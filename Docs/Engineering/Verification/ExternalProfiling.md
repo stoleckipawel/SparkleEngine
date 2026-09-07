@@ -1,10 +1,24 @@
 # External Performance Profiler Runbook
 
-Status: runbook; version-sensitive operational guidance, not proof of current Sparkle implementation or tool support
+**Status:** runbook; version-sensitive operational guidance, not proof of current Sparkle implementation or tool support
 
-Last external-source reconciliation: 2026-08-28
+**Last external-source reconciliation:** 2026-08-28
 
-Scope: profiling-build preparation, current external-tool capabilities, marker interoperability, capture provenance, operational capture checks, input/display measurement options, and revalidation triggers
+**Scope:** profiling-build preparation, current external-tool capabilities, marker interoperability, capture provenance, operational capture checks, input/display measurement options, and revalidation triggers
+
+## Quick Route
+
+```mermaid
+flowchart LR
+    Question[State one performance question] --> Correct[Rule out correctness failure]
+    Correct --> Tool[Choose the narrowest capable tool]
+    Tool --> Provenance[Record build, machine,<br/>driver, tool, mode, and observer]
+    Provenance --> Capture[Capture a fixed workload]
+    Capture --> Compare[Run a discriminating comparison]
+    Compare --> Claim[Report scope, uncertainty,<br/>artifacts, and limitations]
+```
+
+Use [Tool Choice And Tradeoffs](#tool-choice-and-tradeoffs) for selection and [Operational Capture Checks](#operational-capture-checks) for the chosen tool. Revalidate the installed version before use; this dated runbook is not a support matrix.
 
 ## Purpose And Authority Boundary
 

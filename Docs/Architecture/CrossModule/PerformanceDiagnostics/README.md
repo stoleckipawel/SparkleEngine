@@ -1,10 +1,28 @@
 # Performance Diagnostics Architecture
 
-Status: feature dossier; target architecture, not proof of current implementation
+**Status:** feature dossier; target architecture, not proof of current implementation
 
-Last source reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
+**Last source reconciliation:** 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 
-Scope: editor and game frame timing, CPU owner/thread attribution, GPU queue/pass timing, process RAM, GPU memory, bounded live presentation, attached external frame capture, external-profiler correlation, authoring isolation, and Shipping erasure
+**Scope:** editor and game frame timing, CPU owner/thread attribution, GPU queue/pass timing, process RAM, GPU memory, bounded live presentation, attached external frame capture, external-profiler correlation, authoring isolation, and Shipping erasure
+
+## At A Glance
+
+| Current source surface | Target product | Deliberate boundary |
+| --- | --- | --- |
+| host frame clock, thread names, task ETW events, GPU markers/timestamps, allocator facts, memory polling, and editor FPS text | one bounded orientation model shared by DevelopmentGame and Editor, focused GPU capture, reproducible benchmark export, and external-profiler handoff | not an in-engine universal trace viewer, allocation tracker, hardware-counter oracle, or Shipping dependency |
+
+```mermaid
+flowchart LR
+    Producers[Application, Tasks, Renderer,<br/>RHI, Platform facts] --> Session[Application-owned bounded<br/>diagnostics session]
+    Session --> Live[Compact stat views]
+    Session --> Workspace[Editor performance workspace]
+    Session --> Evidence[Explicit benchmark export]
+    Markers[Stable semantic markers] --> External[PIX, RenderDoc, Nsight,<br/>WPA, RGP and related tools]
+    Session -. frame and scope identity .-> External
+```
+
+The internal layer is a compass: it identifies the likely limiting domain and the next useful investigation. External tools and controlled experiments establish cause. The target is not yet implemented or accepted.
 
 ## Dossier Route
 

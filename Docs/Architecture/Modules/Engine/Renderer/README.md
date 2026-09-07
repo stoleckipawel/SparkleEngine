@@ -1,95 +1,128 @@
 # Renderer
 
-Status: module index and current-system reading route; not executable or release evidence
+**Status:** module index and current-system reading route; not executable or release evidence
 
-Scope: explain how Sparkle renders a frame, identify the Renderer features that contribute to it, and route exact capability, design, source, and evidence questions to one owner
+**Scope:** explain how Sparkle renders a frame, identify the Renderer features that contribute to it, and route exact capability, design, source, and evidence questions to one owner
 
-Current-state basis: source and build configuration rechecked 2026-09-06 through committed `master` revision `c28b33bd`; executable Renderer source is unchanged from the earlier `8414b5dc` audit; no build, runtime, GPU-validation, visual, performance, or package result is claimed
+**Current-state basis:** source and build configuration rechecked 2026-09-06 through committed `master` revision `c28b33bd`; executable Renderer source is unchanged from the earlier `8414b5dc` audit
 
-## Start Here
+The Renderer turns an immutable world submission into a lit, post-processed, presented frame. It owns scene/view/frame meaning; the RHI owns low-level GPU mechanisms and backend translation.
 
-Read [Rendering a Sparkle Frame](RenderingASparkleFrame.md) first. It follows one accepted frame from immutable world submission through scene/view preparation, frame-graph construction and execution, GBuffer, lighting, post processing, presentation, submission, and retirement. Each stage links to its feature dossier and live source owner.
+> [!IMPORTANT]
+> **Current state:** Broad Renderer paths exist in source for raster and ray rendering, ReSTIR lighting, post processing, diagnostics, and serial/render-thread execution.
+>
+> **Main limitation:** These paths are not release-proved, lighting currently depends on ray tracing, and several familiar rendering features are explicitly absent.
+>
+> **Evidence:** Source/build membership was rechecked through 2026-09-06. No build, GPU run, visual, performance, backend-parity, or package result is claimed here.
 
-Use the [Renderer Capability Inventory](CapabilityInventory.md) when you need an exact `REN-*` row, implementation state, limit, or evidence destination. The inventory is the ledger; it is deliberately not the explanation of the renderer.
+## At A Glance
 
-## Renderer Feature Dossiers
-
-| Feature or system | What Sparkle currently does | Current boundary | Owning document |
-| --- | --- | --- | --- |
-| Frame production | Accepts monotonic immutable submissions, supports serial or render-thread coordination, prepares one frame slot, executes, submits, and advances completion-owned lifetime. | Source path present; serial/threaded equivalence and shutdown stress remain unproved. | [Rendering a Sparkle Frame](RenderingASparkleFrame.md) |
-| Frame graph and GPU scheduling | Declares typed raster/compute/ray/transfer/provider passes, compiles resource dependencies, barriers, transients, queues, recording chunks, and submission batches. | Source path present; native validation, overlap, aliasing, and rebuild-cost evidence remain open. | [Frame Graph and Scheduling](Features/FrameExecution/FrameGraphAndScheduling.md) |
-| Pipeline materialization and typed binding | Validates cooked shader metadata and typed pass layouts, materializes graphics/compute/ray pipelines, binds current resources, and swaps whole shader generations. | Source path present; ABI, cache identity, backend parity, build membership, and reload stress remain unproved. | [Pipeline Materialization and Typed Binding](Features/ShaderRuntime/PipelineMaterializationAndTypedBinding.md) |
-| Scene and view preparation | Maintains a persistent render-side scene, derives frame-local scene and view state through separate owners, and publishes one coherent GPU-scene generation. | Source path present; capacity, failure, identity, and concurrency behavior need executable evidence. | [Scene and View Preparation](Features/SceneAndViewPreparation/README.md) |
-| Visibility and draw preparation | Classifies per-view bounds/materials, validates candidate identities, preserves compatible authored groups, and deterministically sorts/forms raster batches. | CPU frustum path present; equivalence/benefit unproved; occlusion, LOD, GPU-driven/indirect, stereo, and multiview routes absent. | [Visibility and Draw Preparation](Features/GeometryAndResources/VisibilityAndDrawPreparation.md) |
-| Mesh and texture residency | Admits bounded asynchronous mesh/texture work through preparation/decode, upload, activation, generation replacement, and completion-safe eviction. | Source path present; pressure behavior, fallback asymmetry, throughput, and retirement need executable evidence. | [Mesh and Texture Residency](Features/GeometryAndResources/MeshAndTextureResidency.md) |
-| Temporal sampling and history | Owns per-view Halton jitter, previous-camera state, common history validity/invalidation, and the motion/reprojection convention shared by temporal consumers. | Source path present; exact values, cross-consumer agreement, multi-view isolation, and visual stability remain unproved. | [Temporal Sampling and History](Features/FrameExecution/TemporalSamplingAndHistory.md) |
-| Geometry, materials, and GBuffer | Renders static, instanced, skinned, and morphed triangle geometry through raster or ray GBuffer frontends into one deferred material contract. | Opaque and alpha-tested paths exist; transparent blending and broader material lobes are not supported. | [Geometry, Materials, and GBuffer](Features/GeometryAndResources/GeometryMaterialsAndGBuffer.md) |
-| Ray-tracing scene and traversal | Builds BLAS/TLAS state and runs ray GBuffer/shadow effects through inline queries or native pipelines over shared scene/material semantics. | Capability-gated; reference and ReSTIR-indirect traversal are inline-only, and parity is unproved. | [Ray Tracing](Features/RayTracing/README.md) and its [execution architecture](Features/RayTracing/ExecutionArchitecture.md) |
-| Lighting | Selects one ReSTIR or reference surface-lighting mode and joins direct/indirect lobes, emissive, and sky through one composite contract. | Direct and Indirect paths exist and remain unproved; Volumetric Lighting is absent. | [Lighting](Features/Lighting/README.md) |
-| Direct lighting | Samples directional, point, spot, and rect lights; resolves ray-traced visibility; evaluates direct diffuse, specular, and wrap-subsurface lobes. | Both current lighting modes require ray tracing; no shadow-map or non-ray fallback exists. | [Direct Lighting](Features/Lighting/DirectLighting.md) |
-| Indirect lighting | Resolves secondary diffuse/specular transport through ReSTIR reuse or the accumulating reference path, then joins sky/environment background. | Secondary traversal is inline-only; convergence, bias, history, and reference-oracle credibility remain open. | [Indirect Lighting](Features/Lighting/IndirectLighting.md) |
-| Volumetric lighting | Would own participating media, fog, transmittance, scattering, atmosphere, and aerial perspective. | Not implemented; nearby sky, alpha-mask, and wrap-subsurface paths are explicitly not volumetric support. | [Volumetric Lighting](Features/Lighting/VolumetricLighting.md) |
-| Deferred decals | Has an accepted target design for shared raster/ray material composition. | Not implemented; no authored/runtime data, primary GBuffer pass, or secondary-ray application exists. | [Deferred Decals](Features/DeferredDecals/README.md) |
-| Post Processing | Orders exposure, reconstruction/upscaling, debug handoff, tone mapping, encoding, and publication; names expected absent stages explicitly. | Implemented and absent capabilities have separate child dossiers; family-wide correctness remains unproved. | [Post Processing](Features/PostProcessing/README.md) |
-| Exposure | Resolves manual or automatic metering into one history-aware per-view multiplier before debug replacement and presentation. | Source path present; numerical response, reset, finite bounds, and async overlap remain unproved. | [Exposure](Features/PostProcessing/DisplayPipeline/Exposure.md) |
-| Image reconstruction and upscaling | Produces one output-extent resolved color through Linear, NVIDIA DLSS Super Resolution, or ReSTIR-specific DLSS Ray Reconstruction. | Linear baseline exists; NVIDIA routes are capability/backend/package gated and unproved. | [Image Reconstruction and Upscaling](Features/PostProcessing/ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md) |
-| Resolution, sampling, and anti-aliasing | Resolves viewport/window output extent, provider-selected render extent, active Halton jitter and current single-sample attachment policy before one resolved output. | Extent path present; RHI sample vocabulary is not Renderer MSAA; standalone TAA/FXAA/SMAA and dynamic resolution are absent. | [Resolution, Sampling, and Anti-Aliasing](Features/PostProcessing/ReconstructionAndGeneration/ResolutionSamplingAndAntiAliasing.md) |
-| Tone mapping | Multiplies by exposure and maps HDR scene-referred color to display-linear color through Reinhard, ACES approximation, or ACES fitted filmic. | Source path present; no public bypass and numerical/colorimetric correctness remains unproved. | [Tone Mapping](Features/PostProcessing/DisplayPipeline/ToneMapping.md) |
-| Color grading | Would own authored grading transforms, parameters, and LUT workflows independently from tone mapping. | Not implemented; fixed tone-mapper choices are not color grading. | [Color Grading](Features/PostProcessing/DisplayPipeline/ColorGrading.md) |
-| Chromatic aberration | Would own intentional channel-dependent lens distortion and its placement/sampling policy. | Not implemented; reconstruction or filtering fringes are not feature support. | [Chromatic Aberration](Features/PostProcessing/DisplayPipeline/ChromaticAberration.md) |
-| Frame generation | Would own interpolated-frame synthesis, identity, pacing, UI, latency, and presentation contracts. | Not implemented; Streamline Reflex/PCL, DLSS Super Resolution, and Ray Reconstruction are not frame generation. | [Frame Generation](Features/PostProcessing/ReconstructionAndGeneration/FrameGeneration.md) |
-| Presentation and output | Applies output encoding and back-buffer or viewport-product publication after tone mapping. | HDR display output is absent; numerical color and exact debug presentation remain unproved. | [Presentation and Output](Features/PostProcessing/DisplayPipeline/PresentationAndOutput.md) |
-| UI and editor viewport composition | Replays immutable UI packets as a host overlay or presents an offscreen viewport product through an ImGui texture binding after scene rendering. | Source path present; blend/color/DPI behavior and long-session editor-texture lifetime are unproved. | [UI and Viewport Composition](Features/ViewportAndDiagnostics/UiAndViewportComposition.md) |
-| Latency coordination | Joins host simulation start/end with D3D12 render-submit/present markers and optionally routes them through Streamline PCL with Reflex sleep. | Optional D3D12-only inspected path; host ordering, token narrowing, failures, and any latency benefit remain unproved. | [Latency Coordination](Features/FrameExecution/LatencyCoordination.md) |
-| Debug views | Selects 16 final, GBuffer, lighting, and GPU-scene visualizations and sends them through the common presentation path. | Current presentation can alter diagnostic values; the corrected display-domain design is target-only. | [Debug Views](Features/DebugViews/README.md) |
-| Diagnostics, viewport products, and capture | Collects frame/pass timing and memory data, publishes editor-facing products, and completes asynchronous texture readbacks. | Source path present; truthfulness, color/format semantics, observer cost, and support UX remain unproved. | [Diagnostics, Products, and Capture](Features/ViewportAndDiagnostics/DiagnosticsProductsAndCapture.md) |
-| Settings state and persistence | Captures an aggregate requested state, persists 27 owned CVar names, restores them at startup, and commits edits directly or through the render-thread control route. | Current persistence truncates in place and reports no parse/write failure; requested versus resolved/restart-active state is incomplete. | [Settings State and Persistence](Features/RuntimeConfiguration/SettingsStateAndPersistence.md) and [Selector Catalog](Features/RuntimeConfiguration/FeatureSelectorCatalog.md) |
-| Shader program catalog | Enumerates every registered Renderer global program, stage, entry, consumer, binding boundary, and required runtime target variant. | Exact source ledger exists; cook completeness and declared-metadata agreement remain unproved. | [Shader Program Catalog](Features/ShaderRuntime/ShaderProgramCatalog.md) and [Shader Compilation](../../Tools/ShaderCompiler/README.md) |
-
-The [feature dossier index](Features/README.md) maps every Renderer capability family to these documents and states what each dossier must answer.
-
-The [Feature Selector Catalog](Features/RuntimeConfiguration/FeatureSelectorCatalog.md) maps the full current CVar/settings surface to active owners and calls out registered-but-ineffective or non-persisted controls.
-
-## Choose By Question
-
-| Question | Read |
+| You have | You do not have yet |
 | --- | --- |
-| In what order is a frame produced, and why? | [Rendering a Sparkle Frame](RenderingASparkleFrame.md) |
-| What exactly is supported, partial, gated, vocabulary-only, or absent? | [Capability Inventory](CapabilityInventory.md) |
-| Which source owner implements a stage? | The source-route table in the relevant feature dossier, then verify the linked code/CMake. |
-| Which setting/CVar selects a feature, and is it actually consumed or persisted? | [Feature Selector Catalog](Features/RuntimeConfiguration/FeatureSelectorCatalog.md) |
-| How are aggregate settings saved, restored, moved to the render thread, and marked pending restart? | [Settings State and Persistence](Features/RuntimeConfiguration/SettingsStateAndPersistence.md) |
-| Where are simulation/render/present latency markers and Reflex/PCL boundaries owned? | [Latency Coordination](Features/FrameExecution/LatencyCoordination.md) |
-| How do D3D12, Vulkan, raster, inline, and native-pipeline paths differ? | [Graphics Feature Coverage Matrix](../../../CrossModule/GraphicsCoverageMatrix.md) |
-| How does a feature cross GameFramework, Renderer, ShaderCompiler, and RHI? | [Graphics Feature Execution Traces](../../../CrossModule/FeatureExecutionTraces.md) |
-| What proof is still missing? | [Renderer capability-to-evidence map](../../../../Plans/CapabilityEvidence.md#renderer-capability-to-evidence-map) |
-| Can a feature ship? | Its `FCR-REN-*` report in [Feature Completion Reports](../../../../Acceptance/FeatureCompletionReports.md); this Architecture route cannot approve it. |
+| Persistent render-side scene plus view-local camera/display/history state | Accepted scene/view lifetime, capacity, multi-view, and reload evidence |
+| CPU visibility, resource residency, frame graph, typed shader/pipeline runtime | Occlusion culling, LOD selection, GPU-driven indirect drawing, stereo, or multiview |
+| Raster, inline-ray, and native-ray-pipeline GBuffer frontends | Proved parity across frontends/backends and transparent blended materials |
+| ReSTIR direct/indirect lighting and an accumulating reference mode | Non-ray lighting/shadow fallback, credible accepted reference oracle, volumetric lighting |
+| Exposure, Linear/DLSS reconstruction, tone mapping, debug views, UI and presentation | Color grading, chromatic aberration, frame generation, HDR display output |
+| Requested settings, diagnostics, capture products, shader-generation replacement | Complete requested-versus-active, failure, stress, quality, and performance evidence |
 
-## Ownership Boundary
+## How A Frame Moves Through The Renderer
 
-Renderer owns scene/view/frame policy, technique selection, graph construction, shader/pipeline use, history, providers, and render products. GameFramework owns world/ECS state and publishes immutable render submissions. RHI owns backend resources, command recording, synchronization, native lowering, presentation, and GPU diagnostics. The binding boundary is [Renderer and RHI](../../../Decisions/RendererRhiBoundary.md).
+The solid path is the normal frame. Dashed paths replace or specialize part of it.
 
-Current source structure:
+```mermaid
+flowchart LR
+    Submit[Immutable world submission] --> Scene[Persistent scene update]
+    Scene --> View[View and temporal preparation]
+    View --> Ready[Visibility and resource readiness]
+    Ready --> GBuffer[Raster or ray GBuffer]
+    GBuffer --> Lighting[Direct and indirect lighting]
+    Lighting --> Reconstruct[Exposure and reconstruction]
+    Reconstruct --> Tone[Tone mapping and output encoding]
+    Tone --> UI[UI and viewport composition]
+    UI --> RHI[RHI submission and presentation]
 
-```text
-RenderCoordinator
-  -> RendererHost
-  -> FramePipeline
-       -> RenderScene + PreparedRenderScene
-       -> RenderView + RenderViewState
-       -> RenderGpuScene + RenderRayTracingScene
-       -> FrameGraph
-            -> Passes/<feature>
-            -> RHI command and submission services
-       -> viewport products / UI / present / retirement
+    GBuffer -. debug view .-> Tone
+    Lighting -. reference accumulation .-> Reconstruct
+    Ready -. BLAS/TLAS preparation .-> GBuffer
 ```
 
-## Placement Model
+Start with [Rendering A Sparkle Frame](RenderingASparkleFrame.md) for the complete owner-to-retirement explanation.
 
-The Renderer root contains only module-level entry documents:
+## Feature Families
 
-- this reader route;
-- [Rendering a Sparkle Frame](RenderingASparkleFrame.md), the canonical current execution narrative;
-- [Capability Inventory](CapabilityInventory.md), the exact row/state/evidence ledger.
+| Family | What it contributes | Current boundary | Read next |
+| --- | --- | --- | --- |
+| Frame execution | admission, serial/render-thread coordination, frame graph, history, latency markers, submission lifetime | Implemented path; equivalence, overlap, rebuild, and shutdown remain unproved | [Frame Execution](Features/FrameExecution/README.md) |
+| Scene and view preparation | persistent scene identity, view-local state, GPU-scene publication | Implemented path; capacity, failure, deformation, and multi-view evidence open | [Scene And View Preparation](Features/SceneAndViewPreparation/README.md) |
+| Geometry and resources | residency, visibility, batching, raster/ray GBuffer material contract | Partial; broad source path, but advanced visibility/draw features and transparent blending absent | [Geometry And Resources](Features/GeometryAndResources/README.md) |
+| Ray tracing | BLAS/TLAS/PTLAS planning plus inline and native traversal | Capability-gated; effect/backend parity and lifecycle proof open | [Ray Tracing](Features/RayTracing/README.md) |
+| Lighting | direct/indirect surface transport, ReSTIR/reference modes, sky/emissive composition | Implemented path but ray-dependent and unproved; volumetrics absent | [Lighting](Features/Lighting/README.md) |
+| Post processing | exposure, resolution, reconstruction/upscaling, tone mapping, encoding, presentation | Mixed current/gated/absent capabilities | [Post Processing](Features/PostProcessing/README.md) |
+| Viewport and diagnostics | products, timing/memory observations, capture, UI packet composition | Implemented path; truthfulness, lifetime, observer cost, and package scope unproved | [Viewport And Diagnostics](Features/ViewportAndDiagnostics/README.md) |
+| Runtime configuration | selectors, requested state, persistence, active-state resolution | Partial; one known ineffective selector and package-safe persistence gaps remain | [Runtime Configuration](Features/RuntimeConfiguration/README.md) |
+| Shader runtime | registered program catalog, typed binding, graphics/compute/ray pipeline materialization, generation replacement | Implemented path; ABI, backend, cache, reload, and build-member evidence open | [Shader Runtime](Features/ShaderRuntime/README.md) |
+| Debug views and decals | intermediate visualization plus a separately designed deferred-decal target | Debug path exists but is unproved; deferred decals are not implemented | [Debug Views](Features/DebugViews/README.md), [Deferred Decals](Features/DeferredDecals/README.md) |
 
-All feature-owned current behavior, feature-local catalogs, negative capability dossiers, target architectures, and feature-local acceptance contracts live under [Features](Features/README.md). A feature receives a subfolder only when it owns multiple independently maintained documents, such as current behavior plus a target architecture or substantial acceptance matrix. Delivery sequencing remains under [Plans](../../../../Plans/Renderer/README.md); candidate results and release-wide proof orchestration remain under [Acceptance](../../../../Acceptance/Renderer/README.md).
+The [complete feature guide](Features/README.md) maps every `REN-*` family, source owner, local acceptance contract, and missing evidence item.
+
+## Execution And Backend Matrix
+
+| Path | D3D12 | Vulkan | Important limit |
+| --- | --- | --- | --- |
+| Raster GBuffer and deferred surface lighting inputs | Implemented source path | Implemented source path | No accepted native validation or output-equivalence result |
+| Inline ray GBuffer and direct visibility | Capability-gated path | Capability-gated path | Requires ray-query/device/descriptor readiness |
+| Native ray-pipeline GBuffer and direct visibility | Capability-gated path | Capability-gated path | Shader-table/backend parity remains unproved |
+| ReSTIR direct/indirect | Implemented source path | Implemented source path | Secondary/reference paths do not all use both traversal frontends |
+| Reference path-traced accumulation | Implemented source path | Implemented source path | Discovery blocks calling it unbiased, converged, or a ground-truth oracle |
+| Linear reconstruction | Implemented source path | Implemented source path | Quality/cost range and scale limits remain unproved |
+| NVIDIA DLSS SR/RR, PCL, Reflex | Capability-gated path | Not a supported active route | Vendor runtime, hardware, DLL, redistribution, and fallback constraints |
+| SDR presentation | Implemented source path | Implemented source path | HDR display contract is absent |
+
+`Implemented source path` is not a backend pass. Use [Graphics Feature Coverage](../../../CrossModule/GraphicsCoverageMatrix.md) for exact cells and [Feature Execution Traces](../../../CrossModule/FeatureExecutionTraces.md) for vertical paths.
+
+## How To Select And Observe Features
+
+Renderer behavior is requested through startup/CVar configuration, persisted aggregate rendering settings, editor controls, and per-viewport state. The feature owner resolves that request against backend/device/provider readiness and must expose what actually became active.
+
+- [Feature Selector Catalog](Features/RuntimeConfiguration/FeatureSelectorCatalog.md) lists current controls, defaults, consumers, and known ineffective/absent selectors.
+- [Settings State And Persistence](Features/RuntimeConfiguration/SettingsStateAndPersistence.md) explains startup, editor commit, persistence, restart, and package-location behavior.
+- [Diagnostics, Products, And Capture](Features/ViewportAndDiagnostics/DiagnosticsProductsAndCapture.md) explains observable frame/pass/memory/product identity.
+- [Debug Views](Features/DebugViews/README.md) explains intermediate render-output selection and presentation.
+
+Silent substitution is not support. A requested ray/provider/debug path that cannot activate must report the active path and reason or fail according to its dossier.
+
+## Design Decisions And Tradeoffs
+
+| Decision | Benefit | Cost or drawback |
+| --- | --- | --- |
+| Persistent scene data and view-local data have different owners | Prevents camera/history state from contaminating shared scene identity | Publication, invalidation, and multi-view joins require explicit generations |
+| World submissions are immutable at the Renderer boundary | Safer serial/threaded execution and no direct ECS reads | Submission copying/queueing and stale-frame rejection need capacity control |
+| One frame graph owns pass/resource dependencies | Central barriers, queue order, transient lifetime, culling, and parallel recording | Graph rebuild/materialization adds CPU complexity and another failure boundary |
+| Raster and ray GBuffer frontends share one material-result contract | Makes semantic parity possible and keeps lighting independent of traversal API | Alpha, SBT, acceleration structures, and frontend-specific capability gaps remain complex |
+| Lighting is composed from separate lobe products | Easier debugging and direct/indirect isolation | More persistent/transient products, history, bandwidth, and synchronization |
+| Optional provider integrations sit behind semantic reconstruction/latency contracts | Core frame meaning does not become NVIDIA-specific | Capability checks, packaging, fallback truth, and D3D12-only restrictions remain visible costs |
+| Unsupported effects have explicit negative dossiers | Readers can distinguish absence from forgotten documentation | The feature guide is larger and depends on a concise landing page like this one |
+
+## Known Limitations
+
+- Current surface lighting has no shadow-map or other fully non-ray fallback.
+- Transparent blending and many advanced material lobes are outside the current GBuffer/material contract.
+- Occlusion, LOD, mesh/task shaders, GPU-driven indirect draws, stereo, and multiview are absent.
+- Volumetric lighting, deferred decals, color grading, chromatic aberration, frame generation, and HDR display output are absent.
+- NVIDIA reconstruction/latency integrations are optional and do not imply Vulkan, non-NVIDIA, package, or quality support.
+- The reference path mode cannot be used as an acceptance oracle until its discovery/derivation/evidence gate passes.
+- Source inspection does not establish visual quality, temporal stability, performance, memory bounds, native validation, or release readiness.
+
+## Evidence And Reference
+
+| Need | Document |
+| --- | --- |
+| Exact current capability states, limits, and non-claims | [Renderer Capability Inventory](CapabilityInventory.md) |
+| Every feature dossier and local proof contract | [Renderer Feature Guide](Features/README.md) |
+| Full frame lifecycle | [Rendering A Sparkle Frame](RenderingASparkleFrame.md) |
+| Renderer/RHI ownership invariant | [Renderer And RHI Decision](../../../Decisions/RendererRhiBoundary.md) |
+| Smallest missing checks | [Renderer Evidence Plan](../../../../Plans/CapabilityEvidence.md#renderer-capability-to-evidence-map) |
+| Candidate/release status | `FCR-REN-*` families in [Feature Completion Reports](../../../../Acceptance/FeatureCompletionReports.md) and [First Release](../../../../Acceptance/FirstRelease.md) |
+
+Primary implementation routes are `Engine/Renderer/Public`, `Engine/Renderer/Private`, `Engine/Renderer/ShaderRegistrations`, and `Engine/Renderer/CMakeLists.txt`. Verify those paths before changing a current-state claim.

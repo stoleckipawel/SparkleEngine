@@ -1,14 +1,14 @@
 # Editor Capability Inventory
 
-Status: capability snapshot; current, but not usability, correctness, or packaged-editor evidence
+**Status:** capability snapshot; current, but not usability, correctness, or packaged-editor evidence
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; `Engine/Editor`, `SparkleApplicationEditor`, world-edit, Renderer diagnostic, and CMake surfaces inspected; evidence `S` only
+**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; `Engine/Editor`, `SparkleApplicationEditor`, world-edit, Renderer diagnostic, and CMake surfaces inspected; evidence `S` only
 
-Scope: workspace UI, viewport, level actions, scene inspection/editing, undo/redo, rendering settings, shader/mesh/texture tools, console, capture, restart, and runtime separation
+**Scope:** workspace UI, viewport, level actions, scene inspection/editing, undo/redo, rendering settings, shader/mesh/texture tools, console, capture, restart, and runtime separation
 
-Owner: `Engine/Editor` / `SparkleEditor`; editor hosting and long-running operations belong to `SparkleApplicationEditor`
+**Owner:** `Engine/Editor` / `SparkleEditor`; editor hosting and long-running operations belong to `SparkleApplicationEditor`
 
-Evidence and disposition: [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
 ## Workspace And Level Surface
 

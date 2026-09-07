@@ -1,10 +1,10 @@
 # Clang-Format Decision Record
 
-Status: accepted decision record; executable authority lives in `.clang-format` and the binding coding-style standard
+**Status:** accepted decision record; executable authority lives in `.clang-format` and the binding coding-style standard
 
-Date: 2026-08-02
+**Date:** 2026-08-02
 
-Scope: owned C++20 in `Engine`, `Tools`, and `Projects`, plus owned HLSL/HLSLI in `Engine/Assets/Shaders`
+**Scope:** owned C++20 in `Engine`, `Tools`, and `Projects`, plus owned HLSL/HLSLI in `Engine/Assets/Shaders`
 
 ## Executive Summary
 

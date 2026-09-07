@@ -1,6 +1,6 @@
 # Module Engineering
 
-Status: module engineering index
+**Status:** module engineering index
 
 These standards add rules for a particular implementation domain. Read the document for every affected domain; a cross-module change may require more than one.
 

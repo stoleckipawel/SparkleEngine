@@ -1,10 +1,38 @@
 # Renderer Feature Dossiers
 
-Status: Renderer feature index; routes current source claims and design intent, not release approval
+**Status:** Renderer feature index; routes current source claims and design intent, not release approval
 
-Scope: give each independently meaningful Renderer feature family an explicit definition and owning document, while the parent inventory retains the exact row ledger
+**Scope:** give each independently meaningful Renderer feature family an explicit definition and owning document, while the parent inventory retains the exact row ledger
 
-Authority boundary: these dossiers own how Renderer features work, why their boundaries exist, how their stages interact, and what feature-local criteria, controlled failures, checks, and completion definition apply. [Capability Inventory](../CapabilityInventory.md) owns the compact implementation-state/evidence ledger; [Feature Selector Catalog](RuntimeConfiguration/FeatureSelectorCatalog.md) owns exact reachability; [Acceptance](../../../../../Acceptance/README.md) owns cross-feature reports, workload/release gates, and actual candidate verdicts. Context repeated in a dossier explains its feature and does not independently promote the corresponding row.
+**Authority boundary:** these dossiers own how Renderer features work, why their boundaries exist, how their stages interact, and what feature-local criteria, controlled failures, checks, and completion definition apply. [Capability Inventory](../CapabilityInventory.md) owns the compact implementation-state/evidence ledger; [Feature Selector Catalog](RuntimeConfiguration/FeatureSelectorCatalog.md) owns exact reachability; [Acceptance](../../../../../Acceptance/README.md) owns cross-feature reports, workload/release gates, and actual candidate verdicts. Context repeated in a dossier explains its feature and does not independently promote the corresponding row.
+
+## At A Glance
+
+This is the detailed feature map behind the [Renderer overview](../README.md). Start with a family below, then open its child page for the algorithm, selector, limitations, tradeoffs, and local proof contract. The source-coverage tables later on this page are audit reference, not the recommended reading order.
+
+```mermaid
+flowchart LR
+    Frame[Frame execution] --> Scene[Scene and view preparation]
+    Scene --> Geometry[Geometry, resources, and GBuffer]
+    Geometry --> Lighting[Lighting and ray tracing]
+    Lighting --> Post[Post processing]
+    Post --> Viewport[Viewport, diagnostics, and presentation]
+
+    Config[Runtime configuration] -. selects .-> Frame
+    Shaders[Shader runtime] -. materializes .-> Geometry
+    Shaders -. materializes .-> Lighting
+    Debug[Debug views] -. inspects .-> Geometry
+    Debug -. inspects .-> Lighting
+    Missing[Negative dossiers] -. make missing features explicit .-> Post
+```
+
+| Label used in a dossier | What it tells you |
+| --- | --- |
+| `Implemented path` | Source and build membership contain the route; executable proof may still be absent. |
+| `Partial` | A useful route exists with named coverage gaps. |
+| `Capability-gated` | Build, device, API, SDK, vendor, or configuration decides availability. |
+| `Not found` | A targeted audit found no current feature route. |
+| `Unproved` | The required build, runtime, visual, native-validation, performance, or release evidence is still open. |
 
 ## Dossier Contract
 

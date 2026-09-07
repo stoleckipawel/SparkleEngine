@@ -1,6 +1,6 @@
 # Cross-Module Architecture
 
-Status: cross-module architecture index
+**Status:** cross-module architecture index
 
 Use this folder only when a system has several durable owners and no single module can own the whole contract. Each document must name its participating modules and link back to their module pages. A relationship between two modules alone does not justify moving their module-owned knowledge here.
 

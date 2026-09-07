@@ -1,16 +1,16 @@
 # Shader System — Acceptance
 
-Status: feature-local acceptance contract; not proof that the shader-system migration has passed
+**Status:** feature-local acceptance contract; not proof that the shader-system migration has passed
 
-Scope: final feature criteria, required evidence, controlled failure expectations, and completion handoff for the unified shader, graphics-pipeline, and ray-tracing system
+**Scope:** final feature criteria, required evidence, controlled failure expectations, and completion handoff for the unified shader, graphics-pipeline, and ray-tracing system
 
-Architecture authority: [Shader System Architecture](README.md)
+**Architecture authority:** [Shader System Architecture](README.md)
 
-Delivery authority: [Shader System Delivery Plan](../../../Plans/CrossModule/ShaderSystem.md)
+**Delivery authority:** [Shader System Delivery Plan](../../../Plans/CrossModule/ShaderSystem.md)
 
-Evidence semantics: [Validation And Evidence](../../../Engineering/Verification/ValidationAndEvidence.md)
+**Evidence semantics:** [Validation And Evidence](../../../Engineering/Verification/ValidationAndEvidence.md)
 
-Candidate results: [Feature Completion Reports](../../../Acceptance/FeatureCompletionReports.md)
+**Candidate results:** [Feature Completion Reports](../../../Acceptance/FeatureCompletionReports.md)
 
 This contract defines what the completed feature must prove. The delivery plan may sequence phase exits, but it does not redefine these final criteria or record a release verdict.
 

@@ -1,10 +1,10 @@
 # Capability Documentation Review
 
-Status: operational review runbook
+**Status:** operational review runbook
 
-Scope: evaluate whether a SparkleEngine capability is discoverable, accurately bounded, traceable through its real owners, and ready to receive executable evidence
+**Scope:** evaluate whether a SparkleEngine capability is discoverable, accurately bounded, traceable through its real owners, and ready to receive executable evidence
 
-Authority boundary: module and cross-module Architecture feature dossiers own current source claims and feature-local completion contracts; Acceptance owns candidate reports, workload/release orchestration, and release disposition; Plans own unanswered delivery/evidence sequence; this runbook owns only the review workflow
+**Authority boundary:** module and cross-module Architecture feature dossiers own current source claims and feature-local completion contracts; Acceptance owns candidate reports, workload/release orchestration, and release disposition; Plans own unanswered delivery/evidence sequence; this runbook owns only the review workflow
 
 ## Start From The Reader's Question
 

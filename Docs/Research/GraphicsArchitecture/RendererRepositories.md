@@ -1,9 +1,12 @@
 # E. External Renderer Repository Comparison
 
-Status: research; source-linked external comparison whose patterns are precedent, not local implementation proof
-Research snapshot: 2026-07-24
-Last local reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
-Scope: vendor reference repositories/frameworks compared against SparkleEngine architecture, developer-technology transfer, path tracing, neural graphics, code construction, extensibility, productization, feature scope, and deletion-first improvement targets
+**Status:** research; source-linked external comparison whose patterns are precedent, not local implementation proof
+
+**Research snapshot:** 2026-07-24
+
+**Last local reconciliation:** 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
+
+**Scope:** vendor reference repositories/frameworks compared against SparkleEngine architecture, developer-technology transfer, path tracing, neural graphics, code construction, extensibility, productization, feature scope, and deletion-first improvement targets
 
 ## Intent
 

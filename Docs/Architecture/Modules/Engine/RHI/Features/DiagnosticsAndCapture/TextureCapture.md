@@ -1,10 +1,10 @@
 # RHI Texture Capture
 
-Status: current feature dossier; source-backed, not captured-pixel, format, color, latency, or release evidence
+**Status:** current feature dossier; source-backed, not captured-pixel, format, color, latency, or release evidence
 
-Verified: 2026-09-06 at committed `master` revision `8414b5dc`
+**Verified:** 2026-09-06 at committed `master` revision `8414b5dc`
 
-Scope: `RHI-DIAG-06`; asynchronous texture readback, staging lifetime, supported-format conversion, bitmap writing, polling, result delivery, failure, and cleanup
+**Scope:** `RHI-DIAG-06`; asynchronous texture readback, staging lifetime, supported-format conversion, bitmap writing, polling, result delivery, failure, and cleanup
 
 ## Feature Promise
 

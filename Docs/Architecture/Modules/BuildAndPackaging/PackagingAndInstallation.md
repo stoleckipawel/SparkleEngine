@@ -1,12 +1,14 @@
 # Packaging And Installation
 
-Status: target capability dossier; no current public package or installer was found
+**Status:** target capability dossier; no current public package or installer was found
 
-Owner: repository build and release-delivery configuration; product contributors are Launcher, Showcase, Application, Tools, and the engine modules whose runtime bytes enter the package
+**Scope:** define deterministic staging, manifests, integrity/signing, packaging, installation, writable state, relocation, and clean-machine operation
 
-Snapshot: 2026-09-07; root/module `CMakeLists.txt` and `CMake/*.cmake` were searched for `install(...)` and CPack ownership with no match; source evidence `S` only
+**Owner:** repository build and release-delivery configuration; product contributors are Launcher, Showcase, Application, Tools, and the engine modules whose runtime bytes enter the package
 
-Strategy and acceptance sources: [`PGE-01`, `PGE-13`, `PGE-14`, `PGE-15`](../../../Strategy/Requirements.md), [First Release](../../../Acceptance/FirstRelease.md), and `FCR-PROD-02`/`FCR-PROD-05` in [Feature Completion Reports](../../../Acceptance/FeatureCompletionReports.md)
+**Snapshot:** 2026-09-07; root/module `CMakeLists.txt` and `CMake/*.cmake` were searched for `install(...)` and CPack ownership with no match; source evidence `S` only
+
+**Strategy and acceptance sources:** [`PGE-01`, `PGE-13`, `PGE-14`, `PGE-15`](../../../Strategy/Requirements.md), [First Release](../../../Acceptance/FirstRelease.md), and `FCR-PROD-02`/`FCR-PROD-05` in [Feature Completion Reports](../../../Acceptance/FeatureCompletionReports.md)
 
 ## Capability Identity
 

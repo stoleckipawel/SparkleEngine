@@ -1,8 +1,8 @@
 # Performance Diagnostics Research
 
-Status: research-family index
+**Status:** research-family index
 
-Scope: route performance-diagnostics product precedent, visual interaction studies, and exploratory dashboard promotion gates
+**Scope:** route performance-diagnostics product precedent, visual interaction studies, and exploratory dashboard promotion gates
 
 | Research | Use |
 | --- | --- |

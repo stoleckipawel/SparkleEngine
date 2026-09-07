@@ -1,9 +1,12 @@
 # Debug View Presentation Architecture
 
-Status: target architecture; design-only, not implementation proof
-Date: 2026-08-18
-Last source reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
-Responsibility: debug-view signal-domain classification, display mapping, output encoding, visualization producer requirements, and capture-visible presentation state
+**Status:** target architecture; design-only, not implementation proof
+
+**Date:** 2026-08-18
+
+**Last source reconciliation:** 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
+
+**Responsibility:** debug-view signal-domain classification, display mapping, output encoding, visualization producer requirements, and capture-visible presentation state
 
 ## Decision
 

@@ -1,10 +1,10 @@
 # Renderer Frame Graph and GPU Scheduling
 
-Status: current feature dossier; source-backed, not native-validation, overlap, performance, or release evidence
+**Status:** current feature dossier; source-backed, not native-validation, overlap, performance, or release evidence
 
-Verified: 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
+**Verified:** 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
-Scope: `REN-FG-01` through `REN-FG-08` and the frame-graph portion of `REN-OWN-04`/`REN-OWN-06`; defines how Renderer feature declarations become resources, dependencies, barriers, queue submissions, and retirement
+**Scope:** `REN-FG-01` through `REN-FG-08` and the frame-graph portion of `REN-OWN-04`/`REN-OWN-06`; defines how Renderer feature declarations become resources, dependencies, barriers, queue submissions, and retirement
 
 ## Feature Contract
 

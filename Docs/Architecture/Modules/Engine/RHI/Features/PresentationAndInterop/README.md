@@ -1,8 +1,8 @@
 # RHI Presentation And Interop
 
-Status: RHI feature-family index
+**Status:** RHI feature-family index
 
-Scope: route window presentation, immutable ImGui lowering, and deliberately narrow external-native integration
+**Scope:** route window presentation, immutable ImGui lowering, and deliberately narrow external-native integration
 
 | Document | Open it for |
 | --- | --- |

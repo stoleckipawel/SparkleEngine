@@ -1,14 +1,14 @@
 # Shader System Design Precedent
 
-Status: research; external technical precedent and deferred pipeline-preparation options, not local architecture or implemented behavior
+**Status:** research; external technical precedent and deferred pipeline-preparation options, not local architecture or implemented behavior
 
-Responsibility: preserve the source-backed Unreal, NVIDIA, and AMD comparisons and the deferred PSO-preparation options that informed Sparkle's shader-system decisions
+**Responsibility:** preserve the source-backed Unreal, NVIDIA, and AMD comparisons and the deferred PSO-preparation options that informed Sparkle's shader-system decisions
 
-Authority boundary: [Shader System Architecture](../../Architecture/CrossModule/ShaderSystem/README.md) owns the selected local design; the [delivery plan](../../Plans/CrossModule/ShaderSystem.md) owns sequencing; code and executable build configuration own implemented behavior
+**Authority boundary:** [Shader System Architecture](../../Architecture/CrossModule/ShaderSystem/README.md) owns the selected local design; the [delivery plan](../../Plans/CrossModule/ShaderSystem.md) owns sequencing; code and executable build configuration own implemented behavior
 
-Source review recorded: 2026-08-15; version-sensitive claims must be revalidated before they drive a new decision
+**Source review recorded:** 2026-08-15; version-sensitive claims must be revalidated before they drive a new decision
 
-Interpretation: local-sounding words such as “adopt,” “should,” “target,” and phase dispositions below record the conclusions and options of that review. They are historical rationale, not independent Sparkle requirements; follow the linked Architecture dossier for the accepted current design.
+**Interpretation:** local-sounding words such as “adopt,” “should,” “target,” and phase dispositions below record the conclusions and options of that review. They are historical rationale, not independent Sparkle requirements; follow the linked Architecture dossier for the accepted current design.
 
 ## External Precedent and What Sparkle Adopts
 

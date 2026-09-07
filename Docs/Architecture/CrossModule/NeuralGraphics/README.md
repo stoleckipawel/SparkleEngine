@@ -1,12 +1,12 @@
 # Neural Graphics Architecture
 
-Status: target cross-module feature family; current vendor reconstruction inference is not an owned neural-graphics implementation
+**Status:** target cross-module feature family; current vendor reconstruction inference is not an owned neural-graphics implementation
 
-Owner: cross-module contract spanning future model/tool ownership, Assets publication, Renderer integration, RHI execution, Showcase workloads, and Build/Packaging delivery
+**Owner:** cross-module contract spanning future model/tool ownership, Assets publication, Renderer integration, RHI execution, Showcase workloads, and Build/Packaging delivery
 
-Snapshot: 2026-09-07; Engine, Tools, Projects, CMake, and root build membership were searched for owned training, dataset, model-lowering, and neural-runtime paths with no match; source evidence `S` only
+**Snapshot:** 2026-09-07; Engine, Tools, Projects, CMake, and root build membership were searched for owned training, dataset, model-lowering, and neural-runtime paths with no match; source evidence `S` only
 
-Strategy sources: [`PGE-03`, `PGE-04`, `PGE-11`, `PGE-12`](../../../Strategy/Requirements.md), [Executive Summary](../../../Strategy/ExecutiveSummary.md), [Gap Assessment](../../../Strategy/Assessments/GapAssessment.md), and [Graphics Workloads](../../../Acceptance/GraphicsWorkloads.md)
+**Strategy sources:** [`PGE-03`, `PGE-04`, `PGE-11`, `PGE-12`](../../../Strategy/Requirements.md), [Executive Summary](../../../Strategy/ExecutiveSummary.md), [Gap Assessment](../../../Strategy/Assessments/GapAssessment.md), and [Graphics Workloads](../../../Acceptance/GraphicsWorkloads.md)
 
 ## Capability Identity
 

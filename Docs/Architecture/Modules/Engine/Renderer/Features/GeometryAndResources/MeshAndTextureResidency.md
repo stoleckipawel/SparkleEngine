@@ -1,10 +1,10 @@
 # Renderer Mesh and Texture Residency
 
-Status: current feature dossier; source-backed, not streaming-throughput, memory-pressure, or release evidence
+**Status:** current feature dossier; source-backed, not streaming-throughput, memory-pressure, or release evidence
 
-Verified: 2026-09-06 through committed `master` revision `c28b33bd`; current mesh, texture, residency, diagnostic, and submission owners inspected; executable source is unchanged from the earlier `8414b5dc` audit
+**Verified:** 2026-09-06 through committed `master` revision `c28b33bd`; current mesh, texture, residency, diagnostic, and submission owners inspected; executable source is unchanged from the earlier `8414b5dc` audit
 
-Scope: `REN-SCENE-08`, `REN-SCENE-09`, and the residency mechanics observed by `REN-DIAG-02` through `REN-DIAG-04`; owns asynchronous mesh/texture admission, CPU preparation/decode, upload, activation, generation replacement, cancellation, and completion-safe eviction
+**Scope:** `REN-SCENE-08`, `REN-SCENE-09`, and the residency mechanics observed by `REN-DIAG-02` through `REN-DIAG-04`; owns asynchronous mesh/texture admission, CPU preparation/decode, upload, activation, generation replacement, cancellation, and completion-safe eviction
 
 ## Feature Contract
 

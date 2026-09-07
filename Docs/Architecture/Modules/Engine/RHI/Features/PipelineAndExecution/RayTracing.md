@@ -1,10 +1,10 @@
 # RHI Ray Tracing
 
-Status: current feature dossier; source-backed, not ray correctness, backend parity, vendor support, or performance evidence
+**Status:** current feature dossier; source-backed, not ray correctness, backend parity, vendor support, or performance evidence
 
-Verified: 2026-09-06 at committed `master` revision `8414b5dc`
+**Verified:** 2026-09-06 at committed `master` revision `8414b5dc`
 
-Scope: `RHI-RT-*` and RHI-side `RHI-RTC-*`; acceleration structures, inline queries, native pipelines, shader tables, classic TLAS, partitioned TLAS, transforms, capability gates, and native lowering
+**Scope:** `RHI-RT-*` and RHI-side `RHI-RTC-*`; acceleration structures, inline queries, native pipelines, shader tables, classic TLAS, partitioned TLAS, transforms, capability gates, and native lowering
 
 ## Feature Promise
 

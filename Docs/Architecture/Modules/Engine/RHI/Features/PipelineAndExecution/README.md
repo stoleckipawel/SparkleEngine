@@ -1,8 +1,8 @@
 # RHI Pipeline And Execution
 
-Status: RHI feature-family index
+**Status:** RHI feature-family index
 
-Scope: route immutable pipeline/shader contracts, command recording and submission, synchronization, and ray-tracing execution
+**Scope:** route immutable pipeline/shader contracts, command recording and submission, synchronization, and ray-tracing execution
 
 | Document | Open it for |
 | --- | --- |

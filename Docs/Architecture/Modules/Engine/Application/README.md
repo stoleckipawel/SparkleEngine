@@ -1,14 +1,14 @@
 # Application Capability Inventory
 
-Status: capability snapshot; current, but not release approval or executable evidence
+**Status:** capability snapshot; current, but not release approval or executable evidence
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; `Engine/Application` runtime/editor hosts, command-line/configuration, task ownership, console, shader-recook, and CMake split inspected; evidence `S` only
+**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; `Engine/Application` runtime/editor hosts, command-line/configuration, task ownership, console, shader-recook, and CMake split inspected; evidence `S` only
 
-Scope: process entry, runtime loop, host composition, input/world/render sequencing, threaded-render selection, runtime console, editor composition, shader recook, capture coordination, startup/shutdown
+**Scope:** process entry, runtime loop, host composition, input/world/render sequencing, threaded-render selection, runtime console, editor composition, shader recook, capture coordination, startup/shutdown
 
-Owner: `Engine/Application` / `SparkleApplication` and `SparkleApplicationEditor`
+**Owner:** `Engine/Application` / `SparkleApplication` and `SparkleApplicationEditor`
 
-Evidence and disposition: [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
 ## Product Split
 

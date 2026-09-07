@@ -1,10 +1,10 @@
 # Renderer Scene and View Preparation
 
-Status: current feature-family dossier; source-backed, not runtime, concurrency, visibility, memory, or release evidence
+**Status:** current feature-family dossier; source-backed, not runtime, concurrency, visibility, memory, or release evidence
 
-Verified: 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
+**Verified:** 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
-Scope: `REN-SCENE-01` through `REN-SCENE-10` plus scene/view portions of `REN-OWN-02` through `REN-OWN-04`; routes the three distinct owners that turn immutable world data into prepared scene, prepared view, and published GPU-scene state
+**Scope:** `REN-SCENE-01` through `REN-SCENE-10` plus scene/view portions of `REN-OWN-02` through `REN-OWN-04`; routes the three distinct owners that turn immutable world data into prepared scene, prepared view, and published GPU-scene state
 
 ## Family Contract
 

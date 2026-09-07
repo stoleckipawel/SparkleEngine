@@ -1,10 +1,10 @@
 # RHI Descriptor Binding
 
-Status: current feature dossier; source-backed, not binding correctness, capacity, or backend-parity evidence
+**Status:** current feature dossier; source-backed, not binding correctness, capacity, or backend-parity evidence
 
-Verified: 2026-09-06 at committed `master` revision `8414b5dc`
+**Verified:** 2026-09-06 at committed `master` revision `8414b5dc`
 
-Scope: `RHI-BIND-*`; descriptor layouts, handles, allocation, resource/sampler writes, binding sets/tables, arrays, indexing capabilities, recording lifetime, and bounded Renderer material-table consumption
+**Scope:** `RHI-BIND-*`; descriptor layouts, handles, allocation, resource/sampler writes, binding sets/tables, arrays, indexing capabilities, recording lifetime, and bounded Renderer material-table consumption
 
 ## Feature Promise
 

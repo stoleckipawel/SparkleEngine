@@ -1,14 +1,14 @@
 # Launcher Capability Inventory
 
-Status: capability snapshot; current, but not workflow success or distribution evidence
+**Status:** capability snapshot; current, but not workflow success or distribution evidence
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; Launcher public contracts, planners/executors, Qt GUI, shell path, capability graph, dependencies, level catalog, process handoff, and CMake membership inspected; evidence `S` only
+**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; Launcher public contracts, planners/executors, Qt GUI, shell path, capability graph, dependencies, level catalog, process handoff, and CMake membership inspected; evidence `S` only
 
-Scope: repository discovery, toolchain/dependency readiness, configure/build, cooking, content acquisition, running products, cleaning, quick start, operation history, cancellation, and GUI/shell access
+**Scope:** repository discovery, toolchain/dependency readiness, configure/build, cooking, content acquisition, running products, cleaning, quick start, operation history, cancellation, and GUI/shell access
 
-Owner: `Tools/Launcher/SparkleLauncher` / `SparkleLauncherCore` and `SparkleLauncher`
+**Owner:** `Tools/Launcher/SparkleLauncher` / `SparkleLauncherCore` and `SparkleLauncher`
 
-Evidence and disposition: [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
 ## Frontend And Planning Model
 

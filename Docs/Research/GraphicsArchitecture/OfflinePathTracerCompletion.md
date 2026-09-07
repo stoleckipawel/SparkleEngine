@@ -1,14 +1,14 @@
 # Offline Path Tracer Completion Study
 
-Status: source-backed research and initial discovery report; not an architecture decision, implementation plan, feature-completion claim, or runtime proof
+**Status:** source-backed research and initial discovery report; not an architecture decision, implementation plan, feature-completion claim, or runtime proof
 
-Responsibility: compare primary NVIDIA path-tracing precedents with SparkleEngine's current reference-lighting route and identify the decisions and evidence required before planning an offline unbiased path tracer
+**Responsibility:** compare primary NVIDIA path-tracing precedents with SparkleEngine's current reference-lighting route and identify the decisions and evidence required before planning an offline unbiased path tracer
 
-Authority boundary: the [roadmap](../../Strategy/Roadmap.md#offline-reference-truth-first) owns priority, the [discovery acceptance contract](../../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md) owns `PTD-00` pass/fail, the [feature acceptance contract](../../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/README.md) owns eventual feature scope and definition of done, current code owns implemented behavior, and a later plan may own delivery only after `PTD-00` passes
+**Authority boundary:** the [roadmap](../../Strategy/Roadmap.md#offline-reference-truth-first) owns priority, the [discovery acceptance contract](../../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md) owns `PTD-00` pass/fail, the [feature acceptance contract](../../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/README.md) owns eventual feature scope and definition of done, current code owns implemented behavior, and a later plan may own delivery only after `PTD-00` passes
 
-Research snapshot: NVIDIA sources and SparkleEngine source were inspected on 2026-09-06; local source baseline is committed `master` revision `8414b5dc` with concurrent documentation relocation in the worktree
+**Research snapshot:** NVIDIA sources and SparkleEngine source were inspected on 2026-09-06; local source baseline is committed `master` revision `8414b5dc` with concurrent documentation relocation in the worktree
 
-Non-claims: no shader was compiled, no renderer was launched, no image was captured, no estimator was numerically tested, and no D3D12/Vulkan parity, convergence, unbiasedness, performance, or feature-completion result was produced by this study
+**Non-claims:** no shader was compiled, no renderer was launched, no image was captured, no estimator was numerically tested, and no D3D12/Vulkan parity, convergence, unbiasedness, performance, or feature-completion result was produced by this study
 
 ## Research Decision
 

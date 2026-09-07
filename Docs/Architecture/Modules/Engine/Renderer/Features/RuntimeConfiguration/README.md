@@ -1,8 +1,8 @@
 # Renderer Runtime Configuration
 
-Status: Renderer feature-family index
+**Status:** Renderer feature-family index
 
-Scope: route the independently maintained catalogs for aggregate rendering settings, persistence, selectors, defaults, requested state, and active-state reachability
+**Scope:** route the independently maintained catalogs for aggregate rendering settings, persistence, selectors, defaults, requested state, and active-state reachability
 
 | Document | Open it for |
 | --- | --- |

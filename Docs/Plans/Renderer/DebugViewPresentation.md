@@ -1,12 +1,12 @@
 # Debug View Presentation Delivery Plan
 
-Status: implementation plan; not proof of implementation or acceptance
+**Status:** implementation plan; not proof of implementation or acceptance
 
-Scope: clean-break delivery of per-view show flags, presentation routing, editor controls, capture metadata, and focused verification
+**Scope:** clean-break delivery of per-view show flags, presentation routing, editor controls, capture metadata, and focused verification
 
-Architecture authority: [View Modes And Show Flags](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/ViewModesAndShowFlags.md) and [Debug View Presentation Architecture](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/PresentationArchitecture.md)
+**Architecture authority:** [View Modes And Show Flags](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/ViewModesAndShowFlags.md) and [Debug View Presentation Architecture](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/PresentationArchitecture.md)
 
-Feature acceptance: [Debug View Presentation — Acceptance](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/Acceptance.md)
+**Feature acceptance:** [Debug View Presentation — Acceptance](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/Acceptance.md)
 
 This plan owns implementation slices and their delivery order. It does not redefine signal domains, show-flag semantics, display routing, or final acceptance.
 

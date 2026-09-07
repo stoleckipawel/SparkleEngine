@@ -1,10 +1,10 @@
 # Renderer Temporal Sampling and History
 
-Status: current feature dossier; source-backed, not visual-stability, reconstruction-quality, or release evidence
+**Status:** current feature dossier; source-backed, not visual-stability, reconstruction-quality, or release evidence
 
-Verified: 2026-09-06 through committed `master` revision `c28b33bd`; current `Engine/Renderer` source inspected; executable source is unchanged from the earlier `8414b5dc` audit
+**Verified:** 2026-09-06 through committed `master` revision `c28b33bd`; current `Engine/Renderer` source inspected; executable source is unchanged from the earlier `8414b5dc` audit
 
-Scope: `REN-TEMP-01` through `REN-TEMP-05`; owns per-view jitter, previous-camera publication, history validity, invalidation causes, and the motion/reprojection convention shared by temporal consumers
+**Scope:** `REN-TEMP-01` through `REN-TEMP-05`; owns per-view jitter, previous-camera publication, history validity, invalidation causes, and the motion/reprojection convention shared by temporal consumers
 
 ## Feature Contract
 

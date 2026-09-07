@@ -1,12 +1,12 @@
 # Repository Quality and Complexity Executive Assessment
 
-Status: dated assessment; strategy and refactoring decision brief
+**Status:** dated assessment; strategy and refactoring decision brief
 
-Responsibility: assess how to preserve current capabilities while reducing structural complexity and improving repository credibility
+**Responsibility:** assess how to preserve current capabilities while reducing structural complexity and improving repository credibility
 
-Snapshot date: 2026-08-23
+**Snapshot date:** 2026-08-23
 
-Source revision: `1a70a64c` (`shader & rt doc merge`); engine and tool source remains the `44c2f192` code snapshot assessed below.
+**Source revision:** `1a70a64c` (`shader & rt doc merge`); engine and tool source remains the `44c2f192` code snapshot assessed below.
 
 ## Responsibility And Authority Boundary
 

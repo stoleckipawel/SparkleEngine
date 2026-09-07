@@ -1,6 +1,6 @@
 # Renderer Plans
 
-Status: Renderer plan index
+**Status:** Renderer plan index
 
 These plans are primarily owned by `Engine/Renderer`. Links name collaborating modules without obscuring the primary delivery owner.
 

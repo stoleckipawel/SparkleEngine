@@ -1,8 +1,8 @@
 # Renderer Engineering
 
-Status: binding Renderer integration standard
+**Status:** binding Renderer integration standard
 
-Applies to: `Engine/Renderer`, renderer-owned shaders, persistent GPU-scene policy, frame metadata, frame graphs, render products, path/neural rendering, captures, and graphics evidence
+**Applies to:** `Engine/Renderer`, renderer-owned shaders, persistent GPU-scene policy, frame metadata, frame graphs, render products, path/neural rendering, captures, and graphics evidence
 
 This standard owns Renderer change guardrails. The canonical [Renderer and RHI Architecture Boundary](../../Architecture/Decisions/RendererRhiBoundary.md) owns the dependency, responsibility, lifetime, backend-parity, and enforcement design. [RHI Engineering](RHI.md) owns neutral GPU contracts, backend lowering, native validation, and driver-facing rules. The [World Coordinate, Units, and Transform Contract](../../Architecture/Decisions/WorldCoordinateAndUnits.md) owns world, matrix, camera/light, animation, and skinning semantics.
 

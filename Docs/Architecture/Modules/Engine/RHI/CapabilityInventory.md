@@ -1,22 +1,25 @@
 # RHI Capability Inventory
 
-Status: capability snapshot; not release approval or executable backend evidence
+**Status:** capability snapshot; not release approval or executable backend evidence
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; current `Engine/RHI` public contracts, common implementation, diagnostics, D3D12/Vulkan backends, CMake membership, and representative Renderer consumers inspected; evidence `S` only
+**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; current `Engine/RHI` public contracts, common implementation, diagnostics, D3D12/Vulkan backends, CMake membership, and representative Renderer consumers inspected; evidence `S` only
 
-Scope: backend-neutral and backend-specific device, lifecycle/recovery, queue, resource, descriptor, pipeline, command, ray-tracing, presentation, diagnostics, capture, memory, and interop capabilities
+**Scope:** backend-neutral and backend-specific device, lifecycle/recovery, queue, resource, descriptor, pipeline, command, ray-tracing, presentation, diagnostics, capture, memory, and interop capabilities
 
-Owner: `Engine/RHI`
+**Owner:** `Engine/RHI`
 
-Architecture boundary: [Renderer and RHI Architecture Boundary](../../../Decisions/RendererRhiBoundary.md)
+**Architecture boundary:** [Renderer and RHI Architecture Boundary](../../../Decisions/RendererRhiBoundary.md)
 
-Evidence plan and release disposition: [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence plan and release disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
-Traceability: capability rows use durable `RHI-<family>-NN` identities; their primary proof destinations are listed in the [RHI capability-to-evidence map](../../../../Plans/CapabilityEvidence.md#rhi-capability-to-evidence-map).
+**Traceability:** capability rows use durable `RHI-<family>-NN` identities; their primary proof destinations are listed in the [RHI capability-to-evidence map](../../../../Plans/CapabilityEvidence.md#rhi-capability-to-evidence-map).
 
-Module routes: [RHI module index](README.md) and [RHI feature dossiers](Features/README.md)
+**Module routes:** [RHI module index](README.md) and [RHI feature dossiers](Features/README.md)
 
-Deeper routes: [cross-system backend/feature coverage](../../../CrossModule/GraphicsCoverageMatrix.md) and [producer-to-consumer execution traces](../../../CrossModule/FeatureExecutionTraces.md)
+**Deeper routes:** [cross-system backend/feature coverage](../../../CrossModule/GraphicsCoverageMatrix.md) and [producer-to-consumer execution traces](../../../CrossModule/FeatureExecutionTraces.md)
+
+> [!TIP]
+> This file is an exact backend/reference ledger, not the best introduction. Start with the [RHI overview](README.md), then search by `RHI-*` ID or contract heading. A neutral API row, a D3D12 cell, and a Vulkan cell are separate claims; read their limits and evidence before inferring support or parity.
 
 ## Module Documentation
 

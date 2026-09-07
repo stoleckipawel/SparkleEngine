@@ -1,14 +1,14 @@
 # Core Capability Inventory
 
-Status: capability snapshot; current, but not release approval or runtime evidence
+**Status:** capability snapshot; current, but not release approval or runtime evidence
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; `Engine/Core` public/private source and CMake membership inspected in the live working tree; evidence `S` only
+**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; `Engine/Core` public/private source and CMake membership inspected in the live working tree; evidence `S` only
 
-Scope: dependency-free engine foundations: diagnostics, console/configuration, events, files, paths, process execution, serialization helpers, input vocabulary, math, pixels, time, and thread ownership
+**Scope:** dependency-free engine foundations: diagnostics, console/configuration, events, files, paths, process execution, serialization helpers, input vocabulary, math, pixels, time, and thread ownership
 
-Owner: `Engine/Core` / `SparkleCore`
+**Owner:** `Engine/Core` / `SparkleCore`
 
-Evidence and disposition: [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
 ## Module Boundary
 

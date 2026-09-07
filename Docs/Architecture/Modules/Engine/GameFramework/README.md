@@ -1,14 +1,14 @@
 # GameFramework Capability Inventory
 
-Status: capability snapshot; current, but not release approval or runtime evidence
+**Status:** capability snapshot; current, but not release approval or runtime evidence
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; `Engine/GameFramework` public/private source, CMake membership, Application/Renderer boundaries, and cooked loaders inspected; evidence `S` only
+**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; `Engine/GameFramework` public/private source, CMake membership, Application/Renderer boundaries, and cooked loaders inspected; evidence `S` only
 
-Scope: level lifecycle, cooked asset loading, world/ECS storage, camera/light/material/mesh/animation behavior, editing, publication, and render extraction
+**Scope:** level lifecycle, cooked asset loading, world/ECS storage, camera/light/material/mesh/animation behavior, editing, publication, and render extraction
 
-Owner: `Engine/GameFramework` / `SparkleGameFramework`
+**Owner:** `Engine/GameFramework` / `SparkleGameFramework`
 
-Evidence and disposition: [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
 ## Module Boundary
 

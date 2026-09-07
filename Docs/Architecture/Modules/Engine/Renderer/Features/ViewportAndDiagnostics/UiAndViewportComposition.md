@@ -1,10 +1,10 @@
 # Renderer UI And Viewport Composition
 
-Status: current feature dossier; source-backed, not blend, color, DPI, input, lifetime, stress, or release evidence
+**Status:** current feature dossier; source-backed, not blend, color, DPI, input, lifetime, stress, or release evidence
 
-Verified: 2026-09-06 against source revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
+**Verified:** 2026-09-06 against source revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
-Scope: `REN-UI-01` through `REN-UI-04`; immutable UI packets, host overlays, editor viewport presentation, texture handles, and the post-graph/pre-submit composition boundary
+**Scope:** `REN-UI-01` through `REN-UI-04`; immutable UI packets, host overlays, editor viewport presentation, texture handles, and the post-graph/pre-submit composition boundary
 
 ## Feature Promise
 

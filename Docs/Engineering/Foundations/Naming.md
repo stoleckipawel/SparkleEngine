@@ -1,8 +1,8 @@
 # Naming and Vocabulary
 
-Status: binding naming and cross-boundary vocabulary standard
+**Status:** binding naming and cross-boundary vocabulary standard
 
-Applies to: owned C++, shaders, serialized fields, profiler labels, files, and public documentation
+**Applies to:** owned C++, shaders, serialized fields, profiler labels, files, and public documentation
 
 ## General Naming Baseline
 

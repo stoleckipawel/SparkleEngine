@@ -1,9 +1,15 @@
 # B. Role Source Archive
 
-Status: archive; source record retained for durable traceability
-Responsibility: preserve the normalized source material from which the canonical principal graphics requirements were derived
-Date: 2026-07-26
-Inputs: one CV PDF, nine local image files including one byte-identical duplicate, and one inline role screenshot supplied in the review request
+**Status:** archive; source record retained for durable traceability
+
+**Responsibility:** preserve the normalized source material from which the canonical principal graphics requirements were derived
+
+**Date:** 2026-07-26
+
+**Inputs:** one CV PDF, nine local image files including one byte-identical duplicate, and one inline role screenshot supplied in the review request
+
+> [!NOTE]
+> This is a frozen source archive. Do not read it for current engine state or priority. Use [Requirements](Requirements.md) for the normalized target and search this page only when the provenance of a `PGE-*` requirement matters.
 
 ## Purpose
 

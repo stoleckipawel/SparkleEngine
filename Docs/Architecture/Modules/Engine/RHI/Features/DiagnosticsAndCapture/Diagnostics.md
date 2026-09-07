@@ -1,10 +1,10 @@
 # RHI Diagnostics
 
-Status: current feature dossier; source-backed, not diagnostic truthfulness, fault-handling, observer-cost, or release evidence
+**Status:** current feature dossier; source-backed, not diagnostic truthfulness, fault-handling, observer-cost, or release evidence
 
-Verified: 2026-09-06 at committed `master` revision `8414b5dc`
+**Verified:** 2026-09-06 at committed `master` revision `8414b5dc`
 
-Scope: `RHI-DIAG-01` through `RHI-DIAG-05`; native object identity, GPU events, timestamps, validation messages, D3D12 crash data, live-object reporting, bounded delivery, and observer configuration
+**Scope:** `RHI-DIAG-01` through `RHI-DIAG-05`; native object identity, GPU events, timestamps, validation messages, D3D12 crash data, live-object reporting, bounded delivery, and observer configuration
 
 ## Feature Promise
 

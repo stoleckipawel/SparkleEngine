@@ -1,8 +1,8 @@
 # RHI Device And Resources
 
-Status: RHI feature-family index
+**Status:** RHI feature-family index
 
-Scope: route device creation and aggregate lifetime, neutral capability truth, resource memory, formats, and descriptor binding
+**Scope:** route device creation and aggregate lifetime, neutral capability truth, resource memory, formats, and descriptor binding
 
 | Document | Open it for |
 | --- | --- |

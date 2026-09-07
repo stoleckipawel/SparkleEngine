@@ -1,10 +1,10 @@
 # RHI Presentation
 
-Status: current feature dossier; source-backed, not resize, pacing, color, HDR, or release evidence
+**Status:** current feature dossier; source-backed, not resize, pacing, color, HDR, or release evidence
 
-Verified: 2026-09-06 at committed `master` revision `8414b5dc`
+**Verified:** 2026-09-06 at committed `master` revision `8414b5dc`
 
-Scope: `RHI-PRES-*`; swapchain construction, back-buffer identity/state, acquire, resize, frame count, pacing, VSync, submit/present, and the explicit HDR output gap
+**Scope:** `RHI-PRES-*`; swapchain construction, back-buffer identity/state, acquire, resize, frame count, pacing, VSync, submit/present, and the explicit HDR output gap
 
 ## Feature Promise
 

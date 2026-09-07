@@ -1,10 +1,10 @@
 # Renderer Direct Lighting
 
-Status: current feature dossier; source-backed, not a numerical oracle, native-parity result, visual validation, performance result, or release approval
+**Status:** current feature dossier; source-backed, not a numerical oracle, native-parity result, visual validation, performance result, or release approval
 
-Verified: 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
+**Verified:** 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
-Scope: direct-light portions of `REN-PBR-01` through `REN-PBR-04`, `REN-PBR-06` through `REN-PBR-10`, `REN-LGT-01`, `REN-LGT-02`, `REN-LGT-04`, and `REN-LGT-06`
+**Scope:** direct-light portions of `REN-PBR-01` through `REN-PBR-04`, `REN-PBR-06` through `REN-PBR-10`, `REN-LGT-01`, `REN-LGT-02`, `REN-LGT-04`, and `REN-LGT-06`
 
 ## Feature Promise
 

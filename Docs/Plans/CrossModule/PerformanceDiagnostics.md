@@ -1,10 +1,31 @@
 # Performance Diagnostics Delivery Plan
 
-Status: implementation plan; not proof of implementation or shipment
+**Status:** implementation plan; not proof of implementation or shipment
 
-Last code and document reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
+**Last code and document reconciliation:** 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 
-Scope: staged, feature-selectable delivery of the performance diagnostics product defined by [Performance Diagnostics Architecture](../../Architecture/CrossModule/PerformanceDiagnostics/README.md)
+**Scope:** staged, feature-selectable delivery of the performance diagnostics product defined by [Performance Diagnostics Architecture](../../Architecture/CrossModule/PerformanceDiagnostics/README.md)
+
+## Delivery At A Glance
+
+```mermaid
+flowchart LR
+    P0[0 Reconcile and choose] --> P1[1 Prove external capture]
+    P1 --> P2[2 Build bounded data spine]
+    P2 --> P3[3 Ship orientation surface]
+    P3 --> P4[4 Produce reproducible evidence]
+    P4 --> P5[5 Add selected investigation depth]
+    P5 --> P6[6 Harden and close]
+```
+
+| Rule | Consequence |
+| --- | --- |
+| external capture comes first | the current renderer is observable before internal instrumentation can obscure or perturb it |
+| packages are selected independently | unneeded UI, capture, GPU-detail, or provider depth does not become framework debt |
+| one meaning has one owner and history | Editor/runtime presenters read one bounded product instead of creating competing performance truths |
+| Shipping erasure is a gate | diagnostics implementation and optional SDK payload do not leak into the shipped runtime by default |
+
+This plan is not currently implemented by virtue of being detailed. Each phase remains gated by its own smallest checks and roadmap authorization.
 
 ## Purpose And Authority Boundary
 

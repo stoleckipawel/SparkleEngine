@@ -1,11 +1,12 @@
 # Diagnostics Product And UX Research
 
-Status: research; external precedent and option analysis, not proof of current implementation
+**Status:** research; external precedent and option analysis, not proof of current implementation
 
-Research reconciliation: 2026-08-16
-Last local source reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
+**Research reconciliation:** 2026-08-16
 
-Scope: the visual and functional design of performance diagnostics for SparkleEngine, with emphasis on Epic Games, NVIDIA, and AMD products; data acquisition and implementation sequencing are intentionally secondary
+**Last local source reconciliation:** 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
+
+**Scope:** the visual and functional design of performance diagnostics for SparkleEngine, with emphasis on Epic Games, NVIDIA, and AMD products; data acquisition and implementation sequencing are intentionally secondary
 
 ## Purpose And Authority Boundary
 

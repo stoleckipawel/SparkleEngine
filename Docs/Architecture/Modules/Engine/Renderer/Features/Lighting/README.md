@@ -1,10 +1,10 @@
 # Renderer Lighting
 
-Status: Renderer lighting feature-family index; source-backed, not numerical, convergence, visual, performance, or release evidence
+**Status:** Renderer lighting feature-family index; source-backed, not numerical, convergence, visual, performance, or release evidence
 
-Verified: 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
+**Verified:** 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
-Responsibility: define the shared lighting boundary and route Direct, Indirect, Volumetric, and offline-reference lighting without treating them as one undifferentiated capability
+**Responsibility:** define the shared lighting boundary and route Direct, Indirect, Volumetric, and offline-reference lighting without treating them as one undifferentiated capability
 
 ## Lighting Taxonomy
 

@@ -1,10 +1,10 @@
 # Change Lifecycle
 
-Status: binding workflow standard
+**Status:** binding workflow standard
 
-Applies to: every material owned repository change; scale the record to risk and scope
+**Applies to:** every material owned repository change; scale the record to risk and scope
 
-This document owns the lifecycle of a change: preparation, implementation discipline, reconciliation, acceptance, and completion reporting. Architecture, coding, domain, and validation rules remain in their subject standards.
+**This document owns the lifecycle of a change:** preparation, implementation discipline, reconciliation, acceptance, and completion reporting. Architecture, coding, domain, and validation rules remain in their subject standards.
 
 ## Before Editing
 

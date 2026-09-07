@@ -1,8 +1,8 @@
 # Renderer Display Pipeline
 
-Status: Renderer post-processing feature-family index
+**Status:** Renderer post-processing feature-family index
 
-Scope: route scene-to-display transforms, explicitly absent display effects, output encoding, and target publication
+**Scope:** route scene-to-display transforms, explicitly absent display effects, output encoding, and target publication
 
 | Document | Open it for |
 | --- | --- |

@@ -1,8 +1,8 @@
 # GameFramework and ECS
 
-Status: binding domain integration standard
+**Status:** binding domain integration standard
 
-Applies to: world ownership, ECS storage, systems, loading, animation, publication, and render extraction
+**Applies to:** world ownership, ECS storage, systems, loading, animation, publication, and render extraction
 
 World, transform, animation, skinning, and extraction semantics must preserve the [World Coordinate, Units, and Transform Contract](../../Architecture/Decisions/WorldCoordinateAndUnits.md).
 

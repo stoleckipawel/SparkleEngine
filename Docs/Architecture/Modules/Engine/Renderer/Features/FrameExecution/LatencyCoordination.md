@@ -1,10 +1,10 @@
 # Renderer Latency Coordination
 
-Status: current capability-gated feature dossier; source-backed, not end-to-end latency, pacing, or release evidence
+**Status:** current capability-gated feature dossier; source-backed, not end-to-end latency, pacing, or release evidence
 
-Verified: 2026-09-06 through committed `master` revision `c28b33bd`; public facade, external runtime, Streamline, D3D12 frame, RHI hook, and build membership inspected; executable source is unchanged from the earlier `8414b5dc` audit
+**Verified:** 2026-09-06 through committed `master` revision `c28b33bd`; public facade, external runtime, Streamline, D3D12 frame, RHI hook, and build membership inspected; executable source is unchanged from the earlier `8414b5dc` audit
 
-Scope: `REN-LAT-01` through `REN-LAT-05`; owns application simulation markers, optional Streamline PCL/Reflex coordination, and the Renderer-to-RHI marker identity that joins simulation, render submission, and presentation
+**Scope:** `REN-LAT-01` through `REN-LAT-05`; owns application simulation markers, optional Streamline PCL/Reflex coordination, and the Renderer-to-RHI marker identity that joins simulation, render submission, and presentation
 
 ## Feature Contract
 

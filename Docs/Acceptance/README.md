@@ -1,10 +1,28 @@
 # Acceptance
 
-Status: acceptance navigation index
+**Status:** acceptance navigation index
 
 Acceptance orchestrates progress across features, workloads, and releases. It owns shared completion vocabulary, candidate-report structure, workload gates, release gates, and high-level status; it does not maintain a second feature-documentation tree.
 
 The owning [Architecture](../Architecture/README.md) feature dossier defines each feature together with its local criteria, controlled failure modes, checks, and definition of done. Acceptance links to those definitions and records what a release candidate actually proved. It does not set priority, prescribe implementation design, or duplicate feature matrices.
+
+## At A Glance
+
+```mermaid
+flowchart LR
+    Feature[Architecture feature dossier<br/>criteria, failures, checks] --> Report[Candidate feature report<br/>actual results and artifacts]
+    Workload[Cross-feature workload<br/>maps, quality, performance] --> Report
+    Report --> Release[Release gates<br/>scope, package, adoption, approval]
+```
+
+| What you want to know | Read |
+| --- | --- |
+| what a feature is and what it must prove | its Architecture feature dossier |
+| what this exact candidate passed or failed | its `FCR-*` candidate report |
+| whether several features work together on representative content | Graphics Workloads |
+| whether the complete product may ship | First Release Acceptance |
+
+The current first release remains `Blocked`. Source presence and registry coverage are not accepted evidence.
 
 ## Orchestration And Progress Documents
 

@@ -1,12 +1,12 @@
 # Debug View Presentation Precedent
 
-Status: research; external-source comparison, not Sparkle architecture or acceptance authority
+**Status:** research; external-source comparison, not Sparkle architecture or acceptance authority
 
-Scope: Unreal Engine, NVIDIA RTXPT/Donut, and AMD Cauldron precedent used to separate view-mode presets, show flags, exposure, tone curves, exact diagnostic presentation, and output conversion
+**Scope:** Unreal Engine, NVIDIA RTXPT/Donut, and AMD Cauldron precedent used to separate view-mode presets, show flags, exposure, tone curves, exact diagnostic presentation, and output conversion
 
-Local decision owners: [View Modes And Show Flags](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/ViewModesAndShowFlags.md) and [Debug View Presentation Architecture](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/PresentationArchitecture.md)
+**Local decision owners:** [View Modes And Show Flags](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/ViewModesAndShowFlags.md) and [Debug View Presentation Architecture](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/PresentationArchitecture.md)
 
-Reference-set context: [External Renderer Repository Comparison](RendererRepositories.md)
+**Reference-set context:** [External Renderer Repository Comparison](RendererRepositories.md)
 
 ## Unreal Engine
 

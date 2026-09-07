@@ -1,10 +1,13 @@
 # Renderer Feature Selector Catalog
 
-Status: capability snapshot; current selector catalog, source-backed but not proof that every valid/invalid value activates, persists, recovers, or ships correctly
+**Status:** capability snapshot; current selector catalog, source-backed but not proof that every valid/invalid value activates, persists, recovers, or ships correctly
 
-Verified: 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` and the routed RHI controls are unchanged from the earlier `8414b5dc` source audit
+**Verified:** 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` and the routed RHI controls are unchanged from the earlier `8414b5dc` source audit
 
-Scope: every Renderer feature CVar discovered in current Renderer source plus RHI presentation/adapter/TLAS controls consumed by the Renderer settings surface; maps request, persistence, active consumer, restart/topology effect, and feature dossier. Aggregate state transport, save/restore, and serial/threaded application are owned by [Settings State and Persistence](SettingsStateAndPersistence.md).
+**Scope:** every Renderer feature CVar discovered in current Renderer source plus RHI presentation/adapter/TLAS controls consumed by the Renderer settings surface; maps request, persistence, active consumer, restart/topology effect, and feature dossier. Aggregate state transport, save/restore, and serial/threaded application are owned by [Settings State and Persistence](SettingsStateAndPersistence.md).
+
+> [!TIP]
+> Search this catalog by UI term, CVar, or feature. Read each selector across the whole route—producer, parser, persisted value, active consumer, fallback, restart/topology effect, and observable active state. A registered name without that route is not a usable feature.
 
 ## Selection Contract
 

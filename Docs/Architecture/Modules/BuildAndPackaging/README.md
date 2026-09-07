@@ -1,14 +1,14 @@
 # Build And Packaging Capability Inventory
 
-Status: capability snapshot; current build-system inventory, not a successful-build or release-package record
+**Status:** capability snapshot; current build-system inventory, not a successful-build or release-package record
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; root/module CMake, profile/artifact contracts, dependency fetches, project discovery, tool/product membership, and install/test/CI searches inspected; evidence `S` only
+**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; root/module CMake, profile/artifact contracts, dependency fetches, project discovery, tool/product membership, and install/test/CI searches inspected; evidence `S` only
 
-Scope: build profiles, toolchains, options, dependency acquisition, targets, artifact layout, runtime staging, project discovery, checks, automation, tests, installation, and packaging
+**Scope:** build profiles, toolchains, options, dependency acquisition, targets, artifact layout, runtime staging, project discovery, checks, automation, tests, installation, and packaging
 
-Owner: root/module `CMakeLists.txt` and `CMake/`; Launcher is the user-facing workspace orchestrator
+**Owner:** root/module `CMakeLists.txt` and `CMake/`; Launcher is the user-facing workspace orchestrator
 
-Evidence and disposition: [Capability Evidence Plan](../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../Acceptance/FirstRelease.md)
 
 ## Capability Dossiers
 

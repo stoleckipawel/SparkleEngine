@@ -1,10 +1,10 @@
 # J. Multithreaded Engine Architecture
 
-Status: target architecture; includes canonical decisions but is not proof of current implementation
+**Status:** target architecture; includes canonical decisions but is not proof of current implementation
 
-Last narrowed: 2026-08-11
+**Last narrowed:** 2026-08-11
 
-Scope: task execution, thread ownership, cross-thread publication, bounded queues, render coordination, parallel command recording, cancellation, and shutdown
+**Scope:** task execution, thread ownership, cross-thread publication, bounded queues, render coordination, parallel command recording, cancellation, and shutdown
 
 ## Purpose and Authority Boundary
 

@@ -1,8 +1,8 @@
 # Renderer Shader Runtime
 
-Status: Renderer feature-family index
+**Status:** Renderer feature-family index
 
-Scope: route exact shader-program membership and the runtime materialization, binding, generation, and retirement contract
+**Scope:** route exact shader-program membership and the runtime materialization, binding, generation, and retirement contract
 
 | Document | Open it for |
 | --- | --- |

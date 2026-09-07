@@ -1,14 +1,14 @@
 # Geometry Cache Animation — Acceptance
 
-Status: feature-local acceptance contract; not proof that geometry-cache animation has passed
+**Status:** feature-local acceptance contract; not proof that geometry-cache animation has passed
 
-Scope: feature-local verification matrix, controlled failures, and completion gates for geometry-cache animation
+**Scope:** feature-local verification matrix, controlled failures, and completion gates for geometry-cache animation
 
-Feature architecture: [Geometry Cache Animation Pipeline](README.md)
+**Feature architecture:** [Geometry Cache Animation Pipeline](README.md)
 
-Delivery authority: [Geometry Cache Animation Delivery Plan](../../../Plans/CrossModule/GeometryCacheAnimation.md)
+**Delivery authority:** [Geometry Cache Animation Delivery Plan](../../../Plans/CrossModule/GeometryCacheAnimation.md)
 
-Release/workload orchestration: [Graphics Workloads](../../../Acceptance/GraphicsWorkloads.md)
+**Release/workload orchestration:** [Graphics Workloads](../../../Acceptance/GraphicsWorkloads.md)
 
 This file is part of the Geometry Cache Animation architecture set and owns the proof contract required after delivery. Candidate results remain in the release-level completion report and must retain exact commands, configurations, artifacts, and limitations.
 

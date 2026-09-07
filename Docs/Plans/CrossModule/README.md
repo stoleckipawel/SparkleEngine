@@ -1,6 +1,6 @@
 # Cross-Module Plans
 
-Status: cross-module plan index
+**Status:** cross-module plan index
 
 These plans coordinate several durable module owners and have no coherent single-module delivery owner.
 

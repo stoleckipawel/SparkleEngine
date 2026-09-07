@@ -1,12 +1,12 @@
 # Renderer Visibility And Draw Preparation
 
-Status: current feature dossier; source-backed, not visibility correctness, batching benefit, transparency, multi-view, or performance evidence
+**Status:** current feature dossier; source-backed, not visibility correctness, batching benefit, transparency, multi-view, or performance evidence
 
-Verified: 2026-09-07 at committed `master` revision `c28b33bd`
+**Verified:** 2026-09-07 at committed `master` revision `c28b33bd`
 
-Scope: `REN-VIS-01` through `REN-VIS-09`; per-view frustum visibility, material classification, candidate validation, authored-group preservation, opaque sorting/automatic batching, transparent ordering, workload publication, task capacity, and explicit absent visibility/draw-generation paths
+**Scope:** `REN-VIS-01` through `REN-VIS-09`; per-view frustum visibility, material classification, candidate validation, authored-group preservation, opaque sorting/automatic batching, transparent ordering, workload publication, task capacity, and explicit absent visibility/draw-generation paths
 
-Parents and consumers: [Scene and View Preparation](../SceneAndViewPreparation/README.md) owns scene/view construction; [Geometry, Materials, and GBuffer](GeometryMaterialsAndGBuffer.md) owns what accepted batches draw and publish
+**Parents and consumers:** [Scene and View Preparation](../SceneAndViewPreparation/README.md) owns scene/view construction; [Geometry, Materials, and GBuffer](GeometryMaterialsAndGBuffer.md) owns what accepted batches draw and publish
 
 ## Feature Promise And Motivation
 

@@ -1,14 +1,14 @@
 # Engine Assets Capability Inventory
 
-Status: capability snapshot; current source corpus, not proof of cooked or packaged inclusion
+**Status:** capability snapshot; current source corpus, not proof of cooked or packaged inclusion
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; tracked `Engine/Assets` files and their known compiler/cooker/runtime consumers inspected; evidence `S` only
+**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; tracked `Engine/Assets` files and their known compiler/cooker/runtime consumers inspected; evidence `S` only
 
-Scope: engine-owned shader source, default textures, sky environments, and small geometry fixtures
+**Scope:** engine-owned shader source, default textures, sky environments, and small geometry fixtures
 
-Owner: `Engine/Assets`; the shader compiler, asset cooker, GameFramework, and Renderer own transformation and consumption
+**Owner:** `Engine/Assets`; the shader compiler, asset cooker, GameFramework, and Renderer own transformation and consumption
 
-Evidence and disposition: [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
 `Engine/Assets` is a source corpus, not a C++ module or asset-manager implementation. Its capabilities are useful only when the corresponding cook and runtime consumer are present.
 

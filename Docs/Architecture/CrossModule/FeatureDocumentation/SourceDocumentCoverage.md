@@ -1,8 +1,8 @@
 # Source Document Feature Coverage
 
-Status: document-by-document architecture-owner audit; current for the 2026-09-07 documentation refinement
+**Status:** document-by-document architecture-owner audit; current for the 2026-09-07 documentation refinement
 
-Scope: every document and folder explicitly named by the refinement request, including feature targets that are absent from implementation
+**Scope:** every document and folder explicitly named by the refinement request, including feature targets that are absent from implementation
 
 ## Acceptance Sources
 

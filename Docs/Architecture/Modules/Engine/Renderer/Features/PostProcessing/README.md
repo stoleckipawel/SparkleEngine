@@ -1,10 +1,10 @@
 # Renderer Post Processing
 
-Status: current feature-family dossier; source-backed taxonomy, not visual-quality, latency, performance, backend, or release evidence
+**Status:** current feature-family dossier; source-backed taxonomy, not visual-quality, latency, performance, backend, or release evidence
 
-Verified: 2026-09-06 against source revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
+**Verified:** 2026-09-06 against source revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
-Scope: the image-space stages that turn scene-linear lighting into a resolved display image, including explicit negative coverage for commonly expected stages that Sparkle does not currently implement
+**Scope:** the image-space stages that turn scene-linear lighting into a resolved display image, including explicit negative coverage for commonly expected stages that Sparkle does not currently implement
 
 ## Family Promise
 

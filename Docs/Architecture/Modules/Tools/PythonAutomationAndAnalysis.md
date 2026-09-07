@@ -1,12 +1,14 @@
 # Python Automation And Analysis
 
-Status: negative/target capability dossier; narrow project conversion scripts exist, but no repository-wide Python engineering layer was found
+**Status:** negative/target capability dossier; narrow project conversion scripts exist, but no repository-wide Python engineering layer was found
 
-Owner: Tools for reusable automation; the producing module owns domain semantics and schemas
+**Scope:** distinguish the two project-local conversion scripts from absent reusable automation, analysis, bindings, editor scripting, and runtime Python capabilities
 
-Snapshot: 2026-09-07; repository file inventory found exactly `ConvertLPSHead.py` and `ConvertCornellBox.py`, both under Showcase conversion assets; source evidence `S` only
+**Owner:** Tools for reusable automation; the producing module owns domain semantics and schemas
 
-Strategy sources: [`PGE-07`](../../../Strategy/Requirements.md), [Gap Assessment](../../../Strategy/Assessments/GapAssessment.md), and `NS-EVIDENCE`/`NS-SIMPLIFY` in the [Engineer Persona](../../../Strategy/EngineerPersona.md)
+**Snapshot:** 2026-09-07; repository file inventory found exactly `ConvertLPSHead.py` and `ConvertCornellBox.py`, both under Showcase conversion assets; source evidence `S` only
+
+**Strategy sources:** [`PGE-07`](../../../Strategy/Requirements.md), [Gap Assessment](../../../Strategy/Assessments/GapAssessment.md), and `NS-EVIDENCE`/`NS-SIMPLIFY` in the [Engineer Persona](../../../Strategy/EngineerPersona.md)
 
 ## Capability Identity
 

@@ -1,10 +1,28 @@
 # RHI Feature Dossiers
 
-Status: RHI feature index; routes current source claims and local proof contracts, not backend or release approval
+**Status:** RHI feature index; routes current source claims and local proof contracts, not backend or release approval
 
-Scope: map every public RHI contract and backend implementation family to a cohesive owner without turning the capability inventory into a mixed architecture manual
+**Scope:** map every public RHI contract and backend implementation family to a cohesive owner without turning the capability inventory into a mixed architecture manual
 
-Authority boundary: the [Capability Inventory](../CapabilityInventory.md) owns exact `RHI-*` state and evidence rows. These dossiers own mechanism, ownership, lifetime, failure, and feature-local completion contracts. Renderer owns feature policy; Acceptance owns candidate results and release disposition.
+**Authority boundary:** the [Capability Inventory](../CapabilityInventory.md) owns exact `RHI-*` state and evidence rows. These dossiers own mechanism, ownership, lifetime, failure, and feature-local completion contracts. Renderer owns feature policy; Acceptance owns candidate results and release disposition.
+
+## At A Glance
+
+This is the detailed contract map behind the [RHI overview](../README.md). Follow the lifecycle from device creation to completed GPU work, then use the family pages for D3D12/Vulkan lowering, failure behavior, and proof obligations.
+
+```mermaid
+flowchart LR
+    Device[Device and capabilities] --> Resources[Resources and descriptors]
+    Resources --> Pipeline[Pipelines and shader contracts]
+    Pipeline --> Commands[Commands and synchronization]
+    Commands --> Output[Presentation or ray-tracing work]
+    Output --> Complete[Completion-safe retirement]
+    Diagnostics[Diagnostics and capture] -. observes .-> Device
+    Diagnostics -. observes .-> Commands
+    Interop[External interop] -. capability-gated access .-> Output
+```
+
+Every dossier begins at the backend-neutral contract and follows it through common validation and each applicable backend. Source presence is still `Unproved` until the corresponding build, runtime, native-validation, failure, and release evidence is retained; D3D12 evidence never automatically proves Vulkan.
 
 ## Dossier Contract
 

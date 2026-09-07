@@ -1,8 +1,8 @@
 # Renderer Frame Execution
 
-Status: Renderer feature-family index
+**Status:** Renderer feature-family index
 
-Scope: route the independently maintained contracts that turn admitted frame state into scheduled work, coherent temporal state, and correctly ordered latency coordination
+**Scope:** route the independently maintained contracts that turn admitted frame state into scheduled work, coherent temporal state, and correctly ordered latency coordination
 
 | Document | Open it for |
 | --- | --- |

@@ -1,10 +1,10 @@
 # RHI External Interop
 
-Status: current feature dossier; source-backed, not provider compatibility, backend parity, native-state, or package evidence
+**Status:** current feature dossier; source-backed, not provider compatibility, backend parity, native-state, or package evidence
 
-Verified: 2026-09-06 at committed `master` revision `8414b5dc`
+**Verified:** 2026-09-06 at committed `master` revision `8414b5dc`
 
-Scope: `RHI-DIAG-07`; narrow native device/resource/command handles, resource states, capability reporting, and interposer hooks for optional external providers
+**Scope:** `RHI-DIAG-07`; narrow native device/resource/command handles, resource states, capability reporting, and interposer hooks for optional external providers
 
 ## Feature Promise
 

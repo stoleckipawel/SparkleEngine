@@ -1,8 +1,49 @@
 # Documentation Organization
 
-Status: binding documentation organization and maintenance standard
+**Status:** binding documentation organization and maintenance standard
 
-Applies to: authored Markdown and documentation-owned images under `Docs`
+**Applies to:** authored Markdown and documentation-owned images under `Docs`
+
+## Reader-First Page Contract
+
+Documentation MUST first help a reader form a useful mental model. Authority, evidence, and exact ledgers remain essential, but they MUST NOT bury the answer to “what is this, what do we have, what is missing, and why was it designed this way?”
+
+A feature, system, or module overview follows this reading order unless a shorter page does not need every section:
+
+1. **Plain-language purpose** — one or two sentences naming the result and intended reader.
+2. **At a glance** — current state, supported path, important missing capability, and evidence boundary visible without scrolling through a ledger.
+3. **How it fits** — a small diagram showing owners, data flow, or execution order when three or more relationships matter.
+4. **How to use or select it** — the public executable, API, setting, CVar, editor control, or explicit statement that no user route exists.
+5. **How it works** — the shortest end-to-end explanation before class, method, and capability-ID detail.
+6. **Supported and unsupported matrix** — compare modes, backends, content types, or product profiles when behavior differs.
+7. **Design decisions and tradeoffs** — state the chosen approach, why it exists, its benefit, and its real cost or rejected alternative.
+8. **Limitations, failures, and troubleshooting** — expected gaps and diagnostic/recovery routes in reader language.
+9. **Evidence and reference** — exact capability/acceptance/check IDs, source paths, snapshots, and neighboring authorities.
+
+This is progressive disclosure: the first screen provides orientation, middle sections explain the system, and bottom sections serve implementation and review. Do not begin a reader-facing page with a multi-page inventory, source-directory audit, acceptance ledger, or history unless that exact ledger is the document’s sole purpose.
+
+Use the [Documentation Page Template](DocumentationPageTemplate.md) when creating or materially restructuring a page.
+
+## Language And Presentation
+
+- Lead with the observable result, then name the implementation owner. Prefer “The Renderer turns an immutable world snapshot into a presented frame” over “Renderer owns frame policy.”
+- Use present tense and active voice for current behavior. Use “target,” “planned,” or “not implemented” explicitly for future behavior.
+- Keep paragraphs focused on one idea. Split dense sentences that combine ownership, lifetime, failure, evidence, and tradeoffs.
+- Expand an acronym on first use unless the landing page defines it. Use exact code names only after explaining their role in ordinary language.
+- State costs honestly. Every meaningful design choice SHOULD pair its benefit with a drawback, constraint, or rejected alternative.
+- Use `Implemented path`, `Partial`, `Capability-gated`, `Not found`, and `Unproved` consistently. Do not use vague states such as “supported” or “complete” without the matrix and evidence scope.
+- Put long source lists, capability IDs, failure/check matrices, and audit tables under clearly labeled reference sections near the end.
+
+## Visual Elements
+
+Use visuals when they reduce the work required to understand relationships:
+
+- Mermaid `flowchart` for ownership, execution, or data flow;
+- Mermaid `sequenceDiagram` for cross-thread or asynchronous lifetime;
+- tables for feature/backend/support comparisons and design tradeoffs;
+- checked-in images for visual-quality differences, UI instructions, or diagnostic examples when a real image communicates more than a diagram.
+
+Every visual MUST have a sentence explaining what the reader should notice. Keep diagrams bounded to one question; split a diagram that needs unrelated branches or more than roughly a dozen nodes. Use semantic labels rather than source filenames inside the visual, then link source details below it. A diagram is navigation and explanation, not implementation or runtime evidence.
 
 ## One Knowledge Owner
 

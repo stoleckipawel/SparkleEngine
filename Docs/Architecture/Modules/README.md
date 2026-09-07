@@ -1,16 +1,40 @@
 # Module Architecture And Capability Inventory
 
-Status: module architecture index and dated capability snapshot; not release approval or executable evidence
+**Status:** module architecture index and dated capability snapshot; not release approval or executable evidence
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; the detailed inventories listed below inspected their named source/build surfaces in the live working tree; no build, shader cook, launch, GPU capture, performance run, package run, or clean-machine run was performed for this inventory
+**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; the detailed inventories listed below inspected their named source/build surfaces in the live working tree; no build, shader cook, launch, GPU capture, performance run, package run, or clean-machine run was performed for this inventory
 
-Scope: navigation by repository module plus current engine, tool, project, and build capabilities, their exact coverage and limits, and the evidence still required before a release claim
+**Scope:** navigation by repository module plus current engine, tool, project, and build capabilities, their exact coverage and limits, and the evidence still required before a release claim
 
-Release classification authority: [First Release Acceptance Contract](../../Acceptance/FirstRelease.md)
+**Release classification authority:** [First Release Acceptance Contract](../../Acceptance/FirstRelease.md)
 
-Per-feature candidate report authority: [First Release Feature Completion Reports](../../Acceptance/FeatureCompletionReports.md)
+**Per-feature candidate report authority:** [First Release Feature Completion Reports](../../Acceptance/FeatureCompletionReports.md)
 
-Sequencing authority: [Release-First Principal Graphics Roadmap](../../Strategy/Roadmap.md)
+**Sequencing authority:** [Release-First Principal Graphics Roadmap](../../Strategy/Roadmap.md)
+
+## At A Glance
+
+Use the module pages to understand one owner. Use CrossModule only when the result genuinely crosses owners. The detailed tables later on this page are a dated source ledger, not a release scorecard.
+
+```mermaid
+flowchart LR
+    Tools[Tools<br/>import, cook, compile, launch] --> Products[Cooked products]
+    Products --> Engine[Engine<br/>world, application, renderer, RHI]
+    Engine --> Projects[Projects<br/>Showcase products and workloads]
+    Build[Build and packaging] -. composes .-> Tools
+    Build -. composes .-> Engine
+    Build -. composes .-> Projects
+    Cross[CrossModule] -. traces shared journeys .-> Tools
+    Cross -. traces shared journeys .-> Engine
+    Cross -. traces shared journeys .-> Projects
+```
+
+| If you need to know... | Read |
+| --- | --- |
+| what SparkleEngine contains and what is missing | [Engine At A Glance](../EngineAtAGlance.md) |
+| who owns a source capability | the Engine, Tools, Projects, or Build page below |
+| how a capability travels across owners | [Cross-Module Architecture](../CrossModule/README.md) |
+| whether a candidate actually passed | [Acceptance](../../Acceptance/README.md) |
 
 ## Browse By Repository Boundary
 

@@ -1,16 +1,16 @@
 # Performance Diagnostics — Acceptance
 
-Status: feature-local acceptance contract; not proof that diagnostics or workloads have passed
+**Status:** feature-local acceptance contract; not proof that diagnostics or workloads have passed
 
-Scope: feature-local diagnostic evidence fields, baseline experiments, benchmark artifacts, reviewer paths, and verification gates
+**Scope:** feature-local diagnostic evidence fields, baseline experiments, benchmark artifacts, reviewer paths, and verification gates
 
-Feature architecture: [Performance Diagnostics Architecture](README.md)
+**Feature architecture:** [Performance Diagnostics Architecture](README.md)
 
-Delivery authority: [Performance Diagnostics Delivery Plan](../../../Plans/CrossModule/PerformanceDiagnostics.md)
+**Delivery authority:** [Performance Diagnostics Delivery Plan](../../../Plans/CrossModule/PerformanceDiagnostics.md)
 
-Release/workload orchestration: [Graphics Workloads](../../../Acceptance/GraphicsWorkloads.md)
+**Release/workload orchestration:** [Graphics Workloads](../../../Acceptance/GraphicsWorkloads.md)
 
-Engineering evidence rules: [Validation, Performance, and Evidence](../../../Engineering/Verification/ValidationAndEvidence.md)
+**Engineering evidence rules:** [Validation, Performance, and Evidence](../../../Engineering/Verification/ValidationAndEvidence.md)
 
 This file is part of the Performance Diagnostics architecture set and owns the diagnostic evidence expected from workloads, baseline experiments, reviewer artifacts, and verification gates. Candidate results remain in the release-level completion report and must retain exact commands, configuration, environment, artifacts, and limitations.
 

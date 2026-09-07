@@ -1,8 +1,8 @@
 # Renderer Reconstruction And Generation
 
-Status: Renderer post-processing feature-family index
+**Status:** Renderer post-processing feature-family index
 
-Scope: route resolution reconstruction/upscaling and the independently absent generated-frame capability
+**Scope:** route resolution reconstruction/upscaling and the independently absent generated-frame capability
 
 | Document | Open it for |
 | --- | --- |

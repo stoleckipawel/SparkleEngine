@@ -1,20 +1,41 @@
 # First Release Acceptance Contract
 
-Status: acceptance contract for the first public engine release; requirements are not completion claims
+**Status:** acceptance contract for the first public engine release; requirements are not completion claims
 
-Responsibility: define the complete evidence and approval boundary for the first public SparkleEngine release
+**Responsibility:** define the complete evidence and approval boundary for the first public SparkleEngine release
 
-Release target: SparkleEngine `v0.1.0`, Windows x64
+**Release target:** SparkleEngine `v0.1.0`, Windows x64
 
-Roadmap and sequence: [F. Release-First Principal Graphics Roadmap](../Strategy/Roadmap.md)
+**Roadmap and sequence:** [F. Release-First Principal Graphics Roadmap](../Strategy/Roadmap.md)
 
-Detailed graphics workloads: [I. Bistro and San Miguel Acceptance Workloads](GraphicsWorkloads.md)
+**Detailed graphics workloads:** [I. Bistro and San Miguel Acceptance Workloads](GraphicsWorkloads.md)
 
-Validation policy: [Validation, Performance, and Evidence](../Engineering/Verification/ValidationAndEvidence.md)
+**Validation policy:** [Validation, Performance, and Evidence](../Engineering/Verification/ValidationAndEvidence.md)
 
-Per-feature polish and explanation: [First Release Feature Completion Reports](FeatureCompletionReports.md)
+**Per-feature polish and explanation:** [First Release Feature Completion Reports](FeatureCompletionReports.md)
 
-Release risk and iteration order: [Release Risk Register](../Strategy/Roadmap.md#release-risk-register)
+**Release risk and iteration order:** [Release Risk Register](../Strategy/Roadmap.md#release-risk-register)
+
+## Release At A Glance
+
+| Question | Current answer |
+| --- | --- |
+| What is the intended product? | SparkleEngine `v0.1.0`, delivered as a portable Windows x64 `ShippingGame` Showcase runtime archive plus provenance, checksums, notices, and user documentation. |
+| What exists? | Broad engine, tooling, content, Renderer, and D3D12/Vulkan source paths plus focused development workflows. |
+| Where are we now? | `Blocked`; no frozen candidate has passed the clean build/cook/package, feature, map, backend, performance, stability, adoption, publication, and stabilization gates. |
+| What is the largest product gap? | There is no accepted manifest-owned release package or clean-machine consumer/source-adopter record. |
+| What is the reading rule? | Use the audit below for current blockers, then the release-gate table for the proof required to change a status. |
+
+```mermaid
+flowchart LR
+    Scope[Freeze scope and identity] --> Build[Clean build and cook]
+    Build --> Package[Stage and package]
+    Package --> Features[Close included features]
+    Features --> Maps[Approve maps and quality]
+    Maps --> Native[Performance, stability,<br/>and backend proof]
+    Native --> Adopt[Independent consumer<br/>and source adoption]
+    Adopt --> Publish[Publish and stabilize]
+```
 
 ## Purpose And Authority
 

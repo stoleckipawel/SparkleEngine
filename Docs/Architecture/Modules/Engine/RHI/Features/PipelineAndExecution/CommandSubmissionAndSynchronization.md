@@ -1,10 +1,10 @@
 # RHI Command Submission and Synchronization
 
-Status: current feature dossier; source-backed, not synchronization, overlap, deadlock, or shutdown evidence
+**Status:** current feature dossier; source-backed, not synchronization, overlap, deadlock, or shutdown evidence
 
-Verified: 2026-09-06 at committed `master` revision `8414b5dc`
+**Verified:** 2026-09-06 at committed `master` revision `8414b5dc`
 
-Scope: `RHI-CMD-*`; recording leases/lists, graphics/compute/copy/ray operations, barriers, queue batches, waits, completion tokens, frame identity, and retirement authority
+**Scope:** `RHI-CMD-*`; recording leases/lists, graphics/compute/copy/ray operations, barriers, queue batches, waits, completion tokens, frame identity, and retirement authority
 
 ## Feature Promise
 

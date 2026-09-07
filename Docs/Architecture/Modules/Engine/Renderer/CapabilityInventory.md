@@ -1,20 +1,23 @@
 # Renderer Capability Inventory
 
-Status: capability snapshot; not release approval, visual validation, or performance evidence
+**Status:** capability snapshot; not release approval, visual validation, or performance evidence
 
-Snapshot: 2026-09-06 through committed `master` revision `c28b33bd`; current `Engine/Renderer` public surface, CMake membership, Scene/View/Frame path, frame graph, passes, ray-tracing paths, providers, and shader registrations inspected; executable source is unchanged from the earlier `8414b5dc` audit; evidence `S` only
+**Snapshot:** 2026-09-06 through committed `master` revision `c28b33bd`; current `Engine/Renderer` public surface, CMake membership, Scene/View/Frame path, frame graph, passes, ray-tracing paths, providers, and shader registrations inspected; executable source is unchanged from the earlier `8414b5dc` audit; evidence `S` only
 
-Scope: render-side ownership, frame production, graph scheduling, pipeline materialization and typed binding, scene/view and temporal preparation, residency, geometry/material/lighting algorithms, ray execution, post processing, providers, UI, latency coordination, settings lifecycle, debug products, diagnostics, and known coverage gaps
+**Scope:** render-side ownership, frame production, graph scheduling, pipeline materialization and typed binding, scene/view and temporal preparation, residency, geometry/material/lighting algorithms, ray execution, post processing, providers, UI, latency coordination, settings lifecycle, debug products, diagnostics, and known coverage gaps
 
-Owner: `Engine/Renderer`
+**Owner:** `Engine/Renderer`
 
-Supporting maps: [Whole Repository Architecture Map](../../../WholeRepositoryMap.md), [Renderer and RHI Architecture Boundary](../../../Decisions/RendererRhiBoundary.md), and [Ray-Tracing Execution Architecture](Features/RayTracing/ExecutionArchitecture.md)
+**Supporting maps:** [Whole Repository Architecture Map](../../../WholeRepositoryMap.md), [Renderer and RHI Architecture Boundary](../../../Decisions/RendererRhiBoundary.md), and [Ray-Tracing Execution Architecture](Features/RayTracing/ExecutionArchitecture.md)
 
-Evidence plan and release disposition: [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence plan and release disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
-Traceability: capability rows use durable `REN-<family>-NN` identities; their primary proof destinations are listed in the [Renderer capability-to-evidence map](../../../../Plans/CapabilityEvidence.md#renderer-capability-to-evidence-map).
+**Traceability:** capability rows use durable `REN-<family>-NN` identities; their primary proof destinations are listed in the [Renderer capability-to-evidence map](../../../../Plans/CapabilityEvidence.md#renderer-capability-to-evidence-map).
 
-Deeper routes: [Rendering a Sparkle Frame](RenderingASparkleFrame.md), [Renderer feature dossiers](Features/README.md), [pipeline materialization and typed binding](Features/ShaderRuntime/PipelineMaterializationAndTypedBinding.md), [scene and view preparation](Features/SceneAndViewPreparation/README.md), [mesh and texture residency](Features/GeometryAndResources/MeshAndTextureResidency.md), [temporal sampling and history](Features/FrameExecution/TemporalSamplingAndHistory.md), [latency coordination](Features/FrameExecution/LatencyCoordination.md), [settings lifecycle](Features/RuntimeConfiguration/SettingsStateAndPersistence.md), [cross-system graphics coverage](../../../CrossModule/GraphicsCoverageMatrix.md), [producer-to-consumer execution traces](../../../CrossModule/FeatureExecutionTraces.md), and the [exact shader program catalog](Features/ShaderRuntime/ShaderProgramCatalog.md)
+**Deeper routes:** [Rendering a Sparkle Frame](RenderingASparkleFrame.md), [Renderer feature dossiers](Features/README.md), [pipeline materialization and typed binding](Features/ShaderRuntime/PipelineMaterializationAndTypedBinding.md), [scene and view preparation](Features/SceneAndViewPreparation/README.md), [mesh and texture residency](Features/GeometryAndResources/MeshAndTextureResidency.md), [temporal sampling and history](Features/FrameExecution/TemporalSamplingAndHistory.md), [latency coordination](Features/FrameExecution/LatencyCoordination.md), [settings lifecycle](Features/RuntimeConfiguration/SettingsStateAndPersistence.md), [cross-system graphics coverage](../../../CrossModule/GraphicsCoverageMatrix.md), [producer-to-consumer execution traces](../../../CrossModule/FeatureExecutionTraces.md), and the [exact shader program catalog](Features/ShaderRuntime/ShaderProgramCatalog.md)
+
+> [!TIP]
+> This file is an exact reference ledger, not the best introduction. Start with the [Renderer overview](README.md), then search this page by `REN-*` ID or feature heading. Read the row's **state**, **coverage and limit**, **evidence**, and **release disposition** together; no single cell means “supported.”
 
 ## Module Documentation
 

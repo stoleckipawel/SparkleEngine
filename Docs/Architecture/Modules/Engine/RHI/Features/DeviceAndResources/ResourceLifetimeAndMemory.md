@@ -1,10 +1,10 @@
 # RHI Resource Lifetime and Memory
 
-Status: current feature dossier; source-backed, not resource-correctness, pressure, or performance evidence
+**Status:** current feature dossier; source-backed, not resource-correctness, pressure, or performance evidence
 
-Verified: 2026-09-06 at committed `master` revision `8414b5dc`
+**Verified:** 2026-09-06 at committed `master` revision `8414b5dc`
 
-Scope: `RHI-RES-*` and `RHI-FMT-*`; resource/view descriptions, formats, samplers, upload/readback, allocation, transient aliasing, memory diagnostics, recording use, and reclamation
+**Scope:** `RHI-RES-*` and `RHI-FMT-*`; resource/view descriptions, formats, samplers, upload/readback, allocation, transient aliasing, memory diagnostics, recording use, and reclamation
 
 ## Feature Promise
 

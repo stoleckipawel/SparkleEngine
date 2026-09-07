@@ -1,14 +1,14 @@
 # Deferred GBuffer Decals Delivery Plan
 
-Status: implementation plan; not proof of implementation or acceptance
+**Status:** implementation plan; not proof of implementation or acceptance
 
-Scope: staged delivery of decal authoring, scene/GPU data, deferred composition, ray-hit reuse, and validation
+**Scope:** staged delivery of decal authoring, scene/GPU data, deferred composition, ray-hit reuse, and validation
 
-Architecture authority: [Deferred GBuffer Decal Composition Architecture](../../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/CompositionArchitecture.md)
+**Architecture authority:** [Deferred GBuffer Decal Composition Architecture](../../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/CompositionArchitecture.md)
 
-Cross-system shader sequence: [Shader System Delivery Plan](../CrossModule/ShaderSystem.md)
+**Cross-system shader sequence:** [Shader System Delivery Plan](../CrossModule/ShaderSystem.md)
 
-Feature acceptance: [Deferred GBuffer Decals — Acceptance](../../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/Acceptance.md)
+**Feature acceptance:** [Deferred GBuffer Decals — Acceptance](../../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/Acceptance.md)
 
 This plan owns feature-local delivery order, dependencies, and phase exit sequence. It does not redefine decal semantics, own the final acceptance criteria, or prove that any phase is complete.
 

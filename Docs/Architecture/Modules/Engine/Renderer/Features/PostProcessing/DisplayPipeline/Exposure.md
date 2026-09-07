@@ -1,12 +1,12 @@
 # Renderer Exposure
 
-Status: current feature dossier; source-backed, not colorimetric, temporal-response, performance, or release evidence
+**Status:** current feature dossier; source-backed, not colorimetric, temporal-response, performance, or release evidence
 
-Verified: 2026-09-06 against source revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
+**Verified:** 2026-09-06 against source revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
-Scope: `REN-POST-01` through `REN-POST-03`; manual and automatic exposure, metering, adaptation, history, per-viewport overrides, and asynchronous scheduling
+**Scope:** `REN-POST-01` through `REN-POST-03`; manual and automatic exposure, metering, adaptation, history, per-viewport overrides, and asynchronous scheduling
 
-Parent family: [Post Processing](../README.md)
+**Parent family:** [Post Processing](../README.md)
 
 ## Feature Promise
 

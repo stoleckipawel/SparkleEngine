@@ -1,6 +1,6 @@
 # Tools Module Architecture
 
-Status: Tools module index
+**Status:** Tools module index
 
 This index mirrors the durable tool ownership boundaries under `Tools`.
 
@@ -12,6 +12,6 @@ This index mirrors the durable tool ownership boundaries under `Tools`.
 | SourceImporters | source-format ingestion, transforms, materials, animation, validation, and known losses | [SourceImporters](SourceImporters/README.md) |
 | ToolSupport | shared command-line presentation and progress contracts used by tools | [ToolSupport](ToolSupport/README.md) |
 
-Cross-tool target capability: [Python Automation And Analysis](PythonAutomationAndAnalysis.md) records the current narrow script boundary and the contract required before reusable Python automation, analysis, bindings, or embedded scripting can be claimed.
+**Cross-tool target capability:** [Python Automation And Analysis](PythonAutomationAndAnalysis.md) records the current narrow script boundary and the contract required before reusable Python automation, analysis, bindings, or embedded scripting can be claimed.
 
 Tool-specific implementation rules live in [Tools Engineering](../../../Engineering/Modules/Tools.md); interactive UI rules live in [Editor Engineering](../../../Engineering/Modules/Editor.md). Product consumers remain under [Projects](../Projects/README.md).

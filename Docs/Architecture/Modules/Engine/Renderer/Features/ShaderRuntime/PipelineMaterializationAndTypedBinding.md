@@ -1,10 +1,10 @@
 # Renderer Pipeline Materialization and Typed Binding
 
-Status: current feature dossier; source-backed, not backend-validation, hot-reload stress, or release evidence
+**Status:** current feature dossier; source-backed, not backend-validation, hot-reload stress, or release evidence
 
-Verified: 2026-09-06 through committed `master` revision `c28b33bd`; current parameter, pipeline, shader-generation, CMake, and RHI service routes inspected; executable source is unchanged from the earlier `8414b5dc` audit
+**Verified:** 2026-09-06 through committed `master` revision `c28b33bd`; current parameter, pipeline, shader-generation, CMake, and RHI service routes inspected; executable source is unchanged from the earlier `8414b5dc` audit
 
-Scope: `REN-PIPE-01` through `REN-PIPE-05` and retained identity `REN-DIAG-08`; owns the bridge from registered typed pass contracts and cooked shader metadata to binding layouts, graphics/compute/ray pipelines, per-pass bindings, runtime caches, and completion-safe shader-generation replacement
+**Scope:** `REN-PIPE-01` through `REN-PIPE-05` and retained identity `REN-DIAG-08`; owns the bridge from registered typed pass contracts and cooked shader metadata to binding layouts, graphics/compute/ray pipelines, per-pass bindings, runtime caches, and completion-safe shader-generation replacement
 
 ## Feature Contract
 

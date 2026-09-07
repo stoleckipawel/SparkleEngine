@@ -1,14 +1,14 @@
 # Debug View Presentation — Acceptance
 
-Status: feature-local acceptance contract; not proof that debug-view presentation has passed
+**Status:** feature-local acceptance contract; not proof that debug-view presentation has passed
 
-Scope: feature-local acceptance for mode classification, show-flag resolution, presentation mapping, viewport isolation, capture metadata, backend parity, and repository checks
+**Scope:** feature-local acceptance for mode classification, show-flag resolution, presentation mapping, viewport isolation, capture metadata, backend parity, and repository checks
 
-Feature architecture: [View Modes And Show Flags](ViewModesAndShowFlags.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
+**Feature architecture:** [View Modes And Show Flags](ViewModesAndShowFlags.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
 
-Delivery authority: [Debug View Presentation Delivery Plan](../../../../../../Plans/Renderer/DebugViewPresentation.md)
+**Delivery authority:** [Debug View Presentation Delivery Plan](../../../../../../Plans/Renderer/DebugViewPresentation.md)
 
-Release reporting authority: [Feature Completion Reports](../../../../../../Acceptance/FeatureCompletionReports.md)
+**Release reporting authority:** [Feature Completion Reports](../../../../../../Acceptance/FeatureCompletionReports.md)
 
 This file is part of the Debug Views feature dossier and owns the proof contract required after delivery. Candidate results remain in the release-level completion report and must retain exact commands, configurations, artifacts, and limitations.
 

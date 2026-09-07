@@ -1,10 +1,10 @@
 # Debug View Modes And Show Flags
 
-Status: target architecture; design-only, not implementation proof
+**Status:** target architecture; design-only, not implementation proof
 
-Date: 2026-09-07
+**Date:** 2026-09-07
 
-Responsibility: per-viewport view-mode intent, typed show-flag semantics, preset and override resolution, editor controls, and immutable publication into `RenderView`
+**Responsibility:** per-viewport view-mode intent, typed show-flag semantics, preset and override resolution, editor controls, and immutable publication into `RenderView`
 
 ## Contract
 

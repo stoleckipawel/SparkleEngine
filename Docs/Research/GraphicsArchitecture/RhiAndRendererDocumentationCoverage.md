@@ -1,10 +1,10 @@
 # RHI And Renderer Documentation Coverage Precedent
 
-Status: research; primary-source precedent and local coverage audit, not Sparkle architecture, implementation, or acceptance evidence
+**Status:** research; primary-source precedent and local coverage audit, not Sparkle architecture, implementation, or acceptance evidence
 
-Research snapshot: 2026-09-07
+**Research snapshot:** 2026-09-07
 
-Scope: what production-oriented engines and rendering frameworks document about their render hardware interfaces and renderers; how that precedent sharpens, but does not replace, Sparkle's existing capability-dossier pattern
+**Scope:** what production-oriented engines and rendering frameworks document about their render hardware interfaces and renderers; how that precedent sharpens, but does not replace, Sparkle's existing capability-dossier pattern
 
 ## Question And Method
 

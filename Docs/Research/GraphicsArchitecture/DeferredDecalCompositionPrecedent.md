@@ -1,10 +1,10 @@
 # Deferred Decal Composition Precedent
 
-Status: research; external-source comparison, not Sparkle architecture or acceptance authority
+**Status:** research; external-source comparison, not Sparkle architecture or acceptance authority
 
-Scope: external precedent for projected deferred decals, programmable GBuffer composition, arbitrary ray-hit lookup, and representative workload selection
+**Scope:** external precedent for projected deferred decals, programmable GBuffer composition, arbitrary ray-hit lookup, and representative workload selection
 
-Local decision owner: [Deferred GBuffer Decal Composition Architecture](../../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/CompositionArchitecture.md)
+**Local decision owner:** [Deferred GBuffer Decal Composition Architecture](../../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/CompositionArchitecture.md)
 
 ## Findings And Transferable Choices
 

@@ -1,6 +1,6 @@
 # Renderer Acceptance
 
-Status: Renderer acceptance progress and orchestration index
+**Status:** Renderer acceptance progress and orchestration index
 
 This page tracks high-level acceptance routing for features primarily owned by `Engine/Renderer`. [Renderer Architecture](../../Architecture/Modules/Engine/Renderer/Features/README.md) owns feature description and detailed proof contracts; [Feature Completion Reports](../FeatureCompletionReports.md) owns candidate results and approval. This page owns neither detailed criteria nor evidence artifacts.
 

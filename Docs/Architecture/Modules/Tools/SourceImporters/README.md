@@ -1,14 +1,14 @@
 # Source Importers Capability Inventory
 
-Status: capability snapshot; current, but not fidelity certification or runtime evidence
+**Status:** capability snapshot; current, but not fidelity certification or runtime evidence
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; `Tools/Import/SourceImporters` public/private source, dependencies, and cooking consumers inspected; evidence `S` only
+**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; `Tools/Import/SourceImporters` public/private source, dependencies, and cooking consumers inspected; evidence `S` only
 
-Scope: accepted source scene formats, geometry, instances, transforms, materials, textures, cameras, lights, skins, morphs, animation, validation, and known losses
+**Scope:** accepted source scene formats, geometry, instances, transforms, materials, textures, cameras, lights, skins, morphs, animation, validation, and known losses
 
-Owner: `Tools/Import/SourceImporters` / `SourceImporters`
+**Owner:** `Tools/Import/SourceImporters` / `SourceImporters`
 
-Evidence and disposition: [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
 ## Format Boundary
 

@@ -1,8 +1,8 @@
 # Tools Engineering
 
-Status: binding Tools integration standard
+**Status:** binding Tools integration standard
 
-Applies to: `Tools`, source import, cooking, shader compilation, Launcher operations, command-line workflows, publication, and tool background work
+**Applies to:** `Tools`, source import, cooking, shader compilation, Launcher operations, command-line workflows, publication, and tool background work
 
 Tools transform source or user intent into deterministic products; runtime loading remains cooked-only. Tools preserve the canonical basis, units, spaces, and artifact representation defined by the [World Coordinate, Units, and Transform Contract](../../Architecture/Decisions/WorldCoordinateAndUnits.md). Owned output is regenerated from source when that contract changes; tools do not add compatibility versions, migration readers, or legacy artifacts.
 

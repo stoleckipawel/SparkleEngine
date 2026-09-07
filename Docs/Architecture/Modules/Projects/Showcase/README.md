@@ -1,14 +1,14 @@
 # Showcase Product Capability Inventory
 
-Status: capability snapshot; current product/catalog view, not evidence that every level is downloaded, cooked, runnable, or releasable
+**Status:** capability snapshot; current product/catalog view, not evidence that every level is downloaded, cooked, runnable, or releasable
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; Showcase marker/CMake/entry points, level catalog, authored level files, tracked source content, Launcher use, and runtime startup path inspected; evidence `S` only
+**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; Showcase marker/CMake/entry points, level catalog, authored level files, tracked source content, Launcher use, and runtime startup path inspected; evidence `S` only
 
-Scope: shipped project products, startup/selection behavior, cataloged workloads, content provenance/readiness, and their role as capability evidence
+**Scope:** shipped project products, startup/selection behavior, cataloged workloads, content provenance/readiness, and their role as capability evidence
 
-Owner: `Projects/Showcase`; Engine/Application/Launcher/Cooking own execution infrastructure
+**Owner:** `Projects/Showcase`; Engine/Application/Launcher/Cooking own execution infrastructure
 
-Evidence and disposition: [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
 ## Product Surface
 

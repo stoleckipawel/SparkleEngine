@@ -1,14 +1,14 @@
 # Asset Cooking Capability Inventory
 
-Status: capability snapshot; current, but not deterministic-cook, package, or runtime evidence
+**Status:** capability snapshot; current, but not deterministic-cook, package, or runtime evidence
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; AssetCooker, TextureCooker, MeshCooker, MaterialCooker, SceneCooker, source import, publication, and CMake membership inspected; evidence `S` only
+**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; AssetCooker, TextureCooker, MeshCooker, MaterialCooker, SceneCooker, source import, publication, and CMake membership inspected; evidence `S` only
 
-Scope: project/category orchestration, texture/mesh/material/scene/skeleton/animation products, identity, validation, concurrency, publication, and runtime handoff
+**Scope:** project/category orchestration, texture/mesh/material/scene/skeleton/animation products, identity, validation, concurrency, publication, and runtime handoff
 
-Owner: `Tools/Cooking`; shader cooking is separately owned by [Shader Compilation](../ShaderCompiler/README.md)
+**Owner:** `Tools/Cooking`; shader cooking is separately owned by [Shader Compilation](../ShaderCompiler/README.md)
 
-Evidence and disposition: [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
 ## Orchestration And Products
 

@@ -1,8 +1,8 @@
 # Data And Memory Design
 
-Status: binding data and memory design standard
+**Status:** binding data and memory design standard
 
-Applies to: material sources, transforms, streams, packets, stores, caches, tables, uploads, and hot traversal
+**Applies to:** material sources, transforms, streams, packets, stores, caches, tables, uploads, and hot traversal
 
 Data-oriented design starts from work and access patterns, not from choosing ECS, SoA, or templates.
 

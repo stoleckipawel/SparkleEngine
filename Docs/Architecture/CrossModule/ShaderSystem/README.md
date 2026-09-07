@@ -1,14 +1,34 @@
 # Shader System Architecture
 
-Status: feature dossier; target architecture, source-reconciled but not executable proof
+**Status:** feature dossier; target architecture, source-reconciled but not executable proof
 
-Responsibility: shader authoring identity, compilation inputs, cooked map/library shape, runtime materialization, typed graph use, ownership, failure policy, and capability boundaries
+**Responsibility:** shader authoring identity, compilation inputs, cooked map/library shape, runtime materialization, typed graph use, ownership, failure policy, and capability boundaries
 
-Delivery sequence: [Shader System Delivery Plan](../../../Plans/CrossModule/ShaderSystem.md)
+**Delivery sequence:** [Shader System Delivery Plan](../../../Plans/CrossModule/ShaderSystem.md)
 
-Migration provenance: [Shader System Migration Baseline](../../../Research/ShaderSystem/ShaderSystemMigrationBaseline.md)
+**Migration provenance:** [Shader System Migration Baseline](../../../Research/ShaderSystem/ShaderSystemMigrationBaseline.md)
 
-Current source inventory: [Shader Compilation Capability Inventory](../../Modules/Tools/ShaderCompiler/README.md)
+**Current source inventory:** [Shader Compilation Capability Inventory](../../Modules/Tools/ShaderCompiler/README.md)
+
+## At A Glance
+
+| Current/reconciled foundation | Chosen architecture | Explicitly deferred or rejected |
+| --- | --- | --- |
+| virtual shader sources, generated global shader map and cooked code library, typed runtime lookup, lazy generation-owned pipeline materialization, dependency manifest, and change selection | one concrete shader class owns source/entry/stage and its direct-dispatch parameter contract; frame graph owns semantic use; Renderer materializes complete pipelines; RHI lowers them | universal authored program/pass wrappers, filename identity, runtime compilation, generic permutations, PSO prewarming, duplicate AS shader variants, and a parallel shader subsystem |
+
+```mermaid
+flowchart LR
+    Shader[Concrete shader class<br/>source, entry, stage, parameters] --> Cook[ShaderCompiler<br/>dependency graph and compile jobs]
+    Cook --> Map[Global shader map]
+    Cook --> Library[Cooked code library]
+    Map --> Runtime[Renderer generation<br/>typed lookup and materialization]
+    Library --> Runtime
+    Runtime --> Graph[Frame graph semantic use]
+    Graph --> RHI[RHI pipeline and command lowering]
+    RHI --> Retire[All-queue completion retirement]
+```
+
+This page owns the target distinctions and design. The linked capability inventory owns the dated current source snapshot, and the plan owns migration order; neither is proof that the full target passed.
 
 ## Dossier Route
 

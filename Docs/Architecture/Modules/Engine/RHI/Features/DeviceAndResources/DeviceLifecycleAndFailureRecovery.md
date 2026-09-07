@@ -1,10 +1,10 @@
 # RHI Device Lifecycle And Failure Recovery
 
-Status: current feature dossier; source-backed, not device-run, fault-injection, recovery, or release evidence
+**Status:** current feature dossier; source-backed, not device-run, fault-injection, recovery, or release evidence
 
-Verified: 2026-09-07 at committed `master` revision `c28b33bd`
+**Verified:** 2026-09-07 at committed `master` revision `c28b33bd`
 
-Scope: `RHI-LIFE-01` through `RHI-LIFE-06`; service composition, owner-thread access, publication, steady-state frame use, swapchain recovery, shutdown settlement, device loss, diagnostics, and the explicit absence of in-process device recreation
+**Scope:** `RHI-LIFE-01` through `RHI-LIFE-06`; service composition, owner-thread access, publication, steady-state frame use, swapchain recovery, shutdown settlement, device loss, diagnostics, and the explicit absence of in-process device recreation
 
 ## Feature Promise And Non-Promise
 

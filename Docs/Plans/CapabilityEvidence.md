@@ -1,18 +1,30 @@
 # Capability Evidence Plan
 
-Status: implementation plan; not proof, release classification, or release-wide sequencing authority
+**Status:** implementation plan; not proof, release classification, or release-wide sequencing authority
 
-Snapshot: expanded 2026-09-07 from the repository-wide source-only capability inventory; original implementation baseline `8414b5dc`, with current documentation-owner and negative-capability routes reconciled against the live tree
+**Snapshot:** expanded 2026-09-07 from the repository-wide source-only capability inventory; original implementation baseline `8414b5dc`, with current documentation-owner and negative-capability routes reconciled against the live tree
 
-Responsibility: release-surface reconciliation, inventory refresh, and the claim-falsifying checks required to promote individual source-present capability claims
+**Responsibility:** release-surface reconciliation, inventory refresh, and the claim-falsifying checks required to promote individual source-present capability claims
 
-Inventory authority: [Current Capability Inventory](../Architecture/Modules/README.md)
+**Inventory authority:** [Current Capability Inventory](../Architecture/Modules/README.md)
 
-Release gates and evidence meaning: [First Release Acceptance Contract](../Acceptance/FirstRelease.md) and [Validation, Performance, and Evidence](../Engineering/Verification/ValidationAndEvidence.md)
+**Release gates and evidence meaning:** [First Release Acceptance Contract](../Acceptance/FirstRelease.md) and [Validation, Performance, and Evidence](../Engineering/Verification/ValidationAndEvidence.md)
 
-Candidate-bound report authority: [First Release Feature Completion Reports](../Acceptance/FeatureCompletionReports.md)
+**Candidate-bound report authority:** [First Release Feature Completion Reports](../Acceptance/FeatureCompletionReports.md)
 
-Release-wide sequencing authority: [Release-First Principal Graphics Roadmap](../Strategy/Roadmap.md)
+**Release-wide sequencing authority:** [Release-First Principal Graphics Roadmap](../Strategy/Roadmap.md)
+
+## At A Glance
+
+This is the queue of unanswered proof questions, not a checklist to run in bulk.
+
+| Use this page to... | Do not use it to... |
+| --- | --- |
+| find the smallest check that could falsify one capability claim | infer that a source-present path works |
+| map a capability ID to an evidence ID and escalation trigger | decide release priority or authorize a broad test run |
+| see which foundation, product, RHI, Renderer, shader, or neural evidence remains open | store candidate results or replace the owning `FCR-*` report |
+
+Start with the affected module section. Stop when its smallest prerequisite fails; expand only when that claim requires broader evidence.
 
 ## Responsibility
 

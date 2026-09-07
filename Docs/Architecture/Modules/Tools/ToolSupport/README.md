@@ -1,14 +1,14 @@
 # Shared Tool Support Capability Inventory
 
-Status: capability snapshot; current, but not tool-output compatibility or integration evidence
+**Status:** capability snapshot; current, but not tool-output compatibility or integration evidence
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; `Tools/Support/ToolConsoleSupport`, its CMake membership, and current AssetCooker, TextureCooker, and ShaderCompiler consumers inspected; evidence `S` only
+**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; `Tools/Support/ToolConsoleSupport`, its CMake membership, and current AssetCooker, TextureCooker, and ShaderCompiler consumers inspected; evidence `S` only
 
-Scope: the shared host-tool console formatting boundary used by current command-line content and shader tools
+**Scope:** the shared host-tool console formatting boundary used by current command-line content and shader tools
 
-Owner: `Tools/Support/ToolConsoleSupport` / `ToolConsoleSupport`
+**Owner:** `Tools/Support/ToolConsoleSupport` / `ToolConsoleSupport`
 
-Evidence and disposition: [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
 ## Module Boundary
 

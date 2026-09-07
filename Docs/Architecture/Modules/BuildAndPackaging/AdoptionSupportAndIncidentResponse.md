@@ -1,12 +1,14 @@
 # Adoption, Support, And Incident Response
 
-Status: target product capability dossier; current developer routes exist, but the public adoption/support operation is incomplete
+**Status:** target product capability dossier; current developer routes exist, but the public adoption/support operation is incomplete
 
-Owner: release/product delivery; Launcher, Application, Core diagnostics, Docs, and project products provide owned parts of the route
+**Scope:** define public onboarding, failure recovery, support/security intake, incident response, patch/withdrawal, and independent-reproduction responsibilities
 
-Snapshot: 2026-09-07; current product/workflow inventories, repository-root entry points, and First Release failure/support surfaces reconciled; source evidence `S` only
+**Owner:** release/product delivery; Launcher, Application, Core diagnostics, Docs, and project products provide owned parts of the route
 
-Strategy and acceptance sources: `NS-ADOPTION`, `NS-EVIDENCE`, and `NS-OWNERSHIP` in the [Engineer Persona](../../../Strategy/EngineerPersona.md); `FCR-PROD-01`, `FCR-PROD-02`, `FCR-PROD-06`; [First Release](../../../Acceptance/FirstRelease.md)
+**Snapshot:** 2026-09-07; current product/workflow inventories, repository-root entry points, and First Release failure/support surfaces reconciled; source evidence `S` only
+
+**Strategy and acceptance sources:** `NS-ADOPTION`, `NS-EVIDENCE`, and `NS-OWNERSHIP` in the [Engineer Persona](../../../Strategy/EngineerPersona.md); `FCR-PROD-01`, `FCR-PROD-02`, `FCR-PROD-06`; [First Release](../../../Acceptance/FirstRelease.md)
 
 ## Capability Identity
 

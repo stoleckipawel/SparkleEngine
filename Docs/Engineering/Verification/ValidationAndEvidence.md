@@ -1,8 +1,8 @@
 # Validation, Performance, and Evidence
 
-Status: binding verification standard
+**Status:** binding verification standard
 
-Applies to: correctness checks, diagnostics, logging, instrumentation, comments, tests, benchmarks, captures, and AI-assisted work
+**Applies to:** correctness checks, diagnostics, logging, instrumentation, comments, tests, benchmarks, captures, and AI-assisted work
 
 ## Minimal Correctness Checks
 

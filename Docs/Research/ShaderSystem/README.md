@@ -1,8 +1,8 @@
 # Shader System Research
 
-Status: research-family index
+**Status:** research-family index
 
-Scope: route external shader/pipeline precedent and the frozen pre-migration Sparkle baseline
+**Scope:** route external shader/pipeline precedent and the frozen pre-migration Sparkle baseline
 
 | Research | Use |
 | --- | --- |

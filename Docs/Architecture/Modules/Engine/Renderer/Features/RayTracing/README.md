@@ -1,10 +1,10 @@
 # Renderer Ray Tracing
 
-Status: current feature dossier; source-backed, not native execution, backend parity, visual correctness, performance, or release evidence
+**Status:** current feature dossier; source-backed, not native execution, backend parity, visual correctness, performance, or release evidence
 
-Verified: 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` and `Engine/RHI` are unchanged from the earlier `8414b5dc` source audit
+**Verified:** 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` and `Engine/RHI` are unchanged from the earlier `8414b5dc` source audit
 
-Scope: `REN-RT-01` through `REN-RT-06`, the ray portions of `REN-FRONT-02` through `REN-FRONT-04`, and `REN-LGT-02` through `REN-LGT-04`; defines current acceleration-scene, traversal-frontend, shader-table, and effect coverage
+**Scope:** `REN-RT-01` through `REN-RT-06`, the ray portions of `REN-FRONT-02` through `REN-FRONT-04`, and `REN-LGT-02` through `REN-LGT-04`; defines current acceleration-scene, traversal-frontend, shader-table, and effect coverage
 
 Target semantic invariants and their rationale are owned by [Ray-Tracing Execution Architecture](ExecutionArchitecture.md). This dossier states the current feature shape.
 

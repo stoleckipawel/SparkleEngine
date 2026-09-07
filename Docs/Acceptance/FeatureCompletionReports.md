@@ -1,22 +1,41 @@
 # First Release Feature Completion Reports
 
-Status: acceptance contract; includes a source-audited initial registry whose entries are not completion claims
+**Status:** acceptance contract; includes a source-audited initial registry whose entries are not completion claims
 
-Responsibility: define the per-feature completion report, evidence, approval, and initial registry used to close first-release capability claims
+**Responsibility:** define the per-feature completion report, evidence, approval, and initial registry used to close first-release capability claims
 
-Release target: SparkleEngine `v0.1.0`, Windows x64
+**Release target:** SparkleEngine `v0.1.0`, Windows x64
 
-Source snapshot: committed `master` revision `8414b5dc`, inspected 2026-09-06 while a separate documentation relocation was present in the worktree; no build, cook, runtime, capture, benchmark, or independent-adoption result was added by this report
+**Source snapshot:** committed `master` revision `8414b5dc`, inspected 2026-09-06 while a separate documentation relocation was present in the worktree; no build, cook, runtime, capture, benchmark, or independent-adoption result was added by this report
 
-Release authority: [First Release Acceptance Contract](FirstRelease.md)
+**Release authority:** [First Release Acceptance Contract](FirstRelease.md)
 
-Capability authority: [Principal Graphics Engineering Requirements](../Strategy/Requirements.md)
+**Capability authority:** [Principal Graphics Engineering Requirements](../Strategy/Requirements.md)
 
-Operating model: [Advanced Graphics Engineer Persona](../Strategy/EngineerPersona.md)
+**Operating model:** [Advanced Graphics Engineer Persona](../Strategy/EngineerPersona.md)
 
-Current owner map: [Whole Repository Architecture Map](../Architecture/WholeRepositoryMap.md)
+**Current owner map:** [Whole Repository Architecture Map](../Architecture/WholeRepositoryMap.md)
 
-Current feature-level source inventory: [Current Capability Inventory](../Architecture/Modules/README.md)
+**Current feature-level source inventory:** [Current Capability Inventory](../Architecture/Modules/README.md)
+
+## At A Glance
+
+| You have | You still need for each included or experimental feature |
+| --- | --- |
+| A source-audited `FCR-*` registry covering product, foundation, content, RHI, Renderer, tools, delivery, and maps | One candidate-bound report tied to exact bytes, configuration, owner, reviewer, criteria, failures, checks, and artifacts |
+| Feature-local `AC-*`, `FM-*`, and `CHK-*` contracts beside their Architecture owners | Recorded outcomes rather than copied criteria |
+| A shared polish and explanation schema | Executed correctness, quality, failure, lifetime, backend, performance, adoption, and package evidence where applicable |
+
+```mermaid
+flowchart LR
+    Inventory[Capability row] --> Dossier[Architecture feature dossier]
+    Dossier --> Criteria[AC, FM, and CHK definitions]
+    Criteria --> Candidate[Candidate execution and artifacts]
+    Candidate --> Report[FCR report and reviewer verdict]
+    Report --> Gate[Release gate]
+```
+
+The registry is routing infrastructure. It does not mean any feature is complete.
 
 ## Purpose And Boundary
 

@@ -1,22 +1,25 @@
 # Shader Compilation Capability Inventory
 
-Status: capability snapshot; not a successful cook, runtime-load record, or release approval
+**Status:** capability snapshot; not a successful cook, runtime-load record, or release approval
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; current shader contracts, Renderer registrations, compiler executable/CMake, DXC and Slang backends, cook/publication code, CLI validation script, editor recook, and Renderer runtime loading inspected; evidence `S` only
+**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; current shader contracts, Renderer registrations, compiler executable/CMake, DXC and Slang backends, cook/publication code, CLI validation script, editor recook, and Renderer runtime loading inspected; evidence `S` only
 
-Scope: authored-language and stage coverage, compiler targets/backends, typed registration, source dependency planning, reflection/ABI validation, cooked publication, diagnostics, recook, and runtime loading
+**Scope:** authored-language and stage coverage, compiler targets/backends, typed registration, source dependency planning, reflection/ABI validation, cooked publication, diagnostics, recook, and runtime loading
 
-Owners: `Tools/Shaders` for offline compilation/publication, `Engine/Assets/Shaders` for engine shader sources, `Engine/Renderer/ShaderRegistrations` for Renderer global-program registration, and `Engine/Renderer` for runtime materialization/consumption
+**Owners:** `Tools/Shaders` for offline compilation/publication, `Engine/Assets/Shaders` for engine shader sources, `Engine/Renderer/ShaderRegistrations` for Renderer global-program registration, and `Engine/Renderer` for runtime materialization/consumption
 
-Current system architecture: [Shader System](../../../CrossModule/ShaderSystem/README.md)
+**Current system architecture:** [Shader System](../../../CrossModule/ShaderSystem/README.md)
 
-Delivery plan: [Shader System Plan](../../../../Plans/CrossModule/ShaderSystem.md)
+**Delivery plan:** [Shader System Plan](../../../../Plans/CrossModule/ShaderSystem.md)
 
-Evidence plan and release disposition: [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence plan and release disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
-Traceability: capability rows use durable `SHD-<family>-NN` identities; their primary proof destinations are listed in the [ShaderCompiler capability-to-evidence map](../../../../Plans/CapabilityEvidence.md#shadercompiler-capability-to-evidence-map).
+**Traceability:** capability rows use durable `SHD-<family>-NN` identities; their primary proof destinations are listed in the [ShaderCompiler capability-to-evidence map](../../../../Plans/CapabilityEvidence.md#shadercompiler-capability-to-evidence-map).
 
-Deeper routes: [exact Renderer shader program catalog](../../Engine/Renderer/Features/ShaderRuntime/ShaderProgramCatalog.md), [cross-system graphics coverage](../../../CrossModule/GraphicsCoverageMatrix.md), and [shader authoring-to-runtime trace](../../../CrossModule/FeatureExecutionTraces.md#trace-7-shader-authoring-to-runtime-generation)
+**Deeper routes:** [exact Renderer shader program catalog](../../Engine/Renderer/Features/ShaderRuntime/ShaderProgramCatalog.md), [cross-system graphics coverage](../../../CrossModule/GraphicsCoverageMatrix.md), and [shader authoring-to-runtime trace](../../../CrossModule/FeatureExecutionTraces.md#trace-7-shader-authoring-to-runtime-generation)
+
+> [!TIP]
+> This is a source capability ledger. Start with the [Shader System Architecture](../../../CrossModule/ShaderSystem/README.md) for the mental model, then search here by `SHD-*` ID, authored language, stage, target, or product. Registration, compilation, publication, runtime loading, and executable use are separate claims.
 
 ## Build And Delivery Shape
 

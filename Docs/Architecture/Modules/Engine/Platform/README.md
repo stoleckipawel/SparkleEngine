@@ -1,16 +1,16 @@
 # Platform Capability Inventory
 
-Status: capability snapshot; current, but not portability or runtime evidence
+**Status:** capability snapshot; current, but not portability or runtime evidence
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; `Engine/Platform` public/private source and CMake membership inspected; evidence `S` only
+**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; `Engine/Platform` public/private source and CMake membership inspected; evidence `S` only
 
-Scope: native window ownership, DPI, message pumping, Win32 input acquisition, layered routing, capture, and cursor control
+**Scope:** native window ownership, DPI, message pumping, Win32 input acquisition, layered routing, capture, and cursor control
 
-Owner: `Engine/Platform` / `SparklePlatform`
+**Owner:** `Engine/Platform` / `SparklePlatform`
 
-Evidence and disposition: [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
-Platform expansion route: [Linux Platform Support](LinuxPlatformSupport.md) explicitly records that Vulkan-on-Windows is not a Linux product path and owns the target/exclusion contract.
+**Platform expansion route:** [Linux Platform Support](LinuxPlatformSupport.md) explicitly records that Vulkan-on-Windows is not a Linux product path and owns the target/exclusion contract.
 
 ## Platform Boundary
 

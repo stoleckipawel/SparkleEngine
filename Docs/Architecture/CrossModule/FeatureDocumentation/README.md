@@ -1,8 +1,8 @@
 # Feature Documentation Coverage
 
-Status: traceability index; this folder does not define feature behavior, sequencing, or release approval
+**Status:** traceability index; this folder does not define feature behavior, sequencing, or release approval
 
-Owner: Architecture documentation routing
+**Owner:** Architecture documentation routing
 
 This route answers whether a feature, target, workload, report family, or planned slice mentioned by the strategy/acceptance/planning corpus has an explicit Architecture owner. It prevents a strategy statement or acceptance row from becoming the only description of a feature.
 

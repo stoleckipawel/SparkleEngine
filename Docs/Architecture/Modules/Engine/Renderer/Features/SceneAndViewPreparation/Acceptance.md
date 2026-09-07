@@ -1,10 +1,10 @@
 # Renderer Scene and View Preparation Acceptance
 
-Status: feature-local acceptance contract; defined but unproved
+**Status:** feature-local acceptance contract; defined but unproved
 
-Scope: shared identity, concurrency, capacity, failure, backend, reset, and completion requirements across scene preparation, view preparation, and GPU-scene publication
+**Scope:** shared identity, concurrency, capacity, failure, backend, reset, and completion requirements across scene preparation, view preparation, and GPU-scene publication
 
-Authority boundary: [Scene Preparation](ScenePreparation.md), [View Preparation](ViewPreparation.md), and [GPU-Scene Publication](GpuScenePublication.md) own their mechanisms. [Mesh and Texture Residency](../GeometryAndResources/MeshAndTextureResidency.md) owns resource state/budgets; [Temporal Sampling and History](../FrameExecution/TemporalSamplingAndHistory.md) owns jitter/history semantics. This page owns only the joins needed for one coherent prepared publication. Candidate results and release disposition remain in [Acceptance reporting](../../../../../../Acceptance/FeatureCompletionReports.md).
+**Authority boundary:** [Scene Preparation](ScenePreparation.md), [View Preparation](ViewPreparation.md), and [GPU-Scene Publication](GpuScenePublication.md) own their mechanisms. [Mesh and Texture Residency](../GeometryAndResources/MeshAndTextureResidency.md) owns resource state/budgets; [Temporal Sampling and History](../FrameExecution/TemporalSamplingAndHistory.md) owns jitter/history semantics. This page owns only the joins needed for one coherent prepared publication. Candidate results and release disposition remain in [Acceptance reporting](../../../../../../Acceptance/FeatureCompletionReports.md).
 
 ## Horizontal Coverage
 

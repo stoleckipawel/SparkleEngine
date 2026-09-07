@@ -1,9 +1,12 @@
 # Geometry Cache Animation Pipeline
 
-Status: feature dossier; target architecture, not implemented behavior
-Date: 2026-08-17
-Last source reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
-Scope: Alembic-authored baked mesh animation, native cooking and streaming, playback, shared raster/ray-tracing deformation, and D3D12/Vulkan parity
+**Status:** feature dossier; target architecture, not implemented behavior
+
+**Date:** 2026-08-17
+
+**Last source reconciliation:** 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
+
+**Scope:** Alembic-authored baked mesh animation, native cooking and streaming, playback, shared raster/ray-tracing deformation, and D3D12/Vulkan parity
 
 ## Dossier Route
 

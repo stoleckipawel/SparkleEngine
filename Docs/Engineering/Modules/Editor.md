@@ -1,8 +1,8 @@
 # Editor Engineering
 
-Status: binding Editor integration standard
+**Status:** binding Editor integration standard
 
-Applies to: `Engine/Editor`, ImGui, UI/render boundaries, editor background operations, capture UX, and interactive frontend workflows
+**Applies to:** `Engine/Editor`, ImGui, UI/render boundaries, editor background operations, capture UX, and interactive frontend workflows
 
 The Editor owns user interaction and presentation, not mutable engine subsystem state. Import and cooking publication rules live in [Tools Engineering](Tools.md). Both preserve the canonical basis, units, spaces, and artifact representation defined by the [World Coordinate, Units, and Transform Contract](../../Architecture/Decisions/WorldCoordinateAndUnits.md).
 

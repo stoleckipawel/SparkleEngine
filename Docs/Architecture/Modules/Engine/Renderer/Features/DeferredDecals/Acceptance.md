@@ -1,14 +1,14 @@
 # Deferred GBuffer Decals — Acceptance
 
-Status: feature-local acceptance contract; not proof that deferred decals have passed
+**Status:** feature-local acceptance contract; not proof that deferred decals have passed
 
-Scope: validation fixture, producer/consumer matrix, controlled failures, and completion gates for deferred GBuffer decals
+**Scope:** validation fixture, producer/consumer matrix, controlled failures, and completion gates for deferred GBuffer decals
 
-Feature architecture: [Deferred GBuffer Decal Composition Architecture](CompositionArchitecture.md)
+**Feature architecture:** [Deferred GBuffer Decal Composition Architecture](CompositionArchitecture.md)
 
-Delivery authority: [Deferred GBuffer Decals Delivery Plan](../../../../../../Plans/Renderer/DeferredGBufferDecals.md)
+**Delivery authority:** [Deferred GBuffer Decals Delivery Plan](../../../../../../Plans/Renderer/DeferredGBufferDecals.md)
 
-Release/workload orchestration: [Graphics Workloads](../../../../../../Acceptance/GraphicsWorkloads.md)
+**Release/workload orchestration:** [Graphics Workloads](../../../../../../Acceptance/GraphicsWorkloads.md)
 
 This file is part of the Deferred Decals feature dossier and owns the proof contract required after delivery. Candidate results remain in the release-level completion report and must retain exact commands, configurations, artifacts, and limitations.
 

@@ -1,8 +1,8 @@
 # Tasks Engineering
 
-Status: binding concurrency and synchronization standard
+**Status:** binding concurrency and synchronization standard
 
-Applies to: CPU tasks, threads, queues, locks, atomics, waits, callbacks, publication, cancellation, and shutdown
+**Applies to:** CPU tasks, threads, queues, locks, atomics, waits, callbacks, publication, cancellation, and shutdown
 
 This standard owns reusable concurrency guardrails. [J. Multithreaded Engine Architecture](../../Architecture/CrossModule/MultithreadedEngine.md) owns SparkleEngine's applied target topology and frame lifecycle; it must satisfy these rules without duplicating their full rationale.
 

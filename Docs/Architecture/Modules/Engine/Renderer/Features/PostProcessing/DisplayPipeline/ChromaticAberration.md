@@ -1,12 +1,12 @@
 # Renderer Chromatic Aberration
 
-Status: feature dossier; current negative capability and source-backed absence, not a delivery plan
+**Status:** feature dossier; current negative capability and source-backed absence, not a delivery plan
 
-Verified: 2026-09-06 against source revision `d236da11`; inspected Renderer/shader/view paths are unchanged from the earlier `8414b5dc` audit
+**Verified:** 2026-09-06 against source revision `d236da11`; inspected Renderer/shader/view paths are unchanged from the earlier `8414b5dc` audit
 
-Scope: `REN-POST-12`; intentional wavelength/channel-dependent lens distortion as a post-processing effect
+**Scope:** `REN-POST-12`; intentional wavelength/channel-dependent lens distortion as a post-processing effect
 
-Parent family: [Post Processing](../README.md)
+**Parent family:** [Post Processing](../README.md)
 
 ## Current Capability
 

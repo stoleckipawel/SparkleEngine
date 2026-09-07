@@ -1,10 +1,10 @@
 # RHI Pipeline and Shader Contracts
 
-Status: current feature dossier; source-backed, not shader ABI, pipeline parity, or runtime evidence
+**Status:** current feature dossier; source-backed, not shader ABI, pipeline parity, or runtime evidence
 
-Verified: 2026-09-06 at committed `master` revision `8414b5dc`
+**Verified:** 2026-09-06 at committed `master` revision `8414b5dc`
 
-Scope: `RHI-PIPE-*` plus RHI shader bytecode, target, reflection, parameter-layout, and authoring contracts used to materialize graphics and compute pipelines
+**Scope:** `RHI-PIPE-*` plus RHI shader bytecode, target, reflection, parameter-layout, and authoring contracts used to materialize graphics and compute pipelines
 
 ## Feature Promise
 

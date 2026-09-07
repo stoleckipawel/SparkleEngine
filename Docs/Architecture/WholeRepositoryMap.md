@@ -1,8 +1,10 @@
 # D. Whole Repository Architecture Map
 
-Status: current map; source-backed and descriptive, not a normative architecture or strategy contract
-Last verified: repository-wide map 2026-08-28 at committed `master` revision `20814381`; Launcher ownership and repository code-style routes reverified 2026-08-31 at committed `master` revision `61fe39d9`; build-module dependency visibility reverified 2026-09-03 against the current working tree
-Scope: implemented repository structure, target boundaries, runtime and tool flows, project catalog, and current source-evidence limits
+**Status:** current map; source-backed and descriptive, not a normative architecture or strategy contract
+
+**Last verified:** repository-wide map 2026-08-28 at committed `master` revision `20814381`; Launcher ownership and repository code-style routes reverified 2026-08-31 at committed `master` revision `61fe39d9`; build-module dependency visibility reverified 2026-09-03 against the current working tree
+
+**Scope:** implemented repository structure, target boundaries, runtime and tool flows, project catalog, and current source-evidence limits
 
 ## Intent And Authority
 
@@ -54,38 +56,32 @@ The top-level CMake project requires C++20, loads the Sparkle build profiles and
 
 The active RHI target split is:
 
-```text
-SparkleRHICommon --object sources--> SparkleRHI
-                                      /      \
-                            SparkleRHI_D3D12  SparkleRHI_Vulkan
-                                      \      /
-                              SparkleRHIDiagnostics
+```mermaid
+flowchart TD
+    Common[SparkleRHICommon<br/>object sources] --> Facade[SparkleRHI]
+    D3D12[SparkleRHI_D3D12] --> Facade
+    Vulkan[SparkleRHI_Vulkan] --> Facade
+    Diagnostics[SparkleRHIDiagnostics] --> D3D12
+    Diagnostics --> Vulkan
 ```
 
 `SparkleRHI` privately links the selected backend targets; each backend privately links `SparkleRHIDiagnostics`. `SparkleRHI_D3D12` is enabled by default. Vulkan is enabled when the SDK is found, or required explicitly by configuration. CMake assertions reject common/backend source leakage, and the root `architecture_boundary_check` target enforces the repository-level Renderer/RHI rules.
 
 ## Runtime Product Flow
 
-```text
-ShowcaseEditor / ShowcaseRuntime
-        |
-SparkleApplicationEditor / SparkleApplication
-        |
-LevelSession -> GameWorld -> compiled GameSystemGraph
-        |
-RenderFrameSubmissionExtractor
-        |
-immutable RenderFrameSubmission
-        |
-Renderer facade -> RenderCoordinator
-        |
-RendererHost -> FramePipeline
-        |
-RenderScene + RenderView + FrameGraph + feature Passes
-        |
-RenderDeviceServices -> public RHI services
-        |
-SparkleRHI_D3D12 or SparkleRHI_Vulkan
+```mermaid
+flowchart TD
+    Product[ShowcaseEditor or ShowcaseRuntime] --> App[SparkleApplicationEditor<br/>or SparkleApplication]
+    App --> Session[LevelSession]
+    Session --> World[GameWorld and compiled GameSystemGraph]
+    World --> Extract[RenderFrameSubmissionExtractor]
+    Extract --> Submission[Immutable RenderFrameSubmission]
+    Submission --> Facade[Renderer facade and RenderCoordinator]
+    Facade --> Host[RendererHost and FramePipeline]
+    Host --> Frame[RenderScene, RenderView,<br/>FrameGraph, and feature passes]
+    Frame --> Services[RenderDeviceServices and public RHI]
+    Services --> D3D12[D3D12 backend]
+    Services --> Vulkan[Vulkan backend]
 ```
 
 `GameWorld` is gameplay/level authority. It evaluates systems and publishes a sequenced structural `RenderSceneDelta`, immutable per-frame dynamic data, resource tables, and `RenderViewInput` through `RenderFrameSubmission`; the Renderer never queries ECS storage directly.
@@ -116,17 +112,19 @@ The current Renderer owner map is:
 
 The old private `SceneData`, `Camera`, `FramePipeline`, and `Frame/Core` navigation roots no longer exist. The current high-level route is:
 
-```text
-RenderCoordinator
-  -> RendererHost
-  -> Frame/FramePipeline
-       -> Scene/Preparation + Scene/GpuScene + Scene/RayTracing
-       -> View/RenderViewBuilder + RenderViewPreparation
-       -> Frame/Graph/BuildRenderFrameGraph
-            -> Passes/<feature>
-            -> FrameGraph/<generic infrastructure>
-       -> Frame/Graph/ExecuteRenderFrameGraph
-       -> RenderDeviceServices::SubmitFrame
+```mermaid
+flowchart TD
+    Coordinator[RenderCoordinator] --> Host[RendererHost]
+    Host --> Pipeline[Frame/FramePipeline]
+    Pipeline --> Scene[Scene preparation,<br/>GPU scene, and ray tracing]
+    Pipeline --> View[RenderViewBuilder and<br/>view preparation]
+    Scene --> Build[BuildRenderFrameGraph]
+    View --> Build
+    Build --> Passes[Feature passes]
+    Build --> Graph[Generic frame-graph infrastructure]
+    Passes --> Execute[ExecuteRenderFrameGraph]
+    Graph --> Execute
+    Execute --> Submit[RenderDeviceServices::SubmitFrame]
 ```
 
 The `FrameGraph` object is rebuilt when output/topology, provider selection, lighting/GBuffer selection, shader generation, or a used shader-table-plan generation changes. During each recorded frame, imported resources and typed parameters are applied, then the existing graph runs setup, compile, pass preparation, and execution. This is implemented source shape; its CPU cost still requires measurement before a caching change is justified.

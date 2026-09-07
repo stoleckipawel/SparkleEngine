@@ -1,12 +1,12 @@
 # Renderer Tone Mapping
 
-Status: current feature dossier; source-backed, not numerical, colorimetric, display, backend, or release evidence
+**Status:** current feature dossier; source-backed, not numerical, colorimetric, display, backend, or release evidence
 
-Verified: 2026-09-06 against source revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
+**Verified:** 2026-09-06 against source revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
-Scope: `REN-POST-07`; exposure-weighted HDR scene-referred color to display-linear color through one selected tone-mapping operator
+**Scope:** `REN-POST-07`; exposure-weighted HDR scene-referred color to display-linear color through one selected tone-mapping operator
 
-Parent family: [Post Processing](../README.md)
+**Parent family:** [Post Processing](../README.md)
 
 ## Feature Promise
 

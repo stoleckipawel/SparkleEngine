@@ -1,12 +1,15 @@
 # Shader System Migration Baseline
 
-Status: archive; dated migration snapshot, not current architecture, implementation status, or delivery authority
+**Status:** archive; dated migration snapshot, not current architecture, implementation status, or delivery authority
 
-Responsibility: preserve the frozen Phase 0 shader-system findings, counts, and deletion ledger as migration provenance
+**Responsibility:** preserve the frozen Phase 0 shader-system findings, counts, and deletion ledger as migration provenance
 
-Architecture authority: [Shader System Architecture](../../Architecture/CrossModule/ShaderSystem/README.md)
+**Architecture authority:** [Shader System Architecture](../../Architecture/CrossModule/ShaderSystem/README.md)
 
-Delivery authority: [Shader System Delivery Plan](../../Plans/CrossModule/ShaderSystem.md)
+**Delivery authority:** [Shader System Delivery Plan](../../Plans/CrossModule/ShaderSystem.md)
+
+> [!NOTE]
+> This is frozen pre-migration provenance. Counts and names below intentionally describe the recorded baseline, not the current tree. Use the current capability inventories for implementation state and return here only to verify what the clean-break migration intended to replace.
 
 ## Purpose And Boundary
 

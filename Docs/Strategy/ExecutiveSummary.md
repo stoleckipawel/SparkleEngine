@@ -1,10 +1,10 @@
 # G. Advanced Graphics Engine Executive Summary
 
-Status: orientation; non-normative decision summary
+**Status:** orientation; non-normative decision summary
 
-Date: 2026-08-02
+**Date:** 2026-08-02
 
-Scope: principal graphics direction for SparkleEngine
+**Scope:** principal graphics direction for SparkleEngine
 
 ## Decision
 

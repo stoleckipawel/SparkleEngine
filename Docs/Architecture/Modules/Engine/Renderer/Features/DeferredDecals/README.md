@@ -1,16 +1,16 @@
 # Renderer Deferred Decals
 
-Status: current feature-gap dossier; source-backed absence record, not release approval or executable evidence
+**Status:** current feature-gap dossier; source-backed absence record, not release approval or executable evidence
 
-Snapshot: absence and extension seams rechecked 2026-09-06 against source revision `d236da11`; Renderer/RHI/shader source is unchanged from the earlier `8414b5dc` audit
+**Snapshot:** absence and extension seams rechecked 2026-09-06 against source revision `d236da11`; Renderer/RHI/shader source is unchanged from the earlier `8414b5dc` audit
 
-Scope: `REN-DECAL-01` through `REN-DECAL-03`; current GBuffer, material, ray-hit, frame-graph, blend-state, and authored/runtime seams relevant to deferred decals, including the explicit absence of an implemented decal feature
+**Scope:** `REN-DECAL-01` through `REN-DECAL-03`; current GBuffer, material, ray-hit, frame-graph, blend-state, and authored/runtime seams relevant to deferred decals, including the explicit absence of an implemented decal feature
 
-Target architecture: [Deferred GBuffer Decal Composition Architecture](CompositionArchitecture.md)
+**Target architecture:** [Deferred GBuffer Decal Composition Architecture](CompositionArchitecture.md)
 
-Delivery authority: [Deferred GBuffer Decals Delivery Plan](../../../../../../Plans/Renderer/DeferredGBufferDecals.md)
+**Delivery authority:** [Deferred GBuffer Decals Delivery Plan](../../../../../../Plans/Renderer/DeferredGBufferDecals.md)
 
-Feature acceptance: [Deferred GBuffer Decals — Acceptance](Acceptance.md)
+**Feature acceptance:** [Deferred GBuffer Decals — Acceptance](Acceptance.md)
 
 Code and executable build configuration remain authoritative. Reinspect every listed owner and absence before using this dated snapshot for implementation or release claims.
 

@@ -1,10 +1,10 @@
 # RHI ImGui Rendering
 
-Status: current feature dossier; source-backed, not UI image, clipping, DPI, lifetime, or backend-parity evidence
+**Status:** current feature dossier; source-backed, not UI image, clipping, DPI, lifetime, or backend-parity evidence
 
-Verified: 2026-09-06 at committed `master` revision `8414b5dc`
+**Verified:** 2026-09-06 at committed `master` revision `8414b5dc`
 
-Scope: `RHI-DIAG-08`; backend-specific ImGui device objects, font/texture descriptors, draw-data lowering, clip rectangles, recording, resize, and shutdown lifetime
+**Scope:** `RHI-DIAG-08`; backend-specific ImGui device objects, font/texture descriptors, draw-data lowering, clip rectangles, recording, resize, and shutdown lifetime
 
 ## Feature Promise
 

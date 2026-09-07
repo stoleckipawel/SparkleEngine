@@ -1,12 +1,12 @@
 # Geometry Cache Animation Delivery Plan
 
-Status: implementation plan; not proof of implementation or acceptance
+**Status:** implementation plan; not proof of implementation or acceptance
 
-Scope: staged delivery of geometry-cache import, cooking, playback, residency, shared deformation, ray integration, and validation
+**Scope:** staged delivery of geometry-cache import, cooking, playback, residency, shared deformation, ray integration, and validation
 
-Architecture authority: [Geometry Cache Animation Pipeline](../../Architecture/CrossModule/GeometryCacheAnimation/README.md)
+**Architecture authority:** [Geometry Cache Animation Pipeline](../../Architecture/CrossModule/GeometryCacheAnimation/README.md)
 
-Feature acceptance: [Geometry Cache Animation — Acceptance](../../Architecture/CrossModule/GeometryCacheAnimation/Acceptance.md)
+**Feature acceptance:** [Geometry Cache Animation — Acceptance](../../Architecture/CrossModule/GeometryCacheAnimation/Acceptance.md)
 
 This plan owns delivery order, dependencies, and phase exit sequence. It does not redefine the architecture, own the final acceptance criteria, or prove that any phase is complete.
 

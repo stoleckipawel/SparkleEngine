@@ -1,8 +1,8 @@
 # RHI Diagnostics And Capture
 
-Status: RHI feature-family index
+**Status:** RHI feature-family index
 
-Scope: route attributable backend observations and asynchronous texture readback products
+**Scope:** route attributable backend observations and asynchronous texture readback products
 
 | Document | Open it for |
 | --- | --- |

@@ -1,6 +1,6 @@
 # Engine Module Architecture
 
-Status: Engine module index
+**Status:** Engine module index
 
 This index mirrors the durable modules under `Engine`. Open the owning module first; use hyperlinks to follow producer/consumer relationships without relocating that knowledge into a mixed folder.
 

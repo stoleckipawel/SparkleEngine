@@ -1,9 +1,12 @@
 # World Coordinate, Units, and Transform Contract
 
-Status: canonical architecture decision
-Responsibility: define the single engine-wide world basis, units, transform, animation, skinning, and backend-conversion contract
-Adoption: accepted contract; current code and cooked schemas implement material portions, but the audited tree has no active executable source-test route proving complete conformance
-Last source reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
+**Status:** canonical architecture decision
+
+**Responsibility:** define the single engine-wide world basis, units, transform, animation, skinning, and backend-conversion contract
+
+**Adoption:** accepted contract; current code and cooked schemas implement material portions, but the audited tree has no active executable source-test route proving complete conformance
+
+**Last source reconciliation:** 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 
 ## Responsibility
 

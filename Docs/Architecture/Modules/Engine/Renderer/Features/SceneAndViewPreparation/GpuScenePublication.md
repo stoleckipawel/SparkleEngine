@@ -1,10 +1,10 @@
 # Renderer GPU-Scene Publication
 
-Status: current feature dossier; source-backed, not upload, capacity, raster/ray parity, residency, or runtime evidence
+**Status:** current feature dossier; source-backed, not upload, capacity, raster/ray parity, residency, or runtime evidence
 
-Verified: 2026-09-06 against committed `master` revision `d236da11`
+**Verified:** 2026-09-06 against committed `master` revision `d236da11`
 
-Scope: `REN-SCENE-01` and GPU-publication portions of `REN-SCENE-03` through `REN-SCENE-07`; persistent/frame-indexed GPU-scene storage, binding identity, upload, publication, and completion-safe replacement
+**Scope:** `REN-SCENE-01` and GPU-publication portions of `REN-SCENE-03` through `REN-SCENE-07`; persistent/frame-indexed GPU-scene storage, binding identity, upload, publication, and completion-safe replacement
 
 ## Feature Promise
 

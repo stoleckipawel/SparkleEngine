@@ -1,8 +1,8 @@
 # Renderer Geometry And Resources
 
-Status: Renderer feature-family index
+**Status:** Renderer feature-family index
 
-Scope: route the resource-residency and surface-contract documents that carry immutable asset generations into renderable geometry and material products
+**Scope:** route the resource-residency and surface-contract documents that carry immutable asset generations into renderable geometry and material products
 
 | Document | Open it for |
 | --- | --- |

@@ -1,8 +1,10 @@
 # Neural Graphics Acceptance
 
-Status: feature-local target acceptance contract; no criterion has a candidate result
+**Status:** feature-local target acceptance contract; no criterion has a candidate result
 
-Owner: Neural Graphics feature family; [First Release](../../../Acceptance/FirstRelease.md) owns release disposition and [Feature Completion Reports](../../../Acceptance/FeatureCompletionReports.md) owns candidate results
+**Scope:** define the binary criteria, controlled failures, checks, and completion boundary for a future owned neural-graphics feature
+
+**Owner:** Neural Graphics feature family; [First Release](../../../Acceptance/FirstRelease.md) owns release disposition and [Feature Completion Reports](../../../Acceptance/FeatureCompletionReports.md) owns candidate results
 
 ## Binary Criteria
 

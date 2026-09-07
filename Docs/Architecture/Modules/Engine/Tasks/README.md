@@ -1,14 +1,14 @@
 # Tasks Capability Inventory
 
-Status: capability snapshot; current, but not release approval, stress evidence, or performance evidence
+**Status:** capability snapshot; current, but not release approval, stress evidence, or performance evidence
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; `Engine/Tasks` public/private source, scheduling paths, consumers, and CMake membership inspected; evidence `S` only
+**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; `Engine/Tasks` public/private source, scheduling paths, consumers, and CMake membership inspected; evidence `S` only
 
-Scope: task graphs, lane topology, parallel ranges, execution handles, cancellation, scopes, events, shutdown, failure propagation, and tracing
+**Scope:** task graphs, lane topology, parallel ranges, execution handles, cancellation, scopes, events, shutdown, failure propagation, and tracing
 
-Owner: `Engine/Tasks` / `SparkleTasks`
+**Owner:** `Engine/Tasks` / `SparkleTasks`
 
-Evidence and disposition: [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
 ## Scheduler Contract
 

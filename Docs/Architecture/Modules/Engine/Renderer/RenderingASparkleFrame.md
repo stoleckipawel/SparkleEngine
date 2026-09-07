@@ -1,10 +1,10 @@
 # Rendering a Sparkle Frame
 
-Status: feature dossier; current Renderer frame map and local completion contract, not build, runtime, visual, native-validation, performance, or release evidence
+**Status:** feature dossier; current Renderer frame map and local completion contract, not build, runtime, visual, native-validation, performance, or release evidence
 
-Verified: 2026-09-06 against committed `master` revision `8414b5dc` and the live `Engine/Renderer` and RHI service boundaries named below
+**Verified:** 2026-09-06 against committed `master` revision `8414b5dc` and the live `Engine/Renderer` and RHI service boundaries named below
 
-Responsibility: explain the intent, ownership, data flow, stage order, branches, lifetime, failure boundaries, and tradeoffs of one Sparkle render frame; feature-specific algorithms and limits belong to the linked dossiers
+**Responsibility:** explain the intent, ownership, data flow, stage order, branches, lifetime, failure boundaries, and tradeoffs of one Sparkle render frame; feature-specific algorithms and limits belong to the linked dossiers
 
 ## The Frame In One Sentence
 
@@ -12,44 +12,26 @@ Sparkle can bracket host simulation with the frame's logical identity, accepts o
 
 ## Frame At A Glance
 
-```text
-Host: optional BeginSimulationFrame(id) -> simulation -> EndSimulationFrame(id)
-        |
-GameFramework: immutable RenderFrameSubmission(id)
-        |
-        v
-[0] poll/settle prior capture, residency, and retired generations
-        |
-[1] accept identity + apply RenderScene delta
-        |
-[2] resize/topology decision + RHI BeginFrame
-        |
-[3] upload ready meshes/textures
-        |
-[4] prepare scene -------> PreparedRenderScene
-        |                         |
-[5] build view ----------> RenderView + temporal identity
-        |                         |
-[6] publish GPU scene + prepare BLAS/TLAS/SBT bindings
-        |                         |
-        +-----------+-------------+
-                    v
-[7] bind current resources and parameters into FrameGraph
-                    |
-[8] compile dependencies, barriers, transients, queues, batches
-                    |
-[9] Scene TLAS -> GBuffer -> Lighting -> Exposure/Reconstruction
-                    -> Upscale -> Debug -> Tone map -> Encode -> Copy/Product
-                    (no Color Grading, Chromatic Aberration, or Frame Generation)
-                    |
-[10] record and submit graphics/compute/copy work
-                    |
-[11] render UI, SubmitFrame, publish tokens, AdvanceFrameInFlight
-                    |
-[next frame] poll capture/residency and retire completed generations
+```mermaid
+flowchart TD
+    Host[Host simulation<br/>optional logical frame markers] --> Submit[Immutable RenderFrameSubmission]
+    Submit --> Settle[Settle prior captures, residency,<br/>and retired generations]
+    Settle --> Admit[Accept identity and<br/>apply RenderScene delta]
+    Admit --> Topology[Resolve resize, settings,<br/>providers, and graph topology]
+    Topology --> Begin[RHI BeginFrame and<br/>upload ready resources]
+    Begin --> Scene[Prepare frame-local scene]
+    Begin --> View[Build view and temporal identity]
+    Scene --> GPU[Publish GPU scene and<br/>prepare BLAS, TLAS, and SBT bindings]
+    View --> GPU
+    GPU --> Bind[Bind current resources and<br/>typed parameters into FrameGraph]
+    Bind --> Compile[Compile dependencies, barriers,<br/>transients, queues, and batches]
+    Compile --> Image[TLAS and GBuffer -> lighting -> exposure<br/>and reconstruction -> tone map and encode]
+    Image --> SubmitGPU[Record and submit GPU work]
+    SubmitGPU --> Present[Compose UI, present or publish product,<br/>and advance frame-in-flight]
+    Present -. completion observed next frame .-> Settle
 ```
 
-The arrows above describe semantic dependency. Declaration order helps readers, but the frame-graph compiler owns executable ordering, queue assignment, barriers, aliasing, recording chunks, and submission batches from resource-use declarations.
+The arrows describe semantic dependency and completion-driven lifetime. Declaration order helps readers, but the frame-graph compiler owns executable ordering, queue assignment, barriers, aliasing, recording chunks, and submission batches from resource-use declarations. Color grading, chromatic aberration, frame generation, and volumetric lighting do not enter this path today.
 
 ## Stage-by-Stage Frame
 

@@ -1,10 +1,14 @@
 # C. Candidate And Repository Gap Assessment
 
-Status: dated assessment; not current architecture, requirements, or implementation authority
-Scope: candidate and repository readiness evidence against the stated requirements at the recorded snapshot
-Assessment date: 2026-07-26
-Repository snapshot: `master` at `f74c26e9` plus an uncommitted renderer/residency worktree
-Inputs: [canonical requirements](../Requirements.md), [source archive](../RoleSources.md), supplied CV, [public professional profile](https://www.linkedin.com/in/stoleckipawel/), [public website](https://stoleckipawel.dev/), [public GitHub profile](https://github.com/stoleckipawel), local source inspection, build attempt, and public profiles of engineers already operating at principal/staff level
+**Status:** dated assessment; not current architecture, requirements, or implementation authority
+
+**Scope:** candidate and repository readiness evidence against the stated requirements at the recorded snapshot
+
+**Assessment date:** 2026-07-26
+
+**Repository snapshot:** `master` at `f74c26e9` plus an uncommitted renderer/residency worktree
+
+**Inputs:** [canonical requirements](../Requirements.md), [source archive](../RoleSources.md), supplied CV, [public professional profile](https://www.linkedin.com/in/stoleckipawel/), [public website](https://stoleckipawel.dev/), [public GitHub profile](https://github.com/stoleckipawel), local source inspection, build attempt, and public profiles of engineers already operating at principal/staff level
 
 Use this document to understand the evidence and gaps observed at the stated revision. Revalidate every repository, build, workload, and public-profile claim before using it for current planning. [Requirements](../Requirements.md) owns the target, [Roadmap](../Roadmap.md) owns sequence, and architecture/standards own implementation decisions.
 

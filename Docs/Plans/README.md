@@ -1,8 +1,21 @@
 # Plans
 
-Status: implementation-plan navigation index
+**Status:** implementation-plan navigation index
 
 Plans own ordered delivery, dependencies, clean-break slices, stop conditions, and validation sequence. Placement follows the architecture owner: module-owned plans stay under that module category; truly shared delivery stays under CrossModule. Plans do not prove completion.
+
+## At A Glance
+
+```mermaid
+flowchart LR
+    Target[Strategy or Architecture target] --> Plan[Ordered delivery plan]
+    Plan --> Iteration[Authorized change iteration]
+    Iteration --> Code[Code and build changes]
+    Code --> Evidence[Candidate evidence]
+    Evidence --> Acceptance[Acceptance verdict]
+```
+
+A plan is a sequence, not current state and not authorization. Open it only after the roadmap selects its work and the owning architecture contract is understood.
 
 ## Plan Groups
 

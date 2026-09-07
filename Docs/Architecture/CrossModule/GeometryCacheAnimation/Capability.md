@@ -1,16 +1,16 @@
 # Geometry Cache Animation Capability Snapshot
 
-Status: capability snapshot; not release approval or executable evidence
+**Status:** capability snapshot; not release approval or executable evidence
 
-Snapshot: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration were unchanged from implementation revision `99af6d5b`
+**Snapshot:** 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration were unchanged from implementation revision `99af6d5b`
 
-Scope: current import, cook, animation, render-scene, deformation, residency, and Modern Sponza source surfaces relevant to geometry-cache delivery
+**Scope:** current import, cook, animation, render-scene, deformation, residency, and Modern Sponza source surfaces relevant to geometry-cache delivery
 
-Architecture authority: [Geometry Cache Animation Pipeline](README.md)
+**Architecture authority:** [Geometry Cache Animation Pipeline](README.md)
 
-Delivery authority: [Geometry Cache Animation Delivery Plan](../../../Plans/CrossModule/GeometryCacheAnimation.md)
+**Delivery authority:** [Geometry Cache Animation Delivery Plan](../../../Plans/CrossModule/GeometryCacheAnimation.md)
 
-Feature acceptance: [Geometry Cache Animation — Acceptance](Acceptance.md)
+**Feature acceptance:** [Geometry Cache Animation — Acceptance](Acceptance.md)
 
 Code and executable build configuration remain authoritative. Reinspect every listed owner and absence before using this dated snapshot for implementation or release claims.
 

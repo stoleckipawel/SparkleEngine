@@ -1,24 +1,47 @@
 # F. Release-First Principal Graphics Roadmap
 
-Status: roadmap; release-wide execution sequence whose gates are targets, not completion claims
+**Status:** roadmap; release-wide execution sequence whose gates are targets, not completion claims
 
-Responsibility: release-wide priority, dependency order, and gate sequencing for the first public release
+**Responsibility:** release-wide priority, dependency order, and gate sequencing for the first public release
 
-Planning baseline: repository and release surfaces statically reconciled on 2026-09-06 at committed `master` revision `8414b5dc`; a concurrent documentation relocation is present in the worktree and is not implementation evidence; no build, cook, package, launch, capture, clean-machine, or performance result was added by this reconciliation
+**Planning baseline:** repository and release surfaces statically reconciled on 2026-09-06 at committed `master` revision `8414b5dc`; a concurrent documentation relocation is present in the worktree and is not implementation evidence; no build, cook, package, launch, capture, clean-machine, or performance result was added by this reconciliation
 
-First-release acceptance authority: [First Release Acceptance Contract](../Acceptance/FirstRelease.md)
+**First-release acceptance authority:** [First Release Acceptance Contract](../Acceptance/FirstRelease.md)
 
-Governing graphics requirements: [A. Principal Graphics Engineering Requirements](Requirements.md)
+**Governing graphics requirements:** [A. Principal Graphics Engineering Requirements](Requirements.md)
 
-Dated graphics assessment: [C. Candidate and Repository Gap Assessment](Assessments/GapAssessment.md)
+**Dated graphics assessment:** [C. Candidate and Repository Gap Assessment](Assessments/GapAssessment.md)
 
-Canonical graphics workload: [I. Bistro and San Miguel Acceptance Workloads](../Acceptance/GraphicsWorkloads.md)
+**Canonical graphics workload:** [I. Bistro and San Miguel Acceptance Workloads](../Acceptance/GraphicsWorkloads.md)
 
-Per-feature polish and how-it-works contract: [First Release Feature Completion Reports](../Acceptance/FeatureCompletionReports.md)
+**Per-feature polish and how-it-works contract:** [First Release Feature Completion Reports](../Acceptance/FeatureCompletionReports.md)
 
-Offline path-tracer discovery: [completion study](../Research/GraphicsArchitecture/OfflinePathTracerCompletion.md) and [`PTD-00` acceptance](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md)
+**Offline path-tracer discovery:** [completion study](../Research/GraphicsArchitecture/OfflinePathTracerCompletion.md) and [`PTD-00` acceptance](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md)
 
-Concurrency architecture and execution contract: [J. Multithreaded Engine Architecture](../Architecture/CrossModule/MultithreadedEngine.md)
+**Concurrency architecture and execution contract:** [J. Multithreaded Engine Architecture](../Architecture/CrossModule/MultithreadedEngine.md)
+
+## Roadmap At A Glance
+
+> [!IMPORTANT]
+> **Current direction:** release-first until `REL-11` closes the `v0.1.0` stabilization window.
+>
+> **First technical decision:** `PTD-00` must define a credible offline reference before any current reference mode is used as a correctness oracle.
+>
+> **Current evidence state:** the planning baseline is source/document inspection. All release risks remain open and no release gate passed through documentation alone.
+
+```mermaid
+flowchart LR
+    R0[REL-00<br/>scope] --> R1[REL-01/02<br/>identity and reproducible build]
+    R1 --> R3[REL-03<br/>package]
+    R3 --> R4[REL-04<br/>feature closure]
+    R4 --> R5[REL-05<br/>map quality]
+    R5 --> R67[REL-06/07<br/>performance, stability, backends]
+    R67 --> R89[REL-08/09<br/>candidate and adoption]
+    R89 --> R10[REL-10<br/>publish]
+    R10 --> R11[REL-11<br/>stabilize]
+```
+
+The detailed stage sections are execution targets. The [First Release Acceptance Contract](../Acceptance/FirstRelease.md) owns whether a gate actually passes.
 
 ## Roadmap Decision
 

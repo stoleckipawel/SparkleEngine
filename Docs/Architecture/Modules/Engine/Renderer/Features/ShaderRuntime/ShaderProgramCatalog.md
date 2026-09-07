@@ -1,16 +1,19 @@
 # Renderer Shader Program Catalog
 
-Status: capability snapshot; exact registered-program ledger; not a successful cook, pipeline-creation record, or release approval
+**Status:** capability snapshot; exact registered-program ledger; not a successful cook, pipeline-creation record, or release approval
 
-Snapshot: 2026-09-06 at committed `master` revision `d236da11`; all files in `Engine/Renderer/ShaderRegistrations` reconciled with their typed shader declarations and principal frame-graph consumers, and `Engine/Renderer` is unchanged from the earlier `8414b5dc` audit; evidence `S` only
+**Snapshot:** 2026-09-06 at committed `master` revision `d236da11`; all files in `Engine/Renderer/ShaderRegistrations` reconciled with their typed shader declarations and principal frame-graph consumers, and `Engine/Renderer` is unchanged from the earlier `8414b5dc` audit; evidence `S` only
 
-Scope: the exact Renderer global-program membership linked into the shader-contract target, including source, entry point, stage, consumer, traversal model, runtime target expectation, and important binding boundary
+**Scope:** the exact Renderer global-program membership linked into the shader-contract target, including source, entry point, stage, consumer, traversal model, runtime target expectation, and important binding boundary
 
-Owners: `Engine/Renderer/ShaderRegistrations` for registration membership, typed declarations and pass consumers in `Engine/Renderer`, and `Tools/Shaders` for compilation/publication
+**Owners:** `Engine/Renderer/ShaderRegistrations` for registration membership, typed declarations and pass consumers in `Engine/Renderer`, and `Tools/Shaders` for compilation/publication
 
-Compilation inventory: [Shader Compilation Capability Inventory](../../../../Tools/ShaderCompiler/README.md)
+**Compilation inventory:** [Shader Compilation Capability Inventory](../../../../Tools/ShaderCompiler/README.md)
 
-Cross-system coverage: [Graphics Feature Coverage Matrix](../../../../../CrossModule/GraphicsCoverageMatrix.md)
+**Cross-system coverage:** [Graphics Feature Coverage Matrix](../../../../../CrossModule/GraphicsCoverageMatrix.md)
+
+> [!TIP]
+> Use this as an exact program registry, not a shader-system introduction. Search by program, virtual source, stage, or consumer. A registration row proves source/build membership only; it does not prove that cooking, lookup, pipeline creation, execution, or output succeeded.
 
 ## Count And Meaning
 

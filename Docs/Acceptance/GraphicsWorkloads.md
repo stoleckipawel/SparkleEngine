@@ -1,12 +1,34 @@
 # I. Bistro And San Miguel Acceptance Workloads
 
-Status: acceptance contract for the canonical flagship workloads
-Date: 2026-07-26
+**Status:** acceptance contract for the canonical flagship workloads
 
-Last performance-contract and runtime-roster reconciliation: 2026-08-16
-Scope: content ingestion, material and lighting correctness, raster/ray/path-traced quality, whole-system performance, neural rendering evidence, and portfolio presentation
+**Date:** 2026-07-26
+
+**Last performance-contract and runtime-roster reconciliation:** 2026-08-16
+
+**Scope:** content ingestion, material and lighting correctness, raster/ray/path-traced quality, whole-system performance, neural rendering evidence, and portfolio presentation
 
 This document owns scene selection and exact workload-specific proof gates. The [First Release Acceptance Contract](FirstRelease.md) owns first-release feature, sample-map, package, clean-machine, and publication acceptance; it reuses these map/workload gates without making Bistro or San Miguel redistributable release content by implication. [Principal Graphics Requirements](../Strategy/Requirements.md) owns capability/evidence meaning, the [Engineering task map](../Engineering/README.md#choose-by-task) routes reusable implementation and measurement rules, and [Performance Diagnostics Architecture](../Architecture/CrossModule/PerformanceDiagnostics/README.md) owns metric/population/provenance semantics used by these gates. Revalidate external capture capability through the [External Performance Profiler Runbook](../Engineering/Verification/ExternalProfiling.md).
+
+## Workloads At A Glance
+
+| Workload | Role | Current source/document state | What remains before acceptance |
+| --- | --- | --- | --- |
+| Sponza | short-loop integration and regression scene | existing required workload | It does not replace the two flagship scene gates. |
+| Bistro exterior/interior | primary production-scale PBR, material, lighting, image-quality, and performance workload | pinned external pack and two runtime-supported level routes exist in the recorded reconciliation | frozen cameras, material audit, reference images, both-backend runs, timing distributions, memory, package, and reviewer approval |
+| San Miguel high/low | independent high-detail scene plus lower-detail diagnostic control | acquisition and level records exist; deterministic conversion/runtime support remained blocked in the recorded reconciliation | conversion/import/cook/load closure followed by the same visual, backend, performance, and evidence gates |
+
+```mermaid
+flowchart LR
+    Acquire[Acquire and verify source] --> Inventory[Inventory geometry,<br/>materials, lights, cameras]
+    Inventory --> Cook[Convert, import, and cook]
+    Cook --> Render[Run frozen cameras and motion]
+    Render --> Quality[Compare material, lighting,<br/>temporal, and artifact results]
+    Quality --> Performance[Measure timing and memory]
+    Performance --> Evidence[Retain candidate evidence package]
+```
+
+This is a cross-feature workload contract. Individual Renderer and RHI criteria remain with their Architecture feature owners.
 
 ## Decision
 

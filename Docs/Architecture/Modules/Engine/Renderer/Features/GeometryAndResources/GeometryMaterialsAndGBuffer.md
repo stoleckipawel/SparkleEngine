@@ -1,10 +1,10 @@
 # Renderer Geometry, Materials, and GBuffer
 
-Status: current feature dossier; source-backed, not visual fidelity, raster/ray parity, performance, or release evidence
+**Status:** current feature dossier; source-backed, not visual fidelity, raster/ray parity, performance, or release evidence
 
-Verified: 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
+**Verified:** 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
-Scope: `REN-SCENE-03` through `REN-SCENE-10`, `REN-MAT-01` through `REN-MAT-10`, `REN-GBUF-01` through `REN-GBUF-08`, and `REN-FRONT-01` through `REN-FRONT-07`
+**Scope:** `REN-SCENE-03` through `REN-SCENE-10`, `REN-MAT-01` through `REN-MAT-10`, `REN-GBUF-01` through `REN-GBUF-08`, and `REN-FRONT-01` through `REN-FRONT-07`
 
 ## Feature Promise
 

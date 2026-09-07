@@ -1,12 +1,12 @@
 # Offline Path Tracer — Discovery Gate
 
-Status: acceptance contract; binding feature-local discovery gate for `PTD-00`, not feature implementation acceptance
+**Status:** acceptance contract; binding feature-local discovery gate for `PTD-00`, not feature implementation acceptance
 
-Responsibility: define the evidence required to decide what a complete offline unbiased path tracer means for SparkleEngine and whether an implementation plan may be created
+**Responsibility:** define the evidence required to decide what a complete offline unbiased path tracer means for SparkleEngine and whether an implementation plan may be created
 
-Authority boundary: the [research report](../../../../../../../Research/GraphicsArchitecture/OfflinePathTracerCompletion.md) owns precedent and initial findings, the [roadmap](../../../../../../../Strategy/Roadmap.md#offline-reference-truth-first) owns priority, the [feature dossier](README.md) owns the eventual feature set and definition of done, [`FCR-REN-08`](../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry) owns its result, and a future plan may own delivery only after this gate passes
+**Authority boundary:** the [research report](../../../../../../../Research/GraphicsArchitecture/OfflinePathTracerCompletion.md) owns precedent and initial findings, the [roadmap](../../../../../../../Strategy/Roadmap.md#offline-reference-truth-first) owns priority, the [feature dossier](README.md) owns the eventual feature set and definition of done, [`FCR-REN-08`](../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry) owns its result, and a future plan may own delivery only after this gate passes
 
-Current state: **In progress / blocked for exit** on 2026-09-06. Initial source research exists; accepted transport scope, estimator derivation, executable evidence design, target architecture decision, and independent review do not.
+**Current state:** **In progress / blocked for exit** on 2026-09-06. Initial source research exists; accepted transport scope, estimator derivation, executable evidence design, target architecture decision, and independent review do not.
 
 ## Iteration Control Record
 

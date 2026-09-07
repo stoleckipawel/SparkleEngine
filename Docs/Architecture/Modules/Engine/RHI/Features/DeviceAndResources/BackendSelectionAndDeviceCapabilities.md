@@ -1,10 +1,10 @@
 # RHI Backend Selection and Device Capabilities
 
-Status: current feature dossier; source-backed, not build, device, parity, or release evidence
+**Status:** current feature dossier; source-backed, not build, device, parity, or release evidence
 
-Verified: 2026-09-06 at committed `master` revision `8414b5dc`
+**Verified:** 2026-09-06 at committed `master` revision `8414b5dc`
 
-Scope: `RHI-BACK-*` and `RHI-DEV-*`; compiled backend availability, request/default selection, adapter/device bootstrap, queue topology, and neutral capability reporting
+**Scope:** `RHI-BACK-*` and `RHI-DEV-*`; compiled backend availability, request/default selection, adapter/device bootstrap, queue topology, and neutral capability reporting
 
 ## Feature Promise
 

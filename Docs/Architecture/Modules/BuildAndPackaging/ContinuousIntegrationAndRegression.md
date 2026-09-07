@@ -1,12 +1,14 @@
 # Continuous Integration And Regression
 
-Status: target capability dossier; no tracked CI workflow or CMake test registration was found
+**Status:** target capability dossier; no tracked CI workflow or CMake test registration was found
 
-Owner: repository build/verification automation, with checks implemented by their owning modules
+**Scope:** define reproducible check selection, isolated matrix execution, cancellation, aggregation, artifact retention, and regression-reporting boundaries
 
-Snapshot: 2026-09-07; tracked CI entry points and all CMake files were searched for CI definitions, `enable_testing()`, and `add_test()` with no match; source evidence `S` only
+**Owner:** repository build/verification automation, with checks implemented by their owning modules
 
-Strategy and acceptance sources: `NS-EVIDENCE`, `NS-ADOPTION`, and `NS-OWNERSHIP` in the [Engineer Persona](../../../Strategy/EngineerPersona.md); [`PGE-01`, `PGE-05`, `PGE-06`, `PGE-13`](../../../Strategy/Requirements.md); [First Release](../../../Acceptance/FirstRelease.md)
+**Snapshot:** 2026-09-07; tracked CI entry points and all CMake files were searched for CI definitions, `enable_testing()`, and `add_test()` with no match; source evidence `S` only
+
+**Strategy and acceptance sources:** `NS-EVIDENCE`, `NS-ADOPTION`, and `NS-OWNERSHIP` in the [Engineer Persona](../../../Strategy/EngineerPersona.md); [`PGE-01`, `PGE-05`, `PGE-06`, `PGE-13`](../../../Strategy/Requirements.md); [First Release](../../../Acceptance/FirstRelease.md)
 
 ## Capability Identity
 

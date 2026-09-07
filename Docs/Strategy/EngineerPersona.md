@@ -1,10 +1,10 @@
 # H. Advanced Graphics Engineer Persona
 
-Status: operating model; personal target, not an implementation standard or evidence matrix
+**Status:** operating model; personal target, not an implementation standard or evidence matrix
 
-Date: 2026-08-02
+**Date:** 2026-08-02
 
-Scope: principal-level advanced graphics, developer technology, rendering, GPU systems, and neural graphics engineering
+**Scope:** principal-level advanced graphics, developer technology, rendering, GPU systems, and neural graphics engineering
 
 ## Purpose and Authority Boundary
 

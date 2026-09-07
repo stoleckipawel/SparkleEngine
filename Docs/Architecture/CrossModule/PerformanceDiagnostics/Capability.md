@@ -1,16 +1,16 @@
 # Performance Diagnostics Capability Inventory
 
-Status: capability snapshot; dated, and not architecture, release approval, or executable evidence
+**Status:** capability snapshot; dated, and not architecture, release approval, or executable evidence
 
-Snapshot: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration were unchanged from implementation revision `99af6d5b`; refresh against the live tree before relying on an implementation claim
+**Snapshot:** 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration were unchanged from implementation revision `99af6d5b`; refresh against the live tree before relying on an implementation claim
 
-Scope: current timing, marker, memory, editor, benchmark-export, and attached-capture surfaces relevant to the target diagnostics system
+**Scope:** current timing, marker, memory, editor, benchmark-export, and attached-capture surfaces relevant to the target diagnostics system
 
-Architecture authority: [Performance Diagnostics Architecture](README.md)
+**Architecture authority:** [Performance Diagnostics Architecture](README.md)
 
-Delivery authority: [Performance Diagnostics Delivery Plan](../../../Plans/CrossModule/PerformanceDiagnostics.md)
+**Delivery authority:** [Performance Diagnostics Delivery Plan](../../../Plans/CrossModule/PerformanceDiagnostics.md)
 
-Feature acceptance: [Performance Diagnostics — Acceptance](Acceptance.md)
+**Feature acceptance:** [Performance Diagnostics — Acceptance](Acceptance.md)
 
 This inventory records current source/build surfaces and the reconciliation gaps known when the diagnostics design was written. Code and executable build configuration remain authoritative.
 

@@ -1,12 +1,12 @@
 # Editor Viewport Camera Architecture
 
-Status: canonical architecture decision
+**Status:** canonical architecture decision
 
-Last source reconciliation: 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
+**Last source reconciliation:** 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 
-Scope: the editor viewport camera, navigation preferences, projection, exposure overrides, and the effective render-view boundary
+**Scope:** the editor viewport camera, navigation preferences, projection, exposure overrides, and the effective render-view boundary
 
-Implementation status: the ownership contract is canonical. The [renderer navigation overlay](../WholeRepositoryMap.md#current-renderer-navigation-overlay) records the implemented publication of the effective camera as `RenderViewCameraData` inside the singular `RenderViewInput`.
+**Implementation status:** the ownership contract is canonical. The [renderer navigation overlay](../WholeRepositoryMap.md#current-renderer-navigation-overlay) records the implemented publication of the effective camera as `RenderViewCameraData` inside the singular `RenderViewInput`.
 
 ## Decision
 

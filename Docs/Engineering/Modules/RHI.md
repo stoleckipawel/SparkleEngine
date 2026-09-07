@@ -1,8 +1,8 @@
 # RHI Engineering
 
-Status: binding RHI integration standard
+**Status:** binding RHI integration standard
 
-Applies to: `Engine/RHI`, public GPU contracts, D3D12 and Vulkan backends, native resources and commands, synchronization, presentation, validation, capture interop, hardware, and drivers
+**Applies to:** `Engine/RHI`, public GPU contracts, D3D12 and Vulkan backends, native resources and commands, synchronization, presentation, validation, capture interop, hardware, and drivers
 
 This standard owns RHI and backend change guardrails. The canonical [Renderer and RHI Architecture Boundary](../../Architecture/Decisions/RendererRhiBoundary.md) owns the dependency and responsibility split. [Renderer Engineering](Renderer.md) owns scene/view/frame policy, render products, frame-graph semantics, and graphics feature selection.
 

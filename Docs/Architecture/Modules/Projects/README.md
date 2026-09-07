@@ -1,6 +1,6 @@
 # Project Architecture
 
-Status: Projects module index
+**Status:** Projects module index
 
 Projects compose engine and tool modules into user-facing products and representative workloads. Product-owned knowledge stays here rather than being assigned to an engine module.
 

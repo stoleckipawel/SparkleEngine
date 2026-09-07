@@ -1,12 +1,12 @@
 # Renderer Image Reconstruction And Upscaling
 
-Status: current feature dossier; source-backed, not provider validation, visual-quality, latency, performance, packaging, or release evidence
+**Status:** current feature dossier; source-backed, not provider validation, visual-quality, latency, performance, packaging, or release evidence
 
-Verified: 2026-09-06 against source revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
+**Verified:** 2026-09-06 against source revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
-Scope: `REN-POST-04` through `REN-POST-06`; render-to-output extent resolution through Linear upscale, NVIDIA DLSS Super Resolution, or NVIDIA DLSS Ray Reconstruction
+**Scope:** `REN-POST-04` through `REN-POST-06`; render-to-output extent resolution through Linear upscale, NVIDIA DLSS Super Resolution, or NVIDIA DLSS Ray Reconstruction
 
-Parent family: [Post Processing](../README.md)
+**Parent family:** [Post Processing](../README.md)
 
 Cross-feature resolution/sample contract: [Resolution, Sampling, and Anti-Aliasing](ResolutionSamplingAndAntiAliasing.md). This dossier owns provider evaluation and output identity; it does not promote RHI sample-count or jitter vocabulary into a separate AA feature.
 

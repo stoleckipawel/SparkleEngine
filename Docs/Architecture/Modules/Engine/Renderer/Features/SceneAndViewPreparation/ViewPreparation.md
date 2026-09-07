@@ -1,10 +1,10 @@
 # Renderer View Preparation
 
-Status: current feature dossier; source-backed, not visibility, batching, temporal, multi-view, or runtime evidence
+**Status:** current feature dossier; source-backed, not visibility, batching, temporal, multi-view, or runtime evidence
 
-Verified: 2026-09-06 against committed `master` revision `d236da11`
+**Verified:** 2026-09-06 against committed `master` revision `d236da11`
 
-Scope: `REN-OWN-03`, `REN-SCENE-10`, and view-owned preparation; camera/output intent, temporal identity, culling, material visibility classes, raster batches, workload counts, and RT partition planning
+**Scope:** `REN-OWN-03`, `REN-SCENE-10`, and view-owned preparation; camera/output intent, temporal identity, culling, material visibility classes, raster batches, workload counts, and RT partition planning
 
 ## Feature Promise
 

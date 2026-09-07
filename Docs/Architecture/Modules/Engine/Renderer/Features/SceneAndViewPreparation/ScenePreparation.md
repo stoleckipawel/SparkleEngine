@@ -1,10 +1,10 @@
 # Renderer Scene Preparation
 
-Status: current feature dossier; source-backed, not task, continuity, residency, capacity, or runtime evidence
+**Status:** current feature dossier; source-backed, not task, continuity, residency, capacity, or runtime evidence
 
-Verified: 2026-09-06 against committed `master` revision `d236da11`
+**Verified:** 2026-09-06 against committed `master` revision `d236da11`
 
-Scope: scene-owned portions of `REN-SCENE-02` through `REN-SCENE-07`; persistent `RenderScene` mutation, frame-slot preparation, deformation continuity, light preparation, active-resource references, and failure before publication
+**Scope:** scene-owned portions of `REN-SCENE-02` through `REN-SCENE-07`; persistent `RenderScene` mutation, frame-slot preparation, deformation continuity, light preparation, active-resource references, and failure before publication
 
 ## Feature Promise
 

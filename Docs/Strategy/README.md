@@ -1,8 +1,21 @@
 # Principal Graphics Strategy
 
-Status: strategy index and responsibility map
+**Status:** strategy index and responsibility map
 
 Strategy owns desired capabilities, priority, release-wide sequencing, dated executive assessments, and the target professional operating model. It does not own implementation rules, subsystem design, or completion proof.
+
+## At A Glance
+
+```mermaid
+flowchart LR
+    Persona[Engineer persona<br/>quality of judgment] --> Requirements[Requirements<br/>target capabilities]
+    Requirements --> Roadmap[Roadmap<br/>priority and release sequence]
+    Roadmap --> Architecture[Architecture and plans<br/>system shape and delivery]
+    Architecture --> Acceptance[Acceptance<br/>candidate and release proof]
+    Assessments[Dated assessments] -. inform .-> Roadmap
+```
+
+The active direction is release-first: close, classify, prove, package, and publish the existing product surface before admitting broad new feature work. Strategy says what matters and in what order; Architecture and code say how the system works.
 
 ## Current Direction
 

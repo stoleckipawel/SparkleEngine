@@ -1,10 +1,10 @@
 # Renderer Diagnostics, Products, and Capture
 
-Status: current feature dossier; source-backed, not proof that diagnostics are correct, complete, low-overhead, or release-safe
+**Status:** current feature dossier; source-backed, not proof that diagnostics are correct, complete, low-overhead, or release-safe
 
-Verified: 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
+**Verified:** 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
-Scope: `REN-DIAG-01` through `REN-DIAG-07`; defines Renderer observability, viewport products, asynchronous capture, and previews from the frame owner's perspective
+**Scope:** `REN-DIAG-01` through `REN-DIAG-07`; defines Renderer observability, viewport products, asynchronous capture, and previews from the frame owner's perspective
 
 ## Feature Promise
 

@@ -1,8 +1,8 @@
 # SparkleEngine Code Review
 
-Status: workflow index; code-review entry point whose owning standards control
+**Status:** workflow index; code-review entry point whose owning standards control
 
-Applies to: human or AI review of a SparkleEngine changelist
+**Applies to:** human or AI review of a SparkleEngine changelist
 
 ## Responsibility
 

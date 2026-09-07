@@ -1,14 +1,33 @@
 # Shader System Delivery Plan
 
-Status: implementation plan; includes the migration ledger but is not architecture authority or proof of completion
+**Status:** implementation plan; includes the migration ledger but is not architecture authority or proof of completion
 
-Responsibility: own the ordered cross-module shader, graphics-pipeline, and ray-tracing migration and its clean-break validation sequence
+**Responsibility:** own the ordered cross-module shader, graphics-pipeline, and ray-tracing migration and its clean-break validation sequence
 
-Architecture authority: [Shader System Architecture](../../Architecture/CrossModule/ShaderSystem/README.md)
+**Architecture authority:** [Shader System Architecture](../../Architecture/CrossModule/ShaderSystem/README.md)
 
-Feature acceptance: [Shader System — Acceptance](../../Architecture/CrossModule/ShaderSystem/Acceptance.md)
+**Feature acceptance:** [Shader System — Acceptance](../../Architecture/CrossModule/ShaderSystem/Acceptance.md)
 
-Migration provenance: [Shader System Migration Baseline](../../Research/ShaderSystem/ShaderSystemMigrationBaseline.md)
+**Migration provenance:** [Shader System Migration Baseline](../../Research/ShaderSystem/ShaderSystemMigrationBaseline.md)
+
+## Delivery At A Glance
+
+```mermaid
+flowchart LR
+    A[0-2<br/>freeze identity and typed frontend] --> B[3-4<br/>compile jobs, map, and library]
+    B --> C[5<br/>graphics pipeline materialization]
+    C --> D[6-9<br/>ray runtime, effects, and whole-frame plan]
+    D --> E[10<br/>Apply Changed and provenance]
+    E --> F[11<br/>remove legacy authorities]
+    F --> G[12<br/>regenerate and validate candidate]
+```
+
+| Invariant | Meaning |
+| --- | --- |
+| ordered clean break | no phase leaves two authoring, lookup, cook, runtime, pipeline, graph, or effect-selection authorities |
+| phases 0-11 are source/static checkpoints | they do not claim build, cook, runtime, backend, capture, or performance success |
+| phase 12 is the executable closure | regeneration and focused-to-broad validation happen only after the legacy floor is clean |
+| architecture and acceptance remain external owners | this long file owns sequence and migration bookkeeping, not system meaning or a pass verdict |
 
 ## Purpose And Authority
 

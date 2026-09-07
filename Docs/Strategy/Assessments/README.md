@@ -1,8 +1,8 @@
 # Strategy Assessments
 
-Status: dated-assessment index
+**Status:** dated-assessment index
 
-Scope: route snapshot-bound evaluations of product readiness, repository gaps, and structural quality without promoting them into current strategy or architecture
+**Scope:** route snapshot-bound evaluations of product readiness, repository gaps, and structural quality without promoting them into current strategy or architecture
 
 | Assessment | Use |
 | --- | --- |

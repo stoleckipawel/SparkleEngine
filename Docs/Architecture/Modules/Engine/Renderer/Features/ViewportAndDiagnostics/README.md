@@ -1,8 +1,8 @@
 # Renderer Viewport And Diagnostics
 
-Status: Renderer feature-family index
+**Status:** Renderer feature-family index
 
-Scope: route viewport-facing products, capture and observation, immutable UI composition, and editor/host publication boundaries
+**Scope:** route viewport-facing products, capture and observation, immutable UI composition, and editor/host publication boundaries
 
 | Document | Open it for |
 | --- | --- |

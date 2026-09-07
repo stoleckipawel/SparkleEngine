@@ -1,12 +1,14 @@
 # Linux Platform Support
 
-Status: negative/target capability dossier; no native Linux product path was found
+**Status:** negative/target capability dossier; no native Linux product path was found
 
-Owner: Engine/Platform for window/input/process integration, with Build/Packaging, Application, RHI Vulkan, Tools, and product targets as required contributors
+**Scope:** define the absent native Linux build, platform, Vulkan presentation, host-tool, packaging, and product-evidence boundary
 
-Snapshot: 2026-09-07; Platform/Application/CMake host surfaces expose Win32 types/backends and Windows libraries, while no Linux/X11/Wayland owner or product route was found; source evidence `S` only
+**Owner:** Engine/Platform for window/input/process integration, with Build/Packaging, Application, RHI Vulkan, Tools, and product targets as required contributors
 
-Strategy sources: [`PGE-14`](../../../../Strategy/Requirements.md), [Gap Assessment](../../../../Strategy/Assessments/GapAssessment.md), and [First Release](../../../../Acceptance/FirstRelease.md)
+**Snapshot:** 2026-09-07; Platform/Application/CMake host surfaces expose Win32 types/backends and Windows libraries, while no Linux/X11/Wayland owner or product route was found; source evidence `S` only
+
+**Strategy sources:** [`PGE-14`](../../../../Strategy/Requirements.md), [Gap Assessment](../../../../Strategy/Assessments/GapAssessment.md), and [First Release](../../../../Acceptance/FirstRelease.md)
 
 ## Capability Identity
 

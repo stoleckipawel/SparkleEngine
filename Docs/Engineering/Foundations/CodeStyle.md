@@ -1,8 +1,8 @@
 # Code Style
 
-Status: binding coding and formatting standard
+**Status:** binding coding and formatting standard
 
-Applies to: owned C++, HLSL/HLSLI, build code, tests, and adjacent implementation documentation
+**Applies to:** owned C++, HLSL/HLSLI, build code, tests, and adjacent implementation documentation
 
 ## Purpose and Scope
 

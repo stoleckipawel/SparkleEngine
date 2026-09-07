@@ -1,10 +1,10 @@
 # Performance Dashboard And Efficiency Hub Idea
 
-Status: research; target-product exploration only, not implementation authority or proof of current behavior
+**Status:** research; target-product exploration only, not implementation authority or proof of current behavior
 
-Date: 2026-08-17
+**Date:** 2026-08-17
 
-Scope: the conditions under which historical performance automation should become a separate SparkleEngine tool
+**Scope:** the conditions under which historical performance automation should become a separate SparkleEngine tool
 
 ## Decision Question And Authority
 

@@ -1,10 +1,12 @@
 # Neural Graphics Training And Evaluation
 
-Status: target capability dossier; no owned training or evaluation implementation was found
+**Status:** target capability dossier; no owned training or evaluation implementation was found
 
-Owner: future training/evaluation tool and asset-publication path; Renderer is a consumer, not the training owner
+**Scope:** define the absent data, training, evaluation, reproducibility, quality, failure, and model-publication capability boundary
 
-Snapshot: 2026-09-07; the live non-documentation source/build tree was searched for owned training/data/model paths; source evidence `S` only
+**Owner:** future training/evaluation tool and asset-publication path; Renderer is a consumer, not the training owner
+
+**Snapshot:** 2026-09-07; the live non-documentation source/build tree was searched for owned training/data/model paths; source evidence `S` only
 
 ## Problem And Output Contract
 

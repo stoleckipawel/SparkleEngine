@@ -1,10 +1,10 @@
 # L. Change Integration Standard
 
-Status: binding integration contract and stable standards entry point
+**Status:** binding integration contract and stable standards entry point
 
-Applies to: owned code in `Engine`, `Tools`, `Projects`, build files, shaders, tests, and directly related documentation
+**Applies to:** owned code in `Engine`, `Tools`, `Projects`, build files, shaders, tests, and directly related documentation
 
-Last restructured: 2026-09-06
+**Last restructured:** 2026-09-06
 
 ## Responsibility
 
@@ -79,7 +79,7 @@ This policy controls conflicts with older documents or existing code that still 
 
 ## Subject Authority
 
-Authority follows the [knowledge-area map](../../README.md#knowledge-areas) and the [Engineering task map](../README.md#choose-by-task). Current code and executable configuration prove what exists; plans, snapshots, research, summaries, and historical prompts do not override their named owners.
+Authority follows the [authority-boundary map](../../README.md#authority-boundaries) and the [Engineering task map](../README.md#choose-by-task). Current code and executable configuration prove what exists; plans, snapshots, research, summaries, and historical prompts do not override their named owners.
 
 Resolve ambiguity in the document that owns the subject, then update dependent links in the same change. Existing code is precedent only where it satisfies current authority.
 

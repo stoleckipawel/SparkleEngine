@@ -1,10 +1,13 @@
 # Stable Identifier Architecture Coverage
 
-Status: exact identifier-to-owner routing ledger; no implementation or acceptance result is inferred
+**Status:** exact identifier-to-owner routing ledger; no implementation or acceptance result is inferred
 
-Scope: exact source-authority identifiers and their Architecture owner; feature-local capability and acceptance IDs remain owned by their dossiers
+**Scope:** exact source-authority identifiers and their Architecture owner; feature-local capability and acceptance IDs remain owned by their dossiers
 
-Source authorities: [Engineer Persona](../../../Strategy/EngineerPersona.md), [Requirements](../../../Strategy/Requirements.md), [Roadmap](../../../Strategy/Roadmap.md), [Feature Completion Reports](../../../Acceptance/FeatureCompletionReports.md), [First Release](../../../Acceptance/FirstRelease.md), and [Graphics Workloads](../../../Acceptance/GraphicsWorkloads.md)
+**Source authorities:** [Engineer Persona](../../../Strategy/EngineerPersona.md), [Requirements](../../../Strategy/Requirements.md), [Roadmap](../../../Strategy/Roadmap.md), [Feature Completion Reports](../../../Acceptance/FeatureCompletionReports.md), [First Release](../../../Acceptance/FirstRelease.md), and [Graphics Workloads](../../../Acceptance/GraphicsWorkloads.md)
+
+> [!TIP]
+> This file is a reverse-lookup ledger. Search for an `NS-*`, `PGE-*`, `REL-*`, `RISK-*`, `FCR-*`, `MAP-*`, or `CASE-*` identifier to find its Architecture owner. The link proves routing coverage, not implementation or acceptance.
 
 ## Persona Outcomes
 

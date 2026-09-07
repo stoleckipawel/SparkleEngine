@@ -1,12 +1,12 @@
 # Renderer Presentation And Output
 
-Status: current feature dossier; source-backed, not colorimetric, numerical, display, capture, backend, or release evidence
+**Status:** current feature dossier; source-backed, not colorimetric, numerical, display, capture, backend, or release evidence
 
-Verified: 2026-09-06 against source revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
+**Verified:** 2026-09-06 against source revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
-Scope: `REN-POST-08` through `REN-POST-10`; debug-to-presentation handoff, output encoding, back-buffer copy, viewport-product publication, and the explicit absence of HDR-display output
+**Scope:** `REN-POST-08` through `REN-POST-10`; debug-to-presentation handoff, output encoding, back-buffer copy, viewport-product publication, and the explicit absence of HDR-display output
 
-Parent family: [Post Processing](../README.md); [Tone Mapping](ToneMapping.md) owns the preceding HDR-to-display-linear transform
+**Parent family:** [Post Processing](../README.md); [Tone Mapping](ToneMapping.md) owns the preceding HDR-to-display-linear transform
 
 ## Feature Promise
 

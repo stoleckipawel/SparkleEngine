@@ -1,16 +1,16 @@
 # Renderer Debug Views
 
-Status: current feature dossier; source-backed, not release approval or executable evidence
+**Status:** current feature dossier; source-backed, not release approval or executable evidence
 
-Snapshot: implementation behavior rechecked 2026-09-06 against source revision `d236da11`; Renderer/RHI/shader source is unchanged from the earlier `8414b5dc` audit
+**Snapshot:** implementation behavior rechecked 2026-09-06 against source revision `d236da11`; Renderer/RHI/shader source is unchanged from the earlier `8414b5dc` audit
 
-Scope: `REN-DBG-01` through `REN-DBG-04` and `REN-POST-10`; current debug-visualization modes, source products, tone/output interaction, viewport resolution, limitations, and the boundary to the target presentation architecture
+**Scope:** `REN-DBG-01` through `REN-DBG-04` and `REN-POST-10`; current debug-visualization modes, source products, tone/output interaction, viewport resolution, limitations, and the boundary to the target presentation architecture
 
-Target architecture: [View Modes And Show Flags](ViewModesAndShowFlags.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
+**Target architecture:** [View Modes And Show Flags](ViewModesAndShowFlags.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
 
-Delivery authority: [Debug View Presentation Delivery Plan](../../../../../../Plans/Renderer/DebugViewPresentation.md)
+**Delivery authority:** [Debug View Presentation Delivery Plan](../../../../../../Plans/Renderer/DebugViewPresentation.md)
 
-Feature acceptance: [Debug View Presentation — Acceptance](Acceptance.md)
+**Feature acceptance:** [Debug View Presentation — Acceptance](Acceptance.md)
 
 Code and executable build configuration remain authoritative. Reinspect every listed owner and behavior before using this dated snapshot for implementation or release claims.
 

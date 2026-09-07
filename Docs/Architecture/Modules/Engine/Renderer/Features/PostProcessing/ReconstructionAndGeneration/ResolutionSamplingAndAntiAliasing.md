@@ -1,12 +1,12 @@
 # Renderer Resolution, Sampling, And Anti-Aliasing
 
-Status: current cross-feature dossier; source-backed, not image-quality, temporal-stability, backend, performance, or release evidence
+**Status:** current cross-feature dossier; source-backed, not image-quality, temporal-stability, backend, performance, or release evidence
 
-Verified: 2026-09-07 at committed `master` revision `c28b33bd`
+**Verified:** 2026-09-07 at committed `master` revision `c28b33bd`
 
-Scope: `REN-RESO-01` through `REN-RESO-07`; output/render extent ownership, viewport/scissor, provider quality resolution, temporal sample policy, attachment sample count, resize/history behavior, and explicit absent anti-aliasing/dynamic-resolution modes
+**Scope:** `REN-RESO-01` through `REN-RESO-07`; output/render extent ownership, viewport/scissor, provider quality resolution, temporal sample policy, attachment sample count, resize/history behavior, and explicit absent anti-aliasing/dynamic-resolution modes
 
-Related owners: [Temporal Sampling and History](../../FrameExecution/TemporalSamplingAndHistory.md) owns jitter/history semantics; [Image Reconstruction and Upscaling](ImageReconstructionAndUpscaling.md) owns Linear/DLSS/RR evaluation; [Presentation and Output](../DisplayPipeline/PresentationAndOutput.md) owns the final target
+**Related owners:** [Temporal Sampling and History](../../FrameExecution/TemporalSamplingAndHistory.md) owns jitter/history semantics; [Image Reconstruction and Upscaling](ImageReconstructionAndUpscaling.md) owns Linear/DLSS/RR evaluation; [Presentation and Output](../DisplayPipeline/PresentationAndOutput.md) owns the final target
 
 ## Feature Promise And Motivation
 

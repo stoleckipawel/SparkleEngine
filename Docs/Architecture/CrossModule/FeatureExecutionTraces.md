@@ -1,16 +1,16 @@
 # Graphics Feature Execution Traces
 
-Status: capability snapshot; vertical producer-to-consumer traces; not runtime proof or release approval
+**Status:** capability snapshot; vertical producer-to-consumer traces; not runtime proof or release approval
 
-Snapshot: 2026-09-06 at committed `master` revision `c28b33bd`; current source and build membership inspected; executable Renderer source is unchanged from the earlier `8414b5dc` audit; evidence `S` only
+**Snapshot:** 2026-09-06 at committed `master` revision `c28b33bd`; current source and build membership inspected; executable Renderer source is unchanged from the earlier `8414b5dc` audit; evidence `S` only
 
-Scope: ownership, selection, data production, frame-graph scheduling, shader/RHI consumption, output, history, retirement, and failure behavior for the principal RHI/Renderer/shader-delivery paths
+**Scope:** ownership, selection, data production, frame-graph scheduling, shader/RHI consumption, output, history, retirement, and failure behavior for the principal RHI/Renderer/shader-delivery paths
 
-Owners: the concrete producer and consumer modules named in each trace; this document maps those boundaries and does not transfer them
+**Owners:** the concrete producer and consumer modules named in each trace; this document maps those boundaries and does not transfer them
 
-Horizontal companion: [Graphics Feature Coverage Matrix](GraphicsCoverageMatrix.md)
+**Horizontal companion:** [Graphics Feature Coverage Matrix](GraphicsCoverageMatrix.md)
 
-Module inventories: [RHI](../Modules/Engine/RHI/CapabilityInventory.md), [Renderer](../Modules/Engine/Renderer/CapabilityInventory.md), and [Shader Compilation](../Modules/Tools/ShaderCompiler/README.md)
+**Module inventories:** [RHI](../Modules/Engine/RHI/CapabilityInventory.md), [Renderer](../Modules/Engine/Renderer/CapabilityInventory.md), and [Shader Compilation](../Modules/Tools/ShaderCompiler/README.md)
 
 Renderer-local frame intent, stage order, resource flow, and design tradeoffs: [Rendering a Sparkle Frame](../Modules/Engine/Renderer/RenderingASparkleFrame.md). This cross-module document owns only the handoffs among GameFramework, Renderer, ShaderCompiler, and RHI.
 

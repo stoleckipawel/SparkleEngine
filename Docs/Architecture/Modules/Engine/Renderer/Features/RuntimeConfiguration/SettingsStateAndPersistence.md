@@ -1,10 +1,10 @@
 # Renderer Settings State and Persistence
 
-Status: current feature dossier; source-backed, not round-trip, package, threaded-equivalence, or release evidence
+**Status:** current feature dossier; source-backed, not round-trip, package, threaded-equivalence, or release evidence
 
-Verified: 2026-09-06 through committed `master` revision `c28b33bd`; public state/section, persistence, CVar runtime, editor callback, application startup, and Renderer control routes inspected; executable source is unchanged from the earlier `8414b5dc` audit
+**Verified:** 2026-09-06 through committed `master` revision `c28b33bd`; public state/section, persistence, CVar runtime, editor callback, application startup, and Renderer control routes inspected; executable source is unchanged from the earlier `8414b5dc` audit
 
-Scope: `REN-SET-01` through `REN-SET-05`; owns the lifecycle of the aggregate rendering-settings state, editor commit, workspace persistence, startup restore, render-thread handoff, live versus restart-required application, and requested-state limitations. [Feature Selector Catalog](FeatureSelectorCatalog.md) remains the exact per-selector ledger.
+**Scope:** `REN-SET-01` through `REN-SET-05`; owns the lifecycle of the aggregate rendering-settings state, editor commit, workspace persistence, startup restore, render-thread handoff, live versus restart-required application, and requested-state limitations. [Feature Selector Catalog](FeatureSelectorCatalog.md) remains the exact per-selector ledger.
 
 ## Feature Contract
 

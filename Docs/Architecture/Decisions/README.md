@@ -1,6 +1,6 @@
 # Architecture Decisions
 
-Status: canonical-decision index
+**Status:** canonical-decision index
 
 These documents own accepted cross-system invariants. Implementation must reconcile them with current code and executable configuration.
 

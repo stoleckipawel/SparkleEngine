@@ -1,18 +1,18 @@
 # Graphics Feature Coverage Matrix
 
-Status: capability snapshot; horizontal cross-system inventory; not release approval or executable evidence
+**Status:** capability snapshot; horizontal cross-system inventory; not release approval or executable evidence
 
-Snapshot: 2026-09-06 through committed `master` revision `c28b33bd`; current RHI, Renderer, shader-registration, settings, and build surfaces inspected; executable graphics source is unchanged from the earlier `8414b5dc` audit; evidence `S` only
+**Snapshot:** 2026-09-06 through committed `master` revision `c28b33bd`; current RHI, Renderer, shader-registration, settings, and build surfaces inspected; executable graphics source is unchanged from the earlier `8414b5dc` audit; evidence `S` only
 
-Scope: how each selectable graphics capability crosses user/configuration entry points, Renderer passes and resources, shader programs, RHI prerequisites, backend-specific limits, fallback behavior, and evidence gaps
+**Scope:** how each selectable graphics capability crosses user/configuration entry points, Renderer passes and resources, shader programs, RHI prerequisites, backend-specific limits, fallback behavior, and evidence gaps
 
-Owners: `Engine/RHI`, `Engine/Renderer`, `Tools/Shaders`, and their current producer modules named per row
+**Owners:** `Engine/RHI`, `Engine/Renderer`, `Tools/Shaders`, and their current producer modules named per row
 
-Module inventories: [RHI](../Modules/Engine/RHI/CapabilityInventory.md), [Renderer](../Modules/Engine/Renderer/CapabilityInventory.md), and [Shader Compilation](../Modules/Tools/ShaderCompiler/README.md)
+**Module inventories:** [RHI](../Modules/Engine/RHI/CapabilityInventory.md), [Renderer](../Modules/Engine/Renderer/CapabilityInventory.md), and [Shader Compilation](../Modules/Tools/ShaderCompiler/README.md)
 
-Vertical companion: [Feature Execution Traces](FeatureExecutionTraces.md)
+**Vertical companion:** [Feature Execution Traces](FeatureExecutionTraces.md)
 
-Release classification authority: [First Release Acceptance Contract](../../Acceptance/FirstRelease.md)
+**Release classification authority:** [First Release Acceptance Contract](../../Acceptance/FirstRelease.md)
 
 ## Reading The Matrix
 

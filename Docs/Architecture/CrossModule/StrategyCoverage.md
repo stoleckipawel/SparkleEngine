@@ -1,12 +1,12 @@
 # Capability Coverage Against Persona, Roadmap, And Gap Assessment
 
-Status: capability snapshot; current strategy crosswalk, not a replacement for strategy authority, release acceptance, or candidate evidence
+**Status:** capability snapshot; current strategy crosswalk, not a replacement for strategy authority, release acceptance, or candidate evidence
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; capability inventories reconciled with the [Engineer Persona](../../Strategy/EngineerPersona.md), [Requirements](../../Strategy/Requirements.md), [Gap Assessment](../../Strategy/Assessments/GapAssessment.md), and [Roadmap](../../Strategy/Roadmap.md); source evidence only
+**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; capability inventories reconciled with the [Engineer Persona](../../Strategy/EngineerPersona.md), [Requirements](../../Strategy/Requirements.md), [Gap Assessment](../../Strategy/Assessments/GapAssessment.md), and [Roadmap](../../Strategy/Roadmap.md); source evidence only
 
-Scope: ensure the inventory is complete enough to support release scoping and the principal graphics engineer target, while distinguishing implemented product paths from scaffolding, prose, and unverified claims
+**Scope:** ensure the inventory is complete enough to support release scoping and the principal graphics engineer target, while distinguishing implemented product paths from scaffolding, prose, and unverified claims
 
-Owner: this dated crosswalk is owned by `Docs/Architecture/CrossModule`; strategy documents retain target/sequence authority
+**Owner:** this dated crosswalk is owned by `Docs/Architecture/CrossModule`; strategy documents retain target/sequence authority
 
 ## Product Identity Constraint
 

@@ -1,10 +1,10 @@
 # Renderer Indirect Lighting
 
-Status: current feature dossier; source-backed, not a convergence proof, unbiased-oracle claim, numerical validation, performance result, or release approval
+**Status:** current feature dossier; source-backed, not a convergence proof, unbiased-oracle claim, numerical validation, performance result, or release approval
 
-Verified: 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
+**Verified:** 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
-Scope: indirect-light portions of `REN-PBR-05`, `REN-LGT-01`, and `REN-LGT-03` through `REN-LGT-07`; distinguishes bounced surface transport, environment background, accumulation, and reconstruction inputs
+**Scope:** indirect-light portions of `REN-PBR-05`, `REN-LGT-01`, and `REN-LGT-03` through `REN-LGT-07`; distinguishes bounced surface transport, environment background, accumulation, and reconstruction inputs
 
 ## Feature Promise
 

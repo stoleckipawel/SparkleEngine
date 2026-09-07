@@ -1,10 +1,10 @@
 # Renderer Volumetric Lighting
 
-Status: feature dossier; current negative capability and source-backed absence record, not a target architecture, delivery plan, or release approval
+**Status:** feature dossier; current negative capability and source-backed absence record, not a target architecture, delivery plan, or release approval
 
-Verified: 2026-09-06 against committed `master` revision `d236da11`; inspected Renderer/shader/importer paths are unchanged from the earlier `8414b5dc` audit
+**Verified:** 2026-09-06 against committed `master` revision `d236da11`; inspected Renderer/shader/importer paths are unchanged from the earlier `8414b5dc` audit
 
-Scope: `REN-VOL-01` through `REN-VOL-03`; explicitly defines what Sparkle does not currently implement for participating media, fog, atmospheric scattering, and volumetric composition
+**Scope:** `REN-VOL-01` through `REN-VOL-03`; explicitly defines what Sparkle does not currently implement for participating media, fog, atmospheric scattering, and volumetric composition
 
 ## Current State
 

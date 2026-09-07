@@ -1,10 +1,12 @@
 # Model To Kernel And Runtime Inference
 
-Status: target capability dossier; no owned model lowering, generated kernel, or neural runtime was found
+**Status:** target capability dossier; no owned model lowering, generated kernel, or neural runtime was found
 
-Owner: future model compiler/export tool plus Assets, Renderer, RHI, and Build/Packaging delivery owners
+**Scope:** define the absent model-export, legalization, kernel-generation, runtime-execution, packaging, and completion-safe lifetime boundary
 
-Snapshot: 2026-09-07; the live non-documentation source/build tree was searched for owned model export/lowering/kernel/inference-runtime paths; source evidence `S` only
+**Owner:** future model compiler/export tool plus Assets, Renderer, RHI, and Build/Packaging delivery owners
+
+**Snapshot:** 2026-09-07; the live non-documentation source/build tree was searched for owned model export/lowering/kernel/inference-runtime paths; source evidence `S` only
 
 ## Capability Boundary
 

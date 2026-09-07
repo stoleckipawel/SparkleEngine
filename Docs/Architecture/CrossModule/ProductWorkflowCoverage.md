@@ -1,18 +1,18 @@
 # Product And Developer Workflow Coverage
 
-Status: capability snapshot; horizontal workflow inventory; not usability, runtime, package, or release evidence
+**Status:** capability snapshot; horizontal workflow inventory; not usability, runtime, package, or release evidence
 
-Snapshot: 2026-09-06 at committed `master` revision `8414b5dc`; current module inventories, build membership, product/tool entry points, and release contracts reconciled; evidence `S` only
+**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; current module inventories, build membership, product/tool entry points, and release contracts reconciled; evidence `S` only
 
-Scope: user-visible and contributor-visible journeys that cross Application, Editor, Launcher, tools, content, build, project, and delivery owners
+**Scope:** user-visible and contributor-visible journeys that cross Application, Editor, Launcher, tools, content, build, project, and delivery owners
 
-Owners: each concrete module named in a row owns its implementation; this document owns only the cross-module comparison
+**Owners:** each concrete module named in a row owns its implementation; this document owns only the cross-module comparison
 
-Vertical companion: [Product Execution Traces](ProductExecutionTraces.md)
+**Vertical companion:** [Product Execution Traces](ProductExecutionTraces.md)
 
-Graphics companions: [Graphics Feature Coverage Matrix](GraphicsCoverageMatrix.md) and [Graphics Feature Execution Traces](FeatureExecutionTraces.md)
+**Graphics companions:** [Graphics Feature Coverage Matrix](GraphicsCoverageMatrix.md) and [Graphics Feature Execution Traces](FeatureExecutionTraces.md)
 
-Evidence and disposition: [Capability Evidence Plan](../../Plans/CapabilityEvidence.md), [Feature Completion Reports](../../Acceptance/FeatureCompletionReports.md), and [First Release Acceptance](../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../Plans/CapabilityEvidence.md), [Feature Completion Reports](../../Acceptance/FeatureCompletionReports.md), and [First Release Acceptance](../../Acceptance/FirstRelease.md)
 
 ## How To Read This Matrix
 

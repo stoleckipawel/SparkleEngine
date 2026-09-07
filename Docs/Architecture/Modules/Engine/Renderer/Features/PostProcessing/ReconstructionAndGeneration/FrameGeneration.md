@@ -1,12 +1,12 @@
 # Renderer Frame Generation
 
-Status: feature dossier; current negative capability and source-backed absence, not a delivery plan
+**Status:** feature dossier; current negative capability and source-backed absence, not a delivery plan
 
-Verified: 2026-09-06 against source revision `d236da11`; inspected Renderer/Streamline/frame paths are unchanged from the earlier `8414b5dc` audit
+**Verified:** 2026-09-06 against source revision `d236da11`; inspected Renderer/Streamline/frame paths are unchanged from the earlier `8414b5dc` audit
 
-Scope: `REN-POST-13`; generation and presentation of interpolated frames between normally rendered frames
+**Scope:** `REN-POST-13`; generation and presentation of interpolated frames between normally rendered frames
 
-Parent family: [Post Processing](../README.md)
+**Parent family:** [Post Processing](../README.md)
 
 ## Current Capability
 
