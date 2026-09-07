@@ -6,6 +6,8 @@
 
 **Scope:** `REN-VOL-01` through `REN-VOL-03`; explicitly defines what Sparkle does not currently implement for participating media, fog, atmospheric scattering, and volumetric composition
 
+**Current readiness:** **0/100** — no participating-media, fog, atmosphere, transmittance/scattering, selector, product, or debug-view implementation was found. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 ## At A Glance
 
 | Reader question | Answer |

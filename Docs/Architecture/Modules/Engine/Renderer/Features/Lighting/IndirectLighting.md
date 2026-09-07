@@ -6,6 +6,8 @@
 
 **Scope:** indirect-light portions of `REN-PBR-05`, `REN-LGT-01`, and `REN-LGT-03` through `REN-LGT-07`; distinguishes bounced surface transport, environment background, accumulation, and reconstruction inputs
 
+**Current readiness:** **45/100** — ReSTIR/reference indirect source routes are integrated but unproved; estimator/history, motion, bias/noise, sky, parity, failure, quality, memory, and cost evidence remains open. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Concern | Current contract | Important limit |

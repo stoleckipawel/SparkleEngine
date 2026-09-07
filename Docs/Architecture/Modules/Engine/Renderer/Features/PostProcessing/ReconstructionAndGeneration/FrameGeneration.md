@@ -6,6 +6,8 @@
 
 **Scope:** `REN-POST-13`; generation and presentation of interpolated frames between normally rendered frames
 
+**Current readiness:** **0/100** — no frame-synthesis provider, optical-flow product, generated-frame identity, UI composition, pacing, or present-integration route was found. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 ## At A Glance
 
 | Question | Current answer |

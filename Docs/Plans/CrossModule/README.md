@@ -4,13 +4,15 @@
 
 These plans coordinate several durable module owners and have no coherent single-module delivery owner.
 
+The current baselines are **0/100** for geometry-cache animation, **20/100** for the performance-diagnostics product, and **50/100** for the integrated shader-system route. These are feature scores, not plan completion. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 ## Choose By Outcome
 
-| Planned outcome | Why coordination is cross-module | Current decision boundary |
-| --- | --- | --- |
-| animated geometry-cache playback | source import, cook, world playback, residency, raster/ray deformation, and RHI lifetime form one feature | target architecture exists; implementation/evidence remain planned |
-| trustworthy performance diagnosis | instrumentation, UI, external capture, experiments, evidence, and shipping cost span most runtime owners | external-first staged delivery; no plan phase is acceptance by itself |
-| coherent shader authoring-to-runtime system | registration, compilation, artifacts, typed binding, pipelines, reload, and editor workflow span tools/Renderer/RHI | target architecture and detailed clean-break phases remain separate authorities |
+| Planned outcome | Current feature readiness | Why coordination is cross-module | Current decision boundary |
+| --- | ---: | --- | --- |
+| animated geometry-cache playback | **0/100** | source import, cook, world playback, residency, raster/ray deformation, and RHI lifetime form one feature | target architecture exists; implementation/evidence remain planned |
+| trustworthy performance diagnosis | **20/100** | instrumentation, UI, external capture, experiments, evidence, and shipping cost span most runtime owners | instrumentation foundations exist; target product and proof remain planned |
+| coherent shader authoring-to-runtime system | **50/100** | registration, compilation, artifacts, typed binding, pipelines, reload, and editor workflow span tools/Renderer/RHI | integrated source route exists; candidate verification and delivery are zero |
 
 Open the Architecture owner first to understand the stable contract, then use the plan for ordering, dependencies, and phase exit criteria.
 

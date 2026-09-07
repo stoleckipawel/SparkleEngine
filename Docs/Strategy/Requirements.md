@@ -2,6 +2,8 @@
 
 **Status:** strategy contract; canonical vendor-neutral capability baseline
 
+**Current implementation snapshot:** **43/100** across 45 tracked feature families. This requirements contract defines targets and earns no readiness; use the [Current Feature Readiness dashboard](../Acceptance/CurrentReadiness.md) for present implementation, integration, proof, and delivery state.
+
 **Date:** 2026-07-26
 
 **Scope:** principal-level real-time graphics, developer technology, GPU systems, rendering research productization, workload tooling, and neural graphics

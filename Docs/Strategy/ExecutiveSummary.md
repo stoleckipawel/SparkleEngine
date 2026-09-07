@@ -6,6 +6,8 @@
 
 **Scope:** principal graphics direction for SparkleEngine
 
+**Current implementation snapshot:** **43/100** across 45 tracked feature families; all remain Blocked, with verification and delivery/adoption still zero. See [Current Feature Readiness](../Acceptance/CurrentReadiness.md).
+
 ## Decision
 
 Develop SparkleEngine as a compact renderer-first engine and evidence platform for principal-level graphics engineering. Prioritize a few complete, reproducible vertical slices over feature count, framework breadth, or documentation volume.

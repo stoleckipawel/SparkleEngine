@@ -6,6 +6,8 @@
 
 **Scope:** the conditions under which historical performance automation should become a separate SparkleEngine tool
 
+**Related current readiness:** **20/100** for the broader diagnostics product; this dashboard is an exploration, not an implemented product, and adds no score. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 ## Decision Question And Authority
 
 Should historical performance comparison remain a command-line workflow, live inside the Editor, or become a separate application?

@@ -6,6 +6,8 @@
 
 **Scope:** `REN-TEMP-01` through `REN-TEMP-05`; owns per-view jitter, previous-camera publication, history validity, invalidation causes, and the motion/reprojection convention shared by temporal consumers
 
+**Current readiness:** **45/100** — shared jitter/history/motion/reset infrastructure is integrated; multi-view, deformation, provider/backend equivalence, and temporal-quality evidence is absent. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Contract part | Current behavior | Main risk |

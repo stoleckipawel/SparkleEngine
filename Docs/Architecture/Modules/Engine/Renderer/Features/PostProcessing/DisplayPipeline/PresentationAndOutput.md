@@ -6,6 +6,8 @@
 
 **Scope:** `REN-POST-08` through `REN-POST-10`; debug-to-presentation handoff, output encoding, back-buffer copy, viewport-product publication, and the explicit absence of HDR-display output
 
+**Current readiness:** **45/100** for current SDR output; HDR display output is **0/100**. Encoding/format, resize/DPI, capture interpretation, backend present, and artifact proof remains open. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Destination or transform | Current result | Important boundary |

@@ -8,6 +8,8 @@
 
 **Current state:** **In progress / blocked for exit** on 2026-09-06. Initial source research exists; accepted transport scope, estimator derivation, executable evidence design, target architecture decision, and independent review do not.
 
+**Current readiness:** **20/100** for the feature baseline — this discovery contract is in progress and adds no implementation or verification credit until its evidence is accepted. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## Gate At A Glance
 
 | Discovery must freeze | Why planning cannot safely infer it later |

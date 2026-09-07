@@ -8,6 +8,8 @@
 
 **Feature acceptance:** [Geometry Cache Animation — Acceptance](../../Architecture/CrossModule/GeometryCacheAnimation/Acceptance.md)
 
+**Related current readiness:** **0/100 — target only.** No geometry-cache import, cook, playback, shared deformation, or raster/ray consumer route was found; this plan adds no implementation credit. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 This plan owns delivery order, dependencies, and phase exit sequence. It does not redefine the architecture, own the final acceptance criteria, or prove that any phase is complete.
 
 ## Delivery At A Glance

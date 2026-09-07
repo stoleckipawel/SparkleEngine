@@ -6,6 +6,8 @@
 
 **Scope:** `REN-FG-01` through `REN-FG-08` and the frame-graph portion of `REN-OWN-04`/`REN-OWN-06`; defines how Renderer feature declarations become resources, dependencies, barriers, queue submissions, and retirement
 
+**Current readiness:** **50/100** — dependency compilation, barriers, transients, queues, recording, and submission exist in source; correctness, failure, parity, and cost evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | What the graph owns | Current strength | Open proof boundary |

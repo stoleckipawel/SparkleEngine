@@ -2,6 +2,8 @@
 
 **Status:** research and historical-reference index
 
+**Current-state rule:** research never earns implementation readiness. Feature-specific studies show the linked local feature score only to prevent precedent or a detailed target from looking implemented; the authoritative values remain in [Current Feature Readiness](../Acceptance/CurrentReadiness.md).
+
 Research preserves external precedent, option analysis, visual exploration, and dated migration evidence. It informs decisions but is never local architecture, implementation, or acceptance authority.
 
 ## At A Glance

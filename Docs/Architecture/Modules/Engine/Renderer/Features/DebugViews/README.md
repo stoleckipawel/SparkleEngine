@@ -12,6 +12,8 @@
 
 **Feature acceptance:** [Debug View Presentation — Acceptance](Acceptance.md)
 
+**Current readiness:** **40/100** — debug modes and capture are reachable, but exact signal-domain presentation, per-viewport isolation, unavailable state, provenance, interpretation, and observer-cost proof remains open. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | You can inspect | Current behavior | Principal problem |

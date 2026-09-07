@@ -12,6 +12,8 @@
 
 **Feature acceptance:** [Deferred GBuffer Decals — Acceptance](Acceptance.md)
 
+**Current readiness:** **0/100** — target only; no authored/cooked/scene/GPU decal data, GBuffer composition, or arbitrary ray-hit decal evaluation was found. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 ## At A Glance
 
 | Required capability | Current state | Existing seam is not the feature |

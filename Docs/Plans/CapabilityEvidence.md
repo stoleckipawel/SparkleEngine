@@ -12,6 +12,8 @@
 
 **Candidate-bound report authority:** [First Release Feature Completion Reports](../Acceptance/FeatureCompletionReports.md)
 
+**Current tracked readiness:** **43/100** across 45 `FCR-*` families; every verification and delivery component is still zero. This evidence queue adds no credit until candidate-bound results are retained. See [Current Feature Readiness](../Acceptance/CurrentReadiness.md).
+
 **Release-wide sequencing authority:** [Release-First Principal Graphics Roadmap](../Strategy/Roadmap.md)
 
 ## At A Glance

@@ -8,6 +8,8 @@
 
 **Scope:** content ingestion, material and lighting correctness, raster/ray/path-traced quality, whole-system performance, neural rendering evidence, and portfolio presentation
 
+**Current workload completion:** **0/100 accepted.** Bistro and San Miguel have documented/acquired foundations, but neither has a retained candidate-bound visual, backend, performance, stability, package, and reviewer result. This is a conjunctive acceptance result, not the additive feature-readiness score. See [Current Feature Readiness](CurrentReadiness.md).
+
 This document owns scene selection and exact workload-specific proof gates. The [First Release Acceptance Contract](FirstRelease.md) owns first-release feature, sample-map, package, clean-machine, and publication acceptance; it reuses these map/workload gates without making Bistro or San Miguel redistributable release content by implication. [Principal Graphics Requirements](../Strategy/Requirements.md) owns capability/evidence meaning, the [Engineering task map](../Engineering/README.md#choose-by-task) routes reusable implementation and measurement rules, and [Performance Diagnostics Architecture](../Architecture/CrossModule/PerformanceDiagnostics/README.md) owns metric/population/provenance semantics used by these gates. Revalidate external capture capability through the [External Performance Profiler Runbook](../Engineering/Verification/ExternalProfiling.md).
 
 ## Workloads At A Glance

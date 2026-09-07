@@ -6,6 +6,8 @@
 
 This family separates *where the frame is sampled*, *how one current output image is reconstructed*, and *whether new display frames are synthesized*. Those are different products and must never share a vague “upscaling” claim.
 
+**Current readiness:** **27/100** across described capabilities — reconstruction/upscaling and resolution/sampling are **40/100**; frame generation is **0/100**. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Capability | Current state | Key limitation |

@@ -4,6 +4,8 @@
 
 **Scope:** route external shader/pipeline precedent and the frozen pre-migration Sparkle baseline
 
+**Related current readiness:** **50/100** for the local shader compile/cook/map/library/runtime route; candidate verification and delivery remain zero. Research and historical baselines add no score. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
+
 ## Choose By Question
 
 | Question | Open |

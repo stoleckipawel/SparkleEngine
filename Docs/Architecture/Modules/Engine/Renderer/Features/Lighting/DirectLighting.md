@@ -6,6 +6,8 @@
 
 **Scope:** direct-light portions of `REN-PBR-01` through `REN-PBR-04`, `REN-PBR-06` through `REN-PBR-10`, `REN-LGT-01`, `REN-LGT-02`, `REN-LGT-04`, and `REN-LGT-06`
 
+**Current readiness:** **45/100** — four-light/ReSTIR/visibility/lobe source paths are integrated but ray-dependent; math, limits, artifacts, parity, failure, quality, and cost evidence remains open. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Concern | Current contract | Important limit |

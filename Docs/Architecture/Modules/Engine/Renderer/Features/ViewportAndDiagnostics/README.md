@@ -6,6 +6,8 @@
 
 This family explains how a completed frame becomes inspectable: named products and diagnostic facts are published first, then immutable UI data may be composed into the intended viewport or host target.
 
+**Current readiness:** **40/100** family projection — viewport/UI/debug/capture source paths exist with partial diagnostics truth; candidate semantics, lifetime, observer-cost, and Shipping proof is absent. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Concern | Produced result | Boundary |

@@ -15,6 +15,8 @@
 > [!TIP]
 > Use this as an exact program registry, not a shader-system introduction. Search by program, virtual source, stage, or consumer. A registration row proves source/build membership only; it does not prove that cooking, lookup, pipeline creation, execution, or output succeeded.
 
+**Current readiness:** **50/100** for the shader-system route this catalog feeds; registration membership is source evidence, not executable or delivery proof. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
+
 ## Count And Meaning
 
 There are exactly 35 registrations: 25 Compute, one Vertex, one Pixel, two RayGeneration, two Miss, two ClosestHit, and two AnyHit. A row means the program is registered in current source and build membership. It does not mean its two runtime variants cooked successfully or that a driver created and executed its pipeline.

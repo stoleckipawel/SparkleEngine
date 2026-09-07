@@ -6,6 +6,8 @@
 
 **Scope:** `REN-OWN-03`, `REN-SCENE-10`, and view-owned preparation; camera/output intent, temporal identity, culling, material visibility classes, raster batches, workload counts, and RT partition planning
 
+**Current readiness:** **45/100** — per-view camera/visibility/display/history preparation exists; multi-view isolation, edge cases, failure, capacity, equivalence, and cost evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | View-owned input | Derived result | Kept separate from scene |

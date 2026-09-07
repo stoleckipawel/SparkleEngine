@@ -2,6 +2,8 @@
 
 **Status:** Engine module index
 
+**Current state:** tracked Engine-owned feature families contribute to the repository's **43/100** readiness projection; local module/feature pages show their own values, including explicit **0/100** capabilities. This index is not a separately weighted score. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md).
+
 This index mirrors the durable modules under `Engine`. Open the owning module first; use hyperlinks to follow producer/consumer relationships without relocating that knowledge into a mixed folder.
 
 ## At A Glance

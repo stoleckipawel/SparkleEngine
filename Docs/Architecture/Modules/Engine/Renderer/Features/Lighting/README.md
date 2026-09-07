@@ -6,6 +6,8 @@
 
 **Responsibility:** define the shared lighting boundary and route Direct, Indirect, Volumetric, and offline-reference lighting without treating them as one undifferentiated capability
 
+**Current readiness:** **28/100** across described lighting capabilities — direct/indirect surface paths are **45/100**, the offline reference is **20/100**, and volumetric lighting is **0/100**. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | What Sparkle currently has | What remains absent or blocked |

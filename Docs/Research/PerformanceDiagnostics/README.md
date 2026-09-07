@@ -4,6 +4,8 @@
 
 **Scope:** route performance-diagnostics product precedent, visual interaction studies, and exploratory dashboard promotion gates
 
+**Related current readiness:** **20/100.** Instrumentation foundations exist; the bounded diagnostics product and trusted evidence workflow do not. Research mockups add no score. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 ## Choose By Question
 
 | Question | Open |

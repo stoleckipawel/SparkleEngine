@@ -6,6 +6,8 @@
 
 Shader runtime answers two different questions: which programs are part of the Renderer build contract, and whether one of those programs can safely become a bound native pipeline for the current backend and generation.
 
+**Current readiness:** **50/100** — typed lookup, materialization, generation replacement, and consumers exist in source; ABI/backend/failure/cache/lifetime/package evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Layer | Authority | Result |

@@ -6,6 +6,8 @@
 
 **Scope:** `REN-DIAG-01` through `REN-DIAG-07`; defines Renderer observability, viewport products, asynchronous capture, and previews from the frame owner's perspective
 
+**Current readiness:** **35/100** — useful products, observations, and capture seams exist; attribution, bounded publication, semantic truth, failure, observer-cost, backend, and support evidence remains open. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Product or observation | Current purpose | Trust boundary |

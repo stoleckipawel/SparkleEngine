@@ -8,6 +8,8 @@
 
 **Parent family:** [Post Processing](../README.md)
 
+**Current readiness:** **45/100** — manual/automatic exposure and per-view history source paths exist; numeric, adaptation/reset, scheduling, parity, color-domain, and quality evidence does not. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Mode or boundary | Current behavior | Main limitation |

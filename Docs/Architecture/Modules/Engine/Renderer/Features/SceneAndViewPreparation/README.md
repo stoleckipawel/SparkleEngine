@@ -6,6 +6,8 @@
 
 **Scope:** `REN-SCENE-01` through `REN-SCENE-10` plus scene/view portions of `REN-OWN-02` through `REN-OWN-04`; routes the three distinct owners that turn immutable world data into prepared scene, prepared view, and published GPU-scene state
 
+**Current readiness:** **50/100** — scene/view preparation and GPU publication are integrated in source; identity, capacity, failure, multi-view, deformation, lifetime, and memory evidence remains absent. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Owner | Keeps across frames | Produces for this frame | Must never own |

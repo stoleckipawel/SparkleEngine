@@ -6,6 +6,8 @@
 
 **Scope:** `REN-PIPE-01` through `REN-PIPE-05` and retained identity `REN-DIAG-08`; owns the bridge from registered typed pass contracts and cooked shader metadata to binding layouts, graphics/compute/ray pipelines, per-pass bindings, runtime caches, and completion-safe shader-generation replacement
 
+**Current readiness:** **50/100** — registered/cooked lookup, typed binding, complete pipeline identity, and generation lifetime exist in source; candidate ABI/native/failure/cache proof remains open. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Join | Required agreement | Safe failure |

@@ -6,6 +6,8 @@
 
 **Scope:** `REN-SCENE-01` and GPU-publication portions of `REN-SCENE-03` through `REN-SCENE-07`; persistent/frame-indexed GPU-scene storage, binding identity, upload, publication, and completion-safe replacement
 
+**Current readiness:** **50/100** — one checked GPU-scene publication path exists; stale/capacity/partial-failure, resource-generation, backend, lifetime, memory, and stress proof remains open. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Published family | Consumers | Identity/lifetime concern |

@@ -2,7 +2,7 @@
 
 **Status:** high-level readiness snapshot; orientation only, not feature acceptance or release approval
 
-**Snapshot:** 2026-09-07 against committed `master`; Renderer and RHI source remain unchanged from revision `8414b5dc`; no candidate-bound feature report was found
+**Snapshot:** 2026-09-08 against committed `master` revision `d8602b78`; implementation source remains unchanged from baseline `8414b5dc`; no candidate-bound feature report was found
 
 **Responsibility:** provide one evidence-weighted 0–100 view of what exists now, what is only partial, what is missing, and which proof or delivery layer blocks each tracked feature
 
@@ -20,6 +20,16 @@
 | RHI and GPU execution | 6 | **45/100** | D3D12/Vulkan mechanisms are substantial in source; paired native execution, failure, and release evidence is absent. |
 | Renderer | 22 | **43/100** | Most first-release frame paths exist in source, with important partial/provider-gated paths and no candidate proof. |
 | **All tracked `FCR-*` families** | **45** | **43/100** | **45 Blocked; 0 candidate reports; 0 release-approved features.** |
+
+```mermaid
+flowchart LR
+    I[Implementation<br/>30.1 of 40] --> R[Integration<br/>13.3 of 20]
+    R --> V[Candidate verification<br/>0 of 25]
+    V --> D[Delivery and adoption<br/>0 of 15]
+    D --> Result[Portfolio projection<br/>43 of 100, Blocked]
+```
+
+The component values are averages across the 45 tracked families; the displayed portfolio score rounds their sum to the nearest whole point. The arrows show the evidence progression, not permission to skip a failed acceptance gate.
 
 No tracked feature currently scores above 50 because this snapshot found no candidate-bound executable evidence pack and no accepted delivery/adoption result. This does not say the source is nonfunctional; it says the repository has not retained the proof needed to claim more.
 
@@ -127,6 +137,7 @@ These rows prevent adjacent infrastructure or a detailed target design from look
 | neural training/dataset pipeline | **0/100** | Target only; no production data/model workflow | [Neural Graphics](../Architecture/CrossModule/NeuralGraphics/README.md) |
 | neural runtime model/kernel path | **0/100** | Target only; no production inference feature | [Neural Graphics](../Architecture/CrossModule/NeuralGraphics/README.md) |
 | performance-diagnostics product | **20/100** | Instrumentation foundations; target UI/evidence product absent | [Performance Diagnostics](../Architecture/CrossModule/PerformanceDiagnostics/README.md) |
+| reusable Python automation and analysis | **10/100** | Two project-local conversion scripts; no repository automation, binding, or editor/runtime Python product | [Python Automation and Analysis](../Architecture/Modules/Tools/PythonAutomationAndAnalysis.md) |
 | volumetric lighting/media | **0/100** | Not found | [Volumetric Lighting](../Architecture/Modules/Engine/Renderer/Features/Lighting/VolumetricLighting.md) |
 | color grading | **0/100** | Not found | [Color Grading](../Architecture/Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ColorGrading.md) |
 | chromatic aberration | **0/100** | Not found | [Chromatic Aberration](../Architecture/Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ChromaticAberration.md) |

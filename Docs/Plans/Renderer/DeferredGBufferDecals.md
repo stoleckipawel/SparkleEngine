@@ -10,6 +10,8 @@
 
 **Feature acceptance:** [Deferred GBuffer Decals — Acceptance](../../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/Acceptance.md)
 
+**Related current readiness:** **0/100 — target only.** No decal data, publication, deferred composition, or ray-hit evaluation implementation was found; this plan adds no implementation credit. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 This plan owns feature-local delivery order, dependencies, and phase exit sequence. It does not redefine decal semantics, own the final acceptance criteria, or prove that any phase is complete.
 
 ## Delivery At A Glance

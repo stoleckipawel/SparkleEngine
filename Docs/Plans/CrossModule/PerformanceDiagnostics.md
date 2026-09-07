@@ -6,6 +6,8 @@
 
 **Scope:** staged, feature-selectable delivery of the performance diagnostics product defined by [Performance Diagnostics Architecture](../../Architecture/CrossModule/PerformanceDiagnostics/README.md)
 
+**Related current readiness:** **20/100.** Timing, naming, memory, and capture foundations exist; the bounded diagnostics product, trusted workflow, and candidate evidence remain absent. This plan adds no credit. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 ## Delivery At A Glance
 
 ```mermaid

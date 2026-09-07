@@ -6,6 +6,8 @@
 
 Frame execution keeps three forms of identity aligned: the work graph for this frame, the previous-frame state needed by temporal consumers, and the host/provider markers used to observe latency.
 
+**Current readiness:** **43/100** family projection — frame admission/graph/history are broadly integrated while latency coordination is narrower; executable equivalence, failure, cost, and delivery proof is absent. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Contract | Starts with | Produces | Main open risk |

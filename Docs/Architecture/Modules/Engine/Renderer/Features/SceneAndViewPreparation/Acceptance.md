@@ -6,6 +6,8 @@
 
 **Authority boundary:** [Scene Preparation](ScenePreparation.md), [View Preparation](ViewPreparation.md), and [GPU-Scene Publication](GpuScenePublication.md) own their mechanisms. [Mesh and Texture Residency](../GeometryAndResources/MeshAndTextureResidency.md) owns resource state/budgets; [Temporal Sampling and History](../FrameExecution/TemporalSamplingAndHistory.md) owns jitter/history semantics. This page owns only the joins needed for one coherent prepared publication. Candidate results and release disposition remain in [Acceptance reporting](../../../../../../Acceptance/FeatureCompletionReports.md).
 
+**Current readiness:** **50/100** — the implementation/integration baseline exists; this contract contains no executed candidate verification or delivery result. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## Acceptance At A Glance
 
 ```mermaid

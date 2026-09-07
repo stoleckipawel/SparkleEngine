@@ -10,6 +10,8 @@
 
 **Non-claims:** no shader was compiled, no renderer was launched, no image was captured, no estimator was numerically tested, and no D3D12/Vulkan parity, convergence, unbiasedness, performance, or feature-completion result was produced by this study
 
+**Related current readiness:** **20/100.** An early reference-labelled source route exists, but the offline-oracle claim is blocked at `PTD-00`; this study adds no implementation or verification credit. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#renderer).
+
 ## Research Decision
 
 SparkleEngine should make the offline path tracer the first **technical feature-closure case**, but should not yet call the current `ReferencePathTraced` mode an unbiased renderer or correctness oracle.

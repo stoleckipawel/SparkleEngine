@@ -8,6 +8,8 @@
 
 **Reference-set context:** [External Renderer Repository Comparison](RendererRepositories.md)
 
+**Related current readiness:** **40/100** for the existing debug-view feature. Exact-domain presentation and per-view show-flag targets remain unimplemented/unproved; external precedent adds no score. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#renderer).
+
 ## Unreal Engine
 
 Epic documents `FEngineShowFlags` as bits stored in the view family for artists and developers to customize/debug rendering. View modes are higher-level presets that can manipulate flags, while scalability belongs to console variables. `FSceneViewFamily` owns resolved flags; `FEditorViewportClient` owns current and previous editor-viewport flag sets.

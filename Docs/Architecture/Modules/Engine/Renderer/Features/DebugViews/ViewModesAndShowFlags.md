@@ -6,6 +6,8 @@
 
 **Responsibility:** per-viewport view-mode intent, typed show-flag semantics, preset and override resolution, editor controls, and immutable publication into `RenderView`
 
+**Current readiness:** **40/100** for the existing debug-view feature; the per-viewport show-flag target described here is not implemented and adds no readiness credit. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## Contract
 
 Sparkle should adopt an Unreal-like show-flag model at Sparkle's scale:

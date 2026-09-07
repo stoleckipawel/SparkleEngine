@@ -6,6 +6,8 @@
 
 This family owns the meaning of the pixel after lighting: how scene-linear values are exposed, mapped into a display range, optionally transformed by future looks, encoded, and handed to presentation.
 
+**Current readiness:** **27/100** across described display capabilities — exposure, tone mapping, and SDR output are **45/100**; color grading and chromatic aberration are **0/100**. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Stage | Current state | What readers must not infer |

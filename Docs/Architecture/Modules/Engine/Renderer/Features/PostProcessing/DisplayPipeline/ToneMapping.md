@@ -8,6 +8,8 @@
 
 **Parent family:** [Post Processing](../README.md)
 
+**Current readiness:** **45/100** — three selectable tone operators exist in the integrated display path; numeric/colorimetric, extreme, alpha, backend, exact-domain, and visual proof remains open. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Operator | Intended role | Current proof boundary |

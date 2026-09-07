@@ -6,6 +6,8 @@
 
 **Scope:** graphical product mockups, a system-scope map, and implementation-oriented ASCII layouts for the user-facing diagnostic tools defined by [Performance Diagnostics Architecture](../../Architecture/CrossModule/PerformanceDiagnostics/README.md)
 
+**Related current readiness:** **20/100.** The visuals describe a target over partial instrumentation foundations; no depicted dashboard/workspace/tool is implementation evidence. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 ## Purpose And Authority Boundary
 
 This document shows how each proposed Sparkle diagnostics surface could look. It is the single visual-design owner for graphical mockups, the system-scope map, and plain-text tool layouts. It is a reading aid for product review and implementation planning. The owning architecture defines metric meaning, ownership, bounds, collection modes, validity, and acceptance rules. If a mockup or wireframe conflicts with that architecture, the architecture wins.

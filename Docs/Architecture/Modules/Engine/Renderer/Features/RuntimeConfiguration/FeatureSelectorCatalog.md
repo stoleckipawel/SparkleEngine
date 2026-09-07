@@ -9,6 +9,8 @@
 > [!TIP]
 > Search this catalog by UI term, CVar, or feature. Read each selector across the whole route—producer, parser, persisted value, active consumer, fallback, restart/topology effect, and observable active state. A registered name without that route is not a usable feature.
 
+**Current readiness:** **40/100** for the settings/selector family — the catalog proves source reachability and known negative selectors, not active runtime behavior or delivery. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## Selection Contract
 
 A registered name is not automatically a feature. A trustworthy selector has a producer (console/config/editor/API), parser and valid domain, owned runtime consumer, requested-versus-active result, topology/history/invalidation behavior, visible failure/fallback, persistence/restart contract, and release classification. `REN-E23` keeps the selector inventory open until each row has that closure.

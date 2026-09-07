@@ -6,6 +6,8 @@
 
 **Scope:** `REN-SCENE-08`, `REN-SCENE-09`, and the residency mechanics observed by `REN-DIAG-02` through `REN-DIAG-04`; owns asynchronous mesh/texture admission, CPU preparation/decode, upload, activation, generation replacement, cancellation, and completion-safe eviction
 
+**Current readiness:** **50/100** — bounded read/decode/upload/activate/replace/retire routes exist; boundary/failure/cancellation/pressure/lifetime/memory/soak evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Lifecycle | Required truth | Current limitation |

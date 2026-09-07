@@ -6,6 +6,8 @@
 
 **Scope:** `REN-UI-01` through `REN-UI-04`; immutable UI packets, host overlays, editor viewport presentation, texture handles, and the post-graph/pre-submit composition boundary
 
+**Current readiness:** **45/100** — immutable UI packet and viewport composition routes exist; color/blend/DPI, stale identity, resize/switch, lifetime, failure, and Shipping evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Mode | Scene result | UI/product result | Main risk |

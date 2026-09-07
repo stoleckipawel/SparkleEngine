@@ -2,6 +2,8 @@
 
 **Status:** cross-module architecture index
 
+**Current state:** this index is not a single feature score. Its owned feature dossiers range from **0/100** target-only geometry-cache/neural paths, through **20/100** performance diagnostics, to a **50/100** integrated shader-system route. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 Use this folder only when a system has several durable owners and no single module can own the whole contract. Each document must name its participating modules and link back to their module pages. A relationship between two modules alone does not justify moving their module-owned knowledge here.
 
 ## At A Glance

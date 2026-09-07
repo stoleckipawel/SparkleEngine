@@ -8,6 +8,8 @@
 
 **Parent family:** [Post Processing](../README.md)
 
+**Current readiness:** **0/100** — no grading controls, transforms, LUT resource, pass, shader, selector, or editor route was found. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 ## At A Glance
 
 | Question | Current answer |

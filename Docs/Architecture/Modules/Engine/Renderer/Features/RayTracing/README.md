@@ -6,6 +6,8 @@
 
 **Scope:** `REN-RT-01` through `REN-RT-06`, the ray portions of `REN-FRONT-02` through `REN-FRONT-04`, and `REN-LGT-02` through `REN-LGT-04`; defines current acceleration-scene, traversal-frontend, shader-table, and effect coverage
 
+**Current readiness:** **40/100** — acceleration, inline, native-pipeline, and selection source routes exist but are capability-gated; effect/backend/content parity, failure, lifetime, memory, quality, and cost proof is absent. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Layer | Current route | Critical limit |

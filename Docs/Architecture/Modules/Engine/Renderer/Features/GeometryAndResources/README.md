@@ -6,6 +6,8 @@
 
 This family answers three separate questions: whether the correct asset generation is resident, whether a prepared instance should draw for this view, and what deferred surface values that draw must produce.
 
+**Current readiness:** **48/100** family projection — raster surface production and residency are broad, while visibility is partial and advanced draw paths are absent; candidate proof remains open. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Stage | Input | Output | Explicit boundary |

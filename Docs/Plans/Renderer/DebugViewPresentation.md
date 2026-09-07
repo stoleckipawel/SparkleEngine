@@ -8,6 +8,8 @@
 
 **Feature acceptance:** [Debug View Presentation — Acceptance](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/Acceptance.md)
 
+**Related current readiness:** **40/100** for the existing debug-view feature. The per-view presentation target in this plan is not implemented and adds no score; exact-domain, isolation, unavailable-state, provenance, and observer-cost proof remains open. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#renderer).
+
 This plan owns implementation slices and their delivery order. It does not redefine signal domains, show-flag semantics, display routing, or final acceptance.
 
 ## Delivery At A Glance

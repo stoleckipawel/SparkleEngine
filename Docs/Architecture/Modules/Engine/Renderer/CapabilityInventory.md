@@ -19,6 +19,8 @@
 > [!TIP]
 > This file is an exact reference ledger, not the best introduction. Start with the [Renderer overview](README.md), then search this page by `REN-*` ID or feature heading. Read the row's **state**, **coverage and limit**, **evidence**, and **release disposition** together; no single cell means “supported.”
 
+**Current readiness:** **43/100** across the tracked Renderer portfolio; this inventory contributes source knowledge, not verification or delivery credit. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## Module Documentation
 
 | Document | Responsibility |

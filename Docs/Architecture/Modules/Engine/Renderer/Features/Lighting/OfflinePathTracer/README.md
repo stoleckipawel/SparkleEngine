@@ -8,6 +8,8 @@
 
 **Current disposition:** **BLOCKED** on 2026-09-06. This document defines what eventual completion must prove; it does not accept the current `ReferencePathTraced` implementation, freeze unresolved `PTD-D0` decisions, authorize implementation, or report executable evidence.
 
+**Current readiness:** **20/100** — an early reference-labelled source route exists, but the transport scope, estimator, deterministic raw oracle, independence, lifecycle, parity, and executable proof are blocked. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 ```mermaid

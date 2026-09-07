@@ -10,6 +10,8 @@
 
 **Interpretation:** local-sounding words such as “adopt,” “should,” “target,” and phase dispositions below record the conclusions and options of that review. They are historical rationale, not independent Sparkle requirements; follow the linked Architecture dossier for the accepted current design.
 
+**Related current readiness:** **50/100** for the local shader-system route; compiler/backend/ABI, failure, reload, package, and adoption evidence remains open. This research adds no score. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
+
 ## External Precedent and What Sparkle Adopts
 
 The sources below are precedents, not local implementation authority. Repository links are pinned to the reviewed revisions where possible.

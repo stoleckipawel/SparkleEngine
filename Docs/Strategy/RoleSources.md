@@ -2,6 +2,8 @@
 
 **Status:** archive; source record retained for durable traceability
 
+**Current readiness:** **Not applicable.** This archive records role-source provenance and must not be read as current feature state; use [Current Feature Readiness](../Acceptance/CurrentReadiness.md).
+
 **Responsibility:** preserve the normalized source material from which the canonical principal graphics requirements were derived
 
 **Date:** 2026-07-26

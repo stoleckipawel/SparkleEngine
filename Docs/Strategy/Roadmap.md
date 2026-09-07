@@ -20,6 +20,8 @@
 
 **Concurrency architecture and execution contract:** [J. Multithreaded Engine Architecture](../Architecture/CrossModule/MultithreadedEngine.md)
 
+**Current implementation snapshot:** **43/100** across 45 tracked feature families, but **0/100 release acceptance** because no candidate has closed the conjunctive release gates. Roadmap milestones add no readiness until source, evidence, or delivery actually changes. See [Current Feature Readiness](../Acceptance/CurrentReadiness.md).
+
 ## Roadmap At A Glance
 
 > [!IMPORTANT]

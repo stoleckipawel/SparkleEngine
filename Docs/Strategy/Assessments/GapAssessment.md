@@ -2,6 +2,8 @@
 
 **Status:** dated assessment; not current architecture, requirements, or implementation authority
 
+**Current implementation snapshot:** **43/100** across 45 tracked feature families as of 2026-09-08. The assessment below retains its own dated observations; use [Current Feature Readiness](../../Acceptance/CurrentReadiness.md) for present implementation, integration, evidence, and delivery state.
+
 **Scope:** candidate and repository readiness evidence against the stated requirements at the recorded snapshot
 
 **Assessment date:** 2026-07-26

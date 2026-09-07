@@ -6,6 +6,8 @@
 
 Runtime configuration turns user/editor/startup intent into feature-owner requests. It coordinates state transport, but it does not decide whether a requested path is supported or semantically acceptable.
 
+**Current readiness:** **40/100** — broad selectors and an editor persistence route exist; one ineffective selector plus requested/active/fallback, malformed/unwritable, package, queue, and restart truth remain open. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Layer | Owns | Must expose |

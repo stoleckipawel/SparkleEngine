@@ -10,6 +10,8 @@
 
 **Migration provenance:** [Shader System Migration Baseline](../../Research/ShaderSystem/ShaderSystemMigrationBaseline.md)
 
+**Related current readiness:** **50/100.** The compile/cook/map/library/runtime route is integrated in source; compiler/backend/ABI, failure, reload, package, and adoption evidence remains open. This plan adds no credit. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
+
 ## Delivery At A Glance
 
 ```mermaid

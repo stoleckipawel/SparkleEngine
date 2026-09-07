@@ -8,6 +8,8 @@
 
 **Scope:** the visual and functional design of performance diagnostics for SparkleEngine, with emphasis on Epic Games, NVIDIA, and AMD products; data acquisition and implementation sequencing are intentionally secondary
 
+**Related current readiness:** **20/100.** Local instrumentation foundations exist, but the product described here is not implemented and this research adds no score. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 ## Purpose And Authority Boundary
 
 This document maps the diagnostic product space before implementation. It asks what information a developer needs, at what depth, in which visual form, and how the views should connect without turning the engine or Editor into a profiler framework.

@@ -6,6 +6,8 @@
 
 **Local decision owner:** [Deferred GBuffer Decal Composition Architecture](../../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/CompositionArchitecture.md)
 
+**Related current readiness:** **0/100 — target only.** No Sparkle decal implementation was found; external precedent adds no score. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 ## Research Question And Answer
 
 The question is not merely how to draw a projected box. It is how one authored material overlay can preserve receiver material meaning across a deferred raster GBuffer, ray-produced primary visibility, and later arbitrary ray hits without creating independent composition systems.

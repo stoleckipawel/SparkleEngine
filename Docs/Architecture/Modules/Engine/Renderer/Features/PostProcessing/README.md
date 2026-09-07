@@ -6,6 +6,8 @@
 
 **Scope:** the image-space stages that turn scene-linear lighting into a resolved display image, including explicit negative coverage for commonly expected stages that Sparkle does not currently implement
 
+**Current readiness:** **31/100** across described post-processing capabilities — exposure/reconstruction/tone/output paths are partial-to-integrated, while grading, chromatic aberration, frame generation, and HDR output are **0/100**. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Pipeline question | Current answer |

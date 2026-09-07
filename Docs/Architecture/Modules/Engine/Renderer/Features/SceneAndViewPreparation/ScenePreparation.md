@@ -6,6 +6,8 @@
 
 **Scope:** scene-owned portions of `REN-SCENE-02` through `REN-SCENE-07`; persistent `RenderScene` mutation, frame-slot preparation, deformation continuity, light preparation, active-resource references, and failure before publication
 
+**Current readiness:** **50/100** — persistent-scene to prepared-scene source flow exists; failure/cancellation, capacity, deformation continuity, serial/threaded equivalence, and performance evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Input | Persistent owner | Frame result | Refusal boundary |

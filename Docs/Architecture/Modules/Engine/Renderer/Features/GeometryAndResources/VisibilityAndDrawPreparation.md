@@ -8,6 +8,8 @@
 
 **Parents and consumers:** [Scene and View Preparation](../SceneAndViewPreparation/README.md) owns scene/view construction; [Geometry, Materials, and GBuffer](GeometryMaterialsAndGBuffer.md) owns what accepted batches draw and publish
 
+**Current readiness:** **45/100** — CPU frustum classification, validation, sorting, and batching exist; evidence is open and occlusion, LOD, GPU-driven/indirect, stereo, and multiview are **0/100**. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Stage | Current behavior | Explicit non-capability |

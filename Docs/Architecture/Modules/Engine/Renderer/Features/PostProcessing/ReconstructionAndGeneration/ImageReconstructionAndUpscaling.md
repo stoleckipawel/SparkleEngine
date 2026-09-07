@@ -6,6 +6,8 @@
 
 **Scope:** `REN-POST-04` through `REN-POST-06`; render-to-output extent resolution through Linear upscale, NVIDIA DLSS Super Resolution, or NVIDIA DLSS Ray Reconstruction
 
+**Current readiness:** **40/100** — Linear plus capability-gated DLSS SR/RR routes exist; requested/active/provider truth, inputs, failure, package, temporal quality, latency, and memory evidence remains open. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Active producer | Eligibility | Output contract | Main limitation |

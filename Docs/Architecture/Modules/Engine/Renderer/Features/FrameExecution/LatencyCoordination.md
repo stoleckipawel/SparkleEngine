@@ -6,6 +6,8 @@
 
 **Scope:** `REN-LAT-01` through `REN-LAT-05`; owns application simulation markers, optional Streamline PCL/Reflex coordination, and the Renderer-to-RHI marker identity that joins simulation, render submission, and presentation
 
+**Current readiness:** **25/100** — a D3D12/provider-gated marker and Reflex coordination route exists; identity/order, failure, package, Vulkan boundary, and measured latency benefit remain unproved. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Route | Current state | Important limitation |

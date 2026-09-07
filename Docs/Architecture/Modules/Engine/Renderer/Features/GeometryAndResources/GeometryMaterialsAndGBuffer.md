@@ -6,6 +6,8 @@
 
 **Scope:** `REN-SCENE-03` through `REN-SCENE-10`, `REN-MAT-01` through `REN-MAT-10`, `REN-GBUF-01` through `REN-GBUF-08`, and `REN-FRONT-01` through `REN-FRONT-07`
 
+**Current readiness:** **50/100** for the current raster/GBuffer scope — integrated source paths exist; PBR/content/motion/backend/visual and draw-cost evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Axis | Current coverage | Explicit limit |

@@ -8,6 +8,8 @@
 
 **Related owners:** [Temporal Sampling and History](../../FrameExecution/TemporalSamplingAndHistory.md) owns jitter/history semantics; [Image Reconstruction and Upscaling](ImageReconstructionAndUpscaling.md) owns Linear/DLSS/RR evaluation; [Presentation and Output](../DisplayPipeline/PresentationAndOutput.md) owns the final target
 
+**Current readiness:** **40/100** — output/render extent and temporal jitter paths exist; Renderer MSAA, standalone TAA/FXAA/SMAA, and dynamic resolution are **0/100**, and executable extent/reset/provider proof is absent. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Concept | Current state | Must not be conflated with |

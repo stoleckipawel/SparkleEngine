@@ -12,6 +12,8 @@
 
 This file is part of the Debug Views feature dossier and owns the proof contract required after delivery. Candidate results remain in the release-level completion report and must retain exact commands, configurations, artifacts, and limitations.
 
+**Current readiness:** **40/100** — this contract defines missing proof; it contains no candidate verification or delivery result. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## Acceptance At A Glance
 
 | The gate proves | Why a plausible screenshot is insufficient |

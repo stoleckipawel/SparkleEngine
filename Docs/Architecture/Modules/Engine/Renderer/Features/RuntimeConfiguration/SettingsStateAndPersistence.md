@@ -6,6 +6,8 @@
 
 **Scope:** `REN-SET-01` through `REN-SET-05`; owns the lifecycle of the aggregate rendering-settings state, editor commit, workspace persistence, startup restore, render-thread handoff, live versus restart-required application, and requested-state limitations. [Feature Selector Catalog](FeatureSelectorCatalog.md) remains the exact per-selector ledger.
 
+**Current readiness:** **40/100** — settings edit/load/save/handoff is reachable; durable error reporting, malformed/concurrent/package storage, queue pressure, and structured requested-versus-active state remain incomplete. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 | Question | Current answer |

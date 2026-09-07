@@ -2,6 +2,8 @@
 
 **Status:** Tools module index
 
+**Current state:** tracked Cooking, Launcher, ShaderCompiler, SourceImporter, and ToolSupport routes are each **50/100**; reusable Python automation is **10/100** and is not part of the 45-family `FCR-*` average. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md).
+
 This index mirrors the durable tool ownership boundaries under `Tools`.
 
 ## At A Glance

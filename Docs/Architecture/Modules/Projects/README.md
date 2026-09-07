@@ -2,6 +2,8 @@
 
 **Status:** Projects module index
 
+**Current readiness:** **50/100** for the current Showcase product route — project/catalog/source integration exists, while executable workload, package, adoption, and release evidence remains open. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#product-build-and-delivery).
+
 Projects compose engine and tool modules into user-facing products and representative workloads. Product-owned knowledge stays here rather than being assigned to an engine module.
 
 ## At A Glance

@@ -6,6 +6,8 @@
 
 **Responsibility:** explain the intent, ownership, data flow, stage order, branches, lifetime, failure boundaries, and tradeoffs of one Sparkle render frame; feature-specific algorithms and limits belong to the linked dossiers
 
+**Current readiness:** **43/100** across the tracked Renderer portfolio — the described source path is broad, but every candidate verification and delivery gate remains open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## The Frame In One Sentence
 
 Sparkle can bracket host simulation with the frame's logical identity, accepts one monotonic immutable world submission, updates a persistent render scene, derives one scene-independent view and one frame-local prepared scene, binds them through checked pipeline/parameter contracts into a dependency-compiled frame graph, produces deferred surface data and ray-traced lighting, converts the scene-linear result into an output product, submits/presents the required GPU work, and retains every replaced object until its last submission completes.

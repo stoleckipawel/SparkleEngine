@@ -16,13 +16,15 @@
 
 **Release risk and iteration order:** [Release Risk Register](../Strategy/Roadmap.md#release-risk-register)
 
+**Current readiness:** feature implementation/integration portfolio **43/100**; release acceptance **0/100**. All 45 tracked feature families remain Blocked, no candidate-bound report exists, and no release gate has passed. See [Current Feature Readiness](CurrentReadiness.md).
+
 ## Release At A Glance
 
 | Question | Current answer |
 | --- | --- |
 | What is the intended product? | SparkleEngine `v0.1.0`, delivered as a portable Windows x64 `ShippingGame` Showcase runtime archive plus provenance, checksums, notices, and user documentation. |
 | What exists? | Broad engine, tooling, content, Renderer, and D3D12/Vulkan source paths plus focused development workflows. |
-| Where are we now? | `Blocked`; no frozen candidate has passed the clean build/cook/package, feature, map, backend, performance, stability, adoption, publication, and stabilization gates. |
+| Where are we now? | Feature portfolio **43/100**, release acceptance **0/100**, `Blocked`; no frozen candidate has passed the clean build/cook/package, feature, map, backend, performance, stability, adoption, publication, and stabilization gates. |
 | What is the largest product gap? | There is no accepted manifest-owned release package or clean-machine consumer/source-adopter record. |
 | What is the reading rule? | Use the audit below for current blockers, then the release-gate table for the proof required to change a status. |
 

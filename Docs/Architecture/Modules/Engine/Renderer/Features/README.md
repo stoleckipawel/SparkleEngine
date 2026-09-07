@@ -6,6 +6,8 @@
 
 **Authority boundary:** these dossiers own how Renderer features work, why their boundaries exist, how their stages interact, and what feature-local criteria, controlled failures, checks, and completion definition apply. [Capability Inventory](../CapabilityInventory.md) owns the compact implementation-state/evidence ledger; [Feature Selector Catalog](RuntimeConfiguration/FeatureSelectorCatalog.md) owns exact reachability; [Acceptance](../../../../../Acceptance/README.md) owns cross-feature reports, workload/release gates, and actual candidate verdicts. Context repeated in a dossier explains its feature and does not independently promote the corresponding row.
 
+**Current readiness:** **43/100** across 22 tracked Renderer families — source implementation/integration is substantial; candidate verification and delivery/adoption are `0`. See [Current Feature Readiness](../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## At A Glance
 
 This is the detailed feature map behind the [Renderer overview](../README.md). Start with a family below, then open its child page for the algorithm, selector, limitations, tradeoffs, and local proof contract. The source-coverage tables later on this page are audit reference, not the recommended reading order.

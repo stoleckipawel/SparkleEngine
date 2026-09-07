@@ -8,6 +8,8 @@
 
 **Scope:** projected material decals on opaque and alpha-tested GBuffer receivers, raster and ray-traced primary visibility, later arbitrary ray hits used by GI and reflections, D3D12/Vulkan parity, authoring, and ownership
 
+**Current readiness:** **0/100** — target only; this design does not represent an implemented decal path. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 ## Decision
 
 Sparkle should implement decals as material overlays, never as a forward-lit color effect:

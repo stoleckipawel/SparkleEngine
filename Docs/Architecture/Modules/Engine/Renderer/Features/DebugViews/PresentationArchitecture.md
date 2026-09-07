@@ -8,6 +8,8 @@
 
 **Responsibility:** debug-view signal-domain classification, display mapping, output encoding, visualization producer requirements, and capture-visible presentation state
 
+**Current readiness:** **40/100** for the existing debug-view feature; the corrected presentation target described here is not implemented and adds no readiness credit. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+
 ## Decision
 
 Sparkle should classify every debug-view producer as either scene-referred HDR or display-linear exact, then route both domains through one explicit display-mapping and output-encoding path. The per-viewport [`RenderViewMode` and show-flag contract](ViewModesAndShowFlags.md) supplies the selected mode and the resolved `Exposure` and `Tonemapper` flags; this document owns what those inputs mean for presentation.

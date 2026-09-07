@@ -2,6 +2,8 @@
 
 **Status:** implementation-plan navigation index
 
+**Current-state rule:** plans never earn readiness. Read the linked feature projection or the [Current Feature Readiness dashboard](../Acceptance/CurrentReadiness.md) before interpreting a phase list.
+
 Plans own ordered delivery, dependencies, clean-break slices, stop conditions, and validation sequence. Placement follows the architecture owner: module-owned plans stay under that module category; truly shared delivery stays under CrossModule. Plans do not prove completion.
 
 ## At A Glance

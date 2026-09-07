@@ -12,6 +12,8 @@
 
 This file is part of the Deferred Decals feature dossier and owns the proof contract required after delivery. Candidate results remain in the release-level completion report and must retain exact commands, configurations, artifacts, and limitations.
 
+**Current readiness:** **0/100** — future proof contract only; no decal implementation or candidate evidence exists. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+
 ## Acceptance At A Glance
 
 | Proof dimension | Required conclusion |
