@@ -8,7 +8,7 @@
 
 **Owner:** `Engine/Platform` / `SparklePlatform`
 
-**Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../CapabilityEvidencePlan.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
 **Platform expansion route:** [Linux Platform Support](LinuxPlatformSupport.md) explicitly records that Vulkan-on-Windows is not a Linux product path and owns the target/exclusion contract.
 

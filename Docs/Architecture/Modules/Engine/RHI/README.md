@@ -138,7 +138,8 @@ Public contracts live under `Engine/RHI/Public`. Common validation and neutral i
 | Cohesive feature mechanisms and local acceptance | [RHI Feature Guide](Features/README.md) |
 | Cross-backend Renderer feature comparison | [Graphics Feature Coverage](../../../CrossModule/GraphicsCoverageMatrix.md) |
 | Request-to-command-to-retirement traces | [Graphics Feature Execution Traces](../../../CrossModule/FeatureExecutionTraces.md) |
-| Smallest missing RHI checks | [RHI Evidence Plan](../../../../Plans/CapabilityEvidence.md#rhi-capability-to-evidence-map) |
+| First-release RHI work packages | [RHI And GPU Execution Plan](FirstReleasePlan.md) |
+| Smallest missing RHI checks | [RHI Evidence Plan](../../CapabilityEvidencePlan.md#rhi-capability-to-evidence-map) |
 | Candidate and release disposition | [Feature Completion Reports](../../../../Acceptance/FeatureCompletionReports.md) and [First Release](../../../../Acceptance/FirstRelease.md) |
 | Rules for changing an RHI contract or backend | [RHI Engineering](../../../../Engineering/Modules/RHI.md) |
 

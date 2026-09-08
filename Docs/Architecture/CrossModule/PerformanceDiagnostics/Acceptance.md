@@ -6,7 +6,7 @@
 
 **Feature architecture:** [Performance Diagnostics Architecture](README.md)
 
-**Delivery authority:** [Performance Diagnostics Delivery Plan](../../../Plans/CrossModule/PerformanceDiagnostics.md)
+**Delivery authority:** [Performance Diagnostics Delivery Plan](Plan.md)
 
 **Release/workload orchestration:** [Graphics Workloads](../../../Acceptance/GraphicsWorkloads.md)
 

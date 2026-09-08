@@ -8,7 +8,7 @@
 
 **Feature authority:** the linked Architecture dossier defines each feature and its local acceptance contract; [Feature Completion Reports](FeatureCompletionReports.md) owns the tracked `FCR-*` registry and candidate result schema
 
-**Implementation route:** [First Release Implementation Plan](../Plans/FirstRelease/README.md) orders the work from this baseline and routes all 49 families to staged owner prompts; plan progress alone does not change these scores
+**Implementation route:** [First Release Implementation Plan](../Architecture/CrossModule/FirstRelease/README.md) orders the work from this baseline and routes all 49 families to staged owner prompts; plan progress alone does not change these scores
 
 > [!IMPORTANT]
 > A readiness percentage is a navigation aid, not an acceptance verdict. It cannot average away a failed criterion. Every tracked feature remains **Blocked** until its applicable acceptance dimensions pass and its candidate report records the evidence.
@@ -158,4 +158,4 @@ These rows prevent adjacent infrastructure or a detailed target design from look
 - A controlled failure, backend difference, missing consumer, stale route, or invalidated artifact can lower a component immediately.
 - `100` applies only to the declared scope at the named candidate/revision. Acceptance remains conjunctive and can return to Blocked after invalidation.
 
-The next executable evidence for each tracked family remains in the [Capability Evidence Plan](../Plans/CapabilityEvidence.md); the exact pass criteria remain beside the owning Architecture feature.
+The next executable evidence for each tracked family remains in the [Capability Evidence Plan](../Architecture/Modules/CapabilityEvidencePlan.md); the exact pass criteria remain beside the owning Architecture feature.

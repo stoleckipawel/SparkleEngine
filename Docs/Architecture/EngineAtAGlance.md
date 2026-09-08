@@ -147,6 +147,6 @@ Current gate state lives in [First Release Acceptance](../Acceptance/FirstReleas
 | See exact current/missing capability rows | [Module Capability Inventory](Modules/README.md) |
 | Compare D3D12, Vulkan, raster, inline, and native ray paths | [Graphics Feature Coverage](CrossModule/GraphicsCoverageMatrix.md) |
 | Follow a request through execution and retirement | [Feature Execution Traces](CrossModule/FeatureExecutionTraces.md) |
-| See what remains to prove | [Capability Evidence Plan](../Plans/CapabilityEvidence.md) |
+| See what remains to prove | [Capability Evidence Plan](Modules/CapabilityEvidencePlan.md) |
 | Compare 0–100 readiness across all tracked features | [Current Feature Readiness](../Acceptance/CurrentReadiness.md) |
 | See release progress | [Acceptance](../Acceptance/README.md) |

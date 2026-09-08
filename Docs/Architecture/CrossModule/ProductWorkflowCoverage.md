@@ -12,7 +12,7 @@
 
 **Graphics companions:** [Graphics Feature Coverage Matrix](GraphicsCoverageMatrix.md) and [Graphics Feature Execution Traces](FeatureExecutionTraces.md)
 
-**Evidence and disposition:** [Capability Evidence Plan](../../Plans/CapabilityEvidence.md), [Feature Completion Reports](../../Acceptance/FeatureCompletionReports.md), and [First Release Acceptance](../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../Modules/CapabilityEvidencePlan.md), [Feature Completion Reports](../../Acceptance/FeatureCompletionReports.md), and [First Release Acceptance](../../Acceptance/FirstRelease.md)
 
 ## How To Read This Matrix
 

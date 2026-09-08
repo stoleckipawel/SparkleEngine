@@ -8,7 +8,7 @@
 
 **Owner:** `Tools/Import/SourceImporters` / `SourceImporters`
 
-**Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../CapabilityEvidencePlan.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
 **Current readiness:** **50/100** — glTF/GLB/FBX import routes are source-integrated; fidelity, determinism, provenance, adversarial-input, and product proof remain open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
 

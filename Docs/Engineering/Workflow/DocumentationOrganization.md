@@ -70,30 +70,38 @@ Every rule, decision, plan item, evidence gate, current-state fact, and historic
 
 Code and executable build configuration own implemented behavior. A document MUST NOT upgrade source presence into build, runtime, visual, performance, or release proof.
 
-## Placement By Knowledge Type
+## Placement By Owning Subject And Knowledge Role
 
-| Area | Place here | Do not place here |
+| Location | Place here | Do not place here |
 | --- | --- | --- |
 | `Strategy` | desired capabilities, priority, roadmap, operating model, dated executive assessments | implementation rules or system design |
-| `Architecture` | current maps, capability snapshots, accepted decisions, current/target system shape, and feature-local acceptance criteria, controlled failures, checks, and completion definition | phase execution, runbooks, release-result ledgers, or external studies |
+| `Architecture/Modules/<boundary>/<module>` | module-owned current maps, capability snapshots, decisions, current/target system shape, delivery plans, research, and feature-local proof contracts | another module's private mechanics or release-result ledgers |
+| `Architecture/CrossModule/<subject>` | the same knowledge roles for a system with several durable owners and no coherent primary module owner | a relationship that still has one clear module owner |
 | `Engineering` | binding standards, change/review procedure, accepted technical decision records, operational runbooks | product scope or acceptance gates |
 | `Acceptance` | shared completion vocabulary, cross-feature workload and release gates, report schemas, candidate reports, and high-level progress | architecture, priority, or duplicate feature-local proof contracts |
-| `Plans` | ordered delivery slices, dependencies, stop rules, migration and validation sequence | enduring decisions or completion claims |
-| `Research` | external precedent, option studies, visual exploration, dated migration baselines | binding local policy or current-state authority |
 
-Feature definition and feature-local acceptance form one ownership unit: keep the criteria, controlled failure modes, checks, and definition of done in the owning Architecture feature dossier or beside it in the same feature folder. `Docs/Acceptance` may index those contracts and record high-level candidate progress, but MUST NOT reproduce their detailed matrices. Actual candidate results belong in the release-level completion report and retained evidence.
+Within an Architecture subject folder, keep knowledge roles explicit:
 
-When one subject needs other independently maintained knowledge types, split and cross-link them. Small rationale, delivery notes, or validation checklists may remain with an owning contract when they exist only to explain or verify that contract and have no independent lifecycle. Do not hide a standalone plan, runbook, research report, or release-result ledger in an Architecture folder because it shares a subject with an architecture document.
+| Role | Conventional file | Owns | Does not own |
+| --- | --- | --- | --- |
+| dossier/current/target design | `README.md`, `Capability.md`, or a descriptive architecture page | behavior, ownership, current state, decisions, and feature-local contract routing | delivery order, external precedent, or candidate results |
+| plan | `Plan.md` or a scoped `*Plan.md` | ordered delivery slices, dependencies, stop rules, migration and validation sequence | enduring decisions or completion claims |
+| research | `Research.md` or a descriptive `*Research.md` | external precedent, option studies, visual exploration, dated migration baselines | binding local policy, implementation state, or evidence grades |
+| feature-local acceptance | `Acceptance.md` when too large for the dossier | criteria, controlled failures, checks, and definition of done | candidate or release verdicts |
+
+Feature definition, its plan, research, and feature-local acceptance form one navigational unit while retaining separate authority. Keep independently maintained roles as separate, cross-linked files beside the owning dossier. `Docs/Acceptance` may index local contracts and record high-level candidate progress, but MUST NOT reproduce their detailed matrices. Actual candidate results belong in the release-level completion report and retained evidence.
+
+Small rationale, delivery notes, or validation checklists may remain with an owning contract when they exist only to explain or verify that contract and have no independent lifecycle. Standalone plans and research MUST be colocated under their module or cross-module subject; runbooks remain in Engineering and release-result ledgers remain in Acceptance.
 
 ## Placement By Module Ownership
 
 Architecture MUST make the repository's durable module boundaries visible in its physical hierarchy:
 
-- current module maps, capability snapshots, catalogs, module-owned designs, and feature-local acceptance contracts live under `Architecture/Modules/<repository-boundary>/<module>`;
+- current module maps, capability snapshots, catalogs, module-owned designs, plans, research, and feature-local acceptance contracts live under `Architecture/Modules/<repository-boundary>/<module>`;
 - `Architecture/Modules/Engine`, `Tools`, and `Projects` mirror their repository boundaries; repository-wide build and packaging knowledge remains directly under `Architecture/Modules`;
 - a document that primarily belongs to one module stays with that module even when it calls, configures, or consumes another module; use links to explain those relationships;
 - `Architecture/CrossModule` is reserved for a system with several durable owners and no coherent primary module owner;
-- a cross-module document MUST name the participating module owners and link to their module routes.
+- a cross-module subject MUST name the participating module owners and link to their module routes; its plan and research stay inside that subject folder.
 
 Do not create a topic folder that mixes Renderer, RHI, GameFramework, and tool documents merely because they participate in one feature. Prefer one primary owner. Use CrossModule only when the lifecycle and authority are genuinely shared.
 
@@ -139,14 +147,16 @@ A feature family with child capabilities that have different inputs/results, sel
 
 - Use descriptive PascalCase filenames consistent with repository code and existing stable documents. A module inventory uses `README.md` inside its exact module folder so the path carries the module identity.
 - Name the subject, not the author, date, state of mind, or editing action.
-- Put delivery documents under `Plans`; do not use `ImplementationPlan` in an Architecture filename.
+- Use `Plan.md` when a subject folder has one delivery authority. Use a narrow name such as `FirstReleasePlan.md` when a module contains several independently maintained plans.
+- Use `Research.md` when a subject has one study, or a descriptive `*Research.md`, `*Precedent.md`, or `*Baseline.md` when several studies coexist.
+- Do not create parallel top-level `Plans` or `Research` taxonomies. The owning module/feature path supplies subject context; the filename and status header supply knowledge type.
 - Put historical dates and revisions in document metadata, not filenames, unless multiple retained snapshots require date identity.
 - Avoid catch-all names such as `Misc`, `Notes`, `Ideas`, `New`, or `Final`. A deliberately exploratory document may use “Idea” only when its research status and promotion gate are explicit.
 - Preserve stable A-L identifiers in titles where cross-document traceability still uses them; the filename should remain descriptive.
 
 ## Navigation And Links
 
-The required route is `Docs/README.md` -> area index -> module or concern index -> owning document. Every non-index document MUST be reachable from its nearest index, and every index entry MUST state why a reader would open it. A reader MUST be able to distinguish module-owned and cross-module knowledge from the path alone.
+The required route is `Docs/README.md` -> Architecture/Engineering/Strategy/Acceptance index -> module or cross-module subject index -> owning document. Every non-index document MUST be reachable from its nearest index, and every index entry MUST state why a reader would open it. A reader MUST be able to distinguish module-owned and cross-module knowledge from the path, and architecture/plan/research/acceptance roles from the filename and status header.
 
 Use relative Markdown links. Link directly to the owning section where practical. When a file moves or splits, update every producer and consumer in the same change and remove the old path; do not retain alias files, duplicate copies, or compatibility indexes.
 

@@ -2,7 +2,7 @@
 
 **Status:** target architecture; semantic contract, not proof of runtime support
 
-**Current-state audit provenance:** 2026-08-28 static source/build reconciliation at committed `master` revision `20814381`, whose source and executable build configuration are unchanged from implementation revision `99af6d5b`; migration history is recorded in the [Shader System Delivery Plan](../../../../../../Plans/CrossModule/ShaderSystem.md)
+**Current-state audit provenance:** 2026-08-28 static source/build reconciliation at committed `master` revision `20814381`, whose source and executable build configuration are unchanged from implementation revision `99af6d5b`; migration history is recorded in the [Shader System Delivery Plan](../../../../../CrossModule/ShaderSystem/Plan.md)
 
 **Scope:** ray-query versus native ray-tracing execution semantics, effect portability, ownership, capability truth, typed stage composition, shader binding tables, scene indexing, lifetime, supported alternates, mandatory failure, and target completion invariants
 
@@ -12,7 +12,7 @@
 
 This document describes the intended ray-tracing system as one coherent target. It answers what inline ray query and native ray-tracing pipelines mean, what they share, what must remain distinct, who owns each decision, how shader tables map scene identity to native records, and what makes an effect genuinely dual-execution.
 
-It intentionally owns no implementation phases, prompts, CL boundaries, test order, or delivery gates. The [Shader System Delivery Plan](../../../../../../Plans/CrossModule/ShaderSystem.md#implementation-contract) is the single delivery authority for the shader frontend, compiler, global shader map, code library, RHI/backend pipeline, shader table, frame graph, effects, tooling, and validation sequence. Its [unified implementation reference map](../../../../../../Plans/CrossModule/ShaderSystem.md#unified-implementation-reference-map) owns the actionable external references; the [Shader System feature acceptance contract](../../../../../CrossModule/ShaderSystem/Acceptance.md) owns final proof.
+It intentionally owns no implementation phases, prompts, CL boundaries, test order, or delivery gates. The [Shader System Delivery Plan](../../../../../CrossModule/ShaderSystem/Plan.md#implementation-contract) is the single delivery authority for the shader frontend, compiler, global shader map, code library, RHI/backend pipeline, shader table, frame graph, effects, tooling, and validation sequence. Its [unified implementation reference map](../../../../../CrossModule/ShaderSystem/Plan.md#unified-implementation-reference-map) owns the actionable external references; the [Shader System feature acceptance contract](../../../../../CrossModule/ShaderSystem/Acceptance.md) owns final proof.
 
 Code, tests, executable build configuration, runtime captures, and measured evidence remain the authority for implemented behavior. Committed source contains dual-execution GBuffer and shadow routes plus the shared scene table plan, but native execution, parity, reload, and performance remain unproved under the feature acceptance contract.
 
@@ -364,4 +364,4 @@ The target is realized only when implementation evidence proves all of the follo
 - explicit supported alternate algorithms remain functional, missing mandatory products fail before scheduling, and every single-mode effect is documented honestly;
 - no package compatibility, compiler-only RT replacement, ambiguous capability/mode, backend/graph bypass, universal shader-program layer, duplicate owner, permanent migration diagnostics, or unearned precache/permutation framework remains.
 
-The exact implementation prompts, phase ordering, validation sequence, and references are centralized in the [Shader System Delivery Plan](../../../../../../Plans/CrossModule/ShaderSystem.md#implementation-contract). Final proof is centralized in the [Shader System feature acceptance contract](../../../../../CrossModule/ShaderSystem/Acceptance.md).
+The exact implementation prompts, phase ordering, validation sequence, and references are centralized in the [Shader System Delivery Plan](../../../../../CrossModule/ShaderSystem/Plan.md#implementation-contract). Final proof is centralized in the [Shader System feature acceptance contract](../../../../../CrossModule/ShaderSystem/Acceptance.md).

@@ -97,7 +97,7 @@ Device removed or VK_ERROR_DEVICE_LOST -> diagnostics + fatal boundary
 
 This contract is **defined but unproved**. Normal construction and shutdown do not prove partial-failure cleanup, bounded settlement, device-loss diagnostics, or recovery.
 
-Primary evidence destination: `RHI-E16` in the [Capability Evidence Plan](../../../../../../Plans/CapabilityEvidence.md#rhi-evidence).
+Primary evidence destination: `RHI-E16` in the [Capability Evidence Plan](../../../../CapabilityEvidencePlan.md#rhi-evidence).
 
 ## Primary Source Routes
 

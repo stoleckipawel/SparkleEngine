@@ -303,7 +303,7 @@ Every supported map uses the following sequence. A checkpoint folder owns its ow
 
 #### Diagnostics-package sweep versus map acceptance
 
-Every selected package in the [Performance Diagnostics Delivery Plan](../Plans/CrossModule/PerformanceDiagnostics.md#verification-comes-first) is verified on Sponza and then on every currently runtime-supported catalog level. That package sweep proves the diagnostic action, data, failure state, observer cost, and interpretation workflow across the workload range. It does not accept a map's content, visual quality, or performance gate and does not advance the one-map review ledger below.
+Every selected package in the [Performance Diagnostics Delivery Plan](../Architecture/CrossModule/PerformanceDiagnostics/Plan.md#verification-comes-first) is verified on Sponza and then on every currently runtime-supported catalog level. That package sweep proves the diagnostic action, data, failure state, observer cost, and interpretation workflow across the workload range. It does not accept a map's content, visual quality, or performance gate and does not advance the one-map review ledger below.
 
 The sweep roster is derived at package start from `Projects/Showcase/Levels.catalog`: include levels with no asset pack and levels whose referenced asset pack is `RuntimeSupported = true`. The roster reconciled on 2026-08-16 is Empty, Sponza, Damaged Helmet, Cesium Man, Diffuse Transmission Plant, A Beautiful Game, LPS Head, Cornell Box, Bistro Exterior, Bistro Interior Wine, Modern Sponza, Modern Sponza Emissive Candles, and Modern Sponza Animated Knight. A missing runtime-supported external pack is acquired through the launcher or recorded as a blocking package-verification failure; it is not silently omitted.
 

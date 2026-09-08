@@ -52,4 +52,4 @@ Candidate applications include deterministic workload/result analysis, artifact/
 - `FM-PY-02`: cancellation or exception -> remove or quarantine partial output and return nonzero.
 - `CHK-PY-01`: run twice from frozen inputs and compare manifests/hashes/results; inject malformed, missing, incompatible, and interrupted cases.
 
-These criteria have no candidate results in this documentation pass. [`PY-E01`](../../../Plans/CapabilityEvidence.md#world-content-and-tool-evidence) owns the smallest current-scope proof and negative-claim audit.
+These criteria have no candidate results in this documentation pass. [`PY-E01`](../CapabilityEvidencePlan.md#world-content-and-tool-evidence) owns the smallest current-scope proof and negative-claim audit.

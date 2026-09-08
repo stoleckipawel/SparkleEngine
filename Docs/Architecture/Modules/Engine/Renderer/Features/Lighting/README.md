@@ -42,7 +42,7 @@ This classification is semantic, not merely a source-folder preference. A lighti
 
 Both modes require ray-tracing capability. Sparkle currently has no shadow-map, lightmap, probe-only, or non-ray deferred-lighting fallback.
 
-The current `ReferencePathTraced` branch is only a candidate comparison path. [Offline Path Tracer](OfflinePathTracer/README.md) owns the eventual feature definition and completion contract, while its [Discovery gate](OfflinePathTracer/Discovery.md) must settle transport scope, independence, estimator, and evidence design before implementation planning.
+The current `ReferencePathTraced` branch is only a candidate comparison path. [Offline Path Tracer](OfflinePathTracer/README.md) owns the eventual feature definition and completion contract. Its [Discovery gate](OfflinePathTracer/Discovery.md) must settle transport scope, independence, estimator, and evidence design before the [conditional plan](OfflinePathTracer/Plan.md) can be frozen or production implementation can begin.
 
 Both surface-lighting modes write the same five semantic lobe products:
 

@@ -6,7 +6,7 @@
 
 **Feature architecture:** [Deferred GBuffer Decal Composition Architecture](CompositionArchitecture.md)
 
-**Delivery authority:** [Deferred GBuffer Decals Delivery Plan](../../../../../../Plans/Renderer/DeferredGBufferDecals.md)
+**Delivery authority:** [Deferred GBuffer Decals Delivery Plan](Plan.md)
 
 **Release/workload orchestration:** [Graphics Workloads](../../../../../../Acceptance/GraphicsWorkloads.md)
 
@@ -33,7 +33,7 @@ The small Modern Sponza fixture is only the representative end of the oracle lad
 | North Star | `NS-REAL`, `NS-MATH-DATA`, `NS-EVIDENCE`, `NS-OWNERSHIP`, `NS-ADOPTION`, `NS-SIMPLIFY` |
 | Persona targets | `PGE-02`, `PGE-05`–`PGE-10`, `PGE-13`, `PGE-15` |
 | Roadmap target | Mandatory `v0.1.0` feature closure under `REL-04`, followed by release-map, performance/native, candidate, and delivery gates `REL-05` through `REL-11`. |
-| Feature completion | `FCR-REN-23`; [first-release `GR-5`](../../../../../../Plans/FirstRelease/Renderer/GeometryAndRayTracing.md#gr-5--deferred-gbuffer-decals) selects the detailed delivery plan and this complete acceptance contract. |
+| Feature completion | `FCR-REN-23`; [first-release `GR-5`](../../FirstRelease/GeometryAndRayTracing.md#gr-5--deferred-gbuffer-decals) selects the detailed delivery plan and this complete acceptance contract. |
 | Release risk | `RISK-REL-12`; missing raster/ray equivalence, deterministic overlap, bounded lifetime, or paired-backend evidence blocks the admitted release. |
 
 | Risk seed | Cause, event, and consequence | Likelihood / impact before implementation | Owner / gate | Prevention and detection; contingency and retirement evidence |

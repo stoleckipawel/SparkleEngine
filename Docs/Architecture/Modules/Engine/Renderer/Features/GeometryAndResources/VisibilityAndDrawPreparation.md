@@ -133,7 +133,7 @@ No current Renderer route was found for occlusion culling, HZB queries, portals,
 
 This contract is **defined but unproved**. A lower CPU draw count, a visible scene, or deterministic source sort is not execution, visual-equivalence, or performance evidence.
 
-Primary evidence destination: `REN-E32` in the [Capability Evidence Plan](../../../../../../Plans/CapabilityEvidence.md#renderer-capability-to-evidence-map).
+Primary evidence destination: `REN-E32` in the [Capability Evidence Plan](../../../../CapabilityEvidencePlan.md#renderer-capability-to-evidence-map).
 
 ## Primary Source Routes
 

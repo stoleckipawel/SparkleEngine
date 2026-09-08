@@ -8,7 +8,7 @@
 
 **Owner:** `Engine/Assets`; the shader compiler, asset cooker, GameFramework, and Renderer own transformation and consumption
 
-**Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../CapabilityEvidencePlan.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
 `Engine/Assets` is a source corpus, not a C++ module or asset-manager implementation. Its capabilities are useful only when the corresponding cook and runtime consumer are present.
 

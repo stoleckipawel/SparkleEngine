@@ -8,7 +8,7 @@
 
 **Owner:** `Projects/Showcase`; Engine/Application/Launcher/Cooking own execution infrastructure
 
-**Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../CapabilityEvidencePlan.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
 **Current readiness:** **50/100** for the tracked runtime product route — project/catalog/source integration exists; content readiness, executable workloads, package, first-use, and release evidence remain open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#product-build-and-delivery).
 

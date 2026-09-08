@@ -8,7 +8,7 @@
 
 **Parent family:** [Post Processing](../README.md)
 
-**First-release admission:** `FCR-REN-24`; implementation phase [`DSP-5`](../../../../../../../Plans/FirstRelease/Renderer/DisplayAndReconstruction.md#dsp-5--color-grading)
+**First-release admission:** `FCR-REN-24`; implementation phase [`DSP-5`](../../../FirstRelease/DisplayAndReconstruction.md#dsp-5--color-grading)
 
 **Current readiness:** **0/100** — admitted and `Blocked`; no grading controls, transforms, LUT resource, pass, shader, selector, or editor route was found. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 

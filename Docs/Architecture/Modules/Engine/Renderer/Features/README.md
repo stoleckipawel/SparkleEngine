@@ -170,7 +170,7 @@ This table assesses whether the feature-local **definition** is complete enough 
 | Direct Lighting | Defined, unproved | Execute the stable direct-light ownership, numerical, visibility, backend, and controlled-failure contract. |
 | Indirect Lighting | Defined, unproved | Execute the stable transport, history, convergence, reset, bias, backend, and controlled-failure contract. |
 | Volumetric Lighting | Defined negative boundary | Execute `REN-E24` to confirm absence/reachability; any future implementation needs a new target and completion contract. |
-| Offline Path Tracer | Defined, blocked | Complete the adjacent [Discovery gate](Lighting/OfflinePathTracer/Discovery.md); no implementation plan or oracle claim is authorized yet. |
+| Offline Path Tracer | Defined, blocked | Execute the adjacent [Discovery gate](Lighting/OfflinePathTracer/Discovery.md) through Stage 0 of the [conditional plan](Lighting/OfflinePathTracer/Plan.md); no production implementation or oracle claim is authorized yet. |
 | Ray Tracing | Defined, unproved | Execute the dossier's capability, parity, SBT, lifetime, backend, and failure checks linked to RHI evidence. |
 | Post Processing family | Defined, unproved | Execute `AC-POST-*`/`FM-POST-*` across the child contracts and prove every stage join has one color-domain, extent, history, selector, fallback, and output owner. |
 | Exposure | Defined, unproved | Execute the stable metering, finite-value, adaptation, viewport, reset, and async-scheduling contract. |
@@ -198,7 +198,7 @@ Closing a documentation `Partial` row is evidence-design work under `INV-009`; i
 - [Renderer Capability Inventory](../CapabilityInventory.md) owns row-level implementation states, limits, evidence marks, and explicit non-claims.
 - [Shader Program Catalog](ShaderRuntime/ShaderProgramCatalog.md) owns the exact registered program/entry/stage/consumer list.
 - [Graphics Feature Coverage Matrix](../../../../CrossModule/GraphicsCoverageMatrix.md) owns comparisons across backend and execution modes.
-- [Capability Evidence Plan](../../../../../Plans/CapabilityEvidence.md#renderer-capability-to-evidence-map) owns the smallest unanswered checks.
+- [Capability Evidence Plan](../../../CapabilityEvidencePlan.md#renderer-capability-to-evidence-map) owns the smallest unanswered checks.
 
 When a new Renderer selector, pass family, provider, persistent product, or output is added, update the applicable dossier, inventory row, frame-stage link, horizontal coverage, and evidence mapping together.
 
@@ -207,6 +207,6 @@ When a new Renderer selector, pass family, provider, persistent product, or outp
 - The Renderer root owns only module-level navigation, the whole-frame narrative, and the exact capability ledger.
 - A single current feature responsibility stays as one descriptive file directly under `Features`.
 - A durable feature family or a feature with multiple knowledge owners receives a named subfolder and `README.md`. The family entry defines shared ordering and invariants; child files own independently selectable or independently provable capabilities. Target architecture uses a descriptive filename such as `ExecutionArchitecture.md` or `PresentationArchitecture.md`.
-- Architecture owns each feature's local acceptance contract. Keep compact criteria in the dossier; when the matrix is large, place `Acceptance.md` beside the dossier and route it from the `README.md`. Delivery sequence remains in `Docs/Plans`; candidate results, workload status, and release approval remain in `Docs/Acceptance`.
+- Architecture owns each feature's local acceptance contract. Keep compact criteria in the dossier; when the matrix is large, place `Acceptance.md` beside the dossier and route it from the `README.md`. Put feature delivery in adjacent `Plan.md` and research in adjacent `Research.md` or a descriptive research filename. Candidate results, workload status, and release approval remain in `Docs/Acceptance`.
 - A target-only feature still gets a current gap dossier when readers could otherwise mistake its design for shipped behavior. Deferred Decals follows this rule.
 - Split by responsibility, not file size. Lighting separates Direct, Indirect, Volumetric, and Offline Reference work. Post Processing separates Exposure, Reconstruction/Upscaling, Tone Mapping, Color Grading, Chromatic Aberration, Frame Generation, and Presentation/Output because their results, ordering, capability states, inputs, algorithms, and evidence differ.

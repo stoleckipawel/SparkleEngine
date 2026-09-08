@@ -8,7 +8,7 @@
 
 **Architecture authority:** [Performance Diagnostics Architecture](README.md)
 
-**Delivery authority:** [Performance Diagnostics Delivery Plan](../../../Plans/CrossModule/PerformanceDiagnostics.md)
+**Delivery authority:** [Performance Diagnostics Delivery Plan](Plan.md)
 
 **Feature acceptance:** [Performance Diagnostics — Acceptance](Acceptance.md)
 

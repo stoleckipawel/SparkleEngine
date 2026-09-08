@@ -21,11 +21,13 @@ Coverage is necessary but not sufficient. A routed feature still fails the docum
 | --- | --- |
 | [Source Document Coverage](SourceDocumentCoverage.md) | For every source document named in the refinement request, which feature topics occur and where are they documented? |
 | [Stable Identifier Coverage](StableIdentifierCoverage.md) | Where does every `NS-*`, `PGE-*`, current `FCR-*`, `REL-*`, `RISK-REL-*`, `FM-REL-*`, `MAP-*`, `CASE-*`, and `WL-*` identifier route? |
+| [Documentation Presentation Research](PresentationResearch.md) | Which external information-architecture and presentation precedents informed the reader-first documentation structure? |
+| [Renderer And RHI Coverage Research](GraphicsCoverageResearch.md) | What must Renderer/RHI documentation expose before a graphics change can be understood or reviewed? |
 
 ## Rules
 
 1. The owning Architecture dossier defines current capability, explicit absence, target boundary, ownership/lifetime/failure, and local acceptance.
-2. Strategy owns why and priority; Plans own delivery sequence; Acceptance owns high-level progress and candidate results; Research owns source studies and alternatives.
+2. Strategy owns why and priority; the plan colocated with an Architecture owner owns delivery sequence; Acceptance owns high-level progress and candidate results; colocated research owns source studies and alternatives.
 3. This folder owns links only. It must not copy thresholds, results, or feature contracts from their authoritative documents.
 4. “Covered” means an explicit owner exists. It does not mean implemented, verified, included, or accepted.
 5. A newly mentioned public feature or independently selectable mode must enter both ledgers or receive an explicit not-applicable/excluded owner before the source document is complete.

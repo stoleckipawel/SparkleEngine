@@ -123,7 +123,7 @@ Reload does not prove source compilation occurred, that the ShaderCompiler publi
 
 This contract is **defined but unproved**. Source-level validation paths and caches do not establish native correctness, reload boundedness, build-route uniqueness, or feature output parity.
 
-Primary evidence destination: `REN-E31` in the [Capability Evidence Plan](../../../../../../Plans/CapabilityEvidence.md#renderer-capability-to-evidence-map).
+Primary evidence destination: `REN-E31` in the [Capability Evidence Plan](../../../../CapabilityEvidencePlan.md#renderer-capability-to-evidence-map).
 
 ## Primary Source Routes
 

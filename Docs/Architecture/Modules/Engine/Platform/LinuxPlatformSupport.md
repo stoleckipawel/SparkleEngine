@@ -57,4 +57,4 @@ Linux is therefore **unsupported/absent**, not Experimental. The first-release a
 - `CHK-LINUX-01`: run clean build/product/package gates on the frozen native Linux matrix and inspect binaries/dependencies for Windows leakage.
 - `CHK-LINUX-02`: exercise platform and Vulkan lifecycle cases with native validation and retained diagnostics.
 
-No Linux build or runtime check was run and no criterion is passed by this dossier. [`PLAT-E03`](../../../../Plans/CapabilityEvidence.md#foundation-and-host-evidence) owns the negative-capability audit until the Roadmap admits implementation.
+No Linux build or runtime check was run and no criterion is passed by this dossier. [`PLAT-E03`](../../CapabilityEvidencePlan.md#foundation-and-host-evidence) owns the negative-capability audit until the Roadmap admits implementation.

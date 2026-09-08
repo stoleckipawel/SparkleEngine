@@ -4,7 +4,7 @@
 
 **Current state:** this index is not a single feature score. Its owned feature dossiers range from **0/100** target-only geometry-cache/neural paths, through **20/100** performance diagnostics, to a **50/100** integrated shader-system route. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
 
-Use this folder only when a system has several durable owners and no single module can own the whole contract. Each document must name its participating modules and link back to their module pages. A relationship between two modules alone does not justify moving their module-owned knowledge here.
+Use this folder only when a system has several durable owners and no single module can own the whole contract. Each subject must name its participating modules and link back to their module pages. Its plan, research, capability snapshot, and local proof contract stay beside its dossier. A relationship between two modules alone does not justify moving their module-owned knowledge here.
 
 ## At A Glance
 
@@ -23,10 +23,11 @@ Cross-module pages own the *join*. They must name what each participant contribu
 
 | Document | Participating owners | Read it when... |
 | --- | --- | --- |
-| [Geometry Cache Animation](GeometryCacheAnimation/README.md) | SourceImporters, Cooking, GameFramework, Renderer, RHI | entering the feature dossier for its target pipeline, current capability, and local completion contract |
-| [Shader System](ShaderSystem/README.md) | Renderer, RHI, ShaderCompiler, Cooking, Editor | entering the feature dossier for architecture and its local completion contract |
+| [Geometry Cache Animation](GeometryCacheAnimation/README.md) | SourceImporters, Cooking, GameFramework, Renderer, RHI | entering the feature dossier for its architecture, capability, plan, and local completion contract |
+| [Shader System](ShaderSystem/README.md) | Renderer, RHI, ShaderCompiler, Cooking, Editor | entering the feature dossier for architecture, plan, research, migration provenance, and local completion contract |
 | [Neural Graphics](NeuralGraphics/README.md) | future training/export tools, Assets, Renderer, RHI, Showcase, Build/Packaging | distinguishing current vendor inference from the absent owned training, model-to-kernel, and runtime feature |
 | [Multithreaded Engine](MultithreadedEngine.md) | Tasks plus runtime, Renderer, RHI, and tools | understanding shared threading, publication, shutdown, and failure boundaries |
+| [First Release Implementation Plan](FirstRelease/README.md) | every product, module, feature, build, evidence, and release owner | selecting the next release stage and following it into the module-owned work package |
 | [Product Workflow Coverage](ProductWorkflowCoverage.md) | Application, Editor, Launcher, tools, content, build, Showcase, and delivery | comparing developer/user journeys horizontally, including incomplete packaging and support paths |
 | [Product Execution Traces](ProductExecutionTraces.md) | the same product and tool owners | tracing vital non-graphics workflows vertically from request through result, failure, recovery, and settlement |
 
@@ -36,7 +37,7 @@ Cross-module pages own the *join*. They must name what each participant contribu
 | --- | --- | --- |
 | [Graphics Feature Coverage Matrix](GraphicsCoverageMatrix.md) | Renderer, RHI, shaders, tools, and product selectors | comparing feature coverage horizontally across backends and paths |
 | [Graphics Feature Execution Traces](FeatureExecutionTraces.md) | Application, GameFramework, Renderer, RHI, ShaderCompiler | tracing selected features vertically from producer to consumer |
-| [Performance Diagnostics](PerformanceDiagnostics/README.md) | Core, Platform, Application, Editor, Renderer, RHI, and external tools | entering the feature dossier for its target model, current capability, and local completion contract |
+| [Performance Diagnostics](PerformanceDiagnostics/README.md) | Core, Platform, Application, Editor, Renderer, RHI, and external tools | entering the feature dossier for its architecture, capability, plan, research, and local completion contract |
 | [Strategy Coverage](StrategyCoverage.md) | all inventoried modules | reconciling module inventories with persona, roadmap, and gap requirements |
 | [Feature Documentation Coverage](FeatureDocumentation/README.md) | all strategy, acceptance, plan, research, and Architecture owners | auditing every named source document and stable target/report identifier back to one feature dossier |
 

@@ -8,7 +8,7 @@
 
 **Owner:** `Engine/Application` / `SparkleApplication` and `SparkleApplicationEditor`
 
-**Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../CapabilityEvidencePlan.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
 **Current readiness:** **45/100** — runtime/editor host integration exists in source; candidate lifecycle, failure, performance, package, and adoption evidence is absent. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#product-build-and-delivery).
 

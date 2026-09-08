@@ -17,7 +17,7 @@ Target capability belongs to [Principal Graphics Requirements](../Strategy/Requi
 - [Product Workflow Coverage](CrossModule/ProductWorkflowCoverage.md) and [Product Execution Traces](CrossModule/ProductExecutionTraces.md) own the horizontal actor-journey comparison and vertical non-graphics handoff map; they do not prove usability or release readiness.
 - [World Coordinate, Units, and Transform Contract](Decisions/WorldCoordinateAndUnits.md) owns spatial semantics.
 - [Editor Viewport Camera Architecture](Decisions/EditorViewportCamera.md) owns the editor-view and scene-camera split.
-- [Shader System Architecture](CrossModule/ShaderSystem/README.md) owns the enduring authoring, compilation, cooked-artifact, runtime-materialization, and graph-use design. The [capability inventory](Modules/Tools/ShaderCompiler/README.md) owns the dated current-source view, and the [delivery plan](../Plans/CrossModule/ShaderSystem.md) owns phase order.
+- [Shader System Architecture](CrossModule/ShaderSystem/README.md) owns the enduring authoring, compilation, cooked-artifact, runtime-materialization, and graph-use design. The [capability inventory](Modules/Tools/ShaderCompiler/README.md) owns the dated current-source view, and the [delivery plan](CrossModule/ShaderSystem/Plan.md) owns phase order.
 - [Bistro and San Miguel Acceptance Workloads](../Acceptance/GraphicsWorkloads.md) owns workload gates and evidence meaning.
 
 Dated assessments retain the source state they observed. They are not silently rewritten into current architecture claims.

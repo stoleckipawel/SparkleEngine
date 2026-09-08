@@ -126,8 +126,10 @@ Silent substitution is not support. A requested ray/provider/debug path that can
 | Exact current capability states, limits, and non-claims | [Renderer Capability Inventory](CapabilityInventory.md) |
 | Every feature dossier and local proof contract | [Renderer Feature Guide](Features/README.md) |
 | Full frame lifecycle | [Rendering A Sparkle Frame](RenderingASparkleFrame.md) |
+| First-release Renderer work packages | [Renderer First-Release Plans](FirstRelease/README.md) |
+| External renderer ownership and implementation comparison | [Renderer Repositories Research](RendererRepositoriesResearch.md) |
 | Renderer/RHI ownership invariant | [Renderer And RHI Decision](../../../Decisions/RendererRhiBoundary.md) |
-| Smallest missing checks | [Renderer Evidence Plan](../../../../Plans/CapabilityEvidence.md#renderer-capability-to-evidence-map) |
+| Smallest missing checks | [Renderer Evidence Plan](../../CapabilityEvidencePlan.md#renderer-capability-to-evidence-map) |
 | Candidate/release status | `FCR-REN-*` families in [Feature Completion Reports](../../../../Acceptance/FeatureCompletionReports.md) and [First Release](../../../../Acceptance/FirstRelease.md) |
 
 Primary implementation routes are `Engine/Renderer/Public`, `Engine/Renderer/Private`, `Engine/Renderer/ShaderRegistrations`, and `Engine/Renderer/CMakeLists.txt`. Verify those paths before changing a current-state claim.

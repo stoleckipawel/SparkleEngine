@@ -4,7 +4,7 @@
 
 **Scope:** evaluate whether a SparkleEngine capability is discoverable, accurately bounded, traceable through its real owners, and ready to receive executable evidence
 
-**Authority boundary:** module and cross-module Architecture feature dossiers own current source claims and feature-local completion contracts; Acceptance owns candidate reports, workload/release orchestration, and release disposition; Plans own unanswered delivery/evidence sequence; this runbook owns only the review workflow
+**Authority boundary:** module and cross-module Architecture feature dossiers own current source claims and feature-local completion contracts; Acceptance owns candidate reports, workload/release orchestration, and release disposition; the plan colocated with an owning dossier owns unanswered delivery/evidence sequence; this runbook owns only the review workflow
 
 ## Start From The Reader's Question
 
@@ -15,7 +15,7 @@
 | How does a graphics result travel from request to GPU retirement? | [Graphics Feature Execution Traces](../../Architecture/CrossModule/FeatureExecutionTraces.md) |
 | Can a developer or user complete an end-to-end product journey? | [Product Workflow Coverage](../../Architecture/CrossModule/ProductWorkflowCoverage.md) |
 | Where does a non-graphics journey cross module boundaries? | [Product Execution Traces](../../Architecture/CrossModule/ProductExecutionTraces.md) |
-| What evidence is still missing? | [Capability Evidence Plan](../../Plans/CapabilityEvidence.md) |
+| What evidence is still missing? | [Capability Evidence Plan](../../Architecture/Modules/CapabilityEvidencePlan.md) |
 | What must this feature prove? | Its owning [Architecture](../../Architecture/README.md) feature dossier and adjacent acceptance contract, when split for size |
 | Did this candidate prove it, and may it ship? | [Feature Completion Reports](../../Acceptance/FeatureCompletionReports.md) and [First Release Acceptance](../../Acceptance/FirstRelease.md) |
 | How should a change be implemented and reviewed? | [Change Lifecycle](ChangeLifecycle.md), [Change Integration](ChangeIntegration.md), and [Code Review](CodeReview.md) |

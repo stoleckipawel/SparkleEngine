@@ -241,4 +241,4 @@ The exact names/domains remain in the [Feature Selector Catalog](../Modules/Engi
 
 ## Trace Closure Rule
 
-A vertical path is release-complete only when every stage has an owned producer, an owned consumer, a defined failure/fallback, and candidate-bound executable evidence. Source closure in this document earns only `S`; the corresponding `B`, `R`, `N`, `P`, and `A` work remains in the [Capability Evidence Plan](../../Plans/CapabilityEvidence.md).
+A vertical path is release-complete only when every stage has an owned producer, an owned consumer, a defined failure/fallback, and candidate-bound executable evidence. Source closure in this document earns only `S`; the corresponding `B`, `R`, `N`, `P`, and `A` work remains in the [Capability Evidence Plan](../Modules/CapabilityEvidencePlan.md).

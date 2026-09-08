@@ -184,4 +184,4 @@ When adding, removing, or changing a program:
 2. update every frame-graph producer/consumer and pipeline composition;
 3. update this exact catalog and the stage counts in [Shader Compilation](../../../../Tools/ShaderCompiler/README.md);
 4. run registration validation, both runtime-target cooks, reflection/ABI checks, and the smallest consuming runtime path;
-5. record candidate-bound results through [Capability Evidence](../../../../../../Plans/CapabilityEvidence.md) and [Feature Completion Reports](../../../../../../Acceptance/FeatureCompletionReports.md).
+5. record candidate-bound results through [Capability Evidence](../../../../CapabilityEvidencePlan.md) and [Feature Completion Reports](../../../../../../Acceptance/FeatureCompletionReports.md).

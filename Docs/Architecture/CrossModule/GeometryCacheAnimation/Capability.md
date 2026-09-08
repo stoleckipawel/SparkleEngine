@@ -8,7 +8,7 @@
 
 **Architecture authority:** [Geometry Cache Animation Pipeline](README.md)
 
-**Delivery authority:** [Geometry Cache Animation Delivery Plan](../../../Plans/CrossModule/GeometryCacheAnimation.md)
+**Delivery authority:** [Geometry Cache Animation Delivery Plan](Plan.md)
 
 **Feature acceptance:** [Geometry Cache Animation — Acceptance](Acceptance.md)
 

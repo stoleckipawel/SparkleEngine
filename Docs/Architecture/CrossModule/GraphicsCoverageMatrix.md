@@ -138,4 +138,4 @@ Targeted source review did not find a complete current product path for runtime-
 
 ## Evidence Linkage
 
-The executable closure items for these rows are `RHI-E01` through `RHI-E16`, `REN-E01` through `REN-E33`, and `SHD-E01` through `SHD-E12` in the [Capability Evidence Plan](../../Plans/CapabilityEvidence.md). Candidate-specific results belong in [Feature Completion Reports](../../Acceptance/FeatureCompletionReports.md), not in this snapshot.
+The executable closure items for these rows are `RHI-E01` through `RHI-E16`, `REN-E01` through `REN-E33`, and `SHD-E01` through `SHD-E12` in the [Capability Evidence Plan](../Modules/CapabilityEvidencePlan.md). Candidate-specific results belong in [Feature Completion Reports](../../Acceptance/FeatureCompletionReports.md), not in this snapshot.

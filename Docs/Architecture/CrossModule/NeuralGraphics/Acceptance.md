@@ -55,4 +55,4 @@ Every gate is conjunctive. High image quality cannot compensate for unlicensed d
 | `CHK-NG-03` | `AC-NG-06..07`, `FM-NG-04` | Run the frozen quality/temporal/performance/memory matrix against the classical fallback and perturb fault-sensitive inputs. |
 | `CHK-NG-04` | `AC-NG-08`, `FM-NG-06` | Verify package manifest/licenses/hashes and repeat the supported and missing-artifact journeys from clean bytes. |
 
-Documentation and source inspection establish scope only. No `AC-NG-*`, `FM-NG-*`, or `CHK-NG-*` result is passed here. The deferred [`NG-E01..04`](../../../Plans/CapabilityEvidence.md#neural-graphics-evidence) sequence owns the central proof destinations after roadmap admission.
+Documentation and source inspection establish scope only. No `AC-NG-*`, `FM-NG-*`, or `CHK-NG-*` result is passed here. The deferred [`NG-E01..04`](../../Modules/CapabilityEvidencePlan.md#neural-graphics-evidence) sequence owns the central proof destinations after roadmap admission.

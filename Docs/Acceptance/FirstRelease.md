@@ -8,7 +8,7 @@
 
 **Roadmap and sequence:** [F. Release-First Principal Graphics Roadmap](../Strategy/Roadmap.md)
 
-**Implementation orchestrator:** [First Release Implementation Plan](../Plans/FirstRelease/README.md)
+**Implementation orchestrator:** [First Release Implementation Plan](../Architecture/CrossModule/FirstRelease/README.md)
 
 **Detailed graphics workloads:** [I. Bistro and San Miguel Acceptance Workloads](GraphicsWorkloads.md)
 
@@ -209,7 +209,7 @@ Nothing in this table is accepted merely because a source route exists. The work
 
 ### Current Feature-Inventory Seed
 
-The static scan found the following closure families. The [Current Capability Inventory](../Architecture/Modules/README.md) now provides detailed source-reconciled rows for every release subsystem, plus horizontal graphics coverage, vertical execution traces, the shader catalog, and the [capability evidence plan](../Plans/CapabilityEvidence.md). They are inputs to `REL-00`, not substitutes for tracing actual UI, configuration, producers, consumers, package reachability, approval, or executable evidence.
+The static scan found the following closure families. The [Current Capability Inventory](../Architecture/Modules/README.md) now provides detailed source-reconciled rows for every release subsystem, plus horizontal graphics coverage, vertical execution traces, the shader catalog, and the [capability evidence plan](../Architecture/Modules/CapabilityEvidencePlan.md). They are inputs to `REL-00`, not substitutes for tracing actual UI, configuration, producers, consumers, package reachability, approval, or executable evidence.
 
 | Family | Source-present surfaces to classify |
 | --- | --- |

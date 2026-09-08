@@ -6,7 +6,7 @@
 
 **Scope:** `REN-POST-09`; Windows HDR10 presentation through D3D12 and Vulkan
 
-**Release admission:** mandatory `FCR-REN-26`; staged by [`DSP-7`](../../../../../../../Plans/FirstRelease/Renderer/DisplayAndReconstruction.md#dsp-7--hdr10-display-output)
+**Release admission:** mandatory `FCR-REN-26`; staged by [`DSP-7`](../../../FirstRelease/DisplayAndReconstruction.md#dsp-7--hdr10-display-output)
 
 **Current readiness:** **0/100**, `Blocked` — no HDR swapchain format/color-space negotiation, PQ output transform, static metadata, display capability policy, or candidate evidence was found. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 

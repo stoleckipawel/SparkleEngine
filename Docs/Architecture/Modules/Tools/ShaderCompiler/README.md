@@ -10,11 +10,11 @@
 
 **Current system architecture:** [Shader System](../../../CrossModule/ShaderSystem/README.md)
 
-**Delivery plan:** [Shader System Plan](../../../../Plans/CrossModule/ShaderSystem.md)
+**Delivery plan:** [Shader System Plan](../../../CrossModule/ShaderSystem/Plan.md)
 
-**Evidence plan and release disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence plan and release disposition:** [Capability Evidence Plan](../../CapabilityEvidencePlan.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
-**Traceability:** capability rows use durable `SHD-<family>-NN` identities; their primary proof destinations are listed in the [ShaderCompiler capability-to-evidence map](../../../../Plans/CapabilityEvidence.md#shadercompiler-capability-to-evidence-map).
+**Traceability:** capability rows use durable `SHD-<family>-NN` identities; their primary proof destinations are listed in the [ShaderCompiler capability-to-evidence map](../../CapabilityEvidencePlan.md#shadercompiler-capability-to-evidence-map).
 
 **Deeper routes:** [exact Renderer shader program catalog](../../Engine/Renderer/Features/ShaderRuntime/ShaderProgramCatalog.md), [cross-system graphics coverage](../../../CrossModule/GraphicsCoverageMatrix.md), and [shader authoring-to-runtime trace](../../../CrossModule/FeatureExecutionTraces.md#trace-7-shader-authoring-to-runtime-generation)
 

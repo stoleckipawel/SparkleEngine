@@ -49,7 +49,7 @@ flowchart LR
 | [Build And Packaging](BuildAndPackaging/README.md) | build/dependency mechanics plus distinct package/install, CI/regression, and adoption/support dossiers |
 | [CrossModule](../CrossModule/README.md) | systems that genuinely span multiple durable owners without one primary module |
 
-Physical placement follows ownership: Renderer details stay under `Engine/Renderer`, RHI details under `Engine/RHI`, and relationships are expressed through links. The inventory below provides the repository-wide evidence ledger without replacing those module routes.
+Physical placement follows ownership: Renderer details stay under `Engine/Renderer`, RHI details under `Engine/RHI`, and relationships are expressed through links. A feature's plan and research stay beside its dossier; broader module plans stay at the module root, and ownerless joins use `CrossModule`. The inventory below provides the repository-wide evidence ledger without replacing those routes.
 
 ## Purpose
 
@@ -72,7 +72,7 @@ Code and executable build configuration remain the authority for implementation.
 | How does a graphics feature execute end to end? | Use the [Graphics Feature Execution Traces](../CrossModule/FeatureExecutionTraces.md). |
 | Can a developer or user complete a build/content/editor/runtime/delivery journey? | Use [Product Workflow Coverage](../CrossModule/ProductWorkflowCoverage.md). |
 | Where does that product journey cross owners and fail or settle? | Use [Product Execution Traces](../CrossModule/ProductExecutionTraces.md). |
-| What question is still unanswered and what is the smallest next check? | Use the [Capability Evidence Plan](../../Plans/CapabilityEvidence.md). |
+| What question is still unanswered and what is the smallest next check? | Use the [Capability Evidence Plan](CapabilityEvidencePlan.md). |
 | What must this capability prove, and can it ship? | Use its Architecture feature dossier for the local proof contract, then its `FCR-*` report and the [First Release Acceptance Contract](../../Acceptance/FirstRelease.md) for actual approval. |
 | How do I harden or review this dossier? | Follow [Capability Documentation Review](../../Engineering/Workflow/CapabilityReview.md). |
 
@@ -141,11 +141,11 @@ The initial detailed inventories carry `S` only. No `B`, `R`, `N`, `P`, or `A` e
 | Product/developer workflow coverage | Deep horizontal | [Product And Developer Workflow Coverage](../CrossModule/ProductWorkflowCoverage.md) | Discovery, build, content, cook, launch, editor, runtime, diagnostics, cancellation, package, release, and support journeys compared actor-by-actor; source-only. |
 | Product/developer execution | Deep vertical | [Product And Developer Execution Traces](../CrossModule/ProductExecutionTraces.md) | Quick Start, asset-to-frame, editor transaction, settings, shader reload, capture, and settlement paths traced across owners; source-only. |
 | Registered Renderer programs | Exact catalog | [Renderer Shader Program Catalog](Engine/Renderer/Features/ShaderRuntime/ShaderProgramCatalog.md) | All 35 registrations mapped to source, entry, stage, consumer, and binding/traversal boundary; source-only. |
-| Evidence closure | Plan | [Capability Evidence Plan](../../Plans/CapabilityEvidence.md) | Missing source audits and the smallest proof needed to promote individual claims. It does not replace release gates or roadmap order. |
+| Evidence closure | Plan | [Capability Evidence Plan](CapabilityEvidencePlan.md) | Missing source audits and the smallest proof needed to promote individual claims. It does not replace release gates or roadmap order. |
 
 ## Current Coverage Boundary
 
-Every top-level implementation owner is routed above and has a source-depth capability inventory. That closes the first navigation skeleton, not the release or the dossier audit. Horizontal graphics and product-workflow matrices, vertical execution traces, and the evidence plan own the remaining cross-module questions. [Inventory hardening items `INV-009` through `INV-012`](../../Plans/CapabilityEvidence.md#inventory-expansion) deliberately remain Open until every capability has all dossier dimensions, journeys, proof destinations, and reverse mappings reconciled. Any new public selector, executable, catalog entry, backend/mode, generated product, or module must enter those routes before it can be treated as inventoried.
+Every top-level implementation owner is routed above and has a source-depth capability inventory. That closes the first navigation skeleton, not the release or the dossier audit. Horizontal graphics and product-workflow matrices, vertical execution traces, and the evidence plan own the remaining cross-module questions. [Inventory hardening items `INV-009` through `INV-012`](CapabilityEvidencePlan.md#inventory-expansion) deliberately remain Open until every capability has all dossier dimensions, journeys, proof destinations, and reverse mappings reconciled. Any new public selector, executable, catalog entry, backend/mode, generated product, or module must enter those routes before it can be treated as inventoried.
 
 ## Claims That Require The Deeper Route
 
@@ -165,4 +165,4 @@ Every top-level implementation owner is routed above and has a source-depth capa
 
 ## Maintenance Route
 
-Use [Capability Documentation Review](../../Engineering/Workflow/CapabilityReview.md) to audit a changed dossier, [Documentation Organization](../../Engineering/Workflow/DocumentationOrganization.md) for placement and ownership, and the [Capability Evidence Plan](../../Plans/CapabilityEvidence.md) for unanswered checks. Do not mark a row `B`, `R`, `N`, `P`, or `A` from documentation review, a responsive process, an uninspected screenshot, or an unrecorded local result.
+Use [Capability Documentation Review](../../Engineering/Workflow/CapabilityReview.md) to audit a changed dossier, [Documentation Organization](../../Engineering/Workflow/DocumentationOrganization.md) for placement and ownership, and the [Capability Evidence Plan](CapabilityEvidencePlan.md) for unanswered checks. Do not mark a row `B`, `R`, `N`, `P`, or `A` from documentation review, a responsive process, an uninspected screenshot, or an unrecorded local result.

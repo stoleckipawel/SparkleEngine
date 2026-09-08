@@ -115,7 +115,7 @@ Current and previous matrices are zero/default when history is invalid and must 
 
 This contract is **defined but unproved**. A stable-looking image is not enough: completion requires exact temporal values, invalidation order, cross-consumer agreement, and multi-view isolation artifacts.
 
-Primary evidence destination: `REN-E29` in the [Capability Evidence Plan](../../../../../../Plans/CapabilityEvidence.md#renderer-capability-to-evidence-map).
+Primary evidence destination: `REN-E29` in the [Capability Evidence Plan](../../../../CapabilityEvidencePlan.md#renderer-capability-to-evidence-map).
 
 ## Primary Source Routes
 

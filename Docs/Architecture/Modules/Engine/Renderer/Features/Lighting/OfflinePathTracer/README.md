@@ -1,12 +1,12 @@
 # Offline Path Tracer Feature Dossier
 
-**Status:** feature dossier for eventual `FCR-REN-08`; its embedded acceptance contract remains blocked until `PTD-00` ratifies the transport domain and authorizes planning
+**Status:** feature dossier for eventual `FCR-REN-08`; its embedded acceptance contract and production implementation remain blocked until `PTD-00` ratifies the transport domain and freezes the conditional plan
 
 **Responsibility:** keep the offline path tracer's expected feature definition, acceptance criteria, runtime failure modes, evidence checks, and definition of done together under the Renderer lighting architecture
 
-**Authority boundary:** the [NVIDIA completion study](../../../../../../../Research/GraphicsArchitecture/OfflinePathTracerCompletion.md#primary-nvidia-reference-ledger) owns external precedent, [`PTD-00`](Discovery.md) owns discovery and planning authorization, the [roadmap](../../../../../../../Strategy/Roadmap.md#offline-reference-truth-first) owns priority, code owns implemented behavior, and the eventual [`FCR-REN-08`](../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry) report owns results
+**Authority boundary:** [Research](Research.md) owns NVIDIA/AMD/neutral precedent, [`PTD-00`](Discovery.md) owns discovery and implementation authorization, [Execution Architecture](ExecutionArchitecture.md) owns the proposed target boundary, the [conditional staged plan](Plan.md) owns delivery order/prompts, the [roadmap](../../../../../../../Strategy/Roadmap.md#offline-reference-truth-first) owns priority, code owns implemented behavior, and the eventual [`FCR-REN-08`](../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry) report owns results
 
-**Current disposition:** **BLOCKED** on 2026-09-06. This document defines what eventual completion must prove; it does not accept the current `ReferencePathTraced` implementation, freeze unresolved `PTD-D0` decisions, authorize implementation, or report executable evidence.
+**Current disposition:** **BLOCKED** on 2026-09-09. The target architecture and conditional delivery route are now explicit, but this document does not accept the current `ReferencePathTraced` implementation, freeze unresolved `PTD-D0` decisions, authorize Stage 1, or report executable evidence.
 
 **Current readiness:** **20/100** — an early reference-labelled source route exists, but the transport scope, estimator, deterministic raw oracle, independence, lifecycle, parity, and executable proof are blocked. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
@@ -18,15 +18,25 @@ flowchart LR
     Sample --> Accumulate[Exact-count raw HDR<br/>accumulation]
     Accumulate --> Export[Raw radiance, AOVs,<br/>statistics and manifest]
     Export --> Compare[Independent oracle ladder<br/>and release-map comparison]
-    Discovery[PTD-00 discovery] -. must pass before planning .-> Freeze
+    Discovery[PTD-00 discovery] -. must pass before Stage 1 .-> Freeze
 ```
 
 | What exists now | What completion would mean | What remains prohibited as evidence |
 | --- | --- | --- |
 | a `ReferencePathTraced` source route and an external completion study | a bounded, deterministic, transport-defined offline oracle with explicit scene coverage, lifecycle, backend behavior, and retained proof | treating source presence, a converged-looking screenshot, denoised/tonemapped output, or a shared-dependency comparison as ground truth |
-| feature and discovery contracts | accepted `PTD-D0`, an authorized delivery plan, implementation, and every conjunctive criterion passing | starting implementation or freezing unresolved math/coverage choices from this dossier alone |
+| feature, discovery, architecture, and conditional plan contracts | accepted `PTD-00`, a plan frozen to that report, implementation, and every conjunctive criterion passing | starting implementation or treating provisional architecture/math/coverage choices as accepted |
 
 The product is a correctness oracle, not simply a slower render mode. Its raw result must remain independent of real-time reconstruction, denoising, display mapping, and any approximation it is intended to judge.
+
+## Start Here
+
+| Need | Open |
+| --- | --- |
+| external NVIDIA/AMD implementation findings, neutral math/format foundations, and current Sparkle gaps | [Research](Research.md) |
+| the blocking terminology, estimator, scope, fixture, risk, and independent-review gate | [`PTD-00` Discovery](Discovery.md) |
+| target ownership, job state, dataflow, sampler, integrator, traversal, artifact, workflow, and clean-break decisions | [Execution Architecture](ExecutionArchitecture.md) |
+| implementation order, dependencies, estimates, deletion ledger, stop rules, and ready-to-use prompts | [Staged Implementation Plan](Plan.md) |
+| feature surface, binary acceptance, runtime failures, required checks, and definition of done | this dossier |
 
 ## Acceptance Identity
 
@@ -34,7 +44,7 @@ The product is a correctness oracle, not simply a slower render mode. Its raw re
 | --- | --- |
 | Feature | `FCR-REN-08` offline path-traced reference |
 | Discovery prerequisite | `PTD-00` `PASS` at an exact report revision |
-| Planning prerequisite | accepted `PTD-01`; no implementation starts from this contract alone |
+| Planning prerequisite | [conditional `PTD-01`](Plan.md) reconciled to the exact `PTD-00 PASS` revision; no implementation starts from plan presence alone |
 | North Stars | `NS-REAL`, `NS-MATH-DATA`, `NS-EVIDENCE`, `NS-OWNERSHIP`, `NS-SIMPLIFY` |
 | Persona targets | `PGE-02`, `PGE-05`, `PGE-06`, `PGE-07`, `PGE-08`, `PGE-09`, `PGE-10`, `PGE-13`, `PGE-15` |
 | Release dependencies | `REL-03` before implementation; `REL-04` feature closure; `PTD-03` and `REL-05` before release-map oracle use |
@@ -45,23 +55,23 @@ The product is a correctness oracle, not simply a slower render mode. Its raw re
 
 `PTD-D0` must replace every **Expected** or **Conditional** disposition with an accepted Included/Excluded verdict. A Core row cannot be excluded while retaining the claim “offline unbiased reference.” A Conditional row is included whenever a shipped map, public selector, or retained `v0.1.0` promise reaches it; otherwise the feature and its dependent claims must be unreachable and unadvertised. Excluded behavior may not silently fall back to an approximation inside the raw oracle.
 
-| ID | Initial disposition | Required surface | NVIDIA references to use |
+| ID | Initial disposition | Required surface | External precedents to challenge the design |
 | --- | --- | --- | --- |
-| `OPT-FS-01` | Core | A bounded offline job freezes scene, camera, resolution, transport domain, settings, shaders, assets, backend/compiler, seed stream, and output identity before sample zero. | `NV-RTX-REF`, `NV-FAL-ACC` |
-| `OPT-FS-02` | Core | Deterministic camera rays and subpixel sampling originate from the accepted camera model without consuming a production GBuffer. Pinhole perspective is the expected minimum. | `NV-RTX-CORE`; `NV-FAL-PT` as dependency counterexample |
+| `OPT-FS-01` | Core | A bounded offline job freezes scene, camera, resolution, transport domain, settings, shaders, assets, backend/compiler, seed stream, and output identity before sample zero. | `NV-RTX-REF`, `NV-FAL-ACC`, `AMD-CAP-PT`, `AMD-RPR-PRODUCT` |
+| `OPT-FS-02` | Core | Deterministic camera rays and subpixel sampling originate from the accepted camera model without consuming a production GBuffer. Pinhole perspective is the expected minimum. | `NV-RTX-CORE`, `AMD-CAP-PT`; `NV-FAL-PT` as dependency counterexample |
 | `OPT-FS-03` | Core | Frozen triangle geometry, instance transforms, barycentrics, geometric normals, UVs, winding, sidedness, visibility masks, and scene units have one documented meaning. | `NV-RAY-OFFSET`, `NV-FAL-MIN` |
 | `OPT-FS-04` | Expected | Static meshes plus alpha-tested/two-sided/normal-mapped surfaces used by the release maps. Skinned and morphed meshes are sampled as immutable evaluated snapshots when retained release claims require them. | `NV-FAL-TEST`, `NV-FAL-PT` |
 | `OPT-FS-05` | Core | Texture decode, color space, UV transform, filtering/LOD policy, and material parameters are identical to the accepted scene manifest and independently testable. | `NV-FAL-TEST`, `NV-RTX-CORE` |
 | `OPT-FS-06` | Expected | Opaque metallic-roughness surface reflection includes diffuse, rough/specular reflection, dielectric F0, normal mapping, and emission with derived BSDF evaluation/sampling/PDF correspondence. | `NV-FAL-PT`, `NV-FAL-MIN`, `NV-OPTIX-PT` |
 | `OPT-FS-07` | Expected | Environment, emissive triangles, directional, point, spot, and rectangle/area lights used by the release have frozen radiometric units, sidedness, geometry, attenuation, selection probabilities, PDFs, and visibility. | `NV-FAL-PT`, `NV-OPTIX-PT` |
-| `OPT-FS-08` | Core | One derivable estimator accounts for BSDF and light strategy selection, NEE, emission/environment hits, MIS or an explicitly disjoint alternative, delta events if included, rejected samples, and zero-probability cases without double counting. | `NV-FAL-PT`, `NV-FAL-MIN`, `NV-OPTIX-PT` |
+| `OPT-FS-08` | Core | One derivable estimator accounts for BSDF and light strategy selection, NEE, emission/environment hits, MIS or an explicitly disjoint alternative, delta events if included, rejected samples, and zero-probability cases without double counting. | `NV-FAL-PT`, `NV-FAL-MIN`, `NV-RTG2-REF`, `AMD-CAP-PT`, `REF-VEACH`, `REF-PBRT-PT` |
 | `OPT-FS-09` | Core | Full-integral or finite-path target is named exactly. Russian roulette is compensated. Deterministic bounce/distance limits, clamps, filters, biased MIP choices, and approximate caches are absent from raw full-integral output or explicitly bound a differently named target. | `NV-RTX-REF`, `NV-FAL-PT`, `NV-OPTIX-PT` |
 | `OPT-FS-10` | Core | Stable job/pixel/sample/dimension identity is independent of presentation frame timing and scheduling and supports exact restart or accepted checkpoint/resume behavior. | `NV-RTX-REF`, `NV-FAL-PT` |
 | `OPT-FS-11` | Core | Robust primary, continuation, and connection-ray endpoints use justified reconstruction/transform/traversal error bounds; geometric and shading-normal roles are explicit. | `NV-RAY-OFFSET`, `NV-FAL-TEST` |
 | `OPT-FS-12` | Core | Raw accumulation has a justified precision/summation policy, exact count, reset/invalidation state machine, overflow behavior, checkpoint/partial semantics, and atomic completion. | `NV-FAL-ACC`, `NV-RTX-REF` |
-| `OPT-FS-13` | Core | Scene-linear HDR radiance, required AOVs, per-pixel/sample statistics, ray/path counts, invalid/rejection/cap counters, and immutable provenance are exported separately from previews. | `NV-FAL-PT`, `NV-FAL-ERR` |
+| `OPT-FS-13` | Core | Scene-linear HDR radiance, required AOVs, per-pixel/sample statistics, ray/path counts, invalid/rejection/cap counters, and immutable provenance are exported separately from previews. | `NV-FAL-PT`, `NV-FAL-ERR`, `AMD-RPR-PRODUCT`, `REF-OPENEXR` |
 | `OPT-FS-14` | Core | Analytic, metamorphic, minimal-reviewable, independent-renderer, statistical, lifecycle, backend, and controlled-failure evidence form one oracle ladder. | `NV-FAL-MIN`, `NV-FAL-ERR`, `NV-FAL-TEST`, `NV-RTX-REG` |
-| `OPT-FS-15` | Core | Strict requested-versus-active D3D12/Vulkan behavior, capability rejection, native validation, deterministic completion, progress, cancellation, timeout, cleanup, and bounded CPU/GPU memory/disk/time are proven. | `NV-RTX-CORE`, `NV-RTX-REF` |
+| `OPT-FS-15` | Core | Strict requested-versus-active D3D12/Vulkan behavior, capability rejection, native validation, deterministic completion, progress, cancellation, timeout, cleanup, and bounded CPU/GPU memory/disk/time are proven. | `NV-RTX-CORE`, `NV-RTX-REF`, `AMD-CAP-PT`, `AMD-RR`, `AMD-BAIKAL` |
 | `OPT-FS-16` | Expected | Accepted raw references, convergence/uncertainty, provenance, and dependency-independence statements exist for every applicable release-map camera before the tracer judges real-time PBR or artifacts. | `NV-FAL-ERR`, `NV-FAL-TEST`; NVIDIA images are not Sparkle thresholds |
 | `OPT-FS-17` | Conditional | Depth of field, motion blur, orthographic/panoramic cameras, animated-time integration, extra geometry classes, or procedural materials are included only when `PTD-D0` and release scope retain them. | `NV-FAL-PT`, `NV-RTX-CORE` as feature precedents only |
 | `OPT-FS-18` | Excluded by default | Physical transmission, nested dielectrics, participating media, physical BSSRDF/subsurface transport, spectral transport, and an unrestricted caustics claim remain outside the first oracle unless discovery expands the domain and all associated criteria/checks. | `NV-FAL-PT`, `NV-FAL-TEST`, `NV-RTX-CORE`, `NV-OPTIX-PT` as future scope checklists |
@@ -69,12 +79,12 @@ The product is a correctness oracle, not simply a slower render mode. Its raw re
 
 ## Acceptance Criteria
 
-Every row is binary and must retain its named evidence. Exact numeric tolerances, matrices, sample counts, and resource budgets are frozen by accepted `PTD-00` artifacts before implementation planning; an unset or post-hoc value keeps the criterion blocked.
+Every row is binary and must retain its named evidence. Exact numeric tolerances, matrices, sample counts, and resource budgets are frozen by accepted `PTD-00` artifacts before the conditional plan is accepted or Stage 1 begins; an unset or post-hoc value keeps the criterion blocked.
 
 | ID | Pass criterion | Required evidence | Failure condition |
 | --- | --- | --- | --- |
 | `AC-OPT-01` | The public name and manifest state the exact offline/reference/unbiased/finite/full/converged claim and every included/excluded `OPT-FS-*` row. | signed scope/terminology/transport-domain manifest and selector audit | A reachable behavior or comparison can exceed the stated domain. |
-| `AC-OPT-02` | A consumer can submit, observe, cancel, resume as accepted, and complete the bounded job through one packaged workflow without an IDE or mutable source tree. | clean-machine package transcript, job state trace, outputs, budgets, and support diagnostics | The workflow requires private knowledge, hangs, or treats partial output as complete. |
+| `AC-OPT-02` | An intended reference user can submit, observe, checkpoint/pause, resume, cancel, and complete the bounded job through one staged DevelopmentEditor/source-adopter workflow without an IDE or mutable source tree. | clean-machine staged-tool transcript, job state trace, outputs, budgets, and support diagnostics | The workflow requires private knowledge, hangs, exposes the tool in Shipping consumer first run, or treats partial output as complete. |
 | `AC-OPT-03` | Primary camera rays reproduce the accepted camera and sampling model independently of production GBuffer data. | analytic ray fixtures, subpixel sequence record, edge/corner/center rays, and camera-transform cases | A GBuffer/raster defect can enter the oracle before the first trace or camera samples repeat/shift unexpectedly. |
 | `AC-OPT-04` | The scene snapshot is immutable and complete for all included geometry, transforms, deformation, materials, textures, lights, environment, units, shaders, and backend inputs. | hashed manifest plus mutation/reload/invalidation matrix | Any contributing input is absent from identity or can change after sample zero. |
 | `AC-OPT-05` | Primary/secondary intersection, barycentrics, transforms, sidedness, alpha, visibility, and geometric-normal behavior match analytic fixtures for every included geometry row. | analytic hit/visibility records and adversarial transform matrix | A miss/hit, interpolation, orientation, or alpha result lacks a defect-detecting oracle. |
@@ -109,27 +119,27 @@ Every row is binary and must retain its named evidence. Exact numeric tolerances
 | `FM-OPT-09` | Scene/configuration mutation, resize, reload, overflow, or precision loss leaves stale or wrong accumulation. | State identity resets/rejects or resumes from a verified checkpoint; exact count and error remain inspectable. | `CHK-OPT-09` |
 | `FM-OPT-10` | Exposure, filtering, denoising, tone mapping, gamut/encoding, screenshot conversion, or lossy format enters comparison data. | Raw/preview lineage audit rejects the artifact before comparison. | `CHK-OPT-10` |
 | `FM-OPT-11` | Noise falls while the mean is wrong, correlation mimics stability, or an average hides a local defect. | Replicate/region/convergence/fault protocol returns `FAIL` or `Inconclusive`; thresholds are never tuned post hoc. | `CHK-OPT-11` |
-| `FM-OPT-12` | Falcor/RTXPT/OptiX comparison differs in camera, units, light shape, material model, texture decode, path domain, or output transform. | Equivalence manifest blocks the comparison as `Inconclusive`; no side is declared correct from the image alone. | `CHK-OPT-06` |
+| `FM-OPT-12` | Falcor/RTXPT/OptiX/Capsaicin or another external comparison differs in camera, units, light shape, material model, texture decode, path domain, or output transform. | Equivalence manifest blocks the comparison as `Inconclusive`; no side is declared correct from the image alone. | `CHK-OPT-06` |
 | `FM-OPT-13` | D3D12/Vulkan capability, compiler, validation, or numeric behavior diverges or silently falls back. | Requested/active result and native diagnostics identify the affected backend; it is repaired or excluded explicitly. | `CHK-OPT-12` |
 | `FM-OPT-14` | Timeout, cancellation, TDR/device removal, OOM, disk full, invalid input, or corrupt checkpoint. | The job reaches its declared bounded terminal state, keeps actionable diagnostics, cleans owned resources, and preserves prior valid evidence. | `CHK-OPT-13` |
 | `FM-OPT-15` | Export interruption or process failure leaves a plausible partial/corrupt artifact. | Atomic publish with completion marker/hash prevents candidate discovery; cleanup/recovery is deterministic. | `CHK-OPT-09`, `CHK-OPT-10`, `CHK-OPT-13` |
 | `FM-OPT-16` | A release map shows persistent noise, fireflies, acne, leaks, missing/double light, wrong energy/color/normal/roughness, banding, NaN/Inf, or a temporal seam. | Frozen camera/region evidence fails and maps the symptom to an estimator/material/light/numeric/accumulation owner. | `CHK-OPT-14` |
-| `FM-OPT-17` | Packaged consumer cannot discover/start/monitor/cancel/recover the offline job or find its output/support record. | First-use workflow fails with an actionable result rather than private setup or silent no-op. | `CHK-OPT-15` |
+| `FM-OPT-17` | Intended DevelopmentEditor/source-adopter user cannot discover/start/monitor/checkpoint/cancel/recover the offline job or find its output/support record, or the tool leaks into Shipping consumer first run. | First-use workflow fails with an actionable result rather than private setup or silent no-op; Shipping reachability audit rejects accidental exposure. | `CHK-OPT-15` |
 | `FM-OPT-18` | Current GBuffer-seeded reference and new offline route remain competing authorities, or compatibility/fallback code hides selection. | Ownership/build/selector audit blocks completion until one authority remains and any retained comparison-only route is honestly renamed. | `CHK-OPT-16` |
 | `FM-OPT-19` | An excluded camera/material/light/geometry behavior remains reachable in a release map or public selector. | Scope and map audit rejects the content/selector or reopens discovery; unsupported output is never treated as reference. | `CHK-OPT-01`, `CHK-OPT-14` |
 
-## Required Checks And NVIDIA Use
+## Required Checks And External-Reference Use
 
-Each executed check follows the [check and test design contract](../../../../../../../Engineering/Verification/ValidationAndEvidence.md#check-and-test-design-contract). NVIDIA sources provide precedent or an external comparison, never the expected value by name alone.
+Each executed check follows the [check and test design contract](../../../../../../../Engineering/Verification/ValidationAndEvidence.md#check-and-test-design-contract). NVIDIA, AMD, and neutral sources provide precedent or an external comparison, never the expected value by name alone.
 
-| Check | Claims and failures falsified | Minimum oracle/action and retained artifact | NVIDIA references used |
+| Check | Claims and failures falsified | Minimum oracle/action and retained artifact | External precedents used |
 | --- | --- | --- | --- |
 | `CHK-OPT-01` scope/claim audit | `AC-OPT-01`; `FM-OPT-01`, `FM-OPT-19` | Reconcile manifest, every `OPT-FS-*` verdict, public selectors, release maps, docs, and output labels; retain unmatched search and signed decision. | `NV-RTX-REF` negative-control vocabulary |
 | `CHK-OPT-02` offline-job identity | `AC-OPT-02`, `AC-OPT-04`; `FM-OPT-17` | Submit a frozen job, mutate each identity input, cancel/restart/resume as accepted, and verify terminal states, hashes, budgets, and user-visible results. | `NV-RTX-REF`, `NV-FAL-ACC` |
 | `CHK-OPT-03` camera/geometry route | `AC-OPT-03`, `AC-OPT-05`; `FM-OPT-03`, `FM-OPT-04` | Analytic center/edge/corner camera rays and triangle hit/miss/barycentric/sidedness/alpha/transform cases, with production GBuffer disconnected. | `NV-RTX-CORE`, `NV-FAL-MIN`, `NV-RAY-OFFSET` |
 | `CHK-OPT-04` material/BSDF contract | `AC-OPT-06`, `AC-OPT-07`; `FM-OPT-04`, `FM-OPT-05` | CPU/hand decode, sample/eval/PDF, normalization, limiting, normal-map, alpha, furnace/energy, and per-event comparisons for every included material row. | `NV-FAL-PT`, `NV-FAL-MIN`, `NV-FAL-TEST`, `NV-OPTIX-PT` |
 | `CHK-OPT-05` light/estimator derivation | `AC-OPT-08`, `AC-OPT-09`, `AC-OPT-10`; `FM-OPT-05`, `FM-OPT-06` | Hand-computable light/unit/PDF/visibility cases plus equation-to-code tracing and injected selection/MIS/emission/roulette/cutoff errors. | `NV-FAL-PT`, `NV-FAL-MIN`, `NV-RTX-REF`, `NV-OPTIX-PT` |
-| `CHK-OPT-06` independent-oracle comparison | `AC-OPT-16`; `FM-OPT-02`, `FM-OPT-12` | Render tiny interchange scenes in Sparkle, pinned Falcor Minimal, then Falcor PathTracer after camera/material/light/output equivalence; retain raw files, hashes, manifests, and disagreements. | `NV-FAL-MIN`, `NV-FAL-PT`, `NV-LICENSE` |
+| `CHK-OPT-06` independent-oracle comparison | `AC-OPT-16`; `FM-OPT-02`, `FM-OPT-12` | Render tiny interchange scenes in Sparkle, pinned Falcor Minimal, then Falcor PathTracer/Capsaicin and Mitsuba scalar RGB as applicable after camera/material/light/output equivalence; retain raw files, hashes, manifests, and disagreements. | `NV-FAL-MIN`, `NV-FAL-PT`, `AMD-CAP-PT`, `REF-MITSUBA`, `NV-LICENSE`, `AMD-LICENSE` |
 | `CHK-OPT-07` sample-stream protocol | `AC-OPT-11`, `AC-OPT-16`; `FM-OPT-07` | Repeat, prefix, distribution, dimension, correlation, reorder, interruption, backend, and resume tests with stable sample IDs and predeclared statistics. | `NV-RTX-REF`, `NV-FAL-PT` |
 | `CHK-OPT-08` ray-robustness matrix | `AC-OPT-12`; `FM-OPT-08` | Re-derive the spawn/end-point bound and exercise scale/translation/rotation/shear/mirror/grazing/coplanar/thin-gap/normal-map cases on both APIs. | `NV-RAY-OFFSET`, `NV-FAL-TEST` |
 | `CHK-OPT-09` accumulation lifecycle | `AC-OPT-13`; `FM-OPT-09`, `FM-OPT-15` | Compare required sample-prefix sums/means to a higher-precision oracle through reset, mutation, resize, overflow, cancel, restart, checkpoint, and atomic-completion transitions. | `NV-FAL-ACC`, `NV-RTX-REF` |
@@ -138,7 +148,7 @@ Each executed check follows the [check and test design contract](../../../../../
 | `CHK-OPT-12` backend/native validation | `AC-OPT-17`; `FM-OPT-13` | Identical D3D12/Vulkan manifests, strict capability requests, native validation, compiler/settings identity, raw numeric/statistical comparison, and unsupported-route check. | `NV-RTX-CORE` |
 | `CHK-OPT-13` controlled failure/resources | `AC-OPT-18`; `FM-OPT-14`, `FM-OPT-15` | Inject invalid input, unsupported capability, timeout, cancel, device loss/TDR, OOM, disk-full, corrupt checkpoint, and export failure; retain bounded state/cleanup/recovery evidence. | `NV-FAL-ACC`, `NV-RTX-REF` lifecycle precedent only |
 | `CHK-OPT-14` release-map truth | `AC-OPT-19`; `FM-OPT-16`, `FM-OPT-19` | For every applicable frozen camera, retain converged raw HDR, uncertainty, full frame/crops, artifact checklist, dependency oracle, and subject comparison under `MAP-A` through `MAP-H`. | `NV-FAL-TEST` decomposition; no NVIDIA image threshold reuse |
-| `CHK-OPT-15` packaged consumer workflow | `AC-OPT-02`, `AC-OPT-18`, `AC-OPT-20`; `FM-OPT-17` | Clean-machine first-use path from package discovery through job start/progress/cancel/completion/output/support, including read-only install and paths with spaces/non-ASCII. | No NVIDIA result is the product oracle; RTXPT noninteractive flow is precedent only |
+| `CHK-OPT-15` staged adopter workflow | `AC-OPT-02`, `AC-OPT-18`, `AC-OPT-20`; `FM-OPT-17` | Clean-machine DevelopmentEditor/source-adopter path from staged-tool discovery through job start/progress/checkpoint/resume/cancel/completion/output/support, including read-only install, paths with spaces/non-ASCII, and Shipping-consumer exclusion. | No external result is the product oracle; RTXPT/Baikal noninteractive flows are precedent only |
 | `CHK-OPT-16` ownership/clean-break review | `AC-OPT-20`; `FM-OPT-18` | Inspect owner, producers/consumers, lifetime, build/package membership, selectors, settings, copies, old route, aliases/fallbacks, docs, and generated artifacts; retain deletion/preservation ledger. | `NV-RTX-CORE` separation precedent only |
 
 ## Definition Of Done
@@ -151,9 +161,9 @@ Each executed check follows the [check and test design contract](../../../../../
 4. Every applicable `FM-OPT-01` through `FM-OPT-19` has been deliberately exercised and reaches the required detection boundary, safe state, cleanup, user-visible result, and recovery.
 5. Every `RISK-PTD-*` treatment and `RISK-REL-13` has an owner and observable retirement evidence; no Critical/High exposure is waived by visual plausibility.
 6. The estimator derivation and implementation correspond; raw output contains no undeclared deterministic truncation, clamp, biased environment MIP/filter, denoiser, temporal reconstruction, exposure, tone map, encoding, or screenshot conversion.
-7. Analytic/minimal/independent/statistical evidence supports the bounded oracle claim. All disagreements are resolved or explicitly `Inconclusive`; no shared dependency or NVIDIA label is treated as universal ground truth.
+7. Analytic/minimal/independent/statistical evidence supports the bounded oracle claim. All disagreements are resolved or explicitly `Inconclusive`; no shared dependency or external renderer label is treated as universal ground truth.
 8. D3D12 and Vulkan pass their advertised strict matrices or the unsupported backend is explicitly excluded from the release claim and selector. There is no silent fallback.
-9. The packaged workflow completes end to end with bounded progress/cancel/failure behavior and atomic raw artifacts. Offline rendering has a declared time/VRAM/disk budget; it is not required to meet the interactive 30 FPS target.
+9. The staged DevelopmentEditor/source-adopter workflow completes end to end with bounded progress/checkpoint/resume/cancel/failure behavior and atomic raw artifacts, while Shipping consumer first run remains free of the developer tool unless scope explicitly admits it. Offline rendering has a declared time/VRAM/disk budget; it is not required to meet the interactive 30 FPS target.
 10. `PTD-03` supplies accepted raw references and uncertainty for every applicable shipped example-map camera, and `MAP-A` through `MAP-H` have no unexplained artifact or PBR discrepancy within the oracle's domain.
 11. One production authority remains, the superseded/misleading route is removed or honestly renamed as comparison-only, and implementation/header/CMake/package/selector/documentation membership agree.
 12. The signed `FCR-REN-08` report records exact commands/results, unavailable evidence, residual limitations, invalidation triggers, and a final `PASS`. Source presence, a clean image, high SPP, or an aggregate score cannot substitute for any row.

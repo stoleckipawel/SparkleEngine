@@ -17,7 +17,7 @@
 | target feature semantics and system shape | this page |
 | dated current-source capability and gaps | [Capability](Capability.md) |
 | feature-local criteria, failures, checks, and completion | [Acceptance](Acceptance.md) |
-| delivery order and phase exits | [Geometry Cache Animation Delivery Plan](../../../Plans/CrossModule/GeometryCacheAnimation.md) |
+| delivery order and phase exits | [Geometry Cache Animation Delivery Plan](Plan.md) |
 
 ## At A Glance
 
@@ -52,7 +52,7 @@ Sparkle should support baked vertex animation as a first-class geometry-cache ca
 
 This is a target design, not proof that geometry caches are implemented. Code, cooked schemas, build configuration, tests, captures, and measurements remain the authority for implemented behavior.
 
-This document owns geometry-cache source semantics, cooked data, playback-to-render extraction, streaming, shared deformation, and ray-tracing integration. The adjacent [feature acceptance contract](Acceptance.md) owns criteria, controlled failures, checks, and completion; the [Geometry Cache Animation Delivery Plan](../../../Plans/CrossModule/GeometryCacheAnimation.md) owns phase order, while [Graphics Workloads](../../../Acceptance/GraphicsWorkloads.md) owns map-wide evidence status. [World Coordinate, Units, and Transform Contract](../../Decisions/WorldCoordinateAndUnits.md) owns canonical spatial conventions. [Renderer and RHI Architecture Boundary](../../Decisions/RendererRhiBoundary.md) owns the feature/backend boundary.
+This document owns geometry-cache source semantics, cooked data, playback-to-render extraction, streaming, shared deformation, and ray-tracing integration. The adjacent [feature acceptance contract](Acceptance.md) owns criteria, controlled failures, checks, and completion; the [Geometry Cache Animation Delivery Plan](Plan.md) owns phase order, while [Graphics Workloads](../../../Acceptance/GraphicsWorkloads.md) owns map-wide evidence status. [World Coordinate, Units, and Transform Contract](../../Decisions/WorldCoordinateAndUnits.md) owns canonical spatial conventions. [Renderer and RHI Architecture Boundary](../../Decisions/RendererRhiBoundary.md) owns the feature/backend boundary.
 
 ## Outcome
 
@@ -141,7 +141,7 @@ GeometryCacheSource
   DefaultPlayback           play rate, start offset, loop, initially active
 ```
 
-The [delivery plan](../../../Plans/CrossModule/GeometryCacheAnimation.md) freezes the exact text syntax and extension after the Modern Sponza Alembic face sets and metadata are inventoried. That decision must reuse the repository's existing level/discovery path and must not create a general asset database.
+The [delivery plan](Plan.md) freezes the exact text syntax and extension after the Modern Sponza Alembic face sets and metadata are inventoried. That decision must reuse the repository's existing level/discovery path and must not create a general asset database.
 
 Every used face set has exactly one explicit material binding. The material library is imported through the existing material translation and cooker path; the geometry-cache importer does not grow a second PBR model. Empty slots are allowed only when the source description explicitly selects the ordinary default material. Missing textures retain the existing semantic checker/default behavior, but a missing slot mapping is an authoring error, not a residency fallback.
 
@@ -196,7 +196,7 @@ The file is published atomically with the scene generation. Header, directory, o
 
 Static UVs, indices, and material sections are stored once. Each section names one ordinary material slot and an index range; all sections of a track reference the same sampled vertex range. Sampled attributes are chunked by time. Chunk boundaries are independently decodable so a seek does not require replay from frame zero. Bounds are stored per sample or conservatively per chunk and interpolated conservatively.
 
-The [delivery plan](../../../Plans/CrossModule/GeometryCacheAnimation.md) selects one production codec and chunk duration from deterministic Knight and synthetic-fixture measurements. The file records the one current schema and codec identity so stale output is rejected and regenerated; it does not dispatch to legacy readers or codecs. Uncompressed sample data may exist as a test oracle only; it is not a runtime fallback and is absent from the completed product path.
+The [delivery plan](Plan.md) selects one production codec and chunk duration from deterministic Knight and synthetic-fixture measurements. The file records the one current schema and codec identity so stale output is rejected and regenerated; it does not dispatch to legacy readers or codecs. Uncompressed sample data may exist as a test oracle only; it is not a runtime fallback and is absent from the completed product path.
 
 ## Playback, Streaming, And Failure Semantics
 

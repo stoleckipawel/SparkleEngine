@@ -152,7 +152,7 @@ Resize, scene reset, topology/provider/shader changes, and relevant table-plan c
 - A replacement shader generation is not activated until complete runtime materialization succeeds; the previous generation remains active/retired by queue state.
 - Minimized or invalid-size windows do not perform a swapchain resize; history is invalidated around a real topology resize.
 
-These source-level policies become the stable feature contract below. The [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md#renderer-evidence) selects the smallest candidate checks; it does not redefine the pass conditions.
+These source-level policies become the stable feature contract below. The [Capability Evidence Plan](../../CapabilityEvidencePlan.md#renderer-evidence) selects the smallest candidate checks; it does not redefine the pass conditions.
 
 ## Acceptance Criteria
 

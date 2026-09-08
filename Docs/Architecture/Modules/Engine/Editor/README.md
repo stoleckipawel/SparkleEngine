@@ -8,7 +8,7 @@
 
 **Owner:** `Engine/Editor` / `SparkleEditor`; editor hosting and long-running operations belong to `SparkleApplicationEditor`
 
-**Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../CapabilityEvidencePlan.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
 **Current readiness:** **45/100** — the development Editor is source-integrated; usability, correctness, performance, distribution classification, and non-author evidence remain open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#product-build-and-delivery).
 

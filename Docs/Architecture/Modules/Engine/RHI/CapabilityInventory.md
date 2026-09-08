@@ -10,9 +10,9 @@
 
 **Architecture boundary:** [Renderer and RHI Architecture Boundary](../../../Decisions/RendererRhiBoundary.md)
 
-**Evidence plan and release disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence plan and release disposition:** [Capability Evidence Plan](../../CapabilityEvidencePlan.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
-**Traceability:** capability rows use durable `RHI-<family>-NN` identities; their primary proof destinations are listed in the [RHI capability-to-evidence map](../../../../Plans/CapabilityEvidence.md#rhi-capability-to-evidence-map).
+**Traceability:** capability rows use durable `RHI-<family>-NN` identities; their primary proof destinations are listed in the [RHI capability-to-evidence map](../../CapabilityEvidencePlan.md#rhi-capability-to-evidence-map).
 
 **Module routes:** [RHI module index](README.md) and [RHI feature dossiers](Features/README.md)
 

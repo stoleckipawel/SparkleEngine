@@ -14,9 +14,9 @@ Use this documentation to understand what SparkleEngine currently contains, how 
 | Understand the whole engine | [Engine At A Glance](Architecture/EngineAtAGlance.md) | [Whole Repository Map](Architecture/WholeRepositoryMap.md) |
 | Understand how a frame is rendered | [Renderer](Architecture/Modules/Engine/Renderer/README.md) | [Rendering A Sparkle Frame](Architecture/Modules/Engine/Renderer/RenderingASparkleFrame.md) |
 | Understand D3D12/Vulkan and GPU services | [RHI](Architecture/Modules/Engine/RHI/README.md) | [RHI Feature Guide](Architecture/Modules/Engine/RHI/Features/README.md) |
-| See exactly what exists or is missing | [Module Capability Inventory](Architecture/Modules/README.md) | [Capability Evidence Plan](Plans/CapabilityEvidence.md) |
+| See exactly what exists or is missing | [Module Capability Inventory](Architecture/Modules/README.md) | [Capability Evidence Plan](Architecture/Modules/CapabilityEvidencePlan.md) |
 | Compare current feature readiness | [Current Feature Readiness](Acceptance/CurrentReadiness.md) | Open the linked Architecture dossier for the implementation and missing-work detail |
-| Implement the first release | [First Release Implementation Plan](Plans/FirstRelease/README.md) | Choose the earliest dependency-ready phase, then use its ready-to-run prompt |
+| Implement the first release | [First Release Implementation Plan](Architecture/CrossModule/FirstRelease/README.md) | Choose the earliest dependency-ready phase, then use its ready-to-run prompt |
 | Build, cook, or launch Showcase | [Launcher Architecture](Architecture/Modules/Tools/Launcher/README.md) | [Build And Packaging](Architecture/Modules/BuildAndPackaging/README.md) |
 | Make an implementation change | [Change Integration](Engineering/Workflow/ChangeIntegration.md) | [Engineering Task Map](Engineering/README.md#choose-by-task) |
 | Open or close a release iteration | [Change Lifecycle control record](Engineering/Workflow/ChangeLifecycle.md#create-the-iteration-control-record) | [Roadmap traceability](Strategy/Roadmap.md#stage-target-and-evidence-traceability) |
@@ -24,16 +24,16 @@ Use this documentation to understand what SparkleEngine currently contains, how 
 
 ## How The Documentation Fits Together
 
-The areas answer different questions. Follow the arrows instead of reading `Docs` as one large manual.
+The repository is organized by owning subject first. Strategy, Engineering, and release Acceptance remain distinct top-level authorities; architecture, plans, research, capability snapshots, and feature-local acceptance are colocated under the module or cross-module subject they describe.
 
 ```mermaid
 flowchart LR
-    Research[Research<br/>What can we learn?] --> Strategy[Strategy<br/>What should we achieve?]
-    Strategy --> Architecture[Architecture<br/>What is the system and its design?]
-    Architecture --> Plans[Plans<br/>In what order will it change?]
-    Plans --> Work[Code and build configuration<br/>What is implemented?]
+    Strategy[Strategy<br/>What should we achieve?] --> Subject[Architecture subject folder<br/>Who owns this knowledge?]
+    Research[Colocated research<br/>What can we learn?] --> Subject
+    Subject --> Plan[Colocated plan<br/>In what order will it change?]
+    Plan --> Work[Code and build configuration<br/>What is implemented?]
     Engineering[Engineering<br/>How must work be done?] -. governs .-> Work
-    Architecture -. defines local proof .-> Acceptance[Acceptance<br/>What did this candidate prove?]
+    Subject -. defines local proof .-> Acceptance[Acceptance<br/>What did this candidate prove?]
     Work --> Acceptance
 ```
 
@@ -46,20 +46,22 @@ Code and executable build configuration are the authority for implemented behavi
 | What is Sparkle trying to become, and what is most important? | [Strategy](Strategy/README.md) |
 | What do I have now, what is missing, and how is it designed? | [Architecture](Architecture/README.md) |
 | What rules apply while I change or review it? | [Engineering](Engineering/README.md) |
-| What work is sequenced but not yet completed? | [Plans](Plans/README.md) |
+| What work is sequenced but not yet completed? | The owning [Architecture module or feature](Architecture/README.md); start with the [First Release Implementation Plan](Architecture/CrossModule/FirstRelease/README.md) for release-wide order |
 | What workloads, feature reports, and release gates track progress? | [Acceptance](Acceptance/README.md) |
-| What external precedent or option study informed a design? | [Research](Research/README.md) |
+| What external precedent or option study informed a design? | The research document beside the owning [Architecture dossier](Architecture/README.md) |
 
 ## Authority Boundaries
 
-| Area | Owns | Does not own |
+| Authority | Owns | Does not own |
 | --- | --- | --- |
 | [Strategy](Strategy/README.md) | desired capabilities, priorities, roadmap, operating model, dated assessments | implementation rules or system internals |
-| [Architecture](Architecture/README.md) | current maps, module and feature design, decisions, capability snapshots, feature-local proof contracts | phase sequencing, release results, or external precedent |
+| [Architecture subject tree](Architecture/README.md) | module/feature ownership and navigation; current maps, design, decisions, capability snapshots, and feature-local proof contracts | release results or proof that source-present behavior ran |
+| Colocated `Plan.md` or named plan | ordered delivery, dependencies, stop conditions, migration and validation sequence for its owning subject | enduring design decisions or completion claims |
+| Colocated research document | external precedent, option studies, visual exploration, and dated baselines for its owning subject | local decisions, implementation state, or evidence grades |
 | [Engineering](Engineering/README.md) | workflow, implementation standards, module rules, verification, engineering decisions | release scope, system design, or product research |
 | [Acceptance](Acceptance/README.md) | shared completion language, candidate reports, workload/release gates, high-level progress | duplicate feature architecture or local feature criteria |
-| [Plans](Plans/README.md) | ordered delivery, dependencies, stop conditions, migration and validation sequence | enduring architecture or completion claims |
-| [Research](Research/README.md) | external precedent, option studies, visual exploration, dated baselines | local decisions, implementation state, or evidence grades |
+
+Colocation changes how readers find related knowledge; it does not merge authority. Each document's filename, status header, and responsibility still distinguish current state, target architecture, plan, research, and acceptance.
 
 ## Status Language
 

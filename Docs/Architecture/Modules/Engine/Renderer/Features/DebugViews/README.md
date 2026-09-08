@@ -8,7 +8,9 @@
 
 **Target architecture:** [View Modes And Show Flags](ViewModesAndShowFlags.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
 
-**Delivery authority:** [Debug View Presentation Delivery Plan](../../../../../../Plans/Renderer/DebugViewPresentation.md)
+**Delivery authority:** [Debug View Presentation Delivery Plan](Plan.md)
+
+**Design precedent:** [Debug View Presentation Research](Research.md)
 
 **Feature acceptance:** [Debug View Presentation — Acceptance](Acceptance.md)
 

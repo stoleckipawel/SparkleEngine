@@ -22,7 +22,7 @@ Sparkle should implement decals as material overlays, never as a forward-lit col
 
 This is a target design. Code, cooked schemas, build configuration, and executable tests remain the authority for what exists today.
 
-This document owns decal semantics, data flow, pass placement, and shared raster/ray composition. The adjacent [feature acceptance contract](Acceptance.md) owns the validation fixture, controlled failures, checks, and completion gates; the [Deferred GBuffer Decals Delivery Plan](../../../../../../Plans/Renderer/DeferredGBufferDecals.md) owns feature-local phase order. [Shader System Architecture](../../../../../CrossModule/ShaderSystem/README.md) owns shader identity and publication; the [Shader System Delivery Plan](../../../../../../Plans/CrossModule/ShaderSystem.md) owns the cross-system native RT pipeline/SBT/RHI sequence. The [Ray-Tracing Execution Architecture](../RayTracing/ExecutionArchitecture.md) owns the enduring inline-versus-pipeline and SBT semantics; adding decals must not create a third execution contract.
+This document owns decal semantics, data flow, pass placement, and shared raster/ray composition. The adjacent [feature acceptance contract](Acceptance.md) owns the validation fixture, controlled failures, checks, and completion gates; the [Deferred GBuffer Decals Delivery Plan](Plan.md) owns feature-local phase order. [Shader System Architecture](../../../../../CrossModule/ShaderSystem/README.md) owns shader identity and publication; the [Shader System Delivery Plan](../../../../../CrossModule/ShaderSystem/Plan.md) owns the cross-system native RT pipeline/SBT/RHI sequence. The [Ray-Tracing Execution Architecture](../RayTracing/ExecutionArchitecture.md) owns the enduring inline-versus-pipeline and SBT semantics; adding decals must not create a third execution contract.
 
 ## Outcome
 
@@ -66,7 +66,7 @@ The first content is static by contract. Dynamic decals must not be advertised u
 
 ## External Precedent
 
-[Deferred Decal Composition Precedent](../../../../../../Research/GraphicsArchitecture/DeferredDecalCompositionPrecedent.md) owns the Epic, Frostbite, i3D, Ray Tracing Gems II, and Intel findings that informed this design. The local choices below remain Architecture authority: projected ordered volumes, programmable pre-lighting GBuffer composition, receiver candidate spans before a dedicated decal AS, and a clearly labeled Sparkle-authored workload fixture.
+[Deferred Decal Composition Precedent](Research.md) owns the Epic, Frostbite, i3D, Ray Tracing Gems II, and Intel findings that informed this design. The local choices below remain Architecture authority: projected ordered volumes, programmable pre-lighting GBuffer composition, receiver candidate spans before a dedicated decal AS, and a clearly labeled Sparkle-authored workload fixture.
 
 ## One Decal Contract
 

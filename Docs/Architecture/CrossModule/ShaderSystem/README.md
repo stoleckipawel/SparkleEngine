@@ -4,9 +4,9 @@
 
 **Responsibility:** shader authoring identity, compilation inputs, cooked map/library shape, runtime materialization, typed graph use, ownership, failure policy, and capability boundaries
 
-**Delivery sequence:** [Shader System Delivery Plan](../../../Plans/CrossModule/ShaderSystem.md)
+**Delivery sequence:** [Shader System Delivery Plan](Plan.md)
 
-**Migration provenance:** [Shader System Migration Baseline](../../../Research/ShaderSystem/ShaderSystemMigrationBaseline.md)
+**Migration provenance:** [Shader System Migration Baseline](MigrationBaseline.md)
 
 **Current source inventory:** [Shader Compilation Capability Inventory](../../Modules/Tools/ShaderCompiler/README.md)
 
@@ -39,8 +39,9 @@ This page owns the target distinctions and design. The linked capability invento
 | enduring shader-system semantics and target shape | this page |
 | final criteria, failures, evidence pack, and completion | [Acceptance](Acceptance.md) |
 | dated current-source capability | [Shader Compilation Capability Inventory](../../Modules/Tools/ShaderCompiler/README.md) and [Renderer Shader Programs](../../Modules/Engine/Renderer/Features/ShaderRuntime/ShaderProgramCatalog.md) |
-| delivery order and phase exits | [Shader System Delivery Plan](../../../Plans/CrossModule/ShaderSystem.md) |
-| external precedent and deferred PSO options | [Shader System Design Precedent](../../../Research/ShaderSystem/ShaderSystemDesignPrecedent.md) |
+| delivery order and phase exits | [Shader System Delivery Plan](Plan.md) |
+| external precedent and deferred PSO options | [Shader System Design Precedent](DesignPrecedent.md) |
+| frozen pre-migration inventory and deletion ledger | [Shader System Migration Baseline](MigrationBaseline.md) |
 
 ## Purpose And Authority
 
@@ -93,7 +94,7 @@ A filename answers "where is source text?" A pass name answers "what GPU operati
 - The same compiled shader can be reused by multiple semantic passes.
 - A pass type can be scheduled several times with instance-specific labels such as a mip number, eye, cascade, phase, or view.
 - Renaming or moving a source file should invalidate compilation, but it should not silently rename profiler history, GPU markers, frame-graph nodes, or the shader type that references it.
-- Two directories can contain the same source basename. Sparkle's former basename-derived fallback could not distinguish them; the [migration baseline](../../../Research/ShaderSystem/ShaderSystemMigrationBaseline.md) preserves that historical finding.
+- Two directories can contain the same source basename. Sparkle's former basename-derived fallback could not distinguish them; the [migration baseline](MigrationBaseline.md) preserves that historical finding.
 - Include files and shader libraries are source dependencies but are not independently executable passes.
 
 Using a filename as a default shader debug name is reasonable. Using it as the durable shader-type, pass, pipeline, layout, and artifact identity is not.
@@ -320,7 +321,7 @@ builder.Draw<GBufferVS, GBufferPS>(parameters, renderState, meshDraws);
 
 This is deliberately not a second aggregate with the old fields under a new name. `RasterPassRenderState` contains only pass-selected semantic overrides and has granular setters. It cannot name vertex layouts, topology, render-target formats/count, depth format, sample count, shader stages, or backend objects. Attachment bindings are authoritative for their own compatibility and load/store behavior. The complete immutable pipeline description still exists where D3D12 and Vulkan require it, but only inside the runtime/RHI materialization boundary.
 
-Ray-tracing stages use the same concrete `GlobalShader` registration and `ShaderRef` lookup as raster and compute, but they do not pretend to have identical binding roles. The selected ray-generation shader owns the dispatch-global nested `Parameters` and the dispatch-wide payload, attribute, and recursion compile contract, following Unreal's shader-type ownership. Miss, closest-hit, any-hit, intersection, and callable classes declare only stage identity, genuinely local-record metadata, and optional compile hooks; they do not repeat the ray-generation contract or introduce empty placeholder structs. A focused `RayTracingPipelineComposition` names typed stage membership and hit groups and derives the shared ABI from its selected ray-generation type. It is not a universal `TShaderProgram`, package, second registration framework, or copied metadata record. The target semantics remain in the [ray-tracing target architecture](../../Modules/Engine/Renderer/Features/RayTracing/ExecutionArchitecture.md), while the [delivery plan](../../../Plans/CrossModule/ShaderSystem.md) owns implementation order.
+Ray-tracing stages use the same concrete `GlobalShader` registration and `ShaderRef` lookup as raster and compute, but they do not pretend to have identical binding roles. The selected ray-generation shader owns the dispatch-global nested `Parameters` and the dispatch-wide payload, attribute, and recursion compile contract, following Unreal's shader-type ownership. Miss, closest-hit, any-hit, intersection, and callable classes declare only stage identity, genuinely local-record metadata, and optional compile hooks; they do not repeat the ray-generation contract or introduce empty placeholder structs. A focused `RayTracingPipelineComposition` names typed stage membership and hit groups and derives the shared ABI from its selected ray-generation type. It is not a universal `TShaderProgram`, package, second registration framework, or copied metadata record. The target semantics remain in the [ray-tracing target architecture](../../Modules/Engine/Renderer/Features/RayTracing/ExecutionArchitecture.md), while the [delivery plan](Plan.md) owns implementation order.
 
 The intended authoring surface mirrors Unreal's useful production split without copying its prefixes or legacy binding adapters. This abridged example shows the declaration shape; the product implementation supplies the complete GBuffer output schema required by the owning feature contract.
 
@@ -470,7 +471,7 @@ typed shader refs + pass state + mesh/material facts + attachment signature
 
 ## Design Rationale And Research
 
-The source-backed Unreal, NVIDIA, and AMD comparisons behind these decisions live in [Shader System Design Precedent](../../../Research/ShaderSystem/ShaderSystemDesignPrecedent.md). That research explains the alternatives; this document owns only the selected Sparkle design.
+The source-backed Unreal, NVIDIA, and AMD comparisons behind these decisions live in [Shader System Design Precedent](DesignPrecedent.md). That research explains the alternatives; this document owns only the selected Sparkle design.
 
 ## End-to-End Shader Pipeline Atlas
 
@@ -523,7 +524,7 @@ diagnostics -> replay -> inspection/disassembly -> captures/counters -> hot relo
             -> generation swap -> GPU-safe retirement -> regression evidence
 ```
 
-The fifth column in the next four design-space tables is non-authoritative source context retained to explain the selected target. It is not a uniformly current inventory. Use the [Shader Compilation Capability Inventory](../../Modules/Tools/ShaderCompiler/README.md) for the dated current-source shape and the [migration baseline](../../../Research/ShaderSystem/ShaderSystemMigrationBaseline.md) for historical checkpoints.
+The fifth column in the next four design-space tables is non-authoritative source context retained to explain the selected target. It is not a uniformly current inventory. Use the [Shader Compilation Capability Inventory](../../Modules/Tools/ShaderCompiler/README.md) for the dated current-source shape and the [migration baseline](MigrationBaseline.md) for historical checkpoints.
 
 ### Shader Definition and Graph Use
 
@@ -622,7 +623,7 @@ Do not add a residency state machine, preload queue, or streamer before file cou
 
 ### Deferred Pipeline Preparation
 
-PSO prewarming, preload controls, native cache integration, and speculative preparation remain unselected. [Shader System Design Precedent](../../../Research/ShaderSystem/ShaderSystemDesignPrecedent.md#deferred-pso-prewarming-research) preserves the compared options and the evidence required before reopening that decision.
+PSO prewarming, preload controls, native cache integration, and speculative preparation remain unselected. [Shader System Design Precedent](DesignPrecedent.md#deferred-pso-prewarming-research) preserves the compared options and the evidence required before reopening that decision.
 
 ## Ray Query Versus Ray-Tracing Pipeline and SBT
 
@@ -693,7 +694,7 @@ Current committed source carries RT exports, hit groups, payload/attribute/recur
 
 ### Primary References for the Atlas
 
-These sources supplement the detailed comparison in [Shader System Design Precedent](../../../Research/ShaderSystem/ShaderSystemDesignPrecedent.md#external-precedent-and-what-sparkle-adopts):
+These sources supplement the detailed comparison in [Shader System Design Precedent](DesignPrecedent.md#external-precedent-and-what-sparkle-adopts):
 
 - [Epic: Shader Development](https://dev.epicgames.com/documentation/en-us/unreal-engine/shader-development-in-unreal-engine)
 - [Epic: Shader Debugging Workflows](https://dev.epicgames.com/documentation/en-us/unreal-engine/shader-debugging-workflows-unreal-engine)
@@ -895,6 +896,6 @@ Rejected as a default because Sparkle already runs the cooker out of process and
 ## Related Delivery Records
 
 - [Shader System — Acceptance](Acceptance.md) owns final proof and completion.
-- [Shader System Delivery Plan](../../../Plans/CrossModule/ShaderSystem.md) owns phase order, change boundaries, validation sequencing, and phase exits.
-- [Shader System Migration Baseline](../../../Research/ShaderSystem/ShaderSystemMigrationBaseline.md) preserves the frozen pre-migration inventory and deletion ledger.
+- [Shader System Delivery Plan](Plan.md) owns phase order, change boundaries, validation sequencing, and phase exits.
+- [Shader System Migration Baseline](MigrationBaseline.md) preserves the frozen pre-migration inventory and deletion ledger.
 - [Ray-Tracing Execution Architecture](../../Modules/Engine/Renderer/Features/RayTracing/ExecutionArchitecture.md) owns enduring dual-execution and shader-table semantics.

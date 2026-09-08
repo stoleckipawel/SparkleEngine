@@ -8,11 +8,13 @@
 
 **Target architecture:** [Deferred GBuffer Decal Composition Architecture](CompositionArchitecture.md)
 
-**Delivery authority:** [Deferred GBuffer Decals Delivery Plan](../../../../../../Plans/Renderer/DeferredGBufferDecals.md)
+**Delivery authority:** [Deferred GBuffer Decals Delivery Plan](Plan.md)
+
+**Design precedent:** [Deferred Decal Composition Research](Research.md)
 
 **Feature acceptance:** [Deferred GBuffer Decals — Acceptance](Acceptance.md)
 
-**Release admission:** mandatory `FCR-REN-23`; staged by [`GR-5`](../../../../../../Plans/FirstRelease/Renderer/GeometryAndRayTracing.md#gr-5--deferred-gbuffer-decals)
+**Release admission:** mandatory `FCR-REN-23`; staged by [`GR-5`](../../FirstRelease/GeometryAndRayTracing.md#gr-5--deferred-gbuffer-decals)
 
 **Current readiness:** **0/100**, `Blocked` — release-admitted but no authored/cooked/scene/GPU decal data, GBuffer composition, or arbitrary ray-hit decal evaluation was found. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
 

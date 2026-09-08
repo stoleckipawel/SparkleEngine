@@ -24,7 +24,7 @@ flowchart LR
 | what this exact candidate passed or failed | its `FCR-*` candidate report |
 | whether several features work together on representative content | Graphics Workloads |
 | whether the complete product may ship | First Release Acceptance |
-| what implementation phase to run next | [First Release Implementation Plan](../Plans/FirstRelease/README.md) |
+| what implementation phase to run next | [First Release Implementation Plan](../Architecture/CrossModule/FirstRelease/README.md) |
 
 The current first release remains `Blocked`. Source presence and registry coverage are not accepted evidence.
 
@@ -38,7 +38,7 @@ The current first release remains `Blocked`. Source presence and registry covera
 | [Graphics Workloads](GraphicsWorkloads.md) | Bistro, San Miguel, scene-quality, performance, and evidence workloads |
 | [Renderer Acceptance Progress](Renderer/README.md) | high-level Renderer feature-to-dossier/report routing and current acceptance disposition |
 
-Implementation sequencing deliberately lives outside Acceptance. Use the [First Release Implementation Plan](../Plans/FirstRelease/README.md) for dependency order, phase goals/non-goals, failure controls, exit criteria, and ready-to-run prompts; return here for candidate verdicts.
+Implementation sequencing deliberately lives outside Acceptance. Use the [First Release Implementation Plan](../Architecture/CrossModule/FirstRelease/README.md) for dependency order, phase goals/non-goals, failure controls, exit criteria, and ready-to-run prompts; return here for candidate verdicts.
 
 ## Responsibility Split
 

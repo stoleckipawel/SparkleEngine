@@ -16,9 +16,9 @@
 
 **Per-feature polish and how-it-works contract:** [First Release Feature Completion Reports](../Acceptance/FeatureCompletionReports.md)
 
-**Executable implementation orchestration:** [First Release Implementation Plan](../Plans/FirstRelease/README.md), with every current `FCR-*` family routed to one owner-scoped staged plan and ready-to-run prompts
+**Executable implementation orchestration:** [First Release Implementation Plan](../Architecture/CrossModule/FirstRelease/README.md), with every current `FCR-*` family routed to one owner-scoped staged plan and ready-to-run prompts
 
-**Offline path-tracer discovery:** [completion study](../Research/GraphicsArchitecture/OfflinePathTracerCompletion.md) and [`PTD-00` acceptance](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md)
+**Offline path-tracer discovery:** [completion study](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Research.md) and [`PTD-00` acceptance](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md)
 
 **Concurrency architecture and execution contract:** [J. Multithreaded Engine Architecture](../Architecture/CrossModule/MultithreadedEngine.md)
 
@@ -45,7 +45,7 @@ flowchart LR
     R10 --> R11[REL-11<br/>stabilize]
 ```
 
-The detailed stage sections are strategic execution targets. The [First Release Implementation Plan](../Plans/FirstRelease/README.md) owns phase ordering, dependencies, stop conditions, and implementation prompts. The [First Release Acceptance Contract](../Acceptance/FirstRelease.md) owns whether a gate actually passes.
+The detailed stage sections are strategic execution targets. The [First Release Implementation Plan](../Architecture/CrossModule/FirstRelease/README.md) owns phase ordering, dependencies, stop conditions, and implementation prompts. The [First Release Acceptance Contract](../Acceptance/FirstRelease.md) owns whether a gate actually passes.
 
 ## Roadmap Decision
 
@@ -57,12 +57,12 @@ This is a sequencing change, not a change to the long-term graphics plan. It clo
 
 ## Offline Reference Truth First
 
-The current primary planning objective is `PTD-00`: discover and prove what a complete offline unbiased path tracer must mean before planning its implementation. This is not permission to rename or polish the current `ReferencePathTraced` mode. Source inspection shows that mode starts from the existing GBuffer, shares material/light/shadow code with production paths, uses frame-indexed sampling and fixed bounce/distance limits, and accumulates as temporal history. It is a useful candidate comparison but not yet an independent correctness oracle.
+The current primary planning objective is `PTD-00`: discover and prove what a complete offline unbiased path tracer must mean before freezing or executing its implementation plan. This is not permission to rename or polish the current `ReferencePathTraced` mode. Source inspection shows that mode starts from the existing GBuffer, shares material/light/shadow code with production paths, uses frame-indexed sampling and fixed bounce/distance limits, and accumulates as temporal history. It is a useful candidate comparison but not yet an independent correctness oracle.
 
 | Work identity | When it may run | Required output | Stop rule |
 | --- | --- | --- | --- |
-| `PTD-00` completion discovery | Now; it is the first roadmap action and may inform `REL-00` scope. | Accepted [discovery contract](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md): exact transport/unbiasedness claim, feature and dependency matrix, NVIDIA/current-source study, derivation, risks, failure modes, oracle/fixture/statistical design, target-shape decision, and plan-ready backlog. | Any open item that can change scope, architecture, estimator math, evidence, ownership, or release claims keeps discovery blocked. |
-| `PTD-01` implementation-plan creation | Only after `PTD-00` passes. It may be prepared while release trust/package gates progress. | One Renderer-owned plan with bounded clean-break slices, owners, estimates, deletion ledger, per-slice key checks, and unchanged/excluded scope. | A plan that must rediscover the transport domain or invent a new subsystem returns to `PTD-00`. Its existence is not implementation authorization. |
+| `PTD-00` completion discovery | Now; it is the first roadmap action and may inform `REL-00` scope. | Accepted [discovery contract](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md): exact transport/unbiasedness claim, feature and dependency matrix, NVIDIA/AMD/neutral and current-source study, derivation, risks, failure modes, oracle/fixture/statistical design, target-shape decision, and plan-ready backlog. | Any open item that can change scope, architecture, estimator math, evidence, ownership, or release claims keeps discovery blocked. |
+| `PTD-01` implementation-plan freeze | A [conditional plan](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Plan.md) may be prepared now; it becomes accepted only after `PTD-00 PASS` and exact report reconciliation. | One Renderer-owned plan with bounded clean-break slices, owners, estimates, deletion ledger, per-slice key checks, and unchanged/excluded scope. | A plan that must rediscover the transport domain or invent a new subsystem returns to `PTD-00`. Its existence is not implementation authorization. |
 | `PTD-02` implementation and `FCR-REN-08` candidate closure | First technical implementation slice after `REL-03` opens `REL-04`. | Pass the [offline path tracer feature acceptance contract](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/README.md): included feature matrix, raw offline job, deterministic sampling/accumulation/export, accepted transport domain, diagnostics, analytic/minimal/independent checks, backend/failure/package evidence, release-map readiness, and candidate-bound completion report. | The mode remains experimental or is excluded if the accepted plan cannot meet its oracle claim without open-ended redesign. No weaker output inherits the word “unbiased.” |
 | `PTD-03` release-map adoption | After `PTD-02`; consumed by `REL-05`. | Frozen high-sample references and uncertainty/provenance for each applicable release-map camera, plus evidence that reference and subject do not share the defect under test. | A reference-dependent map/PBR verdict is blocked when its oracle is absent, shared, non-equivalent, unconverged, or post-processed. |
 
@@ -201,7 +201,7 @@ At iteration start, mark these rows `advance`, `preserve`, `not applicable`, or 
 
 | Stage | Primary outcome | Exit artifact | Stop rule |
 | --- | --- | --- | --- |
-| D. Discover reference truth | Exact offline/unbiased claim, dependency boundary, estimator, oracle ladder, failure/evidence design, and smallest target shape. | Accepted `PTD-00` report and authorization decision for `PTD-01`. | No implementation plan while an oracle-shaping question is open. |
+| D. Discover reference truth | Exact offline/unbiased claim, dependency boundary, estimator, oracle ladder, failure/evidence design, and smallest target shape. | Accepted `PTD-00` report and authorization/freeze decision for the conditional `PTD-01`. | No production implementation and no frozen plan choice while an oracle-shaping question is open. |
 | 0. Define | Exact product, platform, support matrix, feature disposition, and non-goals. | Approved scope and inventory. | No implementation before the surface is finite. |
 | 1. Trust | Real identity/license/notices, clean baseline, reviewer route, and executable checks. | Reproducible clean build record. | Do not package ambiguous ownership or rights. |
 | 2. Package | One repeatable Build-Cook-Stage-Package route. | Install/stage manifest and first archive. | Do not validate a development-tree substitute. |
@@ -428,8 +428,8 @@ Update a row only when the required evidence is linked. `Implemented` without ac
 
 | Gate | Status on 2026-09-06 | Evidence/blocker |
 | --- | --- | --- |
-| `PTD-00` Offline path-tracer completion discovery | In progress | The initial [NVIDIA/current-source study](../Research/GraphicsArchitecture/OfflinePathTracerCompletion.md) and [discovery contract](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md) exist. Exit is blocked on accepted transport/feature scope, estimator derivation, oracle and fixture design, target-shape decision, plan-ready backlog, and independent review. |
-| `PTD-01` Offline path-tracer implementation plan | Blocked | Intentionally absent until every `AC-PTD-*` criterion passes. |
+| `PTD-00` Offline path-tracer completion discovery | In progress | The [cross-vendor/current-source research](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Research.md), [target architecture](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/ExecutionArchitecture.md), [conditional plan](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Plan.md), and [discovery contract](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md) exist. Exit is blocked on accepted transport/feature scope, estimator derivation, concrete algorithms/budgets, oracle and fixture design, plan reconciliation, and independent review. |
+| `PTD-01` Offline path-tracer implementation plan | Conditional / blocked for acceptance | The [staged plan](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Plan.md) exists for review and Stage 0 execution; it cannot be frozen or advance to Stage 1 until every `AC-PTD-*` criterion and `REL-03` prerequisite passes. |
 | `PTD-02` / `FCR-REN-08` implementation and candidate closure | Blocked | Requires `PTD-00`, `PTD-01`, and `REL-03`, then every applicable [feature acceptance](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/README.md) row; current source presence is not oracle evidence. |
 | `PTD-03` Release-map reference adoption | Blocked | Requires accepted `FCR-REN-08` plus per-camera raw HDR, convergence/uncertainty, provenance, and dependency-independence evidence. |
 | `REL-00` Scope and freeze | In progress | This roadmap and acceptance contract define the process; approved audience/scope/feature/compatibility/budget inventory is still pending. |
@@ -450,7 +450,7 @@ Update a row only when the required evidence is linked. `Implemented` without ac
 Do these in order. Begin with reference discovery, not shader implementation or visual tuning:
 
 1. execute `PTD-D0` through `PTD-D4`; pass [`PTD-00`](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md) with an exact estimator/domain, dependency and oracle model, risks/failure modes/checks, target shape, and independent plan-readiness review;
-2. create `PTD-01` only after that pass, while approving `v0.1.0` runtime-consumer/source-adopter promises, product/platform/toolchain/support/non-goals, compatibility boundary, first-run experience, budgets, and complete feature inventory;
+2. reconcile and freeze the conditional `PTD-01` only after that pass, while approving `v0.1.0` runtime-consumer/source-adopter promises, product/platform/toolchain/support/non-goals, compatibility boundary, first-run experience, budgets, and complete feature inventory;
 3. choose the exact `ReleaseMapSet` after redistribution review; reconcile every map/material/light/reference need with the frozen path-tracer domain; pin every release input and freeze the optional-provider/Shipping DLL allowlist;
 4. settle publisher/license/version/root quick start/notices/support/security identity and start the trusted signing-provider process;
 5. reconcile the dirty worktree and reproduce cold and warm clean `ShippingGame` build/cook routes from public source instructions;

@@ -2,11 +2,11 @@
 
 **Status:** acceptance contract; binding feature-local discovery gate for `PTD-00`, not feature implementation acceptance
 
-**Responsibility:** define the evidence required to decide what a complete offline unbiased path tracer means for SparkleEngine and whether an implementation plan may be created
+**Responsibility:** define the evidence required to decide what a complete offline unbiased path tracer means for SparkleEngine, freeze the conditional implementation plan, and authorize production implementation
 
-**Authority boundary:** the [research report](../../../../../../../Research/GraphicsArchitecture/OfflinePathTracerCompletion.md) owns precedent and initial findings, the [roadmap](../../../../../../../Strategy/Roadmap.md#offline-reference-truth-first) owns priority, the [feature dossier](README.md) owns the eventual feature set and definition of done, [`FCR-REN-08`](../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry) owns its result, and a future plan may own delivery only after this gate passes
+**Authority boundary:** the [research report](Research.md) owns precedent and initial findings, [Execution Architecture](ExecutionArchitecture.md) owns the proposed target boundary, the [conditional plan](Plan.md) owns Stage 0 and the provisional delivery route, the [roadmap](../../../../../../../Strategy/Roadmap.md#offline-reference-truth-first) owns priority, the [feature dossier](README.md) owns the eventual feature set and definition of done, and [`FCR-REN-08`](../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry) owns its result
 
-**Current state:** **In progress / blocked for exit** on 2026-09-06. Initial source research exists; accepted transport scope, estimator derivation, executable evidence design, target architecture decision, and independent review do not.
+**Current state:** **In progress / blocked for exit** on 2026-09-09. Cross-vendor research, a proposed target architecture, and a conditional delivery plan exist; accepted transport scope, estimator derivation, executable evidence design, concrete algorithm/budget choices, and independent review do not.
 
 **Current readiness:** **20/100** for the feature baseline — this discovery contract is in progress and adds no implementation or verification credit until its evidence is accepted. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
@@ -20,7 +20,7 @@
 | analytic through representative oracle ladder with thresholds, budgets, artifacts, and reviewers | a beauty scene cannot localize bias, lifecycle, determinism, robustness, or backend defects |
 | chosen target shape, rejected alternatives, owners, clean breaks, and plan-ready work packages | otherwise the plan would be architecture discovery disguised as delivery |
 
-`PASS` authorizes creation of `PTD-01`; it does not accept the feature, approve a release claim, or make the current route trustworthy. Any unresolved question that can change the target integral, supported domain, architecture, or evidence validity keeps this gate blocked.
+`PASS` authorizes freezing `PTD-01` to the exact discovery report and permits Stage 1 only after `REL-03`; it does not accept the feature, approve a release claim, or make the current route trustworthy. Any unresolved question that can change the target integral, supported domain, architecture, ownership, or evidence validity keeps this gate blocked.
 
 ## Iteration Control Record
 
@@ -32,7 +32,7 @@
 | Delivery targets | `PTD-00`; preparation for `FCR-REN-08`, `REL-04`, `REL-05`, `MAP-A` through `MAP-H` |
 | Primary release risks | `RISK-REL-05`, `RISK-REL-06`, `RISK-REL-08`, `RISK-REL-11`, `RISK-REL-12`, `RISK-REL-13` |
 | Primary technical risks | `RISK-PTD-01` through `RISK-PTD-12` |
-| Decision | `BLOCKED`; only discovery evidence work is authorized. `PTD-01` implementation-plan creation requires every criterion below to pass. |
+| Decision | `BLOCKED`; only discovery evidence work and Stage 0 of the conditional `PTD-01` plan are authorized. Production implementation requires every criterion below plus `REL-03` to pass. |
 
 ## Discovery Scope
 
@@ -40,7 +40,7 @@ Included:
 
 - a formal transport-domain and unbiasedness claim;
 - current Sparkle owner/producer/consumer/lifetime/build/backend/dependency trace;
-- primary NVIDIA precedent and rejected-copy decisions;
+- primary NVIDIA, AMD, and neutral precedent plus adopted/rejected-copy decisions;
 - feature, dependency-independence, risk, failure, oracle, fixture, statistical, artifact, and operational definitions;
 - a target-shape decision with alternatives and complexity budget;
 - plan-ready work packages, owners, dependencies, clean breaks, evidence order, and estimates.
@@ -83,7 +83,7 @@ All risks are **Open** at this snapshot. Discovery activity does not reduce a ri
 | --- | --- | --- | --- | --- | --- |
 | `RISK-PTD-01` | False oracle through shared dependencies: a deliberately wrong GBuffer/material/light/BRDF value survives both subject and reference. | Prohibit production GBuffer and post-process inputs; inventory all allowed shared leaves. | `CHK-PTD-01`, `CHK-PTD-04`, analytic/minimal/external fault cases. | Narrow the oracle claim or add independent coverage; Renderer/evidence owners. | Every shared leaf has a demonstrated defect-detecting oracle and no unexplained survivor. |
 | `RISK-PTD-02` | Estimator bias or double counting: derivation/code has an unmatched term, probability, measure, cutoff, or rejected sample. | Freeze one transport equation/notation and review strategy composition before architecture selection. | `CHK-PTD-03` plus analytic probability/energy cases. | Remove the term/optimization or relabel the finite/biased target; path-integrator owner. | Independent derivation review and all hand/analytic cases pass. |
-| `RISK-PTD-03` | Feature-domain mismatch: a release map/selector exercises an unmodeled or differently approximated material, light, camera, geometry, or alpha behavior. | Reconcile domain against `ReleaseMapSet` and all public selectors during `PTD-D0`. | `CHK-PTD-01`, `CHK-PTD-05`, per-feature fixture ledger. | Exclude the feature/map or expand discovery before planning; release and graphics-quality owners. | Zero unmatched advertised/map-required semantic. |
+| `RISK-PTD-03` | Feature-domain mismatch: a release map/selector exercises an unmodeled or differently approximated material, light, camera, geometry, or alpha behavior. | Reconcile domain against `ReleaseMapSet` and all public selectors during `PTD-D0`. | `CHK-PTD-01`, `CHK-PTD-05`, per-feature fixture ledger. | Exclude the feature/map or expand discovery before plan freeze/Stage 1; release and graphics-quality owners. | Zero unmatched advertised/map-required semantic. |
 | `RISK-PTD-04` | Numeric ray/transport failure: scale, transform, grazing, thin geometry, shading normal, extreme PDF, or radiance produces acne, leak, NaN/Inf, overflow, or lost energy. | Specify robust spawn/endpoints, normal policy, finite checks, precision, and invalid-result rules. | `CHK-PTD-03`, `CHK-PTD-07`, `CHK-PTD-08`. | Block the affected domain/backend and retain diagnostic output; Renderer/RHI owners. | Adversarial numeric matrix passes with zero unaccounted invalid value or visibility error. |
 | `RISK-PTD-05` | Sample or accumulation identity drifts: repeated/skipped/correlated samples, stale history, wrong resume count, or partial completion. | Stable job/pixel/sample/dimension identity and transactional accumulation state machine. | `CHK-PTD-06`, `CHK-PTD-07`, `CHK-PTD-09`. | Quarantine partial output, restart from last verified checkpoint, and invalidate dependents; sampling/evidence owners. | Repeat/resume/mutation/overflow matrix and independent sequence review pass. |
 | `RISK-PTD-06` | Cross-renderer agreement/disagreement is misread because scenes are not semantically equivalent. | Freeze an interchange manifest for camera, units, geometry, material, texture, light, environment, and path domain. | `CHK-PTD-05` plus analytic controls rendered by both routes. | Mark comparison `Inconclusive`; never tune thresholds to force agreement; content/evidence owners. | Equivalence checklist and analytic controls pass before external images influence verdicts. |
@@ -92,7 +92,7 @@ All risks are **Open** at this snapshot. Discovery activity does not reduce a ri
 | `RISK-PTD-09` | Raw truth is contaminated by clamp/filter/denoiser/exposure/tone/encode/screenshot operations. | Give raw linear HDR a separate named resource/export and immutable metadata; label previews. | `CHK-PTD-03`, `CHK-PTD-09` with each biasing switch toggled or rejected. | Reject contaminated artifacts and regenerate from raw; evidence owner. | Raw path trace proves no display/biasing operation before comparison and identity mutation is detected. |
 | `RISK-PTD-10` | Offline work hangs, TDRs, exhausts VRAM/disk, cannot cancel, or leaves a plausible partial result. | Freeze time/resource budgets, progress, watchdog, cancellation, atomic publish, cleanup, and recovery. | `CHK-PTD-07`, `CHK-PTD-10` controlled timeout/OOM/disk/cancel cases. | Terminate safely, preserve diagnostic/partial state as non-candidate, and reduce bounded workload; runtime owner. | Every controlled failure ends within budget with no complete marker, leaked state, or corrupted prior evidence. |
 | `RISK-PTD-11` | External feature breadth grows a second scene/material framework or multiple competing reference paths. | Select the smallest target from current release needs and enforce one owner/representation/copy budget. | `CHK-PTD-02`, `CHK-PTD-12`; dependency and code-shape estimates. | Defer nonessential features and reject generalized infrastructure; Renderer/release owners. | Accepted decision records each excluded external feature and plan has one target path with bounded size. |
-| `RISK-PTD-12` | Implementation planning begins while a discovery result can still change architecture, scope, estimator, or evidence. | Hard `PTD-00` gate and intentionally absent plan. | `CHK-PTD-11`, `CHK-PTD-12`; search plan index/worktree and audit unresolved questions. | Stop/delete premature plan work and return to the unresolved discovery slice; release owner. | All `AC-PTD-*` pass, zero plan-shaping unknowns remain, and independent review authorizes `PTD-01`. |
+| `RISK-PTD-12` | Production implementation begins, or a conditional plan choice is treated as frozen, while discovery can still change architecture, scope, estimator, or evidence. | Hard `PTD-00` Stage-1 gate; label the plan conditional and make Stage 0 its only authorized work. | `CHK-PTD-11`, `CHK-PTD-12`; inspect code/worktree changes, plan status, prerequisites, and unresolved questions. | Stop premature implementation, revert provisional authority to target status, and return to the unresolved discovery slice; release owner. | All `AC-PTD-*` pass, zero plan-shaping unknowns remain, independent review approves the exact plan revision, and Stage 1 records that revision. |
 
 ## Discovery Failure Modes
 
@@ -113,7 +113,7 @@ These are discovery no-go conditions. They describe what the discovery process m
 | `FM-PTD-11` | D3D12 and Vulkan differ beyond declared numeric tolerance, strict capability is unavailable, or native validation reports an unexplained issue. | Fail `AC-PTD-13`; hold the affected backend/claim and preserve raw diagnostics. |
 | `FM-PTD-12` | Exposure, tone mapping, gamut conversion, output encoding, filtering, denoising, or screenshot quantization is included in raw error measurement. | Fail `AC-PTD-12`; compare linear HDR before presentation and label previews separately. |
 | `FM-PTD-13` | The job hangs, TDRs, exhausts memory/disk, cannot report progress, cannot cancel, or leaves ambiguous partial artifacts. | Fail `AC-PTD-09`/`13`; define budgets, watchdog, atomic output, cleanup, and recovery. |
-| `FM-PTD-14` | NVIDIA feature breadth or an abstract framework expands the target beyond the frozen Sparkle release need. | Fail `AC-PTD-15`; reduce to the smallest accepted domain and defer the rest. |
+| `FM-PTD-14` | NVIDIA/AMD feature breadth or an abstract framework expands the target beyond the frozen Sparkle release need. | Fail `AC-PTD-15`; reduce to the smallest accepted domain and defer the rest. |
 | `FM-PTD-15` | A proposed check proves only that code ran, uses the implementation as its own expected value, or sets thresholds after seeing output. | Fail `AC-PTD-10`/`11`/`14`; predeclare the oracle and inject or identify the defect it detects. |
 | `FM-PTD-16` | Discovery “passes” with an unresolved item capable of changing architecture, scope, estimator math, release claims, or evidence design. | Keep `PTD-00` blocked; unresolved architecture-shaping unknowns may not be transferred as ordinary implementation tasks. |
 
@@ -124,7 +124,7 @@ Each check specification produced during discovery must include initial state, a
 | Check | Criteria, failures, and risks falsified | Minimum action and oracle | Required artifact | Escalation |
 | --- | --- | --- | --- | --- |
 | `CHK-PTD-01` current-route reconciliation | `AC-PTD-03`, `AC-PTD-04`; `FM-PTD-02`, `FM-PTD-08`; `RISK-PTD-01`, `RISK-PTD-03`, `RISK-PTD-08` | Search public selectors, build membership, owners, CPU graph, shader includes, resources, history, output, and both backend bindings; every contribution and fallback must land in one matrix row. | revision-pinned line links, dependency graph, unmatched-search record | Any unmatched selector/contribution blocks scope. |
-| `CHK-PTD-02` primary-precedent audit | `AC-PTD-01`, `AC-PTD-10`, `AC-PTD-15`; `FM-PTD-01`, `FM-PTD-14`; `RISK-PTD-11` | Pin NVIDIA revisions; inspect actual Falcor minimal/full tracer, accumulation/error, tests, RTXPT reference/real-time switches, and robustness source; distinguish adopted, rejected, and unknown lessons. | source URL/SHA ledger and comparison table | A secondary summary or unpinned moving claim cannot decide target shape. |
+| `CHK-PTD-02` primary-precedent audit | `AC-PTD-01`, `AC-PTD-10`, `AC-PTD-15`; `FM-PTD-01`, `FM-PTD-14`; `RISK-PTD-11` | Pin NVIDIA/AMD revisions; inspect Falcor minimal/full tracer, RTXPT reference controls, NVIDIA robustness, Capsaicin shared Inline/DXR tracer, Baikal's bias/wavefront/workflow disclosures, RadeonRays separation, and neutral math/format sources; distinguish adopted, rejected, and unknown lessons. | source URL/SHA ledger and comparison table | A secondary summary or unpinned moving claim cannot decide target shape. |
 | `CHK-PTD-03` estimator review | `AC-PTD-02`, `AC-PTD-05`; `FM-PTD-03`, `FM-PTD-04`; `RISK-PTD-02`, `RISK-PTD-04`, `RISK-PTD-09` | Expand every sampled path probability and contribution in one notation; hand-evaluate zero, unit, delta, two-strategy, roulette, cutoff, and invalid cases. | derivation, reviewer annotations, hand-case outputs | Any unmatched term/probability blocks planning. |
 | `CHK-PTD-04` dependency fault analysis | `AC-PTD-06`; `FM-PTD-02`; `RISK-PTD-01` | For each shared component, posit a concrete wrong value/branch and show which independent level detects it. | shared-dependency/fault/oracle matrix | A fault surviving all proposed oracles forces new independence or narrower claims. |
 | `CHK-PTD-05` fixture and interchange review | `AC-PTD-03`, `AC-PTD-10`; `FM-PTD-08`, `FM-PTD-09`; `RISK-PTD-03`, `RISK-PTD-06`, `RISK-PTD-07` | Specify analytic/metamorphic/minimal/external/lifecycle/backend cases with exact scene semantics and expected failures; dry-run one case on paper. | fixture catalog, rights/provenance, interchange manifest, dry-run review | Any non-equivalent external scene is `Inconclusive`. |
@@ -141,7 +141,7 @@ Each check specification produced during discovery must include initial state, a
 The discovery completion report links, rather than duplicates, these artifacts:
 
 1. frozen terminology, claimant, transport equation/domain, units, and feature/exclusion matrix;
-2. revision-pinned local route and NVIDIA source ledgers;
+2. revision-pinned local route plus NVIDIA, AMD, and neutral source ledgers;
 3. end-to-end estimator derivation and hand cases;
 4. owner/producer/consumer/lifetime/build/backend and shared-dependency graph;
 5. target-shape decision with rejected alternatives and complexity budget;
@@ -157,4 +157,4 @@ Generated experiment output belongs under the normal ignored evidence/artifact r
 
 `PTD-00` passes only when `AC-PTD-01` through `AC-PTD-17` pass, every applicable `FM-PTD-*` has a detecting `CHK-PTD-*`, all release/technical risks have accepted treatments, and independent review signs the exact report revision.
 
-Current decision: **BLOCKED**. The next permitted step is `PTD-D0` through `PTD-D4` discovery evidence work. After a pass, the release owner may authorize `PTD-01` to create the implementation plan. That plan's existence will not authorize implementation before the roadmap opens the `FCR-REN-08` slice.
+Current decision: **BLOCKED**. The next permitted step is `PTD-D0` through `PTD-D4`, executed as Stage 0 of the [conditional implementation plan](Plan.md). After a pass, the release owner may freeze `PTD-01` to the accepted report. Neither the conditional plan nor a discovery pass authorizes implementation before `REL-03` opens the `FCR-REN-08` slice.

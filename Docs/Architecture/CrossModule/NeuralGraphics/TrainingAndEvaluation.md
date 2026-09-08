@@ -56,4 +56,4 @@ Corrupt, incompatible, unlicensed, provenance-incomplete, non-finite, or unexpec
 
 `NG-TRAIN-01` dataset/provenance pipeline, `NG-TRAIN-02` owned model/operator, `NG-TRAIN-03` reproducible training, and `NG-EVAL-01` independent evaluation are **Not found**. The two Showcase conversion scripts and NVIDIA runtime providers are not substitutes.
 
-Acceptance is owned by [Neural Graphics Acceptance](Acceptance.md); executable work must also follow the [Capability Evidence Plan](../../../Plans/CapabilityEvidence.md).
+Acceptance is owned by [Neural Graphics Acceptance](Acceptance.md); executable work must also follow the [Capability Evidence Plan](../../Modules/CapabilityEvidencePlan.md).

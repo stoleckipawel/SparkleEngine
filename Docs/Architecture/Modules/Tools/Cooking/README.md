@@ -8,7 +8,7 @@
 
 **Owner:** `Tools/Cooking`; shader cooking is separately owned by [Shader Compilation](../ShaderCompiler/README.md)
 
-**Evidence and disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../../CapabilityEvidencePlan.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
 **Current readiness:** **50/100** — the cooked-only asset pipeline is source-integrated; deterministic, transactional, bounded, failure, package-relative, and clean-run proof remains open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
 

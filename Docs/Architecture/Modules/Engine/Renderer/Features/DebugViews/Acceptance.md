@@ -6,7 +6,7 @@
 
 **Feature architecture:** [View Modes And Show Flags](ViewModesAndShowFlags.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
 
-**Delivery authority:** [Debug View Presentation Delivery Plan](../../../../../../Plans/Renderer/DebugViewPresentation.md)
+**Delivery authority:** [Debug View Presentation Delivery Plan](Plan.md)
 
 **Release reporting authority:** [Feature Completion Reports](../../../../../../Acceptance/FeatureCompletionReports.md)
 

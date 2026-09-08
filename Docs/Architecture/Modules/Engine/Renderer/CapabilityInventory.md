@@ -10,9 +10,9 @@
 
 **Supporting maps:** [Whole Repository Architecture Map](../../../WholeRepositoryMap.md), [Renderer and RHI Architecture Boundary](../../../Decisions/RendererRhiBoundary.md), and [Ray-Tracing Execution Architecture](Features/RayTracing/ExecutionArchitecture.md)
 
-**Evidence plan and release disposition:** [Capability Evidence Plan](../../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
+**Evidence plan and release disposition:** [Capability Evidence Plan](../../CapabilityEvidencePlan.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
-**Traceability:** capability rows use durable `REN-<family>-NN` identities; their primary proof destinations are listed in the [Renderer capability-to-evidence map](../../../../Plans/CapabilityEvidence.md#renderer-capability-to-evidence-map).
+**Traceability:** capability rows use durable `REN-<family>-NN` identities; their primary proof destinations are listed in the [Renderer capability-to-evidence map](../../CapabilityEvidencePlan.md#renderer-capability-to-evidence-map).
 
 **Deeper routes:** [Rendering a Sparkle Frame](RenderingASparkleFrame.md), [Renderer feature dossiers](Features/README.md), [pipeline materialization and typed binding](Features/ShaderRuntime/PipelineMaterializationAndTypedBinding.md), [scene and view preparation](Features/SceneAndViewPreparation/README.md), [mesh and texture residency](Features/GeometryAndResources/MeshAndTextureResidency.md), [temporal sampling and history](Features/FrameExecution/TemporalSamplingAndHistory.md), [latency coordination](Features/FrameExecution/LatencyCoordination.md), [settings lifecycle](Features/RuntimeConfiguration/SettingsStateAndPersistence.md), [cross-system graphics coverage](../../../CrossModule/GraphicsCoverageMatrix.md), [producer-to-consumer execution traces](../../../CrossModule/FeatureExecutionTraces.md), and the [exact shader program catalog](Features/ShaderRuntime/ShaderProgramCatalog.md)
 
@@ -29,7 +29,7 @@
 | [Rendering a Sparkle Frame](RenderingASparkleFrame.md) | canonical current frame narrative from submission through GPU retirement |
 | [Renderer Feature Dossiers](Features/README.md) | explicit feature-family definitions, algorithms, limits, decisions, and evidence routes |
 
-The Renderer root intentionally owns only this module route, the canonical frame narrative, and the exact capability ledger. Current feature behavior, feature-local target architectures, catalogs, and substantial feature-local acceptance contracts live under [Features](Features/README.md). Plans remain under `Docs/Plans`; candidate results, cross-feature workloads, and release-wide acceptance remain under `Docs/Acceptance`.
+The Renderer root owns this module route, the canonical frame narrative, the exact capability ledger, module-wide research, and the first-release Renderer plan index. Current feature behavior, target architectures, catalogs, plans, research, and substantial feature-local acceptance contracts live under [Features](Features/README.md). Candidate results, cross-feature workloads, and release-wide acceptance remain under `Docs/Acceptance`.
 
 The [RHI module](../RHI/README.md) owns backend-neutral GPU contracts and backend implementations. Cross-module graphics comparisons and end-to-end traces live under [CrossModule](../../../CrossModule/README.md).
 
@@ -185,7 +185,7 @@ Capacities above are hard implementation limits from this snapshot, not recommen
 | Capability ID | Mode/effect | State | Exact algorithm and traversal coverage | Evidence | Release disposition |
 | --- | --- | --- | --- | --- | --- |
 | `REN-LGT-01` | ReSTIR path-traced lighting | Capability-gated | Primary GBuffer plus direct-light reservoir generation, temporal reuse, spatial reuse, and ray-traced visibility; indirect reservoir temporal/spatial/resolve; shared lighting composite and sky. | `S` | Pending |
-| `REN-LGT-04` | Reference path-traced lighting | Capability-gated | A GBuffer-seeded inline path sample produces direct and indirect radiance into RGBA32F accumulation/history before shared composite/sky. It shares primary surface, material/light/shadow, frame-history, and presentation dependencies; the [completion study](../../../../Research/GraphicsArchitecture/OfflinePathTracerCompletion.md) therefore classifies current output as a candidate comparison, not an accepted unbiased oracle. | `S` | Pending; `PTD-00` |
+| `REN-LGT-04` | Reference path-traced lighting | Capability-gated | A GBuffer-seeded inline path sample produces direct and indirect radiance into RGBA32F accumulation/history before shared composite/sky. It shares primary surface, material/light/shadow, frame-history, and presentation dependencies; the [completion study](Features/Lighting/OfflinePathTracer/Research.md) therefore classifies current output as a candidate comparison, not an accepted unbiased oracle. | `S` | Pending; `PTD-00` |
 | `REN-LGT-05` | Accumulation invalidation | Implemented path | Scene, camera/view, settings, extent, and relevant lighting state contribute to reference/ReSTIR history validity. Completeness under every editor action requires runtime testing. | `S` | Pending |
 | `REN-LGT-06` | Lighting composite | Implemented path | Direct diffuse, direct specular, direct subsurface, indirect diffuse, indirect specular, and GBuffer emissive are combined before post processing. | `S` | Pending |
 

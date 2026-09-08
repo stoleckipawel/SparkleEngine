@@ -118,7 +118,7 @@ A resize or any change that modifies the resolved extents/provider/topology inva
 
 This contract is **defined but unproved**. A provider returning an extent, a temporally stable screenshot, or RHI sample vocabulary does not prove resolution correctness, anti-aliasing quality, or performance.
 
-Primary evidence destination: `REN-E33` in the [Capability Evidence Plan](../../../../../../../Plans/CapabilityEvidence.md#renderer-capability-to-evidence-map).
+Primary evidence destination: `REN-E33` in the [Capability Evidence Plan](../../../../../CapabilityEvidencePlan.md#renderer-capability-to-evidence-map).
 
 ## Primary Source Routes
 

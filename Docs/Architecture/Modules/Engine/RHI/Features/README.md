@@ -28,7 +28,7 @@ Every dossier begins at the backend-neutral contract and follows it through comm
 
 ## Dossier Contract
 
-Each dossier identifies its promise and non-promise, neutral owner, D3D12/Vulkan lowering boundary, inputs and outputs, mutable state and lifetime, requested-versus-active behavior when applicable, capacity/failure behavior, source routes, acceptance criteria, controlled failures, checks, and completion definition. Unknown executable behavior remains unproved and routes to the [Capability Evidence Plan](../../../../../Plans/CapabilityEvidence.md).
+Each dossier identifies its promise and non-promise, neutral owner, D3D12/Vulkan lowering boundary, inputs and outputs, mutable state and lifetime, requested-versus-active behavior when applicable, capacity/failure behavior, source routes, acceptance criteria, controlled failures, checks, and completion definition. Unknown executable behavior remains unproved and routes to the [Capability Evidence Plan](../../../CapabilityEvidencePlan.md).
 
 ## Folder Map
 

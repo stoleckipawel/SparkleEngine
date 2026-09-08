@@ -23,13 +23,13 @@ Output encoding is mandatory for both domains. An sRGB swap chain still needs a 
 
 The stock view-mode preset owns the correct `Exposure` and `Tonemapper` defaults. A deliberate override creates a customized view and the full resolved flag set travels with captures. Correctness therefore never depends on a process-global editor toggle or a name heuristic.
 
-This proposal does not change code. The current implementation remains authoritative until the [delivery plan](../../../../../../Plans/Renderer/DebugViewPresentation.md) is implemented and the adjacent [feature acceptance contract](Acceptance.md) passes.
+This proposal does not change code. The current implementation remains authoritative until the [delivery plan](Plan.md) is implemented and the adjacent [feature acceptance contract](Acceptance.md) passes.
 
 ## Authority Boundary
 
 This document owns signal-domain classification, presentation routing, display mapping, output encoding, and visualization producer requirements. [Debug View Modes And Show Flags](ViewModesAndShowFlags.md) owns view-mode intent, flag semantics, resolution, and editor controls. The [current renderer navigation overlay](../../../../../WholeRepositoryMap.md#current-renderer-navigation-overlay) records the broader implemented placement of view mode, resolved display settings, view state, and narrow pass inputs.
 
-[Editor Viewport Camera Architecture](../../../../../Decisions/EditorViewportCamera.md) continues to own per-viewport exposure overrides. [Renderer and RHI Architecture Boundary](../../../../../Decisions/RendererRhiBoundary.md) continues to own frame-graph and backend responsibility. The [Debug View Presentation Delivery Plan](../../../../../../Plans/Renderer/DebugViewPresentation.md) owns implementation slices; the adjacent [feature acceptance contract](Acceptance.md) owns feature proof. Engineering requirements and evidence rules are routed by the [Engineering task map](../../../../../../Engineering/README.md#choose-by-task).
+[Editor Viewport Camera Architecture](../../../../../Decisions/EditorViewportCamera.md) continues to own per-viewport exposure overrides. [Renderer and RHI Architecture Boundary](../../../../../Decisions/RendererRhiBoundary.md) continues to own frame-graph and backend responsibility. The [Debug View Presentation Delivery Plan](Plan.md) owns implementation slices; the adjacent [feature acceptance contract](Acceptance.md) owns feature proof. Engineering requirements and evidence rules are routed by the [Engineering task map](../../../../../../Engineering/README.md#choose-by-task).
 
 ## Implementation Snapshot
 
@@ -214,7 +214,7 @@ The Show menu exposes `Exposure` and `Tonemapper` separately. These overrides ar
 
 ## External Precedent
 
-[Debug View Presentation Precedent](../../../../../../Research/GraphicsArchitecture/DebugViewPresentationPrecedent.md) owns the NVIDIA RTXPT/Donut and AMD Cauldron findings behind the exposure, tone, and output separation. The decision, invariants, local type shape, and rejected presentation alternatives remain here.
+[Debug View Presentation Precedent](Research.md) owns the NVIDIA RTXPT/Donut and AMD Cauldron findings behind the exposure, tone, and output separation. The decision, invariants, local type shape, and rejected presentation alternatives remain here.
 
 ## Rejected Alternatives
 

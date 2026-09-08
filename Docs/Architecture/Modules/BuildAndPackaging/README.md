@@ -8,7 +8,7 @@
 
 **Owner:** root/module `CMakeLists.txt` and `CMake/`; Launcher is the user-facing workspace orchestrator
 
-**Evidence and disposition:** [Capability Evidence Plan](../../../Plans/CapabilityEvidence.md) and [First Release Acceptance Contract](../../../Acceptance/FirstRelease.md)
+**Evidence and disposition:** [Capability Evidence Plan](../CapabilityEvidencePlan.md) and [First Release Acceptance Contract](../../../Acceptance/FirstRelease.md)
 
 **Current readiness:** **25/100** across build-to-release delivery — development build/staging foundations exist, but CI, package/install, verification, and operated delivery are absent. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#product-build-and-delivery).
 

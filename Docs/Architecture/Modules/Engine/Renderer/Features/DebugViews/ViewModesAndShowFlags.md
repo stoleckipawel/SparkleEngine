@@ -140,7 +140,7 @@ The clean break moves `RenderViewMode` from direct `CVarRenderViewMode` consumpt
 
 ## External Precedent
 
-[Debug View Presentation Precedent](../../../../../../Research/GraphicsArchitecture/DebugViewPresentationPrecedent.md) owns the Unreal Engine findings behind the selected view-mode and show-flag model.
+[Debug View Presentation Precedent](Research.md) owns the Unreal Engine findings behind the selected view-mode and show-flag model.
 
 ## Rejected Alternatives
 
