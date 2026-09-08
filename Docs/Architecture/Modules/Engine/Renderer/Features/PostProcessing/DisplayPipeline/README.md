@@ -2,11 +2,11 @@
 
 **Status:** Renderer post-processing feature-family index
 
-**Scope:** route scene-to-display transforms, explicitly absent display effects, output encoding, and target publication
+**Scope:** route implemented scene-to-display transforms, admitted first-release display targets, output encoding, and target publication
 
 This family owns the meaning of the pixel after lighting: how scene-linear values are exposed, mapped into a display range, optionally transformed by future looks, encoded, and handed to presentation.
 
-**Current readiness:** **27/100** across described display capabilities — exposure, tone mapping, and SDR output are **45/100**; color grading and chromatic aberration are **0/100**. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **23/100** across six described display capabilities — exposure, tone mapping, and SDR output are **45/100**; color grading, chromatic aberration, and HDR10 output are admitted **0/100** targets. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## At A Glance
 
@@ -14,19 +14,25 @@ This family owns the meaning of the pixel after lighting: how scene-linear value
 | --- | --- | --- |
 | exposure | implemented source path with manual/automatic state and history | accepted adaptation quality or temporal stability |
 | tone mapping | selectable Reinhard, ACES approximation, and ACES fitted source routes | exact standards compliance or calibrated display output |
-| color grading | not found | tone mapping is not a grading or LUT system |
-| chromatic aberration | not found | generic filtering/reconstruction is not lens simulation |
-| output/presentation handoff | implemented SDR-oriented encoding/copy route | HDR negotiation, metadata, or accepted color accuracy |
+| color grading | first-release target; not found | tone mapping is not a grading or LUT system |
+| chromatic aberration | first-release target; not found | generic filtering/reconstruction is not lens simulation |
+| output/presentation handoff | implemented SDR-oriented encoding/copy route | accepted color accuracy or HDR support |
+| HDR10 display output | first-release target; not found | 10-bit or Linear output alone is not HDR activation |
 
 ```mermaid
 flowchart LR
     Scene[Scene-linear lit color] --> Exposure[Resolve exposure]
-    Exposure --> Tone[Tone map to display-linear]
-    Tone -. future .-> Grade[Color grading]
-    Grade -. future .-> Lens[Chromatic aberration]
-    Tone --> Encode[Encode current SDR output]
-    Lens -. future .-> Encode
-    Encode --> Present[Viewport or swapchain product]
+    Exposure --> Grade[Color grade scene-referred color]
+    Grade --> ODT{Output target}
+    ODT --> Tone[Current SDR tone map]
+    ODT --> HDRTone[Target HDR10 tone and gamut map]
+    Tone --> Lens[Optional chromatic aberration]
+    HDRTone --> Lens
+    Lens --> Encode{Target encoding}
+    Encode --> SDR[Current SDR encoding]
+    Encode --> HDR[Target HDR10 PQ]
+    SDR --> Present[Viewport or swapchain product]
+    HDR --> Present
 ```
 
 ## Choose By Stage
@@ -35,10 +41,11 @@ flowchart LR
 | --- | --- |
 | [Exposure](Exposure.md) | luminance measurement, history, manual/automatic exposure, and frame placement |
 | [Tone Mapping](ToneMapping.md) | selectable scene-referred HDR to display-linear operators and their limits |
-| [Color Grading](ColorGrading.md) | explicit negative capability boundary for grading and LUT workflows |
-| [Chromatic Aberration](ChromaticAberration.md) | explicit negative capability boundary for the named lens effect |
-| [Presentation And Output](PresentationAndOutput.md) | output encoding, format/HDR boundary, back-buffer or viewport publication, and debug handoff |
+| [Color Grading](ColorGrading.md) | first-release grading controls/LUT contract plus current negative boundary |
+| [Chromatic Aberration](ChromaticAberration.md) | first-release lens-effect contract plus current negative boundary |
+| [Presentation And Output](PresentationAndOutput.md) | current SDR encoding, back-buffer or viewport publication, and debug handoff |
+| [HDR Display Output](HDRDisplayOutput.md) | first-release HDR10 transform, RHI activation, UI, transition, fallback, and proof contract |
 
 The parent [Post Processing](../README.md) dossier owns shared stage order. Each transformation retains a separate input/output and proof contract.
 
-The order is semantic: exposure acts on scene-linear lighting, tone mapping produces display-linear intent, look/lens operations would act only at their declared domain, and output encoding/presentation owns the final target contract. Reordering stages requires an explicit color-domain decision, not only a graph edit.
+The order is semantic: exposure acts on scene-linear lighting, grading authors the reconstructed scene-referred look, the selected SDR or HDR tone/gamut mapping creates target-linear intent, chromatic aberration acts before target encoding and UI, and SDR/HDR output paths own their final encoding/publication contracts. Reordering stages requires an explicit color-domain decision, not only a graph edit.

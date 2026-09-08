@@ -2,7 +2,7 @@
 
 **Status:** capability snapshot; horizontal workflow inventory; not usability, runtime, package, or release evidence
 
-**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; current module inventories, build membership, product/tool entry points, and release contracts reconciled; evidence `S` only
+**Snapshot:** 2026-09-08 at committed `master` revision `ffe60e3a`; current module inventories, build membership, product/tool entry points, frozen product dispositions, and release contracts reconciled; evidence `S` only
 
 **Scope:** user-visible and contributor-visible journeys that cross Application, Editor, Launcher, tools, content, build, project, and delivery owners
 
@@ -65,4 +65,4 @@ An unanswered field is not automatically a feature defect, but it is a documenta
 
 The source tree has recognizable development journeys from discovery through development artifacts and from authored content through a rendered result. The largest product discontinuity is after development staging: package, standard-user first run, support/security, update, and independent adoption do not yet have implemented owners. Inside implemented journeys, the recurring evidence gaps are requested-versus-active truth, failure/recovery behavior, bounded resource behavior, and proof on the complete actor-visible route.
 
-This matrix does not choose release scope. Freeze Included, Experimental, Excluded, or Removed only through the acceptance owner, then execute the smallest checks in the capability evidence plan.
+This matrix does not choose release scope. The current [product/output classification](../../Acceptance/FirstRelease.md#frozen-product-and-output-classification) is frozen by the acceptance owner; later changes occur there, then flow into these current-state rows and the smallest checks in the capability evidence plan.

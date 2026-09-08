@@ -6,7 +6,7 @@
 
 **Owner:** release/product delivery; Launcher, Application, Core diagnostics, Docs, and project products provide owned parts of the route
 
-**Snapshot:** 2026-09-07; current product/workflow inventories, repository-root entry points, and First Release failure/support surfaces reconciled; source evidence `S` only
+**Snapshot:** 2026-09-08 at committed `master` revision `ffe60e3a`; current product/workflow inventories, repository/public entry points, Core/RHI diagnostics, symbols, and First Release failure/support surfaces reconciled; source evidence `S` only
 
 **Strategy and acceptance sources:** `NS-ADOPTION`, `NS-EVIDENCE`, and `NS-OWNERSHIP` in the [Engineer Persona](../../../Strategy/EngineerPersona.md); `FCR-PROD-01`, `FCR-PROD-02`, `FCR-PROD-06`; [First Release](../../../Acceptance/FirstRelease.md)
 
@@ -46,16 +46,31 @@ Current Launcher readiness and Docs routes are partial building blocks. There is
 - Runtime and tools own precise diagnostics. Delivery owns the user journey, support-bundle schema, consent, retention, routing, service expectation, and published support decision.
 - Logs/captures/crash data are bounded, inspectable before submission, opt-in where required, free of credentials/private paths, and associated with an exact product/revision/configuration identity.
 
-## Acceptance Handoff
+## `FCR-PROD-06` Support And Incident Contract
 
-- `AC-ADOPT-01`: a non-author can identify the product promise, supported matrix, prerequisites, first action, expected output, controls, reset, and exit without private guidance.
-- `AC-ADOPT-02`: missing content/toolchain/provider/hardware, corrupt configuration, startup failure, crash, hang, and unsupported environment produce distinct recovery or escalation paths.
-- `AC-ADOPT-03`: support and security intake, privacy/consent, retention, severity, acknowledgement, patch/advisory/withdrawal, and version applicability are explicit.
-- `AC-ADOPT-04`: an independent clean-user attempt retains enough evidence to reproduce both success and one controlled failure.
-- `FM-ADOPT-01`: onboarding reaches a dead end or reports false readiness; adoption acceptance fails.
-- `FM-ADOPT-02`: a support bundle leaks secrets/private paths or lacks product identity; it is rejected before submission.
-- `FM-ADOPT-03`: a severe defect has no owned response/distribution route; affected release classification is withdrawn or blocked.
-- `CHK-ADOPT-01`: conduct a scripted non-author source and packaged-product journey with no undocumented intervention.
-- `CHK-ADOPT-02`: exercise the frozen failure/support/security matrix and inspect bundle contents, routing, acknowledgement, and resolution state.
+The support/stabilization owner owns root `SUPPORT.md` and `SECURITY.md`, the public defect and private security channels they name, privacy/retention/redaction policy, candidate-to-symbol lookup, severity clocks, advisory/patch/withdraw decisions, and supported-version data. Core/RHI/Application own diagnostic production, not intake or response policy. The [frozen product contract](../../../Acceptance/FirstRelease.md#frozen-paths-mutation-boundary-and-budgets) owns paths and clocks.
 
-No public support service or release response time is promised by this dossier; those values require a frozen release decision and candidate evidence through [`BUILD-E05`](../../../Plans/CapabilityEvidence.md#product-workflow-and-delivery-evidence).
+| ID | Binary acceptance criterion |
+| --- | --- |
+| `AC-ADOPT-01` | A runtime consumer and source adopter can reach the correct public onboarding/support route, identify product/version/package/source/configuration, expected result, prerequisites, reset/exit, known issues, and whether to use public defect or private security intake without private guidance. |
+| `AC-ADOPT-02` | A user can inspect and explicitly export a bounded redacted bundle for startup failure, process crash, hang/timeout, and GPU/device failure; no automatic upload/telemetry occurs and absence of a diagnostic is reported unavailable rather than successful. |
+| `AC-ADOPT-03` | Native/shader symbols, logs, dumps/captures when consented, and manifest/provenance map to the exact immutable candidate; a mismatched or insufficient bundle is rejected before submission with recovery. |
+| `AC-ADOPT-04` | Public defect and private security intake acknowledge within the frozen clocks, assign an owner/severity, preserve confidentiality/retention, and produce a reproducible resolution, known issue, advisory, patch, or withdrawal decision with version applicability. |
+| `AC-ADOPT-05` | A patch never changes bytes under an existing version; verify/apply/rollback or replace-side-by-side policy, evidence invalidation, user-state preservation/reset, and withdrawal are explicit and exercised for one isolated candidate copy. |
+
+| ID | Cause/injection, safe result, and affected criterion |
+| --- | --- |
+| `FM-ADOPT-01` | Remove `SUPPORT.md`/`SECURITY.md`, break an intake link, or omit a prerequisite. The journey is `Blocked`; docs/search/Launcher may not report readiness (`AC-ADOPT-01`, `AC-ADOPT-04`). |
+| `FM-ADOPT-02` | Inject username/private paths, tokens, arbitrary content, oversized logs, or wrong candidate identity into a bundle. Preview/redaction/validation rejects it before submission and leaves originals local (`AC-ADOPT-02`, `AC-ADOPT-03`). |
+| `FM-ADOPT-03` | Disable DRED/Vulkan/crash/hang collection or omit symbols. The route reports the unavailable item and alternative manual evidence; zero/empty output is never success (`AC-ADOPT-02`, `AC-ADOPT-03`). |
+| `FM-ADOPT-04` | File a controlled `S0`/security report with the operating owner unavailable or clock exceeded. Publication/stabilization blocks and affected bytes are contained/withdrawn; silence is not a response (`AC-ADOPT-04`). |
+| `FM-ADOPT-05` | Present a patch for the wrong hash/version or interrupt replacement. It is rejected before mutation; original bytes/user state remain, and no existing version is overwritten (`AC-ADOPT-05`). |
+
+| Check | Claims falsified | Smallest route and fixed oracle |
+| --- | --- | --- |
+| `CHK-ADOPT-01` | `AC-ADOPT-01`; `FM-ADOPT-01` | Script one non-author runtime and source journey from public entry through success and one prerequisite failure. Record every intervention; any private repair, dead link, false readiness, or missing distinction fails. |
+| `CHK-ADOPT-02` | `AC-ADOPT-02`, `AC-ADOPT-03`; `FM-ADOPT-02`, `FM-ADOPT-03` | On isolated user data, trigger startup/process/hang/GPU cases where supported, export with consent, inject private/mismatched/oversized/unavailable data, and inspect bundle schema, redaction, bounds, identity, symbols, and network activity. |
+| `CHK-ADOPT-03` | `AC-ADOPT-04`; `FM-ADOPT-04` | Submit controlled public and private fixtures through the named channels, retain acknowledgement/owner/severity/timestamps, and rehearse known-issue/advisory/withdraw decisions against the frozen clocks. |
+| `CHK-ADOPT-04` | `AC-ADOPT-05`; `FM-ADOPT-05` | Apply and interrupt a versioned replacement against copies with representative user state; verify hash applicability, atomicity, side-by-side/reset policy, evidence invalidation, rollback/withdraw result, and unchanged published bytes. |
+
+Every criterion/failure maps to a check. At this revision root `SUPPORT.md`, root `SECURITY.md`, a consented bundle/exporter, public crash/hang operation, assigned operating maintainer, and patch/withdraw route are absent, so `FCR-PROD-06` is `Blocked`; the frozen clocks are not claimed as an operating service.

@@ -2,7 +2,7 @@
 
 **Status:** capability snapshot; current product/catalog view, not evidence that every level is downloaded, cooked, runnable, or releasable
 
-**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; Showcase marker/CMake/entry points, level catalog, authored level files, tracked source content, Launcher use, and runtime startup path inspected; evidence `S` only
+**Snapshot:** 2026-09-08 at committed `master` revision `ffe60e3a`; Showcase marker/CMake/entry points, level catalog, authored level files, tracked source content, Launcher use, runtime startup/fallback, and product membership inspected; evidence `S` only
 
 **Scope:** shipped project products, startup/selection behavior, cataloged workloads, content provenance/readiness, and their role as capability evidence
 
@@ -79,6 +79,34 @@ The 13 asset-pack records encode root/extraction/required path, parent relation,
 ## Vertical Launch Trace
 
 Launcher loads `Levels.catalog` -> selected level/pack readiness is evaluated -> missing supported packs sync -> AssetCooker cooks the selected project -> Launcher verifies executable and cooked mesh/texture/shader roots -> `levels.run` sets project/level/API environment and starts ShowcaseEditor or ShowcaseRuntime in the project directory -> GameFramework registers only selected/ready levels -> requested level loads or explicit warning falls back to Empty -> Renderer consumes the scene.
+
+## `FCR-PROD-01` Runtime Consumer Contract
+
+This is the Architecture acceptance owner for the Showcase consumer journey. [Application](../../Engine/Application/README.md#product-contract-boundary) owns host construction and settlement; the [frozen product contract](../../../../Acceptance/FirstRelease.md#frozen-product-and-output-classification) owns release values; [release gates](../../../../Acceptance/FirstRelease.md#release-gates) are linked, not repeated.
+
+| ID | Binary acceptance criterion |
+| --- | --- |
+| `AC-PROD01-01` | From the included archive as a standard user, with no repository, environment override, administrator right, network, or developer tool, `bin/ShowcaseRuntime.exe` reaches the intentional first-run surface within the frozen startup budget and reports the exact product/package identity. |
+| `AC-PROD01-02` | Selecting each included example publishes the requested catalog identity and first correct frame within its load budget; missing, corrupt, unsupported, or unregistered content produces a distinct failure and never claims success through built-in `Empty`. |
+| `AC-PROD01-03` | The consumer can discover controls/help, inspect requested versus active settings, restore documented defaults, return to the first-run surface, and quit without a console command; persistence and reset touch only the frozen per-user paths. |
+| `AC-PROD01-04` | `ShippingGame` contains and exposes no runtime/editor console, CVar authoring route, shader recook, editor panel, source importer/cooker, repository marker dependency, or developer-only command. |
+| `AC-PROD01-05` | Close/quit during idle and level load settles level/task/Renderer/RHI work within the shutdown budget, returns one success/failure exit status, and leaves immutable package/source bytes unchanged. |
+
+| ID | Cause/injection, detection boundary, safe result, and recovery |
+| --- | --- |
+| `FM-PROD01-01` | Remove all `SPARKLE_*` overrides and launch from an arbitrary working directory. Package/Application discovery must still resolve the product; any environment or repository dependency blocks `AC-PROD01-01`. |
+| `FM-PROD01-02` | Remove or corrupt a copied included level/product. LevelSession/consumer UI must keep the last accepted state or stop, name the failed identity, and offer retry/back; silent `Empty` activation fails `AC-PROD01-02`. |
+| `FM-PROD01-03` | Press tilde/backtick and enumerate imports/files in `ShippingGame`. Any developer console or authoring/debug surface fails `AC-PROD01-04`; quit must remain available through consumer UI/window close. |
+| `FM-PROD01-04` | Truncate settings, deny the mutable root, then invoke reset. Invalid state is rejected/quarantined, the user gets one actionable path, and neither package nor repository files change; corruption or source mutation fails `AC-PROD01-03`. |
+| `FM-PROD01-05` | Quit during load and repeat launch/exit. New work stops, in-flight work settles/cancels, and no process or partial user file remains after the budget; hang/leak fails `AC-PROD01-05`. |
+
+| Check | Claims falsified | Smallest route and fixed oracle |
+| --- | --- | --- |
+| `CHK-PROD01-01` | `AC-PROD01-04`; `FM-PROD01-03` | Build the exact `ShippingGame` product when authorized, inspect link/import/file/string membership, then launch and exercise the console shortcut. Zero developer surface is the oracle; any match or overlay is failure. |
+| `CHK-PROD01-02` | `AC-PROD01-01`, `AC-PROD01-03`, `AC-PROD01-05`; `FM-PROD01-01`, `FM-PROD01-04`, `FM-PROD01-05` | On a clean standard-user minimum machine, verify/extract the candidate, launch from an unrelated working directory with overrides absent and network blocked, complete help/settings/reset/quit, and diff created/modified paths and process tree against the frozen path/budget contract. |
+| `CHK-PROD01-03` | `AC-PROD01-02`; `FM-PROD01-02` | For every included map, capture requested/active identity and first frame; on isolated archive copies inject missing and corrupt products. Success requires the requested map; each fault must produce the predeclared non-`Empty` failure/recovery. |
+
+Every criterion and failure above maps to at least one check. Candidate results belong in `FCR-PROD-01`; this source/documentation inspection does not pass any row.
 
 ## Explicit Non-Capabilities And Risks
 

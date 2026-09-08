@@ -2,7 +2,7 @@
 
 **Status:** operating model; personal target, not an implementation standard or evidence matrix
 
-**Current implementation snapshot:** **43/100** across the repository's 45 tracked feature families. This persona describes the target quality of engineering judgment, not personal or feature completion, and adds no score. See [Current Feature Readiness](../Acceptance/CurrentReadiness.md).
+**Current implementation snapshot:** **40/100** across the repository's 49 tracked feature families. This persona describes the target quality of engineering judgment, not personal or feature completion, and adds no score. See [Current Feature Readiness](../Acceptance/CurrentReadiness.md).
 
 **Date:** 2026-08-02
 

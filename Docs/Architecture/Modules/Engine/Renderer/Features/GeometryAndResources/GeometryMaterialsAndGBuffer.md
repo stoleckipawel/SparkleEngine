@@ -91,7 +91,7 @@ When `r.GBuffer.Algorithm=RayTracing`, the Renderer resolves `r.GBuffer.RayTraci
 
 The two frontends share scene identity, hit reconstruction, material lookup, alpha decision, and output meanings. Native pipeline currently authors opaque and alpha-tested triangle hit groups for the Surface ray type. See [Ray-Tracing Execution Architecture](../RayTracing/ExecutionArchitecture.md) for the SBT index and failure contracts.
 
-No current pass applies deferred decals between GBuffer production and downstream consumers. [Deferred Decals](../DeferredDecals/README.md) owns that negative capability boundary and routes the separately labeled future architecture.
+No current pass applies deferred decals between GBuffer production and downstream consumers. [Deferred Decals](../DeferredDecals/README.md) owns that negative capability boundary and routes the separately labeled, first-release-admitted target architecture.
 
 ## Intent And Tradeoffs
 

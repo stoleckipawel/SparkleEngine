@@ -2,7 +2,7 @@
 
 **Status:** strategy contract; canonical vendor-neutral capability baseline
 
-**Current implementation snapshot:** **43/100** across 45 tracked feature families. This requirements contract defines targets and earns no readiness; use the [Current Feature Readiness dashboard](../Acceptance/CurrentReadiness.md) for present implementation, integration, proof, and delivery state.
+**Current implementation snapshot:** **40/100** across 49 tracked feature families. This requirements contract defines targets and earns no readiness; use the [Current Feature Readiness dashboard](../Acceptance/CurrentReadiness.md) for present implementation, integration, proof, and delivery state.
 
 **Date:** 2026-07-26
 

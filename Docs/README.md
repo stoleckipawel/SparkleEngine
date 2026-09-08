@@ -16,6 +16,7 @@ Use this documentation to understand what SparkleEngine currently contains, how 
 | Understand D3D12/Vulkan and GPU services | [RHI](Architecture/Modules/Engine/RHI/README.md) | [RHI Feature Guide](Architecture/Modules/Engine/RHI/Features/README.md) |
 | See exactly what exists or is missing | [Module Capability Inventory](Architecture/Modules/README.md) | [Capability Evidence Plan](Plans/CapabilityEvidence.md) |
 | Compare current feature readiness | [Current Feature Readiness](Acceptance/CurrentReadiness.md) | Open the linked Architecture dossier for the implementation and missing-work detail |
+| Implement the first release | [First Release Implementation Plan](Plans/FirstRelease/README.md) | Choose the earliest dependency-ready phase, then use its ready-to-run prompt |
 | Build, cook, or launch Showcase | [Launcher Architecture](Architecture/Modules/Tools/Launcher/README.md) | [Build And Packaging](Architecture/Modules/BuildAndPackaging/README.md) |
 | Make an implementation change | [Change Integration](Engineering/Workflow/ChangeIntegration.md) | [Engineering Task Map](Engineering/README.md#choose-by-task) |
 | Open or close a release iteration | [Change Lifecycle control record](Engineering/Workflow/ChangeLifecycle.md#create-the-iteration-control-record) | [Roadmap traceability](Strategy/Roadmap.md#stage-target-and-evidence-traceability) |

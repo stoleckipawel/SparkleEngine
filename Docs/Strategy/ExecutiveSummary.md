@@ -6,7 +6,7 @@
 
 **Scope:** principal graphics direction for SparkleEngine
 
-**Current implementation snapshot:** **43/100** across 45 tracked feature families; all remain Blocked, with verification and delivery/adoption still zero. See [Current Feature Readiness](../Acceptance/CurrentReadiness.md).
+**Current implementation snapshot:** **40/100** across 49 tracked feature families; all remain Blocked, with verification and delivery/adoption still zero. See [Current Feature Readiness](../Acceptance/CurrentReadiness.md).
 
 ## Decision
 

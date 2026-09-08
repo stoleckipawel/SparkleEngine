@@ -27,7 +27,7 @@ The Render Hardware Interface (RHI) translates backend-neutral GPU work into one
 | Resource/view/sampler creation, upload/readback, allocation, aliasing, and retirement contracts | Proved allocation-pressure, aliasing, delayed-completion, and leak behavior |
 | Descriptor layouts/writes, graphics/compute/ray pipelines, commands, queues, barriers, waits, and tokens | Complete boundary/capacity/invalid-use and native-validation results |
 | BLAS/TLAS, inline ray queries, native ray pipelines and shader tables, plus partitioned-TLAS vocabulary/path | Accepted support matrix across devices, backends, traversal modes, and dynamic geometry |
-| Swapchain acquire/resize/present, ImGui rendering, external interop, diagnostics, and texture capture | HDR presentation, broad external-native access, or whole-device recreation after device loss |
+| Swapchain acquire/resize/present, ImGui rendering, external interop, diagnostics, and texture capture | Implemented HDR presentation, broad external-native access, or whole-device recreation after device loss; HDR10 is an admitted target only |
 
 ## Where RHI Sits
 
@@ -68,7 +68,7 @@ A frame is safe only when resource, descriptor, pipeline, command, and retiremen
 | --- | --- | --- | --- |
 | Device and resources | backend selection, adapter/device aggregate, capabilities, resources, memory, descriptors, creation/destruction | partial-create cleanup, pressure, capacity, delayed completion, device loss | [Device And Resources](Features/DeviceAndResources/README.md) |
 | Pipeline and execution | shader/pipeline ABI, command recording, queue submission/waits/tokens, ray tracing | invalid combinations, synchronization, parity, SBT/AS capability and retirement | [Pipeline And Execution](Features/PipelineAndExecution/README.md) |
-| Presentation and interop | swapchain, acquire/resize/present, pacing, UI lowering, narrow provider-native access | resize/device-loss behavior, HDR absence, interop/provider/package restrictions | [Presentation And Interop](Features/PresentationAndInterop/README.md) |
+| Presentation and interop | swapchain, acquire/resize/present, pacing, UI lowering, narrow provider-native access | resize/device-loss behavior, admitted-but-absent HDR10 activation, interop/provider/package restrictions | [Presentation And Interop](Features/PresentationAndInterop/README.md) |
 | Diagnostics and capture | names, events, timestamps, native validation/crash facts, live objects, asynchronous readback | attribution, delivery bounds, observer cost, format correctness, fault evidence | [Diagnostics And Capture](Features/DiagnosticsAndCapture/README.md) |
 
 The [RHI Feature Guide](Features/README.md) maps every public service and source directory to one of these contracts.
@@ -83,7 +83,8 @@ The [RHI Feature Guide](Features/README.md) maps every public service and source
 | Inline ray queries | Capability-gated path | Capability-gated path | Requires reported ray-query and descriptor capabilities |
 | Native ray pipelines and shader tables | Capability-gated path | Capability-gated path | Native object/table layout and cross-backend semantic parity remain open |
 | Partitioned TLAS | Narrow capability/provider path | Narrow capability/provider path | Renderer exercises a restricted subset; do not infer general update/refit support |
-| Swapchain and SDR presentation | Implemented source path | Implemented source path | HDR output is explicitly absent; resize and pacing evidence open |
+| Swapchain and SDR presentation | Implemented source path | Implemented source path | resize and pacing evidence open |
+| HDR10 format/color-space/metadata activation | First-release target; not found | First-release target; not found | owned by Renderer `FCR-REN-26` with RHI backend mechanics |
 | External provider interop | Narrow capability-gated path | No general equivalent claim | Native access is provider-specific and deliberately not a general escape hatch |
 | Diagnostics and texture capture | Implemented source path with backend differences | Implemented source path with backend differences | Availability, format, fault correlation, and observer cost need executable proof |
 
@@ -123,7 +124,7 @@ Public contracts live under `Engine/RHI/Public`. Common validation and neutral i
 
 - No backend, adapter, driver, or minimum-hardware matrix has accepted executable evidence.
 - Device loss has diagnostics and terminal handling, but no complete whole-device recreation path.
-- HDR presentation is absent.
+- HDR presentation is absent but its Windows HDR10 backend mechanics are mandatory first-release work under Renderer-owned `FCR-REN-26`.
 - Optional provider interop is not a general native API surface and does not imply Vulkan/provider parity.
 - Public vocabulary can be broader than current Renderer consumers; unused or partial modes must remain unreachable or explicitly classified.
 - Ray tracing and partitioned acceleration remain capability-gated and narrower than the neutral vocabulary may suggest.

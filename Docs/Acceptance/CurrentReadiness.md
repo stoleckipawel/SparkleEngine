@@ -2,11 +2,13 @@
 
 **Status:** high-level readiness snapshot; orientation only, not feature acceptance or release approval
 
-**Snapshot:** 2026-09-08 against committed `master` revision `d8602b78`; implementation source remains unchanged from baseline `8414b5dc`; no candidate-bound feature report was found
+**Snapshot:** 2026-09-08 against committed `master` revision `ffe60e3a`; implementation source remains unchanged from baseline `8414b5dc`; no candidate-bound feature report was found
 
 **Responsibility:** provide one evidence-weighted 0–100 view of what exists now, what is only partial, what is missing, and which proof or delivery layer blocks each tracked feature
 
 **Feature authority:** the linked Architecture dossier defines each feature and its local acceptance contract; [Feature Completion Reports](FeatureCompletionReports.md) owns the tracked `FCR-*` registry and candidate result schema
+
+**Implementation route:** [First Release Implementation Plan](../Plans/FirstRelease/README.md) orders the work from this baseline and routes all 49 families to staged owner prompts; plan progress alone does not change these scores
 
 > [!IMPORTANT]
 > A readiness percentage is a navigation aid, not an acceptance verdict. It cannot average away a failed criterion. Every tracked feature remains **Blocked** until its applicable acceptance dimensions pass and its candidate report records the evidence.
@@ -18,18 +20,18 @@
 | Product, build, and delivery | 6 | **33/100** | Development products exist, but installation/package and public support operation are missing. |
 | Foundation, world, and content | 11 | **49/100** | Broad source-integrated foundations exist; candidate correctness, stress, package, and adoption proof is absent. |
 | RHI and GPU execution | 6 | **45/100** | D3D12/Vulkan mechanisms are substantial in source; paired native execution, failure, and release evidence is absent. |
-| Renderer | 22 | **43/100** | Most first-release frame paths exist in source, with important partial/provider-gated paths and no candidate proof. |
-| **All tracked `FCR-*` families** | **45** | **43/100** | **45 Blocked; 0 candidate reports; 0 release-approved features.** |
+| Renderer | 26 | **36/100** | Most established frame paths exist in source, while four admitted first-release features are absent and no candidate proof exists. |
+| **All tracked `FCR-*` families** | **49** | **40/100** | **49 Blocked; 0 candidate reports; 0 release-approved features.** |
 
 ```mermaid
 flowchart LR
-    I[Implementation<br/>30.1 of 40] --> R[Integration<br/>13.3 of 20]
+    I[Implementation<br/>27.7 of 40] --> R[Integration<br/>12.2 of 20]
     R --> V[Candidate verification<br/>0 of 25]
     V --> D[Delivery and adoption<br/>0 of 15]
-    D --> Result[Portfolio projection<br/>43 of 100, Blocked]
+    D --> Result[Portfolio projection<br/>40 of 100, Blocked]
 ```
 
-The component values are averages across the 45 tracked families; the displayed portfolio score rounds their sum to the nearest whole point. The arrows show the evidence progression, not permission to skip a failed acceptance gate.
+The component values are averages across the 49 tracked families; the displayed portfolio score rounds their sum to the nearest whole point. The arrows show the evidence progression, not permission to skip a failed acceptance gate.
 
 No tracked feature currently scores above 50 because this snapshot found no candidate-bound executable evidence pack and no accepted delivery/adoption result. This does not say the source is nonfunctional; it says the repository has not retained the proof needed to claim more.
 
@@ -114,7 +116,7 @@ When implementation, scope, or evidence changes, update this snapshot, the ownin
 | `FCR-REN-12` | TLAS policy and publication | **40** | `30/10/0/0` | Capability-gated source path | selection, update/refit/PTLAS matrix, identity, bounds, memory, failure, and traversal evidence |
 | `FCR-REN-13` | UI and viewport composition | **45** | `30/15/0/0` | Integrated source path | packet/texture lifetime, color/blend/DPI, stale products, resize/switch, and Shipping behavior |
 | `FCR-REN-14` | tone mapping | **45** | `30/15/0/0` | Three integrated operators | numeric/colorimetric ramps, exposure interaction, exact-domain limit, backend, and visual evidence |
-| `FCR-REN-15` | presentation and output | **45** | `30/15/0/0` | Integrated SDR source path | encoding/format, double-map/banding, resize/DPI, capture, backend-present, and explicit HDR absence |
+| `FCR-REN-15` | SDR presentation and output | **45** | `30/15/0/0` | Integrated SDR source path | encoding/format, double-map/banding, resize/DPI, capture, backend-present, and clean boundary to separate HDR ownership |
 | `FCR-REN-16` | pipeline materialization and typed binding | **50** | `35/15/0/0` | Integrated source path | full-key/ABI/backend/capability checks, reload failure, all-queue retirement, and cache high-water |
 | `FCR-REN-17` | mesh and texture residency | **50** | `35/15/0/0` | Integrated bounded source path | exact/over-budget, backlog, cancellation/failure, stale generation, lifetime, memory, and soak evidence |
 | `FCR-REN-18` | temporal sampling and history | **45** | `30/15/0/0` | Shared integrated infrastructure | jitter/motion/reset/multi-view/provider/backend equivalence and temporal-quality evidence |
@@ -122,27 +124,27 @@ When implementation, scope, or evidence changes, update this snapshot, the ownin
 | `FCR-REN-20` | latency markers and Reflex coordination | **25** | `20/5/0/0` | D3D12/provider-gated partial route | marker identity/order, misuse/failure, package, Vulkan boundary, and measured latency benefit |
 | `FCR-REN-21` | visibility and draw preparation | **45** | `30/15/0/0` | Integrated CPU frustum/batching route | oracle/failure/task evidence and explicit absent occlusion, LOD, GPU-driven, stereo, and multiview paths |
 | `FCR-REN-22` | resolution, sampling, and anti-aliasing boundary | **40** | `25/15/0/0` | Output/render extent and jitter exist; AA scope partial | extent/ratio/reset/backend proof and explicit absent MSAA, standalone TAA/FXAA/SMAA, and dynamic resolution |
+| `FCR-REN-23` | deferred GBuffer decals | **0** | `0/0/0/0` | First-release target; implementation not found | authored/cooked/runtime data, raster and secondary-ray composition, failure, backend, and package evidence |
+| `FCR-REN-24` | color grading | **0** | `0/0/0/0` | First-release target; implementation not found | scene-referred controls/LUT route, failure, color-domain, backend, and package evidence |
+| `FCR-REN-25` | chromatic aberration | **0** | `0/0/0/0` | First-release target; implementation not found | bounded output-space pass, resolution/edge/debug behavior, backend, and package evidence |
+| `FCR-REN-26` | HDR display output | **0** | `0/0/0/0` | First-release HDR10 target; implementation not found | output transform, RHI activation/metadata, UI/fallback/transitions, paired-backend, and HDR-hardware evidence |
 
 ## Explicit Missing Or Not-Yet-Admitted Capabilities
 
-These rows prevent adjacent infrastructure or a detailed target design from looking like an implemented feature. They are not included in the 45-family average unless an existing `FCR-*` row already owns them.
+These rows prevent adjacent infrastructure or a detailed target design from looking like an implemented feature. They are not included in the 49-family average unless an existing `FCR-*` row already owns them. Deferred decals, color grading, chromatic aberration, and HDR output moved into the tracked table above when admitted to the first release; their score remains zero.
 
 | Capability | Readiness | Current state | Current owner or boundary |
 | --- | ---: | --- | --- |
 | release installation/package | **0/100** | Not found | [Build and Packaging](../Architecture/Modules/BuildAndPackaging/README.md) and `FCR-PROD-05` |
 | native Linux product path | **0/100** | Not found | [Linux Platform Support](../Architecture/Modules/Engine/Platform/LinuxPlatformSupport.md) |
 | continuous integration and regression service | **0/100** | Not found | [CI and Regression](../Architecture/Modules/BuildAndPackaging/ContinuousIntegrationAndRegression.md) |
-| deferred GBuffer decals | **0/100** | Target only; not implemented or roadmap-admitted | [Deferred Decals](../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/README.md) |
 | geometry-cache animation | **0/100** | Target only; not implemented or roadmap-admitted | [Geometry Cache Animation](../Architecture/CrossModule/GeometryCacheAnimation/README.md) |
 | neural training/dataset pipeline | **0/100** | Target only; no production data/model workflow | [Neural Graphics](../Architecture/CrossModule/NeuralGraphics/README.md) |
 | neural runtime model/kernel path | **0/100** | Target only; no production inference feature | [Neural Graphics](../Architecture/CrossModule/NeuralGraphics/README.md) |
 | performance-diagnostics product | **20/100** | Instrumentation foundations; target UI/evidence product absent | [Performance Diagnostics](../Architecture/CrossModule/PerformanceDiagnostics/README.md) |
 | reusable Python automation and analysis | **10/100** | Two project-local conversion scripts; no repository automation, binding, or editor/runtime Python product | [Python Automation and Analysis](../Architecture/Modules/Tools/PythonAutomationAndAnalysis.md) |
 | volumetric lighting/media | **0/100** | Not found | [Volumetric Lighting](../Architecture/Modules/Engine/Renderer/Features/Lighting/VolumetricLighting.md) |
-| color grading | **0/100** | Not found | [Color Grading](../Architecture/Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ColorGrading.md) |
-| chromatic aberration | **0/100** | Not found | [Chromatic Aberration](../Architecture/Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ChromaticAberration.md) |
 | frame generation | **0/100** | Not found | [Frame Generation](../Architecture/Modules/Engine/Renderer/Features/PostProcessing/ReconstructionAndGeneration/FrameGeneration.md) |
-| HDR display output | **0/100** | Not found in current presentation contract | [Presentation and Output](../Architecture/Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/PresentationAndOutput.md) |
 | non-ray direct/indirect lighting fallback | **0/100** | Not found | [Lighting](../Architecture/Modules/Engine/Renderer/Features/Lighting/README.md) |
 | occlusion, LOD, GPU-driven/indirect drawing, stereo, and multiview | **0/100** | Not found | [Visibility and Draw Preparation](../Architecture/Modules/Engine/Renderer/Features/GeometryAndResources/VisibilityAndDrawPreparation.md) |
 | Renderer MSAA, standalone TAA/FXAA/SMAA, and dynamic resolution | **0/100** | Not found | [Resolution, Sampling, and Anti-Aliasing](../Architecture/Modules/Engine/Renderer/Features/PostProcessing/ReconstructionAndGeneration/ResolutionSamplingAndAntiAliasing.md) |

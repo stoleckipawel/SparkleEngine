@@ -1,6 +1,6 @@
 # Renderer Deferred Decals
 
-**Status:** current feature-gap dossier; source-backed absence record, not release approval or executable evidence
+**Status:** first-release target dossier plus source-backed absence record; not implementation proof or release approval
 
 **Snapshot:** absence and extension seams rechecked 2026-09-06 against source revision `d236da11`; Renderer/RHI/shader source is unchanged from the earlier `8414b5dc` audit
 
@@ -12,7 +12,9 @@
 
 **Feature acceptance:** [Deferred GBuffer Decals — Acceptance](Acceptance.md)
 
-**Current readiness:** **0/100** — target only; no authored/cooked/scene/GPU decal data, GBuffer composition, or arbitrary ray-hit decal evaluation was found. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+**Release admission:** mandatory `FCR-REN-23`; staged by [`GR-5`](../../../../../../Plans/FirstRelease/Renderer/GeometryAndRayTracing.md#gr-5--deferred-gbuffer-decals)
+
+**Current readiness:** **0/100**, `Blocked` — release-admitted but no authored/cooked/scene/GPU decal data, GBuffer composition, or arbitrary ray-hit decal evaluation was found. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## At A Glance
 
@@ -23,7 +25,7 @@
 | primary raster/ray GBuffer composition | Not found | blend-state support cannot express per-field GBuffer composition by itself |
 | arbitrary secondary-ray decal evaluation | Not found | current ray-hit material reconstruction evaluates the base material only |
 
-The selected future shape is one material-overlay contract shared by raster and ray visibility, with composition before lighting. Until all four rows have real owners and reachability, this page remains a negative-capability record rather than a feature plan or support claim.
+The selected target is one material-overlay contract shared by raster and ray visibility, with composition before lighting. Release admission makes it mandatory work; until all four rows have real owners and reachability, this page remains a target plus negative-capability record rather than a support claim.
 
 Code and executable build configuration remain authoritative. Reinspect every listed owner and absence before using this dated snapshot for implementation or release claims.
 
@@ -37,7 +39,7 @@ Deferred decals are **not implemented**. The three inventory rows separate the a
 | `REN-DECAL-02` primary deferred composition | Not found | No decal render/compute pass modifies the raster or ray-produced GBuffer before lighting. |
 | `REN-DECAL-03` secondary-ray decal evaluation | Not found | Arbitrary ray hits evaluate the base material only; no decal candidate lookup or composition is present. |
 
-The [composition architecture](CompositionArchitecture.md) is a designed future contract, not a fourth current rendering branch. Its plan and acceptance documents remain inactive proof routes until implementation exists.
+The [composition architecture](CompositionArchitecture.md) is the selected first-release contract, not a fourth current rendering branch. Its plan is active in release sequencing, while its acceptance route remains unproved until implementation and candidate evidence exist.
 
 The design extends the existing owner instead of adding a second renderer path:
 
@@ -54,7 +56,7 @@ The exact code must be re-inspected at the start of each implementation phase be
 
 ## Evidence Boundary
 
-`REN-E25` owns the negative/reachability audit until implementation begins. The feature must remain absent from release-facing selectors and claims. Once code exists, the delivery plan must update the frame narrative, GBuffer dossier, shader-program catalog, inventories, selectors, and acceptance evidence together; this gap dossier then becomes the current implementation dossier rather than coexisting with a second truth.
+`REN-E25` owns the negative/reachability audit until implementation begins. The feature may be described as a mandatory target but must remain unavailable and never be claimed as implemented. Once code exists, the delivery plan must update the frame narrative, GBuffer dossier, shader-program catalog, inventories, selectors, and acceptance evidence together; this gap dossier then becomes the current implementation dossier rather than coexisting with a second truth.
 
 ### Current Negative Acceptance
 

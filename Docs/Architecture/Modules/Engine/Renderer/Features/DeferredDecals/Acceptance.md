@@ -12,7 +12,7 @@
 
 This file is part of the Deferred Decals feature dossier and owns the proof contract required after delivery. Candidate results remain in the release-level completion report and must retain exact commands, configurations, artifacts, and limitations.
 
-**Current readiness:** **0/100** — future proof contract only; no decal implementation or candidate evidence exists. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+**Current readiness:** **0/100** — mandatory first-release proof contract; no decal implementation or candidate evidence exists. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## Acceptance At A Glance
 
@@ -32,13 +32,13 @@ The small Modern Sponza fixture is only the representative end of the oracle lad
 |---|---|
 | North Star | `NS-REAL`, `NS-MATH-DATA`, `NS-EVIDENCE`, `NS-OWNERSHIP`, `NS-ADOPTION`, `NS-SIMPLIFY` |
 | Persona targets | `PGE-02`, `PGE-05`–`PGE-10`, `PGE-13`, `PGE-15` |
-| Roadmap target | Not in the `v0.1.0` source-present closure. `REL-11` and an explicit later roadmap admission are prerequisites to implementation. |
-| Feature completion | No `FCR-*` candidate is permitted yet because the current source snapshot reports no decal capability. Admission creates the feature report and copies the risk seeds below into its live risk ledger. |
-| Release risk | `RISK-REL-12`; doing this work before the release closeout is a scope/WIP failure. |
+| Roadmap target | Mandatory `v0.1.0` feature closure under `REL-04`, followed by release-map, performance/native, candidate, and delivery gates `REL-05` through `REL-11`. |
+| Feature completion | `FCR-REN-23`; [first-release `GR-5`](../../../../../../Plans/FirstRelease/Renderer/GeometryAndRayTracing.md#gr-5--deferred-gbuffer-decals) selects the detailed delivery plan and this complete acceptance contract. |
+| Release risk | `RISK-REL-12`; missing raster/ray equivalence, deterministic overlap, bounded lifetime, or paired-backend evidence blocks the admitted release. |
 
 | Risk seed | Cause, event, and consequence | Likelihood / impact before implementation | Owner / gate | Prevention and detection; contingency and retirement evidence |
 |---|---|---|---|---|
-| `RISK-DECAL-01` | Independent channel blending or duplicate material reconstruction corrupts GBuffer/PBR semantics and produces plausible but wrong lighting. | High / Critical | Material/Renderer owner; future feature gate | One composition contract, CPU oracle, raw-channel and reference checks. If unresolved, do not ship/enable decals. Retire across every producer and backend. |
+| `RISK-DECAL-01` | Independent channel blending or duplicate material reconstruction corrupts GBuffer/PBR semantics and produces plausible but wrong lighting. | High / Critical | Material/Renderer owner; `FCR-REN-23` | One composition contract, CPU oracle, raw-channel and reference checks. If unresolved, do not ship/enable decals. Retire across every producer and backend. |
 | `RISK-DECAL-02` | Unbounded tile or receiver candidate growth causes overflow, memory spikes, or frame-time collapse in overlap-heavy views. | High / High | Renderer/performance owner; future performance gate | Explicit capacities/overflow, brute-force comparison, stress scaling, high-water and p99 evidence. If the budget fails, reduce supported density or defer the feature. |
 | `RISK-DECAL-03` | Raster primary, ray primary, and secondary hits apply different projection, ordering, LOD, or receiver rules. | High / High | Renderer/RHI owner; future parity gate | Shared functions/data, producer comparisons, reflected fixture, paired backends. Exclude unsupported producers rather than fall back silently; retire only advertised rows. |
 | `RISK-DECAL-04` | The new system introduces fallback paths, duplicated caches, or permanent diagnostics and grows maintenance cost beyond the feature value. | Medium / High | Feature owner; future completion gate | Clean-break review, zero-content proof, owner/copy budget, deleted-path inventory. Revert/defer the feature if one bounded authority is not achieved. |

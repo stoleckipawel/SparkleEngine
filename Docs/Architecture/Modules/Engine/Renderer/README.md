@@ -6,14 +6,14 @@
 
 **Current-state basis:** source and build configuration rechecked 2026-09-06 through committed `master` revision `c28b33bd`; executable Renderer source is unchanged from the earlier `8414b5dc` audit
 
-**Current readiness:** **43/100** portfolio average (`I/R` present; `V/D = 0/0`); all 22 tracked Renderer families remain Blocked. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **36/100** portfolio average (`I/R` present; `V/D = 0/0`); all 26 tracked Renderer families remain Blocked. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#renderer).
 
 The Renderer turns an immutable world submission into a lit, post-processed, presented frame. It owns scene/view/frame meaning; the RHI owns low-level GPU mechanisms and backend translation.
 
 > [!IMPORTANT]
 > **Current state:** Broad Renderer paths exist in source for raster and ray rendering, ReSTIR lighting, post processing, diagnostics, and serial/render-thread execution.
 >
-> **Readiness:** **43/100** — most of the score is source implementation and integration; no Renderer family has candidate verification or delivery credit.
+> **Readiness:** **36/100** — established families derive their score from source implementation/integration, while four admitted absent features score zero; no Renderer family has candidate verification or delivery credit.
 >
 > **Main limitation:** These paths are not release-proved, lighting currently depends on ray tracing, and several familiar rendering features are explicitly absent.
 >
@@ -27,7 +27,7 @@ The Renderer turns an immutable world submission into a lit, post-processed, pre
 | CPU visibility, resource residency, frame graph, typed shader/pipeline runtime | Occlusion culling, LOD selection, GPU-driven indirect drawing, stereo, or multiview |
 | Raster, inline-ray, and native-ray-pipeline GBuffer frontends | Proved parity across frontends/backends and transparent blended materials |
 | ReSTIR direct/indirect lighting and an accumulating reference mode | Non-ray lighting/shadow fallback, credible accepted reference oracle, volumetric lighting |
-| Exposure, Linear/DLSS reconstruction, tone mapping, debug views, UI and presentation | Color grading, chromatic aberration, frame generation, HDR display output |
+| Exposure, Linear/DLSS reconstruction, tone mapping, debug views, UI and SDR presentation | First-release targets still missing: deferred decals, color grading, chromatic aberration, HDR10 output; excluded: frame generation |
 | Requested settings, diagnostics, capture products, shader-generation replacement | Complete requested-versus-active, failure, stress, quality, and performance evidence |
 
 ## How A Frame Moves Through The Renderer
@@ -66,7 +66,7 @@ Start with [Rendering A Sparkle Frame](RenderingASparkleFrame.md) for the comple
 | Viewport and diagnostics | products, timing/memory observations, capture, UI packet composition | Implemented path; truthfulness, lifetime, observer cost, and package scope unproved | [Viewport And Diagnostics](Features/ViewportAndDiagnostics/README.md) |
 | Runtime configuration | selectors, requested state, persistence, active-state resolution | Partial; one known ineffective selector and package-safe persistence gaps remain | [Runtime Configuration](Features/RuntimeConfiguration/README.md) |
 | Shader runtime | registered program catalog, typed binding, graphics/compute/ray pipeline materialization, generation replacement | Implemented path; ABI, backend, cache, reload, and build-member evidence open | [Shader Runtime](Features/ShaderRuntime/README.md) |
-| Debug views and decals | intermediate visualization plus a separately designed deferred-decal target | Debug path exists but is unproved; deferred decals are not implemented | [Debug Views](Features/DebugViews/README.md), [Deferred Decals](Features/DeferredDecals/README.md) |
+| Debug views and decals | intermediate visualization plus the admitted deferred-decal target | Debug path exists but is unproved; deferred decals are mandatory but not implemented | [Debug Views](Features/DebugViews/README.md), [Deferred Decals](Features/DeferredDecals/README.md) |
 
 The [complete feature guide](Features/README.md) maps every `REN-*` family, source owner, local acceptance contract, and missing evidence item.
 
@@ -81,7 +81,8 @@ The [complete feature guide](Features/README.md) maps every `REN-*` family, sour
 | Reference path-traced accumulation | Implemented source path | Implemented source path | Discovery blocks calling it unbiased, converged, or a ground-truth oracle |
 | Linear reconstruction | Implemented source path | Implemented source path | Quality/cost range and scale limits remain unproved |
 | NVIDIA DLSS SR/RR, PCL, Reflex | Capability-gated path | Not a supported active route | Vendor runtime, hardware, DLL, redistribution, and fallback constraints |
-| SDR presentation | Implemented source path | Implemented source path | HDR display contract is absent |
+| SDR presentation | Implemented source path | Implemented source path | Candidate proof remains open |
+| HDR10 presentation | Not found; first-release target | Not found; first-release target | Renderer transform, RHI activation/metadata, fallback, and HDR-hardware proof are required |
 
 `Implemented source path` is not a backend pass. Use [Graphics Feature Coverage](../../../CrossModule/GraphicsCoverageMatrix.md) for exact cells and [Feature Execution Traces](../../../CrossModule/FeatureExecutionTraces.md) for vertical paths.
 
@@ -113,7 +114,7 @@ Silent substitution is not support. A requested ray/provider/debug path that can
 - Current surface lighting has no shadow-map or other fully non-ray fallback.
 - Transparent blending and many advanced material lobes are outside the current GBuffer/material contract.
 - Occlusion, LOD, mesh/task shaders, GPU-driven indirect draws, stereo, and multiview are absent.
-- Volumetric lighting, deferred decals, color grading, chromatic aberration, frame generation, and HDR display output are absent.
+- Deferred decals, color grading, chromatic aberration, and HDR10 display output are absent but first-release admitted; volumetric lighting and frame generation remain absent and excluded.
 - NVIDIA reconstruction/latency integrations are optional and do not imply Vulkan, non-NVIDIA, package, or quality support.
 - The reference path mode cannot be used as an acceptance oracle until its discovery/derivation/evidence gate passes.
 - Source inspection does not establish visual quality, temporal stability, performance, memory bounds, native validation, or release readiness.

@@ -8,6 +8,8 @@
 
 **Roadmap and sequence:** [F. Release-First Principal Graphics Roadmap](../Strategy/Roadmap.md)
 
+**Implementation orchestrator:** [First Release Implementation Plan](../Plans/FirstRelease/README.md)
+
 **Detailed graphics workloads:** [I. Bistro and San Miguel Acceptance Workloads](GraphicsWorkloads.md)
 
 **Validation policy:** [Validation, Performance, and Evidence](../Engineering/Verification/ValidationAndEvidence.md)
@@ -16,7 +18,7 @@
 
 **Release risk and iteration order:** [Release Risk Register](../Strategy/Roadmap.md#release-risk-register)
 
-**Current readiness:** feature implementation/integration portfolio **43/100**; release acceptance **0/100**. All 45 tracked feature families remain Blocked, no candidate-bound report exists, and no release gate has passed. See [Current Feature Readiness](CurrentReadiness.md).
+**Current readiness:** feature implementation/integration portfolio **40/100**; release acceptance **0/100**. All 49 tracked feature families remain Blocked, no candidate-bound report exists, and no release gate has passed. Deferred decals, color grading, chromatic aberration, and HDR10 output are mandatory **0/100** blockers. See [Current Feature Readiness](CurrentReadiness.md).
 
 ## Release At A Glance
 
@@ -24,7 +26,7 @@
 | --- | --- |
 | What is the intended product? | SparkleEngine `v0.1.0`, delivered as a portable Windows x64 `ShippingGame` Showcase runtime archive plus provenance, checksums, notices, and user documentation. |
 | What exists? | Broad engine, tooling, content, Renderer, and D3D12/Vulkan source paths plus focused development workflows. |
-| Where are we now? | Feature portfolio **43/100**, release acceptance **0/100**, `Blocked`; no frozen candidate has passed the clean build/cook/package, feature, map, backend, performance, stability, adoption, publication, and stabilization gates. |
+| Where are we now? | Feature portfolio **40/100**, release acceptance **0/100**, `Blocked`; no frozen candidate has passed the clean build/cook/package, feature, map, backend, performance, stability, adoption, publication, and stabilization gates. |
 | What is the largest product gap? | There is no accepted manifest-owned release package or clean-machine consumer/source-adopter record. |
 | What is the reading rule? | Use the audit below for current blockers, then the release-gate table for the proof required to change a status. |
 
@@ -62,6 +64,70 @@ The default binary delivery is a portable Windows x64 archive. An installer is o
 4. `SHA256SUMS.txt`, release notes, known issues, and exact build provenance. The runtime archive contains the authoritative `manifests/sparkle-package-manifest.json` used by package discovery.
 
 The launcher, editor, cooker, shader compiler, and other authoring tools are developer-path products. They MAY be added to a separately named developer archive only after their own package and clean-machine gates pass. They do not delay the runtime release merely because they exist in source, provided the public documentation clearly separates build-from-source tooling from the redistributable runtime.
+
+### Frozen Product And Output Classification
+
+`PD-0` freezes the following product boundary for `v0.1.0`. **Developer-only** means present in the tagged source and usable for repository development, but absent from the runtime archive, consumer instructions, and runtime dependency graph. A later change to any row reopens `REL-00`.
+
+| Product or output | Classification | Exact `v0.1.0` boundary |
+| --- | --- | --- |
+| Showcase runtime product and cleared cooked Showcase content | **Included** | `ShowcaseRuntime` in `ShippingGame` is the sole consumer executable. The admitted `ReleaseMapSet` is selected separately by `REL-01`; catalog presence is not package membership. |
+| Showcase project source, catalog, and authored levels | **Included** | Part of the immutable source tag/archive and the source-adopter route; only cleared runtime products enter the binary archive. |
+| Sparkle Launcher | **Developer-only** | Source/workspace frontend for typed sync, configure, build, cook, run, and clean operations. It is not shipped, is not required by the runtime consumer, and owns no release-package policy. |
+| Showcase Editor and `SparkleEditor` | **Developer-only** | Source-built authoring/inspection product. It is excluded from the runtime archive and does not define the consumer journey. |
+| ShaderCompiler, AssetCooker, texture/mesh/material/scene cookers, SourceImporters, and ToolConsoleSupport | **Developer-only** | Required only on admitted source/build/cook routes. Their outputs may ship; their executables, SDKs, source formats, logs, and debug products do not. |
+| Immutable tagged source tree | **Included** | Public source-adopter output with unstable `0.y.z` source API, no binary ABI promise, and no installed integration contract. |
+| `SparkleEngine-v0.1.0-windows-x64.zip` | **Included** | Portable, offline, standard-user runtime archive with immutable package bytes and package-relative runtime inputs. |
+| `SparkleEngine-v0.1.0-symbols.zip` | **Included, separate** | Exact-candidate native and shader symbols retained or published under the support/privacy decision; never mixed into the runtime archive. |
+| Installer, updater, registry integration, file associations, and prerequisite bootstrapper | **Excluded** | The user extracts/removes the portable archive. No installer or launcher dependency may be implied. |
+| Binary SDK, plugin ABI, installed headers/libraries, templates, or redistributable development kit | **Excluded** | Public source headers are not an SDK. No compatibility, installation, or external binary-link promise exists for `v0.1.0`. |
+| Runtime/editor developer console, shader recook, capture/debug panels, and authoring commands in `ShippingGame` | **Excluded** | They must be unreachable and absent from the runtime package/import surface; a consumer quit/settings/help path cannot depend on them. |
+
+No requested product is classified **Removed** at `PD-0`. `Removed` remains the required disposition for a later-discovered reachable product or claim that has neither an admitted audience nor an owner; it may not be relabelled Developer-only to avoid deletion.
+
+### Frozen Platform And Toolchain Prerequisites
+
+These are contract targets, not evidence that the current source enforces or passes them. `REL-02`, `REL-06`, `REL-08`, and `REL-09` retain the executable proof. A consumer prerequisite is invalid if it requires an environment variable, repository/build path, administrator rights after extraction, developer SDK, or network access.
+
+| Boundary | Supported prerequisite for `v0.1.0` | Current implementation consequence |
+| --- | --- | --- |
+| Runtime OS and account | Windows 11 x64, version 24H2/build 26100 or newer; standard user; long paths enabled only if the final package proves it needs them | No accepted OS/version preflight exists; below-minimum rejection is `FCR-PROD-01` work. |
+| Runtime CPU and memory | x86-64 CPU with SSE4.1, at least 4 physical cores/8 logical processors, and 16 GiB system memory | No accepted CPU/RAM preflight or minimum-machine result exists. |
+| D3D12 minimum | 8 GiB dedicated GPU memory, D3D feature level 12_1, Shader Model 6.6, and DXR 1.1; D3D12 is the default public API | Source requests feature level 12_1 and rejects less than Shader Model 6.6, but complete capability rejection and the memory floor are unproved. |
+| Vulkan minimum | The same memory/RT class plus Vulkan 1.3, swapchain, graphics/compute/copy queues, timeline semaphore, synchronization2, dynamic rendering, formatless storage-image reads/writes, descriptor indexing, buffer-device-address, acceleration-structure, ray-query, and ray-tracing-pipeline support | Source rejects a loader/device below 1.3 and missing core requirements; the full first-release feature matrix remains unproved. |
+| Runtime storage/display | SSD; 16 GiB free before extraction; 1920x1080 SDR desktop output is the minimum acceptance presentation | Final archive/content sizes and display behavior remain candidate evidence. |
+| Supported source toolchain | Visual Studio Community 2026 `18.7.0` / MSVC `14.51.36231`, Windows SDK `10.0.26100.0`, CMake `4.3.3`, Git for Windows `2.54.0`, Qt `6.11.1` `msvc2022_64`, and Vulkan SDK `1.4.350.0` containing Slang `2026.8` and DXC `1.9.0.5347` | This is the sole `v0.1.0` source-adopter matrix until another row passes `REL-02`. Source-declared CMake `3.20`, Git `2.25`, Qt `6.8`, VS 2022, clang-cl, and Ninja paths remain Developer-only compatibility hypotheses, not public support claims. |
+| Cold source acquisition | Git and HTTPS network access for the immutable source/dependency inputs; no credentials or private caches | The current dependency set is not uniformly immutable and therefore still blocks `REL-01`/`REL-02`. Warm/offline replay is required after the declared cache is populated. |
+
+The reference runtime machine for the first candidate is Windows x64 build `26200`, AMD Ryzen 9 8940HX (16 cores/32 logical processors), 63.17 GiB RAM, and NVIDIA GeForce RTX 5070 Ti Laptop GPU with 12,227 MiB reported dedicated memory on driver `610.47`. This row records the inspected host only; no build, launch, graphics-capability query, or performance result was run by `PD-0`.
+
+### Frozen Paths, Mutation Boundary, And Budgets
+
+The runtime archive layout is `bin/ShowcaseRuntime.exe` with its allowlisted runtime DLLs beside it, `Projects/Showcase/Cooked/`, `manifests/sparkle-package-manifest.json`, `.sparkle`, `README.md`, `LICENSE.txt`, and `THIRD_PARTY_NOTICES.txt`. Nothing else is inferred by scanning a development artifact directory. Public source entry and support paths are repository-root `README.md`, `Docs/README.md`, `SUPPORT.md`, and `SECURITY.md`; the first, third, and fourth are absent at this revision and keep their journeys blocked rather than moving their content into private instructions.
+
+| State or operation | Frozen location/effect |
+| --- | --- |
+| Runtime immutable bytes | User-selected extraction root; read-only operation must succeed. No runtime write may occur below it. |
+| Runtime mutable root | `%LOCALAPPDATA%\SparkleEngine\Showcase\v0.1\` |
+| Runtime settings | `Config\RuntimeSettings.ini`; atomic replacement. **Reset settings** affects only this file and returns documented defaults. |
+| Runtime logs/captures/crashes/cache | `Logs\`, `Captures\`, `Crashes\`, and `Cache\` below the mutable root; each has a separate retention/clear action. No `v0.1.0` save-game product exists. |
+| Launcher state | `%LOCALAPPDATA%\SparkleEngine\LauncherState\<repository-key>\{Settings.json,Activity.json,Logs\}`; Developer-only and repository-keyed. |
+| Source build/cook products | Repository-owned `build\`, `artifacts\`, and `logs\`; editor **Save All** may change the explicitly selected authored `.level` source, while clean/recook/reset may change only previewed generated roots. |
+| Remove runtime | Delete the extracted immutable root; user state remains until the user invokes the separately labelled data-removal action. |
+
+| Budget | Frozen threshold and oracle |
+| --- | --- |
+| First interactive consumer surface | At most 15.0 s from process creation to responsive, intentional first-run UI on the minimum machine with cold OS file cache. `Empty`, console, or fallback content does not satisfy it. |
+| Default accepted example active | At most 30.0 s from explicit selection to published active-level identity and first correct presented frame; any other `ReleaseMapSet` member has a 60.0 s ceiling. |
+| Shutdown/cancellation | Runtime exits within 5.0 s of quit/close; Editor and Launcher settle owned child/task work within 10.0 s after explicit cancellation/close. |
+| Runtime bytes/storage | Runtime archive at most 4 GiB; extracted immutable tree at most 8 GiB; documented free-space prerequisite 16 GiB. |
+| Runtime memory | Process committed-memory high-water at most 12 GiB and tracked local GPU-memory high-water at most 7 GiB on the minimum machine; no unbounded growth across the stability loop. |
+| Runtime frame rate | Use the existing [30 FPS release floor](#thirty-fps-performance-floor); this row does not weaken its p95/p99, hitch, or measurement rules. |
+| Source-adopter cold/warm route | Cold sync/configure/build/cook at most 120 min, warm no-change replay at most 15 min, peak system memory at most 32 GiB, and owned working storage at most 100 GiB on the supported source machine. |
+| Launcher local planning | A non-network readiness/preflight refresh completes within 5.0 s; external process/download time is reported separately and never converted into ready/success. |
+| Support clock | Public defect acknowledgement within 5 business days; private security acknowledgement within 3 business days; a validated `S0` receives a contain/withdraw decision within 1 business day. Lack of an operating channel or assigned maintainer blocks `FCR-PROD-06`. |
+
+Product/release scope is owned by the release owner; Application/Showcase own the runtime journey; Build And Packaging owns source/package orchestration; Launcher and Editor own only their Developer-only workflows; the support/stabilization owner owns `SUPPORT.md`, `SECURITY.md`, intake, symbols, severity clocks, and patch/withdrawal. At this revision these are role assignments, not evidence of staffed public channels.
 
 ## Release Audiences
 
@@ -126,7 +192,7 @@ Audit basis: static source/build/document inspection of committed `master` at `8
 | Missing-content behavior | Catalog/load failures can fall back to the built-in `Empty` level. | `Blocked`: a required packaged map, catalog, shader, or content failure must not masquerade as a successful empty scene. Reserve fallback only for an explicitly requested recovery path. |
 | Core/platform/tasks | Platform, application, task, filesystem, logging, input, and lifecycle owners exist. | `Source present`: standard-user paths, shutdown, cancellation, resize, and repeated-run behavior remain unproven as release claims. |
 | RHI | D3D12 and Vulkan implementations, native validation switches, timing, capture, and ray-tracing paths exist. | `Source present`: native validation cleanliness, capability failure, resource lifetime, and device-removal behavior require evidence. |
-| Renderer | Raster, deferred/PBR, exposure, tone mapping, debug views, Linear/DLSS upscaling, DLSS Ray Reconstruction, ray/path, ReSTIR, scene/view/frame, and GPU-scene paths are present. Volumetric lighting, deferred decals, color grading, chromatic aberration, frame generation, and HDR display output are absent. | `Source present`: each included mode needs a frozen feature row, map evidence, performance result, and backend disposition. Absent features remain excluded until roadmap admission and complete feature contracts. |
+| Renderer | Raster, deferred/PBR, exposure, tone mapping, debug views, Linear/DLSS upscaling, DLSS Ray Reconstruction, ray/path, ReSTIR, scene/view/frame, and GPU-scene paths are present. Deferred decals, color grading, chromatic aberration, and HDR10 output are absent but first-release admitted; volumetric lighting and frame generation remain excluded. | `Source present` or admitted target: each included mode needs a frozen feature row, map evidence, performance result, and backend disposition. Every admitted absent feature must be implemented and evidenced; exclusions cannot masquerade as support. |
 | World/content | World, scene, component, map catalog, import, cook, shader cook, and runtime asset paths exist. | `Source present`: deterministic clean cook, package-relative load, malformed-input handling, and bounded memory need proof. |
 | Showcase content | The catalog contains 16 level records; 13 are described by the current workload audit as runtime-supported and three as source-readiness-only. External packs have mixed licenses and support states. | `Blocked`: freeze a redistributable `ReleaseMapSet`; runtime support does not establish redistribution rights or visual acceptance. |
 | Evidence harness | Level-selected launch and manual viewport capture exist; backend timestamp infrastructure exists. | `Blocked`: `MAP-00` still owns fixed resolution, readiness/settled identity, named capture sidecars, timing export, and a unified manifest. |
@@ -151,7 +217,7 @@ The static scan found the following closure families. The [Current Capability In
 | Core, platform, and tasks | Math/memory/events/logging; filesystem/project discovery; Win32 window/input/focus; task graph, scopes, events, parallel-for, workers, cancellation, and profiling hooks. |
 | World and scene | Entity/component/world ownership; transforms; cameras; directional/point/spot/rect lights; sky; static/skeletal meshes; materials; animation/skinning/morph data; level parsing/loading/session and cooked registries. |
 | RHI and presentation | D3D12 and Vulkan devices, queues, resources, descriptors, bindings, command lists, swapchain/presentation, frame latency, timestamps, captures, classic/partitioned TLAS, inline ray queries, and native ray-tracing pipelines. |
-| Renderer | Scene/view/frame submission; persistent GPU scene and caches; scene depth/GBuffer; deferred PBR; sky; direct lighting/shadows; lighting composite; exposure; tone mapping; output encoding; buffer visualization; linear upscaling; DLSS SR/RR provider routes; ray-traced GBuffer; path-traced direct/indirect; reference accumulation; direct/indirect ReSTIR routes. Explicit absent rows cover Volumetric Lighting, deferred decals, Color Grading, Chromatic Aberration, Frame Generation, and HDR display output. |
+| Renderer | Scene/view/frame submission; persistent GPU scene and caches; scene depth/GBuffer; deferred PBR; sky; direct lighting/shadows; lighting composite; exposure; tone mapping; output encoding; buffer visualization; linear upscaling; DLSS SR/RR provider routes; ray-traced GBuffer; path-traced direct/indirect; reference accumulation; direct/indirect ReSTIR routes. Mandatory target rows cover deferred decals, Color Grading, Chromatic Aberration, and HDR10 display output; explicit excluded rows cover Volumetric Lighting and Frame Generation. |
 | Editor and application | Editor viewport/session/camera; rendering/upscaling settings; scene selection/transactions; viewport capture; UI frame; runtime/editor hosts; shader source-change and recook coordination. |
 | Import and cooking | Source importers; scene, mesh, material, texture, and asset cookers; texture decoding/shape/mips/channels/BC compression; cooked scene/mesh/material/texture/animation/skeleton/shader products. |
 | Launcher | Toolchain/source discovery; configure/build/cook; level catalog and asset-pack sync; editor/runtime launch; progress/cancel/failure; maintenance and clean operations. |
@@ -168,7 +234,7 @@ Every item begins as `Source present`. `REL-00` splits compound rows into indepe
 - minimum and reference CPU, memory, GPU, driver, and storage configurations;
 - the exact runtime executable and default graphics configuration;
 - required audiences, supported source toolchain, public API/ABI stability, persisted-data compatibility, reset, update, downgrade, and side-by-side-install policy;
-- every selectable render mode, debug view, upscaler, lighting path, post-processing stage, presentation path, and backend as `Included`, `Experimental`, or `Excluded`, including explicit decisions for currently absent Color Grading, Chromatic Aberration, Frame Generation, Volumetric Lighting, deferred decals, and HDR output;
+- every selectable render mode, debug view, upscaler, lighting path, post-processing stage, presentation path, and backend as `Included`, `Experimental`, or `Excluded`; deferred decals, Color Grading, Chromatic Aberration, and HDR10 output are required `Included` results, while Frame Generation and Volumetric Lighting remain explicit exclusions;
 - the `ReleaseMapSet`, meaningful first-run/default map, consumer map-selection path, fixed cameras/routes, and redistribution disposition;
 - source-only versus packaged developer tools;
 - network requirements, prerequisite installer policy, immutable installation root, per-user save/cache/config/log/capture/crash locations, reset, and uninstall instructions;
@@ -206,7 +272,7 @@ The runtime-consumer journey is accepted only from the candidate archive and pub
 - extraction and first launch require no administrator rights, registry edit, environment variable, developer SDK, compiler, source checkout, network connection, or writable installation directory;
 - first launch reaches an intentional accepted example or consumer menu within the frozen startup budget. `Empty`, a developer console, or a fallback scene is not the public first impression unless deliberately selected and explained;
 - one discoverable product-owned path selects every shipped example and advertised backend/mode. A developer-only environment variable is evidence plumbing, not consumer UX;
-- controls/help identify movement, look, speed, map/mode selection, settings/reset, capture if advertised, and a reliable quit path. Unsupported controller, HDR, accessibility, language, or display behavior is explicit;
+- controls/help identify movement, look, speed, map/mode selection, settings/reset, capture if advertised, HDR requested/active/fallback state, and a reliable quit path. Unsupported controller, accessibility, language, or display configurations remain explicit;
 - settings persist under the declared per-user root, survive a normal restart, reject or reset corruption safely, and can be reset without deleting the installation;
 - the runtime makes no undeclared outbound connection and does not collect or upload logs, dumps, hardware identity, or usage data without explicit consent;
 - normal removal deletes only installed files. Per-user data retention/deletion is documented and never removes unrelated data.
@@ -368,7 +434,7 @@ Every negative check records its `FM-*` and `CHK-*`, expected failure, observed 
 | Shader delivery | Clean shader cook for the release matrix; program/library/ABI identity; missing/incompatible artifact rejection; cold and warm pipeline behavior; no runtime dependency on source shaders/compiler; Shipping erasure of recook, symbols, and private diagnostic paths. |
 | D3D12 RHI | Debug layer and GPU-based validation on focused workloads; descriptor/resource/state/queue lifetime; timestamp/capture path; resize; capability rejection; DRED evidence for device-removal incidents. |
 | Vulkan RHI | Core, synchronization, GPU-assisted, and best-practices validation where supported; queue/resource/swapchain lifetime; timestamp/capture path; resize; capability rejection; zero uncategorized validation findings. |
-| Renderer | Each included view mode, lighting path, ray/raster route, reconstruction/upscaler/provider, exposure, tone mapper, post-processing stage, presentation/output path, and debug view has a feature row, compatible-map result, backend disposition, requested/active/fallback state, quality evidence, and performance cost. Absent Color Grading, Chromatic Aberration, Frame Generation, Volumetric Lighting, deferred decals, and HDR output remain explicitly excluded or enter owned admission; development-only console/diagnostic surfaces are absent or classified. |
+| Renderer | Each included view mode, lighting path, ray/raster route, reconstruction/upscaler/provider, exposure, tone mapper, post-processing stage, presentation/output path, and debug view has a feature row, compatible-map result, backend disposition, requested/active/fallback state, quality evidence, and performance cost. Deferred decals, Color Grading, Chromatic Aberration, and HDR10 output must pass `FCR-REN-23` through `26`; Frame Generation and Volumetric Lighting remain explicitly excluded; development-only console/diagnostic surfaces are absent or classified. |
 | Editor | If distributed: clean-machine start; viewport/camera/settings/edit/capture workflows; save/generated-content ownership; user-visible support matches actual behavior. |
 | Launcher | If distributed: source/toolchain discovery; configure/build/cook/run; asset-pack sync; progress/cancel/failure; selectable scope matches support; no repository-only path assumptions; child-process handoff and shutdown. |
 | Third-party providers | Exact feature/provider need; immutable SDK/runtime identity; license and redistribution; release-only DLL allowlist; signature/publisher; unsupported-hardware and missing-provider behavior; no debug/provider payload leakage. |
@@ -423,7 +489,7 @@ The candidate package, not a development-tree executable, is the subject of fina
 - Map switch/reload loop covering every release map: 30 minutes without unbounded memory growth, stale content, crash, hang, or device removal.
 - Fixed representative traversal: 30-minute soak per included backend while collecting frame time and memory high-water.
 - First-run/default experience, example selector, controls/help, settings/reset, capture if advertised, reliable quit, and every public error/recovery action.
-- Resize, minimize/restore, alt-tab, focus/input recovery, supported full-screen/window modes, supported DPI/scaling, monitor changes, and SDR/HDR transitions if advertised.
+- Resize, minimize/restore, alt-tab, focus/input recovery, supported full-screen/window modes, supported DPI/scaling, monitor changes, and the required SDR/HDR transition and fallback matrix.
 - Keyboard/mouse and every advertised controller path; English plus one non-dot-decimal Windows locale; Unicode user and extraction paths.
 - Offline use with outbound traffic observed and blocked, standard-user account, non-system drive where available, read-only installation directory, and full/disk-write-denied mutable root.
 - First run with empty caches and warm repeat run; pipeline/shader compilation behavior is visible and bounded.
@@ -495,7 +561,7 @@ artifacts/validation/releases/<version>/<candidate-id>/
 
 This contract adopts established delivery structure without copying another engine's product scope:
 
-- Unreal Engine documents packaging as Build, Cook, Stage, and Package, followed where needed by Deploy and Run. Sparkle adopts those named product boundaries and proves the resulting staged package rather than treating compilation as delivery. Source: [Packaging Your Project](https://dev.epicgames.com/documentation/en-us/unreal-engine/packaging-your-project).
+- Unreal Engine 5.8 documentation, retrieved 2026-09-08, describes packaging as Build, Cook, Stage, and Package, followed where needed by Deploy and Run. Sparkle adopts those named product boundaries and proves the resulting staged package rather than treating compilation as delivery. Source: [Packaging Your Project](https://dev.epicgames.com/documentation/unreal-engine/packaging-your-project?application_version=5.8).
 - CMake defines installation rules as the source for an installed tree, while CPack generates packages from those rules. Sparkle therefore requires one owned staging/install contract before selecting an archive generator. Sources: [CMake `install()`](https://cmake.org/cmake/help/latest/command/install.html) and [CPack](https://cmake.org/cmake/help/latest/module/CPack.html).
 - Microsoft recommends a D3D12 debug-layer-clean application and provides GPU-based validation for descriptor, resource-state, and related GPU-timeline errors; DRED provides breadcrumbs and page-fault data for device removal. Sparkle uses focused native-validation and incident gates, not validation-enabled performance numbers. Sources: [Direct3D 12 programming environment setup](https://learn.microsoft.com/en-us/windows/win32/direct3d12/directx-12-programming-environment-set-up), [GPU-based validation](https://learn.microsoft.com/en-us/windows/win32/direct3d12/using-d3d12-debug-layer-gpu-based-validation), and [DRED](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_device_removed_extended_data).
 - Khronos treats validation as a development requirement and notes that validation layers are not intended to ship with the application. Sparkle separates Vulkan validation runs from the final package and performance profile. Sources: [Vulkan validation overview](https://docs.vulkan.org/guide/latest/validation_overview.html) and [Vulkan development tools](https://docs.vulkan.org/guide/latest/development_tools.html).

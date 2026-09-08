@@ -44,14 +44,14 @@
 
 ### Product, Build, And Delivery
 
-| ID | Architecture owner |
-| --- | --- |
-| `FCR-PROD-01` | [Showcase](../../Modules/Projects/Showcase/README.md) and [Application](../../Modules/Engine/Application/README.md) |
-| `FCR-PROD-02` | [Build/Packaging](../../Modules/BuildAndPackaging/README.md) and [Adoption](../../Modules/BuildAndPackaging/AdoptionSupportAndIncidentResponse.md) |
-| `FCR-PROD-03` | [Launcher](../../Modules/Tools/Launcher/README.md) |
-| `FCR-PROD-04` | [Application](../../Modules/Engine/Application/README.md) and [Editor](../../Modules/Engine/Editor/README.md) |
-| `FCR-PROD-05` | [Packaging And Installation](../../Modules/BuildAndPackaging/PackagingAndInstallation.md) |
-| `FCR-PROD-06` | [Adoption, Support, And Incident Response](../../Modules/BuildAndPackaging/AdoptionSupportAndIncidentResponse.md) and [RHI Diagnostics](../../Modules/Engine/RHI/Features/DiagnosticsAndCapture/README.md) |
+| ID | Architecture contract owner | Required contributors |
+| --- | --- | --- |
+| `FCR-PROD-01` | [Showcase runtime consumer](../../Modules/Projects/Showcase/README.md#fcr-prod-01-runtime-consumer-contract) | [Application host](../../Modules/Engine/Application/README.md#product-contract-boundary), GameFramework level/session, Renderer/RHI, Packaging |
+| `FCR-PROD-02` | [Build/Packaging source adopter](../../Modules/BuildAndPackaging/README.md#fcr-prod-02-source-adopter-contract) | Adoption, CMake/dependencies, Cooking/ShaderCompiler, Showcase |
+| `FCR-PROD-03` | [Launcher](../../Modules/Tools/Launcher/README.md#fcr-prod-03-launcher-contract) | Core process/files, build/cook/content owners, Showcase child products |
+| `FCR-PROD-04` | [Editor](../../Modules/Engine/Editor/README.md#fcr-prod-04-editor-contract) | [Application host](../../Modules/Engine/Application/README.md#product-contract-boundary), GameFramework world/level, Renderer |
+| `FCR-PROD-05` | [Packaging And Installation](../../Modules/BuildAndPackaging/PackagingAndInstallation.md#fcr-prod-05-package-contract) | CMake/artifact owners, Showcase/Application, all runtime-byte contributors |
+| `FCR-PROD-06` | [Adoption, Support, And Incident Response](../../Modules/BuildAndPackaging/AdoptionSupportAndIncidentResponse.md#fcr-prod-06-support-and-incident-contract) | Core/Application logs and failures, [RHI Diagnostics](../../Modules/Engine/RHI/Features/DiagnosticsAndCapture/README.md), package/symbol/publication owners |
 
 ### Foundation, World, And Content
 
@@ -106,6 +106,10 @@
 | `FCR-REN-20` | [Latency Coordination](../../Modules/Engine/Renderer/Features/FrameExecution/LatencyCoordination.md) |
 | `FCR-REN-21` | [Visibility And Draw Preparation](../../Modules/Engine/Renderer/Features/GeometryAndResources/VisibilityAndDrawPreparation.md) |
 | `FCR-REN-22` | [Resolution, Sampling, And Anti-Aliasing](../../Modules/Engine/Renderer/Features/PostProcessing/ReconstructionAndGeneration/ResolutionSamplingAndAntiAliasing.md) |
+| `FCR-REN-23` | [Deferred Decals](../../Modules/Engine/Renderer/Features/DeferredDecals/README.md) |
+| `FCR-REN-24` | [Color Grading](../../Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ColorGrading.md) |
+| `FCR-REN-25` | [Chromatic Aberration](../../Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ChromaticAberration.md) |
+| `FCR-REN-26` | [HDR Display Output](../../Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/HDRDisplayOutput.md) |
 
 ## Release Gates And Risks
 

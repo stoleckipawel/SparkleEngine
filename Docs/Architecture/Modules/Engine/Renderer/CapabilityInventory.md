@@ -19,7 +19,7 @@
 > [!TIP]
 > This file is an exact reference ledger, not the best introduction. Start with the [Renderer overview](README.md), then search this page by `REN-*` ID or feature heading. Read the row's **state**, **coverage and limit**, **evidence**, and **release disposition** together; no single cell means “supported.”
 
-**Current readiness:** **43/100** across the tracked Renderer portfolio; this inventory contributes source knowledge, not verification or delivery credit. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **36/100** across the tracked Renderer portfolio; this inventory contributes source knowledge, not verification or delivery credit. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## Module Documentation
 
@@ -220,9 +220,9 @@ The negative capability boundary and the minimum ownership required for any futu
 
 | Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |
 | --- | --- | --- | --- | --- | --- |
-| `REN-DECAL-01` | Authored and scene decal data | Not found | No component, imported/cooked record, render-scene table, GPU-scene payload, selector, or editor authoring path was found. | `S` | Excluded; future plan only |
-| `REN-DECAL-02` | Primary deferred GBuffer composition | Not found | No decal pass modifies the shared raster/ray GBuffer before depth-derived and lighting consumers. | `S` | Excluded; future plan only |
-| `REN-DECAL-03` | Secondary-ray decal evaluation | Not found | Arbitrary ray hits evaluate base materials without decal candidate lookup or composition. | `S` | Excluded; future plan only |
+| `REN-DECAL-01` | Authored and scene decal data | Not found | No component, imported/cooked record, render-scene table, GPU-scene payload, selector, or editor authoring path was found. | `S` | First-release target; `FCR-REN-23` Blocked |
+| `REN-DECAL-02` | Primary deferred GBuffer composition | Not found | No decal pass modifies the shared raster/ray GBuffer before depth-derived and lighting consumers. | `S` | First-release target; `FCR-REN-23` Blocked |
+| `REN-DECAL-03` | Secondary-ray decal evaluation | Not found | Arbitrary ray hits evaluate base materials without decal candidate lookup or composition. | `S` | First-release target; `FCR-REN-23` Blocked |
 
 Current absence, extension seams, and the separately labeled target architecture are routed by [Deferred Decals](Features/DeferredDecals/README.md).
 
@@ -263,13 +263,13 @@ Current absence, extension seams, and the separately labeled target architecture
 
 | Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |
 | --- | --- | --- | --- | --- | --- |
-| `REN-POST-11` | Color grading | Not found | No grading pass/shader, parameter stack, 1D/3D LUT asset/import/cook route, color-space transform, selector, debug product, or editor workflow was found. The three tone-mapper choices are not grading. | `S` | Excluded unless later admitted |
+| `REN-POST-11` | Color grading | Not found | No grading pass/shader, parameter stack, 1D/3D LUT asset/import/cook route, color-space transform, selector, debug product, or editor workflow was found. The three tone-mapper choices are not grading. | `S` | First-release target; `FCR-REN-24` Blocked |
 
 ## Chromatic Aberration
 
 | Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |
 | --- | --- | --- | --- | --- | --- |
-| `REN-POST-12` | Chromatic aberration | Not found | No lens/channel distortion model, strength/center/falloff setting, pass, shader, selector, history, diagnostic, or editor workflow was found. Reconstruction artifacts are not feature support. | `S` | Excluded unless later admitted |
+| `REN-POST-12` | Chromatic aberration | Not found | No lens/channel distortion model, strength/center/falloff setting, pass, shader, selector, history, diagnostic, or editor workflow was found. Reconstruction artifacts are not feature support. | `S` | First-release target; `FCR-REN-25` Blocked |
 
 ## Frame Generation
 
@@ -282,7 +282,7 @@ Current absence, extension seams, and the separately labeled target architecture
 | Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |
 | --- | --- | --- | --- | --- | --- |
 | `REN-POST-08` | Output encoding | Implemented path | Automatic, Linear, and sRGB encoding selections. | `S` | Pending |
-| `REN-POST-09` | HDR display output | Not found | No PQ, scRGB, HDR10 metadata, display-nit contract, or HDR swapchain mode was found in the current Renderer/RHI output selections. | `S` | Excluded unless later admitted |
+| `REN-POST-09` | HDR display output | Not found | No PQ, HDR10 color-space/metadata, display-nit contract, or HDR swapchain mode was found in the current Renderer/RHI output selections. [HDR Display Output](Features/PostProcessing/DisplayPipeline/HDRDisplayOutput.md) defines the selected HDR10 target. | `S` | First-release target; `FCR-REN-26` Blocked |
 | `REN-POST-10` | Exact debug presentation | Partial | Debug views flow through the existing exposure/tone/output chain. The separate exact display-linear versus scene-referred debug presentation described in the target design is not implemented in this snapshot. | `S` | Pending |
 
 ## Debug Views
@@ -347,7 +347,7 @@ The settings section persists 27 named Renderer CVars in `/Script/SparkleRendere
 
 Release inventory must be generated from both UI/public settings and console/config surfaces. A hidden but reachable command or CVar is still a selectable capability unless Shipping erases or locks it.
 
-No current selector exists for Volumetric Lighting, deferred decals, color grading, chromatic aberration, frame generation, HDR display output, or a non-ray lighting fallback because those product paths are absent. The exact current route, defaults, clamps, persistence, known unused selector, and deliberately absent selector set are in the [Feature Selector Catalog](Features/RuntimeConfiguration/FeatureSelectorCatalog.md).
+No current selector exists for Volumetric Lighting, deferred decals, color grading, chromatic aberration, frame generation, HDR display output, or a non-ray lighting fallback because those product paths are absent. Deferred decals, grading, chromatic aberration, and HDR10 are nevertheless first-release admitted; their implementation plans must add truthful selectors and active-state reporting before product claims. The exact current route, defaults, clamps, persistence, known unused selector, and deliberately absent selector set are in the [Feature Selector Catalog](Features/RuntimeConfiguration/FeatureSelectorCatalog.md).
 
 ## Explicit Non-Claims And Shipping Risks
 
@@ -368,10 +368,10 @@ No current selector exists for Volumetric Lighting, deferred decals, color gradi
 - Streamline PCL/Reflex is optional, D3D12-only in the inspected route, has no public active-mode report, narrows the 64-bit frame ID for provider tokens, and has no measured latency claim.
 - Settings persistence rewrites a workspace INI section in place and reports no write/parse failure; package-safe durable persistence is not established.
 - Current debug views do not yet have the target exact display-linear presentation split.
-- No current HDR-display output contract was found.
+- No current HDR-display implementation was found; the first-release target contract is now explicit.
 - No participating-media, fog-volume, volumetric-lighting, atmosphere, or aerial-perspective path was found; sky and wrap-subsurface lighting do not imply those capabilities.
-- Deferred decals have a target architecture, delivery plan, and acceptance contract, but no current authored data, scene/GPU representation, GBuffer pass, or secondary-ray composition path.
-- No color-grading parameters/LUT transform, chromatic-aberration lens effect, or frame-generation synthesis/presentation path was found. Tone mapping, reconstruction artifacts, Streamline PCL, and Reflex are not substitutes.
+- Deferred decals are first-release admitted and have a target architecture, delivery plan, and acceptance contract, but no current authored data, scene/GPU representation, GBuffer pass, or secondary-ray composition path.
+- Color grading and chromatic aberration are first-release admitted but have no current implementation; frame generation remains absent and excluded. Tone mapping, reconstruction artifacts, Streamline PCL, and Reflex are not substitutes.
 
 ## Primary Source Routes
 

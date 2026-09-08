@@ -6,14 +6,14 @@
 
 **Summary basis:** Architecture inventories reviewed 2026-09-07; their individual snapshot revisions and evidence limits remain authoritative
 
-**Current readiness:** **43/100** across 45 tracked feature families; all remain Blocked and none has candidate-bound verification or delivery credit. See [Current Feature Readiness](../Acceptance/CurrentReadiness.md).
+**Current readiness:** **40/100** across 49 tracked feature families; all remain Blocked and none has candidate-bound verification or delivery credit. See [Current Feature Readiness](../Acceptance/CurrentReadiness.md).
 
 SparkleEngine is a compact, renderer-first C++ engine built around a cooked-content runtime, a multithreaded Renderer, and backend-neutral GPU services with D3D12 and Vulkan implementations.
 
 > [!IMPORTANT]
 > **Current state:** Broad implementation paths exist in source, but the first release is blocked.
 >
-> **Readiness:** **43/100** — source implementation and integration account for the score; candidate verification and delivery/adoption are both still `0`.
+> **Readiness:** **40/100** — source implementation and integration account for the score; four newly admitted absent Renderer features add no points, and candidate verification and delivery/adoption are both still `0`.
 >
 > **Biggest gaps:** No accepted clean build/run record, formal package, automated regression/CI, clean-machine proof, or release approval.
 >
@@ -73,7 +73,7 @@ The important boundary is that GameFramework publishes immutable scene/view inpu
 | Platform and Application | **50/100** | Partial | Win32 window/input/DPI, runtime/editor hosts, serial/threaded frame loop | Non-Windows host, broad lifecycle tests, packaged standard-user behavior |
 | Assets, import, and cooking | **49/100** | Implemented path; unproved | glTF/GLB/FBX subsets, textures, meshes, materials, scenes, animation, shader products | Full fidelity, deterministic publication, malformed-input, license, and package completeness evidence |
 | GameFramework | **48/100** | Implemented path; unproved | levels, cooked loading, ECS/world updates, editing, render extraction | Cancellation/reload, malformed content, numerical and cross-worker determinism evidence |
-| Renderer | **43/100** | Broad implemented path; capability-gated | raster/ray GBuffer, direct/indirect lighting, frame graph, post processing, diagnostics | Feature correctness, visual/temporal quality, backend parity, performance, missing feature families |
+| Renderer | **36/100** | Broad established path plus four absent mandatory targets | raster/ray GBuffer, direct/indirect lighting, frame graph, post processing, diagnostics | Deferred decals, grading, chromatic aberration, HDR10, feature correctness, visual/temporal quality, backend parity, and performance |
 | RHI | **45/100** | Broad implemented path; capability-gated | D3D12/Vulkan resources, descriptors, pipelines, commands, ray tracing, presentation, diagnostics | Native validation, device/queue/lifetime faults, parity, performance, device-recovery scope |
 | Tools and products | **45/100** | Partial | Launcher, cookers, ShaderCompiler, editor, Showcase runtime/editor | polished first use, public support route, independent adoption, packaged operation |
 

@@ -2,7 +2,7 @@
 
 **Status:** capability snapshot; current build-system inventory, not a successful-build or release-package record
 
-**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; root/module CMake, profile/artifact contracts, dependency fetches, project discovery, tool/product membership, and install/test/CI searches inspected; evidence `S` only
+**Snapshot:** 2026-09-08 at committed `master` revision `ffe60e3a`; root/module CMake, profile/artifact contracts, dependency fetches, project discovery, tool/product membership, and install/test/CI searches inspected; evidence `S` only
 
 **Scope:** build profiles, toolchains, options, dependency acquisition, targets, artifact layout, runtime staging, project discovery, checks, automation, tests, installation, and packaging
 
@@ -73,6 +73,35 @@ The current build graph is useful engineering infrastructure, not yet a product-
 | `BUILD-019` | Automated tests | Not found | No `enable_testing()` or `add_test()` occurs in current CMake. Existing validation is custom checks/manual evidence, not CTest coverage. | `S` |
 | `BUILD-020` | CI | Not found | No tracked `.github` workflow or other inspected CI configuration exists. | `S` |
 | `BUILD-021` | Root onboarding | Partial | Root has `LICENSE.txt`, AGENTS routing, and deep Docs, but no root `README.md` in this snapshot. Clean-user entry remains incomplete. | `S` |
+
+## `FCR-PROD-02` Source-Adopter Contract
+
+This section owns the build-side source-adopter verdict. [Adoption](AdoptionSupportAndIncidentResponse.md) owns public recovery/support after a failure; [First Release](../../../Acceptance/FirstRelease.md#frozen-platform-and-toolchain-prerequisites) owns the frozen prerequisite values.
+
+| ID | Binary acceptance criterion |
+| --- | --- |
+| `AC-PROD02-01` | From the immutable public tag/archive and root `README.md`, a non-author can identify the exact supported toolchain, network/cache/disk effects, unstable source API/no-binary-SDK boundary, and one minimal `ShippingGame` runtime route before running commands. |
+| `AC-PROD02-02` | On the supported source machine with empty dependency/build/cook caches, the documented commands sync immutable inputs, configure, build `ShowcaseRuntime` and required cook tools, cook the included products, and launch the requested example within the frozen source budget. Every step has an attributable exit and artifact identity. |
+| `AC-PROD02-03` | The same source/revision/toolchain replays from the declared warm cache without network, produces logically identical manifests/products, and does not depend on an author path, private cache, environment-only selection, or repository dirt. |
+| `AC-PROD02-04` | Launcher, Editor, import/cook tools, providers, alternate generators/compilers, and contributor checks are separately classified; omitting an optional Developer-only surface either removes its prerequisite at configure time or fails before work with one actionable reason. |
+| `AC-PROD02-05` | Clean/reset operations enumerate and require confirmation for owned generated roots, preserve tracked/untracked source and user-declared preserved paths, and report missing/locked/partial deletion as failure. |
+
+| ID | Cause/injection, safe result, and affected criterion |
+| --- | --- |
+| `FM-PROD02-01` | Remove or downgrade CMake, Git, MSVC/Windows SDK, Qt, Vulkan SDK/DXC/Slang, or a selected optional tool. Configure/preflight must identify the exact missing/unsupported prerequisite and exit nonzero; a skipped action or missing artifact cannot be summarized as success (`AC-PROD02-01`, `AC-PROD02-02`, `AC-PROD02-04`). |
+| `FM-PROD02-02` | Block network with an empty cache, corrupt a dependency checkout/archive, or replace a locked revision. Cold acquisition fails without partial acceptance; warm replay either uses verified cache or says network is required (`AC-PROD02-02`, `AC-PROD02-03`). |
+| `FM-PROD02-03` | Run from a Unicode/spaced clone and remove all `SPARKLE_*` path overrides. Any private path, author cache, or environment-only requirement fails the source route (`AC-PROD02-02`, `AC-PROD02-03`). |
+| `FM-PROD02-04` | At this revision `Tools/CMakeLists.txt` adds Launcher unconditionally and Launcher requires Qt 6.8, so even a runtime-focused configure requires Qt. Until membership makes Developer-only surfaces separately selectable, `AC-PROD02-04` is `BLOCKED`; instructions may not call Qt optional. |
+| `FM-PROD02-05` | Place sentinels and preserved paths beside every clean target, inject a locked file, and cancel. Any source/sentinel removal or false-success aggregate fails `AC-PROD02-05`. |
+| `FM-PROD02-06` | Inspect public wording and delivered files for SDK/install/ABI claims. Any binary SDK implication without installed headers/libraries/samples/version policy fails `AC-PROD02-01` and must be removed, not softened. |
+
+| Check | Claims falsified | Smallest route and fixed oracle |
+| --- | --- | --- |
+| `CHK-PROD02-01` | `AC-PROD02-01`, `AC-PROD02-04`; `FM-PROD02-04`, `FM-PROD02-06` | Static audit of root onboarding, CMake option/subdirectory/target membership, public headers, archive disposition, and exact configure prerequisites. Every advertised optional product must be omittable and no SDK claim may exist. |
+| `CHK-PROD02-02` | `AC-PROD02-02`, `AC-PROD02-03`; `FM-PROD02-01`–`03` | Two isolated clones on the supported source toolchain: empty-cache online cold route followed by network-blocked warm replay, with one missing-tool and one corrupt-input injection. Compare commands, exits, manifests/hashes, paths, created files, duration, and final active map. |
+| `CHK-PROD02-03` | `AC-PROD02-05`; `FM-PROD02-05` | Dry-run/preview then confirmed clean against a disposable clone containing source/sentinel/preserved/locked fixtures. Only enumerated generated roots may change, and any incomplete deletion must be a failed result. |
+
+Every source-adopter criterion/failure maps to a check. No configure, build, cook, clean, or launch was run in this documentation pass, so `FCR-PROD-02` remains `Blocked`.
 
 ## Vertical Build-To-Product Trace
 

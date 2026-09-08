@@ -4,7 +4,7 @@
 
 This page tracks high-level acceptance routing for features primarily owned by `Engine/Renderer`. [Renderer Architecture](../../Architecture/Modules/Engine/Renderer/Features/README.md) owns feature description and detailed proof contracts; [Feature Completion Reports](../FeatureCompletionReports.md) owns candidate results and approval. This page owns neither detailed criteria nor evidence artifacts.
 
-**Current readiness:** **43/100** across 22 tracked Renderer families; all remain Blocked, with verification and delivery/adoption at zero. See [Current Feature Readiness](../CurrentReadiness.md#renderer).
+**Current readiness:** **36/100** across 26 tracked Renderer families; all remain Blocked, with verification and delivery/adoption at zero. Four admitted release features are currently **0/100**. See [Current Feature Readiness](../CurrentReadiness.md#renderer).
 
 ## At A Glance
 
@@ -12,7 +12,8 @@ This page tracks high-level acceptance routing for features primarily owned by `
 | --- | --- |
 | source path exists but candidate proof remains open | debug views, exposure, reconstruction/upscaling, tone mapping, presentation/output, pipeline materialization, residency, temporal state, settings, latency coordination, visibility, and resolution/sampling |
 | discovery blocked before implementation/acceptance can proceed | independent offline path-tracing oracle (`PTD-00`) |
-| not implemented and not admitted to first release | deferred decals, color grading, chromatic aberration, and frame generation |
+| not implemented but admitted to first release | deferred decals, color grading, chromatic aberration, and HDR10 display output |
+| not implemented and not admitted to first release | frame generation |
 
 No Renderer row is promoted by this summary. Follow the feature contract for what must pass and the `FCR-REN-*` result route for what a specific candidate actually proved.
 
@@ -22,7 +23,7 @@ No Renderer row is promoted by this summary. Follow the feature contract for wha
 | --- | ---: | --- | --- |
 | Offline path tracer; `PTD-00` discovery remains blocked and `FCR-REN-08` cannot yet accept oracle status | **20/100** | [Feature dossier](../../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/README.md) and [discovery gate](../../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md) | [`FCR-REN-08`](../FeatureCompletionReports.md#initial-completion-report-registry) |
 | Debug-view presentation; source present, candidate proof blocked | **40/100** | [Debug Views dossier](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/README.md) and [feature acceptance](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/Acceptance.md) | [`FCR-REN-11`](../FeatureCompletionReports.md#initial-completion-report-registry) |
-| Deferred GBuffer decals; not implemented and not admitted to the first release | **0/100** | [Deferred Decals dossier](../../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/README.md) and [feature acceptance](../../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/Acceptance.md) | no candidate report until roadmap admission |
+| Deferred GBuffer decals; mandatory target, implementation not found | **0/100** | [Deferred Decals dossier](../../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/README.md) and [feature acceptance](../../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/Acceptance.md) | [`FCR-REN-23`](../FeatureCompletionReports.md#initial-completion-report-registry) |
 | Exposure; source present, candidate proof open | **45/100** | [Exposure dossier](../../Architecture/Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/Exposure.md) | [`FCR-REN-09`](../FeatureCompletionReports.md#initial-completion-report-registry) |
 | Image reconstruction/upscaling; source present or capability-gated, candidate proof open | **40/100** | [Image Reconstruction and Upscaling dossier](../../Architecture/Modules/Engine/Renderer/Features/PostProcessing/ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md) | [`FCR-REN-10`](../FeatureCompletionReports.md#initial-completion-report-registry) |
 | Tone mapping; source present, numerical/color proof open | **45/100** | [Tone Mapping dossier](../../Architecture/Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ToneMapping.md) | [`FCR-REN-14`](../FeatureCompletionReports.md#initial-completion-report-registry) |
@@ -34,6 +35,9 @@ No Renderer row is promoted by this summary. Follow the feature contract for wha
 | Latency coordination; capability-gated D3D12 route present, identity/failure/benefit proof open | **25/100** | [Latency Coordination dossier](../../Architecture/Modules/Engine/Renderer/Features/FrameExecution/LatencyCoordination.md) | [`FCR-REN-20`](../FeatureCompletionReports.md#initial-completion-report-registry) |
 | Visibility and draw preparation; source present, correctness/equivalence/performance proof open | **45/100** | [Visibility and Draw Preparation dossier](../../Architecture/Modules/Engine/Renderer/Features/GeometryAndResources/VisibilityAndDrawPreparation.md) | [`FCR-REN-21`](../FeatureCompletionReports.md#initial-completion-report-registry) |
 | Resolution, sampling, and anti-aliasing; extent/single-sample/provider paths present with explicit absent AA/dynamic-resolution modes | **40/100** | [Resolution, Sampling, and Anti-Aliasing dossier](../../Architecture/Modules/Engine/Renderer/Features/PostProcessing/ReconstructionAndGeneration/ResolutionSamplingAndAntiAliasing.md) | [`FCR-REN-22`](../FeatureCompletionReports.md#initial-completion-report-registry) |
-| Color grading, chromatic aberration, and frame generation; not implemented and not admitted | **0/100** | [Post Processing family](../../Architecture/Modules/Engine/Renderer/Features/PostProcessing/README.md) and its negative capability dossiers | no candidate reports until roadmap admission; negative audits `REN-E26` through `REN-E28` |
+| Color grading; mandatory target, implementation not found | **0/100** | [Color Grading dossier](../../Architecture/Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ColorGrading.md) | [`FCR-REN-24`](../FeatureCompletionReports.md#initial-completion-report-registry) |
+| Chromatic aberration; mandatory target, implementation not found | **0/100** | [Chromatic Aberration dossier](../../Architecture/Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ChromaticAberration.md) | [`FCR-REN-25`](../FeatureCompletionReports.md#initial-completion-report-registry) |
+| HDR10 display output; mandatory target, implementation not found | **0/100** | [HDR Display Output dossier](../../Architecture/Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/HDRDisplayOutput.md) | [`FCR-REN-26`](../FeatureCompletionReports.md#initial-completion-report-registry) |
+| Frame generation; not implemented and not admitted | **0/100** | [Frame Generation dossier](../../Architecture/Modules/Engine/Renderer/Features/PostProcessing/ReconstructionAndGeneration/FrameGeneration.md) | no candidate report until roadmap admission; negative audit `REN-E28` |
 
 Other Renderer feature families use the same rule: define their proof beside the feature, then add only a high-level route here when acceptance progress needs coordination across the Renderer portfolio.

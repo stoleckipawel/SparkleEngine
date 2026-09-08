@@ -2,7 +2,7 @@
 
 **Status:** dated-assessment index
 
-**Current-state rule:** assessment findings retain their named snapshot. They do not silently update to the current **43/100** portfolio projection; compare them with [Current Feature Readiness](../../Acceptance/CurrentReadiness.md).
+**Current-state rule:** assessment findings retain their named snapshot. They do not silently update to the current **40/100** portfolio projection; compare them with [Current Feature Readiness](../../Acceptance/CurrentReadiness.md).
 
 **Scope:** route snapshot-bound evaluations of product readiness, repository gaps, and structural quality without promoting them into current strategy or architecture
 

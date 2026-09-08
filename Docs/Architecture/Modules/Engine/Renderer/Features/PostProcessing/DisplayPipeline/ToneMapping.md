@@ -18,7 +18,7 @@
 | ACES approximation | default ACES-inspired display mapping | name does not establish standards conformance |
 | ACES fitted filmic | alternate fitted filmic curve | output/colorimetric agreement and artistic suitability unproved |
 
-Exactly one operator consumes exposure-weighted HDR `ResolvedSceneColor` and produces display-linear `ToneMappedSceneColor`. Output transfer encoding and publication happen later; color grading is absent rather than folded into these curves.
+Exactly one operator consumes exposure-weighted HDR scene color and produces display-linear `ToneMappedSceneColor`. The admitted color-grading stage will supply graded scene-referred input before this operator; output-device encoding and publication happen later. Grading remains absent from current source and is never folded into these curves.
 
 ## Feature Promise
 
@@ -35,7 +35,7 @@ The shader clamps alpha with `saturate` while mapping RGB. Current source does n
 - `RenderView` owns the resolved per-view tone-mapper intent; `ExecuteRenderFrameGraph` updates the graph uniform each frame.
 - Tone mapping consumes the resolved scene color after reconstruction/upscaling and optional debug replacement.
 - Exposure is multiplied in the tone-mapping shader, but [Exposure](Exposure.md) owns metering and temporal adaptation.
-- Tone mapping is not color grading: no grading controls, grading stack, or LUT is applied before or inside the current operator.
+- Tone mapping is not color grading: no grading controls, grading stack, or LUT is applied in current source, and the target stage remains a distinct pre-tone owner.
 - Output encoding is a separate pass and remains the only owner of Linear/sRGB transfer selection.
 
 ## Failure, Tradeoffs, And Evidence

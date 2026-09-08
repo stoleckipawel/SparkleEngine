@@ -1,12 +1,12 @@
 # RHI Presentation
 
-**Status:** current feature dossier; source-backed, not resize, pacing, color, HDR, or release evidence
+**Status:** current SDR feature dossier plus first-release HDR10 collaboration boundary; source-backed absence is not HDR or release evidence
 
 **Verified:** 2026-09-06 at committed `master` revision `8414b5dc`
 
-**Scope:** `RHI-PRES-*`; swapchain construction, back-buffer identity/state, acquire, resize, frame count, pacing, VSync, submit/present, and the explicit HDR output gap
+**Scope:** `RHI-PRES-*`; swapchain construction, back-buffer identity/state, acquire, resize, frame count, pacing, VSync, submit/present, and RHI mechanics for the admitted HDR10 target
 
-**Current readiness:** **50/100** for the current SDR scope — acquire/resize/present routes exist for both backends; executable pacing, failure, parity, format, and packaged evidence does not. HDR output is separately **0/100**. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#rhi-and-gpu-execution).
+**Current readiness:** **50/100** for the current SDR scope — acquire/resize/present routes exist for both backends; executable pacing, failure, parity, format, and packaged evidence does not. HDR output is separately **0/100**, first-release admitted, and Blocked under `FCR-REN-26`. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#rhi-and-gpu-execution).
 
 ## At A Glance
 
@@ -17,7 +17,7 @@
 | VSync or pacing request | backend activates, rejects, or reports the effective mode | configuration intent is not proof of timing behavior |
 | resize/minimize/out-of-date | pause/drain and replace swapchain-dependent objects without replacing the device | this is presentation recovery, not whole-device recovery |
 | device or surface failure | exact failure reaches a recoverable presentation state or bounded terminal path | no stale back buffer may be reported as a fresh present |
-| HDR request | unavailable in the current contract | SDR swapchain support does not imply HDR format/color-space/metadata support |
+| HDR request | unavailable in current source; admitted target | SDR swapchain support does not imply HDR format/color-space/metadata support; the target contract is [HDR Display Output](../../../Renderer/Features/PostProcessing/DisplayPipeline/HDRDisplayOutput.md) |
 
 ## Swapchain Lifecycle
 
@@ -37,7 +37,7 @@ stateDiagram-v2
 
 ## Feature Promise
 
-For a valid native window and supported configuration, RHI owns one swapchain lifecycle that acquires a current back buffer, exposes its neutral render state, submits/presents it in order, and rebuilds safely on size changes. The current contract is SDR-oriented and does not claim HDR negotiation or output.
+For a valid native window and supported configuration, RHI owns one swapchain lifecycle that acquires a current back buffer, exposes its neutral render state, submits/presents it in order, and rebuilds safely on size changes. Current source is SDR-oriented. The admitted target extends that same owner with HDR capability discovery, compatible format/color-space activation, static metadata, transitions, and truthful fallback; Renderer retains color-transform policy.
 
 ## Ownership And Lifecycle
 
@@ -61,7 +61,7 @@ For a valid native window and supported configuration, RHI owns one swapchain li
 - `AC-RHI-PRES-02` — resize, minimize/restore, rapid resize, surface loss, and shutdown replace or retain native buffers without stale views, use-after-free, deadlock, or fabricated presentation.
 - `AC-RHI-PRES-03` — VSync and pacing requests produce the documented active mode and observable fallback/rejection; measurements record backend/device configuration.
 - `AC-RHI-PRES-04` — device/present failure is surfaced with recoverable state or bounded shutdown; the prior frame is not reported as a new success.
-- `AC-RHI-PRES-05` — HDR requests remain explicitly unavailable until color space, format, metadata, negotiation, Renderer encoding, and display evidence have an owned contract.
+- `AC-RHI-PRES-05` — until `FCR-REN-26` is implemented, HDR requests remain explicitly unavailable; completion requires the linked `AC-HDR-*` format/color-space/metadata, transition, fallback, Renderer-transform, backend, hardware, and display evidence.
 
 ## Controlled Failures And Checks
 
@@ -69,7 +69,7 @@ For a valid native window and supported configuration, RHI owns one swapchain li
 | --- | --- | --- |
 | `FM-RHI-PRES-01` zero/invalid extent or lost surface | no new back-buffer work; wait/rebuild/failure is explicit | `CHK-RHI-PRES-01` resize/minimize/surface-loss loop |
 | `FM-RHI-PRES-02` present/device error | exact failure propagates; no success counter/identity advances | `CHK-RHI-PRES-02` injected backend failure |
-| `FM-RHI-PRES-03` unsupported pacing/VSync/HDR request | requested-versus-active result is explicit or request rejects | `CHK-RHI-PRES-03` mode/capability matrix |
+| `FM-RHI-PRES-03` unsupported pacing/VSync or HDR capability/activation failure | requested-versus-active/fallback result is explicit; HDR preserves a valid SDR presentation route | `CHK-RHI-PRES-03` mode/capability matrix plus `CHK-HDR-*` |
 
 Check coverage: `CHK-RHI-PRES-01` covers `AC-RHI-PRES-01`, `AC-RHI-PRES-02`, and `FM-RHI-PRES-01`; `CHK-RHI-PRES-02` covers `AC-RHI-PRES-02`, `AC-RHI-PRES-04`, and `FM-RHI-PRES-02`; `CHK-RHI-PRES-03` covers `AC-RHI-PRES-03`, `AC-RHI-PRES-05`, and `FM-RHI-PRES-03`.
 

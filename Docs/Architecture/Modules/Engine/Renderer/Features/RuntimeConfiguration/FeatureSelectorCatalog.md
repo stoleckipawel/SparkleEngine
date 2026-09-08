@@ -68,11 +68,11 @@ These controls affect frame storage and presentation but are not proof that ever
 | Capability | Current selector state | Documentation owner |
 | --- | --- | --- |
 | Volumetric lighting, fog, atmosphere, aerial perspective | no Renderer/RHI setting, CVar, viewport request, or editor control was found | [Volumetric Lighting](../Lighting/VolumetricLighting.md); `REN-E24` audits continued absence |
-| Deferred decals | no authored/editor/runtime selector was found because no current decal feature exists | [Deferred Decals](../DeferredDecals/README.md); `REN-E25` prevents the target design from becoming an implied feature |
-| Color grading | no grading parameter, LUT, transform, or editor selector exists | [Color Grading](../PostProcessing/DisplayPipeline/ColorGrading.md); `REN-E26` audits continued absence |
-| Chromatic aberration | no lens/channel effect or viewport selector exists | [Chromatic Aberration](../PostProcessing/DisplayPipeline/ChromaticAberration.md); `REN-E27` audits continued absence |
+| Deferred decals | no authored/editor/runtime selector was found; `GR-5` must add truthful requested/active state with the implementation | [Deferred Decals](../DeferredDecals/README.md); `REN-E25` preserves current absence truth until `FCR-REN-23` is implemented |
+| Color grading | no grading parameter, LUT, transform, or editor selector exists; `DSP-5` must add the admitted surface | [Color Grading](../PostProcessing/DisplayPipeline/ColorGrading.md); `REN-E26` preserves current absence truth until `FCR-REN-24` is implemented |
+| Chromatic aberration | no lens/channel effect or viewport selector exists; `DSP-6` must add the admitted surface | [Chromatic Aberration](../PostProcessing/DisplayPipeline/ChromaticAberration.md); `REN-E27` preserves current absence truth until `FCR-REN-25` is implemented |
 | Frame generation | no provider, quality, pacing, or presentation selector exists; Reflex/PCL controls are not frame synthesis | [Frame Generation](../PostProcessing/ReconstructionAndGeneration/FrameGeneration.md); `REN-E28` audits continued absence |
-| HDR display output | no PQ/scRGB/HDR10/display-nit/swapchain-HDR selection exists | [Presentation and Output](../PostProcessing/DisplayPipeline/PresentationAndOutput.md) |
+| HDR display output | no HDR request, supported/active/fallback state, PQ/HDR10/display-nit, or swapchain-HDR selection exists; `DSP-7` must add it | [HDR Display Output](../PostProcessing/DisplayPipeline/HDRDisplayOutput.md); `REN-E34` preserves current absence truth until `FCR-REN-26` is implemented |
 | Non-ray lighting fallback | no shadow-map/lightmap/probe-only/deferred-raster lighting mode exists | [Lighting](../Lighting/README.md) |
 
 An absent selector is not a UI omission when the feature itself is absent. Adding a selector before its producer, active-state reporting, failure behavior, and completion contract exist would create misleading public vocabulary.

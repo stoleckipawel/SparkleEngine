@@ -2,7 +2,7 @@
 
 **Status:** strategy index and responsibility map
 
-**Current implementation snapshot:** **43/100** across 45 tracked feature families; all remain Blocked because candidate verification and delivery/adoption are zero. Strategy targets do not earn readiness. See [Current Feature Readiness](../Acceptance/CurrentReadiness.md).
+**Current implementation snapshot:** **40/100** across 49 tracked feature families; all remain Blocked because candidate verification and delivery/adoption are zero. Strategy targets do not earn readiness. See [Current Feature Readiness](../Acceptance/CurrentReadiness.md).
 
 Strategy owns desired capabilities, priority, release-wide sequencing, dated executive assessments, and the target professional operating model. It does not own implementation rules, subsystem design, or completion proof.
 

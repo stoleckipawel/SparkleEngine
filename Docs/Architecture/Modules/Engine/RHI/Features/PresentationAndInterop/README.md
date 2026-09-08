@@ -40,4 +40,4 @@ Presentation owns swapchain images, ImGui owns UI command lowering, and interop 
 - Resize and minimize replace presentation identity while older frames may remain in flight.
 - UI textures and provider-native handles must not outlive their resource/device generation.
 - Provider availability and a successful present do not prove Renderer color correctness.
-- HDR, broad native access, and equivalent provider support across backends remain explicit non-capabilities.
+- HDR remains absent but HDR10 activation is a mandatory first-release target under Renderer-owned `FCR-REN-26`; broad native access and equivalent provider support across backends remain explicit non-capabilities.

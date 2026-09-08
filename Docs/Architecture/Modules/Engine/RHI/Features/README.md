@@ -110,7 +110,7 @@ No public or private RHI directory is an undocumented catch-all. PCH, include, n
 | Pipelines/shaders | Defined, unproved | exercise complete descriptor/ABI identity, invalid combinations, generation retirement, and both lowerings |
 | Commands/synchronization | Defined, unproved | exercise queue dependencies, barriers, aliasing, lease misuse, failure, stall, and shutdown |
 | Ray tracing | Defined, unproved | exercise AS/SBT/traversal matrices, unsupported combinations, vendor gates, semantic parity, and retirement |
-| Presentation | Defined, unproved | exercise acquire/resize/minimize/VSync/pacing/device-loss flows and explicit HDR rejection on both backends |
+| Presentation | Defined, unproved plus admitted HDR10 target | exercise acquire/resize/minimize/VSync/pacing/device-loss flows; implement and prove HDR format/color-space/metadata activation and SDR fallback under `FCR-REN-26` on both backends |
 | Diagnostics | Defined, unproved | correlate engine/native identity, faults, timestamps, delivery bounds, observer cost, and backend-specific availability |
 | Texture capture | Defined, unproved | exercise pattern decoding, formats/layout, asynchronous states, faults, bounds, resize/shutdown, and both backends |
 | External interop | Defined, unproved | exercise capability gates, native identity/state, manual/interposer routes, fallback, generation lifetime, and packaging |

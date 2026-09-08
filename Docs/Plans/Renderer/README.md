@@ -6,6 +6,8 @@ These plans are primarily owned by `Engine/Renderer`. Links name collaborating m
 
 Current feature baselines are **40/100** for existing debug views and **0/100** for deferred decals. Planned target work does not increase either score. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#renderer).
 
+For closure of all 26 Renderer families admitted to `v0.1.0`, use the [First Release Renderer Plans](../FirstRelease/Renderer/README.md). This folder retains focused feature/migration plans; deferred decals are explicitly selected by `GR-5`, while plan presence alone does not admit other work.
+
 ## Choose By Outcome
 
 | Outcome | Current feature readiness | Current architecture state | Plan purpose |

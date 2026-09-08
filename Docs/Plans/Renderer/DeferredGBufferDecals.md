@@ -10,7 +10,9 @@
 
 **Feature acceptance:** [Deferred GBuffer Decals — Acceptance](../../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/Acceptance.md)
 
-**Related current readiness:** **0/100 — target only.** No decal data, publication, deferred composition, or ray-hit evaluation implementation was found; this plan adds no implementation credit. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+**First-release owner:** mandatory `FCR-REN-23`; selected by [`GR-5`](../FirstRelease/Renderer/GeometryAndRayTracing.md#gr-5--deferred-gbuffer-decals) under `REL-04`
+
+**Related current readiness:** **0/100 — first-release target, Blocked.** No decal data, publication, deferred composition, or ray-hit evaluation implementation was found; release admission and this plan add no implementation credit. See [Current Feature Readiness](../../Acceptance/CurrentReadiness.md#renderer).
 
 This plan owns feature-local delivery order, dependencies, and phase exit sequence. It does not redefine decal semantics, own the final acceptance criteria, or prove that any phase is complete.
 

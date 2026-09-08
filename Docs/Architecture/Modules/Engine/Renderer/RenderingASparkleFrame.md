@@ -6,7 +6,7 @@
 
 **Responsibility:** explain the intent, ownership, data flow, stage order, branches, lifetime, failure boundaries, and tradeoffs of one Sparkle render frame; feature-specific algorithms and limits belong to the linked dossiers
 
-**Current readiness:** **43/100** across the tracked Renderer portfolio — the described source path is broad, but every candidate verification and delivery gate remains open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **36/100** across the tracked Renderer portfolio — the described source path is broad, four admitted first-release features are absent, and every candidate verification and delivery gate remains open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## The Frame In One Sentence
 
@@ -33,7 +33,7 @@ flowchart TD
     Present -. completion observed next frame .-> Settle
 ```
 
-The arrows describe semantic dependency and completion-driven lifetime. Declaration order helps readers, but the frame-graph compiler owns executable ordering, queue assignment, barriers, aliasing, recording chunks, and submission batches from resource-use declarations. Color grading, chromatic aberration, frame generation, and volumetric lighting do not enter this path today.
+The arrows describe semantic dependency and completion-driven lifetime. Declaration order helps readers, but the frame-graph compiler owns executable ordering, queue assignment, barriers, aliasing, recording chunks, and submission batches from resource-use declarations. Color grading and chromatic aberration do not enter this path today but are first-release targets; frame generation and volumetric lighting remain absent and excluded.
 
 ## Stage-by-Stage Frame
 
@@ -81,7 +81,7 @@ This is not one fixed list of GPU commands. The topology is specialized before c
 | Direct lighting | four analytic light kinds; Inline/Pipeline shadow visibility | Produces direct diffuse/specular/subsurface lobes. Shadow traversal resolves independently from GBuffer traversal. |
 | Indirect lighting | ReSTIR indirect; reference indirect | Produces indirect diffuse/specular lobes through inline secondary rays. Sky is an environment/background boundary, not broad IBL or atmosphere support. |
 | Volumetric lighting | none | No media/fog representation, scattering/transmittance integration, atmosphere/aerial-perspective pass, product, selector, or history enters the frame. |
-| Deferred decals | none | No decal data or post-GBuffer composition stage exists. The feature-local target architecture is not current frame behavior. |
+| Deferred decals | none | No decal data or post-GBuffer composition stage exists. The feature-local target architecture is mandatory first-release work, not current frame behavior. |
 | GBuffer/shadow traversal | Automatic; Inline; Pipeline | Automatic resolves capability and readiness before graph construction. Strict modes must not silently become the other traversal frontend. |
 | TLAS | Classic; capability/provider-gated partitioned | Both are built from shared prepared-scene identity. Current PTLAS policy remains a narrow subset documented in the ray-tracing dossier. |
 | Ray reconstruction | Off; NVIDIA DLSS Ray Reconstruction | Only participates in the ReSTIR lighting route. A successful reconstruction supplies resolved output; otherwise normal upscaling owns resolution conversion. |
@@ -205,8 +205,9 @@ This contract is **defined but unproved**. Completion requires every `AC-FRM-*` 
 | Exposure and adaptation | [Exposure](Features/PostProcessing/DisplayPipeline/Exposure.md) |
 | Image reconstruction, upscaling, and provider lifetime | [Image Reconstruction and Upscaling](Features/PostProcessing/ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md) |
 | Tone mapping | [Tone Mapping](Features/PostProcessing/DisplayPipeline/ToneMapping.md) |
-| Explicit absence of color grading | [Color Grading](Features/PostProcessing/DisplayPipeline/ColorGrading.md) |
-| Explicit absence of chromatic aberration | [Chromatic Aberration](Features/PostProcessing/DisplayPipeline/ChromaticAberration.md) |
+| Color-grading target and current absence | [Color Grading](Features/PostProcessing/DisplayPipeline/ColorGrading.md) |
+| Chromatic-aberration target and current absence | [Chromatic Aberration](Features/PostProcessing/DisplayPipeline/ChromaticAberration.md) |
+| HDR10-output target and current absence | [HDR Display Output](Features/PostProcessing/DisplayPipeline/HDRDisplayOutput.md) |
 | Explicit absence of frame generation | [Frame Generation](Features/PostProcessing/ReconstructionAndGeneration/FrameGeneration.md) |
 | Debug handoff, encoding, and output targets | [Presentation and Output](Features/PostProcessing/DisplayPipeline/PresentationAndOutput.md) and [Debug Views](Features/DebugViews/README.md) |
 | Host UI and editor viewport composition | [UI and Viewport Composition](Features/ViewportAndDiagnostics/UiAndViewportComposition.md) |

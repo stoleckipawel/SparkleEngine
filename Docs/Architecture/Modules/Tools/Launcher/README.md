@@ -2,7 +2,7 @@
 
 **Status:** capability snapshot; current, but not workflow success or distribution evidence
 
-**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; Launcher public contracts, planners/executors, Qt GUI, shell path, capability graph, dependencies, level catalog, process handoff, and CMake membership inspected; evidence `S` only
+**Snapshot:** 2026-09-08 at committed `master` revision `ffe60e3a`; Launcher public contracts, planners/executors, Qt GUI, shell path, capability graph, dependencies, level catalog, state paths, process handoff, clean containment, and CMake membership inspected; evidence `S` only
 
 **Scope:** repository discovery, toolchain/dependency readiness, configure/build, cooking, content acquisition, running products, cleaning, quick start, operation history, cancellation, and GUI/shell access
 
@@ -75,6 +75,34 @@ Launcher is a capability planner and operation host. It is not a package manager
 ## Vertical Quick-Start Trace
 
 Launcher discovers repository/content -> loads settings/catalog -> capability registry evaluates requested `levels.run` -> if host/dependency/workspace/content/cook prerequisite is missing it returns one concrete operation -> user executes it in a scoped background task -> planner revalidates inputs/readiness immediately before each destructive/process step -> child output and exit status update activity -> downstream capability IDs are invalidated -> resolution repeats until `levels.run` launches the editor/runtime child.
+
+## `FCR-PROD-03` Launcher Contract
+
+Launcher is **Developer-only** and must remain an optional frontend over the source-owned operations. It is not shipped, cannot be a runtime prerequisite, and cannot become the package-policy owner.
+
+| ID | Binary acceptance criterion |
+| --- | --- |
+| `AC-PROD03-01` | From a documented repository root, the GUI and shell route discover the exact source/toolchain/project state, identify Developer-only status, and produce the same typed operation request/result for equivalent sync/configure/build/cook/run/clean intent. |
+| `AC-PROD03-02` | Readiness distinguishes ready, missing, stale, unsupported, unavailable, failed, cancelled, timed out, skipped, and missing-artifact states; success requires zero exit plus every operation-specific final artifact/consumer oracle. |
+| `AC-PROD03-03` | Run follows the final `ShowcaseEditor`/`ShowcaseRuntime` child through requested-level activation or actionable failure; Launcher process creation/PID/exit alone is never success. |
+| `AC-PROD03-04` | Cancellation and close settle the owned process tree/task scope once within budget, retain the final log/result, preserve the prior accepted products, and permit a clean retry. |
+| `AC-PROD03-05` | Clean/force-recook previews canonical contained targets and byte/file counts, requires explicit confirmation, honors preserved paths, and changes no source or per-user runtime state. |
+
+| ID | Cause/injection, safe result, and affected criterion |
+| --- | --- |
+| `FM-PROD03-01` | Remove each required tool/SDK or expected output. The capability graph must name the missing owner and refuse dependent work; warning text, skipped work, or an old artifact cannot satisfy `AC-PROD03-02`. |
+| `FM-PROD03-02` | Start a child that exits, fails activation, or hands off to another process. Launcher follows the authoritative descendant/product log and reports failure unless the requested active identity is observed (`AC-PROD03-03`). |
+| `FM-PROD03-03` | Cancel during download/build/cook/run and close during cancellation. Descendants settle, previous accepted output remains, and exactly one Cancelled/Failed result is retained (`AC-PROD03-04`). |
+| `FM-PROD03-04` | Add source/sentinel/reparse/preserved/locked paths around a clean target. Path escape or source mutation is severity-critical; partial deletion must report failure (`AC-PROD03-05`). |
+| `FM-PROD03-05` | Run equivalent GUI/shell requests with Unicode/spaces and stale settings. Divergent command semantics/artifacts or environment-only repair fails `AC-PROD03-01`. |
+
+| Check | Claims falsified | Smallest route and fixed oracle |
+| --- | --- | --- |
+| `CHK-PROD03-01` | `AC-PROD03-01`, `AC-PROD03-02`; `FM-PROD03-01`, `FM-PROD03-05` | Use GUI and `--dry-run`/`--run` against the same disposable repository states, then compare typed plan, requiredness, command, effects, final category, and artifacts for normal, missing-tool, stale, Unicode, and missing-artifact cases. |
+| `CHK-PROD03-02` | `AC-PROD03-03`, `AC-PROD03-04`; `FM-PROD03-02`, `FM-PROD03-03` | Launch one requested level, follow child/handoff/activation identity, then inject early exit and cancel each external-operation class. Process-tree, operation-result, log, artifact hashes, and settlement time are the oracle. |
+| `CHK-PROD03-03` | `AC-PROD03-05`; `FM-PROD03-04` | Execute preview and confirmed clean/force recook in a disposable repository with containment fixtures. Diff the complete filesystem; only the exact approved roots may change and incomplete cleanup must fail. |
+
+Candidate results belong in `FCR-PROD-03`; source presence does not pass these checks.
 
 ## Explicit Non-Capabilities And Risks
 

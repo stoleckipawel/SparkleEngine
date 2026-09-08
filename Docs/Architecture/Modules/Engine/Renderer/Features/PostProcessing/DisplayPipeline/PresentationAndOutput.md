@@ -4,9 +4,9 @@
 
 **Verified:** 2026-09-06 against source revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
-**Scope:** `REN-POST-08` through `REN-POST-10`; debug-to-presentation handoff, output encoding, back-buffer copy, viewport-product publication, and the explicit absence of HDR-display output
+**Scope:** `REN-POST-08` and `REN-POST-10`; debug-to-presentation handoff, current SDR output encoding, back-buffer copy, and viewport-product publication. `REN-POST-09` HDR output has its own dossier.
 
-**Current readiness:** **45/100** for current SDR output; HDR display output is **0/100**. Encoding/format, resize/DPI, capture interpretation, backend present, and artifact proof remains open. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **45/100** for current SDR output. [HDR Display Output](HDRDisplayOutput.md) is a separately tracked first-release target at **0/100**. Encoding/format, resize/DPI, capture interpretation, backend present, and artifact proof remains open. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## At A Glance
 
@@ -16,7 +16,7 @@
 | game/host back buffer | encoded output is copied into the acquired presentation target | RHI owns acquire/present mechanics and format capability |
 | editor viewport | final color becomes a typed viewport product and registered texture generation | product/generation must match the UI packet and viewport |
 | debug result | shares the common exposure/tone/encode chain today | exact/bounded diagnostics can be distorted; target architecture remains unimplemented |
-| HDR display | absent | no format/color-space negotiation, metadata, display policy, or evidence |
+| HDR display | separately admitted target, currently absent | [HDR Display Output](HDRDisplayOutput.md) owns format/color-space negotiation, metadata, display policy, fallback, and evidence |
 
 This stage is the semantic handoff from Renderer image processing to an external consumer. A visible image is not enough: the destination, encoding, extent, alpha, frame, viewport, and generation must all identify the product that was actually published.
 
@@ -38,7 +38,7 @@ ResolvedSceneColor
 | --- | --- | --- |
 | Debug handoff | Lit or one of 15 diagnostic modes | [Debug Views](../../DebugViews/README.md) owns modes/products; current diagnostics still enter the common exposure/tone/output chain |
 | Output encoding | Automatic from output format, Linear, sRGB shader encoding | writes the linear counterpart of the presentation format before copy/publication |
-| HDR display | none | no PQ, scRGB, HDR10 metadata, display-nit contract, or HDR swapchain negotiation |
+| HDR display | no current route | mandatory HDR10 target and SDR fallback are defined in [HDR Display Output](HDRDisplayOutput.md) |
 
 The current debug handoff makes `REN-POST-10` Partial: bounded, false-color, and already-preview-mapped diagnostics can be changed by exposure/tone/encoding. The [Debug View Presentation Architecture](../../DebugViews/PresentationArchitecture.md) defines a target scene-referred versus exact display-linear split; source does not yet implement it.
 
@@ -62,7 +62,7 @@ The current debug handoff makes `REN-POST-10` Partial: bounded, false-color, and
 - `AC-OUT-02` — the output-encoding target uses the required linear-format counterpart and the final copy/publication preserves channel order, alpha policy, dimensions, and viewport rectangle.
 - `AC-OUT-03` — viewport 0 reaches the imported presentable back buffer; nonzero viewports publish generation-bound final color and requested depth/normal products without cross-viewport or stale-generation reuse.
 - `AC-OUT-04` — resize, minimize/restore, output-format change, viewport destruction/recreation, and scene reload rebuild/invalidate the right products and never present a stale prior image as current.
-- `AC-OUT-05` — unsupported PQ/scRGB/HDR10/display-nit/HDR-swapchain requests remain explicitly unavailable; Linear encoding is not advertised as HDR display support.
+- `AC-OUT-05` — SDR/Linear encoding is never advertised as HDR display support; HDR requested/active/fallback behavior delegates to `AC-HDR-*` and cannot bypass the HDR dossier.
 - `AC-OUT-06` — current debug modes are described and captured as passing through the common tone/output chain until the target exact-presentation contract is implemented.
 - `AC-OUT-07` — D3D12 and Vulkan decoded back-buffer/offscreen products agree with the numerical oracle and produce no uncategorized native presentation/format validation issue.
 
@@ -74,16 +74,16 @@ The current debug handoff makes `REN-POST-10` Partial: bounded, false-color, and
 | `FM-OUT-02` | stale viewport/product generation after resize/recreate | product/draw/capture is refused or retired; stale image is not current output | `CHK-OUT-02` |
 | `FM-OUT-03` | minimize/zero extent or unavailable back buffer | no out-of-bounds dispatch/copy occurs; recovery rebuilds on valid extent | `CHK-OUT-02` |
 | `FM-OUT-04` | NaN/Inf/extreme display-linear input or double encoding | numerical check exposes the declared policy or fails the candidate | `CHK-OUT-01` |
-| `FM-OUT-05` | HDR display setting/claim introduced without complete contract | selector/source/package audit rejects the support claim | `CHK-OUT-03` |
+| `FM-OUT-05` | SDR/Linear route or partial HDR plumbing is advertised as complete HDR | cross-dossier selector/source/package audit rejects the support claim | `CHK-OUT-03` |
 
 | Check | Exercise and oracle | Covers |
 | --- | --- | --- |
 | `CHK-OUT-01` | shader/copy readback of known ramps over encoding × output-format × alpha/extreme-value cells | `AC-OUT-01`, `AC-OUT-02`, `AC-OUT-07`; `FM-OUT-01`, `FM-OUT-04` |
 | `CHK-OUT-02` | swapchain and two offscreen viewports through resize, zero extent, minimize/restore, format change, destruction/recreation, reload, and capture | `AC-OUT-03`, `AC-OUT-04`; `FM-OUT-02`, `FM-OUT-03` |
-| `CHK-OUT-03` | inspect selectors, RHI swapchain formats/metadata, package/runtime UI, debug captures, and documentation for HDR/exact-debug claims | `AC-OUT-05`, `AC-OUT-06`; `FM-OUT-05` |
+| `CHK-OUT-03` | inspect selectors, package/runtime UI, debug captures, and documentation for exact-debug and SDR claims; route all HDR state/evidence to `CHK-HDR-*` | `AC-OUT-05`, `AC-OUT-06`; `FM-OUT-05` |
 | `CHK-OUT-04` | paired D3D12/Vulkan presentation/offscreen run with decoded artifacts and native validation | `AC-OUT-02`, `AC-OUT-03`, `AC-OUT-07` |
 
-This contract is **defined but unproved**. Passing SDR encoding/publication does not close `REN-POST-09` or the target `REN-POST-10` exact-presentation work.
+This contract is **defined but unproved**. Passing SDR encoding/publication does not close separate `REN-POST-09`/`FCR-REN-26` HDR output or the target `REN-POST-10` exact-presentation work.
 
 ## Primary Source Routes
 

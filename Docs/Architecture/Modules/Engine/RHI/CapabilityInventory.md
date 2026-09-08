@@ -177,7 +177,7 @@ Ray tracing is not one boolean. The current contract separates acceleration stru
 | `RHI-PRES-02` | VSync | Implemented path | Runtime setting reaches the presentation path. Tearing/present-mode behavior still needs backend/device evidence. | `S` | Pending |
 | `RHI-PRES-03` | Frame pacing | Implemented path | D3D12 exposes a frame-latency waitable object; Vulkan exposes acquisition throttling in its capability surface. | `S` | Pending |
 | `RHI-PRES-04` | Back-buffer commands | Implemented path | Back-buffer resource/RTV, format, viewport/scissor, transition, submit, and present are available to Renderer. | `S` | Pending |
-| `RHI-PRES-05` | HDR presentation | Not found | The inspected public presentation/output contract did not establish HDR10, PQ, scRGB, display metadata, or HDR swapchain negotiation. | `S` | Pending |
+| `RHI-PRES-05` | HDR presentation | Not found | The inspected source does not establish HDR10 format/color-space/metadata or swapchain negotiation. Renderer [HDR Display Output](../Renderer/Features/PostProcessing/DisplayPipeline/HDRDisplayOutput.md) defines the admitted target and owns `FCR-REN-26`; RHI owns native mechanics. | `S` | First-release target; Blocked |
 
 ## Diagnostics, Capture, And External Interop
 
@@ -200,7 +200,7 @@ Ray tracing is not one boolean. The current contract separates acceleration stru
 - Fixed-capacity material descriptors are not an engine-wide bindless resource model.
 - Native RT pipeline support does not cover every ray-using Renderer effect.
 - The RHI has procedural/callable/advanced stage vocabulary beyond current Renderer production paths. Such vocabulary is not a shippable feature.
-- No current HDR presentation contract was found.
+- No current HDR presentation implementation was found; the admitted HDR10 contract is owned by Renderer and requires both RHI backends.
 - Swapchain resize/recreation is implemented; whole-device recreation after D3D12 removal or Vulkan device loss is not. DRED/result diagnostics are not recovery.
 - Rich partitioned-TLAS operation vocabulary exceeds the current Renderer strategy. Advertise only the actually selected and exercised subset.
 

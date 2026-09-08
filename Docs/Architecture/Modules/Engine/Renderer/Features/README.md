@@ -6,7 +6,7 @@
 
 **Authority boundary:** these dossiers own how Renderer features work, why their boundaries exist, how their stages interact, and what feature-local criteria, controlled failures, checks, and completion definition apply. [Capability Inventory](../CapabilityInventory.md) owns the compact implementation-state/evidence ledger; [Feature Selector Catalog](RuntimeConfiguration/FeatureSelectorCatalog.md) owns exact reachability; [Acceptance](../../../../../Acceptance/README.md) owns cross-feature reports, workload/release gates, and actual candidate verdicts. Context repeated in a dossier explains its feature and does not independently promote the corresponding row.
 
-**Current readiness:** **43/100** across 22 tracked Renderer families — source implementation/integration is substantial; candidate verification and delivery/adoption are `0`. See [Current Feature Readiness](../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **36/100** across 26 tracked Renderer families — source implementation/integration is substantial, four admitted release features are absent, and candidate verification/delivery/adoption are `0`. See [Current Feature Readiness](../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## At A Glance
 
@@ -176,10 +176,11 @@ This table assesses whether the feature-local **definition** is complete enough 
 | Exposure | Defined, unproved | Execute the stable metering, finite-value, adaptation, viewport, reset, and async-scheduling contract. |
 | Image reconstruction/upscaling | Defined, unproved | Execute the stable provider-readiness, requested/active, input, reset, fallback, backend, package, quality, and performance contract. |
 | Tone mapping | Defined, unproved | Execute the stable numerical-curve, finite-value, alpha, exposure-interaction, and color-domain contract for all three operators. |
-| Color grading | Defined negative boundary | Execute `REN-E26`; any implementation needs owned transform/LUT authoring, color-space, parameter, editor, and proof contracts. |
-| Chromatic aberration | Defined negative boundary | Execute `REN-E27`; any implementation needs owned lens model, placement, sampling, viewport, identity, artifact, and cost contracts. |
+| Color grading | Defined first-release target; currently absent | Execute `DSP-5`, `AC/FM/CHK-CGR-*`, and `REN-E26`; do not award readiness before owned controls/LUT, color-domain, editor, backend, package, and proof routes exist. |
+| Chromatic aberration | Defined first-release target; currently absent | Execute `DSP-6`, `AC/FM/CHK-CHR-*`, and `REN-E27`; do not award readiness before the bounded placement, sampling, viewport, identity, artifact, and cost contract passes. |
 | Frame generation | Defined negative boundary | Execute `REN-E28`; do not confuse Reflex/PCL latency markers, temporal upscaling, or Ray Reconstruction with generated frames. |
-| Presentation/output | Defined, unproved | Execute the stable encoding, format, HDR rejection, viewport-product, resize, and numerical contract; keep Tone Mapping and Debug Views separate. |
+| SDR presentation/output | Defined, unproved | Execute the stable encoding, format, viewport-product, resize, and numerical contract; keep Tone Mapping, HDR, and Debug Views separate. |
+| HDR10 display output | Defined first-release target; currently absent | Execute `DSP-7`, `AC/FM/CHK-HDR-*`, and `REN-E34` across Renderer transform, RHI activation/metadata, UI, fallback, transitions, paired backends, hardware, package, and evidence. |
 | UI/viewport composition | Defined, unproved | Execute the stable packet, blend/color/DPI, generation, texture-lifetime, resize, and controlled-failure contract. |
 | Latency coordination | Defined, unproved | Execute `AC-LAT-*`/`FM-LAT-*` for six-marker identity/order, PCL/Reflex readiness, no-op cells, failure/shutdown, 32-bit token narrowing, and measured-benefit separation. |
 | Debug Views | Defined, unproved | Use [Acceptance](DebugViews/Acceptance.md); current result remains blocked until its checks run. |

@@ -2,7 +2,7 @@
 
 **Status:** dated assessment; strategy and refactoring decision brief
 
-**Current feature readiness:** **Not graded by this assessment.** Repository quality is not interchangeable with feature completion; use the current **43/100** portfolio projection in [Current Feature Readiness](../../Acceptance/CurrentReadiness.md) for implementation/evidence state.
+**Current feature readiness:** **Not graded by this assessment.** Repository quality is not interchangeable with feature completion; use the current **40/100** portfolio projection in [Current Feature Readiness](../../Acceptance/CurrentReadiness.md) for implementation/evidence state.
 
 **Responsibility:** assess how to preserve current capabilities while reducing structural complexity and improving repository credibility
 

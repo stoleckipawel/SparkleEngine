@@ -15,7 +15,8 @@
 | How many final image paths exist? | One ordered path from scene-linear color to one resolved, tone-mapped, encoded current-frame output. |
 | Which reconstruction exists? | Linear reconstruction plus capability-gated NVIDIA DLSS Super Resolution and Ray Reconstruction routes. |
 | Which presentation transforms exist? | Exposure, selectable tone mapping, and SDR-oriented output encoding/publication. |
-| Which commonly expected features are absent? | Color grading, chromatic aberration, frame generation, HDR display output, dynamic resolution, Renderer MSAA, and standalone TAA/FXAA/SMAA. |
+| Which first-release features are absent? | Color grading, chromatic aberration, and HDR10 display output are admitted mandatory targets at 0/100. |
+| Which expected features remain excluded? | Frame generation, dynamic resolution, Renderer MSAA, and standalone TAA/FXAA/SMAA. |
 | What is the central risk? | Extent, history, provider, debug, color-domain, and output identity can disagree even when each stage exists in isolation. |
 
 Read the family in execution order below. A neighboring stage never grants another feature: latency markers are not frame generation, tone curves are not color grading, and temporal jitter is not a complete anti-aliasing product.
@@ -29,13 +30,15 @@ SceneColor at render extent
   -> Exposure measurement/history
   -> optional Ray Reconstruction
   -> Upscaling when reconstruction did not produce ResolvedSceneColor
+  -> Color Grading [first-release target; currently absent]
   -> optional Debug View replacement
-  -> Tone Mapping
-  -> Output Encoding
+  -> target-specific Tone/Gamut Mapping [SDR current; HDR10 target absent]
+  -> Chromatic Aberration [first-release target; currently absent]
+  -> SDR Encoding or HDR10 PQ [HDR currently absent]
   -> back-buffer copy or viewport product
 ```
 
-Color grading, chromatic aberration, and frame generation do not enter this path today. Their documents are negative capability boundaries so SDK presence, tone-mapper curves, temporal upscaling, or Reflex latency markers cannot be mistaken for those features.
+Color grading, chromatic aberration, HDR10 output, and frame generation do not enter the current source path. The first three are mandatory first-release work packages with full target/acceptance contracts; frame generation remains excluded. Their current negative boundaries prevent SDK presence, tone curves, 10-bit formats, temporal upscaling, or Reflex markers from being mistaken for implementation.
 
 ## Folder Map
 
@@ -52,9 +55,10 @@ Color grading, chromatic aberration, and frame generation do not enter this path
 | Image reconstruction and upscaling | `REN-POST-04` through `REN-POST-06` | Linear implemented; NVIDIA providers capability-gated; proof open | [Image Reconstruction and Upscaling](ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md) |
 | Resolution, sampling, and anti-aliasing | `REN-RESO-01` through `REN-RESO-07` plus shared `REN-TEMP-*`/provider boundaries | output/render extent and single-sample/Halton path implemented; MSAA, standalone post AA, and dynamic resolution not found | [Resolution, Sampling, and Anti-Aliasing](ReconstructionAndGeneration/ResolutionSamplingAndAntiAliasing.md) |
 | Tone mapping | `REN-POST-07` | Three selectable operators; proof open | [Tone Mapping](DisplayPipeline/ToneMapping.md) |
-| Output and presentation | `REN-POST-08` through `REN-POST-10` | SDR-oriented encoding/publication implemented; HDR absent; exact debug presentation partial | [Presentation and Output](DisplayPipeline/PresentationAndOutput.md) |
-| Color grading | `REN-POST-11` | Not found | [Color Grading](DisplayPipeline/ColorGrading.md) |
-| Chromatic aberration | `REN-POST-12` | Not found | [Chromatic Aberration](DisplayPipeline/ChromaticAberration.md) |
+| SDR output and presentation | `REN-POST-08`, `REN-POST-10` | SDR-oriented encoding/publication implemented; exact debug presentation partial | [Presentation and Output](DisplayPipeline/PresentationAndOutput.md) |
+| HDR display output | `REN-POST-09` | First-release target; implementation not found | [HDR Display Output](DisplayPipeline/HDRDisplayOutput.md) |
+| Color grading | `REN-POST-11` | First-release target; implementation not found | [Color Grading](DisplayPipeline/ColorGrading.md) |
+| Chromatic aberration | `REN-POST-12` | First-release target; implementation not found | [Chromatic Aberration](DisplayPipeline/ChromaticAberration.md) |
 | Frame generation | `REN-POST-13` | Not found; Reflex is not frame generation | [Frame Generation](ReconstructionAndGeneration/FrameGeneration.md) |
 
 ## Ordering And Ownership Invariants
@@ -63,7 +67,7 @@ Color grading, chromatic aberration, and frame generation do not enter this path
 - Ray Reconstruction and upscaling are mutually exclusive producers of `ResolvedSceneColor`; the frame does not intentionally resolve twice.
 - Output extent, provider-resolved render extent, temporal sampling, and attachment sample count remain separate concepts. [Resolution, Sampling, and Anti-Aliasing](ReconstructionAndGeneration/ResolutionSamplingAndAntiAliasing.md) owns their combination and negative-mode boundary.
 - Debug visualization may replace resolved color before the common tone/output path, but [Debug Views](../DebugViews/README.md) owns visualization semantics.
-- Tone mapping owns HDR scene-referred to display-linear mapping. It does not own color grading, output transfer encoding, or publication.
+- Color grading is admitted before tone mapping in scene-referred space; tone mapping owns the following scene-referred-to-display-linear mapping. Neither owns output-device encoding or publication.
 - Presentation owns output encoding and destination publication. [UI and Viewport Composition](../ViewportAndDiagnostics/UiAndViewportComposition.md) happens after graph execution and is not a post-processing effect.
 - Frame generation would create additional presented frames and therefore requires pacing, latency, UI, swapchain, and provenance contracts beyond ordinary upscaling. No such owner exists today.
 
@@ -72,15 +76,15 @@ Color grading, chromatic aberration, and frame generation do not enter this path
 - Requested and active provider/state must be distinguishable; unsupported external paths may not remain advertised as active.
 - Extent, view, scene, provider, shader, and graph-generation changes must invalidate only the affected temporal state and retire old resources after their queue tokens complete.
 - Every stage must state its input/output color domain, extent, format, alpha behavior, history, and failure result. A stage with no current implementation stays explicitly unavailable.
-- `REN-E13` through `REN-E18` and `REN-E26` through `REN-E28` own the currently planned evidence. Candidate verdicts belong in [Feature Completion Reports](../../../../../../Acceptance/FeatureCompletionReports.md).
-- The implemented child dossiers define stable feature-local `AC-*`, `FM-*`, and `CHK-*` criteria under `INV-009`; those criteria are unproved until candidate execution. The negative dossiers define current absence rather than implementation plans.
+- `REN-E13` through `REN-E18`, `REN-E26` through `REN-E28`, and `REN-E34` own the currently planned post-processing evidence. Candidate verdicts belong in [Feature Completion Reports](../../../../../../Acceptance/FeatureCompletionReports.md).
+- Every child dossier defines stable feature-local `AC-*`, `FM-*`, and `CHK-*` criteria under `INV-009`; those criteria are unproved until candidate execution. Admitted target dossiers define both the required destination and verified current absence; plan phases own execution order.
 
 ## Family-Level Completion Contract
 
 - `AC-POST-01` — exactly one stage owns each transition in the documented order, and every edge records input/output color domain, extent, format, alpha, identity, and history behavior.
 - `AC-POST-02` — every reachable combination of exposure, reconstruction/upscaler, debug mode, tone mapper, encoding, output target, and backend either produces the one declared result or exposes a documented unavailable/fallback state.
 - `AC-POST-03` — scene/view/extent/provider/shader/topology changes reset only affected temporal stages, never bind mixed generations, and retire old resources after queue completion.
-- `AC-POST-04` — absent color grading, chromatic aberration, frame generation, and HDR-display features remain absent from selectors, graph passes, shader/provider registration, UI, and product claims.
+- `AC-POST-04` — admitted grading, chromatic, and HDR stages satisfy their child contracts before becoming selectable or claimed; excluded frame generation and AA modes remain absent from selectors, graph passes, registration, UI, and product claims.
 
 | Failure ID | Injection or cause | Required safe behavior | Detecting check |
 | --- | --- | --- | --- |
