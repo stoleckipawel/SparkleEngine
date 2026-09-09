@@ -79,6 +79,8 @@ Use a consistent replacement vocabulary while drafting:
 | `{{PERSONA}}` | Intended developer, author, operator, player, service, or downstream system. |
 | `{{PRODUCT}}` | Exact semantic output or observable outcome. |
 
+The scaffolds also use self-describing uppercase tokens such as `{{SAFE_STATE}}` and `{{MINIMUM_FALSIFIER}}`; these are author prompts, not a closed data schema. Replace them with concrete prose, identifiers, values, and relative links rather than preserving the token names as feature vocabulary.
+
 Before handoff, a repository search for `{{`, `}}`, `TBD`, `TODO`, `should work`, and unowned `Unknown` must either return zero or identify an explicit blocked decision with an owner and gate.
 
 ## Instantiate In This Order
@@ -95,6 +97,28 @@ Before handoff, a repository search for `{{`, `}}`, `TBD`, `TODO`, `should work`
 10. Build a dependency-ordered plan whose stages produce reviewable vertical slices. Every stage names prerequisites, deletions, non-goals, risks, exit evidence, stop conditions, and a copy-ready prompt.
 11. Map every included feature statement and failure to an acceptance criterion and a check capable of exposing the defect. Predeclare thresholds, samples, matrices, and stop rules before candidate results exist.
 12. Add the nearest-index route, run link/anchor/placeholder/UTF-8/whitespace checks, inspect the scoped diff, and report precisely which executable checks were not run.
+
+## Ready-To-Use Package Authoring Prompt
+
+Use this prompt to populate a new feature package. Replace its placeholders before execution.
+
+```text
+Create or materially refresh the feature documentation package for {{FEATURE_NAME}} at {{FEATURE_PATH}}. This is a research, discovery, architecture, acceptance, UX, and staged-planning task; do not change production code unless the request separately authorizes implementation.
+
+Apply AGENTS.md, Docs/README.md, Docs/Engineering/Workflow/ChangeIntegration.md, Docs/Engineering/Workflow/ChangeLifecycle.md, Docs/Engineering/Workflow/DocumentationOrganization.md, Docs/Engineering/Workflow/CapabilityReview.md, and Docs/Engineering/Workflow/Templates/FeatureDeliveryPackage.md. Select every additional applicable foundation, module, and verification document from the Engineering task map.
+
+Inspect first: git status and revision; the nearest Architecture owner and indexes; every current selector/caller, producer, consumer, mutable owner, lifetime, build/generated membership, backend/mode/profile/content path, result, failure, test/evidence route, and stale or competing name. Preserve unrelated dirty work. Distinguish committed baseline from concurrent changes.
+
+Research current local implementation before external precedent. Use original papers/specifications, official vendor documentation, and revision-pinned primary source repositories. For every source record the observed fact, permitted transfer, forbidden inference, exact revision/date, and license/provenance action. Research is not local implementation or acceptance proof.
+
+Choose the smallest honest set of feature-local documents from README.md, Discovery.md, Research.md, Semantics.md, ExecutionArchitecture.md, UserExperience.md, and Plan.md. Keep one owner per current fact, decision, semantic rule, architecture contract, UX behavior, plan item, and result; link instead of copying. Do not exceed seven direct Markdown siblings.
+
+Populate the package end to end: plain-language product and non-promises; revision-pinned current route; complete feature/support matrix; blocking discovery questions and risks; exact semantics, units, edge/invalid behavior, and reference procedure where applicable; ownership, identity, lifetime, state, execution, capacity, backend/mode, failure/recovery, security/package, and clean-break architecture; intended first-use and automation experience; binary AC/FM/CHK coverage; dependency-ordered stages, estimates, deletions, non-goals, stop conditions, and copy-ready implementation prompts.
+
+NON-NEGOTIABLE: no unresolved choice that can change product scope, correctness, units, identity, ownership, lifetime, failure behavior, public UX, thresholds, budgets, evidence validity, package reachability, or architecture may be deferred into an implementation prompt. Every included surface maps to an owner, semantic disposition, stage, acceptance criterion, failure coverage, defect-detecting check, and completion-result owner. Every prompt must contain an explicit non-negotiable exit paragraph and must block rather than improvise when prerequisites are absent or contradicted.
+
+Validate local links and anchors, placeholder disposition, IDs and no-orphan traceability, direct-sibling budget, strict UTF-8, whitespace, stale paths/names, scoped diff, and git diff --check. Run no build/runtime/GPU/visual/performance/package check unless a specific documentation claim requires it. Report exact checks and limitations, and keep the first production stage BLOCKED until the accepted discovery and release prerequisites pass.
+```
 
 ## Evidence Language Used By Every File
 
