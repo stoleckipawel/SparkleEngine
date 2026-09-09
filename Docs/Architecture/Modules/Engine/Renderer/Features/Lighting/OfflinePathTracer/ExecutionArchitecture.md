@@ -4,7 +4,9 @@
 
 **Scope:** define the owner, contracts, lifetime, execution, sampling, accumulation, artifact, workflow, and clean-break boundaries for SparkleEngine's eventual offline path-traced reference
 
-**Verified:** 2026-09-09 against committed `master` revision `1ecc2d1c`; current-state statements are source inspection only
+**Authority boundary:** [Transport And Estimator](TransportAndEstimator.md) owns equations and estimator semantics, [User Experience](UserExperience.md) owns the Editor/noninteractive experience, [Discovery](Discovery.md) owns ratification, the [feature dossier](README.md) owns acceptance, and the [staged plan](Plan.md) owns delivery order
+
+**Verified:** 2026-09-09 against committed `master` revision `a91d13c5`; current-state statements are source inspection only
 
 **Current readiness:** **20/100** — the source tree has an interactive GBuffer-seeded candidate path, not the independent offline job described here. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
@@ -45,7 +47,7 @@ The completion change is therefore a clean break in authority. It may reuse inde
 
 ## Product And Mathematical Claim
 
-`PTD-00` must accept the exact equation and notation. This architecture constrains the decision to two explicit products:
+`PTD-00` must accept the exact equation, notation, decision slots, and `MATH-*` correspondence in [Transport And Estimator](TransportAndEstimator.md). This architecture constrains the decision to two explicit products:
 
 | Product | Required claim | Termination behavior | Permitted use |
 | --- | --- | --- | --- |
@@ -230,9 +232,11 @@ RandomValue = Sample(JobSeed, PixelCoordinate, SampleOrdinal, DimensionId)
 
 The sample stream is inspectable through a small deterministic dump used by analytic checks. It is not tied to a submitted general random-number test framework.
 
+The exact key/counter packing, float conversion, dimension assignment, branch behavior, replicate identity, and invalidation rule are owned by [`MATH-09`](TransportAndEstimator.md#math-09--stateless-sample-identity). A stateful or frame-index-derived generator cannot satisfy this architecture even if one fixed run repeats.
+
 ## One Semantic Integrator
 
-The estimator is one semantic contract shared by traversal frontends. A path sample owns:
+The estimator is one semantic contract shared by traversal frontends. The authoritative proposed event sequence and contribution formulas are [the reference algorithm and `MATH-*` ledger](TransportAndEstimator.md#reference-algorithm); this section owns only the state and architecture correspondence. A path sample owns:
 
 - camera ray and throughput;
 - current geometric and shading frame;
@@ -305,7 +309,7 @@ Automatic selection may choose only between already accepted routes and records 
 
 ## Workflow And Reachability
 
-The same ApplicationEditor operation serves two development-product surfaces:
+The same ApplicationEditor operation serves two development-product surfaces. [User Experience](UserExperience.md) owns their complete setup, preflight, state/action, progress, preview, recovery, accessibility, result, and first-use behavior:
 
 - an Editor workspace for selecting the current scene/camera, validating the exact domain, choosing resolution/crop/output/budgets/backend/frontend, starting work, viewing a separately labeled progressive preview plus progress/counters, requesting a checkpoint/pause, cancelling, resuming a verified checkpoint, and opening artifacts;
 - a noninteractive `ShowcaseEditor` invocation that consumes a checked-in or generated submission manifest, loads the project/level/camera through the canonical Application route, resolves the same Renderer request, returns stable exit/result categories, and is suitable for reproducible evidence runs without UI automation.
@@ -395,6 +399,8 @@ Use:
 
 - [Feature dossier and acceptance](README.md) for `OPT-FS-*`, `AC-OPT-*`, `FM-OPT-*`, `CHK-OPT-*`, and definition of done;
 - [Discovery contract](Discovery.md) for the `PTD-00` gate and evidence package;
+- [Transport And Estimator](TransportAndEstimator.md) for notation, formulas, core algorithm, PBR decisions, and mathematical failure points;
+- [User Experience](UserExperience.md) for Editor/noninteractive interaction, defaults, state actions, error presentation, artifacts, accessibility, and first-use proof;
 - [Completion study](Research.md) for NVIDIA/AMD/neutral precedent and current-source gaps;
 - [Staged implementation plan](Plan.md) for dependency order, work packages, deletions, prompts, and exit gates;
 - [Ray Tracing Execution Architecture](../../RayTracing/ExecutionArchitecture.md) for shared semantic-effect and frontend policy;

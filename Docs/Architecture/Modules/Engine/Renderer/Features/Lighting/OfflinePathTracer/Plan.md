@@ -4,9 +4,9 @@
 
 **Scope:** deliver `FCR-REN-08` end to end through one Renderer-owned offline job, one semantic path estimator, raw evidence publication, D3D12/Vulkan traversal parity, usable Editor/CLI workflows, controlled failure, and release-map adoption
 
-**Prepared:** 2026-09-09 against committed `master` revision `1ecc2d1c`; estimates are planning ranges, not schedule commitments
+**Prepared:** 2026-09-09 against committed `master` revision `a91d13c5`; estimates are planning ranges, not schedule commitments
 
-**Authority boundary:** [Execution Architecture](ExecutionArchitecture.md) owns the target design; the [feature dossier](README.md) owns `OPT-FS-*`, `AC-OPT-*`, `FM-OPT-*`, `CHK-OPT-*`, and definition of done; [Discovery](Discovery.md) owns `PTD-00`; the [completion study](Research.md) owns external precedent; this page owns delivery order, dependencies, clean breaks, estimates, prompts, and slice exit gates
+**Authority boundary:** [Transport And Estimator](TransportAndEstimator.md) owns mathematical semantics, [Execution Architecture](ExecutionArchitecture.md) owns system ownership/lifetime, [User Experience](UserExperience.md) owns the human/automation workflow; the [feature dossier](README.md) owns `OPT-FS-*`, `AC-OPT-*`, `FM-OPT-*`, `CHK-OPT-*`, and definition of done; [Discovery](Discovery.md) owns `PTD-00`; the [completion study](Research.md) owns external precedent; this page owns delivery order, dependencies, clean breaks, estimates, prompts, and slice exit gates
 
 **Current readiness:** **20/100** — plan presence adds no implementation, integration, verification, or delivery credit. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
@@ -77,7 +77,7 @@ The range is intentionally honest about math review, two APIs, two traversal fro
 
 Every implementation prompt below inherits these rules. The executing agent must:
 
-1. start at the repository root; read `AGENTS.md`, `Docs/README.md`, the selected Engineering task routes, [Execution Architecture](ExecutionArchitecture.md), [feature acceptance](README.md), [Discovery](Discovery.md), and this plan in full;
+1. start at the repository root; read `AGENTS.md`, `Docs/README.md`, the selected Engineering task routes, [Transport And Estimator](TransportAndEstimator.md), [Execution Architecture](ExecutionArchitecture.md), [User Experience](UserExperience.md), [feature acceptance](README.md), [Discovery](Discovery.md), and this plan in full;
 2. inspect `git status --short`, preserve unrelated dirty work, and inspect live owners/producers/consumers/lifetime/build membership with `rg` before editing;
 3. confirm all named prerequisite gates and prior-stage exit artifacts. If a prerequisite is absent, stale, or contradicted by code, stop and report `BLOCKED`; do not improvise around it;
 4. implement only the selected stage and defects required for its exit criteria. Do not begin later UI, general framework, performance, denoising, neural, material-system, or compatibility work;
@@ -88,6 +88,8 @@ Every implementation prompt below inherits these rules. The executing agent must
 9. do not add submitted test-only classes, fixtures, executables, files, or CMake targets. Temporary local probes are allowed only when necessary and must be removed before handoff; use existing validation routes and production diagnostics;
 10. run `architecture_boundary_check` whenever Renderer/RHI boundaries change, focused build/shader checks required by the stage, and `git diff --check`. Do not claim unrun checks passed;
 11. leave one iteration record containing gate revision, decisions, changed files, deletions, checks actually run, exact outputs/artifact links, known limitations, blockers, and the next permitted stage.
+
+Every prompt's `NON-NEGOTIABLE` paragraph is an exit gate, not motivational prose. A handoff must quote each item and attach its proof or say `BLOCKED`. “Implemented,” a clean build, a plausible image, or a manual click-through cannot substitute for that proof.
 
 If source reality proves a plan instruction wrong, correct the owning architecture/plan document in the same stage and explain the divergence. Do not preserve a bad plan through code contortions.
 
@@ -103,6 +105,8 @@ If source reality proves a plan instruction wrong, correct the owning architectu
 - Preview is a derivative of raw output and carries its raw hash; it is never the numeric comparison source.
 - A checkpoint is a verified exact prefix. A completion manifest is atomic, immutable, and written last.
 - A phase cannot close from source inspection, compilation, one beauty image, one backend, one seed, or one external renderer alone.
+- Every implemented transport term maps to one accepted `MATH-*` row and one retained defect-detecting result. No stage may silently revise a formula or decision slot.
+- Every user-visible state/action/error/artifact obeys [User Experience](UserExperience.md); UI and CLI derive from the same ApplicationEditor intent and Renderer truth.
 
 ## Stage 0 - Close Discovery And Freeze The Plan
 
@@ -113,20 +117,23 @@ Produce the exact `PTD-00` evidence package, independently review it, and reconc
 ### Work
 
 1. Re-audit the live current route, selectors, source/shader/generated/CMake membership, Scene/View ownership, RHI frontends, capture/export infrastructure, ApplicationEditor operations, package roots, and release-map requirements.
-2. Freeze `SurfaceTransportReference` and `FinitePathDiagnostic` equations, path measures, event notation, units, included/excluded `OPT-FS-*` rows, safety-ceiling behavior, and permitted oracle claims.
+2. Ratify or replace every `MATH-*` row and decision slot in [Transport And Estimator](TransportAndEstimator.md): products, equations, direction/measure notation, units/color, PBR material/normal model, light/lobe strategies, MIS, roulette, sampling, accumulation, robust rays, invalid/safety behavior, included/excluded `OPT-FS-*` rows, and permitted oracle claims.
 3. Freeze camera, geometry, texture, material, light, environment, alpha/sidedness, deformation, backend/frontend, raw output, workflow, and package matrices against `ReleaseMapSet` and public reachability.
 4. Complete the equation-to-code design for camera sampling, BSDF selection/eval/PDF, light PMF/native-to-solid-angle PDF, emission/environment MIS, delta cases, roulette, shading normals, alpha rejection, invalid values, and robust endpoints.
 5. Select the stateless sampler, dimension ledger, accumulation representation, maximum supported SPP, checkpoint layout, OpenEXR channel/schema policy, artifact hashes, budgets, and statistical protocol.
 6. Specify analytic/metamorphic fixtures, minimal event oracle, Falcor/Capsaicin/Mitsuba external interchange scenes, equivalence manifests, independent replicates, thresholds, regions, stop/escalation rules, and controlled fault injections.
 7. Record adopted/rejected NVIDIA/AMD/neutral precedents and exact source/license revisions. No copied source or redistributed asset enters by inference.
-8. Complete `AC-PTD-*`/`FM-PTD-*`/`RISK-PTD-*`/`CHK-PTD-*` traceability, clean-break deletion ledger, owner/dependency assignments, and revised implementation estimates.
-9. Obtain independent review and record `PASS` or `BLOCKED`. On `PASS`, update this plan's status and exact prerequisite revision without claiming implementation evidence.
+8. Ratify or replace [User Experience](UserExperience.md): intended personas, recommended defaults, preflight, state/action truth, progress/preview labels, pause/resume/cancel/shutdown, error/result contract, CLI/UI equivalence, accessibility, support, first-use, and Shipping exclusion.
+9. Complete `AC-PTD-*`/`FM-PTD-*`/`RISK-PTD-*`/`CHK-PTD-*` traceability, clean-break deletion ledger, owner/dependency assignments, and revised implementation estimates.
+10. Obtain independent mathematical, numerical, architecture, evidence, and first-use review and record `PASS` or `BLOCKED`. On `PASS`, update this plan's status and exact prerequisite revision without claiming implementation evidence.
 
 ### Exit gate
 
 - `AC-PTD-01` through `17` all pass at one report revision.
 - Every `PTD-Q-*` is closed by a decision/evidence result, not moved into code as an ambiguity.
 - Every included `OPT-FS-*` row has an owner, phase, defect-detecting check, budget, and external/shared-dependency oracle.
+- Every `MATH-*` row is accepted/replaced/excluded, every formula-changing slot is filled, and all hand cases plus independent math/numeric review are retained.
+- The experience contract is frozen tightly enough that Stage 8 cannot invent product labels, defaults, state actions, failure behavior, artifact precedence, accessibility, or UI/CLI equivalence.
 - The Stage 1 prompt can be executed without inventing scope, math, architecture, evidence, or ownership.
 - No implementation file changed and no plan presence is counted as readiness.
 
@@ -136,6 +143,8 @@ Produce the exact `PTD-00` evidence package, independently review it, and reconc
 Execute only Stage 0 of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Plan.md.
 
 Apply the plan's Universal Execution Contract. Do not change production code. Complete PTD-D0 through PTD-D4 and the full PTD-00 evidence package from the live repository, not from assumptions in the plan. Freeze the exact SurfaceTransportReference and FinitePathDiagnostic equations/domains; reconcile every OPT-FS row with release maps and public selectors; derive camera, BSDF, light, MIS, roulette, normal, alpha, robust-ray, sampling, accumulation, artifact, backend, workflow, and failure contracts; predeclare the oracle/statistical matrices and budgets; pin and classify all external source/license precedents; build a no-orphan traceability and clean-break ledger; and obtain an independent plan-readiness review.
+
+NON-NEGOTIABLE: ratify or replace every MATH-* row and every decision slot in TransportAndEstimator.md, with hand-worked zero/unit/delta/Jacobian/MIS/emission-hit/roulette/finite-depth/invalid/variance cases and independent mathematical plus numerical review. Ratify or replace UserExperience.md with a dry-run first-use review covering recommended defaults, preflight, every state/action, raw-versus-preview truth, pause/resume/cancel/recovery, errors, artifacts, accessibility, UI/CLI equivalence, and Shipping exclusion. A remaining inferred PDF measure, probability, unit, material-normal rule, threshold, budget, user action, or failure outcome is a BLOCKER.
 
 Use the cheapest claim-falsifying probes first. Do not build the engine or render representative maps unless a named PTD-00 criterion requires that escalation. Any unresolved item that can alter scope, estimator, architecture, ownership, evidence, or release claims keeps PTD-00 BLOCKED. End with the exact PASS/BLOCKED revision, evidence links, unrun checks, revised estimates, and whether Stage 1 is authorized. Never mark PTD-00 PASS from document completeness alone.
 ```
@@ -171,6 +180,8 @@ Implement only Stage 1 of Docs/Architecture/Modules/Engine/Renderer/Features/Lig
 
 From the live tree, introduce the smallest Renderer-owned offline request/handle/progress/result/state contracts, immutable Scene/View generation leases, canonical input digest, strict requested-versus-active capability fields, and ApplicationEditor submit/observe/cancel boundary. Remove or honestly rename every public ReferencePathTraced authority that can be mistaken for the accepted offline oracle; update all producers, consumers, generated metadata, build membership, and docs as one clean break. Do not implement the estimator, EXR writer, UI, generic job system, compatibility alias, or fallback.
 
+NON-NEGOTIABLE: the contracts must represent every accepted lifecycle state and stable terminal category needed by UserExperience.md without putting strings, widgets, files, or UI truth in Renderer. Unsupported domain/capability must reject before allocation/sample zero; requested and active values must remain distinct; cancellation and destruction must settle leases/resources within the frozen bound; no selector, progress object, or result may imply reference/convergence/completion authority that evidence has not earned.
+
 Exercise invalid scope/capability, identity mutation, state transition, cancellation, ownership/retirement, selector, and clean-break claims with focused checks; run architecture_boundary_check if the Renderer/RHI boundary changes and git diff --check. Stop on duplicate scene/job authority or any need to invent a PTD-00 decision. Handoff exact changed/deleted files, checks actually run, evidence, limitations, and Stage 2 readiness.
 ```
 
@@ -204,6 +215,8 @@ Implement only Stage 2 of Docs/Architecture/Modules/Engine/Renderer/Features/Lig
 
 Extend the existing Scene and View owners with immutable generation-stable data/views needed by the accepted offline contract; do not create an offline scene database. Implement frozen camera snapshots, independent camera/subpixel rays, the accepted stateless job/pixel/sample/dimension sampler and dimension ledger, non-overlapping committed sample ranges, and bounded analytic primary-hit/sample diagnostics. Remove all frame-index dependence from the new route and reject every unsupported reachable semantic before sample zero.
 
+NON-NEGOTIABLE: implement accepted MATH-01 and MATH-09 exactly. Film/raster/crop/filter mapping must have known-value rays and a constant-radiance integral; generator key/counter packing, integer-to-float conversion, named dimensions, replicate identity, overflow, and branch independence must be inspectable. Same `(digest, replicate, pixel, ordinal, dimension)` means the same bits across batch sizes, scheduling, restart, and accepted backends; different complete sample ranges never overlap or skip.
+
 Use analytic ray/hit expectations and deterministic repeat/prefix/reorder/restart probes. Inspect both API binding implications but do not add the RGS frontend, full BSDF/light estimator, accumulation, export, or UI. Run focused shader/build checks, ownership/retirement checks, architecture_boundary_check where applicable, and git diff --check. Stop if freezing requires copied scene truth or if any sample dimension/domain decision is still open.
 ```
 
@@ -217,7 +230,7 @@ Implement a deliberately small camera-to-emission/environment tracer whose event
 
 1. Define one Renderer shader semantic core for path state, surface event, BSDF result, light event, trace result, contribution, and diagnostics; keep API-specific types outside it.
 2. Implement accepted material decode for the minimal opaque Lambertian/emissive domain, primary/continuation trace, environment miss, emission hit, and BSDF continuation.
-3. Implement `FinitePathDiagnostic` with the exact declared path length and event record. Do not expose it as full transport.
+3. Implement the exact finite-depth termination/event state for the minimal-domain internal slice of `FinitePathDiagnostic`. Do not expose this incomplete estimator slice as the completed finite product or as full transport.
 4. Implement finite/invalid/PDF/normal/event validation with retained counters; never clamp or turn invalid values into plausible black.
 5. Add minimal raw in-memory radiance output sufficient for analytic checking. Do not yet build final accumulation or file publication.
 6. Maintain equation-to-code labels or a compact ledger so every throughput term maps to the accepted derivation.
@@ -235,6 +248,8 @@ Implement a deliberately small camera-to-emission/environment tracer whose event
 Implement only Stage 3 of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Plan.md after Stage 2 passes. Apply the Universal Execution Contract.
 
 Create one API-neutral Renderer shader semantic core for a minimal camera path over the accepted opaque Lambertian/emissive/environment domain. Include material decode, primary and continuation hits, BSDF sampling/evaluation/PDF correspondence, environment misses, emissive hits, FinitePathDiagnostic termination, exact path-event diagnostics, and explicit invalid counters. Keep traversal behind the current accepted adapter and keep output in-memory for analytic checks. Preserve equation-to-code correspondence and remove any duplicated old helper authority that the new semantic core replaces.
+
+NON-NEGOTIABLE: implement only the accepted finite-domain portions of MATH-02, MATH-03, MATH-07, and the Reference Algorithm. Every direction convention, geometric cosine, lobe-selection mass, conditional/complete PDF, emission term, and legitimate zero termination must appear once in both the event record and equation-to-code ledger. The internal FinitePathDiagnostic(D) slice must have the frozen vertex/depth meaning, no roulette, an identity-bearing finite label, and no route by which it can be presented as the completed finite product or SurfaceTransportReference before Stage 4 adds and proves the accepted NEE/MIS strategies.
 
 Run the predeclared black/environment/emissive/Lambertian/one-path/two-path analytic cases and controlled probability/cosine/emission/invalid injections. Do not add full NEE/MIS, material breadth, EXR/checkpoints, RGS, UI, denoising, or performance refactors. A plausible image is not an exit artifact. Stop on an unmatched derivation term or shared dependency with no independent oracle.
 ```
@@ -268,6 +283,8 @@ Implement only Stage 4 of Docs/Architecture/Modules/Engine/Renderer/Features/Lig
 
 Extend the one semantic core to the entire PTD-00-included reflective surface/light domain: metallic-roughness diffuse/specular sampling-evaluation-PDF correspondence, dielectric limits, analytic/emissive/environment light PMFs and measure conversions, connection visibility, NEE, the accepted MIS heuristic, emissive/environment hit weighting, delta/zero cases, compensated Russian roulette, and non-energy-changing AOV classification. SurfaceTransportReference must have no silent deterministic cap, clamp, filter, cache, biased MIP, or invalid-to-black path; a safety-depth reach is a diagnosed failure. Keep FinitePathDiagnostic separately named.
 
+NON-NEGOTIABLE: implement accepted MATH-02 through MATH-08 exactly. Continuous lobe sampling evaluates the complete BSDF and complete unconditional mixture PDF; delta events retain complete discrete event mass. Light PDF is selection PMF times conditional solid-angle density, with reviewed area and latitude-longitude Jacobians. NEE and emissive/environment-hit MIS use comparable PDFs at the correct vertex and cannot double count; the last admitted FinitePathDiagnostic vertex evaluates emission and NEE before depth termination. Roulette observes the frozen throughput/state and divides survivors by the exact survival probability. Every factor is tagged in a bounded event trace; no epsilon, saturate, max-to-zero, firefly filter, MIP, cutoff, or preview fix may alter raw expectation.
+
 Delete superseded separate direct/indirect reference estimator authority in the same clean break when all required diagnostics/consumers move. Run equation-to-code, hand-computable light/energy/PDF cases, white-furnace or accepted equivalents, independent-replicate means, and deliberate missing/duplicate probability/MIS/emission/roulette faults. Do not add excluded transmission/media/BSSRDF/spectral features, artifact workflow, RGS, UI, or speculative wavefront execution.
 ```
 
@@ -299,6 +316,8 @@ Make every included content semantic and ray endpoint reliable across the accept
 Implement only Stage 5 of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Plan.md after the full included estimator passes. Apply the Universal Execution Contract.
 
 Close every PTD-00-included geometry/material/texture semantic: alpha test, sidedness/winding, UV transforms, texture decode and color space, addressing/filter/LOD, normal maps, emission, and frozen evaluated skin/morph state when included. Derive and implement one robust primary/continuation/connection endpoint policy from Sparkle formats/transforms/compiler assumptions and geometric normals. Remove fixed MinT, normal-bias/grazing tuning, and maximum-distance authority from SurfaceTransportReference; preserve only explicitly named diagnostic controls.
+
+NON-NEGOTIABLE: close every accepted row of the PBR Material Contract and MATH-11. Geometric normal owns sides, visibility, and ray offsets; shading normal enters only through the accepted effective BSDF/model. Roughness zero follows the accepted delta limit, alpha follows one frozen cutout rule, AO never attenuates raw physical transport, and excluded subsurface/transmission/media remain unreachable. The endpoint bound includes reconstruction, transform, and traversal error and shortens both ends of connection rays; a scene-tuned epsilon is a stage failure.
 
 Run the accepted CPU/analytic decode cases and scale/translation/rotation/nonuniform-scale/shear/mirror/grazing/coplanar/thin-gap/alpha/sidedness/normal-map matrix. Retain counters for every invalid/rejected/endpoint failure. Do not expand into excluded transmission, media, BSSRDF, spectral, procedural, motion-blur, or generalized material-framework work. Stop if any release-reachable semantic remains unmatched or requires scene-specific tuning.
 ```
@@ -333,6 +352,8 @@ Implement only Stage 6 of Docs/Architecture/Modules/Engine/Renderer/Features/Lig
 
 Implement the PTD-00-selected accumulation precision/summation, exact integer count, second moment/uncertainty, overflow, complete-sample-range commit, reset and checkpoint state. Extend existing RHI readback instead of adding a capture subsystem. Add an ApplicationEditor-owned transactional artifact writer for raw EXR beauty/AOVs, counters, bounded events, hashes, checkpoint data, and a manifest written last; keep preview separate and tied to the raw hash. Review existing TinyEXR write capability, ownership, license, security, CMake and package implications before reuse. Enforce writable-root/free-space/path/overwrite/failure rules and preserve prior valid output.
 
+NON-NEGOTIABLE: implement accepted MATH-10 with the frozen numeric representation and complete-range merge order; sample count is exact integer state, and variance/standard error cannot use an unproved cancellation-prone shortcut. Raw EXR uses declared FLOAT/HALF/UINT channels, lossless policy, color metadata, finite-value validation, and unambiguous AOV units. Checkpoint and completion bind the full digest/prefix; staging cannot be discovered as complete; manifest publishes last; preview and all display transforms remain a one-way derivative of a committed raw prefix.
+
 Run higher-precision prefix/extreme-count comparisons, mutation/reset/cancel/restart/resume/overflow cases, raw lineage inspection, provenance mutation, forbidden-switch rejection, corrupt checkpoint, disk-full/access/export interruption, and atomic-publish checks. Do not add UI, RGS, adaptive stopping, denoising, or a generic asset/capture framework. Stop on any partial artifact that can appear complete or any accumulation input missing from identity.
 ```
 
@@ -364,6 +385,8 @@ Run the same semantic estimator through strict Inline and native Pipeline fronte
 Implement only Stage 7 of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Plan.md after transactional raw output passes. Apply the Universal Execution Contract and the repository ray-tracing execution architecture.
 
 Keep the estimator, sampler, material/light logic, diagnostics, and output semantic in one Renderer core. Formalize its trace/visibility adapter; add the required path/visibility ray types and checked logical scene-to-SBT mapping to the existing RayTracingShaderTablePlan; implement thin RGS/miss/any-hit/closest-hit adapters and current RHI bindings; and add strict requested-versus-active Inline/Pipeline plus D3D12/Vulkan selection with visible rejection. Do not copy the estimator, create backend-specific materials, silently fall back, or add wavefront/SER/vendor optimization.
+
+NON-NEGOTIABLE: all four accepted strict combinations execute the same Reference Algorithm, MATH-* code, sample stream, material/light data, alpha/sidedness rules, robust endpoints, accumulation semantics, counters, and artifact identity. Adapters may translate only traversal payload, binding, and command mechanism. Any backend conditional that changes contribution, PDF, random dimension, invalid disposition, or output meaning is a semantic fork and blocks the stage.
 
 Run identical analytic jobs and sample prefixes on every accepted route, compare raw values/counters within the predeclared bitwise or statistical rule, exercise robust endpoints and unsupported capability, inspect native validation and compiler identities, run architecture_boundary_check, focused shader/build checks, and git diff --check. Any unexplained validation or backend/frontend divergence blocks the stage.
 ```
@@ -397,6 +420,8 @@ Implement only Stage 8 of Docs/Architecture/Modules/Engine/Renderer/Features/Lig
 
 Build one ApplicationEditor operation surface over the existing Renderer job and use it from both an Editor Offline Path Tracer workspace and a noninteractive ShowcaseEditor manifest invocation. Expose exact scope/configuration including crop/region, input digest, requested/active route, sample prefix, progress/budgets/counters, checkpoint, cancel/resume, terminal error, and artifact navigation. Keep one active Renderer job and bounded operation queue. UI/CLI state must not duplicate Renderer truth. Keep Shipping consumer and consumer first run free of this developer tool unless the accepted release scope explicitly says otherwise.
 
+NON-NEGOTIABLE: implement UserExperience.md as a product contract, not a debug panel. The recommended path is intent-first and requires no IDE/CVar/private knowledge; Validate precedes Start; every state exposes one dominant valid action; raw candidate, preview, checkpoint, staging, completed artifact, ETA, and convergence have non-overlapping labels. Pause creates a verified exact-prefix checkpoint; panel/application close settles safely; failures show root cause, identity, why it matters, one next action, stable result category, and bounded details. Keyboard/focus/non-color/scale/locale/Unicode behavior and UI/CLI canonical-request equivalence are correctness requirements.
+
 Exercise clean discovery, invalid inputs, UI/CLI identity equivalence, progress, checkpoint, cancellation, application close, timeout, paths with spaces/non-ASCII, read-only install, support diagnostics, and output discovery. Do not add a second executable, generic task framework, developer-console dependency, or workflow-only fallback. Run focused application/editor build checks and git diff --check; report runtime surfaces not exercised.
 ```
 
@@ -429,6 +454,8 @@ Execute the complete defect-detecting oracle and failure ladder. This is the fir
 Execute only Stage 9 of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Plan.md after the UI/CLI routes pass. Apply the Universal Execution Contract. This is evidence execution and defect repair within the implemented offline path tracer; it is not permission to broaden features.
 
 Run the predeclared CHK-OPT-03 through CHK-OPT-13 matrices: analytic and metamorphic camera/hit/material/BSDF/light/estimator cases; deliberate PDF/MIS/emission/roulette/correlation/invalid/truncation faults; sample prefix/reorder/restart studies; higher-precision accumulation; robustness transforms; raw/provenance/preview lineage; minimal event oracle; semantically equivalent pinned external renderer comparisons; independent replicate convergence and regional uncertainty; strict Inline/Pipeline and D3D12/Vulkan native validation; and bounded invalid-input/capability/timeout/cancel/device/OOM/disk/export/checkpoint failures.
+
+NON-NEGOTIABLE: every accepted MATH-* row must have a seeded defect that the retained protocol detects, including wrong measure/Jacobian, missing or doubled PMF, lobe-mixture mismatch, delta MIS, emission-hit double count, roulette compensation, dimension alias, variance cancellation, and robust-endpoint failure. Each shared camera/material/light/traversal/output dependency must have an oracle outside that dependency. Execute the complete UserExperience failure/recovery matrix; success-path screenshots or responsive processes are not workflow evidence. No threshold, crop, seed, replicate, budget, or stop rule changes after candidate output is observed.
 
 Use only thresholds, scenes, repetitions, seeds, regions, budgets, and stop rules frozen before execution. Record raw artifacts, hashes, manifests, source/compiler/driver identities, injected defect and detection, exact commands, outcomes, cleanup, and limitations. Treat semantic mismatch or unexplained disagreement as Inconclusive/Blocked. Fix discovered defects at their owner and rerun only invalidated evidence; never tune output or thresholds to pass. End with a no-orphan acceptance/failure/check matrix and an exact Stage 10 readiness decision.
 ```
@@ -464,6 +491,8 @@ Finish the product boundary, produce release-map references inside the accepted 
 Execute only Stage 10 of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Plan.md after Stage 9 evidence is complete. Apply the Universal Execution Contract.
 
 Freeze every applicable release-map camera/configuration within the accepted transport domain and produce PTD-03 raw references with independent replicates, convergence/uncertainty, complete provenance, hashes, full frames/crops, artifact review, and shared-dependency oracle statements. Exercise the exact clean-machine DevelopmentEditor/package workflow, writable-root/read-only-install and spaces/non-ASCII paths, both backends, first use, support diagnostics, budgets, and controlled failures. Keep Shipping consumer free of the tool unless release scope explicitly admits it.
+
+NON-NEGOTIABLE: ship only the scope proved by the accepted TransportAndEstimator.md revision and only the workflow proved by UserExperience.md. Every public label, preset, tooltip, CLI result, manifest, artifact action, map comparison, and support message must preserve the bounded claim and raw/preview distinction. A map outside the domain, nonzero unexplained correctness counter, unresolved MATH-* defect, inaccessible first-use step, silent capability substitution, plausible partial artifact, or surviving competing reference authority blocks FCR-REN-08.
 
 Complete the clean break: remove or unambiguously relabel all old GBuffer-seeded reference producer/history/settings/shaders/selectors/docs and remove temporary probes; audit source/header/shader/generated/CMake/package/SBOM/license/docs membership and unrelated dirty work. Run CHK-OPT-01, 14, 15, 16 plus every invalidated prior check, architecture_boundary_check, focused builds/runs required by the claims, and git diff --check. File FCR-REN-08 with exact PASS/BLOCKED/EXCLUDED evidence and limitations. Do not call the feature accepted unless every applicable AC-OPT-01 through 20 passes conjunctively and the acceptance owner approves the report.
 ```

@@ -103,5 +103,5 @@ The numeric readiness score is separate from these state labels. It adds impleme
 ### Write Or Restructure Documentation
 
 1. [Documentation Organization](Engineering/Workflow/DocumentationOrganization.md)
-2. [Documentation Page Template](Engineering/Workflow/DocumentationPageTemplate.md)
+2. [Documentation Templates](Engineering/Workflow/Templates/README.md)
 3. [Capability Documentation Review](Engineering/Workflow/CapabilityReview.md) when describing a feature or selectable mode

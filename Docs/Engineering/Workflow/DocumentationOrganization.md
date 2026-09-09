@@ -37,7 +37,7 @@ Section names alone do not satisfy the page contract. A feature page is deep eno
 
 Do not fill missing depth with generic headings or repeat the same overview in every child. The family page owns shared flow and invariants; a leaf explains the behavior and proof boundary that is unique to that capability. A long ledger without an end-to-end mental model is incomplete, as is a polished overview without exact limitations and evidence.
 
-Use the [Documentation Page Template](DocumentationPageTemplate.md) when creating or materially restructuring a page.
+Use the [Documentation Page Template](Templates/Page.md) when creating or materially restructuring one page. Use the [Feature Delivery Documentation Package](Templates/FeatureDeliveryPackage.md) when a substantial feature needs independently maintained research, discovery, semantic, architecture, experience, acceptance, and staged-delivery authorities.
 
 ## Language And Presentation
 

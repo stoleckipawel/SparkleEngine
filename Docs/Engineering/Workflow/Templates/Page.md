@@ -15,7 +15,7 @@ Use only the sections that answer a real reader question. A compact feature may 
 
 **Verified:** date and revision when the page records a current-state snapshot
 
-**Current readiness:** **NN/100** (`I/R/V/D = NN/NN/NN/NN`) — plain-language current state; [score basis](../../Acceptance/CurrentReadiness.md)
+**Current readiness:** **NN/100** (`I/R/V/D = NN/NN/NN/NN`) — plain-language current state; score-basis link
 
 One or two plain-language sentences explain what result this system produces and why a reader should care.
 
@@ -89,7 +89,7 @@ Separate implemented source shape from build, runtime, visual, native-validation
 - Related concepts and next/previous reading.
 ````
 
-Before using the structure, apply the [feature depth test](DocumentationOrganization.md#feature-depth-test). Do not retain a heading with generic filler, and do not duplicate family-wide flow in every leaf; show the leaf's distinct decision, state, failure, and evidence boundary.
+Before using the structure, apply the [feature depth test](../DocumentationOrganization.md#feature-depth-test). Do not retain a heading with generic filler, and do not duplicate family-wide flow in every leaf; show the leaf's distinct decision, state, failure, and evidence boundary.
 
 ## Index-Page Variant
 

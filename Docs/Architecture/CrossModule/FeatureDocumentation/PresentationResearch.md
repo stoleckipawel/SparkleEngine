@@ -72,7 +72,7 @@ The reader should be able to stop after any layer. Orientation does not require 
 
 ## Local Adoption
 
-The binding Sparkle form of these findings is [Documentation Organization](../../../Engineering/Workflow/DocumentationOrganization.md#reader-first-page-contract). New or substantially revised pages use the [Documentation Page Template](../../../Engineering/Workflow/DocumentationPageTemplate.md). The first applied routes are [SparkleEngine At A Glance](../../EngineAtAGlance.md), [Renderer](../../Modules/Engine/Renderer/README.md), and [RHI](../../Modules/Engine/RHI/README.md).
+The binding Sparkle form of these findings is [Documentation Organization](../../../Engineering/Workflow/DocumentationOrganization.md#reader-first-page-contract). New or substantially revised pages use the [Documentation Page Template](../../../Engineering/Workflow/Templates/Page.md). The first applied routes are [SparkleEngine At A Glance](../../EngineAtAGlance.md), [Renderer](../../Modules/Engine/Renderer/README.md), and [RHI](../../Modules/Engine/RHI/README.md).
 
 ## Official Sources
 

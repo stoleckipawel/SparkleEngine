@@ -61,4 +61,4 @@ A document in this tree may prove that a source/build route exists or define wha
 
 ## Writing And Placement
 
-Use [Documentation Organization](../Engineering/Workflow/DocumentationOrganization.md) for ownership and placement, and the [Documentation Page Template](../Engineering/Workflow/DocumentationPageTemplate.md) for reader-first structure and visual guidance.
+Use [Documentation Organization](../Engineering/Workflow/DocumentationOrganization.md) for ownership and placement, and the [Documentation Templates](../Engineering/Workflow/Templates/README.md) for reader-first page or feature-package scaffolds.

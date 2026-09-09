@@ -26,6 +26,6 @@ Documentation organization and capability review join this sequence when claims,
 | [Code Review](CodeReview.md) | reviewing a changelist without changing it |
 | [Capability Documentation Review](CapabilityReview.md) | hardening a capability inventory, tracing horizontal/vertical coverage, or preparing missing evidence |
 | [Documentation Organization](DocumentationOrganization.md) | adding, splitting, moving, naming, linking, or retiring documentation |
-| [Documentation Page Template](DocumentationPageTemplate.md) | writing or restructuring an overview, feature dossier, concept page, or task guide for quick human comprehension |
+| [Documentation Templates](Templates/README.md) | writing one reader-facing page or preparing a complete research-to-delivery documentation package for a substantial feature |
 
 Return to the [Engineering task map](../README.md#choose-by-task) to select conditional module and verification rules.
