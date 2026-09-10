@@ -69,10 +69,10 @@ The absence is useful: no legacy grade, LUT cache, selector, or compatibility re
 | tone and encoding | [`Presentation.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Presentation.cpp) produces separately named `ToneMappedSceneColor` and `EncodedSceneColor` products | preserve separate scene grade, target tone/gamut, and output encoding authorities |
 | public display state | [`EngineRenderingDisplayTypes.h`](../../../../../../../../../Engine/Renderer/Public/Settings/EngineRenderingDisplayTypes.h) exposes tone, exposure, and encoding vocabulary only | add the smallest grade contract; do not imply current support |
 | settings persistence | [`EngineRenderingSettings.h`](../../../../../../../../../Engine/Renderer/Public/Settings/EngineRenderingSettings.h) is the existing display-settings route | extend it once; no grade singleton or shadow config |
-| per-view selection | [`ViewportContracts.h`](../../../../../../../../../Engine/Renderer/Public/View/ViewportContracts.h) has no grade request/result | discovery must establish global/default versus per-view precedence and identity |
+| per-view selection | [`ViewportContracts.h`](../../../../../../../../../Engine/Renderer/Public/Viewport/ViewportContracts.h) has no grade request/result | discovery must establish global/default versus per-view precedence and identity |
 | assets | the repository has generic texture/cook routes but no `.cube` semantic source/cooked contract | parser, deterministic cook, dependency discovery, and package reachability are first-class work |
 
-This trace was verified at revision `30597d7d`. It is a source snapshot, not a guarantee that concurrently changing user-owned files remain unchanged during later implementation.
+This trace was verified at committed revision `ca55e7d8`; concurrent user-owned dirty work was not treated as feature proof.
 
 ## Primary-Source Findings
 

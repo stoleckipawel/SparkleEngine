@@ -1,15 +1,11 @@
 #pragma once
 
-#include "Frame/Graph/RenderFrameGraphResources.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 
-class FrameGraphBuilder;
+struct RenderView;
 
-void AddReferencePathTracerProducerPasses(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources);
-void FinalizeReferencePathTracerPasses(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    FrameGraphTextureHandle referencePathTracerSample,
-    const RenderFrameGraphResources& resources);
+class ReferencePathTracer final
+{
+public:
+	ViewportRenderProgress Update(const RenderView& view) const noexcept;
+};

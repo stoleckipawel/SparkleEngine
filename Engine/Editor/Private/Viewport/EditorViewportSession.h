@@ -18,17 +18,20 @@ public:
 	RenderViewCameraData UpdateCamera(const CameraInputIntent& intent, float deltaSeconds, RenderViewportExtent extent) noexcept;
 
 	const EditorViewportSettingsState& GetSettings() const noexcept { return m_settings.GetState(); }
+	RenderViewMode GetViewMode() const noexcept { return m_viewMode; }
 	void SetMoveSpeed(float speedMetersPerSecond) noexcept;
 	void SetRotationSpeed(float degreesPerPixel) noexcept;
 	void SetInvertY(bool invertY) noexcept;
 	void SetProjectionKind(CameraProjectionKind projectionKind) noexcept;
 	void SetOrthographicHeight(float heightMeters) noexcept;
 	void SetExposureOverrides(ViewportExposureOverrides overrides) noexcept;
+	void SetViewMode(RenderViewMode viewMode) noexcept;
 
 private:
 	EditorViewportSettings m_settings;
 	CameraNavigationState m_navigationState;
 	RenderViewCameraData m_camera;
+	RenderViewMode m_viewMode = RenderViewMode::Lit;
 	std::uint64_t m_worldGeneration = 0;
 	bool m_cameraInitialized = false;
 };

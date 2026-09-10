@@ -6,7 +6,7 @@
 
 **Authority boundary:** [Discovery](Discovery.md) freezes product/platform/color decisions; [Research](Research.md) owns precedent; [Semantics](Semantics.md) owns color/luminance math; [Execution Architecture](ExecutionArchitecture.md) owns Renderer/RHI state and lifetime; [User Experience](UserExperience.md) owns visible behavior; [Plan](Plan.md) owns delivery; code/build configuration owns implementation; `FCR-REN-26` owns candidate results
 
-**Verified baseline:** 2026-09-10 at committed revision `669637cf`; Renderer/RHI/window/swapchain/settings/UI/capture/package source inspected; no executable HDR check was run
+**Verified baseline:** 2026-09-10 at committed revision `ca55e7d8`; Renderer/RHI/window/swapchain/settings/UI/capture/package source inspected; no executable HDR hardware check was run; concurrent user-owned dirty paths were not treated as committed proof
 
 **Scope:** `REN-POST-09`; Windows HDR10 presentation through D3D12 and Vulkan
 
@@ -44,6 +44,42 @@ flowchart LR
 
 Requested, supported, eligible, activating, active, and fallback state are different facts. An HDR request may become active only after RHI confirms the current output and the complete accepted format/color-space tuple, and Renderer selects the matching transform for the same generation. Metadata follows the policy accepted by `HDRD-09`; it never determines pixel interpretation or proves display behavior. A Linear, FP16, or 10-bit surface alone is not HDR evidence.
 
+## Outcome And Bounded Claim
+
+The admitted outcome is a Windows display-output feature that joins one Renderer-owned scene-to-target/UI transform to one RHI-owned, current-output native presentation result, publishes HDR active only for a generation-consistent eligible tuple, and recovers to a usable truthfully labeled SDR route across every admitted failure and transition. The target release profile remains HDR10/Rec.2020/PQ; whether any DevelopmentEditor/UI cell requires FP16/scRGB is a discovery decision and must not be conflated with HDR10 encoding.
+
+Completion claims signal construction and native activation on the frozen machine/display/backend matrix. It does not claim monitor calibration, mastering-monitor accuracy, vendor tone-mapping behavior, screenshot fidelity, OS-wide HDR correctness, Dolby Vision, HLG, dynamic metadata, automatic content mastering, or universal HDR support.
+
+## Feature Set
+
+| ID | Surface | First-release disposition | Proof owner |
+| --- | --- | --- | --- |
+| `HDR-FS-01` | Windows HDR10 Rec.2020/D65/PQ output | admitted target; exact surface route blocked | semantics + native tuple + `AC-HDR-02/03` |
+| `HDR-FS-02` | D3D12 presentation | admitted | RHI D3D12 state/transition evidence |
+| `HDR-FS-03` | Vulkan Win32 presentation | admitted if Stage-0 extensions/tuple are usable | RHI Vulkan state/transition evidence |
+| `HDR-FS-04` | existing SDR output and atomic fallback | mandatory | all transition/failure/package cells |
+| `HDR-FS-05` | fixed/adaptive 1000-nit creative target policy | candidate blocked by `HDRD-04` | Renderer semantic and measurement evidence |
+| `HDR-FS-06` | system SDR-white-aware UI mapping with bounded fallback | candidate blocked by `HDRD-05` | Windows query + UI patch evidence |
+| `HDR-FS-07` | requested/supported/eligible/activating/active/fallback/error state | included | shared presentation result and UX checks |
+| `HDR-FS-08` | output association and display/OS/window/device revalidation | included | state-machine fault/transition evidence |
+| `HDR-FS-09` | static metadata | omit, best-effort diagnostic, or required remains blocked; never pixel/activation authority | `HDRD-09`, native consistency evidence |
+| `HDR-FS-10` | DevelopmentEditor and packaged Runtime reachability | admitted only per frozen backend/window/UI/profile matrix | package/clean-machine and UI-composition evidence |
+| `HDR-FS-11` | HLG, Dolby Vision, dynamic metadata, automatic calibration/mastering profiles | excluded | selector/type/shader/native/package absence audit |
+| `HDR-FS-12` | HDR offscreen/export/screenshot guarantee and non-Windows platforms | excluded unless separately admitted | capture/product/platform claim audit |
+
+## Product And Support Matrix
+
+| Cell | Candidate route | Required disposition/evidence |
+| --- | --- | --- |
+| DevelopmentEditor + D3D12 + eligible HDR display | HDR10 UINT10/PQ or explicitly selected FP16/scRGB editor route | output/UI/interposer eligibility, transform/tuple/state/transition evidence |
+| DevelopmentEditor + Vulkan + eligible HDR display | exact enumerated HDR surface tuple or explicit ineligible/fallback | extension/surface/Win32 output association and paired semantic evidence |
+| packaged Runtime + D3D12 | admitted HDR10 tuple with cooked transform/config | package/clean-machine activation, UI, transitions, fallback |
+| packaged Runtime + Vulkan | same only if frozen release matrix admits it | package plus native extension/surface proof |
+| SDR display / OS HDR off / remote or ineligible session | known-good SDR tuple | explicit unsupported/ineligible/fallback state and unchanged SDR pixels |
+| windowed/fullscreen/minimized/straddling/moved | policy frozen per cell | output-generation revalidation and bounded black-frame/latency result |
+| SDR-authored UI | system/current or bounded fallback white mapping | target-linear composition and measured/reference patch evidence |
+| exact debug/raw capture | explicit scene/target/PQ/native/compositor domains | product lineage; never infer display light from a screenshot |
+
 ## Ownership And Lifetime
 
 | Owner | Responsibility | Must not own |
@@ -52,6 +88,21 @@ Requested, supported, eligible, activating, active, and fallback state are diffe
 | RHI presentation owner | output capability, swapchain recreation, format/color-space pairing, metadata submission, present state | artistic grading, exposure, or tone policy |
 | View/runtime settings | user request and observable requested/active/fallback state | fabricated active state before backend confirmation |
 | Acceptance evidence | monitor/backend matrix, measurement/capture interpretation, transition and fallback results | replacing executable proof with documentation |
+
+## Design Decisions And Tradeoffs
+
+| Candidate direction | Benefit | Cost/constraint | Decision owner |
+| --- | --- | --- | --- |
+| one backend-neutral presentation request/capability/result | Renderer can select transform from current truth without native APIs | shared contract must represent different D3D12/Vulkan limitations honestly | `HDRD-07/08/10` |
+| HDR10 UINT10/PQ release profile | interoperable bounded signal target | narrower Windows composition/alpha/UI eligibility than general FP16/scRGB guidance | `HDRD-03` |
+| optional editor FP16/scRGB cell | may fit Advanced Color composition/UI better | is a different encoding/tuple and doubles some semantic/native/evidence cells | `HDRD-01/03/11/12` |
+| system SDR white with bounded fallback | respects user/system UI brightness policy | dynamic query/update/failure ownership and validation required | `HDRD-05` |
+| fixed or bounded-adaptive peak | reproducible creative intent or improved display use | detected capability is not mastering policy; adaptation can change authored result | `HDRD-04` |
+| metadata non-authority | prevents false activation/color claims | diagnostics must separate requested/submitted/accepted/unknown effect | `HDRD-09` |
+| generation-joined Renderer/RHI state | prevents PQ-on-SDR and SDR-on-HDR mixed frames | transition protocol and handoff latency become explicit | `HDRD-10` |
+| atomic SDR fallback | preserves usability on failure | requires recreatable known-good tuple and bounded recovery/black-frame behavior | `HDRD-07/08/10` |
+
+These are not accepted by appearing here. Discovery must update every affected semantic, architecture, UX, plan, support, and evidence surface together when selecting them.
 
 ## Start Here
 
@@ -95,6 +146,18 @@ Requested, supported, eligible, activating, active, and fallback state are diffe
 - `CHK-HDR-03` — deterministic PQ ramps, gamut wedges, peak/black patches, and current/fallback SDR-white UI reference content on admitted HDR hardware.
 - `CHK-HDR-04` — SDR fallback plus resize, monitor move, OS HDR toggle, fullscreen/window, suspend/resume, and device-recovery transitions.
 - `CHK-HDR-05` — candidate-bound D3D12/Vulkan and SDR/HDR artifact matrix with limitations recorded in `FCR-REN-26`.
+
+## Cross-Document Traceability
+
+| Surface | Discovery | Research | Semantics | Architecture / UX | Plan | Acceptance / checks | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| scene-to-target/gamut/PQ | `HDRD-02/04/06` | `HDR-REF-ITU-PQ/2020`, `HDR-REF-DX-01` | `HDR-MATH-01` through `07` | Renderer transform generation and raw product UX | Stage 4 | `AC-HDR-02/03`; `FM-HDR-03`; `CHK-HDR-01/03/05` | `FCR-REN-26` |
+| UI/SDR white | `HDRD-05/11` | `HDR-REF-MS-AC-01/02` | `HDR-MATH-08/09` | UI mapping/composition and visible policy | Stages 4-5 | `AC-HDR-04`; `FM-HDR-03`; `CHK-HDR-03/05` | `FCR-REN-26` |
+| D3D12 output tuple | `HDRD-03/07/09/10` | `HDR-REF-MS-AC-01`, `HDR-REF-DX-01/02` | encoded product identity | shared state + D3D12 adapter + transition UX | Stages 1-2/5-6 | `AC-HDR-01/02/05/06`; `FM-HDR-01/02/04/06`; `CHK-HDR-01/02/04` | `FCR-REN-26` |
+| Vulkan output tuple | `HDRD-03/08/09/10` | `HDR-REF-VK-01/02/03` | same Renderer signal semantics | shared state + Vulkan adapter + transition UX | Stages 1/3/5-6 | `AC-HDR-01/02/05/06/07`; `FM-HDR-01/02/04/05/06`; `CHK-HDR-01/02/04/05` | `FCR-REN-26` |
+| transitions/fallback | `HDRD-07/08/10/12` | Windows/output and native state precedent | generation consistency rule | transaction/state machine and recovery experience | Stages 1-3/5-6 | `AC-HDR-01/05/06/07`; `FM-HDR-02/04/05`; `CHK-HDR-02/04/05` | `FCR-REN-26` |
+| capture/measurement/support | `HDRD-11/12` | source limits and oracle ladder | artifact-domain rules | capture/support/workflow contract | Stages 5/7 | `AC-HDR-08`; `FM-HDR-06`; `CHK-HDR-03/05` | `FCR-REN-26` |
+| exclusions | `HDRD-01` | rejected-transfer ledger | no semantic rules | absent selectors/profiles/routes | all stages | negative/source/package audit | `FCR-REN-26` |
 
 ## Current Negative Boundary
 

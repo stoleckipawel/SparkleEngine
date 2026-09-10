@@ -4,9 +4,9 @@
 
 **Responsibility:** define the bounded lens-effect product, current absence, target surface, acceptance, failures, checks, and definition of done for `FCR-REN-25`
 
-**Authority boundary:** [Discovery](Discovery.md) freezes the model; [Research](Research.md) owns precedent; [Semantics](Semantics.md) owns coordinate/filter rules; [Execution Architecture](ExecutionArchitecture.md) owns state and execution; [Plan](Plan.md) owns delivery; this dossier owns feature acceptance; candidate results remain in `FCR-REN-25`
+**Authority boundary:** [Discovery](Discovery.md) freezes the model; [Research](Research.md) owns precedent; [Semantics](Semantics.md) owns coordinate/filter rules; [Execution Architecture](ExecutionArchitecture.md) owns state and execution; [User Experience](UserExperience.md) owns the development workflow; [Plan](Plan.md) owns delivery; this dossier owns feature acceptance; candidate results remain in `FCR-REN-25`
 
-**Verified:** 2026-09-10 against committed revision `669637cf`; current Renderer/shader/View/debug/capture/editor/package paths were inspected as source only
+**Verified:** 2026-09-10 against committed revision `ca55e7d8`; current Renderer/shader/View/debug/capture/editor/package paths were inspected as source only; concurrent user-owned dirty paths were not treated as committed proof
 
 **Scope:** `REN-POST-12`; intentional wavelength/channel-dependent lens distortion as a post-processing effect
 
@@ -27,6 +27,42 @@
 
 The admitted implementation must make zero strength an exact identity transform and keep artifacts from being mislabeled as deliberate output. The retained negative boundary protects both current feature claims and image-quality bug classification until that implementation exists.
 
+## Outcome And Bounded Claim
+
+The admitted outcome is one inexpensive, deliberately authored per-view radial channel-separation effect with stable reference-height units, exact zero omission, bounded sampling, target-linear placement, and reproducible state/capture identity on both Renderer backends. It may be called implemented only when the analytic coordinate/filter oracle, stage products, lifecycle/workflow, package route, performance budget, and artifact-classification checks pass for the same candidate.
+
+The claim excludes physical lens calibration, wavelength transport, spectral sensor response, real-world lens profiles, anamorphic behavior, local volumes, temporal stabilization, guard-band reconstruction, user-authored per-channel curves, and quality tiers. Vendor/engine precedent informs discovery but cannot prove Sparkle's model.
+
+## Feature Set
+
+| ID | Surface | First-release disposition | Proof owner |
+| --- | --- | --- | --- |
+| `CHR-FS-01` | global default plus per-view override | included | settings/View state and `AC-CHR-05` |
+| `CHR-FS-02` | one strength in pixels at a 1080-line reference | candidate; blocked by `CHRD-04` | semantics and `AC-CHR-02/03` |
+| `CHR-FS-03` | normalized center and start offset | included after exact geometry freeze | semantics and `AC-CHR-02` |
+| `CHR-FS-04` | fixed three-channel radial sampling | candidate; compare against AMD/Unity spectral precedent | discovery, semantics, `AC-CHR-02` |
+| `CHR-FS-05` | target-linear pass after tone/gamut and before encoding/UI | candidate; domain cells blocked by `CHRD-02` | graph/product evidence and `AC-CHR-04` |
+| `CHR-FS-06` | bilinear clamp-to-edge and alpha copy | included after texel-center/bounds proof | semantics and `AC-CHR-02/04/06` |
+| `CHR-FS-07` | exact neutral pass/resource omission | included | graph/resource trace and `AC-CHR-01` |
+| `CHR-FS-08` | editor controls, reset, truthful requested/active state | included for DevelopmentEditor | UX and `AC-CHR-05/06` |
+| `CHR-FS-09` | raw pre/post plus encoded/UI capture lineage | included for evidence/support | capture owner and `AC-CHR-04/07` |
+| `CHR-FS-10` | D3D12/Vulkan and admitted packaged product | included only where release matrix admits the product | `AC-CHR-07` |
+| `CHR-FS-11` | spectral LUT/multisample, physical profiles, anamorphic, guard band | excluded | selector/source/package absence audit |
+| `CHR-FS-12` | local volumes, masks, history, quality tiers, player controls | excluded | selector/state/workflow absence audit |
+
+## Product And Support Matrix
+
+| Product / mode | Authored controls | Runtime effect | Required result |
+| --- | --- | --- | --- |
+| DevelopmentEditor D3D12 | global/default and per-view | target when active | full semantic, workflow, capture, failure, and cost evidence |
+| DevelopmentEditor Vulkan | same contract | target when active | same plus raw backend comparison and native validation |
+| packaged Runtime D3D12 | cooked/configured values only if product scope admits them | target | dependency/configuration reachability and clean-machine result |
+| packaged Runtime Vulkan | same if release backend is admitted | target | package plus backend evidence |
+| SDR / HDR output | one effect model over explicitly named target-linear domains | separate matrix cells | matched coordinate behavior and correct stage/product lineage |
+| exact debug views | no artistic distortion unless Debug Views explicitly owns an exception | bypass target | selector/topology/capture proof |
+| UI | no distortion | downstream composition | alpha/UI sentinel capture |
+| excluded physical/spectral/volume/history surfaces | no controls/state/shaders/assets/package claims | absent | negative reachability audit |
+
 ## Start Here
 
 | Question | Owning document |
@@ -36,6 +72,7 @@ The admitted implementation must make zero strength an exact identity transform 
 | What do mature engine implementations establish or not establish? | [Research](Research.md) |
 | What are the exact candidate coordinates, displacement, filtering, and identity rules? | [Semantics](Semantics.md) |
 | Who owns settings, View state, pass placement, failure, and cost? | [Execution Architecture](ExecutionArchitecture.md) |
+| What should first use, state truth, reset, failure, capture, and automation feel like? | [User Experience](UserExperience.md) |
 | In what order can it be delivered? | [Plan](Plan.md) |
 | What did a candidate prove? | [`FCR-REN-25`](../../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry) and retained evidence |
 
@@ -58,6 +95,20 @@ The admitted scope must define and implement:
 - reference patterns for zero-strength identity, center stability, radial symmetry, edge behavior, temporal stability, and resolution independence.
 
 Physical lens calibration, spectral rendering, anamorphic models, per-channel author curves, guard-band expansion, history, local volumes, and multiple quality modes are non-goals for `v0.1.0`. Until implementation exists, the admitted feature remains unavailable and `Blocked`, not Experimental.
+
+## Design Decisions And Tradeoffs
+
+| Candidate direction | Benefit | Cost/constraint | Decision owner |
+| --- | --- | --- | --- |
+| fixed three-channel model | predictable three filtered reads and a small analyzable contract | less spectral smoothness/physical plausibility than multi-sample models | `CHRD-01/05/09` |
+| reference-height pixel strength | author intent can be tested across resolution | requires exact active-extent scaling and clear UI units | `CHRD-04` |
+| aspect-aware radial coordinates | stable behavior across ultrawide, portrait, subrect, off-center views | more semantic cases than naive normalized radius | `CHRD-03` |
+| target-linear placement | leaves UI sharp and avoids sampling encoded values | SDR/HDR domains must be named and separately evidenced | `CHRD-02/08` |
+| clamp-to-edge without guard band | bounded, simple first release | high strengths duplicate edge pixels; maximum displacement must be bounded | `CHRD-06` |
+| distinct initial pass | preserves raw products and defect localization | adds one active output-resolution read/write resource route | `CHRD-09` |
+| exact zero omission | truthful cost and identity | neutral predicate must be centralized across settings/View/graph | `CHRD-07/09` |
+
+These are discovery candidates. A changed choice must update semantics, architecture, UX, plan, fixtures, budgets, and acceptance mapping together.
 
 ## First-Release Acceptance Criteria
 
@@ -87,6 +138,17 @@ Physical lens calibration, spectral rendering, anamorphic models, per-channel au
 | `CHK-CHR-03` | matched patterns at admitted resolutions plus resize, DPI, edge, zero-extent, and temporal camera cases | `AC-CHR-03`, `AC-CHR-07`; `FM-CHR-02`, `FM-CHR-04` |
 | `CHK-CHR-04` | settings round trip, two viewports, invalid input, missing resource/pipeline, generation failure and recovery | `AC-CHR-05`, `AC-CHR-06`; `FM-CHR-01`, `FM-CHR-02` |
 | `CHK-CHR-05` | paired D3D12/Vulkan raw comparison, package route, timing/memory and artifact-classification review | `AC-CHR-07`, `AC-CHR-08`; `FM-CHR-05` |
+
+## Cross-Document Traceability
+
+| Surface | Discovery | Research | Semantics | Architecture / UX | Plan | Acceptance / checks | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| model and controls | `CHRD-01/03/04/05` | `CHR-REF-AMD-01/02`, `CHR-REF-UNITY-01/02/03` | `CHR-MATH-01/02/03/07` | View request/result and control contract | Stages 0-2/3 | `AC-CHR-01/02/03/05`; `CHK-CHR-01/03/04` | `FCR-REN-25` |
+| stage/domain/UI/debug | `CHRD-02/08` | `CHR-REF-AMD-03`, `CHR-REF-UNITY-02` | `CHR-MATH-05/09` | graph products and UX capture/status | Stages 2-3 | `AC-CHR-04/08`; `CHK-CHR-02/05` | `FCR-REN-25` |
+| filtering/edge/extent | `CHRD-03/04/06` | source implementation comparison | `CHR-MATH-01/02/04/05/07` | immutable frame extent; error contract | Stage 2 | `AC-CHR-02/03/06`; `CHK-CHR-01/03/04` | `FCR-REN-25` |
+| selection/lifecycle | `CHRD-07` | activation precedent | `CHR-MATH-06/07/08` | settings/View/graph state and reset UX | Stages 1/3 | `AC-CHR-01/05/06`; `CHK-CHR-04` | `FCR-REN-25` |
+| backend/package/cost | `CHRD-09/10` | evidence and cost precedent | fixed semantic contract | support/evidence and reachability matrices | Stage 4 | `AC-CHR-07/08`; `CHK-CHR-03/05` | `FCR-REN-25` |
+| exclusions/artifact classification | `CHRD-01/08/10` | rejected-transfer ledger | no admitted rules | absent controls/assets/history; truthful labels | all stages | `AC-CHR-08`; `CHK-CHR-05/NEG-01` | `FCR-REN-25` |
 
 ## Evidence And Source Audit
 

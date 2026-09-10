@@ -35,7 +35,6 @@ RenderViewInvalidationReason RenderViewState::CombineInvalidationReasons(
 void RenderViewState::Invalidate(RenderViewInvalidationReason reason) noexcept
 {
 	m_pendingInvalidationReasons = CombineInvalidationReasons(m_pendingInvalidationReasons, reason);
-	m_referencePathTracerHistoryInvalidationHash.reset();
 	m_restirLightingHistoryInvalidationHash.reset();
 	m_rayTracingPlanner->Reset();
 }
@@ -52,11 +51,6 @@ bool RenderViewState::UpdateHistoryInvalidationHash(std::optional<std::uint64_t>
 	const bool invalidated = !previousHash || *previousHash != currentHash;
 	previousHash = currentHash;
 	return invalidated;
-}
-
-bool RenderViewState::UpdateReferencePathTracerHistory(std::uint64_t invalidationHash) noexcept
-{
-	return UpdateHistoryInvalidationHash(m_referencePathTracerHistoryInvalidationHash, invalidationHash);
 }
 
 bool RenderViewState::UpdateRestirLightingHistory(std::uint64_t invalidationHash) noexcept

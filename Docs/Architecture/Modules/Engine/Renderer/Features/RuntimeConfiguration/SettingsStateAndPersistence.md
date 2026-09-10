@@ -12,8 +12,8 @@
 
 | Question | Current answer |
 | --- | --- |
-| what is edited? | one aggregate `EngineRenderingSettingsState`; 28 fields describe requested rendering configuration |
-| what is persisted? | 27 allowlisted `r.*` values in the workspace `Config/DefaultEngine.ini`; view mode remains session-only |
+| what is edited? | one aggregate `EngineRenderingSettingsState`; 26 fields describe requested rendering configuration |
+| what is persisted? | 26 allowlisted `r.*` values in the workspace `Config/DefaultEngine.ini`; view mode is owned separately by each viewport session |
 | how does it reach rendering? | startup applies the section before command-line overrides; editor commits go through the Renderer facade and serial or render-thread control path |
 | what becomes active immediately? | only settings whose feature owner can apply them without recreation; adapter and back-buffer format changes require restart |
 | what is missing? | atomic/user-scoped packaged persistence, surfaced parse/write errors, and a structured requested-versus-active/fallback status model |
@@ -41,8 +41,8 @@ The motivation is one coherent editor transaction and deterministic render-threa
 
 | Surface | Current coverage | Boundary |
 | --- | --- | --- |
-| aggregate public state | 28 fields: presentation/device, tone/output, exposure, upscale/RR, GBuffer/RT, lighting, batching/TLAS/PTLAS, and view mode | value snapshot; it does not contain active provider/capability/fallback reasons |
-| persisted allowlist | 27 exact `r.*` names in `/Script/SparkleRenderer.EngineRenderingSettings` | `r.ViewMode` is deliberately excluded and remains session state |
+| aggregate public state | 26 fields: presentation/device, tone/output, exposure, upscale/RR, GBuffer/RT, batching, and TLAS/PTLAS | value snapshot; it does not contain per-viewport UI state or active provider/capability/fallback reasons |
+| persisted allowlist | 26 exact `r.*` names in `/Script/SparkleRenderer.EngineRenderingSettings` | view mode is deliberately not Renderer settings; Editor owns it in `EditorViewportSession`, while `r.ViewMode` is a diagnostic adapter |
 | persistence file | workspace `Config/DefaultEngine.ini`; writer replaces its one section and retains other loaded lines/sections | not an atomic temp-and-replace write; error/status is not returned |
 | startup | `Application` applies persisted settings before command-line CVar overrides | malformed values are currently attempted and their error text is discarded |
 | editor commit | each changed setter writes persistence, then invokes the bound host callback or directly applies CVars | whole snapshot is resent; unchanged fields are skipped by CVar comparison |
@@ -52,7 +52,7 @@ The motivation is one coherent editor transaction and deterministic render-threa
 
 ## Persistence Semantics And Known Gaps
 
-The loader ignores missing files, comments, blank lines, other sections, unknown names, and registered-name lookup failures. It trims key/value strings. Valid allowlisted values are parsed by the owning CVar. Invalid parse diagnostics are presently discarded. The writer creates the parent directory best-effort, reads the existing file, removes the first matching owned section, inserts a freshly generated 27-value section, and truncates/re-writes the file.
+The loader ignores missing files, comments, blank lines, other sections, unknown names, and registered-name lookup failures. It trims key/value strings. Valid allowlisted values are parsed by the owning CVar. Invalid parse diagnostics are presently discarded. The writer creates the parent directory best-effort, reads the existing file, removes the first matching owned section, inserts a freshly generated 26-value section, and truncates/re-writes the file.
 
 Consequences that must remain explicit:
 
@@ -83,7 +83,7 @@ Consequences that must remain explicit:
 ## Acceptance Criteria
 
 - `AC-SET-01` — public state, editor controls, setters, CVar capture/apply, persistence allowlist, selector catalog, and feature consumers agree field-for-field with intentional exclusions named.
-- `AC-SET-02` — a valid 27-name section round-trips exactly while comments and unrelated sections remain unchanged according to the declared formatting policy; view mode remains unpersisted.
+- `AC-SET-02` — a valid 26-name section round-trips exactly while comments and unrelated sections remain unchanged according to the declared formatting policy; per-viewport view mode remains outside Renderer settings persistence.
 - `AC-SET-03` — malformed, unknown, duplicate, unreadable, unwritable, partial-write, and concurrent-edit cases return an actionable result and preserve a valid prior file/state rather than silently succeeding.
 - `AC-SET-04` — startup persisted values apply before command-line overrides; serial and threaded commits produce equivalent ordered CVar and next-frame resolved states.
 - `AC-SET-05` — live, topology/history-affecting, capability-gated, and restart-required changes expose requested/CVar/resolved/session-active state and reason without false activation.

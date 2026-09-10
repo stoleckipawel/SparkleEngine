@@ -63,7 +63,7 @@ Queue existence does not prove useful overlap. When any non-graphics queue is us
 
 ## Rebuild And Invalidation
 
-The graph rebuilds when output/render extent or output target/format changes, GBuffer/lighting mode changes, active ray execution plan changes, image-provider graph key changes, shader generation changes, or a graph using the scene SBT observes a new table-plan generation. Resize drains/rebuilds swapchain-coupled execution; other changes retire the old graph asynchronously.
+The graph rebuilds when output/render extent or output target/format changes, GBuffer frontend changes, active ray execution plan changes, image-provider graph key changes, shader generation changes, or a graph using the scene SBT observes a new table-plan generation. A future active Reference Path Tracer route will add its per-view product/topology identity here; the Stage 1 contract-only selector does not fabricate a graph branch. Resize drains/rebuilds swapchain-coupled execution; other changes retire the old graph asynchronously.
 
 Rebuild invalidates view/frame/provider history. The tradeoff is simple, inspectable immutable topology at the cost of rebuild/materialization churn. Current source still performs setup and compile work per executed frame; its CPU cost and the value of further caching are unmeasured.
 

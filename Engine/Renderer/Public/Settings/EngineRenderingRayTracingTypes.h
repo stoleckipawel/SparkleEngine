@@ -15,12 +15,6 @@ enum class RayTracingExecutionMode : std::uint8_t
 	Pipeline,
 };
 
-enum class LightingMode : std::uint8_t
-{
-	RestirPathTraced,
-	ReferencePathTracer
-};
-
 enum class RayTracingPtlasPartitionUpdateMode : std::uint8_t
 {
 	AlwaysUpdatePartition,

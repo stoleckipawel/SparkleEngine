@@ -17,7 +17,7 @@ A registered name is not automatically a feature. A trustworthy selector has a p
 
 ## Persisted Renderer Settings Section
 
-`EngineRenderingSettingsPersistence` owns 27 names under `/Script/SparkleRenderer.EngineRenderingSettings` in workspace `Config/DefaultEngine.ini`. The editor settings section captures/applies the same state. View mode is exposed in the settings state but deliberately not persisted by this file.
+`EngineRenderingSettingsPersistence` owns 26 names under `/Script/SparkleRenderer.EngineRenderingSettings` in workspace `Config/DefaultEngine.ini`. The editor settings section captures/applies the same state. View mode is not a Renderer setting: each Editor viewport owns it in `EditorViewportSession`, and the request boundary carries it to Renderer.
 
 | Feature | Persisted selectors | Default/request boundary | Active owner and effect |
 | --- | --- | --- | --- |
@@ -27,7 +27,7 @@ A registered name is not automatically a feature. A trustworthy selector has a p
 | Upscaling | `r.Upscaler.Provider`, `r.Upscaler.QualityMode` | Linear, NativeAA | [reconstruction/upscaling](../PostProcessing/ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md) provider stack and graph key; external provider may resolve back to Linear |
 | Ray reconstruction | `r.RayReconstruction.Mode` | Off | [reconstruction/upscaling](../PostProcessing/ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md) provider stack; ReSTIR only; unavailable path resolves Off |
 | GBuffer | `r.GBuffer.Algorithm`, `r.GBuffer.RayTracingExecution` | Rasterized, Automatic | graph topology plus ray-GBuffer execution plan |
-| Lighting | `r.Lighting.Mode` | ReSTIR path-traced | graph topology; ReSTIR or reference branch |
+| Reference Path Tracer | `ViewportRenderRequest.ViewMode = RenderViewMode::ReferencePathTracer` | Lit | Per-view semantic contract in the existing frame pipeline; no clickable Stage 1 UI, transport allocation, or fallback |
 | Mesh work | `r.MeshAutoBatching` | on | per-view raster batch construction |
 | Classic TLAS | `r.RayTracing.Tlas.Refit` | on | classic TLAS strategy after initial build |
 | PTLAS | `r.RayTracing.PreferPartitionedTlas`, `r.RayTracing.Ptlas.PartitionsPerAxis`, `r.RayTracing.Ptlas.PartitionUpdateMode`, `r.RayTracing.Ptlas.MarkAllDynamicInPartition`, `r.RayTracing.Ptlas.ModeChangeDistance` | off, 8, AlwaysUpdatePartition, false, 100 | RHI capability preference plus per-view partition planner; actual current execution remains the narrow one-operation/no-update/no-translation strategy |
@@ -38,17 +38,13 @@ The settings writer replaces only its owned INI section. Loading silently ignore
 
 | Selector | Default/domain | Current consumer and effect | Persistence/reachability boundary | Dossier |
 | --- | --- | --- | --- | --- |
-| `r.ViewMode` | Lit plus 15 debug modes | view uniform/debug pass; Wireframe also alters raster fill | session state; editor UI exposes it; not in the 27-name persisted set | [Debug Views](../DebugViews/README.md) |
+| `r.ViewMode` | Lit, Reference Path Tracer, plus 15 final/debug modes | diagnostic default adapter only when no per-viewport request identity exists; Wireframe also alters raster fill | console-only compatibility-free diagnostic surface; Editor view mode lives in `EditorViewportSession` and is not Renderer settings/persistence | [Debug Views](../DebugViews/README.md) and [Reference Path Tracer](../Lighting/ReferencePathTracer/README.md) |
 | `r.RayTracing.Shadows.Execution` | Automatic, Inline, Pipeline | direct-shadow execution plan and graph topology | console surface; not mirrored by `EngineRenderingSettingsState` | [Direct Lighting](../Lighting/DirectLighting.md) and [Ray Tracing](../RayTracing/README.md) |
 | `r.RayTracedShadows.NormalBias` | 0.01 world units | shadow ray input | console only; inspected frame binding does not clamp it | [Direct Lighting](../Lighting/DirectLighting.md) |
 | `r.RayTracedShadows.MaxDistance` | 100000 world units | directional shadow ray maximum | console only; inspected frame binding does not clamp it | [Direct Lighting](../Lighting/DirectLighting.md) |
 | `r.RayTracing.Restir.Indirect.Bounces` | 2 requested; active clamp 1..8 | ReSTIR indirect candidate path | console only; requested value can differ from active clamped value | [Indirect Lighting](../Lighting/IndirectLighting.md) |
 | `r.RayTracing.Restir.Indirect.NormalBias` | 0.01 requested; active minimum 0 | ReSTIR indirect ray spawn | console only | [Indirect Lighting](../Lighting/IndirectLighting.md) |
 | `r.RayTracing.Restir.Indirect.MaxDistance` | 100000 requested; active minimum 0.001 | ReSTIR indirect traversal | console only | [Indirect Lighting](../Lighting/IndirectLighting.md) |
-| `r.RayTracing.ReferencePathTracer.SamplesPerPixel` | 64 requested; active clamp 1..4096 | reference accumulation sample count | console only; high values are not performance-approved | [Indirect Lighting](../Lighting/IndirectLighting.md) |
-| `r.RayTracing.ReferencePathTracer.Bounces` | 8 requested; active clamp 1..16 | reference secondary bounce count | console only | [Indirect Lighting](../Lighting/IndirectLighting.md) |
-| `r.RayTracing.ReferencePathTracer.NormalBias` | 0.01 requested; active minimum 0 | reference ray spawn | console only | [Indirect Lighting](../Lighting/IndirectLighting.md) |
-| `r.RayTracing.ReferencePathTracer.MaxDistance` | 100000 requested; active minimum 0.001 | reference traversal | console only | [Indirect Lighting](../Lighting/IndirectLighting.md) |
 | `r.Diagnostics.MarkerVerbosity` | FramePass; Off/FramePass/Detailed | frame/pass/detailed GPU marker emission | developer console; package exposure must be classified | [Diagnostics](../ViewportAndDiagnostics/DiagnosticsProductsAndCapture.md) |
 | `r.Diagnostics.GpuTiming` | off | timestamp collection/resolution | developer console; observer cost unmeasured | [Diagnostics](../ViewportAndDiagnostics/DiagnosticsProductsAndCapture.md) |
 | `r.FrameGraph.ParallelRecording` | on | Tasks-backed recording chunks | developer console; equivalence/scaling unproved | [Frame Graph](../FrameExecution/FrameGraphAndScheduling.md) |
@@ -58,7 +54,7 @@ The settings writer replaces only its owned INI section. Loading silently ignore
 
 | Selector | Current contract | Boundary |
 | --- | --- | --- |
-| `r.BackBufferCount` | supported values 2 or 3; renderer/device recreation required | registered/owned by RHI; absent from `EngineRenderingSettingsState` and its persisted 27-name section |
+| `r.BackBufferCount` | supported values 2 or 3; renderer/device recreation required | registered/owned by RHI; absent from `EngineRenderingSettingsState` and its persisted 26-name section |
 | `r.MaximumFramesInFlight` | supported values 1..3 and no greater than back-buffer count; recreation required | registered/owned by RHI; absent from Renderer settings UI/persistence |
 
 These controls affect frame storage and presentation but are not proof that every combination is exposed or stable. Their current lack of Renderer settings integration must not be described as “back-buffer/frame-count settings support.”
@@ -100,7 +96,7 @@ When adding or changing a selector:
 - `AC-SEL-01` — every Renderer-owned registered CVar and every RHI control surfaced by Renderer settings has exactly one catalog row with parser/domain, default, producer, active consumer or explicit no-consumer state, persistence, restart/topology/history effect, and dossier.
 - `AC-SEL-02` — every enum value and numeric boundary is accepted, clamped, rejected, or marked vocabulary-only exactly as documented; malformed values produce actionable diagnostics rather than disappearing silently.
 - `AC-SEL-03` — requested and active state remain separately inspectable for capability-gated traversal/provider/PTLAS choices, including fallback/refusal reason.
-- `AC-SEL-04` — the 27-name owned INI section round-trips valid settings without modifying other sections; non-persisted/session/RHI-only controls remain absent by design.
+- `AC-SEL-04` — the 26-name owned INI section round-trips valid settings without modifying other sections; non-persisted/session/RHI-only controls remain absent by design.
 - `AC-SEL-05` — live changes apply on the next permitted frame, topology/history changes rebuild/reset their owners, and restart-required changes do not claim live activation.
 - `AC-SEL-06` — Editor, Runtime, Debug/Development/Shipping, workspace/package, D3D12/Vulkan reachability is independently classified; hidden console reachability still counts unless erased/locked.
 - `AC-SEL-07` — absent feature selectors remain absent and ineffective `r.Material.BindingMode` vocabulary is removed or visibly nonfunctional, never advertised as an active feature.
@@ -118,7 +114,7 @@ When adding or changing a selector:
 | Check | Exercise and oracle | Covers |
 | --- | --- | --- |
 | `CHK-SEL-01` | mechanically enumerate Renderer CVars, Renderer-settings allowlist/state/UI, and routed RHI controls; compare names/domains/defaults/consumers to every catalog row and negative selector | `AC-SEL-01`, `AC-SEL-06`, `AC-SEL-07`; `FM-SEL-04` |
-| `CHK-SEL-02` | round-trip exact 27-name section with boundary/malformed/unknown values, unrelated sections, concurrent edit, write failure, and packaged path cases | `AC-SEL-02`, `AC-SEL-04`; `FM-SEL-01`, `FM-SEL-03` |
+| `CHK-SEL-02` | round-trip exact 26-name section with boundary/malformed/unknown values, unrelated sections, concurrent edit, write failure, and packaged path cases | `AC-SEL-02`, `AC-SEL-04`; `FM-SEL-01`, `FM-SEL-03` |
 | `CHK-SEL-03` | runtime matrix over valid/invalid/strict/Automatic/restart/topology/history changes; compare requested/active state, reason, graph/history generation, and next-frame result | `AC-SEL-02`, `AC-SEL-03`, `AC-SEL-05`; `FM-SEL-02`, `FM-SEL-05` |
 
 This selector contract is **defined but unproved**. A registered or persisted name is not feature evidence; release results must demonstrate the active consumer and observable result in every advertised cell.
@@ -129,6 +125,6 @@ This selector contract is **defined but unproved**. A registered or persisted na
 - [`EngineRenderingSettingsRuntime.cpp`](../../../../../../../Engine/Renderer/Private/Settings/EngineRenderingSettingsRuntime.cpp) and [`EngineRenderingSettingsPersistence.cpp`](../../../../../../../Engine/Renderer/Private/Settings/EngineRenderingSettingsPersistence.cpp)
 - [`ViewportDisplayCVars.cpp`](../../../../../../../Engine/Renderer/Private/View/ViewportDisplayCVars.cpp)
 - [`UpscalerSettings.cpp`](../../../../../../../Engine/Renderer/Private/Upscaling/UpscalerSettings.cpp) and [`RayReconstructionSettings.cpp`](../../../../../../../Engine/Renderer/Private/RayReconstruction/RayReconstructionSettings.cpp)
-- [`RayTracedShadowCVars.cpp`](../../../../../../../Engine/Renderer/Private/RayTracing/Effects/Shadows/RayTracedShadowCVars.cpp), [`RestirIndirectLightingCVars.cpp`](../../../../../../../Engine/Renderer/Private/RayTracing/Effects/RestirLighting/RestirIndirectLightingCVars.cpp), and [`ReferencePathTracerCVars.cpp`](../../../../../../../Engine/Renderer/Private/RayTracing/Effects/ReferencePathTracer/ReferencePathTracerCVars.cpp)
+- [`RayTracedShadowCVars.cpp`](../../../../../../../Engine/Renderer/Private/RayTracing/Effects/Shadows/RayTracedShadowCVars.cpp) and [`RestirIndirectLightingCVars.cpp`](../../../../../../../Engine/Renderer/Private/RayTracing/Effects/RestirLighting/RestirIndirectLightingCVars.cpp)
 - [`MaterialCVars.cpp`](../../../../../../../Engine/Renderer/Private/Scene/Materials/MaterialCVars.cpp)
 - [`RHICVars.cpp`](../../../../../../../Engine/RHI/Private/CVars/RHICVars.cpp)

@@ -22,7 +22,7 @@ Temporal sampling is shared infrastructure. It does not itself establish a compl
 
 ## Feature Contract
 
-Temporal sampling is a view-owned contract, not an implementation detail of one upscaler. `RenderViewState` turns frame/view/scene/provider/topology identity into one current/previous temporal uniform. GBuffer, motion-vector, ReSTIR, reference accumulation, exposure history, and external reconstruction consume that shared identity; no consumer may invent a second camera-history or jitter convention.
+Temporal sampling is a view-owned contract, not an implementation detail of one upscaler. `RenderViewState` turns frame/view/scene/provider/topology identity into one current/previous temporal uniform. GBuffer, motion-vector, ReSTIR, exposure history, and external reconstruction consume that shared identity; no consumer may invent a second camera-history or jitter convention. The future Reference Path Tracer observes this semantic camera continuity but owns its independent sample identity and accumulation locally.
 
 ```text
 view identity + frame ID + camera + render extent + generations
@@ -49,7 +49,7 @@ The source alternatives must not be advertised as user-selectable anti-aliasing 
 
 ## Persistent View State And Invalidation
 
-`RenderViewState` retains view identity, prior camera pose/matrices, prior NDC jitter, generation observations, two lighting-history hashes, the ray partition planner, and pending/last invalidation flags. A continuing frame publishes previous matrices and sets `HistoryValid = 1` only when a previous pose exists and no invalidation is pending.
+`RenderViewState` retains view identity, prior camera pose/matrices, prior NDC jitter, generation observations, the ReSTIR lighting-history hash, the ray partition planner, and pending/last invalidation flags. A continuing frame publishes previous matrices and sets `HistoryValid = 1` only when a previous pose exists and no invalidation is pending.
 
 | Invalidation cause | Detection owner | Required consequence |
 | --- | --- | --- |
@@ -63,7 +63,7 @@ The source alternatives must not be advertised as user-selectable anti-aliasing 
 | graph-topology generation | pass/resource topology changes | reject histories tied to the previous graph |
 | explicit reset | construction or owner-requested invalidation | begin with invalid history |
 
-An invalidation resets the reference/ReSTIR history hashes and the per-view ray partition planner as well as the common validity flag. Feature-specific history can add a narrower invalidation hash, but it cannot override an invalid common view history.
+An invalidation resets the ReSTIR history hash and the per-view ray partition planner as well as the common validity flag. Future feature-specific Reference Path Tracer history remains below that feature owner, may add stricter semantic identity, and cannot override an invalid common view history.
 
 ## Consumer And Coordinate Contract
 
@@ -72,7 +72,7 @@ An invalidation resets the reference/ReSTIR history hashes and the per-view ray 
 | raster GBuffer | applies the current jitter to rasterized clip position |
 | motion-vector shader | emits zero when common history is invalid; removes current jitter so provider motion is unjittered |
 | ReSTIR reprojection | applies geometric motion, then moves from current to previous jittered pixel grid using the jitter delta |
-| frame histories | invalidates exposure, reservoir, reference accumulation, and provider histories when common validity is false; lighting-specific hashes can invalidate further |
+| frame histories | invalidates exposure, reservoir, and provider histories when common validity is false; implemented feature-specific hashes can invalidate further |
 | Streamline providers | convert current NDC jitter to pixels, publish previous/current clip transforms only when valid, declare motion vectors unjittered, and set provider reset when requested or invalid |
 
 Current and previous matrices are zero/default when history is invalid and must not be consumed as meaningful transforms. `HistoryValid`, not nonzero matrix contents, is the authority.

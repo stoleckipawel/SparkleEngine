@@ -22,6 +22,7 @@ public:
 	void SetSideInsets(float leftInsetPixels, float rightInsetPixels) noexcept;
 	void SetRequestedExtent(RenderViewportExtent extent) noexcept;
 	void SetExposureOverrides(const ViewportExposureOverrides& overrides) noexcept;
+	void SetRenderViewMode(RenderViewMode viewMode) noexcept;
 	void SetRenderProducts(const ViewportRenderProducts& renderProducts) noexcept;
 	void SetSceneColorTexture(EditorTextureHandle texture) noexcept;
 	const ViewportRenderRequest& GetRenderRequest() const noexcept;
@@ -32,6 +33,7 @@ public:
 private:
 	void UpdateRequestedExtent(float availableWidth, float availableHeight) noexcept;
 	void BuildEmptyState() noexcept;
+	void BuildProgressOverlay() noexcept;
 
 	ViewportRenderRequest m_renderRequest = {};
 	ViewportRenderProducts m_renderProducts = {};

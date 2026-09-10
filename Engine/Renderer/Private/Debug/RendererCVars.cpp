@@ -2,7 +2,10 @@
 
 #include "Renderer/Public/Debug/RendererCVars.h"
 
-ConsoleVariable<RenderViewMode> CVarRenderViewMode("r.ViewMode", RenderViewMode::Lit, "Renderer debug view mode.");
+ConsoleVariable<RenderViewMode> CVarRenderViewMode(
+    "r.ViewMode",
+    RenderViewMode::Lit,
+    "Diagnostic default view-mode adapter used only when no per-viewport request identity exists.");
 ConsoleVariable<GBufferAlgorithm> CVarGBufferAlgorithm(
     "r.GBuffer.Algorithm",
     GBufferAlgorithm::Rasterized,
@@ -15,11 +18,6 @@ ConsoleVariable<RayTracingExecutionMode> CVarShadowRayTracingExecutionMode(
     "r.RayTracing.Shadows.Execution",
     RayTracingExecutionMode::Automatic,
     "Ray-traced shadow execution: 0=automatic, 1=inline ray query, 2=ray-tracing pipeline.");
-ConsoleVariable<LightingMode> CVarLightingMode(
-    "r.Lighting.Mode",
-    LightingMode::RestirPathTraced,
-    "Lighting pipeline: 0=ReSTIR real-time path tracing, 1=Reference Path Tracer.");
-
 ConsoleVariable<bool> CVarRendererMeshAutoBatching(
     "r.MeshAutoBatching",
     true,

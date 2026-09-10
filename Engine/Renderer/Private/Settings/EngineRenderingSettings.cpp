@@ -148,11 +148,6 @@ void EngineRenderingSettingsSection::SetGBufferRayTracingExecutionMode(RayTracin
 	SetValue(m_state.GBufferRayTracingExecutionMode, mode);
 }
 
-void EngineRenderingSettingsSection::SetLightingMode(LightingMode mode)
-{
-	SetValue(m_state.Lighting, mode);
-}
-
 void EngineRenderingSettingsSection::SetMeshAutoBatching(bool enabled)
 {
 	SetValue(m_state.MeshAutoBatching, enabled);
@@ -186,11 +181,6 @@ void EngineRenderingSettingsSection::SetPtlasMarkAllDynamicInPartition(bool enab
 void EngineRenderingSettingsSection::SetPtlasModeChangeDistance(float distance)
 {
 	SetValue(m_state.PtlasModeChangeDistance, distance);
-}
-
-void EngineRenderingSettingsSection::SetRenderViewMode(RenderViewMode viewMode)
-{
-	SetValue(m_state.ViewMode, viewMode);
 }
 
 bool EngineRenderingSettingsSection::ComputePendingRestart() const noexcept

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Editor/EditorTextureHandle.h"
+#include "../Debug/RenderViewMode.h"
 #include "../RendererAPI.h"
 #include "../Settings/EngineRenderingDisplayTypes.h"
 #include "RHI/Public/Formats/PixelFormat.h"
@@ -158,8 +159,25 @@ struct SPARKLE_RENDERER_API ViewportRenderRequest
 	RenderViewKind ViewKind = RenderViewKind::Game;
 	RenderViewportExtent Extent = {};
 	RenderViewSelectionToken ViewSelection = {};
+	RenderViewMode ViewMode = RenderViewMode::Lit;
 	RenderOutputFlags RequestedOutputs = RenderOutputFlags::SceneColor;
 	ViewportExposureOverrides Exposure;
+};
+
+enum class ViewportRenderProgressState : std::uint8_t
+{
+	None = 0,
+	Unavailable,
+	Rendering,
+	Complete,
+};
+
+struct SPARKLE_RENDERER_API ViewportRenderProgress final
+{
+	RenderViewMode ViewMode = RenderViewMode::Lit;
+	ViewportRenderProgressState State = ViewportRenderProgressState::None;
+	std::uint64_t CompletedWork = 0;
+	std::uint64_t TargetWork = 0;
 };
 
 struct SPARKLE_RENDERER_API ViewportRenderProducts
@@ -175,6 +193,7 @@ struct SPARKLE_RENDERER_API ViewportRenderProducts
 	const RenderProduct& GetObjectId() const noexcept { return m_objectId; }
 	const RenderProduct& GetNormals() const noexcept { return m_normals; }
 	const RenderProduct& GetOverlayMask() const noexcept { return m_overlayMask; }
+	const ViewportRenderProgress& GetProgress() const noexcept { return m_progress; }
 
 	void Clear() noexcept;
 
@@ -182,6 +201,7 @@ struct SPARKLE_RENDERER_API ViewportRenderProducts
 
 	void ClearProduct(RenderOutputFlags output) noexcept;
 	void SetProduct(RenderOutputFlags output, RenderProduct product) noexcept;
+	void SetProgress(ViewportRenderProgress progress) noexcept { m_progress = progress; }
 
 private:
 	RenderProduct* SelectProduct(RenderOutputFlags output) noexcept;
@@ -195,4 +215,5 @@ private:
 	RenderProduct m_objectId = {};
 	RenderProduct m_normals = {};
 	RenderProduct m_overlayMask = {};
+	ViewportRenderProgress m_progress = {};
 };

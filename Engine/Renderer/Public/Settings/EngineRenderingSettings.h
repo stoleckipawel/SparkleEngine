@@ -1,7 +1,6 @@
 #pragma once
 
 #include "RHI/Public/Presentation/RhiPresentationDefaults.h"
-#include "Renderer/Public/Debug/RenderViewMode.h"
 #include "Renderer/Public/Settings/EngineRenderingDisplayTypes.h"
 #include "Renderer/Public/Settings/EngineRenderingRayReconstructionTypes.h"
 #include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
@@ -33,7 +32,6 @@ struct EngineRenderingSettingsState final
 	EngineRayReconstructionMode RayReconstructionMode = EngineRayReconstructionMode::Off;
 	GBufferAlgorithm SelectedGBufferAlgorithm = GBufferAlgorithm::Rasterized;
 	RayTracingExecutionMode GBufferRayTracingExecutionMode = RayTracingExecutionMode::Automatic;
-	LightingMode Lighting = LightingMode::RestirPathTraced;
 	bool MeshAutoBatching = true;
 	bool RefitTlas = true;
 	bool PtlasActive = false;
@@ -41,7 +39,6 @@ struct EngineRenderingSettingsState final
 	RayTracingPtlasPartitionUpdateMode PtlasPartitionUpdateMode = RayTracingPtlasPartitionUpdateMode::AlwaysUpdatePartition;
 	bool PtlasMarkAllDynamicInPartition = false;
 	float PtlasModeChangeDistance = 100.0f;
-	RenderViewMode ViewMode = RenderViewMode::Lit;
 };
 
 class SPARKLE_RENDERER_API EngineRenderingSettingsSection final
@@ -81,7 +78,6 @@ public:
 	void SetRayReconstructionMode(EngineRayReconstructionMode mode);
 	void SetGBufferAlgorithm(GBufferAlgorithm algorithm);
 	void SetGBufferRayTracingExecutionMode(RayTracingExecutionMode mode);
-	void SetLightingMode(LightingMode mode);
 	void SetMeshAutoBatching(bool enabled);
 	void SetRefitTlas(bool enabled);
 	void SetPtlasActive(bool active);
@@ -89,7 +85,6 @@ public:
 	void SetPtlasPartitionUpdateMode(RayTracingPtlasPartitionUpdateMode mode);
 	void SetPtlasMarkAllDynamicInPartition(bool enabled);
 	void SetPtlasModeChangeDistance(float distance);
-	void SetRenderViewMode(RenderViewMode viewMode);
 
 private:
 	template <typename TValue> void SetValue(TValue& destination, TValue value)

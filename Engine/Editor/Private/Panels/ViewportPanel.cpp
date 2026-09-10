@@ -4,6 +4,7 @@
 #include "Util/UiUtil.h"
 
 #include <algorithm>
+#include <cstdio>
 
 #include <imgui.h>
 
@@ -86,6 +87,15 @@ void ViewportPanel::SetExposureOverrides(const ViewportExposureOverrides& overri
 	}
 }
 
+void ViewportPanel::SetRenderViewMode(RenderViewMode viewMode) noexcept
+{
+	if (m_renderRequest.ViewMode != viewMode)
+	{
+		m_renderRequest.ViewMode = viewMode;
+		++m_renderRequest.Generation;
+	}
+}
+
 const ViewportRenderRequest& ViewportPanel::GetRenderRequest() const noexcept
 {
 	return m_renderRequest;
@@ -118,6 +128,45 @@ void ViewportPanel::BuildEmptyState() noexcept
 	ImGui::Spacing();
 	ImGui::TextWrapped(
 	    "EditorApplication is requesting runtime scene output, but no scene color surface is available for presentation yet.");
+}
+
+void ViewportPanel::BuildProgressOverlay() noexcept
+{
+	const ViewportRenderProgress& progress = m_renderProducts.GetProgress();
+	if (progress.State == ViewportRenderProgressState::None || progress.ViewMode != m_renderRequest.ViewMode)
+	{
+		return;
+	}
+
+	const ImVec2 viewportMin = ImGui::GetWindowPos();
+	ImGui::SetCursorScreenPos(ImVec2(viewportMin.x + 12.0f, viewportMin.y + 12.0f));
+	ImGui::BeginChild(
+	    "##ViewportRenderProgress",
+	    ImVec2(260.0f, progress.State == ViewportRenderProgressState::Unavailable ? 34.0f : 58.0f),
+	    ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY,
+	    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoInputs);
+
+	if (progress.State == ViewportRenderProgressState::Unavailable)
+	{
+		ImGui::TextUnformatted("Selected view mode is unavailable");
+	}
+	else
+	{
+		const float fraction = progress.TargetWork == 0
+		    ? 0.0f
+		    : (std::min) (1.0f, static_cast<float>(progress.CompletedWork) / static_cast<float>(progress.TargetWork));
+		char label[64] = {};
+		std::snprintf(
+		    label,
+		    sizeof(label),
+		    "%llu / %llu",
+		    static_cast<unsigned long long>(progress.CompletedWork),
+		    static_cast<unsigned long long>(progress.TargetWork));
+		ImGui::TextUnformatted(progress.State == ViewportRenderProgressState::Complete ? "Complete" : "Rendering");
+		ImGui::ProgressBar(fraction, ImVec2(-1.0f, 0.0f), label);
+	}
+
+	ImGui::EndChild();
 }
 
 void ViewportPanel::BuildUI(bool disableInteraction)
@@ -174,6 +223,7 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 
 		ImGui::Image(static_cast<ImTextureID>(m_sceneColorTexture.Pack()), imageSize);
 	}
+	BuildProgressOverlay();
 
 	ImGui::EndChild();
 	ImGui::EndDisabled();

@@ -4,7 +4,6 @@
 
 #include "Config/DepthConvention.h"
 #include "Core/Public/Math/WorldCoordinateSystem.h"
-#include "Debug/RendererCVars.h"
 #include "GameFramework/Public/Scene/Camera/CameraDesc.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "RHI/Public/Resources/RhiResourceDesc.h"
@@ -44,6 +43,7 @@ void RenderViewBuilder::Build(RenderView& output, RenderViewState& state, const 
 	output.viewportId = request.ViewportRequest.ViewportId;
 	output.selection = request.ViewportRequest.ViewSelection;
 	output.kind = request.ViewportRequest.ViewKind;
+	output.viewMode = request.ViewportRequest.ViewMode;
 	output.renderExtent = request.RenderExtent;
 	output.outputExtent = request.OutputExtent;
 	output.displaySettings = ResolvedViewportDisplaySettings::Resolve(request.ViewportRequest.Exposure);
@@ -95,7 +95,7 @@ void RenderViewBuilder::Build(RenderView& output, RenderViewState& state, const 
 	const float renderHeight = static_cast<float>((std::max) (request.RenderExtent.Height, 1u));
 	output.uniform.ViewportSize = {renderWidth, renderHeight};
 	output.uniform.ViewportSizeInv = {1.0f / renderWidth, 1.0f / renderHeight};
-	output.uniform.ViewModeIndex = static_cast<std::uint32_t>(CVarRenderViewMode.Get());
+	output.uniform.ViewModeIndex = static_cast<std::uint32_t>(output.viewMode);
 
 	output.temporalUniform = state.BuildTemporal(
 	    RenderViewStateBuildInput{

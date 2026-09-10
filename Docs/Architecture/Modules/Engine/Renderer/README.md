@@ -47,7 +47,7 @@ flowchart LR
     UI --> RHI[RHI submission and presentation]
 
     GBuffer -. debug view .-> Tone
-    Lighting -. reference accumulation .-> Reconstruct
+    Lighting -. future reference view-mode route .-> Reconstruct
     Ready -. BLAS/TLAS preparation .-> GBuffer
 ```
 

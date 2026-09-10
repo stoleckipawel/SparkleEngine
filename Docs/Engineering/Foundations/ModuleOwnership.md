@@ -162,6 +162,33 @@ An engine scales when a capability can evolve, validate, and retire inside a pre
 
 Review change fan-out and dependency direction, not only local class quality. A locally elegant type that forces repository-wide knowledge is not modular.
 
+### Feature Enclosure And Integration-Hook Budget
+
+A feature is an enclosed capability with a predictable implementation home. Its algorithms, private state, validation, resource declarations, shader bindings, diagnostics, and feature-specific failure handling MUST live beneath that home. Existing Scene, View, frame, graph, RHI, Editor, and Application owners expose or consume only the semantic information they already own.
+
+The normal integration budget for a feature is:
+
+1. one existing semantic selector or request field when user or caller intent truly varies;
+2. one named composition call at the owning frame, graph, pipeline, operation, or UI assembly point;
+3. existing generic inputs and mechanisms, such as Scene/View data, frame-graph resources, RHI commands, or an already justified progress/result channel;
+4. the smallest presentation hook required by a real user; and
+5. build/generated membership, subject documentation, and defect-detecting checks.
+
+This is a responsibility budget, not a license to add five abstractions. Zero new public types and zero new generic fields is the default. Any additional cross-owner hook must name its consumer, invariant, lifetime, failure behavior, why the feature owner cannot keep it private, and the check that would fail if it were removed or miswired.
+
+A feature change fails enclosure review when feature-named state or branching appears in generic Scene/View/RHI/settings/history types without a semantic need shared by their other consumers; an orchestrator owns the feature's state machine or algorithm; UI stores Renderer truth; backend code selects feature policy; one feature requires repeated switches across unrelated callers; or deleting the feature would leave broad scaffolding behind.
+
+Every staged feature change MUST retain an integration-hook ledger. Classify each touched file outside the feature home as **existing hook**, **new justified hook**, **clean-break deletion**, **build/generated membership**, **documentation/evidence**, or **unrelated**. `Unrelated` is forbidden. A new justified hook blocks the stage until architecture review accepts it. The stage also records:
+
+- feature-named production references outside the feature home;
+- new public types, generic fields, settings, registries, services, and owner members;
+- repeated selector or policy switches;
+- dependency direction into and out of the feature;
+- the deletion path if the feature is removed; and
+- the smallest check that proves the orchestrator only selects/invokes/publishes while the feature owner retains mechanism and state.
+
+The ledger is required even when the diff is small. A build or formatter result cannot pass this architecture property.
+
 ## SOLID Without Ceremony
 
 ### Single Responsibility

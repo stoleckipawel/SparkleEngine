@@ -57,7 +57,6 @@ EngineRenderingSettingsState EngineRenderingSettingsRuntime::Capture() noexcept
 	state.RayReconstructionMode = CVarRayReconstructionMode.Get();
 	state.SelectedGBufferAlgorithm = CVarGBufferAlgorithm.Get();
 	state.GBufferRayTracingExecutionMode = CVarGBufferRayTracingExecutionMode.Get();
-	state.Lighting = CVarLightingMode.Get();
 	state.MeshAutoBatching = CVarRendererMeshAutoBatching.Get();
 	state.RefitTlas = CVarRayTracingClassicTlasRefit.Get();
 	state.PtlasActive = CVarRayTracingPreferPartitionedTlas.Get();
@@ -65,7 +64,6 @@ EngineRenderingSettingsState EngineRenderingSettingsRuntime::Capture() noexcept
 	state.PtlasPartitionUpdateMode = CVarRayTracingPtlasPartitionUpdateMode.Get();
 	state.PtlasMarkAllDynamicInPartition = CVarRayTracingPtlasMarkAllDynamicInPartition.Get();
 	state.PtlasModeChangeDistance = CVarRayTracingPtlasModeChangeDistance.Get();
-	state.ViewMode = CVarRenderViewMode.Get();
 	return state;
 }
 
@@ -97,7 +95,6 @@ void EngineRenderingSettingsRuntime::Apply(const EngineRenderingSettingsState& s
 	setCVarIfChanged(CVarRayReconstructionMode, state.RayReconstructionMode);
 	setCVarIfChanged(CVarGBufferAlgorithm, state.SelectedGBufferAlgorithm);
 	setCVarIfChanged(CVarGBufferRayTracingExecutionMode, state.GBufferRayTracingExecutionMode);
-	setCVarIfChanged(CVarLightingMode, state.Lighting);
 	setCVarIfChanged(CVarRendererMeshAutoBatching, state.MeshAutoBatching);
 	setCVarIfChanged(CVarRayTracingClassicTlasRefit, state.RefitTlas);
 	setCVarIfChanged(CVarRayTracingPreferPartitionedTlas, state.PtlasActive);
@@ -105,7 +102,6 @@ void EngineRenderingSettingsRuntime::Apply(const EngineRenderingSettingsState& s
 	setCVarIfChanged(CVarRayTracingPtlasPartitionUpdateMode, state.PtlasPartitionUpdateMode);
 	setCVarIfChanged(CVarRayTracingPtlasMarkAllDynamicInPartition, state.PtlasMarkAllDynamicInPartition);
 	setCVarIfChanged(CVarRayTracingPtlasModeChangeDistance, state.PtlasModeChangeDistance);
-	setCVarIfChanged(CVarRenderViewMode, state.ViewMode);
 }
 
 void EngineRenderingSettingsRuntime::ApplyPersistedValues() noexcept

@@ -525,6 +525,18 @@ flowchart LR
 
 Explain why policy remains with the feature owner and lower layers expose mechanism rather than choosing product behavior.
 
+## Feature Enclosure And Integration-Hook Budget
+
+Name one implementation home and the one-sentence responsibility it owns. Draw the shortest host-frame or operation route into it, then freeze the allowed hooks before implementation.
+
+| Surface | Permitted role | Existing or new | Exact semantic payload | Why it cannot remain feature-local | Removal proof | Per-stage check |
+| --- | --- | --- | --- | --- | --- | --- |
+| {{COMPOSITION_POINT}} | select and invoke only | {{STATE}} | {{INTENT_OR_RESULT}} | {{NECESSITY}} | {{ZERO_RESIDUE_SEARCH}} | `CHK-{{PREFIX}}-ARCH` |
+
+Default to zero new public types, zero feature-specific fields on generic owners, and zero feature policy in Scene, View, RHI, settings, history, UI, or application orchestration. List every accepted exception. The feature owner contains algorithms, mutable state, validation, resource declarations, shader bindings, diagnostics, and feature-specific failure handling. Generic owners may retain only existing semantic truth and narrow composition/publication.
+
+Define `AC-{{PREFIX}}-ARCH` for enclosure/change locality, `FM-{{PREFIX}}-ARCH` for feature diffusion or duplicate authority, and `CHK-{{PREFIX}}-ARCH` as a mandatory per-stage architecture-fitness audit. The check inventories every touched file outside the feature home, searches feature symbols and repeated selectors, inspects public/shared surface growth and dependency direction, verifies the orchestrator contains no mechanics, and proves bounded deletion. A build or formatter result is never this evidence.
+
 ## Owner, Producer, Consumer, And Lifetime
 
 | Data, state, or operation | Mutable owner | Producer | Consumers | Identity/generation | Lifetime/publication | Capacity/retirement |
@@ -778,7 +790,8 @@ Every stage executor must:
 7. preserve explicit requested-versus-active state, strict unsupported behavior, safe failure, bounded cancellation, and transactional publication;
 8. map every changed semantic to its accepted rule and every claim/failure to a defect-detecting check;
 9. inspect the scoped diff and run the cheapest applicable checks before escalating;
-10. report exact commands, configurations, outputs, retained artifacts, unavailable checks, limitations, blockers, deletions, and next permitted stage.
+10. run the feature's architecture-fitness check and retain its integration-hook ledger; a new unjustified hook, feature-specific generic state, scattered policy switch, or public implementation vocabulary blocks the stage;
+11. report exact commands, configurations, outputs, retained artifacts, unavailable checks, limitations, blockers, deletions, and next permitted stage.
 
 Every prompt's `NON-NEGOTIABLE` paragraph is an exit gate. The handoff quotes each requirement with proof or reports `BLOCKED`.
 
@@ -791,6 +804,7 @@ Every prompt's `NON-NEGOTIABLE` paragraph is an exit gate. The handoff quotes ea
 - Preview/diagnostic/partial output cannot become authoritative result.
 - Thresholds, seeds, matrices, budgets, and stop rules are frozen before candidate results are observed.
 - Temporary probes remain local-only and are removed before final adoption unless accepted as durable product checks.
+- Every stage passes `CHK-{{PREFIX}}-ARCH`; implementation remains predominantly inside the frozen feature home and each outside edit is an accepted composition, consumer, build/generated, documentation/evidence, or clean-break hook.
 
 ## Stage {{N}} — {{OUTCOME_NAME}}
 
@@ -823,6 +837,7 @@ State one observable vertical-slice outcome, not a list of files or mechanisms.
 - Required deletion and no-stale-reference proof.
 - Required review and evidence artifacts.
 - Explicit `BLOCKED` triggers.
+- `CHK-{{PREFIX}}-ARCH` passes for this stage with an exact outside-feature hook ledger, public-surface delta, dependency audit, feature-symbol/repeated-switch searches, and bounded-removal result.
 
 ### Ready-To-Use Implementation Prompt
 
@@ -835,11 +850,11 @@ Inspect first: {{OWNERS_PRODUCERS_CONSUMERS_LIFETIME_SELECTORS_BUILD_AND_CURRENT
 
 Change: {{EXACT_SEMANTIC_ARCHITECTURE_UX_AND_PRODUCTION_BOUNDARY}}. Update every owned producer/consumer/build/generated/document surface and delete {{REPLACED_AUTHORITY}} as one clean break.
 
-NON-NEGOTIABLE: {{THE_FEW_CORRECTNESS_OWNERSHIP_LIFETIME_FAILURE_OR_UX_FACTS_WHOSE_VIOLATION_COULD_PRODUCE_PLAUSIBLE_BUT_WRONG_SUCCESS}}. Quote each item at handoff with its retained proof or report BLOCKED.
+NON-NEGOTIABLE: {{THE_FEW_CORRECTNESS_OWNERSHIP_LIFETIME_FAILURE_OR_UX_FACTS_WHOSE_VIOLATION_COULD_PRODUCE_PLAUSIBLE_BUT_WRONG_SUCCESS}}. Keep the implementation inside {{FEATURE_HOME}} behind the frozen integration hooks. Generic orchestrators select, invoke, and publish only; they do not acquire feature state, algorithms, validation, resource policy, shader bindings, or feature-specific failure logic. Quote each item at handoff with its retained proof or report BLOCKED.
 
 Do not implement: {{LATER_STAGES_GENERIC_FRAMEWORKS_COMPATIBILITY_PATHS_OPTIMIZATIONS_OR_EXCLUDED_FEATURES}}.
 
-Validate: run {{PREDECLARED_SMALLEST_FALSIFIERS_FAULT_INJECTIONS_MATRIX_AND_REQUIRED_REPOSITORY_CHECKS}}. A build, launch, screenshot, responsive process, or plausible output alone is not an exit result. Do not change thresholds or controls after observing the candidate.
+Validate: run {{PREDECLARED_SMALLEST_FALSIFIERS_FAULT_INJECTIONS_MATRIX_AND_REQUIRED_REPOSITORY_CHECKS}} and `CHK-{{PREFIX}}-ARCH`. Retain every outside-feature touched file and feature-symbol occurrence with its accepted hook role. A build, launch, screenshot, responsive process, plausible output, or formatter result alone is not an exit result. Do not change thresholds or controls after observing the candidate.
 
 Stop if: {{MISSING_DECISION_DUPLICATE_AUTHORITY_SEMANTIC_DIVERGENCE_UNOWNED_LIFETIME_SILENT_FALLBACK_UNBOUNDED_FAILURE_OR_EVIDENCE_INVALIDITY}}.
 
@@ -881,6 +896,7 @@ The gate fails when:
 | Discovery passes because documentation is lengthy | Open constants, units, budgets, or ownership decisions survive into coding. | Require binary decision rows, artifacts, independent review, and no inferred slot. |
 | The plan chooses architecture | Later stages silently rewrite the durable design. | Resolve design in its owner before freezing the stage prompt. |
 | A stage is horizontal plumbing only | Many abstractions exist without a real end-to-end result. | Deliver the smallest real vertical slice and expand from proven semantics. |
+| A feature diffuses through generic owners | Each individual edit looks small, but understanding or removing the feature requires tracing the entire engine. | Freeze one feature home and hook budget; run `CHK-{{PREFIX}}-ARCH` at every stage and block every unledgered outside edit. |
 | Prompt says “implement correctly” | The executor can satisfy prose with a plausible but wrong route. | Add explicit non-negotiable invariants, falsifiers, exclusions, and stop conditions. |
 | Acceptance covers only the happy path | Partial, failed, stale, or unsupported states can masquerade as success. | Pair each material failure with safe state, recovery, cleanup, and negative check. |
 | Thresholds are chosen after output | Evidence becomes tuning rather than evaluation. | Freeze matrix, oracle, samples, thresholds, and escalation before the candidate. |
@@ -909,8 +925,9 @@ Before handing the package to an implementation agent, verify:
 12. the final route includes adoption, package/profile isolation, removal of temporary/replaced paths, documentation reconciliation, and feature-completion reporting;
 13. all placeholders are resolved or are explicit blocked rows with owners;
 14. the nearest indexes route the package and direct siblings remain within the navigation budget;
-15. local links/anchors, IDs, UTF-8, whitespace, and `git diff --check` pass;
-16. the handoff explicitly lists every build, runtime, visual, native-validation, performance, security, package, accessibility, or clean-machine check not run.
+15. one feature home and an explicit integration-hook budget are frozen; every stage requires architecture-fitness acceptance and a bounded-removal proof;
+16. local links/anchors, IDs, UTF-8, whitespace, and `git diff --check` pass;
+17. the handoff explicitly lists every build, runtime, visual, native-validation, performance, security, package, accessibility, or clean-machine check not run.
 
 ## Worked Example
 

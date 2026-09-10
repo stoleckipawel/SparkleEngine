@@ -60,15 +60,9 @@ There are exactly 35 registrations: 25 Compute, one Vertex, one Pixel, two RayGe
 
 See [Indirect Lighting](../Lighting/IndirectLighting.md) for the algorithm, history, inputs, limits, and evidence boundary.
 
-## Reference Direct And Indirect Lighting
+## Reference Path Tracer Programs
 
-| Program | Virtual source | Entry | Stage | Runtime consumer and boundary |
-| --- | --- | --- | --- | --- |
-| `ReferencePathTracerDirectLightingCS` | `/Engine/Passes/RayTracing/ReferencePathTracerDirectLighting.hlsl` | `main` | Compute | Reference direct sampler; inline ray query and fixed material texture table. |
-| `ReferencePathTracerIndirectLightingCS` | `/Engine/Passes/RayTracing/ReferencePathTracerIndirectLighting.hlsl` | `main` | Compute | Reference indirect sampler; inline ray query, sky, deformation/hit/material inputs. |
-| `ReferencePathTracerAccumulationCS` | `/Engine/Passes/RayTracing/ReferencePathTracerAccumulation.hlsl` | `main` | Compute | Motion/validity-aware RGBA32F reference-history accumulation; does not trace rays itself. |
-
-The three ReSTIR-indirect and three reference traversal/accumulation programs have no registered RayGeneration/Miss/Hit equivalents. The native-pipeline claim must therefore remain limited to GBuffer and direct-shadow visibility. See the [Reference Path Tracer](../Lighting/ReferencePathTracer/README.md) for why the reference route is not yet an accepted oracle.
+No Reference Path Tracer shader program is registered after the Stage 1 clean break. The per-view mode currently reaches a Private feature owner that reports unavailable; later stages add the frozen semantic integrator and its traversal adapters here. The current native-pipeline claim remains limited to GBuffer and direct-shadow visibility. See the [Reference Path Tracer](../Lighting/ReferencePathTracer/README.md).
 
 ## Lighting Composite And Sky
 

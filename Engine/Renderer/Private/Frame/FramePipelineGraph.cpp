@@ -29,10 +29,8 @@ RenderViewportExtent FramePipeline::ResolveOutputExtent() const noexcept
 RenderFrameGraphSettings FramePipeline::ResolveFrameGraphSettings() const noexcept
 {
 	const RenderViewportExtent outputExtent = ResolveOutputExtent();
-	const LightingMode lighting = CVarLightingMode.Get();
 	const ResolvedViewportDisplaySettings displaySettings = ResolvedViewportDisplaySettings::Resolve(m_viewportRenderRequest.Exposure);
-	const ImageProviderPipeline imagePipeline = lighting == LightingMode::RestirPathTraced ? ImageProviderPipeline::RayReconstruction
-	                                                                                       : ImageProviderPipeline::PresentationUpscaling;
+	const ImageProviderPipeline imagePipeline = ImageProviderPipeline::RayReconstruction;
 	return RenderFrameGraphSettings{
 	    .RenderExtent = m_imageProviders.ResolveRenderExtent(outputExtent, imagePipeline),
 	    .OutputExtent = outputExtent,
@@ -68,12 +66,9 @@ void FramePipeline::InitializeFrameGraph(const RenderFrameGraphSettings& setting
 	RenderFrameGraphFactory frameGraphFactory(dependencies);
 	RenderFrameGraphBuildResult buildResult = frameGraphFactory.Build();
 	m_frameGraphSettings = settings;
-	m_builtLightingMode = CVarLightingMode.Get();
 	m_builtGBufferAlgorithm = CVarGBufferAlgorithm.Get();
 	m_builtGBufferExecutionPlan = ResolveRayTracingGBufferExecutionPlan(m_renderScene.GetRayTracingScene().GetCapabilityReport());
-	m_builtShadowExecutionPlan = m_builtLightingMode == LightingMode::RestirPathTraced
-	    ? ResolveRayTracingShadowExecutionPlan(m_renderScene.GetRayTracingScene().GetCapabilityReport())
-	    : RayTracingShadowExecutionPlan{};
+	m_builtShadowExecutionPlan = ResolveRayTracingShadowExecutionPlan(m_renderScene.GetRayTracingScene().GetCapabilityReport());
 	m_builtShaderTablePlanGeneration = m_renderScene.GetRayTracingScene().GetShaderTablePlan().GetGeneration();
 	m_builtShaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration();
 	m_frameResources = buildResult.Resources;
@@ -139,22 +134,20 @@ void FramePipeline::RefreshGraphForTopology() noexcept
 	}
 
 	const RenderFrameGraphSettings settings = ResolveFrameGraphSettings();
-	const LightingMode lightingMode = CVarLightingMode.Get();
 	const GBufferAlgorithm gBufferAlgorithm = CVarGBufferAlgorithm.Get();
 	const RayTracingGBufferExecutionPlan gBufferExecutionPlan =
 	    ResolveRayTracingGBufferExecutionPlan(m_renderScene.GetRayTracingScene().GetCapabilityReport());
-	const RayTracingShadowExecutionPlan shadowExecutionPlan = lightingMode == LightingMode::RestirPathTraced
-	    ? ResolveRayTracingShadowExecutionPlan(m_renderScene.GetRayTracingScene().GetCapabilityReport())
-	    : RayTracingShadowExecutionPlan{};
+	const RayTracingShadowExecutionPlan shadowExecutionPlan =
+	    ResolveRayTracingShadowExecutionPlan(m_renderScene.GetRayTracingScene().GetCapabilityReport());
 	const std::uint64_t shaderTablePlanGeneration = m_renderScene.GetRayTracingScene().GetShaderTablePlan().GetGeneration();
 	const std::uint64_t shaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration();
 	const bool usesSceneShaderTable = gBufferExecutionPlan.Active == RayTracingExecutionFrontend::Pipeline
 	    || shadowExecutionPlan.Active == RayTracingExecutionFrontend::Pipeline
 	    || m_builtGBufferExecutionPlan.Active == RayTracingExecutionFrontend::Pipeline
 	    || m_builtShadowExecutionPlan.Active == RayTracingExecutionFrontend::Pipeline;
-	if (providerChanged || settings != m_frameGraphSettings || lightingMode != m_builtLightingMode
-	    || gBufferAlgorithm != m_builtGBufferAlgorithm || gBufferExecutionPlan != m_builtGBufferExecutionPlan
-	    || shadowExecutionPlan != m_builtShadowExecutionPlan || shaderGeneration != m_builtShaderGeneration
+	if (providerChanged || settings != m_frameGraphSettings || gBufferAlgorithm != m_builtGBufferAlgorithm
+	    || gBufferExecutionPlan != m_builtGBufferExecutionPlan || shadowExecutionPlan != m_builtShadowExecutionPlan
+	    || shaderGeneration != m_builtShaderGeneration
 	    || (usesSceneShaderTable && shaderTablePlanGeneration != m_builtShaderTablePlanGeneration))
 	{
 		InvalidateViewHistory(RenderViewInvalidationReason::GraphTopology);

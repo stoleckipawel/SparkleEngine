@@ -214,6 +214,12 @@ If a rule cannot state its owner or enforcement path, keep it a candidate rather
 
 ## Source Files and Headers
 
+### Architecture Fitness Is A Checked Style Property
+
+Readable code includes readable ownership. Feature work follows the binding [feature-enclosure and integration-hook budget](ModuleOwnership.md#feature-enclosure-and-integration-hook-budget): the implementation remains in one predictable feature home, generic orchestration contains only the narrow composition hook, and public or shared vocabulary exists only for a proved consumer boundary.
+
+Every feature stage treats enclosure, change locality, SOLID responsibility, and DRY authority as binary acceptance properties. The review retains the integration-hook ledger, feature-symbol search, public-surface delta, repeated-switch search, dependency direction, and removal-path result. Formatting, line count, a successful build, or many small classes cannot substitute for this check.
+
 ### Placement
 
 - Public files contain stable contracts required across module boundaries.

@@ -24,6 +24,8 @@ public:
 		{
 			case RenderViewMode::Lit:
 				return UiUtil::EditorIcon::ViewLit;
+			case RenderViewMode::ReferencePathTracer:
+				return UiUtil::EditorIcon::ViewLit;
 			case RenderViewMode::Wireframe:
 				return UiUtil::EditorIcon::ViewMode;
 			case RenderViewMode::GBufferDiffuse:
@@ -92,6 +94,8 @@ const char* ViewportTopPanel::GetViewModeLabel(RenderViewMode viewMode) noexcept
 	{
 		case RenderViewMode::Lit:
 			return "Lit";
+		case RenderViewMode::ReferencePathTracer:
+			return "Reference Path Tracer (Unavailable)";
 		case RenderViewMode::Wireframe:
 			return "Wireframe";
 		case RenderViewMode::GBufferDiffuse:
@@ -148,9 +152,9 @@ void ViewportTopPanel::DrawViewModeOption(RenderViewMode option, RenderViewMode 
 	const std::string optionLabel = UiUtil::MakeIconLabel(ViewModePresentation::GetViewModeIcon(option), GetViewModeLabel(option));
 	if (ImGui::Selectable(optionLabel.c_str(), selected))
 	{
-		if (m_renderingSettings != nullptr)
+		if (m_viewportSession != nullptr)
 		{
-			m_renderingSettings->SetRenderViewMode(option);
+			m_viewportSession->SetViewMode(option);
 		}
 	}
 
@@ -182,7 +186,7 @@ void ViewportTopPanel::BuildLevelName(bool compact) const noexcept
 
 void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction, bool compact) noexcept
 {
-	RenderViewMode currentViewMode = m_renderingSettings != nullptr ? m_renderingSettings->GetState().ViewMode : RenderViewMode::Lit;
+	RenderViewMode currentViewMode = m_viewportSession != nullptr ? m_viewportSession->GetViewMode() : RenderViewMode::Lit;
 	if (currentViewMode >= RenderViewMode::Count)
 	{
 		currentViewMode = RenderViewMode::Lit;

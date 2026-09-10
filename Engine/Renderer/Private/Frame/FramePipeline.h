@@ -27,6 +27,7 @@ class GpuMeshCache;
 class RendererImageProviderStack;
 class RendererMemoryMonitor;
 class RenderPassRuntimeCache;
+class ReferencePathTracer;
 class RenderScene;
 class RenderScenePreparation;
 class RenderViewBuilder;
@@ -118,7 +119,6 @@ private:
 	std::vector<std::unique_ptr<RenderFrame>> m_renderFrames;
 	FrameExecutionRetirementQueue m_frameExecutionRetirementQueue;
 	RenderFrameGraphSettings m_frameGraphSettings = {};
-	LightingMode m_builtLightingMode = LightingMode::RestirPathTraced;
 	GBufferAlgorithm m_builtGBufferAlgorithm = GBufferAlgorithm::Rasterized;
 	RayTracingGBufferExecutionPlan m_builtGBufferExecutionPlan = {};
 	RayTracingShadowExecutionPlan m_builtShadowExecutionPlan = {};
@@ -132,6 +132,7 @@ private:
 	std::uint64_t m_graphTopologyGeneration = 0u;
 	std::unique_ptr<UiFrameRenderer> m_uiFrameRenderer;
 	std::unique_ptr<ViewportCaptureService> m_viewportCaptureService;
+	std::unique_ptr<ReferencePathTracer> m_referencePathTracer;
 	bool m_resizePending = false;
 	bool m_windowMinimized = false;
 	ImageProviderGraphKey m_imageProviderFrameGraphKey = {};

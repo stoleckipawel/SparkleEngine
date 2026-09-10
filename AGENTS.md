@@ -24,6 +24,7 @@ Strategy owns desired outcomes and priorities. Architecture owns current/target 
 ## Working Agreements
 
 - Inspect the current owner, producers, consumers, lifetime, and build membership before editing. Search the repository with `rg` and `rg --files` before adding or renaming a concept.
+- For feature work, enforce the [feature-enclosure and integration-hook budget](Docs/Engineering/Foundations/ModuleOwnership.md#feature-enclosure-and-integration-hook-budget) at every implementation stage. Keep mechanism and feature state in one predictable owner; treat every feature-named edit outside it as an integration hook that requires ledgered justification and a defect-detecting check.
 - Apply the [single-truth and copy budget](Docs/Engineering/Foundations/DataAndMemory.md#single-truth-and-copy-budget) before adding a data holder or snapshot; prefer references, views, handles, and moves unless a real boundary requires a copy.
 - Extend the existing owner and production path. Follow the current [clean-break policy](Docs/Engineering/Workflow/ChangeIntegration.md#current-clean-break-policy): update every producer and consumer, delete the replaced path in the same change, and regenerate local artifacts. Do not add internal versioning, legacy paths, migration readers/writers, compatibility adapters, aliases, or dual representations.
 - Keep changes scoped, preserve unrelated work, and recheck the revision, status, and scoped diff before handoff. If concurrent work overlaps the owned path, reconcile it rather than restoring an earlier snapshot.

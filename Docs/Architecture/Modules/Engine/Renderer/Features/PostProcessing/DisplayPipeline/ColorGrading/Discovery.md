@@ -6,7 +6,7 @@
 
 **Authority boundary:** [Research](Research.md) supplies precedent; [Semantics](Semantics.md), [Execution Architecture](ExecutionArchitecture.md), and [User Experience](UserExperience.md) are conditional design candidates; [Plan](Plan.md) orders work only after this gate passes; [README](README.md) owns feature acceptance; code and build configuration own implementation
 
-**Verified:** 2026-09-10 against committed revision `30597d7d`; current Renderer, shader, texture-cooking, settings, editor, and package routes were re-inspected as source only; unrelated dirty work was present outside this package
+**Verified:** 2026-09-10 against committed revision `ca55e7d8`; current Renderer, shader, texture-cooking, settings, editor, and package routes were re-inspected as source only; concurrent user-owned dirty work was present outside this package and was not treated as committed proof
 
 **Current readiness:** **0/100** — discovery adds no implementation, verification, delivery, or adoption credit. See [Current Feature Readiness](../../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
@@ -31,7 +31,7 @@ Color grading cannot be reduced to adding a saturation value and a texture sampl
 | Field | `ITER-CGRD-00` |
 | --- | --- |
 | Claim | Sparkle has enough reviewed, falsifiable information to implement the smallest color-grading result without inventing color, asset, lifecycle, or evidence policy in code. |
-| Starting point | committed source and package input `30597d7d`; unrelated dirty work outside this feature remains user-owned |
+| Starting point | committed source and package input `ca55e7d8`; unrelated dirty work outside this feature remains user-owned |
 | North Stars | `NS-MATH-DATA`, `NS-OWNERSHIP`, `NS-EVIDENCE`, `NS-SIMPLIFY`, `NS-ADOPTION` |
 | Persona targets | `PGE-02`, `PGE-05`, `PGE-07`, `PGE-08`, `PGE-09`, `PGE-13`, `PGE-15` |
 | Delivery targets | `CGRD-00`, `DSP-5`, preparation for `FCR-REN-24` |
@@ -61,7 +61,7 @@ Every `CGRD-*` row must retain: `Proposed`, `Accepted`, `Rejected`, or `Blocked`
 
 ## Current Source Truth
 
-At `669637cf`, [`PostProcessing.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/PostProcessing/PostProcessing.cpp) resolves/upscales scene color, applies debug replacement, and calls presentation. [`Presentation.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Presentation.cpp) dispatches tone mapping and then output encoding. [`EngineRenderingDisplayTypes.h`](../../../../../../../../../Engine/Renderer/Public/Settings/EngineRenderingDisplayTypes.h) defines tone, exposure, and output-encoding enums only. The TextureCooker accepts raster/HDR/EXR texture sources but contains no `.cube` parser or grading-specific cooked contract.
+At `ca55e7d8`, [`PostProcessing.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/PostProcessing/PostProcessing.cpp) resolves/upscales scene color, applies debug replacement, and calls presentation. [`Presentation.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Presentation.cpp) dispatches tone mapping and then output encoding. [`EngineRenderingDisplayTypes.h`](../../../../../../../../../Engine/Renderer/Public/Settings/EngineRenderingDisplayTypes.h) defines tone, exposure, and output-encoding enums only. The TextureCooker accepts raster/HDR/EXR texture sources but contains no `.cube` parser or grading-specific cooked contract.
 
 This proves a source-backed absence and identifies possible extension points. It does not prove that the current color labels are colorimetrically complete, that a LUT may safely reuse the generic texture route, or that any proposed shader will build or run.
 

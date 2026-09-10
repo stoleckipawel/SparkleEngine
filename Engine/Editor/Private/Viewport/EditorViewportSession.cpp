@@ -103,3 +103,11 @@ void EditorViewportSession::SetExposureOverrides(ViewportExposureOverrides overr
 {
 	(void) m_settings.SetExposureOverrides(overrides);
 }
+
+void EditorViewportSession::SetViewMode(RenderViewMode viewMode) noexcept
+{
+	if (viewMode < RenderViewMode::Count)
+	{
+		m_viewMode = viewMode;
+	}
+}

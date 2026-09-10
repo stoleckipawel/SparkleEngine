@@ -65,10 +65,6 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 	    {"Automatic", RayTracingExecutionMode::Automatic},
 	    {"Inline ray query", RayTracingExecutionMode::Inline},
 	    {"Ray-tracing pipeline", RayTracingExecutionMode::Pipeline}};
-	static constexpr ComboOption<LightingMode> lightingModeOptions[] = {
-	    {"ReSTIR real-time path tracing", LightingMode::RestirPathTraced},
-	    {"Reference Path Tracer", LightingMode::ReferencePathTracer}};
-
 	DrawDisplaySettingsSection(*m_settings, settings, filterText);
 
 	if (MatchesFilter(filterText, "Geometry", "geometry mesh auto batching") && BeginSettingsCategory("Geometry"))
@@ -92,21 +88,6 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 			    "Mesh auto batching",
 			    settings.MeshAutoBatching,
 			    [this](bool value) { m_settings->SetMeshAutoBatching(value); });
-			ImGui::EndTable();
-		}
-		ImGui::Dummy(ImVec2(0.0f, 4.0f));
-	}
-
-	if (MatchesFilter(filterText, "Lighting", "lighting mode") && BeginSettingsCategory("Lighting"))
-	{
-		if (BeginSettingsTable("##RenderingLightingSettings"))
-		{
-			DrawComboOptionRow(
-			    "##LightingMode",
-			    "Lighting mode",
-			    settings.Lighting,
-			    lightingModeOptions,
-			    [this](LightingMode value) { m_settings->SetLightingMode(value); });
 			ImGui::EndTable();
 		}
 		ImGui::Dummy(ImVec2(0.0f, 4.0f));

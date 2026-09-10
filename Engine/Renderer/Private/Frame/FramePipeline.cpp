@@ -2,6 +2,7 @@
 #include "Frame/FramePipeline.h"
 
 #include "Diagnostics/FrameExecutionDiagnostics.h"
+#include "Debug/RendererCVars.h"
 #include "UI/UiFrameRenderer.h"
 #include "Frame/RenderFrame.h"
 #include "Frame/Graph/ExecuteRenderFrameGraph.h"
@@ -13,6 +14,7 @@
 #include "Pipeline/RenderPassRuntimeCache.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "Providers/ImageProviderFrameInput.h"
+#include "Passes/Lighting/ReferencePathTracer/ReferencePathTracer.h"
 #include "Scene/RayTracing/RenderRayTracingFrameBindings.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -55,7 +57,8 @@ FramePipeline::FramePipeline(
     m_imageProviders(imageProviders),
     m_taskExecutor(taskExecutor),
     m_uiFrameRenderer(std::make_unique<UiFrameRenderer>(deviceServices, enableUiRenderPackets)),
-    m_viewportCaptureService(std::make_unique<ViewportCaptureService>(deviceServices))
+    m_viewportCaptureService(std::make_unique<ViewportCaptureService>(deviceServices)),
+    m_referencePathTracer(std::make_unique<ReferencePathTracer>())
 {
 	m_windowExtent = {static_cast<std::uint32_t>(m_window.GetWidth()), static_cast<std::uint32_t>(m_window.GetHeight())};
 
@@ -240,12 +243,17 @@ RenderFrame& FramePipeline::PrepareRenderFrame(const RenderViewInput& viewInput,
 	frame.FrameInFlightIndex = frameIndex;
 
 	m_renderScenePreparation.Execute(scene, frame.PreparedScene);
+	ViewportRenderRequest resolvedViewportRequest = m_viewportRenderRequest;
+	if (resolvedViewportRequest.ViewportId == 0)
+	{
+		resolvedViewportRequest.ViewMode = CVarRenderViewMode.Get();
+	}
 	m_renderViewBuilder.Build(
 	    frame.View,
 	    m_renderViewState,
 	    RenderViewBuildRequest{
 	        .Input = viewInput,
-	        .ViewportRequest = m_viewportRenderRequest,
+	        .ViewportRequest = resolvedViewportRequest,
 	        .RenderExtent = m_frameGraphSettings.RenderExtent,
 	        .OutputExtent = m_frameGraphSettings.OutputExtent,
 	        .FrameId = frame.Identity.FrameId,
@@ -253,6 +261,7 @@ RenderFrame& FramePipeline::PrepareRenderFrame(const RenderViewInput& viewInput,
 	        .ShaderGeneration = frame.Identity.ShaderGeneration,
 	        .ImageProviderGeneration = frame.Identity.ImageProviderGeneration,
 	        .GraphTopologyGeneration = m_graphTopologyGeneration});
+	m_viewportRenderProducts.SetProgress(m_referencePathTracer->Update(frame.View));
 	m_renderViewPreparation.Prepare(frame.PreparedScene, frame.View, m_renderViewState);
 	frame.PreparedScene.gpuBindings = &scene.UpdateGpuScene(frame.PreparedScene, frame.View, frame.FrameInFlightIndex);
 	return *frameSlot;

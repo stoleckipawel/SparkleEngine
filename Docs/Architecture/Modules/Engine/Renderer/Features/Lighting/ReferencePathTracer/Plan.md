@@ -1,8 +1,8 @@
 # Reference Path Tracer Staged Implementation Plan
 
-**Status:** `PTD-01` frozen by **`PTD-00-R1 PASS`** at immutable dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300`; development Stages 1-9 are authorized, while Stage 10/release closure remains gated by `REL-03`, release maps, support identities, and executable evidence
+**Status:** **`PTD-00-R1 PASS`** remains the immutable discovery prerequisite; **`PTD-01-R2 PASS`** accepts the Stage-1 ordinary-selector/Private-capsule clean break at production diff identity `567b7f170afaaebf4ce4d76b7ec38aaefa66a780`, Stage 2 is authorized, and Stage 10/release closure remains gated by `REL-03`, release maps, support identities, and executable evidence
 
-**Scope:** deliver `FCR-REN-08` end to end through one Renderer-owned per-view reference session, one semantic path estimator, viewport-first Lit comparison, optional raw evidence publication, D3D12/Vulkan traversal parity, secondary runtime/offscreen workflows, controlled failure, and release-map adoption
+**Scope:** deliver `FCR-REN-08` end to end through one feature-local Renderer per-view session, one semantic path estimator, viewport-first Lit comparison, optional raw evidence publication, D3D12/Vulkan traversal parity, secondary runtime/offscreen workflows, controlled failure, and release-map adoption
 
 **Prepared:** R0 source audit at `669637cf23b9748f8b94635409e74159d31d0bc2`; R1 gate reconciliation rebased 2026-09-10 to committed source input `30597d7d0bb70af9f2836ab01d81d47c3e20bcde`; estimates are planning ranges, not schedule commitments
 
@@ -12,9 +12,9 @@
 
 **Authority boundary:** [Transport And Estimator](TransportAndEstimator.md) owns mathematical semantics, [Execution Architecture](ExecutionArchitecture.md) owns system ownership/lifetime, [User Experience](UserExperience.md) owns the human/automation workflow; the [feature dossier](README.md) owns `RPT-FS-*`, `AC-RPT-*`, `FM-RPT-*`, `CHK-RPT-*`, and definition of done; [Discovery](Discovery.md) owns `PTD-00`; the [completion study](Research.md) owns external precedent; this page owns delivery order, dependencies, clean breaks, estimates, prompts, and slice exit gates
 
-**Current readiness:** **20/100** — plan presence adds no implementation, integration, verification, or delivery credit. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **`PTD-01-R2 PASS`** accepts Stage 1 selector order, settings separation, capsule locality, one frame hook, necessary generic progress reader, bounded removal, generated cleanup, and exact evidence ledger. Stage 2 is authorized. No estimator, session identity, accumulation, clickable product route, oracle, package, or release credit is claimed. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
-**Non-claims:** no plan stage has passed, no production code was changed, and no build, shader compile, runtime, GPU, image, convergence, backend, performance, package, or release evidence was produced by authoring this plan
+**Non-claims:** the prior Stage 1 build and focused checks prove neither feature enclosure nor ownership acceptance. They also produce no shader transport, image, convergence, backend parity, performance, package, Shipping, or accepted-reference evidence.
 
 This plan exists now because the requested implementation route needs to be concrete and reviewable before code work. Its presence does not manufacture a `PTD-00` pass. Stage 0 must replace every provisional choice and estimate with the accepted discovery result; if the result changes architecture, this plan is revised before Stage 1 rather than bending implementation around stale prose.
 
@@ -75,17 +75,17 @@ No stage may hide an unmet exit criterion in the next stage. A discovery-shaping
 | Stage | Focus | Initial effort range | Prerequisite | Primary exit checks |
 | --- | --- | ---: | --- | --- |
 | 0 | discovery closure and plan freeze | 70-110 h | none | `CHK-PTD-01` through `12` as applicable |
-| 1 | contracts, per-view session owner, selector clean break | 50-85 h | immutable `PTD-00-R1 PASS` | `CHK-RPT-01`, `02`, `16` |
-| 2 | immutable inputs, Scene/Game camera identity, primary rays, sample identity | 80-130 h | Stage 1 | `CHK-RPT-02`, `03`, `07` |
-| 3 | minimal reviewable integrator | 75-125 h | Stage 2 | `CHK-RPT-03`, `04`, `05` |
-| 4 | complete included surface estimator | 110-180 h | Stage 3 | `CHK-RPT-04`, `05`, `11` |
-| 5 | material/geometry coverage and numeric robustness | 90-150 h | Stage 4 | `CHK-RPT-03`, `04`, `08` |
-| 6 | in-memory per-view accumulation/invalidation, live preview, and progress snapshots | 80-135 h | Stage 5 | `CHK-RPT-09`, focused `15` |
-| 7 | first usable viewport mode, live navigation, progress/reset UX, and Lit comparison | 70-120 h | Stage 6 | `CHK-RPT-02`, `09`, `15`, `16` |
-| 8 | Inline/RGS and D3D12/Vulkan parity | 90-150 h | Stage 7 | `CHK-RPT-07`, `08`, `12` |
-| 9 | minimal evidence capture, EXR/checkpoint/offscreen publication, independent oracle, and failure evidence | 145-250 h | Stage 8 | `CHK-RPT-04` through `13` |
-| 10 | package/adoption evidence, cleanup, completion report | 70-125 h | Stage 9, accepted `ReleaseMapSet`, support identities, `REL-03` | `CHK-RPT-01`, `14`, `15`, `16` |
-| **Total** | full first-release closure | **930-1,560 h** | accepted scope | all applicable `AC-RPT-01` through `20` |
+| 1 | contracts, feature capsule, selector clean break | 50-85 h | immutable `PTD-00-R1 PASS` | `CHK-RPT-01`, `02`, `16`, `17` |
+| 2 | immutable inputs, Scene/Game camera identity, primary rays, sample identity | 80-130 h | Stage 1 | `CHK-RPT-02`, `03`, `07`, `17` |
+| 3 | minimal reviewable integrator | 75-125 h | Stage 2 | `CHK-RPT-03`, `04`, `05`, `17` |
+| 4 | complete included surface estimator | 110-180 h | Stage 3 | `CHK-RPT-04`, `05`, `11`, `17` |
+| 5 | material/geometry coverage and numeric robustness | 90-150 h | Stage 4 | `CHK-RPT-03`, `04`, `08`, `17` |
+| 6 | in-memory per-view accumulation/invalidation, live preview, and progress snapshots | 80-135 h | Stage 5 | `CHK-RPT-09`, focused `15`, `17` |
+| 7 | first usable viewport mode, live navigation, progress/reset UX, and Lit comparison | 70-120 h | Stage 6 | `CHK-RPT-02`, `09`, `15`, `16`, `17` |
+| 8 | Inline/RGS and D3D12/Vulkan parity | 90-150 h | Stage 7 | `CHK-RPT-07`, `08`, `12`, `17` |
+| 9 | minimal evidence capture, EXR/checkpoint/offscreen publication, independent oracle, and failure evidence | 145-250 h | Stage 8 | `CHK-RPT-04` through `13`, plus `17` |
+| 10 | package/adoption evidence, cleanup, completion report | 70-125 h | Stage 9, accepted `ReleaseMapSet`, support identities, `REL-03` | `CHK-RPT-01`, `14`, `15`, `16`, `17` |
+| **Total** | full first-release closure | **930-1,560 h** | accepted scope | all applicable `AC-RPT-01` through `21` |
 
 The range is intentionally honest about math review, two APIs, two traversal frontends, artifact safety, and independent evidence. Stage 0 must re-estimate after feature scope, machines, release maps, tolerances, and reusable infrastructure are known. Cutting evidence, raw output, failure behavior, or a required backend is a scope decision, not an “optimization” of this estimate. Ordering artifact work later protects the daily viewport use case; it does not make final evidence optional.
 
@@ -97,13 +97,14 @@ Every implementation prompt below inherits these rules. The executing agent must
 2. inspect `git status --short`, preserve unrelated dirty work, and inspect live owners/producers/consumers/lifetime/build membership with `rg` before editing;
 3. confirm all named prerequisite gates and prior-stage exit artifacts. If a prerequisite is absent, stale, or contradicted by code, stop and report `BLOCKED`; do not improvise around it;
 4. implement only the selected stage and defects required for its exit criteria. Do not begin later UI, general framework, performance, denoising, neural, material-system, or compatibility work;
-5. preserve Scene-owned scene data, View-owned view identity/camera data, one Renderer per-view session authority, one semantic integrator, thin RHI traversal adapters, and the single-truth/copy budget;
+5. preserve Scene-owned scene data, View-owned view identity/camera data, one private Reference Path Tracer capsule, one semantic integrator, thin RHI traversal adapters, and the single-truth/copy budget;
 6. perform clean breaks for Sparkle-owned contracts: update all producers/consumers/build/docs together and delete the replaced path. Do not add legacy readers, aliases, version bridges, fallback selectors, or dual representations;
 7. keep current code/behavior labels honest. Never use “unbiased,” “ground truth,” “converged,” or “accepted reference” beyond the exact passed scope;
 8. design each check with initial state, action/injection, oracle, matrix, artifact, maximum duration/resources, cleanup, and escalation. Use the cheapest claim-falsifying check first;
 9. do not add submitted test-only classes, fixtures, executables, files, or CMake targets. Temporary local probes are allowed only when necessary and must be removed before handoff; use existing validation routes and production diagnostics;
-10. run `architecture_boundary_check` whenever Renderer/RHI boundaries change, focused build/shader checks required by the stage, and `git diff --check`. Do not claim unrun checks passed;
-11. leave one iteration record containing gate revision, decisions, changed files, deletions, checks actually run, exact outputs/artifact links, known limitations, blockers, and the next permitted stage.
+10. execute `CHK-RPT-17` for the current stage. Retain `ARCH-RPT-<stage>` listing every touched production file outside the frozen feature and shader homes, its accepted hook category and necessity, all feature-named references outside the capsule, new public/shared types and fields, repeated selector switches, dependency direction, and bounded-removal proof. Any unlisted file or unjustified hook blocks the stage;
+11. run `architecture_boundary_check` whenever Renderer/RHI boundaries change, focused build/shader checks required by the stage, and `git diff --check`. Do not claim unrun checks passed;
+12. leave one iteration record containing gate revision, decisions, changed files, deletions, `ARCH-RPT-<stage>`, checks actually run, exact outputs/artifact links, known limitations, blockers, and the next permitted stage.
 
 Every prompt's `NON-NEGOTIABLE` paragraph is an exit gate, not motivational prose. A handoff must quote each item and attach its proof or say `BLOCKED`. “Implemented,” a clean build, a plausible image, or a manual click-through cannot substitute for that proof.
 
@@ -127,6 +128,8 @@ If source reality proves a plan instruction wrong, correct the owning architectu
 - Lit comparison suspends one bounded per-view prefix and resumes only after full-digest revalidation. Export/offscreen automation derives from the same Renderer session semantics.
 - Camera controls remain responsive in the selected mode. Superseded camera work is abandoned before commit, the newest accepted identity is presented at bounded cadence, and accumulation continues automatically when movement stops; no save/readback/checkpoint work may outrank that loop.
 - Every user-visible state/action/error/artifact obeys [User Experience](UserExperience.md); Editor/runtime/offscreen surfaces do not duplicate Renderer truth.
+- The implementation remains inside `Engine/Renderer/Private/Passes/Lighting/ReferencePathTracer/` and its matching shader home except for the frozen hook ledger. `FramePipeline` and Lighting may select, invoke, and publish only; generic Scene, View, frame resources/history, settings, RHI, Editor, and Application types never acquire feature mechanism or mutable feature truth.
+- Every stage passes `CHK-RPT-17` independently. A build, formatter pass, small file count, or locally clean class cannot compensate for feature diffusion.
 
 ## Stage 0 - Close Discovery And Freeze The Plan
 
@@ -179,41 +182,76 @@ The blocking facts are release-owned: no accepted `ReleaseMapSet`, support-hardw
 
 R1 identifies the R0 dependency as a gate-placement error: final release maps, named support machines, and an already-proved package cannot be prerequisites for implementing the development tracer they must later exercise. [Discovery's R1 reconciliation](Discovery.md#ptd-00-r1-gate-separation-reconciliation) freezes `RPTConformanceSet`, capability-driven refusal, explicit Stage-9 output destinations, six-profile target reachability, and the development-versus-release boundary. The repository owner accepted immutable dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300` as `PTD-00-R1 PASS` on 2026-09-10, authorizing Stages 1-9. Stage 10, `FCR-REN-08`, packaged support, and `PTD-03` remain blocked by `ReleaseMapSet`, support identities, `REL-03`, and executable evidence.
 
-## Stage 1 - Establish Per-View Session Contracts And One Honest Selector
+## Stage 1 - Establish One Ordinary View Mode And A Feature-Local Owner
 
 ### Objective
 
-Install the minimal production per-view session/state contracts and remove the duplicate GBuffer-seeded public authority before transport expansion. No candidate artifact may yet be called an accepted reference.
+Install the smallest production seam for an ordinary per-viewport view mode and remove the duplicate GBuffer-seeded public authority before transport expansion. Keep all path-tracer-specific execution state under the feature owner. No candidate artifact may yet be called an accepted reference.
 
 ### Work
 
-1. Add one Renderer-owned per-view request/session-handle/progress/result/state owner with bounded validation, reasoned invalidation, target completion, suspension, and terminal categories. Keep public surface semantic and small; hide implementation classes in Private.
-2. Put reference intent and observation on the canonical View boundary without copying Scene/View truth. Add canonical transport-digest construction and explicit immutable Scene/View generation leases.
-3. Add requested-versus-active backend/frontend/product fields and reject unsupported scope/capability before resource allocation.
-4. Define `RenderViewMode::ReferencePathTracer` as the sole target selector and its per-view semantics, but do not expose a clickable product route until a real estimator and live accumulator can satisfy it in Stage 7.
-5. Remove `LightingMode::ReferencePathTracer`, its GBuffer-seeded reference authority, and orphan settings/selectors in one clean break. Do not retain an alias, fallback, comparison copy, or dual representation.
-6. Add bounded production diagnostics for state, reset reason/discarded prefix, error, and input digest. Do not add a second dashboard, generic job framework, or filesystem schema.
-7. Update CMake/generated metadata/docs/consumers and delete superseded paths in the same change.
+1. Define `RenderViewMode::ReferencePathTracer` directly after `Lit` with contiguous C++/HLSL values. Carry it through the same per-viewport request and `RenderView` path as every other view mode.
+2. Keep Editor selection in `EditorViewportSession`; `EngineRenderingSettingsState` owns neither view mode nor a path-tracing/lighting-route selector.
+3. Add one Private, feature-local owner below `Passes/Lighting/ReferencePathTracer`. The existing `FramePipeline` invokes it through one unconditional composition call; the owner alone recognizes the selected semantic. Do not create a second renderer, frame loop, scene database, public feature facade, or path-tracer fields on generic View state.
+4. Expose only a generic viewport progress shape needed by a progress bar. Product/backend/frontend, estimator state, digests, reset classification, sample allocation, and controls stay feature-local until the stage that implements and consumes them.
+5. Keep the item unavailable in the clickable menu until real shaders and live accumulation exist. An unavailable diagnostic selection may retain ordinary Lit pixels, but its progress state must not label those pixels as reference output.
+6. Remove `LightingMode::ReferencePathTracer`, its GBuffer-seeded reference authority, and every orphan setting/selector in one clean break. Do not retain an alias, fallback selector, comparison copy, or dual representation.
+7. Update generated metadata, build membership, current-state docs, and consumers and delete superseded paths in the same change.
+8. Produce `ARCH-RPT-1` and remove or relocate every Stage 1 addition that exceeds the frozen hook ledger. Do not retain a generic progress contract unless its necessary Editor boundary and feature-neutral semantics are proved; do not keep feature lifecycle logic in `FramePipeline` beyond one composition call.
 
 ### Exit gate
 
-- State transitions, target progress shape, reset categories, and invalid request/capability/pause/restart behavior are observable without starting transport.
-- Scene/View leases preserve ownership and retirement; no deep copy or mutable cross-thread reference exists.
-- One semantic `RenderViewMode` target exists; no Lighting selector, alias, UI, or manifest overclaims current output.
-- `AC-RPT-01`, the contract/state portion of `AC-RPT-02`/`04`, and relevant `FM-RPT-01`, `14`, `18`, `19` are falsified by focused checks.
-- `CHK-RPT-01`, focused `CHK-RPT-02`, and `CHK-RPT-16` evidence is retained; Renderer/RHI boundary check passes if affected.
+- One contiguous C++/HLSL `RenderViewMode` target exists and flows through the ordinary request/View/frame path; no Lighting selector or settings copy remains.
+- Editor session state, Renderer request data, the feature-local unavailable decision, and generic progress observation have distinct owners.
+- Generic View and settings types contain no path-tracer request, product, digest, session, backend/frontend, result, or reset vocabulary.
+- The Private feature owner reports the dormant selection unavailable without allocating, dispatching, or inventing Scene/View/session identity before Stage 2.
+- Focused selector/ownership/clean-break checks, Renderer and Editor builds, `architecture_boundary_check`, formatting, and `git diff --check` pass.
+- `CHK-RPT-17` passes: all feature mechanism and mutable state are in the capsule, each outside edit is a frozen hook or clean-break/build/documentation site, the frame contains no feature transition logic, and deleting the capsule plus ledgered hooks leaves no framework residue.
 
 ### Ready-to-use prompt
 
 ```text
 Implement only Stage 1 of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md after verifying the exact immutable PTD-00-R1 PASS revision. Apply the Universal Execution Contract. Do not require or imply REL-03, release-map, support-machine, package, or Shipping proof in this development contract stage; those remain Stage-10 gates.
 
-From the live tree, introduce the smallest Renderer-owned per-view reference request/session-handle/progress/result/state contracts, canonical View intent/observation boundary, immutable Scene/View generation leases, transport digest, strict requested-versus-active capability fields, exact prefix/target and reasoned invalidation state. Define RenderViewMode::ReferencePathTracer as the sole target semantic but keep it unavailable to users until Stage 7 can connect a real implementation. Remove LightingMode::ReferencePathTracer, the GBuffer-seeded reference authority, every producer/consumer/setting that exists only for it, and all duplicate selector authority; update generated metadata, build membership, and docs as one clean break. Do not implement the new estimator, EXR writer, UI, generic job system, compatibility alias, or fallback.
+From the live tree, add `RenderViewMode::ReferencePathTracer` immediately after `Lit` with contiguous C++/HLSL values and carry it through the existing per-viewport request, `RenderViewBuilder`, `RenderView`, and `FramePipeline` like any other view mode. Editor selection belongs to `EditorViewportSession`, never `EngineRenderingSettingsState`. Put the only feature-specific production owner in Private below `Passes/Lighting/ReferencePathTracer`; in Stage 1 it recognizes only the selected semantic and reports generic unavailability without manufacturing Scene/View/session identity. Add no generic progress surface before a real Editor consumer proves that stable boundary. Keep the clickable item unavailable until Stage 7 connects real shaders and accumulation. Remove `LightingMode::ReferencePathTracer`, the GBuffer-seeded reference authority, every producer/consumer/setting that exists only for it, and all duplicate selector authority; update generated metadata, build membership, and docs as one clean break. Do not implement the new estimator, EXR writer, UI beyond the generic progress reader, generic job system, compatibility alias, or fallback selector.
 
-NON-NEGOTIABLE: the contracts must represent every accepted per-view lifecycle state, exact committed/target prefix, invalidation class/reason/discarded count, suspension/resume, and stable terminal category needed by UserExperience.md without putting strings, widgets, files, or UI truth in Renderer. Unsupported domain/capability must reject before allocation/sample zero; requested and active values remain distinct; destruction settles leases/resources within the frozen bound; target SPP is not convergence; no selector, progress object, or result may imply authority evidence has not earned.
+NON-NEGOTIABLE: Reference Path Tracer implementation details must not spread across generic Renderer View, settings, Scene, frame resources/history, RHI, Editor, or Application contracts. The only unconditional shared addition is the ordinary enum value and its existing request/View transport. A generic progress payload is allowed only when the real Editor consumer proves that stable boundary; otherwise keep it feature-local until Stage 7. `FramePipeline` or Lighting owns at most one select/invoke/publish hook and no feature state transition, validation, allocation, digest, sample, shader, or error policy. No Stage 1 selector, progress object, retained Lit image, or result may imply authority evidence has not earned.
 
-Exercise invalid scope/capability, identity mutation, state transitions, pause/restart/destruction, ownership/retirement, `RenderViewMode` versus `LightingMode` selector removal, and clean-break claims with focused checks; run architecture_boundary_check if the Renderer/RHI boundary changes and git diff --check. Stop on duplicate scene/session/selector authority or any need to invent a PTD-00 decision. Handoff exact changed/deleted files, checks actually run, evidence, limitations, and Stage 2 readiness. Do not change either Editor `RenderViewKind::Game` producer in this stage; that camera-semantic clean break belongs to Stage 2.
+Exercise exact enum parity/order, Editor-session ownership, request/View propagation, feature-local ownership, `RenderViewMode` versus `LightingMode` selector removal, and clean-break claims with focused checks. Execute `CHK-RPT-17` and retain `ARCH-RPT-1`; run `architecture_boundary_check` and `git diff --check`. Stop on duplicate Scene/View/settings/selector authority, an unledgered outside-feature file, a public/generic contract without a proved consumer, repeated feature selection, or path-tracer mechanism escaping the capsule. Handoff exact changed/deleted files by hook role, checks actually run, evidence, limitations, and Stage 2 readiness. Do not change either Editor `RenderViewKind::Game` producer in this stage; that camera-semantic clean break belongs to Stage 2.
 ```
+
+### Stage-1 execution result — 2026-09-10
+
+`PTD-01-R0` was superseded because it exposed feature-specific session/request/result vocabulary through generic Renderer types. `PTD-01-R1` was reopened because it had no `ARCH-RPT-1` enclosure proof. **`PTD-01-R2 PASS`** retains `PTD-00-R1 PASS` at `d3152ec28f74cc1987f1d58fb52fa7ede10fd300`, removes the pseudo-session generation, proves the generic progress consumer, reduces frame integration to one feature call, regenerates stale shader products, and was independently accepted for architecture plus UX/evidence against the exact record in [Stage 1 Evidence](Stage1Evidence.md).
+
+| Iteration field | Retained result |
+| --- | --- |
+| Scope | Only the ordinary per-view selector seam, generic progress-bar payload, Private feature owner, old-route clean break, and documentation reconciliation are in scope. No estimator, accumulator, EXR/checkpoint/offscreen path, clickable Reference Path Tracer item, or accepted-reference result is added. |
+| Architecture | `ViewportRenderRequest` carries the same `ViewMode` field for every mode; `EditorViewportSession` owns Editor selection; `RenderView` carries only the selected mode; `EngineRenderingSettingsState` contains neither view mode nor a lighting-route selector. `FramePipeline` calls one Private `Passes/Lighting/ReferencePathTracer` owner inside the existing renderer/frame architecture. No public Reference Path Tracer contract, feature-specific View state, second renderer, or copied Scene/View truth remains. |
+| Selector | `RenderViewMode` is contiguous and source-ordered: `Lit=0`, `ReferencePathTracer=1`, then the shifted final/debug values through `GpuSceneInstances=16`, mirrored exactly in HLSL. The former `LightingMode`, `r.Lighting.Mode`, persisted setting, panel row, and all producers/consumers are absent. The Editor menu deliberately does not offer the new item before Stage 7. |
+| State truth | The shared surface is renderer-agnostic: selected view mode, `None`/`Unavailable`/`Rendering`/`Complete`, completed work, and target work. `ViewportPanel` is the real consumer and suppresses a snapshot for a different selected mode. Stage 1 reports only generic unavailability with `0/0` work and never relabels retained Lit pixels as reference output. It deliberately contains no session generation, reset reason, backend, estimator, digest, or result claim before the real session owns those truths. |
+| Architecture fitness | The Private owner alone recognizes `ReferencePathTracer`; `FramePipeline` contains one incomplete-type owner member, constructs it once, and performs one unconditional `Update`/publish call. It contains no feature switch, lifecycle transition, validation, reset, allocation, shader, sample, or error policy. The generic progress surface is justified by the existing Editor product-snapshot boundary and one feature-neutral overlay. |
+| Clean-break deletions | Deleted the three old reference shaders and uniform include, three shader registrations, three shader parameter headers, direct/indirect pass pair, the six-file reference pass/history stack, and the six-file old CVar/settings/uniform stack. Removed the reference frame-history texture/hash and restored ReSTIR as the ordinary lighting graph route. No alias, fallback selector, compatibility reader, or duplicate estimator remains. |
+| Focused behavior evidence | The exact source probe passed `Lit=0`, `ReferencePathTracer=1`, contiguous modes through `GpuSceneInstances=16`, and `Count=17` in C++/HLSL; exactly one frame feature call; one Editor progress reader; and zero legacy `LightingMode`, `CVarLightingMode`, `r.Lighting.Mode`, `ReferencePathTracing`, or `OfflinePathTracer` production/configuration hits. Source inspection found no clickable `DrawViewModeOption(ReferencePathTracer)` route. |
+| Generated/build/boundary evidence | `SparkleRenderer` and `SparkleEditor` built in `DevelopmentEditor`; a forced follow-up Renderer build compiled both `FramePipeline.cpp` and `ReferencePathTracer.cpp`. `architecture_boundary_check` passed. `ShaderCompiler` built, then global cooks from the repository and `Projects/Showcase` contexts each published 32 shader types, 64 compile jobs/map entries, and 60 unique code records. The retired shader-symbol scan then returned zero hits in both Shared and Showcase cooked shader roots. Pinned clang-format 22.1.3 check-only formatting and `git diff --check` pass. |
+| Criteria disposition | **PASS.** Independent architecture review accepted `CHK-RPT-17` and the exact 57-path `ARCH-RPT-1` ledger; independent UX/evidence review accepted the truthful unavailable/progress/settings boundary. `AC-RPT-21` passes for Stage 1, with no result promoted beyond the stated selector/ownership/clean-break contract. |
+| Unrun checks and limits | No engine/editor runtime launch, GPU dispatch, representative-map render, image, statistical convergence, backend/frontend parity, accessibility interaction, Shipping/package, or release-map check is claimed. Those are not Stage-1 behavior claims. Stage 2 remains responsible for canonical Editor `Scene` versus runtime `Game` identity, immutable leases, primary rays, sampling, and detailed feature-local invalidation; both existing Editor `RenderViewKind::Game` producers remain unchanged here. |
+| Next authorization | **Stage 2 is authorized** against `PTD-00-R1` plus this exact `PTD-01-R2` production identity/evidence record. Stage 7 remains the first clickable product route; Stage 10 and release claims remain separately gated. |
+
+#### `ARCH-RPT-1` feature-enclosure ledger
+
+The exact 57-path manifest, classifications, commands, generated-product hashes, and review limits are retained in [Stage 1 Evidence](Stage1Evidence.md). The table below is the bounded-removal summary, not a substitute for that exact manifest.
+
+| Site | Allowed role | R2 result and removal bound |
+| --- | --- | --- |
+| `Engine/Renderer/Private/Passes/Lighting/ReferencePathTracer/` | complete Stage-1 feature capsule | Owns the only feature recognition and truthful unavailable result; no allocation, dispatch, pseudo-session generation, or copied Scene/View truth. Delete this folder to remove the feature mechanism. |
+| C++/HLSL `RenderViewMode` definitions | one ordinary selector value | Contiguous value `1` immediately after Lit. Removing the feature deletes only this mirrored row and shifts the later contiguous values together. |
+| `ViewportRenderRequest` -> `RenderViewBuilder` -> `RenderView` | existing ordinary per-view transport | Carries the same `ViewMode` field used by every debug/final mode; no feature-named field or type exists. This transport remains useful if the feature is deleted. |
+| `EditorViewportSession` -> `UI` -> `ViewportPanel`/`ViewportTopPanel` | existing viewport selection and minimal presentation | Session, not rendering settings, owns the mode. The dormant item is not listed in the combo; its exhaustive label/icon and generic unavailable overlay remove with the enum/progress hook. |
+| `FramePipeline` | one composition/lifetime hook | One Private incomplete-type member, construction, and unconditional update/publication call; no repeated selector or feature policy. Removing those four sites leaves the frame architecture unchanged. |
+| `ViewportRenderProgress` and `ViewportRenderProducts` | proved feature-neutral Editor observation boundary | Contains only mode/state/completed/target and has one real Editor reader. No session generation or feature taxonomy is prepaid. If no other progressive view remains after feature deletion, the payload/getter/setter/overlay delete as one bounded hook. |
+| Lighting/frame graph/history/settings/configuration edits | clean-break deletion sites | Restore ReSTIR as the single ordinary Lit recipe and delete the old GBuffer-seeded route, selector, settings row, CVar, persistence, history, uniforms, passes, shaders, and registrations. These are removal edits, not new feature hooks. |
+| recursive CMake/generated shader products and docs | build/evidence membership | Recursive source membership picked up the capsule and discarded deleted registrations; global recooks removed retired symbols from both local cooked roots. Documentation records target versus proved behavior without becoming implementation authority. |
 
 ## Stage 2 - Freeze Inputs, Unify Camera Invalidation, Generate Rays, And Stabilize Samples
 
@@ -223,17 +261,19 @@ Create an independently traceable primary-ray and sample-identity route over fro
 
 ### Work
 
-1. Publish the accepted immutable Scene generation inputs needed for triangle hits, material/light identity, and AS use without introducing a feature-specific scene database.
-2. Publish one canonical semantic View fingerprint for Editor-produced `RenderViewKind::Scene` and runtime `RenderViewKind::Game`: view/selection/camera identity, position/orientation, projection/lens, admitted shutter/time, crop/filter, and render extent. Clean-break both current Editor producers from their incorrect `Game` submission. Normalize semantic values; never hash padding or ordinary TAA jitter.
-3. Implement exact transport-reset classification for every effective camera and contributing generation, plus non-reset classifications for presentation, scheduling, target SPP, and view-mode suspension. Input/cut flags refine the reason but never replace canonical identity.
-4. Implement accepted center/edge/corner/subpixel primary-ray generation independent of GBuffer resources and the stateless sample generator/dimension ledger over session seed, pixel, sample ordinal, and dimension ID.
-5. Allocate and commit non-overlapping half-open sample ranges; separate Renderer frame index and real-time jitter from sample ordinal completely. Reject a stale range before commit.
-6. Add bounded diagnostic primary-hit/event/fingerprint/invalidation readback for analytic cases and sample-stream inspection.
-7. Prove restart/prefix/reorder/mode-suspension identity at the contract level. Reject unsupported camera/geometry/deformation/material/light/dynamic semantics before sample zero.
+1. Consume the existing immutable prepared-Scene views and generations needed for triangle hits, material/light identity, and AS use without introducing a feature-specific scene database or path-tracer fields in Scene. Extend a canonical Scene contract only when the missing value is owner truth required by another real Renderer consumer.
+2. Add `RenderViewMode` to the generic frame-graph recipe key and establish `BuildRenderFrameGraph` as the sole outside-feature Lit-versus-Reference recipe switch. Preserve the original frame shell; the Reference branch invokes one feature-local composition entry and does not yet claim usable radiance.
+3. Construct the transport fingerprint inside the feature capsule from the ordinary View fields for Editor-produced `RenderViewKind::Scene` and runtime `RenderViewKind::Game`: view/selection/camera identity, position/orientation, projection/lens, admitted shutter/time, crop/filter, and render extent. Clean-break both current Editor producers from their incorrect `Game` submission. Normalize semantic values; never add a path-tracer fingerprint to View, hash padding, or include ordinary TAA jitter.
+4. Implement exact transport-reset classification for every effective camera and contributing generation, plus non-reset classifications for presentation, scheduling, target SPP, and view-mode suspension. Input/cut flags refine the reason but never replace canonical identity.
+5. Implement accepted center/edge/corner/subpixel primary-ray generation independent of GBuffer resources and the stateless sample generator/dimension ledger over session seed, pixel, sample ordinal, and dimension ID.
+6. Allocate and commit non-overlapping half-open sample ranges; separate Renderer frame index and real-time jitter from sample ordinal completely. Reject a stale range before commit.
+7. Add bounded diagnostic primary-hit/event/fingerprint/invalidation readback for analytic cases and sample-stream inspection.
+8. Prove restart/prefix/reorder/mode-suspension identity at the contract level. Reject unsupported camera/geometry/deformation/material/light/dynamic semantics before sample zero.
 
 ### Exit gate
 
 - Analytic camera rays and triangle hit/miss/barycentric/transform/sidedness cases match predeclared expectations with the production GBuffer disconnected.
+- Lit and Reference requests select mutually exclusive middle recipes inside the same `BuildRenderFrameGraph`/`FramePipeline` shell; the sole outside-feature switch is part of the graph key, and no second renderer, frame loop, submission route, or duplicated Scene/View owner exists.
 - Editor and Game camera translation, rotation, selection, cut/teleport, projection/lens, resize, and continuous-motion cases produce the same semantic reset behavior; unchanged frames and ordinary TAA jitter do not reset.
 - Same input digest and sample identity repeat across frame timing, batch/reorder, mode suspension, and restart probes; ranges neither overlap nor skip.
 - Every mutable contributing input has generation identity or is excluded.
@@ -244,7 +284,7 @@ Create an independently traceable primary-ray and sample-identity route over fro
 ```text
 Implement only Stage 2 of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md after confirming Stage 1 evidence and unchanged PTD-00 scope. Apply the Universal Execution Contract.
 
-Extend the existing Scene and View owners with immutable generation-stable data/views needed by the accepted reference contract; do not create a feature-specific scene database. Build one canonical post-resolution View fingerprint for Editor and Game cameras and classify exact transport reset versus target-goal, presentation, scheduling, mode-suspension, and unsupported changes. Implement independent camera/subpixel rays, the accepted stateless session/pixel/sample/dimension sampler and dimension ledger, non-overlapping committed ranges with stale-generation rejection, and bounded analytic fingerprint/primary-hit/sample diagnostics. Remove frame-index and ordinary TAA-jitter dependence from the new route; reject every unsupported reachable dynamic semantic before sample zero.
+Keep the original Renderer frame architecture. Add the ordinary selected `RenderViewMode` to the frame-graph recipe key and make `BuildRenderFrameGraph` the sole outside-feature choice between the existing Lit middle and one feature-local Reference Path Tracer composition entry; both routes retain the same frame admission, Scene/View preparation, RT-scene publication, graph execution, RHI submission, viewport product, UI, and presentation owners. Consume existing immutable Scene and View data and generations; extend their canonical owner only for missing domain-neutral truth with another proved Renderer consumer, never for Reference Path Tracer convenience. Inside the feature capsule, build one canonical post-resolution transport fingerprint for Editor and Game cameras and classify exact transport reset versus target-goal, presentation, scheduling, mode-suspension, and unsupported changes. Implement independent camera/subpixel rays, the accepted stateless session/pixel/sample/dimension sampler and dimension ledger, non-overlapping committed ranges with stale-generation rejection, and bounded analytic fingerprint/primary-hit/sample diagnostics. Remove frame-index and ordinary TAA-jitter dependence from the new route; reject every unsupported reachable dynamic semantic before sample zero.
 
 NON-NEGOTIABLE: implement accepted MATH-01 and MATH-09 exactly. Film/raster/crop/filter mapping must have known-value rays and a constant-radiance integral. Any effective camera/ray-domain change defines a different measurement and resets with no motion epsilon; Editor input events are not authority; unchanged submissions, frame count, and TAA jitter do not reset. Generator packing/conversion/dimensions/replicate/overflow/branch independence remain inspectable. Same `(digest, replicate, pixel, ordinal, dimension)` means the same bits across batch sizes, scheduling, Lit suspension, restart, and accepted backends; stale or overlapping ranges never commit.
 
@@ -263,14 +303,16 @@ Implement a deliberately small camera-to-emission/environment tracer whose event
 2. Implement accepted material decode for the minimal opaque Lambertian/emissive domain, primary/continuation trace, environment miss, emission hit, and BSDF continuation.
 3. Implement the exact finite-depth termination/event state for the minimal-domain internal slice of `FinitePathDiagnostic`. Do not expose this incomplete estimator slice as the completed finite product or as full transport.
 4. Implement finite/invalid/PDF/normal/event validation with retained counters; never clamp or turn invalid values into plausible black.
-5. Add minimal raw in-memory radiance output sufficient for analytic checking. Do not yet build final accumulation or file publication.
-6. Maintain equation-to-code labels or a compact ledger so every throughput term maps to the accepted derivation.
+5. Materialize the Reference middle recipe through one feature-local graph-composition entry. It produces minimal raw in-memory radiance directly from camera paths and bypasses the production GBuffer, ReSTIR lighting, ray reconstruction, and other estimators it will judge; it still executes through the original frame graph and RHI.
+6. Add minimal raw in-memory radiance output sufficient for analytic checking. Do not yet build final accumulation or file publication.
+7. Maintain equation-to-code labels or a compact ledger so every throughput term maps to the accepted derivation.
 
 ### Exit gate
 
 - Black, constant environment, emissive hit, Lambertian normalization/energy, one- and two-segment hand cases pass within frozen tolerance.
 - Intentional PDF, cosine, emission, sample-selection, and invalid-value faults are detected by the named checks.
 - No GBuffer, real-time lighting, post-process, temporal history, API-specific estimator fork, or hidden limit enters the semantic core.
+- The minimal Reference radiance is produced by the alternate middle of the ordinary Sparkle frame; it does not use a second renderer/executable/submission path and is not composed on top of Lit output.
 - Focused `CHK-RPT-03`, `04`, and `05` cover the minimal portions of `AC-RPT-05` through `10` and `FM-RPT-02` through `06`.
 
 ### Ready-to-use prompt
@@ -278,7 +320,7 @@ Implement a deliberately small camera-to-emission/environment tracer whose event
 ```text
 Implement only Stage 3 of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md after Stage 2 passes. Apply the Universal Execution Contract.
 
-Create one API-neutral Renderer shader semantic core for a minimal camera path over the accepted opaque Lambertian/emissive/environment domain. Include material decode, primary and continuation hits, BSDF sampling/evaluation/PDF correspondence, environment misses, emissive hits, FinitePathDiagnostic termination, exact path-event diagnostics, and explicit invalid counters. Keep traversal behind the current accepted adapter and keep output in-memory for analytic checks. Preserve equation-to-code correspondence and remove any duplicated old helper authority that the new semantic core replaces.
+Create one API-neutral Renderer shader semantic core for a minimal camera path over the accepted opaque Lambertian/emissive/environment domain. Connect it as the Reference middle recipe of the original `BuildRenderFrameGraph`, invoked through one feature-local composition entry; it replaces the GBuffer/ReSTIR/reconstruction middle for that mode while retaining the shared frame shell and RHI execution. Include material decode, primary and continuation hits, BSDF sampling/evaluation/PDF correspondence, environment misses, emissive hits, FinitePathDiagnostic termination, exact path-event diagnostics, and explicit invalid counters. Keep traversal behind the current accepted adapter and keep output in-memory for analytic checks. Preserve equation-to-code correspondence and remove any duplicated old helper authority that the new semantic core replaces.
 
 NON-NEGOTIABLE: implement only the accepted finite-domain portions of MATH-02, MATH-03, MATH-07, and the Reference Algorithm. Every direction convention, geometric cosine, lobe-selection mass, conditional/complete PDF, emission term, and legitimate zero termination must appear once in both the event record and equation-to-code ledger. The internal FinitePathDiagnostic(D) slice must have the frozen vertex/depth meaning, no roulette, an identity-bearing finite label, and no route by which it can be presented as the completed finite product or SurfaceTransportReference before Stage 4 adds and proves the accepted NEE/MIS strategies.
 
@@ -363,10 +405,11 @@ Turn valid path samples into a reset-safe in-memory per-view prefix with justifi
 
 1. Implement the accepted accumulation representation, summation algorithm, exact integer count, second moment/variance/standard error, maximum count, overflow behavior, and deterministic reduction contract.
 2. Commit only complete sample ranges. Before commit, reject stale View/Scene generations; implement every accepted transport-reset, target-goal, presentation-refresh, scheduling-update, mode-suspend/resume, explicit-restart, and unsupported transition with exact reason/discarded-prefix state.
-3. Publish immutable, bounded progress snapshots containing state, exact committed/target prefix, active route, last reset/discarded prefix, counters, memory, measured throughput, and clearly estimated ETA. Observation never stalls sample commit or becomes a second state authority.
+3. Produce immutable, bounded feature-local progress snapshots containing state, exact committed/target prefix, active route, last reset/discarded prefix, counters, memory, measured throughput, and clearly estimated ETA. Publish only the smallest feature-neutral projection required by the existing viewport boundary; observation never stalls sample commit or becomes a second state authority.
 4. Produce a viewport-readable scene-linear display source from the newest completely committed prefix at a bounded cadence. Apply presentation only as a one-way derivative; it never mutates accumulation or enters transport identity.
-5. Prioritize newest-camera response: stop scheduling superseded work, reject stale completion, coalesce UI reset notifications, and begin ordinal zero for the latest identity without waiting for old high-quality preview/readback work. When change stops, accumulation continues automatically.
-6. Implement bounded pause/restart, Lit suspension/revalidation, capacity/eviction, cancellation, timeout, view destruction, and resource retirement. Reserve typed readback/checkpoint contract seams if accepted, but do not implement codec, filesystem, EXR, manifest, offscreen, or generic capture machinery.
+5. Publish that display derivative into the same frame's ordinary display/post-process/presentation tail. Raw reference radiance and evidence readback remain upstream and feature-owned; no tone mapping, reconstruction, upscaler, or Lit buffer feeds the accumulator.
+6. Prioritize newest-camera response: stop scheduling superseded work, reject stale completion, coalesce UI reset notifications, and begin ordinal zero for the latest identity without waiting for old high-quality preview/readback work. When change stops, accumulation continues automatically.
+7. Implement bounded pause/restart, Lit suspension/revalidation, capacity/eviction, cancellation, timeout, view destruction, and resource retirement. Reserve typed readback/checkpoint contract seams if accepted, but do not implement codec, filesystem, EXR, manifest, offscreen, or generic capture machinery.
 
 ### Exit gate
 
@@ -382,7 +425,7 @@ Turn valid path samples into a reset-safe in-memory per-view prefix with justifi
 ```text
 Implement only Stage 6 of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md after Stage 5 passes. Apply the Universal Execution Contract.
 
-Implement the PTD-00-selected per-view accumulation precision/summation, exact integer committed/target counts, second moment/uncertainty, overflow, complete-range commit, stale-generation rejection, and every frozen invalidation/goal/presentation/scheduling/mode-suspension/restart transition with reason and discarded prefix. Publish bounded immutable progress snapshots and a viewport-readable one-way display derivative from the newest completely committed prefix. Prioritize the newest canonical camera identity: abandon superseded scheduling, reject late work, update presentation within the frozen response budget, and continue accumulation automatically when movement stops. Implement bounded pause/restart, Lit suspension/revalidation, capacity/eviction, cancellation, timeout, destruction, and resource retirement.
+Implement the PTD-00-selected per-view accumulation precision/summation, exact integer committed/target counts, second moment/uncertainty, overflow, complete-range commit, stale-generation rejection, and every frozen invalidation/goal/presentation/scheduling/mode-suspension/restart transition with reason and discarded prefix inside the feature capsule. Produce bounded immutable feature-local progress and project only the minimum feature-neutral viewport observation, plus a viewport-readable one-way display derivative from the newest completely committed prefix. Prioritize the newest canonical camera identity: abandon superseded scheduling, reject late work, update presentation within the frozen response budget, and continue accumulation automatically when movement stops. Implement bounded pause/restart, Lit suspension/revalidation, capacity/eviction, cancellation, timeout, destruction, and resource retirement without moving the state machine into `FramePipeline`, View history, settings, or UI.
 
 NON-NEGOTIABLE: implement accepted MATH-10 with the frozen numeric representation and complete-range merge order; count is exact integer state, and variance cannot use an unproved cancellation-prone shortcut. A changed canonical measurement/radiance input invalidates before commit; presentation/scheduling-only changes cannot reset; target increases continue and decreases report the actual prefix; Lit return resumes only after full identity match. The selected viewport never freezes on an old composition or requires manual restart after camera motion. Display is a one-way derivative of the exact current prefix, and its cadence cannot alter estimator/sample identity.
 
@@ -397,7 +440,7 @@ Deliver the first usable product milestone: a first-class, one-click Reference P
 
 ### Work
 
-1. Expose the Stage-1 `RenderViewMode::ReferencePathTracer` semantic in the viewport menu immediately after Lit and connect it directly to the one per-view Renderer session. Confirm no reference choice remains in global Lighting settings.
+1. Expose the Stage-1 `RenderViewMode::ReferencePathTracer` semantic in the viewport menu immediately after Lit and connect it through the ordinary viewport product boundary to the one feature-local per-view session. Confirm no reference choice remains in global Lighting settings.
 2. On selection preserve prior Lit settings, resolve the accepted mode preset, run automatic preflight, and start accumulation without a manual Validate/Start step. Unsupported selection shows `Unavailable` with one cause/action and no silent fallback.
 3. Add the compact viewport overlay and details surface for state, exact committed/target SPP, ratio, last reset/discarded prefix, measured throughput, estimated ETA, requested/active route, memory/budget, counters, pause, and restart. Completion retains a compact badge; Evidence/Output may be visibly unavailable until Stage 9.
 4. Make live navigation the scheduling priority: keep Editor and Game controls responsive, present the newest accepted camera's committed prefix at bounded cadence, visibly distinguish brief stale/resetting presentation, coalesce reset notifications without coalescing semantic identity, and refine automatically when motion stops.
@@ -418,7 +461,7 @@ Deliver the first usable product milestone: a first-class, one-click Reference P
 ```text
 Implement only Stage 7 of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md after live in-memory accumulation passes. Apply the Universal Execution Contract.
 
-Expose RenderViewMode::ReferencePathTracer immediately after Lit in the existing viewport menu and connect it to the one Renderer per-view session; confirm no global Lighting reference selector remains. Selection must preserve Lit settings, resolve the accepted mode preset, validate and start automatically. Implement the compact state/progress/reset/completion overlay, details/actions, canonical Editor and Game camera behavior, exact Lit suspension/revalidation, explicit eviction/second-view capacity, pause/restart, and unavailable/failure presentation. Keep Shipping exposure gated and Evidence/Output unavailable or explicitly deferred rather than faking it.
+Expose RenderViewMode::ReferencePathTracer immediately after Lit in the existing viewport menu and connect it through the ordinary viewport product boundary to the already-integrated alternate recipe of the original frame; do not introduce a new renderer, frame loop, render command, or presentation route at the UI stage. Confirm no global Lighting reference selector remains. Selection must preserve Lit settings, resolve the accepted mode preset, validate and start automatically. Implement the compact state/progress/reset/completion overlay as a read-only projection, plus details/actions, canonical Editor and Game camera behavior, exact Lit suspension/revalidation, explicit eviction/second-view capacity, pause/restart, and unavailable/failure presentation. Keep Renderer truth in the capsule, Shipping exposure gated, and Evidence/Output unavailable or explicitly deferred rather than faking it.
 
 NON-NEGOTIABLE: implement UserExperience.md P0/P1 as the primary product, not a debug panel or mandatory render wizard. One selection starts a supported view. Camera controls remain responsive; the displayed composition follows the newest accepted identity within the frozen budget; exact canonical camera/radiance changes reset before commit; and refinement resumes automatically when motion stops. Input flags/tolerances are not authority; TAA jitter/frame count/display/scheduling changes do not reset. Lit restores untouched settings and resumes only after full identity match. Progress is exact target-prefix progress, never convergence.
 
@@ -434,8 +477,8 @@ Run the same semantic estimator and already-usable viewport session through stri
 ### Work
 
 1. Freeze the semantic trace/visibility adapter boundary used by the accepted Inline route.
-2. Add path and visibility ray-type requirements to the existing ray-tracing pipeline/SBT plan; implement thin RGS, miss, any-hit, and closest-hit adapters without copying estimator/material/light logic.
-3. Bind resources/payloads/SBT indices through current RHI owners; reject unavailable pipeline features before sample zero.
+2. Keep path/visibility ray types, payload interpretation, and logical hit mapping in the feature capsule. Use the existing generic ray-tracing pipeline/SBT mechanisms; extend a shared plan only for a backend-neutral capability required by another real ray-tracing consumer and record that exception in `ARCH-RPT-8`.
+3. Implement thin RGS, miss, any-hit, and closest-hit adapters beside the feature and bind their resources/payloads/SBT indices through current generic RHI mechanisms; reject unavailable pipeline features before sample zero.
 4. Implement strict requested/active Inline/Pipeline and D3D12/Vulkan selection. Automatic chooses only accepted routes and records the resolution.
 5. Compare identical session/sample prefixes, event counters, analytic hits, raw values or declared statistical tolerances, compiler/settings identities, native validation outputs, and live viewport state transitions.
 6. Measure enough to prove bounded progress, camera-response, and TDR safety and identify whether the megakernel violates a frozen budget. Do not introduce wavefront execution without that evidence and a new accepted design slice.
@@ -452,7 +495,7 @@ Run the same semantic estimator and already-usable viewport session through stri
 ```text
 Implement only Stage 8 of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md after the first usable viewport milestone passes. Apply the Universal Execution Contract and the repository ray-tracing execution architecture.
 
-Keep the estimator, sampler, material/light logic, diagnostics, accumulation, live navigation behavior, and output semantic in one Renderer core. Formalize its trace/visibility adapter; add the required path/visibility ray types and checked logical scene-to-SBT mapping to the existing RayTracingShaderTablePlan; implement thin RGS/miss/any-hit/closest-hit adapters and current RHI bindings; and add strict requested-versus-active Inline/Pipeline plus D3D12/Vulkan selection with visible rejection. Do not copy the estimator, create backend-specific materials, silently fall back, or add wavefront/SER/vendor optimization.
+Keep the estimator, sampler, material/light logic, ray types, logical hit mapping, diagnostics, accumulation, live navigation behavior, and output semantic in the Reference Path Tracer capsule. Formalize its trace/visibility adapter; use existing backend-neutral shader-table and RHI mechanisms; implement thin feature-local RGS/miss/any-hit/closest-hit adapters; and add strict requested-versus-active Inline/Pipeline plus D3D12/Vulkan selection with visible rejection. Do not add Reference Path Tracer policy or types to RHI. Extend `RayTracingShaderTablePlan` only if a missing backend-neutral contract has another real consumer and `ARCH-RPT-8` independently accepts the hook. Do not copy the estimator, create backend-specific materials, silently fall back, or add wavefront/SER/vendor optimization.
 
 NON-NEGOTIABLE: all four accepted strict combinations execute the same Reference Algorithm, MATH-* code, sample stream, material/light data, alpha/sidedness rules, robust endpoints, accumulation semantics, counters, progress truth, and camera invalidation semantics. Adapters may translate only traversal payload, binding, and command mechanism. Any backend conditional that changes contribution, PDF, random dimension, invalid disposition, output meaning, live-reset behavior, or automatic post-motion refinement is a semantic fork and blocks the stage.
 
@@ -520,7 +563,7 @@ Finish the product boundary, produce release-map references inside the accepted 
 
 ### Exit gate
 
-- Every applicable `AC-RPT-01` through `20` passes conjunctively; every `FM-RPT-*` has exercised detecting evidence; all `RPT-FS-*` rows match public/release reachability.
+- Every applicable `AC-RPT-01` through `21` passes conjunctively; every `FM-RPT-*` has exercised detecting evidence; all `RPT-FS-*` rows match public/release reachability.
 - `CHK-RPT-14`, `15`, and `16` pass in addition to retained Stage 9 evidence.
 - `SurfaceTransportReference` is the single reference authority; no GBuffer-seeded or compatibility reference path competes with it.
 - Package and release-map use remains inside the accepted domain and preserves raw/preview/provenance separation.
@@ -535,7 +578,7 @@ Freeze every applicable release-map camera/configuration within the accepted tra
 
 NON-NEGOTIABLE: ship only the scope proved by the accepted TransportAndEstimator.md revision and only the workflow proved by UserExperience.md. Every view-mode label/order, preset, overlay, reset reason, runtime/offscreen result, manifest, artifact action, map comparison, and support message must preserve the bounded claim and raw/preview distinction. A map outside the domain, nonzero unexplained correctness counter, unresolved MATH-* defect, inaccessible first-use step, stale/mixed prefix, silent capability substitution, plausible partial artifact, or surviving competing selector/estimator authority blocks FCR-REN-08.
 
-Complete the clean break: remove or unambiguously relabel all old GBuffer-seeded reference producer/history/settings/shaders/selectors/docs and remove temporary probes; audit source/header/shader/generated/CMake/package/SBOM/license/docs membership and unrelated dirty work. Run CHK-RPT-01, 14, 15, 16 plus every invalidated prior check, architecture_boundary_check, focused builds/runs required by the claims, and git diff --check. File FCR-REN-08 with exact PASS/BLOCKED/EXCLUDED evidence and limitations. Do not call the feature accepted unless every applicable AC-RPT-01 through 20 passes conjunctively and the acceptance owner approves the report.
+Complete the clean break: remove or unambiguously relabel all old GBuffer-seeded reference producer/history/settings/shaders/selectors/docs and remove temporary probes; audit source/header/shader/generated/CMake/package/SBOM/license/docs membership and unrelated dirty work. Run CHK-RPT-01, 14, 15, 16, 17 plus every invalidated prior check, architecture_boundary_check, focused builds/runs required by the claims, and git diff --check. File FCR-REN-08 with exact PASS/BLOCKED/EXCLUDED evidence and limitations. Do not call the feature accepted unless every applicable AC-RPT-01 through 21 passes conjunctively and the acceptance owner approves the report.
 ```
 
 ## Phase-To-Acceptance Traceability
@@ -544,17 +587,17 @@ This table assigns each feature, acceptance, failure, and check ID to one primar
 
 | Stage | Feature rows primarily delivered | Acceptance primarily closed | Runtime failures primarily exercised | Checks primarily owned |
 | --- | --- | --- | --- | --- |
-| 0 | dispositions for `RPT-FS-17`, `RPT-FS-18`, `RPT-FS-19` | discovery prerequisite only | discovery `FM-PTD-*` | `CHK-PTD-01` through `CHK-PTD-12` |
-| 1 | no final feature row; selector/session contract precursor | none; contracts prepare later closure | `FM-RPT-01`, `FM-RPT-18` | `CHK-RPT-01` |
-| 2 | `RPT-FS-02`, `RPT-FS-03`, `RPT-FS-10` | `AC-RPT-03`, `AC-RPT-04`, `AC-RPT-11` | `FM-RPT-03`, `FM-RPT-07` | `CHK-RPT-02`, `CHK-RPT-03`, `CHK-RPT-07` |
-| 3 | no final feature row; minimal analytic precursor only | none; analytic precursor only | none; controlled estimator faults prepare Stage 4 | no final feature check; retain precursor evidence for Stage 5 |
-| 4 | `RPT-FS-06`, `RPT-FS-07`, `RPT-FS-08`, `RPT-FS-09` | `AC-RPT-07`, `AC-RPT-08`, `AC-RPT-09`, `AC-RPT-10` | `FM-RPT-05`, `FM-RPT-06` | `CHK-RPT-05` |
-| 5 | `RPT-FS-04`, `RPT-FS-05`, `RPT-FS-11` | `AC-RPT-05`, `AC-RPT-06`, `AC-RPT-12` | `FM-RPT-04`, `FM-RPT-08` | `CHK-RPT-04`, `CHK-RPT-08` |
-| 6 | `RPT-FS-12` | `AC-RPT-13` and in-memory portions of `AC-RPT-15` | `FM-RPT-09`, `FM-RPT-10`, `FM-RPT-15` | `CHK-RPT-09` |
-| 7 | `RPT-FS-01` and viewport portions of `RPT-FS-15` | primary viewport `AC-RPT-02` and workflow closure for `AC-RPT-13`, `AC-RPT-20` | `FM-RPT-09`, `FM-RPT-17`, `FM-RPT-18` | `CHK-RPT-09`, `CHK-RPT-15`, `CHK-RPT-16` |
-| 8 | backend/frontend portions of `RPT-FS-15` | `AC-RPT-17` | `FM-RPT-13` | `CHK-RPT-12` |
-| 9 | `RPT-FS-13`, `RPT-FS-14` and evidence/publication portions of `RPT-FS-12`, `RPT-FS-15` | `AC-RPT-14`, `AC-RPT-15`, `AC-RPT-16`, `AC-RPT-18` and secondary workflow closure for `AC-RPT-02`, `AC-RPT-20` | `FM-RPT-02`, `FM-RPT-11`, `FM-RPT-12`, `FM-RPT-14` and artifact portions of `FM-RPT-10`, `FM-RPT-15`, `FM-RPT-17` | `CHK-RPT-06`, `CHK-RPT-10`, `CHK-RPT-11`, `CHK-RPT-13` |
-| 10 | `RPT-FS-16` and final enforcement of Stage-0 dispositions | `AC-RPT-01`, `AC-RPT-19`, `AC-RPT-20` | `FM-RPT-16`, `FM-RPT-19` | `CHK-RPT-14`, `CHK-RPT-16` |
+| 0 | dispositions for `RPT-FS-17`, `RPT-FS-18`, `RPT-FS-19` | discovery prerequisite and proposed `AC-RPT-21` hook freeze | discovery `FM-PTD-*` plus proposed `FM-RPT-20` prevention | `CHK-PTD-01` through `CHK-PTD-12`; freeze `CHK-RPT-17` inputs |
+| 1 | no final feature row; selector/capsule precursor | `AC-RPT-21` for the Stage 1 surface | `FM-RPT-01`, `FM-RPT-18`, `FM-RPT-20` | `CHK-RPT-01`, `CHK-RPT-17` |
+| 2 | `RPT-FS-02`, `RPT-FS-03`, `RPT-FS-10` | `AC-RPT-03`, `AC-RPT-04`, `AC-RPT-11`, retained `AC-RPT-21` | `FM-RPT-03`, `FM-RPT-07`, `FM-RPT-20` | `CHK-RPT-02`, `CHK-RPT-03`, `CHK-RPT-07`, `CHK-RPT-17` |
+| 3 | no final feature row; minimal analytic precursor only | `AC-RPT-21` for the new core | controlled estimator faults prepare Stage 4; `FM-RPT-20` | `CHK-RPT-17`; retain analytic precursor evidence for Stage 5 |
+| 4 | `RPT-FS-06`, `RPT-FS-07`, `RPT-FS-08`, `RPT-FS-09` | `AC-RPT-07`, `AC-RPT-08`, `AC-RPT-09`, `AC-RPT-10`, retained `AC-RPT-21` | `FM-RPT-05`, `FM-RPT-06`, `FM-RPT-20` | `CHK-RPT-05`, `CHK-RPT-17` |
+| 5 | `RPT-FS-04`, `RPT-FS-05`, `RPT-FS-11` | `AC-RPT-05`, `AC-RPT-06`, `AC-RPT-12`, retained `AC-RPT-21` | `FM-RPT-04`, `FM-RPT-08`, `FM-RPT-20` | `CHK-RPT-04`, `CHK-RPT-08`, `CHK-RPT-17` |
+| 6 | `RPT-FS-12` | `AC-RPT-13`, in-memory portions of `AC-RPT-15`, retained `AC-RPT-21` | `FM-RPT-09`, `FM-RPT-10`, `FM-RPT-15`, `FM-RPT-20` | `CHK-RPT-09`, `CHK-RPT-17` |
+| 7 | `RPT-FS-01` and viewport portions of `RPT-FS-15` | primary viewport `AC-RPT-02`, workflow closure for `AC-RPT-13`, `AC-RPT-20`, retained `AC-RPT-21` | `FM-RPT-09`, `FM-RPT-17`, `FM-RPT-18`, `FM-RPT-20` | `CHK-RPT-09`, `CHK-RPT-15`, `CHK-RPT-16`, `CHK-RPT-17` |
+| 8 | backend/frontend portions of `RPT-FS-15` | `AC-RPT-17`, retained `AC-RPT-21` | `FM-RPT-13`, `FM-RPT-20` | `CHK-RPT-12`, `CHK-RPT-17` |
+| 9 | `RPT-FS-13`, `RPT-FS-14` and evidence/publication portions of `RPT-FS-12`, `RPT-FS-15` | `AC-RPT-14`, `AC-RPT-15`, `AC-RPT-16`, `AC-RPT-18`, secondary workflow closure for `AC-RPT-02`, `AC-RPT-20`, retained `AC-RPT-21` | `FM-RPT-02`, `FM-RPT-11`, `FM-RPT-12`, `FM-RPT-14`, `FM-RPT-20`, and artifact portions of `FM-RPT-10`, `FM-RPT-15`, `FM-RPT-17` | `CHK-RPT-06`, `CHK-RPT-10`, `CHK-RPT-11`, `CHK-RPT-13`, `CHK-RPT-17` |
+| 10 | `RPT-FS-16` and final enforcement of Stage-0 dispositions | `AC-RPT-01`, `AC-RPT-19`, `AC-RPT-20`, `AC-RPT-21` | `FM-RPT-16`, `FM-RPT-19`, `FM-RPT-20` | `CHK-RPT-14`, `CHK-RPT-16`, `CHK-RPT-17` |
 
 Conditional feature work is inserted into the owning input/integrator/evidence stages only when `PTD-00` includes it. Default exclusions remain excluded, and raw-oracle prohibitions are verified in every stage rather than implemented as features.
 
@@ -595,6 +638,6 @@ Escalation changes the smallest falsified surface first. It does not begin with 
 
 ## Completion Rule
 
-This plan is complete only when the acceptance owner records `FCR-REN-08 PASS` against one immutable evidence set and every applicable `AC-RPT-01` through `20` passes. If scope, math, sampler, material/light semantics, compiler/shader identity, backend/frontend, accumulation, artifact schema, or release content changes later, the completion report names the invalidated evidence and reruns the smallest affected checks.
+This plan is complete only when the acceptance owner records `FCR-REN-08 PASS` against one immutable evidence set and every applicable `AC-RPT-01` through `21` passes. If scope, math, sampler, material/light semantics, compiler/shader identity, backend/frontend, accumulation, artifact schema, architecture hooks, or release content changes later, the completion report names the invalidated evidence and reruns the smallest affected checks, including `CHK-RPT-17` for any source-shape change.
 
 An implemented tracer with incomplete evidence is **not complete**. A fully evidenced finite-path diagnostic is **not the full surface reference**. A package workflow with a shared or post-processed oracle is **not trustworthy**. The plan is designed to make those substitutions impossible to hide.

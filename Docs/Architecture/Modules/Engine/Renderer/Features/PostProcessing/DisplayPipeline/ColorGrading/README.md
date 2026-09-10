@@ -6,7 +6,7 @@
 
 **Authority boundary:** [Discovery](Discovery.md) freezes implementation-shaping decisions; [Research](Research.md) owns precedent; [Semantics](Semantics.md) owns math and LUT interpretation; [Execution Architecture](ExecutionArchitecture.md) owns system shape; [User Experience](UserExperience.md) owns developer workflow; [Plan](Plan.md) owns delivery order; code/build configuration owns implementation; `FCR-REN-24` owns candidate results
 
-**Verified:** 2026-09-10 against committed revision `30597d7d`; current Renderer/shader/asset/settings/editor/package paths were re-inspected as source only; unrelated dirty work was present outside this package
+**Verified:** 2026-09-10 against committed revision `ca55e7d8`; current Renderer/shader/asset/settings/editor/package paths were re-inspected as source only; concurrent user-owned dirty work was present outside this package and was not treated as committed proof
 
 **Scope:** `REN-POST-11`; artistic and technical color adjustments distinct from exposure, tone mapping, and output encoding
 

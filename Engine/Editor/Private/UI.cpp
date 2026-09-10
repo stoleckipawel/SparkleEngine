@@ -194,6 +194,10 @@ void UI::Update()
 
 	NewFrame();
 	Build();
+	if (m_viewportPanel && m_viewportSession)
+	{
+		m_viewportPanel->SetRenderViewMode(m_viewportSession->GetViewMode());
+	}
 	m_renderPacket = m_renderPacketBuilder->Build(*ImGui::GetDrawData(), UiPresentationMode::EditorViewport, m_viewportGeneration);
 }
 

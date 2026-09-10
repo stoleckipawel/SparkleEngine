@@ -73,6 +73,7 @@ void ViewportRenderProducts::Clear() noexcept
 	m_objectId = {};
 	m_normals = {};
 	m_overlayMask = {};
+	m_progress = {};
 }
 
 void ViewportRenderProducts::ClearProduct(RenderOutputFlags output) noexcept

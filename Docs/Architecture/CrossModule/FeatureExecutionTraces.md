@@ -44,7 +44,7 @@ The source ownership rule is concrete: `RenderScene` owns persistent scene data,
 | Pipeline materialization | `GBufferMeshPass` -> runtime pass cache -> RHI | Typed `GBufferVS/GBufferPS`, binding layout, graphics PSO and material descriptors | Shader generation and material/pipeline keys control reuse |
 | Draw | Batch drawer -> graphics command list | Indexed triangle draws write the GBuffer | Alpha mask can discard; no blend pass follows |
 | Derived buffers | `SkyMotionVectorCS` and `SceneDepthCS` | Completes background motion and writes linear `R32_Float` scene depth | Runs after either raster or ray GBuffer frontend |
-| Lighting | Selected lighting producers -> composite -> sky | Reads common GBuffer semantics and produces HDR `SceneColor` | Raster GBuffer does not imply non-ray lighting: both current lighting modes still trace rays |
+| Lighting | ReSTIR lighting producers -> composite -> sky | Reads common GBuffer semantics and produces HDR `SceneColor` | Raster GBuffer does not imply non-ray lighting: the current ordinary lighting route still traces rays; the Reference Path Tracer selector is contract-only and unavailable until its specialized frame route exists |
 | Post Processing | exposure -> optional reconstruction/upscale -> debug -> tone map -> encode -> copy | Output extent/color format becomes back buffer or viewport product | Current debug views still pass through presentation semantics; color grading, chromatic aberration, and frame generation are absent |
 
 Vertical completeness risk: importer/cooker fidelity for every material role remains a separate asset-pipeline audit. This trace proves the Renderer-side consumer path exists, not that every source format populates it correctly.
@@ -82,16 +82,15 @@ ReSTIR history invalidates when the prepared-scene invalidation hash changes, wh
 
 The [Direct Lighting dossier](../Modules/Engine/Renderer/Features/Lighting/DirectLighting.md) owns the direct reservoir/visibility/BRDF result. The [Indirect Lighting dossier](../Modules/Engine/Renderer/Features/Lighting/IndirectLighting.md) owns secondary transport and its histories. No Volumetric Lighting stage participates in this trace; its [negative capability dossier](../Modules/Engine/Renderer/Features/Lighting/VolumetricLighting.md) records the missing media/atmosphere ownership.
 
-## Trace 4: Convergent Reference Path
+## Trace 4: Reference Path Tracer Contract Boundary
 
 | Step | Operation | Exact contract | Boundary |
 | --- | --- | --- | --- |
-| Mode selection | `LightingMode::ReferencePathTracer` | Graph allocates all five lighting lobes as RGBA32F | Still depends on inline ray queries; “reference” does not mean CPU or native-pipeline traversal |
-| Direct sample | `ReferencePathTracerDirectLightingCS` | GBuffer, four light buffers, TLAS, hit/material buffers, fixed texture table -> direct diffuse/specular/subsurface | Inline only |
-| Indirect sample | `ReferencePathTracerIndirectLightingCS` | GBuffer, sky, TLAS, deformation/hit/material buffers, fixed texture table -> indirect diffuse/specular | Inline only; bounce-control behavior unexecuted |
-| Sample validity | Reference sample descriptor carries sample color/validity for accumulation | Current lighting sample -> validity-aware accumulation inputs | Exact invalid sample behavior needs numeric test |
-| Accumulation | `ReferencePathTracerAccumulationCS` | Current sample + previous RGBA32F history + motion + validity -> current history and scene sample | Prepared-scene/view invalidation hash resets history |
-| Composite/present | Common composite, sky, exposure, upscale, debug, presentation | High-precision lobes eventually become RGBA16F scene/output intermediates | It is a convergence/reference feature, not yet an accepted correctness oracle; see [`PTD-00`](../Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Discovery.md) |
+| Semantic request | `ViewportRenderRequest.ViewMode = RenderViewMode::ReferencePathTracer` | The same single per-view mode field used by every view mode | Editor owns selection in `EditorViewportSession`; Stage 1 keeps the item out of the clickable menu |
+| Existing View boundary | `RenderViewBuilder` -> `RenderView` -> `FramePipeline` | Canonical View data carries only the selected mode; no path-tracer request/result/session fields are added to generic View state | No Scene/View deep copy or mutable cross-thread reference |
+| Feature-local owner | `Passes/Lighting/ReferencePathTracer/ReferencePathTracer` | Private owner recognizes only the ordinary selected mode; it does not manufacture Scene/View/session identity | Stage 1 deliberately reports generic unavailable `0/0` and allocates or dispatches nothing |
+| Observation | `ViewportRenderProducts.GetProgress()` -> `ViewportPanel` | Renderer-agnostic mode/state/completed/target payload has one real Editor reader and suppresses a different selected mode | Detailed transport identity, reset, estimator, backend, result, and artifact state remains absent until its owning implementation stage |
+| Clean break | Renderer lighting graph/settings/history and shader membership | ReSTIR remains the ordinary lighting route; the former GBuffer-seeded reference shaders, history, setting, CVar, registrations, and selector are removed | `RenderViewMode::ReferencePathTracer` is the sole semantic name; Lit is only the retained presentation while transport is unavailable |
 
 ## Trace 5: External Image Provider Lifecycle
 
@@ -179,7 +178,7 @@ The per-cache defaults and absence of global priority/LRU/pressure arbitration a
 | Step | Producer -> consumer | Current transition | Gap or failure boundary |
 | --- | --- | --- | --- |
 | startup restore | `Application` -> settings persistence -> CVar registry | allowlisted values from the owned INI section apply before command-line overrides | missing file is ignored; malformed parse diagnostics are discarded |
-| editor edit | Editor panel -> `EngineRenderingSettingsSection` | one setter mutates the 28-field snapshot and commits | view mode is state/session-only; only 27 names persist |
+| editor rendering-settings edit | Editor panel -> `EngineRenderingSettingsSection` | one setter mutates the 26-field snapshot and commits | only its 26 owned names persist; per-viewport view mode is a separate `EditorViewportSession` concern |
 | save | section -> workspace `Config/DefaultEngine.ini` | first matching owned section is replaced; other loaded lines/sections are retained | truncate-and-rewrite returns no open/write/flush status and is not concurrency-safe/atomic |
 | handoff | commit callback -> host -> `Renderer::SubmitRenderingSettings` | whole value snapshot crosses the public facade | no callback applies CVars directly; editor binds the host callback |
 | execution | coordinator -> CVar owners | serial applies directly; threaded mode queues `RenderSettingsChangedCommand` to render context | queue ordering/backpressure/shutdown equivalence is unproved |

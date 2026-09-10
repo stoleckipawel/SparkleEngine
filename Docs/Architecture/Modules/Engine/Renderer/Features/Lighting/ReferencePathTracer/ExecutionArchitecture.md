@@ -12,14 +12,14 @@
 
 **Priority reconciliation:** 2026-09-10 makes the responsive live viewport slice the first architecture milestone and places durable artifact workflow after it; this changes no current-source or readiness claim.
 
-**Current readiness:** **20/100** — the source tree has an interactive GBuffer-seeded candidate branch and a separate generic view-mode menu, not the independent viewport reference session described here. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **`PTD-01-R2 PASS`** accepts the Stage-1 ordinary-selector/Private-owner seam and exact `ARCH-RPT-1` feature-enclosure ledger; Stage 2 is authorized. Estimator, session identity, accumulator, clickable UI, and oracle evidence remain absent. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
-**Non-claims:** no target contract is accepted, no production code was changed, and no build, shader compile, runtime, GPU, image, convergence, backend, performance, package, or release evidence was produced by this architecture document
+**Non-claims:** the Stage 1 implementation does not provide path transport, shader execution, image output, convergence, backend parity, performance, package, Shipping, or release evidence.
 
-The target is one bounded, restartable **per-view reference session** selected as `RenderViewMode::ReferencePathTracer` immediately after Lit. It traces camera paths over immutable Scene- and View-owned generations, accumulates automatically while the effective view is unchanged, invalidates before mixing changed inputs, and can publish raw scene-linear evidence atomically. A secondary offscreen run uses the same session semantics. This is not a quality preset layered onto the current GBuffer-seeded `LightingMode::ReferencePathTracer` branch.
+The target is one bounded, restartable **per-view reference session** selected as `RenderViewMode::ReferencePathTracer` immediately after Lit. It is a specialized setup and execution route inside the existing Renderer, `FramePipeline`, frame graph, Scene, View, and RHI architecture—not a separate renderer. It traces camera paths over immutable Scene- and View-owned generations, accumulates automatically while the effective view is unchanged, invalidates before mixing changed inputs, and can publish raw scene-linear evidence atomically. A secondary offscreen run uses the same session semantics. It is not a quality preset layered onto the retired GBuffer-seeded branch, and it does not duplicate frame ownership.
 
 > [!IMPORTANT]
-> **Current state:** Target architecture; not implemented or accepted.
+> **Current state:** `PTD-01-R2 PASS` established selector order, one stateless Private owner, a proved generic progress reader, and the obsolete-route/generated-product clean break under `CHK-RPT-17`. Later target stages remain unimplemented and the result is not accepted-reference output.
 >
 > **Gate:** Stage 1 implementation may begin only after the [discovery contract](Discovery.md) records `PTD-00 PASS` and the [delivery plan](Plan.md) names that exact report revision.
 >
@@ -45,7 +45,7 @@ Typed readback and minimal durable publication are added after that slice to ear
 
 | Concern | Current source route | Required target |
 | --- | --- | --- |
-| Invocation | `LightingMode::ReferencePathTracer` runs as a global interactive lighting branch, while `RenderViewMode` contains Lit/debug presentation choices but no Reference Path Tracer item. | `RenderViewMode::ReferencePathTracer` appears immediately after Lit. Selection automatically validates and starts one bounded per-view session; export and offscreen automation consume the same session contract. |
+| Invocation | `RenderViewMode::ReferencePathTracer` is value `1`, immediately after Lit, and travels through the ordinary per-view request into the existing `FramePipeline`. Stage 1 keeps it out of the clickable menu and reports transport unavailable. The former global `LightingMode` branch is deleted. | Selection automatically validates and starts one bounded per-view session once Stage 7 exposes the completed transport route; export and offscreen automation consume the same session contract. |
 | Primary visibility | `GBufferPathSurface.hlsli` starts paths from production GBuffer values. | Camera sample to primary ray to canonical scene hit; no production GBuffer or reconstruction input. |
 | Estimator | Separate direct and indirect passes, analytic-light iteration, BSDF continuation, fixed bounce/distance limits, and no complete light/BSDF MIS contract. | One reviewed camera-path estimator with event, measure, probability, emission, NEE, MIS, roulette, rejection, and termination correspondence. |
 | Identity | Samples are coupled to render `FrameIndex`. | Stateless view-session/pixel/sample/dimension identity, independent of presentation frame time, queue order, batch size, mode switches, and restart. |
@@ -84,7 +84,7 @@ flowchart LR
     Menu[Viewport View Mode] --> View[View-owned reference intent and identity]
     Runtime[Game view request] --> View
     CLI[ApplicationEditor offscreen request] --> View
-    View --> Session[Renderer per-view reference session]
+    View --> Session[Feature-local Renderer per-view session]
     Scene[Scene-owned immutable generation] --> Session
     Session --> Integrator[One semantic integrator]
     Integrator --> Inline[Inline traversal adapter]
@@ -113,21 +113,90 @@ flowchart LR
 
 Each committed prefix is bound to immutable leases and identities over Scene/View-owned generations. It is not a deep-copied alternative world. A contributing mutation publishes a new generation, invalidates the old prefix before the next sample-range commit, and begins a new session digest at ordinal zero. If a producer cannot provide complete generation truth, that dynamic domain is rejected rather than blended.
 
+## Frame Integration Rule
+
+Sparkle's live frame route is the template: `FramePipeline::OnRender` admits and prepares the frame, `BuildRenderFrameGraph` declares high-level stages, and stage owners such as `GBuffer`, `RestirLighting`, and `Exposure` expose one named composition function while keeping their passes, settings, resources, and shaders with the capability. Reference Path Tracer follows that exact shape. It is not dispatched by a second renderer, a side job, or an unrelated post-process/debug path.
+
+`FramePipeline` may know only that the selected `RenderViewMode` participates in the frame-recipe key and may retain the feature owner's lifetime. It must not own Reference Path Tracer validation, accumulation counters, reset classification, transport digest, requested/active backend or frontend, sample state, shader binding, resource allocation, or error policy. `BuildRenderFrameGraph` is the one outside-feature recipe-selection site: it constructs the ordinary Lit middle or invokes one `AddReferencePathTracerPasses`-style entry. No Lighting subpass, post-process stage, presentation path, or RHI frontend independently chooses the renderer again.
+
+### One Frame, Two Middle Recipes
+
+“A view mode” means a different setup of the original frame, not a different frame architecture. The selected mode changes the middle recipe while preserving the common frame shell:
+
+```mermaid
+flowchart LR
+    Admit[FramePipeline admission and preparation] --> Scene[Canonical Scene/View and RT-scene publication]
+    Scene --> Select{BuildRenderFrameGraph recipe}
+    Select -->|Lit| Lit[GBuffer -> ReSTIR lighting -> reconstruction]
+    Select -->|Reference Path Tracer| RPT[Reference transport -> raw accumulation -> display resolve]
+    Lit --> Present[Common viewport product, display pipeline, UI and submission]
+    RPT --> Present
+```
+
+The Reference Path Tracer recipe replaces the estimator-dependent GBuffer/ReSTIR/ray-reconstruction middle; it does not layer reference transport on their outputs. It still uses the same `RenderFrame`, prepared Scene/View, ray-tracing scene, `FrameGraphBuilder`, compiled graph execution, RHI queues/resources/pipelines, viewport publication, Editor UI packet, and submission/presentation machinery. Its raw accumulator remains feature-owned and bypasses display processing for evidence; only a one-way display derivative enters the ordinary exposure/tone-map/output presentation tail.
+
+`RenderViewMode` therefore participates in the generic frame-graph recipe key. A Lit/Reference switch rebuilds or selects the matching graph at the existing safe topology boundary, while the Private Reference Path Tracer owner persists long enough to implement the accepted Lit suspend/revalidate policy. This is one renderer with two recipes, not two renderers and not one monolithic graph that runs both estimators.
+
+Stage 1 intentionally leaves this alternate recipe unavailable because no correct estimator exists yet. Its deletion of the former shaders/resources removed a GBuffer-seeded approximation that violated the accepted reference integral; it did not reject shaders, resources, or frame integration as concepts. Stages 2 through 6 repopulate the feature capsule with independent camera rays, transport shaders, graph passes, resources, and accumulation, and connect them through the single recipe site above before Stage 7 exposes the menu row.
+
+The feature consumes existing immutable frame inputs: prepared Scene data and generation, canonical View/camera/extent/view-mode identity, existing ray-tracing scene bindings, frame-graph construction and execution services, and generic product publication. It does not add path-tracer fields to generic Scene, View, history, settings, RHI, or frame-resource types merely for convenience. If a missing semantic is genuinely shared, its owner and other consumer must be proved before the shared contract is expanded.
+
+This deliberate difference matters:
+
+- an ordinary **view mode** is the user selector and travels through the existing View boundary;
+- the **feature capsule** owns everything required to implement that mode;
+- the **frame** selects and invokes the capsule in one place;
+- the **RHI** executes generic resource, pipeline, trace, dispatch, barrier, queue, and readback operations; and
+- the **Editor** lists the mode and renders a generic progress observation, without storing Renderer state or transport settings.
+
+No plugin framework, generic renderer-feature registry, new renderer module, global job system, or feature-specific settings family is introduced to achieve this. Direct composition is preferred while one concrete feature is sufficient.
+
+### Frozen Feature Home
+
+The steady-state implementation home is `Engine/Renderer/Private/Passes/Lighting/ReferencePathTracer/`, with shaders in one matching feature directory under `Engine/Assets/Shaders/Passes/Lighting/ReferencePathTracer/`. The feature home owns its entry point, session/accumulation lifetime, input digest, estimator, resources, shader parameter records, traversal-facing semantic adapters, progress production, diagnostics, and cleanup. Private files may be split by real responsibility, but remain under this capsule.
+
+Shader registration remains in the repository's generated/registration route because the build system owns discovery. Registration files contain registration only; the shader implementation and feature policy remain in the capsule. Later artifact encoding stays with its ApplicationEditor/filesystem owner, but it consumes a narrow immutable raw-readback result and never becomes part of the interactive rendering state machine.
+
+### Integration-Hook Ledger
+
+These are the only pre-authorized steady-state hooks. Every other outside-feature edit is blocked until this document accepts it with a real consumer and failure check.
+
+| Outside surface | Allowed knowledge | Forbidden knowledge | Removal proof |
+| --- | --- | --- | --- |
+| `RenderViewMode` C++/HLSL declaration | contiguous `ReferencePathTracer = 1` semantic only | samples, backend, product, session, reset, estimator, or resource policy | removing the enum row and matching UI row leaves no selector reference |
+| canonical viewport request and `RenderView` | ordinary `ViewMode` value already used by all modes | feature request structs, digest, progress, session, frontend/backend, or accumulator fields | no `ReferencePathTracer`-named member/type exists |
+| one frame/lighting composition site | select ordinary Lit or invoke the feature entry point and publish its declared output | feature state machine, validation, allocation, sampling, shader binding, counters, or repeated selector switches | one include/call/branch disappears and the ordinary route remains coherent |
+| generic viewport product/progress channel | only a feature-neutral state/count observation if at least two real modes or one necessary stable Editor boundary justify it | transport-specific enums, reset taxonomy, backend state, settings, or controls | consumer audit proves the channel remains useful or it is deleted with the feature |
+| Editor view-mode menu/overlay | label/order/icon and generic progress display/action | Renderer state ownership, path-tracing settings, accumulation mutation, or fallback selection | menu row/overlay branch removes cleanly |
+| build/generated/docs/evidence | membership, registration, documentation, retained checks | runtime policy | zero stale membership/name search |
+
+`FramePipeline` directly owning `ReferencePathTracer` is permitted only if lifetime analysis proves the pipeline is the narrow existing composition owner and the header uses one private incomplete-type member. Even then, all operations reduce to one feature entry call plus teardown; feature transitions or fields in `FramePipeline` fail the budget. If the persistent graph/pass owner already provides the correct lifetime, prefer that owner and keep `FramePipeline` free of the member.
+
+### Rejected Diffusion Shapes
+
+- path-tracer-specific members in `RenderView`, `RenderViewState`, `FrameHistory`, `RenderFrameGraphResources`, `EngineRenderingSettings`, generic viewport contracts, or RHI interfaces;
+- repeated `ReferencePathTracer` switches in frame preparation, graph build, execution, presentation, capture, settings, and UI;
+- public request/session/result/backend/frontend types created before an external module consumer exists;
+- separate Direct/Indirect/Accumulation owners distributed among generic lighting, ray-tracing effects, history, and settings folders;
+- feature-specific validation or progress truth reconstructed in Editor;
+- a generic feature manager, plugin registry, interface family, or job service introduced for this single mode; and
+- a “thin facade” whose callers still manipulate feature internals.
+
+Every implementation stage runs [the architecture-fitness check](README.md#required-checks-and-external-reference-use) and retains an exact outside-feature hook ledger. A successful build, small files, or a clean formatter result cannot pass feature enclosure.
+
 ## Intended Source Shape
 
 The implementation extends existing modules and keeps public vocabulary narrow. Exact filenames are selected against the live tree, but ownership should converge on this shape:
 
 | Repository surface | Intended contents |
 | --- | --- |
-| `Engine/Renderer/Public/ReferencePathTracer/` or the nearest live semantic owner | Only the per-view request, progress/reset snapshot, result, product/frontend enums, and typed artifact-readback contracts a real consumer needs. Do not publish private pass vocabulary. |
-| `Engine/Renderer/Private/ReferencePathTracer/` or the existing per-view state owner | Session validation/state, transport digest, immutable leases, sample ranges, accumulator, invalidation classification, diagnostic/readback scheduling, and orchestration of the semantic integrator. |
-| `Engine/Renderer/Private/RayTracing/Effects/ReferencePathTracer/` or the nearest live semantic-effect owner | Integrator bindings and thin Inline/Pipeline adapters; no application, file, or UI policy. Extend an existing owner instead when inspection shows it is already the singular authority. |
-| `Engine/Assets/Shaders/RayTracing/ReferencePathTracer/` | Shared sample, path-state, BSDF/light estimator, robust-ray, diagnostic, accumulation, and frontend shader code. Do not fork by API. |
+| `Engine/Renderer/Private/Passes/Lighting/ReferencePathTracer/` | The complete Renderer feature capsule: entry point, private session, validation, digest, sample ranges, accumulation, estimator bindings, resources, diagnostics, progress production, and thin traversal-facing semantic adapters. |
+| `Engine/Assets/Shaders/Passes/Lighting/ReferencePathTracer/` | Shared camera, sample, path-state, BSDF/light estimator, robust-ray, diagnostic, accumulation, and frontend shader code. Do not fork semantic code by API. |
 | `Engine/Renderer/ShaderRegistrations/` | Only registrations for actual passes/programs; generated metadata remains authoritative. |
-| `Engine/Application/Private/ReferencePathTracer/` and `EditorOperations/` | Bounded asynchronous artifact writing, optional offscreen command execution, stable results, and shutdown coordination. |
-| `Engine/Editor/Private/Panels/` and current viewport owners | View-mode ordering/selection, progress overlay, details/save presentation, and Lit-comparison interaction over View/Renderer contracts. |
+| existing `ApplicationEditor` operation owner, only in the later artifact stage | Bounded asynchronous artifact writing and optional offscreen execution over a narrow immutable readback result; no interactive session state. |
+| existing Editor viewport menu/overlay owners | One ordinary view-mode row and one generic progress presentation; no feature state, transport settings, or Renderer implementation contract. |
 
-Do not create a top-level `PathTracer` engine, a new executable, a parallel `ReferenceRenderer` module, or public per-pass classes. If the live owner already provides the required abstraction, extend it rather than manufacturing the suggested directory.
+Do not create a top-level `PathTracer` engine, a new executable, a parallel `ReferenceRenderer` module, public per-pass classes, a generic feature framework, or a second path-tracer folder. If a proposed source file cannot be placed in the feature home or one frozen hook row, the architecture must be reviewed before that file is created.
 
 ## End-To-End View Route
 
@@ -157,15 +226,16 @@ The primary loop ends at the progress snapshot and viewport presentation above. 
 
 ## Contract Vocabulary
 
-Names are illustrative until implementation review, but responsibilities are fixed.
+Names are illustrative until implementation review, but responsibilities are fixed. Except for the ordinary `RenderViewMode` request and renderer-agnostic viewport progress payload, these are feature-local concepts and must not become generic Renderer, View, Scene, RHI, settings, or Editor vocabulary.
 
 | Contract | Required content |
 | --- | --- |
-| `ReferencePathTracerViewRequest` | View identity/handle, accepted camera/extent/crop/filter semantics, target product, exact target SPP, seed/replicate, backend/frontend request, included domain, and bounded GPU batch/memory/checkpoint/readback policy. It contains no file path, codec, dialog, or widget state. |
-| `ReferencePathTracerInputDigest` | Canonical hash of every transport-affecting scene, view, asset, shader, compiler, estimator, backend/frontend, sampler, domain, and resolution value. View-mode selection, target SPP, presentation settings, wall clock, batch size, and invocation-only fields do not enter this digest. |
-| `ReferencePathTracerSessionHandle` | Stable view-session identity and observation/pause/restart/checkpoint/readback capabilities without exposing mutable implementation state. |
-| `ReferencePathTracerProgress` | State, exact committed/target sample prefix, elapsed time, active backend/frontend, last reset reason/discarded prefix, memory estimate, checkpoint/export status, counters/warnings, and terminal error category. |
-| `ReferencePathTracerResult` | Current complete/partial/failed state, input digest, committed prefix, counters, uncertainty, and explicit candidate/accepted authority label. An artifact location appears only after successful export. |
+| `RenderViewMode` through `ViewportRenderRequest` | The only shared request surface: one ordinary per-view mode value. Editor selection remains in `EditorViewportSession`; no path-tracer configuration enters `EngineRenderingSettingsState`. |
+| Feature-local configuration | Accepted camera/extent/crop/filter semantics, target product/SPP, seed/replicate, backend/frontend policy, included domain, and bounded batch/memory/checkpoint/readback policy. It remains Private until a concrete UI or command consumer requires a narrow boundary. |
+| `ReferencePathTracerInputDigest` | Private canonical hash of every transport-affecting scene, view, asset, shader, compiler, estimator, backend/frontend, sampler, domain, and resolution value. View-mode selection, target SPP, presentation settings, wall clock, batch size, and invocation-only fields do not enter this digest. |
+| `ReferencePathTracerSession` | Private feature owner for stable identity, accumulation, invalidation, pause/restart/checkpoint/readback, and mutable implementation state. Generic View state does not own or mirror it. |
+| `ViewportRenderProgress` | The small renderer-agnostic UI boundary: selected mode, none/unavailable/rendering/complete state, completed work, and target work. It intentionally has no session generation in Stage 1; Stage 7 may add an exact consumer-checked identity only after the real session owns that truth. Detailed reset, digest, backend, counter, warning, and failure diagnostics remain feature-local. |
+| Feature-local result | Complete/partial/failed state, input digest, committed prefix, counters, uncertainty, and explicit candidate/accepted authority label. It crosses a public boundary only with the later capture/export consumer that needs it. |
 | `ReferencePathTracerSampleRange` | Half-open, non-overlapping sample-ordinal range assigned to a batch. Completion becomes visible only when the entire range is committed. |
 | `ReferencePathTracerSubmission` | Secondary ApplicationEditor-owned serializable project/level/camera locator, output destination, filesystem/disk/wall-time/checkpoint policy, and reference View request. It creates an offscreen canonical view; it is not a second scene or estimator format. |
 | `ReferencePathTracerArtifactManifest` | Product/domain, complete input identity, source/build/compiler/shader/asset hashes, camera/scene semantics, sampler, sample prefix, accumulation policy, backend/frontend, raw/AOV file metadata, counters, budgets, timing, checkpoint lineage, and completion status. |
@@ -456,7 +526,7 @@ Exact source deletions are frozen by the plan stage that inspects the live tree.
 
 An implementation review fails if any invariant is false:
 
-1. One Renderer owner defines the per-view reference session and one semantic core defines path contribution.
+1. One private Reference Path Tracer capsule defines the per-view reference session and one semantic core defines path contribution.
 2. Scene owns scene data and View owns view identity/camera data; the session holds immutable generations rather than a duplicate world.
 3. Requested and active backend/frontend/domain are distinct, recorded, and never silently substituted.
 4. Sample identity depends on session seed/pixel/sample/dimension, never frame timing, mode switching, or scheduling.

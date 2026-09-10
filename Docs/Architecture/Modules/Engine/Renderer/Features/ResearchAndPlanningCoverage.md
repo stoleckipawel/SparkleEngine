@@ -6,7 +6,7 @@
 
 **Authority boundary:** each feature dossier owns its behavior and acceptance; feature-local Discovery owns implementation-shaping decisions; feature-local Research owns precedent; feature-local Plan owns delivery order; [First Release Renderer Plans](../FirstRelease/README.md) own cross-feature release order; this page owns only documentation-depth classification and upgrade sequence
 
-**Verified:** 2026-09-10; source/build truth and the initial documentation inventory were inspected at `669637cf`, and the package/navigation result was rechecked at integrated revision `30597d7d`. All Markdown under `Renderer/Features`, the feature-delivery template, first-release Renderer plans, capability/readiness indexes, and representative current source/build routes were inspected. Concurrent edits under `Lighting/ReferencePathTracer` were treated as user-owned precedent and not modified by this pass.
+**Verified:** 2026-09-10; source/build truth and the initial documentation inventory were inspected at `669637cf`, the initial package/navigation result was rechecked at `30597d7d`, and the three display packages were structurally and source-link revalidated after deepening at committed revision `ca55e7d8`. All Markdown under `Renderer/Features`, the feature-delivery template, first-release Renderer plans, capability/readiness indexes, and representative current source/build routes were inspected. Concurrent edits under `Lighting/ReferencePathTracer` were treated as user-owned precedent and not modified by this pass.
 
 **Current readiness:** Not applicable — documentation package depth does not change the Renderer **36/100** portfolio projection or any candidate verdict. See [Current Feature Readiness](../../../../../Acceptance/CurrentReadiness.md#renderer).
 
@@ -27,7 +27,7 @@ The goal is repeatable planning depth, not seven files per feature. A full packa
 
 | Field | Record |
 | --- | --- |
-| Identity | `ITER-REN-FEATUREDOC-01`; owner: Renderer feature documentation; status: **PASS for documentation planning only**; scope: planning-depth audit and the three absent display packages; start revision `669637cf`, integrated revision `30597d7d`, with user-owned Reference Path Tracer edits preserved; decision: every remaining family has an honest package route |
+| Identity | `ITER-REN-FEATUREDOC-01`; owner: Renderer feature documentation; status: **PASS for documentation planning only**; scope: planning-depth audit and the three absent display packages; start revision `669637cf`, integrated revision `30597d7d`, deepening baseline `ca55e7d8`, with user-owned Reference Path Tracer edits preserved; decision: every remaining family has an honest package route |
 | North Star | `NS-OWNERSHIP`, `NS-EVIDENCE`, `NS-ADOPTION`, `NS-SIMPLIFY`; make each future feature change start from explicit decisions, owners, proof, and a small non-duplicated document set |
 | Persona targets | `PGE-07`, `PGE-08`, `PGE-09`, `PGE-13`, `PGE-15`: **advance planning/documentation only**; no build, runtime, GPU, colorimetric, performance, package, adoption, or evidence-level increase is claimed |
 | Delivery target | `DSP-5`, `DSP-6`, `DSP-7`; `FCR-REN-24`, `FCR-REN-25`, `FCR-REN-26`; preserve all other `FCR-REN-01` through `26` routes and explicit release exclusions |
@@ -90,7 +90,7 @@ Promote a feature to a larger class when active work introduces an unresolved eq
 | `FCR-REN-22` | resolution/sampling/AA | [Resolution, Sampling, And Anti-Aliasing](PostProcessing/ReconstructionAndGeneration/ResolutionSamplingAndAntiAliasing.md), `DSP-1` | `C`; absent AA/dynamic-resolution modes remain negative until admitted |
 | `FCR-REN-23` | deferred decals | [focused package](DeferredDecals/README.md), `GR-5` | `B`; add Discovery before Phase 1; add Semantics only if composition rules cannot remain in architecture |
 | `FCR-REN-24` | color grading | [full package](PostProcessing/DisplayPipeline/ColorGrading/README.md), `CGRD-00`, `DSP-5` | `A`; Stage 0 only until decisions pass |
-| `FCR-REN-25` | chromatic aberration | [focused semantic package](PostProcessing/DisplayPipeline/ChromaticAberration/README.md), `CHRD-00`, `DSP-6` | `B/A`; UX remains with dossier/architecture because the workflow is small; Stage 0 only |
+| `FCR-REN-25` | chromatic aberration | [full package](PostProcessing/DisplayPipeline/ChromaticAberration/README.md), `CHRD-00`, `DSP-6` | `A`; standalone UX is justified by active-state/artifact-classification workflow; Stage 0 only |
 | `FCR-REN-26` | HDR Display Output | [full package](PostProcessing/DisplayPipeline/HDRDisplayOutput/README.md), `HDRD-00`, `DSP-7` | `A`; Stage 0 only until platform/color/hardware decisions pass |
 
 ## Explicit Negative Capabilities
@@ -107,7 +107,7 @@ Promote a feature to a larger class when active work introduces an unresolved eq
 
 ### Wave 1 — Mandatory Absent Display Features
 
-Complete in this pass at the documentation-contract level: Color Grading, Chromatic Aberration, and HDR Display Output now have blocked discovery, primary-source research, explicit semantics/architecture, conditional staged plans, and package navigation. This does not close their discovery gates or readiness.
+Complete in this pass at the documentation-contract level: Color Grading, Chromatic Aberration, and HDR Display Output now have seven-role packages with blocked discovery, primary-source research, executable semantic candidates, explicit ownership/lifetime/failure architecture, full user experience, conditional staged plans, and cross-document traceability. This does not close their discovery gates or readiness.
 
 ### Wave 2 — Next Active High-Risk Feature
 
@@ -164,11 +164,26 @@ Only roadmap/product admission opens a `D` capability. Its first artifact is Dis
 | Check | 2026-09-10 result |
 | --- | --- |
 | `CHK-FDOC-01` | `FCR-REN-01` through `26` were all present exactly as covered families; material negative capabilities retain explicit `D` rules. |
-| `CHK-FDOC-02` | Color Grading has seven direct Markdown siblings, Chromatic Aberration six, and HDR Display Output seven; every file declares status, responsibility, and authority, and no package exceeds the seven-sibling budget. |
+| `CHK-FDOC-02` | Color Grading, Chromatic Aberration, and HDR Display Output each have seven direct Markdown siblings; every file declares status, responsibility, and authority, and no package exceeds the seven-sibling budget. |
 | `CHK-FDOC-03` | all 20 cited external URLs returned HTTP `200`; the six repository `HEAD` revisions matched the hashes recorded in Research; rights, permitted transfer, and non-inference boundaries are explicit. |
 | `CHK-FDOC-04` | all expected discovery, acceptance, failure, and check ID ranges were present; prohibited authoring placeholders were absent; all three production plans remain gated by `CGRD-00`, `CHRD-00`, or `HDRD-00`. |
 | `CHK-FDOC-05` | repository-wide local Markdown validation found zero missing paths and zero missing anchors; the only old `.md` display paths are verbatim historical status evidence in `ProductAndDelivery.md`; strict UTF-8 found zero failures; `git diff --check` found no whitespace errors. |
 | `CHK-FDOC-06` | start/end revision and status were rechecked; the concurrent Reference Path Tracer package was excluded from this pass's edits and preserved when revision `30597d7d` integrated both workstreams. |
+
+## Deepening Validation Result
+
+This second pass was revalidated at committed revision `ca55e7d8` with concurrent user-owned Reference Path Tracer implementation/refactor work left untouched.
+
+| Check | 2026-09-10 deepening result |
+| --- | --- |
+| feature-local ID and no-orphan inventory | expected owner series were present for 34 blocking decisions, 30 discovery checks, 33 risks, 36 retained hand cases, 24 research source IDs, and all feature acceptance/failure/check series |
+| `CHK-FDOC-02/04` | all three packages have exactly seven direct Markdown siblings; 21/21 files declare status/responsibility/authority; 90 required depth-section classes were present; placeholder scan found zero `TODO`/`TBD`/`FIXME`/`XXX`/`PLACEHOLDER` hits; every production plan remains discovery-gated |
+| `CHK-FDOC-03` | all 28 unique external primary-source URLs in the three packages returned HTTP `200`, including revision-pinned implementation files and the OpenColorIO security advisory; transfer/non-inference and rights boundaries remain explicit |
+| `CHK-FDOC-05` scoped | all 229 local links/anchors in the 21 package files plus the parent/coverage indexes resolved; strict UTF-8 decoded all 23 files |
+| `CHK-FDOC-05` repository audit | 217 files/3,086 local links were checked; nine stale links remain outside this pass in concurrently changing Reference Path Tracer/lighting/selector documentation because their linked implementation files or one historical discovery anchor are being replaced; this pass did not edit or claim those routes fixed |
+| `CHK-FDOC-06` | direct `ArchitectureBoundaryCheck.cmake` execution passed with no new violations; scoped and full `git diff --check` exited zero; current revision/status and scoped diff were rechecked, and all unrelated concurrent source/documentation changes were preserved |
+
+No engine build, shader compile, runtime, native HDR activation, GPU, display measurement, visual, performance, package, or release check was run or implied. The three feature discovery gates and FCRs remain `Blocked`.
 
 ## Completion Rule
 

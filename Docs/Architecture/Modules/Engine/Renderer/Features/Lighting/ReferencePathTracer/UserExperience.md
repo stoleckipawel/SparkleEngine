@@ -118,7 +118,7 @@ The minimum clean first-use flow is select, observe accumulation, navigate freel
 
 ## View Session State And Dominant Action
 
-One logical `ReferencePathTracerSession` belongs to one Renderer view identity. The state and action names below are frozen public development-product vocabulary; implementation-private type names may differ without changing them.
+One logical, feature-local Reference Path Tracer session belongs to one Renderer view identity. The state and action names below are frozen user-facing development-product vocabulary, not a requirement to expose matching path-tracer-specific C++ types through generic Renderer, View, settings, RHI, or Editor contracts.
 
 | State | User sees | Dominant action | Forbidden impression |
 | --- | --- | --- | --- |
@@ -376,15 +376,16 @@ The implementation sequence has two non-interchangeable gates. The primary viewp
 2. both Editor and Game camera producers pass translation, rotation, camera selection, cut/teleport, projection/lens, resize, unchanged-frame, and continuous-motion matrices through one canonical View route;
 3. `CHK-RPT-09` proves no stale sample survives any hard invalidation, the displayed composition follows the newest camera within its frozen responsiveness budget, and no presentation/scheduling-only change loses a valid prefix;
 4. `CHK-RPT-16` proves one per-view Renderer session owns accumulation, no duplicate Lighting selector or estimator authority remains, and Shipping reachability matches accepted scope;
-5. keyboard, focus, non-color, scale/DPI, narrow layout, and bounded-log cases pass; and
-6. a first-time reviewer completes the primary loop without saving, source edits, IDE use, console commands, private explanation, or a setup wizard.
+5. `CHK-RPT-17` proves the UI is only the ordinary view-mode selector and generic progress consumer: it owns no Renderer session, transport settings, reset policy, or duplicate feature truth;
+6. keyboard, focus, non-color, scale/DPI, narrow layout, and bounded-log cases pass; and
+7. a first-time reviewer completes the primary loop without saving, source edits, IDE use, console commands, private explanation, or a setup wizard.
 
 The complete workflow is ready for `FCR-REN-08` consideration only when the primary gate remains passing and:
 
-7. `CHK-RPT-02` proves viewport, runtime, and noninteractive equivalent intents resolve to the same semantic digest and sample stream;
-8. `CHK-RPT-13` exercises capability, capacity, timeout, cancellation, device, checkpoint, disk, and publication failures with bounded cleanup/recovery;
-9. `CHK-RPT-10` proves every display/save/open/compare action keeps raw and presentation lineage separate; and
-10. full-resolution raw save, locale, spaces, non-ASCII, read-only install, offscreen automation, support, and output discovery pass their declared evidence matrices.
+8. `CHK-RPT-02` proves viewport, runtime, and noninteractive equivalent intents resolve to the same semantic digest and sample stream;
+9. `CHK-RPT-13` exercises capability, capacity, timeout, cancellation, device, checkpoint, disk, and publication failures with bounded cleanup/recovery;
+10. `CHK-RPT-10` proves every display/save/open/compare action keeps raw and presentation lineage separate; and
+11. full-resolution raw save, locale, spaces, non-ASCII, read-only install, offscreen automation, support, and output discovery pass their declared evidence matrices.
 
 This page defines the intended experience; the [feature dossier](README.md#acceptance-criteria) and signed `FCR-REN-08` report own the eventual verdict.
 

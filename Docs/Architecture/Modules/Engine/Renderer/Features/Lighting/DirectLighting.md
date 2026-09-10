@@ -14,7 +14,7 @@
 | --- | --- | --- |
 | light inventory | directional, point, spot, and rectangular analytic lights | capacity, units, attenuation, cone/area edge behavior need numerical proof |
 | surface model | shared deferred material inputs produce diffuse, specular, and wrap-subsurface lobes | broader transmission, clear-coat, anisotropy, and volumetric transport are absent |
-| candidate selection | selected-light/ReSTIR or reference-path candidate according to lighting mode | estimator correctness, bias, and stability unproved |
+| candidate selection | selected-light/ReSTIR on the current ordinary lighting route | estimator correctness, bias, and stability unproved; Reference Path Tracer direct transport is not implemented in Stage 1 |
 | visibility | ray traced; direct route can resolve inline or native pipeline where ready | no shadow-map or fully non-ray fallback |
 | output | three separate scene-linear textures joined later by LightingComposite | debug/presentation transforms can alter how raw lobes appear |
 
@@ -26,10 +26,10 @@ Direct lighting evaluates one selected analytic light against the primary GBuffe
 
 ## Current Producers
 
-| Lighting mode | Candidate and visibility path | Surface resolve | Current boundary |
+| Route | Candidate and visibility path | Surface resolve | Current boundary |
 | --- | --- | --- | --- |
 | ReSTIR path-traced | Temporal and spatial direct-light reservoir reuse select a light sample; `DirectShadowSignal` resolves visibility through Inline or native Pipeline traversal. | `DirectLighting` evaluates the active BRDF terms into the three direct lobes. | Capability-gated; reuse bias, disocclusion, parity, and performance evidence are open. |
-| Reference path-traced | `ReferencePathTracerDirectLighting` traces the direct sample inline using the shared surface/light/material contract. | Writes the same three semantic lobes at reference precision. | Candidate comparison path; shared dependencies prevent treating it as an independent oracle without `PTD-00`. |
+| Reference Path Tracer | No Stage 1 producer or validated reference session. The dormant ordinary view-mode semantic reaches one Private owner and yields only a generic unavailable observation without allocation. | No direct-reference lobe is published. | Later stages add capability preflight, exact refusal reasons, and frozen-estimator transport as a specialized route inside the existing frame architecture. |
 
 ReSTIR direct order:
 
@@ -95,7 +95,7 @@ The two traversal frontends are intended to produce the same `DirectShadowSignal
 - `AC-DIR-04` — Inline and Pipeline direct-shadow frontends agree on miss, opaque occlusion, alpha-mask rejection, double-sided geometry, light distance, and normal-bias edge cases within a declared tolerance.
 - `AC-DIR-05` — Automatic exposes its resolved traversal; strict Inline/Pipeline rejects when unavailable and never substitutes unshadowed output or another frontend.
 - `AC-DIR-06` — all three direct lobes remain scene-linear and independent until the one lighting composite; debug/capture can identify each producer without treating presentation output as raw evidence.
-- `AC-DIR-07` — ReSTIR and reference-direct modes consume the same scene/light/material identity and produce the same semantic lobe units while retaining explicit algorithm/precision differences.
+- `AC-DIR-07` — once implemented, the ReSTIR and reference-direct routes consume generation-compatible scene/light/material identity and expose comparable scene-linear units while retaining explicit algorithm/precision differences.
 - `AC-DIR-08` — representative D3D12 and Vulkan results satisfy the numerical/parity tolerance with native validation enabled; performance claims include light count, traversal, resolution, and diagnostic state.
 
 ## Controlled Failure Modes And Checks
@@ -123,5 +123,5 @@ This contract is **defined but unproved**. Passing requires the candidate report
 - [`DirectLightReservoir.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/Direct/DirectLightReservoir.cpp) and the temporal/spatial shaders under [`Passes/Lighting/Direct`](../../../../../../../Engine/Assets/Shaders/Passes/Lighting/Direct)
 - [`DirectShadowSignal.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/Shadows/DirectShadowSignal.cpp) and [`DirectShadowSignalCommon.hlsli`](../../../../../../../Engine/Assets/Shaders/Passes/Lighting/Shadows/DirectShadowSignalCommon.hlsli)
 - [`DirectLighting.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/Direct/DirectLighting.cpp) and [`DirectLighting.hlsl`](../../../../../../../Engine/Assets/Shaders/Passes/Lighting/Direct/DirectLighting.hlsl)
-- [`ReferencePathTracerDirectLighting.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/Direct/ReferencePathTracerDirectLighting.cpp)
+- [`ReferencePathTracer.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/ReferencePathTracer/ReferencePathTracer.cpp) is the contract-only Private feature seam; no reference direct-light producer exists in Stage 1.
 - [`RenderGpuLightingPayloadBuilder.cpp`](../../../../../../../Engine/Renderer/Private/Scene/GpuScene/RenderGpuLightingPayloadBuilder.cpp)
