@@ -1,6 +1,6 @@
 # Reference Path Tracer User Experience Contract
 
-**Status:** Stage-0-frozen development-product experience candidate for `FCR-REN-08`; product implementation remains absent and `PTD-00-R1` awaits immutable repository-owner ratification in [Discovery](Discovery.md#ptd-00-r1-gate-separation-reconciliation)
+**Status:** Stage-0-frozen development-product experience accepted by `PTD-00-R1 PASS` at immutable dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300`; product implementation remains absent
 
 **Responsibility:** define how a developer, lighting engineer, or technical artist discovers, enters, navigates, observes, compares, resets, pauses, diagnoses, and secondarily exports or automates the Reference Path Tracer
 

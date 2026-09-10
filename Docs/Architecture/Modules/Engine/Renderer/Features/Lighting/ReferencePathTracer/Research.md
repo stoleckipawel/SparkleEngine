@@ -283,6 +283,6 @@ Until `FCR-REN-08` eventually passes its candidate acceptance:
 
 ## Research Handoff
 
-Current discovery decision: **`PTD-00-R1 READY FOR OWNER RATIFICATION`**. R1 freezes the development domain against `RPTConformanceSet`, keeps release-map support non-inferred, and separates implementation authorization from later package/adoption proof. No runtime, image, performance, package, or release evidence was produced.
+Current discovery decision: **`PTD-00-R1 PASS`** at immutable dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300`. R1 freezes the development domain against `RPTConformanceSet`, keeps release-map support non-inferred, and separates implementation authorization from later package/adoption proof. No runtime, image, performance, package, or release evidence was produced.
 
 Next permitted work is repository-owner review of the exact R1 documentation revision. On acceptance, Stage 1 may begin; release/content/support/package reconciliation remains mandatory before Stage 10, `FCR-REN-08` release closure, or `PTD-03` oracle adoption.

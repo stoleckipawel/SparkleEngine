@@ -1,6 +1,6 @@
 # Reference Path Tracer Staged Implementation Plan
 
-**Status:** `PTD-01` delivery candidate reconciled to **`PTD-00-R1 READY FOR OWNER RATIFICATION`**; an accepted immutable R1 authorizes development Stages 1-9, while Stage 10/release closure remains gated by `REL-03`, release maps, support identities, and executable evidence
+**Status:** `PTD-01` frozen by **`PTD-00-R1 PASS`** at immutable dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300`; development Stages 1-9 are authorized, while Stage 10/release closure remains gated by `REL-03`, release maps, support identities, and executable evidence
 
 **Scope:** deliver `FCR-REN-08` end to end through one Renderer-owned per-view reference session, one semantic path estimator, viewport-first Lit comparison, optional raw evidence publication, D3D12/Vulkan traversal parity, secondary runtime/offscreen workflows, controlled failure, and release-map adoption
 
@@ -177,7 +177,7 @@ The blocking facts are release-owned: no accepted `ReleaseMapSet`, support-hardw
 
 ### Stage-0 R1 gate reconciliation — 2026-09-10
 
-R1 identifies the R0 dependency as a gate-placement error: final release maps, named support machines, and an already-proved package cannot be prerequisites for implementing the development tracer they must later exercise. [Discovery's R1 reconciliation](Discovery.md#ptd-00-r1-gate-separation-reconciliation) freezes `RPTConformanceSet`, capability-driven refusal, explicit Stage-9 output destinations, six-profile target reachability, and the development-versus-release boundary. Stages 1-9 become eligible only after the repository owner accepts one immutable `PTD-00-R1 PASS`; Stage 10, `FCR-REN-08`, packaged support, and `PTD-03` remain blocked by `ReleaseMapSet`, support identities, `REL-03`, and executable evidence. Current state is **READY FOR OWNER RATIFICATION**, not yet `PASS`; Stage 1 remains unauthorized until that exact acceptance is recorded.
+R1 identifies the R0 dependency as a gate-placement error: final release maps, named support machines, and an already-proved package cannot be prerequisites for implementing the development tracer they must later exercise. [Discovery's R1 reconciliation](Discovery.md#ptd-00-r1-gate-separation-reconciliation) freezes `RPTConformanceSet`, capability-driven refusal, explicit Stage-9 output destinations, six-profile target reachability, and the development-versus-release boundary. The repository owner accepted immutable dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300` as `PTD-00-R1 PASS` on 2026-09-10, authorizing Stages 1-9. Stage 10, `FCR-REN-08`, packaged support, and `PTD-03` remain blocked by `ReleaseMapSet`, support identities, `REL-03`, and executable evidence.
 
 ## Stage 1 - Establish Per-View Session Contracts And One Honest Selector
 

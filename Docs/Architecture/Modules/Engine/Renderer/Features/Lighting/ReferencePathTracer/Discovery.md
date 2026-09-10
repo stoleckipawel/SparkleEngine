@@ -6,7 +6,7 @@
 
 **Authority boundary:** the [research report](Research.md) owns precedent and initial findings, [Transport And Estimator](TransportAndEstimator.md) owns the proposed mathematical contract and decision slots, [Execution Architecture](ExecutionArchitecture.md) owns the proposed system boundary, [User Experience](UserExperience.md) owns the proposed human/automation workflow, the [conditional plan](Plan.md) owns Stage 0 and the provisional delivery route, the [roadmap](../../../../../../../Strategy/Roadmap.md#reference-path-tracer-truth-first) owns priority, the [feature dossier](README.md) owns the eventual feature set and definition of done, and [`FCR-REN-08`](../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry) owns its result
 
-**Current state:** **`PTD-00-R1` ready for repository-owner ratification** on 2026-09-10, rebased to committed source input `30597d7d0bb70af9f2836ab01d81d47c3e20bcde`. R1 removes the circular release-package dependency from technical implementation authorization without claiming that release maps, support hardware, packaging, Shipping reachability, or runtime evidence exist. Until this documentation change is accepted at one immutable revision, Stage 1 remains unauthorized.
+**Current state:** **`PTD-00-R1 PASS`**, accepted by the repository owner on 2026-09-10 at immutable dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300` against committed source input `30597d7d0bb70af9f2836ab01d81d47c3e20bcde`. R1 removes the circular release-package dependency from technical implementation authorization without claiming that release maps, support hardware, packaging, Shipping reachability, or runtime evidence exist. Development Stages 1 through 9 are authorized; Stage 10 and release claims remain separately gated.
 
 **Naming reconciliation:** the 2026-09-09 working-tree clean break makes `ReferencePathTracer` the sole feature name; it changes no behavior, authorization, or evidence claim.
 
@@ -35,7 +35,7 @@
 | Delivery targets | `PTD-00`; preparation for `FCR-REN-08`, `REL-04`, `REL-05`, `MAP-A` through `MAP-H` |
 | Primary release risks | `RISK-REL-05`, `RISK-REL-06`, `RISK-REL-08`, `RISK-REL-11`, `RISK-REL-12`, `RISK-REL-13` |
 | Primary technical risks | `RISK-PTD-01` through `RISK-PTD-12` |
-| Decision | **`PTD-00-R1 READY FOR OWNER RATIFICATION`**; no implementation is authorized until the repository owner accepts one immutable R1 revision. That acceptance authorizes development Stages 1-9; the release inputs and executable proof named below remain mandatory for Stage 10 and release claims. |
+| Decision | **`PTD-00-R1 PASS`** at immutable dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300`; development Stages 1-9 are authorized. The release inputs and executable proof named below remain mandatory for Stage 10 and release claims. |
 
 ## Discovery Scope
 
@@ -420,10 +420,10 @@ These are independent AI-assisted design reviews, not implementation evidence an
 | `AC-PTD-01` through `02`, `04` through `12`, `14` through `16` | **PASS (design)** | R0 plus its reconciliations freeze terminology, math, current route, independence, sampling, robustness, lifecycle, statistics, artifacts, traceability, target architecture, clean break, estimates, and implementation prompts. |
 | `AC-PTD-03` | **PASS (development scope)** | Every `RPTConformanceSet` and development-selector semantic maps to the included/excluded feature matrix; later release maps are forbidden from inheriting support. |
 | `AC-PTD-13` | **PASS (design)** | Capability predicates, actions, bounds, failure outcomes, explicit Stage-9 destination, six-profile target policy, and later proof owners are frozen. No hardware/package result is claimed. |
-| `AC-PTD-17` | **READY FOR OWNER RATIFICATION** | Independent math/numeric and UX/evidence reviews passed the reconciled candidate; architecture review found the design internally coherent. Repository-owner acceptance of one immutable R1 revision is intentionally not inferred. |
+| `AC-PTD-17` | **PASS** | Independent math/numeric, architecture/readiness, and UX/evidence reviews passed the reconciled candidate; the repository owner accepted immutable dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300` on 2026-09-10. |
 
 ### R1 decision and next action
 
-Current decision: **`PTD-00-R1 READY FOR OWNER RATIFICATION`** against source input `30597d7d0bb70af9f2836ab01d81d47c3e20bcde`. No production source changed in R1 preparation. Accepting this exact documentation change at an immutable revision closes `AC-PTD-17`, records `PTD-00-R1 PASS`, freezes `PTD-01`, and authorizes Stage 1 without waiting for `REL-03`. Until that acceptance exists, Stage 1 remains unauthorized.
+Current decision: **`PTD-00-R1 PASS`**. The repository owner accepted immutable dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300` on 2026-09-10 against source input `30597d7d0bb70af9f2836ab01d81d47c3e20bcde`. This closes `AC-PTD-17`, freezes `PTD-01` to that dossier revision, and authorizes development Stage 1 without waiting for `REL-03`.
 
 Release status is unchanged: `ReleaseMapSet`, named support hardware, `REL-03`, package/Shipping proof, runtime/backend/statistical evidence, `FCR-REN-08`, and `PTD-03` remain blocked and may not be implied by the technical discovery result.

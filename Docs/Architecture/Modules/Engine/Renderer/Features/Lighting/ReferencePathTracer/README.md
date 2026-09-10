@@ -1,12 +1,12 @@
 # Reference Path Tracer Feature Dossier
 
-**Status:** feature dossier for eventual `FCR-REN-08`; `PTD-00-R1` is ready for repository-owner ratification, after which development implementation may begin while release/package/oracle-adoption claims remain blocked
+**Status:** feature dossier for eventual `FCR-REN-08`; `PTD-00-R1 PASS` authorizes development Stages 1-9 while release/package/oracle-adoption claims remain blocked
 
 **Responsibility:** keep the Reference Path Tracer's expected feature definition, acceptance criteria, runtime failure modes, evidence checks, and definition of done together under the Renderer lighting architecture
 
 **Authority boundary:** [Research](Research.md) owns NVIDIA/AMD/Epic/neutral precedent, [`PTD-00`](Discovery.md) owns discovery and implementation authorization, [Transport And Estimator](TransportAndEstimator.md) owns the proposed mathematical contract, [Execution Architecture](ExecutionArchitecture.md) owns the proposed system boundary, [User Experience](UserExperience.md) owns the proposed human/automation workflow, the [conditional staged plan](Plan.md) owns delivery order/prompts, the [roadmap](../../../../../../../Strategy/Roadmap.md#reference-path-tracer-truth-first) owns priority, code owns implemented behavior, and the eventual [`FCR-REN-08`](../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry) report owns results
 
-**Current disposition:** **`PTD-00-R1 READY FOR OWNER RATIFICATION`** on 2026-09-10 against source input `30597d7d0bb70af9f2836ab01d81d47c3e20bcde`. R1 freezes the development contract against `RPTConformanceSet` and moves release-map, named-hardware, package, and Shipping proof to Stage 10 where they can exercise a real implementation. The current `ReferencePathTracer` implementation remains unaccepted, Stage 1 is unauthorized until one immutable R1 is accepted, and no executable feature evidence is claimed.
+**Current disposition:** **`PTD-00-R1 PASS`**, repository-owner accepted on 2026-09-10 at immutable dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300` against source input `30597d7d0bb70af9f2836ab01d81d47c3e20bcde`. R1 freezes the development contract against `RPTConformanceSet` and moves release-map, named-hardware, package, and Shipping proof to Stage 10 where they can exercise a real implementation. Development Stage 1 is authorized; the current implementation remains unaccepted and no executable feature evidence is claimed.
 
 **Naming reconciliation:** the 2026-09-09 working-tree clean break makes `ReferencePathTracer` the sole feature name; it changes no behavior, readiness score, or evidence claim.
 
