@@ -13,7 +13,7 @@
 | Concern | Current contract | Important limit |
 | --- | --- | --- |
 | real-time route | ReSTIR temporal/spatial reuse and inline-ray resolve | bias, stability, disocclusion, and useful performance unproved |
-| reference route | one inline indirect sample accumulated in history | current branch is not an accepted independent offline oracle |
+| Reference Path Tracer route | one inline indirect sample accumulated in history | current branch is not an accepted independent reference oracle |
 | surface result | separate indirect diffuse and indirect specular scene-linear products | no volumetric transport and limited material-lobe coverage |
 | environment | sky/background is composed separately from bounced surface lighting | background fill is not atmospheric or volumetric scattering |
 | temporal ownership | per-view histories keyed by scene/view/extent/topology identity | stale history can contaminate convergence and reconstruction |
@@ -31,7 +31,7 @@ Sky is documented here because it is the current environment/background boundary
 | Lighting mode | Algorithm | History | Current boundary |
 | --- | --- | --- | --- |
 | ReSTIR path-traced | Clear/seed working reservoirs, temporal reuse, spatial reuse, then inline-ray indirect resolve. Configured bounce count is clamped to 8. | Previous indirect reservoir plus surface/motion/history validity; optional reconstruction-guide products are emitted for DLSS RR. | Inline only; bias, correlation, disocclusion, multi-bounce stability, backend behavior, and cost remain unproved. |
-| Reference path-traced | `PathTracedIndirectLighting` produces one inline secondary-path sample into the indirect lobes; direct and indirect lobes are composited with sky into an RGBA32F reference sample and accumulated. | Validity- and motion-aware reference history; configured samples per pixel clamp to 4096 and path bounces to 16. | Candidate comparison path, not an accepted unbiased or independent ground truth. |
+| Reference path-traced | `ReferencePathTracerIndirectLighting` produces one inline secondary-path sample into the indirect lobes; direct and indirect lobes are composited with sky into an RGBA32F reference sample and accumulated. | Validity- and motion-aware reference history; configured samples per pixel clamp to 4096 and path bounces to 16. | Candidate comparison path, not an accepted unbiased or independent ground truth. |
 
 ReSTIR indirect order:
 
@@ -49,7 +49,7 @@ Reference order:
 ```text
 GBuffer + TLAS/material/lights/sky
   -> direct sample + indirect sample
-  -> five-lobe composite + emissive + sky into ReferenceLightingSample
+  -> five-lobe composite + emissive + sky into ReferencePathTracerSample
   -> validity/motion-aware accumulation into SceneColor
 ```
 
@@ -65,7 +65,7 @@ GBuffer + TLAS/material/lights/sky
 
 Temporal correctness depends on frame, scene, camera/view, motion, surface, settings, extent, shader, provider, and graph-topology identity as applicable. Scene reset, camera discontinuity, resize, mode/provider/shader changes, and affected topology changes invalidate relevant histories. The presence of hashes and reset signals is not evidence that every editor mutation is covered.
 
-Reference accumulation shares the primary GBuffer, scene, materials, lights, ray traversal, and presentation with the real-time renderer. Its precision and accumulation make it useful for comparison, but do not make it independent. The [Offline Path Tracer Discovery](OfflinePathTracer/Discovery.md) owns the estimator/domain/oracle decision.
+Reference accumulation shares the primary GBuffer, scene, materials, lights, ray traversal, and presentation with the real-time renderer. Its precision and accumulation make it useful for comparison, but do not make it independent. The [Reference Path Tracer Discovery](ReferencePathTracer/Discovery.md) owns the estimator/domain/oracle decision.
 
 ## Inputs, Outputs, And Ownership
 
@@ -113,7 +113,7 @@ This contract is **defined but unproved**. `REN-E09` can close the interactive R
 ## Primary Source Routes
 
 - [`RestirIndirectLighting.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/Restir/RestirIndirectLighting.cpp), [`RestirIndirectTemporal.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/Restir/RestirIndirectTemporal.cpp), [`RestirIndirectSpatial.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/Restir/RestirIndirectSpatial.cpp), and [`RestirIndirectResolve.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/Restir/RestirIndirectResolve.cpp)
-- [`PathTracedIndirectLighting.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/PathTracedIndirectLighting.cpp)
-- [`ReferenceLighting.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/Reference/ReferenceLighting.cpp) and [`ReferenceLightingAccumulation.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/Reference/ReferenceLightingAccumulation.cpp)
+- [`ReferencePathTracerIndirectLighting.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/ReferencePathTracerIndirectLighting.cpp)
+- [`ReferencePathTracer.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/ReferencePathTracer/ReferencePathTracer.cpp) and [`ReferencePathTracerAccumulation.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/ReferencePathTracer/ReferencePathTracerAccumulation.cpp)
 - [`LightingComposite.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/LightingComposite.cpp) and [`Sky.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/Sky/Sky.cpp)
 - [`Engine/Assets/Shaders/Lighting`](../../../../../../../Engine/Assets/Shaders/Lighting) and [`Engine/Assets/Shaders/RayTracing`](../../../../../../../Engine/Assets/Shaders/RayTracing)

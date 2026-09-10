@@ -6,6 +6,8 @@
 
 **Last performance-contract and runtime-roster reconciliation:** 2026-08-16
 
+**Reference Path Tracer target reconciliation:** viewport-first Reference Path Tracer wording reconciled on 2026-09-09 against committed `master` revision `20c7bb11`; no workload verdict or executable evidence changed
+
 **Scope:** content ingestion, material and lighting correctness, raster/ray/path-traced quality, whole-system performance, neural rendering evidence, and portfolio presentation
 
 **Current workload completion:** **0/100 accepted.** Bistro and San Miguel have documented/acquired foundations, but neither has a retained candidate-bound visual, backend, performance, stability, package, and reviewer result. This is a conjunctive acceptance result, not the additive feature-readiness score. See [Current Feature Readiness](CurrentReadiness.md).
@@ -131,7 +133,7 @@ The 2026-07-26 source audit found:
 | Core material data | Base color, normal, roughness, metallic, ambient occlusion, emissive, index-of-refraction-derived F0, alpha mode/cutoff, and double-sided state have import/runtime representations. | A useful PBR base exists. It does not prove correct Bistro conversion or drawing. |
 | Raster transparency | Alpha-mask clipping is implemented. Alpha-blend metadata reaches shaders, but the inspected D3D12 and Vulkan graphics pipelines disable render-target blending and no transparent raster draw path was found. | Transparent Bistro materials are currently a real P0 gap; do not call them supported until ordering/compositing, depth policy, paired-backend behavior, and reference images pass. |
 | Advanced glTF material lobes | Clearcoat, transmission, volume, specular, sheen, iridescence, diffuse transmission, anisotropy, and dispersion are reported as unsupported and approximated. | "Full material coverage" must be a declared support matrix with truthful fallbacks, not an undefined claim. |
-| Renderer | Paired explicit API backends, frame graph, ray-tracing scene paths, reference/path-traced lighting, ReSTIR, material buffers, and reconstruction plumbing exist. | Bistro should consolidate and validate existing depth before another broad rendering feature is added. |
+| Renderer | Paired explicit API backends, frame graph, ray-tracing scene paths, the Reference Path Tracer, ReSTIR, material buffers, and reconstruction plumbing exist. | Bistro should consolidate and validate existing depth before another broad rendering feature is added. |
 | Existing scene | Sponza is required and the startup default. | Preserve it as the short loop while Bistro becomes the long acceptance run. |
 | San Miguel | No catalog entry, assets, level, or verified import path is present. | Add it as an external optional pack after the shared provenance/inventory path is proven on Bistro. |
 
@@ -309,7 +311,7 @@ The sweep roster is derived at package start from `Projects/Showcase/Levels.cata
 
 Generated package evidence belongs under `artifacts/validation/performance-diagnostics/<package-id>/<run-id>/<level-id>/`. Formal map evidence remains under `artifacts/validation/showcase-levels/<run-id>/<level-id>/` and follows `MAP-A` through `MAP-H`. This separation permits every implementation package to exercise every supported map without pretending that repeated smoke/measurement work completed the ordered content review.
 
-The first comparison profile is `DevelopmentGame`, D3D12, the discrete NVIDIA adapter, fixed startup resolution, VSync disabled, a frozen initial camera, and recorded image-provider fallbacks. Vulkan, editor overhead, alternate cameras, ray-traced/reference modes, and image-provider comparisons are later routes; they must not be silently mixed into the first per-map number.
+The first comparison profile is `DevelopmentGame`, D3D12, the discrete NVIDIA adapter, fixed startup resolution, VSync disabled, a frozen initial camera, and recorded image-provider fallbacks. Vulkan, editor overhead, alternate cameras, ray-traced and Reference Path Tracer modes, and image-provider comparisons are later routes; they must not be silently mixed into the first per-map number.
 
 `MAP-E` proves one harness run and its definitions. It is not a statistically definitive optimization result; `WL-04` and the Performance Contract below own repeated-run evidence.
 
@@ -436,7 +438,7 @@ Required reference paths:
 - real-time ray/path result with the classical denoiser or reconstruction baseline;
 - neural result only after its separate model contract is met.
 
-Until [`PTD-00`](../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md) and then [`FCR-REN-08`](FeatureCompletionReports.md#initial-completion-report-registry) pass, Sparkle's current high-sample `ReferencePathTraced` output is a **candidate comparison**, not ground truth. Reference-dependent PBR and lighting verdicts remain blocked unless an analytic or independent accepted oracle can decide the exact claim without that route. The offline reference need not meet the 30 FPS interactive target, but its job duration, progress, cancellation, memory/disk bounds, and terminal artifact state must be controlled.
+Until [`PTD-00`](../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Discovery.md) and then [`FCR-REN-08`](FeatureCompletionReports.md#initial-completion-report-registry) pass, Sparkle's current high-sample `ReferencePathTracer` output is a **candidate comparison**, not ground truth. Reference-dependent PBR and lighting verdicts remain blocked unless an analytic or independent accepted oracle can decide the exact claim without that route. The target Reference Path Tracer need not meet the 30 FPS interactive target while accumulating, but its viewport/offscreen session duration, exact progress, reset/cancellation, memory/disk bounds, and optional artifact terminal state must be controlled.
 
 Every comparison freezes:
 
@@ -565,7 +567,7 @@ One workload should produce several narrow stories rather than one enormous "eng
 | --- | --- | --- |
 | `CASE-01 Content to Correct Pixel` | Provenance, deterministic FBX/OBJ conversion paths, Bistro and San Miguel material inventories, support matrix, authored/reference cameras, debug views. | `PGE-07`, `PGE-09`, `PGE-13`, `PGE-15` |
 | `CASE-02 One Frame, Two APIs` | Same route and settings on D3D12/Vulkan; frame/resource/barrier/descriptor/pipeline/RT-build comparison; difficult incident and reduced repro. | `PGE-05`, `PGE-06`, `PGE-09`, `PGE-10`, `PGE-14` |
-| `CASE-03 Path-Traced Lighting Under Budget` | Reference convergence, real-time sample allocation, BLAS/TLAS and lighting cost, quality/performance frontier, failure cases. | `PGE-02`, `PGE-05`, `PGE-08`, `PGE-10`, `PGE-13` |
+| `CASE-03 Reference Path Tracer Under Budget` | Reference convergence, real-time sample allocation, BLAS/TLAS and lighting cost, quality/performance frontier, failure cases. | `PGE-02`, `PGE-05`, `PGE-08`, `PGE-10`, `PGE-13` |
 | `CASE-04 Model to Shader` | Dataset split, model/operator derivation, immutable export, numerical checks, optimized GPU kernels, classical fallback, Bistro presentation and held-out San Miguel results. | `PGE-03`, `PGE-04`, `PGE-08`, `PGE-11`, `PGE-12`, `PGE-13` |
 | `CASE-05 Adoption Package` | Clean acquisition/build/cook/run, capability and fallback matrix, tuning guide, peer reproduction, issue template. | `PGE-01`, `PGE-07`, `PGE-13`, `PGE-14`, `PGE-15` |
 
@@ -631,6 +633,6 @@ Bistro is complete for the six-month portfolio only when:
 - a clean reviewer path, source attribution, video, captures, tables, and limitations exist;
 - another engineer can reproduce at least one case without private guidance.
 
-San Miguel support is complete when its high/low acquisition/import/cook path is deterministic, all material losses are classified, its routes render correctly in raster/hybrid and reference modes, the controlled high/low performance record exists, and its high-detail gallery hero plus neural held-out result are published. It does not wait for all Bistro-specific case studies to be repeated.
+San Miguel support is complete when its high/low acquisition/import/cook path is deterministic, all material losses are classified, its routes render correctly in raster/hybrid and Reference Path Tracer modes, the controlled high/low performance record exists, and its high-detail gallery hero plus neural held-out result are published. It does not wait for all Bistro-specific case studies to be repeated.
 
 A visually attractive screenshot without these conditions is a milestone, not completion.

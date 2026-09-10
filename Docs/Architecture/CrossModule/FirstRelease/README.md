@@ -108,7 +108,7 @@ This is the exact one-to-one execution assignment. The phase owns implementation
 | `FCR-REN-02` | [`FS-2`](../../Modules/Engine/Renderer/FirstRelease/FrameAndScene.md#fs-2--scene-view-and-gpu-scene-preparation) | `FCR-REN-03` | [`FS-3`](../../Modules/Engine/Renderer/FirstRelease/FrameAndScene.md#fs-3--frame-graph-compile-and-execution) |
 | `FCR-REN-04` | [`GR-2`](../../Modules/Engine/Renderer/FirstRelease/GeometryAndRayTracing.md#gr-2--visibility-draw-preparation-and-raster-gbuffer) | `FCR-REN-05` | [`GR-4`](../../Modules/Engine/Renderer/FirstRelease/GeometryAndRayTracing.md#gr-4--ray-traced-gbuffer) |
 | `FCR-REN-06` | [`LGT-1`](../../Modules/Engine/Renderer/FirstRelease/Lighting.md#lgt-1--direct-lighting) | `FCR-REN-07` | [`LGT-2`](../../Modules/Engine/Renderer/FirstRelease/Lighting.md#lgt-2--indirect-lighting) |
-| `FCR-REN-08` | [`LGT-3`](../../Modules/Engine/Renderer/FirstRelease/Lighting.md#lgt-3--execute-ptd-00-discovery), then the accepted [staged `PTD-01` plan](../../Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Plan.md) | `FCR-REN-09` | [`DSP-2`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-2--exposure) |
+| `FCR-REN-08` | [`LGT-3`](../../Modules/Engine/Renderer/FirstRelease/Lighting.md#lgt-3--execute-ptd-00-discovery), then the accepted [staged `PTD-01` plan](../../Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md) | `FCR-REN-09` | [`DSP-2`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-2--exposure) |
 | `FCR-REN-10` | [`DSP-3`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-3--image-reconstruction-and-provider-integration) | `FCR-REN-11` | [`RD-3`](../../Modules/Engine/Renderer/FirstRelease/RuntimeAndDiagnostics.md#rd-3--debug-views-diagnostics-products-and-capture) |
 | `FCR-REN-12` | [`GR-3`](../../Modules/Engine/Renderer/FirstRelease/GeometryAndRayTracing.md#gr-3--renderer-tlas-policy-and-publication) | `FCR-REN-13` | [`RD-4`](../../Modules/Engine/Renderer/FirstRelease/RuntimeAndDiagnostics.md#rd-4--ui-and-viewport-composition) |
 | `FCR-REN-14` | [`DSP-4`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-4--tone-mapping-encoding-and-presentation) | `FCR-REN-15` | [`DSP-4`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-4--tone-mapping-encoding-and-presentation) |
@@ -123,7 +123,7 @@ This is the exact one-to-one execution assignment. The phase owns implementation
 
 | Stage | Roadmap gate | Goal | Phase exit |
 | --- | --- | --- | --- |
-| `FR-00` | `REL-00`, `PTD-00` | freeze first-release scope and settle the offline-reference discovery decision | scope/selector/package classifications are reviewable; `PTD-00` is `PASS` or the release is explicitly blocked/re-scoped |
+| `FR-00` | `REL-00`, `PTD-00` | freeze first-release scope and settle the Reference Path Tracer discovery decision | scope/selector/package classifications are reviewable; `PTD-00` is `PASS` or the release is explicitly blocked/re-scoped |
 | `FR-01` | `REL-01`, `REL-02` | establish identity, rights, prerequisites, and a trustworthy baseline | candidate identity, allowlists, clean baseline route, and failure records exist |
 | `FR-02` | `REL-03` | implement one manifest-owned build-cook-stage-verify-package spine | immutable staged tree and clean-machine package smoke satisfy the acceptance gate |
 | `FR-03` | `REL-04` | close all 49 included feature families through their owner plans | every included FCR has a candidate-bound verdict; no unclassified reachable feature remains |
@@ -137,7 +137,7 @@ This is the exact one-to-one execution assignment. The phase owns implementation
 
 ### `FR-00` — Scope And Discovery
 
-**Goal:** produce one reviewable release manifest of included, experimental, excluded, and removed behavior, then execute `PTD-00` before any offline-path-tracer implementation plan exists.
+**Goal:** produce one reviewable release manifest of included, experimental, excluded, and removed behavior, then execute `PTD-00` before any Reference Path Tracer implementation plan exists.
 
 **Non-goals:** implementation, optimistic scoring, adding target-only features, or treating the present reference path as an unbiased oracle.
 
@@ -288,7 +288,7 @@ Stop the current iteration when any of these is true:
 - an implementation would create a second mutable owner, semantic path, selector truth, or evidence truth;
 - a required check is unavailable, inconclusive, or bound to a different candidate;
 - the only route to passing is a silent fallback, map-specific workaround, compatibility layer, broad mutex, retry loop, or suppressed native diagnostic;
-- the offline path-tracer work would cross from `PTD-00` discovery into implementation before the gate passes;
+- the Reference Path Tracer work would cross from `PTD-00` discovery into implementation before the gate passes;
 - the active candidate, package manifest, release map set, provider version, backend, or configuration changes without evidence invalidation.
 
 ## Explicitly Unscheduled Capabilities

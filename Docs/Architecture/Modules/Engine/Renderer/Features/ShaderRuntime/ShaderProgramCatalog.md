@@ -64,11 +64,11 @@ See [Indirect Lighting](../Lighting/IndirectLighting.md) for the algorithm, hist
 
 | Program | Virtual source | Entry | Stage | Runtime consumer and boundary |
 | --- | --- | --- | --- | --- |
-| `PathTracedDirectLightingCS` | `/Engine/Passes/RayTracing/PathTracedDirectLighting.hlsl` | `main` | Compute | Reference direct sampler; inline ray query and fixed material texture table. |
-| `PathTracedIndirectLightingCS` | `/Engine/Passes/RayTracing/PathTracedIndirectLighting.hlsl` | `main` | Compute | Reference indirect sampler; inline ray query, sky, deformation/hit/material inputs. |
-| `ReferenceLightingAccumulationCS` | `/Engine/Passes/RayTracing/ReferenceLightingAccumulation.hlsl` | `main` | Compute | Motion/validity-aware RGBA32F reference-history accumulation; does not trace rays itself. |
+| `ReferencePathTracerDirectLightingCS` | `/Engine/Passes/RayTracing/ReferencePathTracerDirectLighting.hlsl` | `main` | Compute | Reference direct sampler; inline ray query and fixed material texture table. |
+| `ReferencePathTracerIndirectLightingCS` | `/Engine/Passes/RayTracing/ReferencePathTracerIndirectLighting.hlsl` | `main` | Compute | Reference indirect sampler; inline ray query, sky, deformation/hit/material inputs. |
+| `ReferencePathTracerAccumulationCS` | `/Engine/Passes/RayTracing/ReferencePathTracerAccumulation.hlsl` | `main` | Compute | Motion/validity-aware RGBA32F reference-history accumulation; does not trace rays itself. |
 
-The three ReSTIR-indirect and three reference traversal/accumulation programs have no registered RayGeneration/Miss/Hit equivalents. The native-pipeline claim must therefore remain limited to GBuffer and direct-shadow visibility. See the [Offline Path Tracer](../Lighting/OfflinePathTracer/README.md) for why the reference route is not yet an accepted oracle.
+The three ReSTIR-indirect and three reference traversal/accumulation programs have no registered RayGeneration/Miss/Hit equivalents. The native-pipeline claim must therefore remain limited to GBuffer and direct-shadow visibility. See the [Reference Path Tracer](../Lighting/ReferencePathTracer/README.md) for why the reference route is not yet an accepted oracle.
 
 ## Lighting Composite And Sky
 

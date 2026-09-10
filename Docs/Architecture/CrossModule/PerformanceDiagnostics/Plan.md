@@ -243,7 +243,7 @@ The roster reconciled on 2026-08-16 contains 13 levels:
 | `DiffuseTransmissionPlant` | Alpha/transmission stress | Material/overdraw/transmission sensitivity and whether the feature exposes unsupported/fallback state honestly. |
 | `ABeautifulGame` | Repetition and material variety | Instance, draw, descriptor, texture-residency, and material-variation scaling. |
 | `LPSHead` | Dense character/head asset | Geometry, texture, skin/material, upload, and memory behavior on a focused external asset. |
-| `CornellBox` | Lighting/reference control | Fixed geometry with lighting, ray/path/reference-mode, and presentation comparisons where supported. |
+| `CornellBox` | Lighting/reference control | Fixed geometry with lighting, ray tracing, Reference Path Tracer, and presentation comparisons where supported. |
 | `BistroExterior` | Large exterior scene | Geometry/material/texture scale, extraction/culling, command generation, GPU passes, and memory pressure. |
 | `BistroInteriorWine` | Dense interior/material scene | Visibility, glass/material fallback, lighting, overdraw, and interior/exterior workload change. |
 | `ModernSponza` | High-resolution composed scene | Texture/geometry residency, transparency, material variety, and large modern asset behavior. |

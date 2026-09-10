@@ -66,7 +66,7 @@ public:
 	RayTracingPtlasPartitionPlan BuildRayTracingPlan(
 	    const PreparedRenderScene& preparedScene,
 	    const DirectX::XMFLOAT3& cameraPosition) noexcept;
-	bool UpdateReferenceLightingHistory(std::uint64_t invalidationHash) noexcept;
+	bool UpdateReferencePathTracerHistory(std::uint64_t invalidationHash) noexcept;
 	bool UpdateRestirLightingHistory(std::uint64_t invalidationHash) noexcept;
 	RenderViewInvalidationReason GetLastInvalidationReasons() const noexcept { return m_lastInvalidationReasons; }
 
@@ -101,7 +101,7 @@ private:
 	std::uint64_t m_shaderGeneration = 0u;
 	std::uint64_t m_imageProviderGeneration = 0u;
 	std::uint64_t m_graphTopologyGeneration = 0u;
-	std::optional<std::uint64_t> m_referenceLightingHistoryInvalidationHash;
+	std::optional<std::uint64_t> m_referencePathTracerHistoryInvalidationHash;
 	std::optional<std::uint64_t> m_restirLightingHistoryInvalidationHash;
 	std::unique_ptr<RenderRayTracingViewPlanner> m_rayTracingPlanner;
 	std::uint32_t m_temporalSampleIndex = 0u;

@@ -18,7 +18,7 @@ ConsoleVariable<RayTracingExecutionMode> CVarShadowRayTracingExecutionMode(
 ConsoleVariable<LightingMode> CVarLightingMode(
     "r.Lighting.Mode",
     LightingMode::RestirPathTraced,
-    "Lighting pipeline: 0=ReSTIR real-time path tracing, 1=convergent reference path tracing.");
+    "Lighting pipeline: 0=ReSTIR real-time path tracing, 1=Reference Path Tracer.");
 
 ConsoleVariable<bool> CVarRendererMeshAutoBatching(
     "r.MeshAutoBatching",

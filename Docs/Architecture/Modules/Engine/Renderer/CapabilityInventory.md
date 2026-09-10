@@ -185,7 +185,7 @@ Capacities above are hard implementation limits from this snapshot, not recommen
 | Capability ID | Mode/effect | State | Exact algorithm and traversal coverage | Evidence | Release disposition |
 | --- | --- | --- | --- | --- | --- |
 | `REN-LGT-01` | ReSTIR path-traced lighting | Capability-gated | Primary GBuffer plus direct-light reservoir generation, temporal reuse, spatial reuse, and ray-traced visibility; indirect reservoir temporal/spatial/resolve; shared lighting composite and sky. | `S` | Pending |
-| `REN-LGT-04` | Reference path-traced lighting | Capability-gated | A GBuffer-seeded inline path sample produces direct and indirect radiance into RGBA32F accumulation/history before shared composite/sky. It shares primary surface, material/light/shadow, frame-history, and presentation dependencies; the [completion study](Features/Lighting/OfflinePathTracer/Research.md) therefore classifies current output as a candidate comparison, not an accepted unbiased oracle. | `S` | Pending; `PTD-00` |
+| `REN-LGT-04` | Reference Path Tracer | Capability-gated | A GBuffer-seeded inline path sample produces direct and indirect radiance into RGBA32F accumulation/history before shared composite/sky. It shares primary surface, material/light/shadow, frame-history, and presentation dependencies; the [completion study](Features/Lighting/ReferencePathTracer/Research.md) therefore classifies current output as a candidate comparison, not an accepted unbiased oracle. | `S` | Pending; `PTD-00` |
 | `REN-LGT-05` | Accumulation invalidation | Implemented path | Scene, camera/view, settings, extent, and relevant lighting state contribute to reference/ReSTIR history validity. Completeness under every editor action requires runtime testing. | `S` | Pending |
 | `REN-LGT-06` | Lighting composite | Implemented path | Direct diffuse, direct specular, direct subsurface, indirect diffuse, indirect specular, and GBuffer emissive are combined before post processing. | `S` | Pending |
 
@@ -355,7 +355,7 @@ No current selector exists for Volumetric Lighting, deferred decals, color gradi
 - PBR support is limited to the material components and BRDF families listed above. It is not blanket glTF/Disney/MaterialX feature completeness.
 - Alpha masking exists; general transparent blending/transmission does not have a complete current render path.
 - Ray use currently has no fully non-ray lighting fallback. Minimum hardware/support claims must account for that fact.
-- Native RT pipeline execution covers ray GBuffer and direct-shadow visibility, not reference path tracing or ReSTIR indirect.
+- Native RT pipeline execution covers ray GBuffer and direct-shadow visibility, not the Reference Path Tracer or ReSTIR indirect.
 - Dynamic ray-traced deformation performs CPU position work and full BLAS rebuild; it is not refit/update support and may be expensive.
 - Partitioned TLAS has a richer low-level RHI contract than the Renderer currently exercises.
 - Optional NVIDIA providers require exact binary, adapter, driver, interposer, feature, and fallback evidence before advertisement.

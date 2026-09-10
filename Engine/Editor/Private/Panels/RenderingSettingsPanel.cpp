@@ -67,7 +67,7 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 	    {"Ray-tracing pipeline", RayTracingExecutionMode::Pipeline}};
 	static constexpr ComboOption<LightingMode> lightingModeOptions[] = {
 	    {"ReSTIR real-time path tracing", LightingMode::RestirPathTraced},
-	    {"Convergent reference path tracing", LightingMode::ReferencePathTraced}};
+	    {"Reference Path Tracer", LightingMode::ReferencePathTracer}};
 
 	DrawDisplaySettingsSection(*m_settings, settings, filterText);
 

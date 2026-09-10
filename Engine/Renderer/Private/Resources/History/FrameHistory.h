@@ -20,7 +20,7 @@ struct FrameGraphReservoirHistoryHandles final
 struct FrameHistoryResourceLayout final
 {
 	FrameGraphTextureHistory Exposure = {};
-	FrameGraphTextureHistory ReferenceLighting = {};
+	FrameGraphTextureHistory ReferencePathTracer = {};
 	FrameGraphReservoirHistoryHandles DirectLightReservoir = {};
 	FrameGraphReservoirHistoryHandles RestirIndirectReservoir = {};
 };

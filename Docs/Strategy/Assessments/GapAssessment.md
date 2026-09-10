@@ -81,7 +81,7 @@ Scale: `E0` absent, `E1` claimed/scaffolded, `E2` implemented, `E3` verified, `E
 | ID | Current level | Strongest current evidence | Missing proof / next gate | Priority |
 | --- | ---: | --- | --- | --- |
 | `PGE-01` | `E3` professional / `E1` public repo | Current-role partner coordination; cross-functional recommendations; training and talks. | An independent Sparkle integration/adoption exercise with peer feedback and reproducible handoff. | P1 |
-| `PGE-02` | `E2.5` | Shipped lighting work; tracing/denoising recommendation; Sparkle reference path tracing, path-traced lighting, ReSTIR, and RT scene code. | Frozen Bistro flagship and San Miguel breadth routes with reference checks, convergence/quality study, captures, latency/memory table, and paired backend result. | P0 |
+| `PGE-02` | `E2.5` | Shipped lighting work; tracing/denoising recommendation; Sparkle Reference Path Tracer, ReSTIR, and RT scene code. | Frozen Bistro flagship and San Miguel breadth routes with reference checks, convergence/quality study, captures, latency/memory table, and paired backend result. | P0 |
 | `PGE-03` | `E0` | Provider-ready reconstruction plumbing is not a neural feature. | A trained neural rendering vertical slice that replaces a classical path and has a real fallback. | P0 |
 | `PGE-04` | `E0` | No tensor/operator/model-to-kernel path found. | PyTorch/ONNX graph analysis, fixed-topology export, HLSL/Slang inference kernels, numerical checks, and optimization study. | P0 |
 | `PGE-05` | `E3` professional / `E1.5` repo | 60 FPS console target; cross-platform CPU/GPU/memory optimization; renderer timing/memory/residency surfaces. | Reproducible Bistro and San Miguel benchmark protocol with percentile frame data, causal captures, and regression gates. | P0 |

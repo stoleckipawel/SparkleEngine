@@ -4,9 +4,9 @@
 
 **Verified:** 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
-**Responsibility:** define the shared lighting boundary and route Direct, Indirect, Volumetric, and offline-reference lighting without treating them as one undifferentiated capability
+**Responsibility:** define the shared lighting boundary and route Direct, Indirect, Volumetric, and Reference Path Tracer lighting without treating them as one undifferentiated capability
 
-**Current readiness:** **28/100** across described lighting capabilities — direct/indirect surface paths are **45/100**, the offline reference is **20/100**, and volumetric lighting is **0/100**. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **28/100** across described lighting capabilities — direct/indirect surface paths are **45/100**, the Reference Path Tracer is **20/100**, and volumetric lighting is **0/100**. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## At A Glance
 
@@ -16,7 +16,7 @@
 | ReSTIR direct/indirect products and an accumulating interactive reference branch | Accepted numerical, convergence, temporal, visual, or performance proof |
 | Five separate scene-linear lobe products joined with emissive and sky | Participating-media/volumetric lighting |
 | Debug access to direct and indirect lobe products | Exact presentation for every diagnostic lobe |
-| A defined offline path-tracer target and discovery gate | An authorized, implemented, independent offline reference oracle |
+| A defined Reference Path Tracer target and discovery gate | An authorized, implemented, independent reference oracle |
 
 The most important design choice is product separation: direct diffuse, direct specular, direct subsurface, indirect diffuse, and indirect specular remain distinct until one composite. That improves diagnosis and comparison, at the cost of more resources, histories, bandwidth, and synchronization.
 
@@ -27,7 +27,7 @@ The most important design choice is product separation: direct diffuse, direct s
 | Direct lighting | Direct diffuse, direct specular, and direct subsurface radiance from directional, point, spot, and rect lights with ray-traced visibility. | Implemented, capability-gated; executable correctness and limits remain unproved. | [Direct Lighting](DirectLighting.md) |
 | Indirect lighting | Indirect diffuse and indirect specular radiance from either ReSTIR reuse or the accumulating reference path, plus the environment sky/background boundary. | Implemented, capability-gated; convergence, bias, history, and oracle status remain unproved. | [Indirect Lighting](IndirectLighting.md) |
 | Volumetric lighting | Participating media, fog volumes, extinction, in-scattering, transmittance, atmospheric scattering, and aerial perspective. | Not implemented in the inspected Renderer. | [Volumetric Lighting](VolumetricLighting.md) |
-| Offline reference path tracer | A bounded, deterministic, independently defined transport oracle rather than reuse of the interactive GBuffer/lighting path. | Discovery blocked; implementation is not authorized and current `ReferencePathTraced` is not this oracle. | [Offline Path Tracer](OfflinePathTracer/README.md) and [`PTD-00` discovery](OfflinePathTracer/Discovery.md) |
+| Reference Path Tracer | A bounded, deterministic, independently defined transport oracle rather than reuse of the interactive GBuffer/lighting path. | Discovery blocked; implementation is not authorized and current `ReferencePathTracer` is not this oracle. | [Reference Path Tracer](ReferencePathTracer/README.md) and [`PTD-00` discovery](ReferencePathTracer/Discovery.md) |
 
 This classification is semantic, not merely a source-folder preference. A lighting feature belongs to one domain according to the transport result it produces. Shared material evaluation, history, composite, and presentation remain common infrastructure and are not copied into three implementations.
 
@@ -42,7 +42,7 @@ This classification is semantic, not merely a source-folder preference. A lighti
 
 Both modes require ray-tracing capability. Sparkle currently has no shadow-map, lightmap, probe-only, or non-ray deferred-lighting fallback.
 
-The current `ReferencePathTraced` branch is only a candidate comparison path. [Offline Path Tracer](OfflinePathTracer/README.md) owns the eventual feature definition and completion contract. Its [Discovery gate](OfflinePathTracer/Discovery.md) must settle transport scope, independence, estimator, and evidence design before the [conditional plan](OfflinePathTracer/Plan.md) can be frozen or production implementation can begin.
+The current `ReferencePathTracer` branch is only a candidate comparison path. [Reference Path Tracer](ReferencePathTracer/README.md) owns the eventual feature definition and completion contract. Its [Discovery gate](ReferencePathTracer/Discovery.md) must settle transport scope, independence, estimator, and evidence design before the [conditional plan](ReferencePathTracer/Plan.md) can be frozen or production implementation can begin.
 
 Both surface-lighting modes write the same five semantic lobe products:
 
@@ -79,7 +79,7 @@ The composite owns the join point. Direct and indirect producers do not independ
 - Debug views expose the five lobe products, but current presentation can modify them through exposure, tone mapping, and encoding.
 - Exact selectors and persistence live in [Feature Selector Catalog](../RuntimeConfiguration/FeatureSelectorCatalog.md). Row-level states live in the [Capability Inventory](../../CapabilityInventory.md). Release proof remains in `REN-E06` through `REN-E10`, `REN-E18`, and the dedicated volumetric absence check `REN-E24`.
 
-The family is complete only when the selected surface-lighting mode passes both [Direct Lighting](DirectLighting.md#acceptance-criteria) and [Indirect Lighting](IndirectLighting.md#acceptance-criteria), the common composite/sky join preserves their documented scene-linear products, and the active mode/capability limitations remain visible. [Volumetric Lighting](VolumetricLighting.md) and [Offline Path Tracer](OfflinePathTracer/README.md) retain independent negative/blocked dispositions and cannot inherit that verdict.
+The family is complete only when the selected surface-lighting mode passes both [Direct Lighting](DirectLighting.md#acceptance-criteria) and [Indirect Lighting](IndirectLighting.md#acceptance-criteria), the common composite/sky join preserves their documented scene-linear products, and the active mode/capability limitations remain visible. [Volumetric Lighting](VolumetricLighting.md) and [Reference Path Tracer](ReferencePathTracer/README.md) retain independent negative/blocked dispositions and cannot inherit that verdict.
 
 ## Primary Source Route
 

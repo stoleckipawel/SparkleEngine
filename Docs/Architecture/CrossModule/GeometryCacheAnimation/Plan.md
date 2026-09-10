@@ -91,7 +91,7 @@ Exit: the fixture and Knight visibly deform at correct scale, placement, materia
 - bind each geometry-cache BLAS to the shared current deformed range and immutable topology indices;
 - update continuous fixed-topology playback and rebuild on asset/discontinuity boundaries;
 - make the central ray-hit attribute path fetch the same current deformed normal/tangent/position data used by raster;
-- validate ray-traced primary GBuffer, off-screen reflection visibility, indirect/GI material response, path/reference lighting, shadows, loop, and seek;
+- validate ray-traced primary GBuffer, off-screen reflection visibility, indirect/GI material response, the Reference Path Tracer, shadows, loop, and seek;
 - record BLAS full/update time, scratch/resident bytes, TLAS cost, ray-hit cost, and raster-versus-ray image comparisons.
 
 Exit: raster and ray-primary surfaces agree within the recorded tolerance; the animated Knight appears correctly in reflections and GI on D3D12 and Vulkan; measured BLAS cost meets the Phase 0 budget. A backend that fails remains unsupported explicitly rather than receiving a static substitution.

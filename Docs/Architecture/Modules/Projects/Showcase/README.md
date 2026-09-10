@@ -51,7 +51,7 @@ The catalog has 16 level records: 13 Selected and 3 not selected. Selection is i
 | `ModernSponza`, `ModernSponzaCandles`, `ModernSponzaKnight` | Yes | External packs marked download/runtime supported, including parent dependencies | Large scene/materials; emissive-instance stress; FBX skeletal animation | Multi-GB acquisition, license verification, cook/runtime and memory evidence remain open. |
 | `BistroExterior`, `BistroInteriorWine` | Yes | External Bistro pack marked download/runtime supported | Large FBX scene, outdoor/indoor lighting/material variants | Import fidelity and memory/performance evidence remain open. |
 | `LPSHead` | Yes | External pack marked download/runtime supported; conversion helper tracked | Skin/head shading | Conversion/provenance and final material correctness remain open. |
-| `CornellBox` | Yes | External pack marked download/runtime supported; conversion helper tracked | Indirect/reference lighting and convergence | Conversion and reference oracle must be recorded. |
+| `CornellBox` | Yes | External pack marked download/runtime supported; conversion helper tracked | Indirect lighting, Reference Path Tracer, and convergence | Conversion and reference oracle must be recorded. |
 | `JungleRuins` | No | Download supported, runtime unsupported | Future dense USD/out-of-core scene | USD composition and virtualized/out-of-core geometry absent. |
 | `SanMiguelHigh`, `SanMiguelLow` | No | Download supported, runtime unsupported | Future large-scene tiers | Deterministic OBJ/MTL/PNG-to-glTF conversion absent. |
 

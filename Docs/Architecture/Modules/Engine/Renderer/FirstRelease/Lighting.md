@@ -1,16 +1,16 @@
 # Renderer Lighting Closure Plan
 
-**Status:** implementation plan for direct/indirect closure and the `PTD-00` handoff; not an offline-path-tracer implementation plan or evidence
+**Status:** implementation plan for direct/indirect closure and the `PTD-00` handoff; not an Reference Path Tracer implementation plan or evidence
 
 **Families:** `FCR-REN-06`, `FCR-REN-07`, `FCR-REN-08`
 
-**Current readiness:** section projection **37/100**; direct/indirect source routes exist, the offline-reference family is **20/100**, and all three remain `Blocked`
+**Current readiness:** section projection **37/100**; direct/indirect source routes exist, the Reference Path Tracer family is **20/100**, and all three remain `Blocked`
 
-**Responsibility:** sequence direct and indirect lighting closure and enforce the discovery gate before offline-reference implementation planning
+**Responsibility:** sequence direct and indirect lighting closure and enforce the discovery gate before Reference Path Tracer implementation planning
 
 **Parent:** [First Release Renderer Plans](README.md)
 
-**Architecture:** [Lighting](../Features/Lighting/README.md), [Direct Lighting](../Features/Lighting/DirectLighting.md), [Indirect Lighting](../Features/Lighting/IndirectLighting.md), and [Offline Path Tracer](../Features/Lighting/OfflinePathTracer/README.md)
+**Architecture:** [Lighting](../Features/Lighting/README.md), [Direct Lighting](../Features/Lighting/DirectLighting.md), [Indirect Lighting](../Features/Lighting/IndirectLighting.md), and [Reference Path Tracer](../Features/Lighting/ReferencePathTracer/README.md)
 
 ## Plan At A Glance
 
@@ -34,15 +34,15 @@ flowchart LR
 | `LGT-4` | all three | candidate comparison/adoption reports absent |
 
 > [!CAUTION]
-> `LGT-3` is a hard implementation stop. The [discovery contract](../Features/Lighting/OfflinePathTracer/Discovery.md) deliberately requires `PTD-00` to pass before the conditional `PTD-01` plan can be frozen or advance beyond Stage 0. Provisional transport choices and prompts remain non-authoritative until discovery tests and accepts them.
+> `LGT-3` is a hard implementation stop. The [discovery contract](../Features/Lighting/ReferencePathTracer/Discovery.md) deliberately requires `PTD-00` to pass before the conditional `PTD-01` plan can be frozen or advance beyond Stage 0. Provisional transport choices and prompts remain non-authoritative until discovery tests and accepts them.
 
-NVIDIA's [RTXDI integration guide](https://github.com/NVIDIA-RTX/RTXDI/blob/main/Doc/Integration.md) is a primary reference for the boundary where the application owns scene, materials, GBuffer, rays, and API integration while the SDK supplies reservoir algorithms. [RTX Path Tracing](https://github.com/NVIDIA-RTX/RTXPT) and the repository's [completion study](../Features/Lighting/OfflinePathTracer/Research.md) are precedents and research inputs, never local proof.
+NVIDIA's [RTXDI integration guide](https://github.com/NVIDIA-RTX/RTXDI/blob/main/Doc/Integration.md) is a primary reference for the boundary where the application owns scene, materials, GBuffer, rays, and API integration while the SDK supplies reservoir algorithms. [RTX Path Tracing](https://github.com/NVIDIA-RTX/RTXPT) and the repository's [completion study](../Features/Lighting/ReferencePathTracer/Research.md) are precedents and research inputs, never local proof.
 
 ## `LGT-0` — Freeze Units, Estimators, And Comparison Domain
 
 **Goal:** establish one testable material/light/sky/unit, sampling identity, raw-output, and comparison contract for all three families.
 
-**Non-goals:** choosing an offline transport scope before discovery, tuning for release screenshots, or forcing direct/indirect/reference histories into one lifetime.
+**Non-goals:** choosing the Reference Path Tracer transport scope before discovery, tuning for release screenshots, or forcing direct/indirect/reference histories into one lifetime.
 
 **Required work:** reconcile four light types/limits, material lobes, units/spaces, sky/environment boundary, surface/ray spawn, PDFs/weights/reservoir validity, deterministic sample identity, output lobe channels, composite, history/reset, debug separation, backends/routes, quality/cost/memory matrices, and feature `AC/FM/CHK`.
 
@@ -78,7 +78,7 @@ Implement LGT-1 in the existing direct-light semantic owner and thin visibility 
 
 **Goal:** close `FCR-REN-07` for the explicitly admitted estimator, reuse, bounce, material, sky, temporal, and failure domain.
 
-**Non-goals:** calling the current offline path a ground truth, increasing bounces/features without acceptance need, or tuning away bias without identifying it.
+**Non-goals:** calling the current Reference Path Tracer route ground truth, increasing bounces/features without acceptance need, or tuning away bias without identifying it.
 
 **Required work:** reconcile candidate/sample generation, PDFs/weights/reservoir math, secondary ray/material/sky evaluation, bounce scope, direct/indirect separation, temporal/spatial reuse, motion/disocclusion/reset, firefly/non-finite policy, deterministic seeds, inline/RGS/backend equivalence, raw lobe outputs, artifact gallery, and quality/time/memory frontier.
 
@@ -98,7 +98,7 @@ Implement LGT-2 in the existing indirect-light estimator/reservoir owner with sh
 
 **Non-goals:** modifying the path tracer, asserting unbiasedness, importing RTXPT/Falcor architecture, or drafting detailed implementation phases before the decision.
 
-**Required work:** execute every discovery item, risk, failure mode, check, and evidence package named by the [binding `PTD-00` contract](../Features/Lighting/OfflinePathTracer/Discovery.md); use the [research study](../Features/Lighting/OfflinePathTracer/Research.md) and pinned primary sources; distinguish verified local source, observed behavior, mathematical requirement, precedent, unknown, and release decision.
+**Required work:** execute every discovery item, risk, failure mode, check, and evidence package named by the [binding `PTD-00` contract](../Features/Lighting/ReferencePathTracer/Discovery.md); use the [research study](../Features/Lighting/ReferencePathTracer/Research.md) and pinned primary sources; distinguish verified local source, observed behavior, mathematical requirement, precedent, unknown, and release decision.
 
 **Failure modes:** source inspection reported as runtime proof; external renderer result attributed locally; transport terms undefined; unsupported material/light silently excluded; numerical tolerance chosen without oracle; gate passes with missing evidence.
 
@@ -107,37 +107,37 @@ Implement LGT-2 in the existing indirect-light estimator/reservoir owner with sh
 **Ready-to-use prompt:**
 
 ```text
-Execute PTD-00 exactly as Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md and Stage 0 of its Plan.md specify. Create its iteration record at the current revision and preserve source/observed/reference distinctions. Inspect the complete local transport, material, light, ray, accumulation, export, reset, backend, package, and evidence routes; run only the discovery checks the contract requires. Compare against the pinned NVIDIA, AMD, and neutral mathematical sources for explicit questions, recording revisions and transfer boundaries. Produce the required evidence package and binary gate decision. Do not change implementation, freeze the plan, or start Stage 1 on BLOCKED/incomplete results.
+Execute PTD-00 exactly as Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Discovery.md and Stage 0 of its Plan.md specify. Create its iteration record at the current revision and preserve source/observed/reference distinctions. Inspect the complete local transport, material, light, ray, accumulation, export, reset, backend, package, and evidence routes; run only the discovery checks the contract requires. Compare against the pinned NVIDIA, AMD, and neutral mathematical sources for explicit questions, recording revisions and transfer boundaries. Produce the required evidence package and binary gate decision. Do not change implementation, freeze the plan, or start Stage 1 on BLOCKED/incomplete results.
 ```
 
-## Conditional `PTD-01` Handoff — Freeze The Offline Plan From Accepted Facts
+## Conditional `PTD-01` Handoff — Freeze The Reference Path Tracer Plan From Accepted Facts
 
-**Goal:** after `PTD-00 PASS`, create the dedicated path-tracer plan whose phases close every included `OPT-FS-*`, `AC-OPT-*`, `FM-OPT-*`, and `CHK-OPT-*` without invented requirements.
+**Goal:** after `PTD-00 PASS`, create the dedicated path-tracer plan whose phases close every included `RPT-FS-*`, `AC-RPT-*`, `FM-RPT-*`, and `CHK-RPT-*` without invented requirements.
 
 **Non-goals:** this document serving as that plan, implementing during plan authoring, or retaining rejected discovery assumptions.
 
 **Failure modes:** prompt runs before gate pass; plan omits an accepted transport row; vendor precedent becomes local goal; acceptance truth is duplicated; phase cannot be independently checked.
 
-**Phase exit criteria:** `Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Plan.md` exists only after gate authorization, is linked from plan indexes, maps every accepted discovery output and acceptance row, and contains per-phase goals/non-goals/failures/exit criteria/prompts.
+**Phase exit criteria:** `Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md` exists only after gate authorization, is linked from plan indexes, maps every accepted discovery output and acceptance row, and contains per-phase goals/non-goals/failures/exit criteria/prompts.
 
 **Ready-to-use prompt:**
 
 ```text
-Run this prompt only if PTD-00 has an explicit PASS and complete accepted evidence package. Reconcile the conditional PTD-01 at Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Plan.md to that exact revision. Replace every provisional current-state, transport, algorithm, numerical oracle/tolerance, material/light/backend/package, dependency, estimate, and stop-condition choice with accepted PTD-00 output. Verify every included OPT-FS, AC-OPT, FM-OPT, and CHK-OPT maps to the correct owner-sized vertical phase and that every prompt preserves its non-goals, controlled failures, exit checks, escalation, and reference-transfer boundary. Do not edit production code, copy acceptance authority, or add vendor architecture by analogy. Validate index links and no-orphan coverage before authorizing Stage 1.
+Run this prompt only if PTD-00 has an explicit PASS and complete accepted evidence package. Reconcile the conditional PTD-01 at Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md to that exact revision. Replace every provisional current-state, transport, algorithm, numerical oracle/tolerance, material/light/backend/package, dependency, estimate, and stop-condition choice with accepted PTD-00 output. Verify every included RPT-FS, AC-RPT, FM-RPT, and CHK-RPT maps to the correct owner-sized vertical phase and that every prompt preserves its non-goals, controlled failures, exit checks, escalation, and reference-transfer boundary. Do not edit production code, copy acceptance authority, or add vendor architecture by analogy. Validate index links and no-orphan coverage before authorizing Stage 1.
 ```
 
 ## `LGT-4` — Lighting Candidate Closure
 
-**Goal:** after `FCR-REN-08` implementation through the authorized `PTD-01`, compare direct/indirect results with the accepted offline reference and close all three families for one candidate.
+**Goal:** after `FCR-REN-08` implementation through the authorized `PTD-01`, compare direct/indirect results with the accepted Reference Path Tracer and close all three families for one candidate.
 
 **Non-goals:** treating one attractive image as convergence, allowing the reference to share the same defect without independent checks, or skipping packaged/backend routes.
 
 **Failure modes:** reference/candidate share unverified input; accumulation not converged; exposure/tone confounds raw result; one backend/provider differs; artifact gallery is cherry-picked; path-tracer evidence predates lighting changes.
 
-**Phase exit criteria:** direct, indirect, and offline reports satisfy their complete Architecture contracts; raw/reference, convergence, analytic/independent, failure, backend, package, quality/time/memory, and release-map evidence share one candidate identity.
+**Phase exit criteria:** direct, indirect, and Reference Path Tracer reports satisfy their complete Architecture contracts; raw/reference, convergence, analytic/independent, failure, backend, package, quality/time/memory, and release-map evidence share one candidate identity.
 
 **Ready-to-use prompt:**
 
 ```text
-Execute LGT-4 only after PTD-01 implementation has a candidate-bound result. Freeze the candidate and reconcile FCR-REN-06/07/08 plus all OPT criteria/checks. Run missing analytic, deterministic, convergence, raw-lobe, direct/indirect/reference, failure, history/reset, inline/RGS, D3D12/Vulkan, packaged, and release-map comparisons. Keep sample identity, settings, input assets, camera, output domain, tolerances/confidence, and independent references explicit. Any lighting/material/ray/shader change invalidates affected evidence. File exact decisions, limitations, and blockers; never call the reference unbiased beyond its accepted scope.
+Execute LGT-4 only after PTD-01 implementation has a candidate-bound result. Freeze the candidate and reconcile FCR-REN-06/07/08 plus all RPT criteria/checks. Run missing analytic, deterministic, convergence, raw-lobe, direct/indirect/reference, failure, history/reset, inline/RGS, D3D12/Vulkan, packaged, and release-map comparisons. Keep sample identity, settings, input assets, camera, output domain, tolerances/confidence, and independent references explicit. Any lighting/material/ray/shader change invalidates affected evidence. File exact decisions, limitations, and blockers; never call the reference unbiased beyond its accepted scope.
 ```

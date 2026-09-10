@@ -91,7 +91,7 @@
 | `FCR-REN-05` | [Renderer Ray Tracing](../../Modules/Engine/Renderer/Features/RayTracing/README.md) and [Geometry/GBuffer](../../Modules/Engine/Renderer/Features/GeometryAndResources/GeometryMaterialsAndGBuffer.md) |
 | `FCR-REN-06` | [Direct Lighting](../../Modules/Engine/Renderer/Features/Lighting/DirectLighting.md) |
 | `FCR-REN-07` | [Indirect Lighting](../../Modules/Engine/Renderer/Features/Lighting/IndirectLighting.md) |
-| `FCR-REN-08` | [Offline Path Tracer](../../Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/README.md) |
+| `FCR-REN-08` | [Reference Path Tracer](../../Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md) |
 | `FCR-REN-09` | [Exposure](../../Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/Exposure.md) |
 | `FCR-REN-10` | [Image Reconstruction And Upscaling](../../Modules/Engine/Renderer/Features/PostProcessing/ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md) |
 | `FCR-REN-11` | [Debug Views](../../Modules/Engine/Renderer/Features/DebugViews/README.md) and [Diagnostics/Capture](../../Modules/Engine/Renderer/Features/ViewportAndDiagnostics/DiagnosticsProductsAndCapture.md) |
@@ -120,7 +120,7 @@
 | `REL-02` | [Build/Packaging](../../Modules/BuildAndPackaging/README.md), [CI/Regression](../../Modules/BuildAndPackaging/ContinuousIntegrationAndRegression.md) |
 | `REL-03` | [Packaging And Installation](../../Modules/BuildAndPackaging/PackagingAndInstallation.md) |
 | `REL-04` | All module/feature dossiers; exact current families are mapped above |
-| `REL-05` | [Renderer Features](../../Modules/Engine/Renderer/Features/README.md), [Showcase](../../Modules/Projects/Showcase/README.md), [Offline Path Tracer](../../Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/README.md) |
+| `REL-05` | [Renderer Features](../../Modules/Engine/Renderer/Features/README.md), [Showcase](../../Modules/Projects/Showcase/README.md), [Reference Path Tracer](../../Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md) |
 | `REL-06` | [Performance Diagnostics](../PerformanceDiagnostics/README.md), [Frame Execution](../../Modules/Engine/Renderer/Features/FrameExecution/README.md), residency owners |
 | `REL-07` | [RHI Diagnostics](../../Modules/Engine/RHI/Features/DiagnosticsAndCapture/README.md), [Device Lifecycle](../../Modules/Engine/RHI/Features/DeviceAndResources/DeviceLifecycleAndFailureRecovery.md) |
 | `REL-08` | [Packaging](../../Modules/BuildAndPackaging/PackagingAndInstallation.md), [Adoption](../../Modules/BuildAndPackaging/AdoptionSupportAndIncidentResponse.md) |
@@ -139,7 +139,7 @@
 | `RISK-REL-10` | `REL-10` and `REL-11` owners |
 | `RISK-REL-11` | [CI/Regression](../../Modules/BuildAndPackaging/ContinuousIntegrationAndRegression.md) and every evidence-producing feature owner |
 | `RISK-REL-12` | [Strategy Coverage](../StrategyCoverage.md) and release sequencing authority |
-| `RISK-REL-13` | [Offline Path Tracer](../../Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/README.md) |
+| `RISK-REL-13` | [Reference Path Tracer](../../Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md) |
 
 ### Common Release Failure Modes
 
@@ -179,7 +179,7 @@
 | `MAP-10` | [Showcase](../../Modules/Projects/Showcase/README.md), [Lighting](../../Modules/Engine/Renderer/Features/Lighting/README.md) |
 | `MAP-11` | [Geometry Cache Animation](../GeometryCacheAnimation/README.md), [Temporal Sampling](../../Modules/Engine/Renderer/Features/FrameExecution/TemporalSamplingAndHistory.md), [Ray Tracing](../../Modules/Engine/Renderer/Features/RayTracing/README.md) |
 | `MAP-12` | [Showcase](../../Modules/Projects/Showcase/README.md), [Source Importers](../../Modules/Tools/SourceImporters/README.md), [Residency](../../Modules/Engine/Renderer/Features/GeometryAndResources/MeshAndTextureResidency.md) |
-| `MAP-13` | [Showcase](../../Modules/Projects/Showcase/README.md), [Offline Path Tracer](../../Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/README.md), [Lighting](../../Modules/Engine/Renderer/Features/Lighting/README.md) |
+| `MAP-13` | [Showcase](../../Modules/Projects/Showcase/README.md), [Reference Path Tracer](../../Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md), [Lighting](../../Modules/Engine/Renderer/Features/Lighting/README.md) |
 
 ## Specialist Cases And Workload Ladder
 
@@ -187,12 +187,12 @@
 | --- | --- |
 | `CASE-01` | SourceImporters, Cooking, Showcase, Geometry/GBuffer, Debug Views |
 | `CASE-02` | [RHI Features](../../Modules/Engine/RHI/Features/README.md), [Graphics Coverage](../GraphicsCoverageMatrix.md), [Feature Execution](../FeatureExecutionTraces.md) |
-| `CASE-03` | [Offline Path Tracer](../../Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/README.md), [Performance Diagnostics](../PerformanceDiagnostics/README.md) |
+| `CASE-03` | [Reference Path Tracer](../../Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md), [Performance Diagnostics](../PerformanceDiagnostics/README.md) |
 | `CASE-04` | [Neural Graphics](../NeuralGraphics/README.md), [Training/Evaluation](../NeuralGraphics/TrainingAndEvaluation.md), [Model To Kernel](../NeuralGraphics/ModelToKernelAndRuntimeInference.md) |
 | `CASE-05` | [Packaging](../../Modules/BuildAndPackaging/PackagingAndInstallation.md), [Adoption/Support](../../Modules/BuildAndPackaging/AdoptionSupportAndIncidentResponse.md), [Product Workflows](../ProductWorkflowCoverage.md) |
 | `WL-01` | [Assets](../../Modules/Engine/Assets/README.md), [Source Importers](../../Modules/Tools/SourceImporters/README.md), [Cooking](../../Modules/Tools/Cooking/README.md) |
 | `WL-02` | [Showcase](../../Modules/Projects/Showcase/README.md), source/cook owners |
-| `WL-03` | Showcase and Renderer/RHI feature owners, including [Offline Path Tracer](../../Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/README.md) |
+| `WL-03` | Showcase and Renderer/RHI feature owners, including [Reference Path Tracer](../../Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md) |
 | `WL-04` | [Performance Diagnostics](../PerformanceDiagnostics/README.md), [RHI](../../Modules/Engine/RHI/README.md), [Renderer](../../Modules/Engine/Renderer/README.md) |
 | `WL-05` | [Neural Training And Evaluation](../NeuralGraphics/TrainingAndEvaluation.md) |
 | `WL-06` | [Model To Kernel And Runtime Inference](../NeuralGraphics/ModelToKernelAndRuntimeInference.md) |

@@ -81,7 +81,7 @@ Geometry-cache animation is complete only when all of the following are true:
 - `AC-GCA-03` — GameFramework holds only playback state and immutable asset identity. Check: `CHK-GCA-10`.
 - `AC-GCA-04` — sample bytes stream through one bounded residency/lifetime owner. Check: `CHK-GCA-06`.
 - `AC-GCA-05` — raster, dynamic BLAS, and ray-hit attributes consume one current/previous deformed-geometry product. Checks: `CHK-GCA-07`–`CHK-GCA-09`.
-- `AC-GCA-06` — raster and ray-traced primary visibility, reflections, GI, and path/reference lighting show the same accepted deformation. Checks: `CHK-GCA-07`–`CHK-GCA-09`.
+- `AC-GCA-06` — raster and ray-traced primary visibility, reflections, GI, and the Reference Path Tracer show the same accepted deformation. Checks: `CHK-GCA-07`–`CHK-GCA-09`.
 - `AC-GCA-07` — D3D12 and Vulkan pass the recorded gates. Checks: `CHK-GCA-08`, `CHK-GCA-09`.
 - `AC-GCA-08` — Modern Sponza Knight is correctly scaled, placed, material-bound, animated, and measured without a scene-specific branch or static fallback. Checks: `CHK-GCA-01`, `CHK-GCA-03`, `CHK-GCA-05`–`CHK-GCA-09`.
 - `AC-GCA-09` — no USD runtime, Alembic runtime, pose bake, morph-frame expansion, duplicate cache, dormant mode, or permanent diagnostic clutter remains. Check: `CHK-GCA-10`.

@@ -66,7 +66,7 @@ No recommendation in this assessment authorizes removal of a user-visible or gra
 
 - D3D12 and Vulkan backends, capability reporting, debug support, presentation, and native lifetime correctness;
 - rasterized and ray-traced GBuffer paths;
-- reference path-traced lighting and ReSTIR direct/indirect lighting;
+- Reference Path Tracer and ReSTIR direct/indirect lighting;
 - ray queries and native ray-tracing pipeline execution where currently implemented;
 - frame-graph declaration, compilation, barriers, transient planning, recording, and execution;
 - persistent render scene, view, frame, GPU-scene, resource, texture, mesh, and material behavior;

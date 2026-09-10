@@ -64,7 +64,7 @@ The completed path supports one or more baked mesh tracks with:
 - per-sample visibility and bounds when authored;
 - current and previous deformed vertices for correct motion vectors and temporal consumers;
 - asynchronous, bounded chunk streaming instead of full-cache startup retention;
-- the same visible deformation in rasterized GBuffer, ray-traced primary visibility, reflections, GI, and path/reference lighting that use the scene TLAS.
+- the same visible deformation in rasterized GBuffer, ray-traced primary visibility, reflections, GI, and the Reference Path Tracer that use the scene TLAS.
 
 It deliberately does not turn geometry caches into skeletal clips, morph-target banks, editable simulation, or a general scene-description format. The first delivery does not support changing topology, hair/curve/point primitives, particle caches, subdivision surfaces, cloth collision, retargeting, USD composition, or runtime Alembic parsing.
 
@@ -286,7 +286,7 @@ Constant topology allows reusable BLAS allocations for geometry-cache sections. 
 - scratch allocation covers the required build/update maximum;
 - submission-token lifetime protects deformed vertices, indices, scratch, and acceleration structures.
 
-The ray scene uses the same material, instance transform, visibility, and hit-record path as other triangle geometry. Reflections, GI, and path/reference lighting require no geometry-cache-specific shading effect: once the shared current attributes and BLAS are in the ordinary TLAS, those consumers see the deformation through their existing material-hit contract.
+The ray scene uses the same material, instance transform, visibility, and hit-record path as other triangle geometry. Reflections, GI, and the Reference Path Tracer require no geometry-cache-specific shading effect: once the shared current attributes and BLAS are in the ordinary TLAS, those consumers see the deformation through their existing material-hit contract.
 
 Record full-build versus update time, BLAS memory, scratch high-water, and total ray-scene build cost. If continuous update does not meet the accepted Knight budget on either backend, ray geometry-cache support remains blocked; do not silently omit the object from reflections/GI or substitute a static BLAS.
 

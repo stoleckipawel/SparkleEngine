@@ -18,7 +18,7 @@ enum class RayTracingExecutionMode : std::uint8_t
 enum class LightingMode : std::uint8_t
 {
 	RestirPathTraced,
-	ReferencePathTraced
+	ReferencePathTracer
 };
 
 enum class RayTracingPtlasPartitionUpdateMode : std::uint8_t

@@ -107,7 +107,7 @@ For the detailed lifecycle, read [Rendering A Sparkle Frame](Modules/Engine/Rend
 | Raster GBuffer | **50/100** | Implemented path; unproved | Static/instanced/skinned/morphed opaque and masked geometry; transparent blending and broad material models are absent. |
 | Ray GBuffer and shadows | **40/100** | Capability-gated; unproved | Inline and native pipeline frontends exist; supported semantics and backend parity remain unproved. |
 | Direct and indirect lighting | **45/100** | Implemented path; unproved | ReSTIR/reference surface-lighting paths currently require ray tracing; no shadow-map or non-ray fallback exists. |
-| Offline path-tracing reference | **20/100** | Defined but blocked | Discovery must establish estimator/oracle credibility before it can approve other lighting. |
+| Reference Path Tracer reference | **20/100** | Defined but blocked | Discovery must establish estimator/oracle credibility before it can approve other lighting. |
 | Exposure, reconstruction, and upscaling | **40/100** | Partial/capability-gated | Manual/automatic exposure and Linear/DLSS routes exist; provider availability and temporal behavior need proof. |
 | Tone mapping and SDR output | **45/100** | Implemented path; unproved | Three tone-map choices feed display encoding; no public bypass or HDR display contract exists. |
 | Debug views and capture | **40/100** | Implemented path; unproved | Intermediate products are selectable/capturable; semantic display correctness and attribution remain open. |

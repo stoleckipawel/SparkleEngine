@@ -14,7 +14,7 @@
 | --- | --- | --- |
 | [Frame And Scene](FrameAndScene.md) | `FCR-REN-01`, `02`, `03` | immutable admission, Scene/View/GPU-scene preparation, graph compile/execute |
 | [Geometry And Ray Tracing](GeometryAndRayTracing.md) | `FCR-REN-04`, `05`, `12`, `17`, `21`, `23` | resident visible geometry, raster/ray GBuffer, TLAS, traversal identity, and deferred decals |
-| [Lighting](Lighting.md) | `FCR-REN-06`, `07`, `08` | direct/indirect lighting and discovery-gated offline reference closure |
+| [Lighting](Lighting.md) | `FCR-REN-06`, `07`, `08` | direct/indirect lighting and discovery-gated Reference Path Tracer closure |
 | [Display And Reconstruction](DisplayAndReconstruction.md) | `FCR-REN-09`, `10`, `14`, `15`, `18`, `22`, `24`–`26` | view-owned temporal/display state through grading, lens, SDR, and HDR10 output |
 | [Runtime And Diagnostics](RuntimeAndDiagnostics.md) | `FCR-REN-11`, `13`, `16`, `19`, `20` | shader binding, settings, debug/capture, UI composition, latency coordination |
 

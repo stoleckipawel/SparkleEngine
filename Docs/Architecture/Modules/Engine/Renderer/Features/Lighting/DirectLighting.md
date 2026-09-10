@@ -29,7 +29,7 @@ Direct lighting evaluates one selected analytic light against the primary GBuffe
 | Lighting mode | Candidate and visibility path | Surface resolve | Current boundary |
 | --- | --- | --- | --- |
 | ReSTIR path-traced | Temporal and spatial direct-light reservoir reuse select a light sample; `DirectShadowSignal` resolves visibility through Inline or native Pipeline traversal. | `DirectLighting` evaluates the active BRDF terms into the three direct lobes. | Capability-gated; reuse bias, disocclusion, parity, and performance evidence are open. |
-| Reference path-traced | `PathTracedDirectLighting` traces the direct sample inline using the shared surface/light/material contract. | Writes the same three semantic lobes at reference precision. | Candidate comparison path; shared dependencies prevent treating it as an independent oracle without `PTD-00`. |
+| Reference path-traced | `ReferencePathTracerDirectLighting` traces the direct sample inline using the shared surface/light/material contract. | Writes the same three semantic lobes at reference precision. | Candidate comparison path; shared dependencies prevent treating it as an independent oracle without `PTD-00`. |
 
 ReSTIR direct order:
 
@@ -123,5 +123,5 @@ This contract is **defined but unproved**. Passing requires the candidate report
 - [`DirectLightReservoir.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/Direct/DirectLightReservoir.cpp) and the temporal/spatial shaders under [`Passes/Lighting/Direct`](../../../../../../../Engine/Assets/Shaders/Passes/Lighting/Direct)
 - [`DirectShadowSignal.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/Shadows/DirectShadowSignal.cpp) and [`DirectShadowSignalCommon.hlsli`](../../../../../../../Engine/Assets/Shaders/Passes/Lighting/Shadows/DirectShadowSignalCommon.hlsli)
 - [`DirectLighting.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/Direct/DirectLighting.cpp) and [`DirectLighting.hlsl`](../../../../../../../Engine/Assets/Shaders/Passes/Lighting/Direct/DirectLighting.hlsl)
-- [`PathTracedDirectLighting.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/Direct/PathTracedDirectLighting.cpp)
+- [`ReferencePathTracerDirectLighting.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/Direct/ReferencePathTracerDirectLighting.cpp)
 - [`RenderGpuLightingPayloadBuilder.cpp`](../../../../../../../Engine/Renderer/Private/Scene/GpuScene/RenderGpuLightingPayloadBuilder.cpp)

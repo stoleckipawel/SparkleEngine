@@ -11,7 +11,7 @@ This page tracks high-level acceptance routing for features primarily owned by `
 | Portfolio state | Feature families |
 | --- | --- |
 | source path exists but candidate proof remains open | debug views, exposure, reconstruction/upscaling, tone mapping, presentation/output, pipeline materialization, residency, temporal state, settings, latency coordination, visibility, and resolution/sampling |
-| discovery blocked before implementation/acceptance can proceed | independent offline path-tracing oracle (`PTD-00`) |
+| discovery blocked before implementation/acceptance can proceed | independent Reference Path Tracer oracle (`PTD-00`) |
 | not implemented but admitted to first release | deferred decals, color grading, chromatic aberration, and HDR10 display output |
 | not implemented and not admitted to first release | frame generation |
 
@@ -21,7 +21,7 @@ No Renderer row is promoted by this summary. Follow the feature contract for wha
 
 | Feature/progress route | Readiness | Feature-owned contract | Result route |
 | --- | ---: | --- | --- |
-| Offline path tracer; `PTD-00` discovery remains blocked and `FCR-REN-08` cannot yet accept oracle status | **20/100** | [Feature dossier](../../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/README.md), [target architecture](../../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/ExecutionArchitecture.md), and [conditional plan](../../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Plan.md) | [`FCR-REN-08`](../FeatureCompletionReports.md#initial-completion-report-registry) |
+| Reference Path Tracer; `PTD-00` discovery remains blocked and `FCR-REN-08` cannot yet accept oracle status | **20/100** | [Feature dossier](../../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md), [target architecture](../../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/ExecutionArchitecture.md), and [conditional plan](../../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md) | [`FCR-REN-08`](../FeatureCompletionReports.md#initial-completion-report-registry) |
 | Debug-view presentation; source present, candidate proof blocked | **40/100** | [Debug Views dossier](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/README.md) and [feature acceptance](../../Architecture/Modules/Engine/Renderer/Features/DebugViews/Acceptance.md) | [`FCR-REN-11`](../FeatureCompletionReports.md#initial-completion-report-registry) |
 | Deferred GBuffer decals; mandatory target, implementation not found | **0/100** | [Deferred Decals dossier](../../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/README.md) and [feature acceptance](../../Architecture/Modules/Engine/Renderer/Features/DeferredDecals/Acceptance.md) | [`FCR-REN-23`](../FeatureCompletionReports.md#initial-completion-report-registry) |
 | Exposure; source present, candidate proof open | **45/100** | [Exposure dossier](../../Architecture/Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/Exposure.md) | [`FCR-REN-09`](../FeatureCompletionReports.md#initial-completion-report-registry) |

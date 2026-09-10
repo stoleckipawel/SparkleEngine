@@ -6,7 +6,7 @@
 
 **Authority boundary:** [Documentation Organization](../DocumentationOrganization.md) owns placement, naming, granularity, and navigation; [Change Lifecycle](../ChangeLifecycle.md) owns iteration, risk, acceptance, failure, check, and decision requirements; [Change Integration](../ChangeIntegration.md) owns production-path and clean-break rules; [Validation And Evidence](../../Verification/ValidationAndEvidence.md) owns check design and evidence meaning; this template owns only the reusable document shape and population sequence
 
-Use this package when a feature crosses several durable knowledge roles, introduces a new public or selectable result, changes ownership/lifetime, needs external precedent, contains algorithmic or protocol correctness, creates a user/tool workflow, or will support a feature-completion claim. The worked example is the Renderer [Offline Path Tracer dossier](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/README.md).
+Use this package when a feature crosses several durable knowledge roles, introduces a new public or selectable result, changes ownership/lifetime, needs external precedent, contains algorithmic or protocol correctness, creates a user/tool workflow, or will support a feature-completion claim. The worked example is the Renderer [Reference Path Tracer dossier](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md).
 
 > [!IMPORTANT]
 > Copying this template does not advance readiness or authorize implementation. Replace every `{{PLACEHOLDER}}`, verify current-state statements against code and executable build configuration, keep unresolved decisions visibly blocked, and retain actual results only in their candidate-bound evidence or completion report.
@@ -914,13 +914,13 @@ Before handing the package to an implementation agent, verify:
 
 ## Worked Example
 
-The [Offline Path Tracer package](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/README.md) demonstrates the full shape:
+The [Reference Path Tracer package](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md) demonstrates the full shape:
 
-- [Discovery](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md) keeps implementation blocked until the mathematical, architectural, evidence, budget, and experience decisions are accepted;
-- [Research](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Research.md) separates pinned NVIDIA/AMD/neutral precedent from local proof;
-- [Transport And Estimator](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/TransportAndEstimator.md) is the feature-specific `Semantics.md` equivalent;
-- [Execution Architecture](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/ExecutionArchitecture.md) owns the offline job, immutable inputs, execution, artifact, and clean-break target;
-- [User Experience](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/UserExperience.md) owns the Editor/noninteractive journey and raw-result truth;
-- [Staged Plan](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Plan.md) carries dependency-ordered prompts whose non-negotiable paragraphs are exit gates.
+- [Discovery](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Discovery.md) keeps implementation blocked until the mathematical, architectural, evidence, budget, and experience decisions are accepted;
+- [Research](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Research.md) separates pinned NVIDIA/AMD/Epic/neutral precedent from local proof;
+- [Transport And Estimator](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/TransportAndEstimator.md) is the feature-specific `Semantics.md` equivalent;
+- [Execution Architecture](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/ExecutionArchitecture.md) owns the per-view reference session, immutable inputs, invalidation, execution, artifact, and clean-break target;
+- [User Experience](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/UserExperience.md) owns the viewport-first Lit comparison, Editor/Game camera behavior, raw-save/offscreen journey, and presentation truth;
+- [Staged Plan](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md) carries dependency-ordered prompts whose non-negotiable paragraphs are exit gates.
 
 Use the example for depth and separation of authority, not for renderer-specific vocabulary, stage count, formulas, estimates, IDs, or feature scope.

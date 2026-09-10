@@ -26,7 +26,7 @@ The Renderer turns an immutable world submission into a lit, post-processed, pre
 | Persistent render-side scene plus view-local camera/display/history state | Accepted scene/view lifetime, capacity, multi-view, and reload evidence |
 | CPU visibility, resource residency, frame graph, typed shader/pipeline runtime | Occlusion culling, LOD selection, GPU-driven indirect drawing, stereo, or multiview |
 | Raster, inline-ray, and native-ray-pipeline GBuffer frontends | Proved parity across frontends/backends and transparent blended materials |
-| ReSTIR direct/indirect lighting and an accumulating reference mode | Non-ray lighting/shadow fallback, credible accepted reference oracle, volumetric lighting |
+| ReSTIR direct/indirect lighting and an accumulating Reference Path Tracer mode | Non-ray lighting/shadow fallback, credible accepted reference oracle, volumetric lighting |
 | Exposure, Linear/DLSS reconstruction, tone mapping, debug views, UI and SDR presentation | First-release targets still missing: deferred decals, color grading, chromatic aberration, HDR10 output; excluded: frame generation |
 | Requested settings, diagnostics, capture products, shader-generation replacement | Complete requested-versus-active, failure, stress, quality, and performance evidence |
 
@@ -61,7 +61,7 @@ Start with [Rendering A Sparkle Frame](RenderingASparkleFrame.md) for the comple
 | Scene and view preparation | persistent scene identity, view-local state, GPU-scene publication | Implemented path; capacity, failure, deformation, and multi-view evidence open | [Scene And View Preparation](Features/SceneAndViewPreparation/README.md) |
 | Geometry and resources | residency, visibility, batching, raster/ray GBuffer material contract | Partial; broad source path, but advanced visibility/draw features and transparent blending absent | [Geometry And Resources](Features/GeometryAndResources/README.md) |
 | Ray tracing | BLAS/TLAS/PTLAS planning plus inline and native traversal | Capability-gated; effect/backend parity and lifecycle proof open | [Ray Tracing](Features/RayTracing/README.md) |
-| Lighting | direct/indirect surface transport, ReSTIR/reference modes, sky/emissive composition | Implemented path but ray-dependent and unproved; volumetrics absent | [Lighting](Features/Lighting/README.md) |
+| Lighting | direct/indirect surface transport, ReSTIR and Reference Path Tracer modes, sky/emissive composition | Implemented path but ray-dependent and unproved; volumetrics absent | [Lighting](Features/Lighting/README.md) |
 | Post processing | exposure, resolution, reconstruction/upscaling, tone mapping, encoding, presentation | Mixed current/gated/absent capabilities | [Post Processing](Features/PostProcessing/README.md) |
 | Viewport and diagnostics | products, timing/memory observations, capture, UI packet composition | Implemented path; truthfulness, lifetime, observer cost, and package scope unproved | [Viewport And Diagnostics](Features/ViewportAndDiagnostics/README.md) |
 | Runtime configuration | selectors, requested state, persistence, active-state resolution | Partial; one known ineffective selector and package-safe persistence gaps remain | [Runtime Configuration](Features/RuntimeConfiguration/README.md) |
@@ -116,7 +116,7 @@ Silent substitution is not support. A requested ray/provider/debug path that can
 - Occlusion, LOD, mesh/task shaders, GPU-driven indirect draws, stereo, and multiview are absent.
 - Deferred decals, color grading, chromatic aberration, and HDR10 display output are absent but first-release admitted; volumetric lighting and frame generation remain absent and excluded.
 - NVIDIA reconstruction/latency integrations are optional and do not imply Vulkan, non-NVIDIA, package, or quality support.
-- The reference path mode cannot be used as an acceptance oracle until its discovery/derivation/evidence gate passes.
+- The Reference Path Tracer cannot be used as an acceptance oracle until its discovery/derivation/evidence gate passes.
 - Source inspection does not establish visual quality, temporal stability, performance, memory bounds, native validation, or release readiness.
 
 ## Evidence And Reference

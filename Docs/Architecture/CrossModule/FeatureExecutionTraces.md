@@ -86,12 +86,12 @@ The [Direct Lighting dossier](../Modules/Engine/Renderer/Features/Lighting/Direc
 
 | Step | Operation | Exact contract | Boundary |
 | --- | --- | --- | --- |
-| Mode selection | `LightingMode::ReferencePathTraced` | Graph allocates all five lighting lobes as RGBA32F | Still depends on inline ray queries; “reference” does not mean CPU or native-pipeline traversal |
-| Direct sample | `PathTracedDirectLightingCS` | GBuffer, four light buffers, TLAS, hit/material buffers, fixed texture table -> direct diffuse/specular/subsurface | Inline only |
-| Indirect sample | `PathTracedIndirectLightingCS` | GBuffer, sky, TLAS, deformation/hit/material buffers, fixed texture table -> indirect diffuse/specular | Inline only; bounce-control behavior unexecuted |
+| Mode selection | `LightingMode::ReferencePathTracer` | Graph allocates all five lighting lobes as RGBA32F | Still depends on inline ray queries; “reference” does not mean CPU or native-pipeline traversal |
+| Direct sample | `ReferencePathTracerDirectLightingCS` | GBuffer, four light buffers, TLAS, hit/material buffers, fixed texture table -> direct diffuse/specular/subsurface | Inline only |
+| Indirect sample | `ReferencePathTracerIndirectLightingCS` | GBuffer, sky, TLAS, deformation/hit/material buffers, fixed texture table -> indirect diffuse/specular | Inline only; bounce-control behavior unexecuted |
 | Sample validity | Reference sample descriptor carries sample color/validity for accumulation | Current lighting sample -> validity-aware accumulation inputs | Exact invalid sample behavior needs numeric test |
-| Accumulation | `ReferenceLightingAccumulationCS` | Current sample + previous RGBA32F history + motion + validity -> current history and scene sample | Prepared-scene/view invalidation hash resets history |
-| Composite/present | Common composite, sky, exposure, upscale, debug, presentation | High-precision lobes eventually become RGBA16F scene/output intermediates | It is a convergence/reference feature, not yet an accepted correctness oracle; see [`PTD-00`](../Modules/Engine/Renderer/Features/Lighting/OfflinePathTracer/Discovery.md) |
+| Accumulation | `ReferencePathTracerAccumulationCS` | Current sample + previous RGBA32F history + motion + validity -> current history and scene sample | Prepared-scene/view invalidation hash resets history |
+| Composite/present | Common composite, sky, exposure, upscale, debug, presentation | High-precision lobes eventually become RGBA16F scene/output intermediates | It is a convergence/reference feature, not yet an accepted correctness oracle; see [`PTD-00`](../Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Discovery.md) |
 
 ## Trace 5: External Image Provider Lifecycle
 
