@@ -102,7 +102,7 @@ Implement LGT-2 in the existing indirect-light estimator/reservoir owner with sh
 
 **Failure modes:** source inspection reported as runtime proof; external renderer result attributed locally; transport terms undefined; unsupported material/light silently excluded; numerical tolerance chosen without oracle; gate passes with missing evidence.
 
-**Phase exit criteria:** the Architecture gate records `PASS` with all required outputs, or the release records `BLOCKED`/re-scope. Only `PASS` authorizes freezing `PTD-01`; Stage 1 still requires `REL-03`.
+**Phase exit criteria:** the Architecture gate records `PASS` with all required development outputs, or records `BLOCKED`/re-scope. Only an immutable repository-owner-accepted `PTD-00-R1 PASS` freezes `PTD-01` and authorizes development Stages 1 through 9. `REL-03`, accepted release maps, and named support machines remain mandatory before Stage 10, `FCR-REN-08` release closure, and release-map oracle adoption.
 
 **Ready-to-use prompt:**
 

@@ -6,7 +6,7 @@
 
 **Authority boundary:** each feature dossier owns its behavior and acceptance; feature-local Discovery owns implementation-shaping decisions; feature-local Research owns precedent; feature-local Plan owns delivery order; [First Release Renderer Plans](../FirstRelease/README.md) own cross-feature release order; this page owns only documentation-depth classification and upgrade sequence
 
-**Verified:** 2026-09-10 against committed revision `669637cf`; all Markdown under `Renderer/Features`, the feature-delivery template, first-release Renderer plans, capability/readiness indexes, and representative current source/build routes were inspected. Concurrent edits under `Lighting/ReferencePathTracer` were treated as user-owned precedent and not modified.
+**Verified:** 2026-09-10; source/build truth and the initial documentation inventory were inspected at `669637cf`, and the package/navigation result was rechecked at integrated revision `30597d7d`. All Markdown under `Renderer/Features`, the feature-delivery template, first-release Renderer plans, capability/readiness indexes, and representative current source/build routes were inspected. Concurrent edits under `Lighting/ReferencePathTracer` were treated as user-owned precedent and not modified by this pass.
 
 **Current readiness:** Not applicable — documentation package depth does not change the Renderer **36/100** portfolio projection or any candidate verdict. See [Current Feature Readiness](../../../../../Acceptance/CurrentReadiness.md#renderer).
 
@@ -27,13 +27,13 @@ The goal is repeatable planning depth, not seven files per feature. A full packa
 
 | Field | Record |
 | --- | --- |
-| Identity | `ITER-REN-FEATUREDOC-01`; owner: Renderer feature documentation; status: **in progress pending documentation validation**; scope: planning-depth audit and the three absent display packages; start revision `669637cf` with user-owned dirty edits in the Reference Path Tracer dossier; intended decision: whether every remaining family has an honest package route |
+| Identity | `ITER-REN-FEATUREDOC-01`; owner: Renderer feature documentation; status: **PASS for documentation planning only**; scope: planning-depth audit and the three absent display packages; start revision `669637cf`, integrated revision `30597d7d`, with user-owned Reference Path Tracer edits preserved; decision: every remaining family has an honest package route |
 | North Star | `NS-OWNERSHIP`, `NS-EVIDENCE`, `NS-ADOPTION`, `NS-SIMPLIFY`; make each future feature change start from explicit decisions, owners, proof, and a small non-duplicated document set |
 | Persona targets | `PGE-07`, `PGE-08`, `PGE-09`, `PGE-13`, `PGE-15`: **advance planning/documentation only**; no build, runtime, GPU, colorimetric, performance, package, adoption, or evidence-level increase is claimed |
 | Delivery target | `DSP-5`, `DSP-6`, `DSP-7`; `FCR-REN-24`, `FCR-REN-25`, `FCR-REN-26`; preserve all other `FCR-REN-01` through `26` routes and explicit release exclusions |
 | Complexity budget | add one root coverage owner; keep each feature folder at seven Markdown siblings or fewer; no new top-level Plans/Research taxonomy, duplicate acceptance ledger, production code, test code, compatibility index, or generic rendering framework |
 | Performance | **no runtime exposure** — Markdown/navigation only; no executable path or package content changes |
-| Decision | pending `CHK-FDOC-01` through `06`; a documentation `PASS` will mean package/navigation consistency only |
+| Decision | `CHK-FDOC-01` through `06` passed on 2026-09-10; this means package/navigation consistency only and does not pass discovery, implementation, executable evidence, or release acceptance |
 
 ## Quality Bar
 
@@ -158,6 +158,17 @@ Only roadmap/product admission opens a `D` capability. Its first artifact is Dis
 | `FM-FDOC-05` | concurrent user-owned changes overlap or are reformatted | scoped-diff check blocks handoff until ownership is reconciled |
 
 `CHK-FDOC-01` compares `FCR-REN-01` through `26`, Current Readiness, feature index, and this table. `CHK-FDOC-02` inspects headers, roles, direct siblings, and duplicated claims. `CHK-FDOC-03` resolves external/local source links and revision identifiers. `CHK-FDOC-04` searches placeholders, vague status, decision IDs, plan prerequisites, and copy-ready prompts. `CHK-FDOC-05` runs local Markdown path/anchor and old-path checks plus strict UTF-8/whitespace validation. `CHK-FDOC-06` compares start/end revision, status, and scoped diff, followed by `git diff --check`.
+
+## Validation Result
+
+| Check | 2026-09-10 result |
+| --- | --- |
+| `CHK-FDOC-01` | `FCR-REN-01` through `26` were all present exactly as covered families; material negative capabilities retain explicit `D` rules. |
+| `CHK-FDOC-02` | Color Grading has seven direct Markdown siblings, Chromatic Aberration six, and HDR Display Output seven; every file declares status, responsibility, and authority, and no package exceeds the seven-sibling budget. |
+| `CHK-FDOC-03` | all 20 cited external URLs returned HTTP `200`; the six repository `HEAD` revisions matched the hashes recorded in Research; rights, permitted transfer, and non-inference boundaries are explicit. |
+| `CHK-FDOC-04` | all expected discovery, acceptance, failure, and check ID ranges were present; prohibited authoring placeholders were absent; all three production plans remain gated by `CGRD-00`, `CHRD-00`, or `HDRD-00`. |
+| `CHK-FDOC-05` | repository-wide local Markdown validation found zero missing paths and zero missing anchors; the only old `.md` display paths are verbatim historical status evidence in `ProductAndDelivery.md`; strict UTF-8 found zero failures; `git diff --check` found no whitespace errors. |
+| `CHK-FDOC-06` | start/end revision and status were rechecked; the concurrent Reference Path Tracer package was excluded from this pass's edits and preserved when revision `30597d7d` integrated both workstreams. |
 
 ## Completion Rule
 

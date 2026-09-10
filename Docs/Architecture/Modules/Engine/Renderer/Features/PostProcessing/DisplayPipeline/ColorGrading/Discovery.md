@@ -6,7 +6,7 @@
 
 **Authority boundary:** [Research](Research.md) supplies precedent; [Semantics](Semantics.md), [Execution Architecture](ExecutionArchitecture.md), and [User Experience](UserExperience.md) are conditional design candidates; [Plan](Plan.md) orders work only after this gate passes; [README](README.md) owns feature acceptance; code and build configuration own implementation
 
-**Verified:** 2026-09-10 against committed revision `669637cf`; current Renderer, shader, texture-cooking, settings, editor, and package routes were inspected as source only
+**Verified:** 2026-09-10 against committed revision `30597d7d`; current Renderer, shader, texture-cooking, settings, editor, and package routes were re-inspected as source only; unrelated dirty work was present outside this package
 
 **Current readiness:** **0/100** — discovery adds no implementation, verification, delivery, or adoption credit. See [Current Feature Readiness](../../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
@@ -23,6 +23,41 @@ Color grading cannot be reduced to adding a saturation value and a texture sampl
 | Ownership | target state is View-owned | freeze global defaults, per-view override, generation identity, persistence, and retirement |
 | Product route | DevelopmentEditor authoring and packaged consumption are required | freeze first use, error state, automation equivalence, package policy, and support output |
 | Evidence | `AC-CGR-*` exists, but thresholds and fixtures are not frozen | predeclare numeric, visual, backend, package, memory, and cost oracles |
+
+`PASS` freezes one immutable `CGRD-00-R1` report and permits only Stage 1 of [Plan](Plan.md). It does not mean that a parser is safe, a shader compiles, a LUT is colorimetrically correct, a backend agrees, a package contains the asset, or `FCR-REN-24` passed. A decision that can change feature scope, color meaning, source grammar, identity, ownership, failure, cost, or evidence keeps the gate blocked.
+
+## Iteration Control Record
+
+| Field | `ITER-CGRD-00` |
+| --- | --- |
+| Claim | Sparkle has enough reviewed, falsifiable information to implement the smallest color-grading result without inventing color, asset, lifecycle, or evidence policy in code. |
+| Starting point | committed source and package input `30597d7d`; unrelated dirty work outside this feature remains user-owned |
+| North Stars | `NS-MATH-DATA`, `NS-OWNERSHIP`, `NS-EVIDENCE`, `NS-SIMPLIFY`, `NS-ADOPTION` |
+| Persona targets | `PGE-02`, `PGE-05`, `PGE-07`, `PGE-08`, `PGE-09`, `PGE-13`, `PGE-15` |
+| Delivery targets | `CGRD-00`, `DSP-5`, preparation for `FCR-REN-24` |
+| Technical risks | `RISK-CGR-01` through `RISK-CGR-09`; source-file parsing is untrusted-input work, not a cosmetic tool concern |
+| Decision | **BLOCKED** until `AC-CGRD-01` through `10` pass at one immutable report revision and the repository owner records acceptance |
+
+## Discovery Scope
+
+Included:
+
+- one exact scene-working boundary and one bounded parametric-plus-LUT product;
+- current owner, selector, source/cook/runtime asset, frame-graph, shader, View, capture, package, backend, lifetime, and failure traces;
+- a strict `.cube` subset with byte, line, token, dimension, sample-count, allocation, numeric, and path/provenance limits;
+- exact CPU/GPU semantic correspondence, asymmetric fixtures, raw-stage artifacts, and a defect-injection oracle ladder;
+- DevelopmentEditor authoring and packaged Runtime consumption with one serialized intent and truthful requested/resolved/active state;
+- a dependency-ordered clean-break plan with estimates, stop rules, deletion targets, reviewers, and candidate handoff.
+
+Excluded:
+
+- production code, submitted test-only infrastructure, copied external LUTs, or candidate images during discovery;
+- OpenColorIO runtime integration, a general color-management graph, local volumes, multiple blended looks, curves, masks, timelines, or display calibration;
+- declaring the current tone mapper, output encoding, generic texture cooker, or any future screenshot a grading implementation or correctness proof.
+
+## Decision Recording Contract
+
+Every `CGRD-*` row must retain: `Proposed`, `Accepted`, `Rejected`, or `Blocked`; accountable owner and independent reviewer; exact evidence/artifact; rationale and rejected alternatives; affected `CGR-FS-*`, `CGR-MATH-*`, `AC/FM/CHK`; implementation and package consequence; and an invalidation trigger. A default value, source precedent, prototype result, or convenient API shape is not a disposition.
 
 ## Current Source Truth
 
@@ -71,6 +106,9 @@ Every row must have an explicit disposition, reviewer, rationale, and invalidati
 | `RISK-CGR-04` | asynchronous edit/reload publishes stale or partial state | immutable request digest, generation-qualified publication, completion-safe retirement | retain last explicit good/default state with visible failure; View/runtime owner retires after randomized completion checks |
 | `RISK-CGR-05` | a generic color-management framework grows around one small first-release feature | enforce `CGRD-01`, narrow public types, no OCIO runtime or multi-look graph | remove unused abstractions in the owning stage; Renderer owner retires at scoped diff review |
 | `RISK-CGR-06` | raw, display-mapped, screenshot, or UI-composited artifacts are compared as if equivalent | named pre-grade/post-grade/pre-tone products and manifest fields | mark evidence inconclusive; acceptance owner retires after artifact-lineage checks |
+| `RISK-CGR-07` | a hostile `.cube` token, line, count, or path exhausts memory/CPU or escapes the accepted source root | bounded streaming/token parser, checked arithmetic before allocation, canonicalized allowed roots, no format-string parsing, corpus/fuzz review | reject before publication, preserve prior good generation, and record one stable category; asset/cook and security reviewers retire after all boundary/fault cases settle within budget |
+| `RISK-CGR-08` | editing global defaults or one viewport resets unrelated temporal histories or another view's grade | generation impact taxonomy and per-view immutable selection; digest-difference and two-view interleaving checks | discard only the affected grade generation and repair the producer; View owner retires after reset-locality evidence |
+| `RISK-CGR-09` | parameter/LUT fusion, precision reduction, or texture filtering changes semantics after standalone checks pass | freeze independent products and semantic digest before optimization; compare fused/unfused CPU/GPU outputs and counters | retain the unfused route or reject the optimization; pass owner retires after equivalence and performance evidence at accepted thresholds |
 
 ## Discovery Acceptance
 
@@ -82,10 +120,55 @@ Every row must have an explicit disposition, reviewer, rationale, and invalidati
 | `AC-CGRD-04` | source/cooked/runtime identity and failure/retirement paths have one owner each and bounded resource policy. | `CGR-EXP-03/05` and deletion ledger |
 | `AC-CGRD-05` | first-use, error, reload, package, capture, and automation experiences expose truthful requested/active state. | reviewed `UserExperience.md` and `CGR-EXP-06` |
 | `AC-CGRD-06` | every `AC-CGR-*`, `FM-CGR-*`, and material risk maps to a predeclared defect-detecting check and budget. | no-orphan traceability plus `CGR-EXP-07` |
+| `AC-CGRD-07` | the full included/excluded feature, profile, backend, asset, selector, and output matrix has one disposition and no reachable undeclared cell. | reconciled `CGR-FS-*` ledger, support matrix, selector/package audit, and explicit exclusions |
+| `AC-CGRD-08` | hostile-input and capacity policy is sufficient to bound parser work, multiplication/allocation, path resolution, decoded payload, GPU upload, retirement backlog, and diagnostic volume. | adversarial corpus, checked-limit table, timeout/memory bounds, cleanup observation, and security review |
+| `AC-CGRD-09` | each stage is a reviewable vertical result with prerequisites, estimates, deletions, non-goals, stop conditions, and a prompt whose non-negotiables are falsifiable. | accepted `Plan.md`, capacity/estimate assumptions, and stage-to-acceptance map |
+| `AC-CGRD-10` | an independent reviewer can reconstruct the claim, reproduce at least one hand case, and identify a seeded defect caught by each evidence class. | exact-revision color/math, asset/security, architecture, UX, and evidence review record |
 
 `FM-CGRD-01` occurs when a decision is silently deferred to code. `FM-CGRD-02` occurs when a selected oracle shares the implementation defect it claims to catch. `FM-CGRD-03` occurs when the package admits a control, asset form, domain, or workflow not mapped to acceptance and delivery. Any of these failures keeps the gate `Blocked`.
+
+## Discovery Failure Modes
+
+| ID | Controlled failure | Required safe result | Detecting checks |
+| --- | --- | --- | --- |
+| `FM-CGRD-01` | an implementation prompt, type name, or shader constant selects an unresolved `CGRD-*` choice | Stage 1 remains unauthorized; move the choice back to Discovery and invalidate dependent design text | `CHK-CGRD-01`, `CHK-CGRD-08` |
+| `FM-CGRD-02` | CPU reference and GPU route share parser, layout, luma weights, or transform helper | evidence is invalid rather than agreeing; install an independent evaluator and asymmetric fixtures | `CHK-CGRD-03`, `CHK-CGRD-04` |
+| `FM-CGRD-03` | included control, asset form, backend/profile, state, or output lacks an owner/stage/criterion/failure/check | no-orphan gate fails and the surface remains excluded/unreachable | `CHK-CGRD-02`, `CHK-CGRD-09` |
+| `FM-CGRD-04` | parser limits are described qualitatively or allocation occurs before all counts are validated | discovery remains blocked; retain hostile input and memory/time observations | `CHK-CGRD-05` |
+| `FM-CGRD-05` | a visual comparison, vendor LUT, or screenshot is the only transform oracle | verdict is `Inconclusive`; add analytic/hand-known values and raw-stage artifacts | `CHK-CGRD-03`, `CHK-CGRD-06` |
+| `FM-CGRD-06` | package or live-reload behavior is postponed until after semantic implementation | plan review fails because identity/failure could change architecture | `CHK-CGRD-07`, `CHK-CGRD-08` |
+
+## Check Design Ledger
+
+Every retained check must declare initial state, action or injected fault, independent oracle, matrix, threshold, artifact, maximum work/resource bound, cleanup, and escalation. The Stage-0 report fills exact commands and locations; this table defines the minimum claims they must falsify.
+
+| ID | Smallest falsifier | Oracle and required artifact | Fails when |
+| --- | --- | --- | --- |
+| `CHK-CGRD-01` | scan the package and prompts for unresolved decision leakage | `CGRD-*` disposition export plus plan/prompt reference map | any implementation-shaping slot is absent, contradictory, or silently chosen |
+| `CHK-CGRD-02` | enumerate feature statements, profiles, selectors, asset forms, products, and exclusions | no-orphan cross-document traceability table | a reachable/included surface lacks one owner or proof route |
+| `CHK-CGRD-03` | evaluate neutral, asymmetric SOP/saturation, negative, HDR, and order hand cases | independent double-precision calculations retained as text/CSV | a semantic alternative is indistinguishable or a known mutation survives |
+| `CHK-CGRD-04` | evaluate asymmetric `2^3`/`3^3` LUT cells and interior interpolation | independently generated LUT bytes, expected coordinates, and CPU results | axis order, half-texel, interpolation, domain, or composition defects survive |
+| `CHK-CGRD-05` | feed truncated, extra, duplicate, non-finite, huge-count, huge-token, hostile-path, and advisory-shaped inputs | bounded parser/resource/security report with peak bytes/time and stable categories | work/allocation is unbounded, partial state publishes, or a crash/hang occurs |
+| `CHK-CGRD-06` | trace pre-grade, post-parameter, post-LUT, pre-tone, encoded, and screenshot products | domain/format/extent/alpha manifest and seeded stage-order defects | an artifact is ambiguous or a wrong-stage transform can pass visually |
+| `CHK-CGRD-07` | model source edit/cook/upload/publication/replacement/retirement interleavings | generation state table with stale-completion injections | stale/partial data activates, prior good state corrupts, or resources leak |
+| `CHK-CGRD-08` | dry-run every plan stage from its prompt | reviewer transcript with prerequisite and stop-condition challenges | the executor must invent policy, begin a later stage, or cannot name deletion/exit proof |
+| `CHK-CGRD-09` | map every risk/failure to a controlled negative and criterion | machine-readable or reviewed mapping with zero orphan IDs | any risk has no prevention/detection/contingency/retirement evidence |
+| `CHK-CGRD-10` | independent color, asset/security, architecture, UX, and evidence review | named corrections and final exact-revision dispositions | reviewers require private explanation or find a claim-changing ambiguity |
+
+## Required `CGRD-00-R1` Evidence Package
+
+The gate report is complete only when it retains:
+
+1. exact source revision, dirty-state boundary, current-route trace, and negative-capability evidence;
+2. all `CGRD-01` through `12` dispositions with rationale, alternatives, reviewers, and invalidation triggers;
+3. accepted feature/support matrices, one terminology/domain glossary, and accepted revisions of every companion document;
+4. working-space/exposure/order derivation, SOP/saturation/LUT hand cases, axis/interpolation fixtures, and defect controls;
+5. `.cube` grammar plus hostile-input corpus, security review, checked capacity limits, expected categories, and package/provenance policy;
+6. owner/producer/consumer/identity/lifetime/publication/retirement/deletion ledger and end-to-end author-to-pixel sequence;
+7. first-use, invalid asset, live edit, two-view, reset, capture, package, accessibility, and automation dry runs;
+8. stage estimates and assumptions, no-orphan traceability, exact stop/escalation rules, and independent review record;
+9. exact checks actually run, artifacts, limitations, unavailable executable checks, and final `PASS` or `BLOCKED` decision.
 
 ## Gate Decision
 
 `CGRD-00` is **Blocked**. A reviewer may record `PASS` only when all discovery acceptance criteria pass conjunctively, the exact accepted revisions of the dossier, semantics, architecture, experience, and plan are named, and `DSP-5` plus release prerequisites permit work. A pass authorizes Stage 1 of [Plan](Plan.md), not the whole feature and not `FCR-REN-24`.
-

@@ -1,6 +1,6 @@
 # Reference Path Tracer User Experience Contract
 
-**Status:** Stage-0-frozen development-product experience candidate for `FCR-REN-08`; product implementation remains absent and `PTD-00` remains blocked by the report-level blockers in [Discovery](Discovery.md)
+**Status:** Stage-0-frozen development-product experience candidate for `FCR-REN-08`; product implementation remains absent and `PTD-00-R1` awaits immutable repository-owner ratification in [Discovery](Discovery.md#ptd-00-r1-gate-separation-reconciliation)
 
 **Responsibility:** define how a developer, lighting engineer, or technical artist discovers, enters, navigates, observes, compares, resets, pauses, diagnoses, and secondarily exports or automates the Reference Path Tracer
 
@@ -47,7 +47,7 @@ These are Stage-0 design inputs, not claims about the current implementation. A 
 | Evidence actions | `Pause` is memory-only. `Checkpoint And Pause`, `Save Current Prefix`, and `Save When Complete` are P3 Expert actions. An identity change cancels a pending save intent; it never retargets it automatically. `Cancel After Checkpoint` means finish and verify the current checkpoint transaction, then stop; ordinary `Cancel` abandons staging. |
 | Shipping | `ShippingEditor` and `ShippingGame` retain the `ReferencePathTracer` enumerator unconditionally in the existing public Renderer `RenderViewMode` source header for source/ABI symmetry. Both compile out every producer, session factory, selector, CVar/command-line adapter, overlay, request parser, ApplicationEditor operation, writer, optional codec dependency, package entry, and public documentation route; an injected/corrupt value deterministically reports `UnsupportedCapability` before allocation. Enum source presence is not consumer reachability. |
 
-The performance bounds become executable only after `REL-01` names the release maps and support hardware. Their absence is a report-level blocker, not permission for an implementation to choose different numbers.
+The numerical bounds are implementation contracts immediately. A development machine either meets the capability/resource predicates and reports measured behavior or returns the frozen unavailable/capacity result; it does not invent different limits. Naming minimum/reference release machines and claiming those bounds as supported-product performance remains a Stage-10 release gate.
 
 ## Product Pillar
 

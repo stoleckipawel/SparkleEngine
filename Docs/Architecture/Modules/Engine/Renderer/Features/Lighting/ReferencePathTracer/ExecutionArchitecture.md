@@ -1,6 +1,6 @@
 # Reference Path Tracer Execution Architecture
 
-**Status:** Stage-0-frozen target-architecture candidate for `FCR-REN-08`; implementation remains blocked by `PTD-00-R0` and `REL-03`
+**Status:** Stage-0-frozen target-architecture candidate for `FCR-REN-08`; development implementation awaits immutable repository-owner acceptance of `PTD-00-R1`, while release/package adoption remains separately blocked
 
 **Scope:** define the owner, contracts, lifetime, execution, sampling, accumulation, viewport interaction, artifact, automation, and clean-break boundaries for SparkleEngine's eventual Reference Path Tracer
 

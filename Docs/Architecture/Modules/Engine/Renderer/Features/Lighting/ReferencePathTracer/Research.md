@@ -18,7 +18,7 @@
 
 SparkleEngine should make the Reference Path Tracer the first **technical feature-closure case**, but should not yet call the current `ReferencePathTracer` mode an unbiased renderer or correctness oracle.
 
-The first action is still `PTD-00`: freeze what “Reference Path Tracer,” “unbiased,” “reference,” “converged,” and “feature complete” mean; audit every dependency; derive the estimator; define falsifying fixtures and statistics; and decide the smallest trustworthy target. A conditional `PTD-01` plan now makes the intended end-to-end route reviewable, but only an accepted `PTD-00` report may freeze that plan or authorize Stage 1. Implementation remains the first feature slice of `REL-04` and does not bypass release identity, reproducible-build, or package prerequisites.
+The first action remains acceptance of the exact `PTD-00-R1` revision: it freezes what “Reference Path Tracer,” “unbiased,” “reference,” “converged,” and “feature complete” mean; audits dependencies; derives the estimator; and fixes falsifying fixtures and statistics. An accepted R1 freezes `PTD-01` and authorizes development implementation independently of later release packaging. This does not bypass release identity, reproducible-build, package, map, support, or adoption evidence before Stage 10 and `FCR-REN-08` release closure.
 
 This ordering is deliberate. A wrong oracle can make every later PBR, lighting, ReSTIR, map, and denoising comparison look authoritative while preserving the same error.
 
@@ -283,6 +283,6 @@ Until `FCR-REN-08` eventually passes its candidate acceptance:
 
 ## Research Handoff
 
-Current discovery decision: **`PTD-00-R0 BLOCKED`**. Stage 0 converted the initial questions into explicit decisions or a named external blocker in [Discovery](Discovery.md#ptd-q--disposition), froze the mathematical candidate in [Transport And Estimator](TransportAndEstimator.md#stage-0-decision-freeze), and retained independent reviews. The exact `ReleaseMapSet`, accepted hardware/package reachability, and final independent signatures are still absent; no runtime, image, performance, or package proof was produced.
+Current discovery decision: **`PTD-00-R1 READY FOR OWNER RATIFICATION`**. R1 freezes the development domain against `RPTConformanceSet`, keeps release-map support non-inferred, and separates implementation authorization from later package/adoption proof. No runtime, image, performance, package, or release evidence was produced.
 
-Next permitted work is release/content/support reconciliation followed by `PTD-00-R1` review. Stage 1 and all production implementation remain unauthorized until both `PTD-00 PASS` and `REL-03` are recorded.
+Next permitted work is repository-owner review of the exact R1 documentation revision. On acceptance, Stage 1 may begin; release/content/support/package reconciliation remains mandatory before Stage 10, `FCR-REN-08` release closure, or `PTD-03` oracle adoption.

@@ -1,12 +1,12 @@
 # Reference Path Tracer Feature Dossier
 
-**Status:** feature dossier for eventual `FCR-REN-08`; its embedded acceptance contract and production implementation remain blocked until `PTD-00` ratifies the transport domain and freezes the conditional plan
+**Status:** feature dossier for eventual `FCR-REN-08`; `PTD-00-R1` is ready for repository-owner ratification, after which development implementation may begin while release/package/oracle-adoption claims remain blocked
 
 **Responsibility:** keep the Reference Path Tracer's expected feature definition, acceptance criteria, runtime failure modes, evidence checks, and definition of done together under the Renderer lighting architecture
 
 **Authority boundary:** [Research](Research.md) owns NVIDIA/AMD/Epic/neutral precedent, [`PTD-00`](Discovery.md) owns discovery and implementation authorization, [Transport And Estimator](TransportAndEstimator.md) owns the proposed mathematical contract, [Execution Architecture](ExecutionArchitecture.md) owns the proposed system boundary, [User Experience](UserExperience.md) owns the proposed human/automation workflow, the [conditional staged plan](Plan.md) owns delivery order/prompts, the [roadmap](../../../../../../../Strategy/Roadmap.md#reference-path-tracer-truth-first) owns priority, code owns implemented behavior, and the eventual [`FCR-REN-08`](../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry) report owns results
 
-**Current disposition:** **`PTD-00-R0 BLOCKED`** on 2026-09-10 at committed `master` `669637cf23b9748f8b94635409e74159d31d0bc2`. Stage 0 froze the candidate estimator, architecture, evidence, and UX contracts, but the exact `ReleaseMapSet`, accepted support/package reachability, and final independent approval remain unavailable. The current `ReferencePathTracer` implementation is not accepted, Stage 1 is not authorized, and no executable feature evidence is claimed.
+**Current disposition:** **`PTD-00-R1 READY FOR OWNER RATIFICATION`** on 2026-09-10 against source input `30597d7d0bb70af9f2836ab01d81d47c3e20bcde`. R1 freezes the development contract against `RPTConformanceSet` and moves release-map, named-hardware, package, and Shipping proof to Stage 10 where they can exercise a real implementation. The current `ReferencePathTracer` implementation remains unaccepted, Stage 1 is unauthorized until one immutable R1 is accepted, and no executable feature evidence is claimed.
 
 **Naming reconciliation:** the 2026-09-09 working-tree clean break makes `ReferencePathTracer` the sole feature name; it changes no behavior, readiness score, or evidence claim.
 
@@ -60,7 +60,7 @@ Raw readback and minimal provenance follow as acceptance infrastructure. Polishe
 | Planning prerequisite | [conditional `PTD-01`](Plan.md) reconciled to the exact `PTD-00 PASS` revision; no implementation starts from plan presence alone |
 | North Stars | `NS-REAL`, `NS-MATH-DATA`, `NS-EVIDENCE`, `NS-OWNERSHIP`, `NS-SIMPLIFY` |
 | Persona targets | `PGE-02`, `PGE-05`, `PGE-06`, `PGE-07`, `PGE-08`, `PGE-09`, `PGE-10`, `PGE-13`, `PGE-15` |
-| Release dependencies | `REL-03` before implementation; `REL-04` feature closure; `PTD-03` and `REL-05` before release-map oracle use |
+| Release dependencies | none for development Stages 1-9 after immutable `PTD-00-R1 PASS`; `REL-03` plus release/support inputs before Stage 10 and `FCR-REN-08` release closure; `PTD-03`/`REL-05` before release-map oracle use |
 | Technical risks | accepted dispositions for `RISK-PTD-01` through `RISK-PTD-12` and `RISK-REL-13` |
 | Result | `PASS`, `BLOCKED`, or `EXCLUDED`; no partial score or aggregate override |
 

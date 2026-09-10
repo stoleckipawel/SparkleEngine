@@ -1,10 +1,10 @@
 # Reference Path Tracer Staged Implementation Plan
 
-**Status:** conditional `PTD-01` delivery plan reconciled to **`PTD-00-R0 BLOCKED`**; Stage 0 was executed on 2026-09-10, and all production implementation stages remain blocked until a later exact `PTD-00 PASS` and `REL-03`
+**Status:** `PTD-01` delivery candidate reconciled to **`PTD-00-R1 READY FOR OWNER RATIFICATION`**; an accepted immutable R1 authorizes development Stages 1-9, while Stage 10/release closure remains gated by `REL-03`, release maps, support identities, and executable evidence
 
 **Scope:** deliver `FCR-REN-08` end to end through one Renderer-owned per-view reference session, one semantic path estimator, viewport-first Lit comparison, optional raw evidence publication, D3D12/Vulkan traversal parity, secondary runtime/offscreen workflows, controlled failure, and release-map adoption
 
-**Prepared:** re-audited 2026-09-10 against committed `master` revision `669637cf23b9748f8b94635409e74159d31d0bc2`; estimates are planning ranges, not schedule commitments
+**Prepared:** R0 source audit at `669637cf23b9748f8b94635409e74159d31d0bc2`; R1 gate reconciliation rebased 2026-09-10 to committed source input `30597d7d0bb70af9f2836ab01d81d47c3e20bcde`; estimates are planning ranges, not schedule commitments
 
 **Naming reconciliation:** the 2026-09-09 working-tree clean break makes `ReferencePathTracer` the sole feature name; it does not authorize or complete a plan stage.
 
@@ -19,7 +19,7 @@
 This plan exists now because the requested implementation route needs to be concrete and reviewable before code work. Its presence does not manufacture a `PTD-00` pass. Stage 0 must replace every provisional choice and estimate with the accepted discovery result; if the result changes architecture, this plan is revised before Stage 1 rather than bending implementation around stale prose.
 
 > [!CAUTION]
-> Do not start Stage 1 because this file exists. Production implementation requires both an exact `PTD-00 PASS` report revision and the `REL-03` release gate. Until then, only Stage 0 discovery/evidence work is authorized.
+> Do not start Stage 1 because this file exists. Development implementation requires an exact immutable `PTD-00-R1 PASS` accepted by the repository owner. `REL-03`, release maps, and named support machines are not Stage-1 inputs; they remain mandatory for Stage 10 and every release/package/oracle-adoption claim.
 
 ## Outcome
 
@@ -52,9 +52,7 @@ Artifacts remain required for final oracle authority, but they are not the first
 
 ```mermaid
 flowchart TD
-    D0[Stage 0: PTD-00 discovery closure] --> R3{REL-03 passed?}
-    R3 -->|yes| C1[Stage 1: per-view contracts and selector clean break]
-    R3 -->|no| Hold[Hold implementation]
+    D0[Stage 0: immutable PTD-00 PASS] --> C1[Stage 1: per-view contracts and selector clean break]
     C1 --> I2[Stage 2: frozen inputs, camera and samples]
     I2 --> I3[Stage 3: minimal semantic integrator]
     I3 --> I4[Stage 4: complete surface estimator]
@@ -63,7 +61,9 @@ flowchart TD
     I6 --> I7[Stage 7: viewport mode and Lit comparison]
     I7 --> I8[Stage 8: traversal/backend parity]
     I8 --> I9[Stage 9: evidence capture, artifacts and oracle proof]
-    I9 --> I10[Stage 10: adoption, packaging and closure]
+    I9 --> R3{ReleaseMapSet, support identities and REL-03 passed?}
+    R3 -->|yes| I10[Stage 10: adoption, packaging and closure]
+    R3 -->|no| Hold[Retain development candidate; no release claim]
     I10 --> FCR[FCR-REN-08 candidate]
     FCR --> PTD3[PTD-03 release-map references]
 ```
@@ -75,7 +75,7 @@ No stage may hide an unmet exit criterion in the next stage. A discovery-shaping
 | Stage | Focus | Initial effort range | Prerequisite | Primary exit checks |
 | --- | --- | ---: | --- | --- |
 | 0 | discovery closure and plan freeze | 70-110 h | none | `CHK-PTD-01` through `12` as applicable |
-| 1 | contracts, per-view session owner, selector clean break | 50-85 h | `PTD-00 PASS`, `REL-03` | `CHK-RPT-01`, `02`, `16` |
+| 1 | contracts, per-view session owner, selector clean break | 50-85 h | immutable `PTD-00-R1 PASS` | `CHK-RPT-01`, `02`, `16` |
 | 2 | immutable inputs, Scene/Game camera identity, primary rays, sample identity | 80-130 h | Stage 1 | `CHK-RPT-02`, `03`, `07` |
 | 3 | minimal reviewable integrator | 75-125 h | Stage 2 | `CHK-RPT-03`, `04`, `05` |
 | 4 | complete included surface estimator | 110-180 h | Stage 3 | `CHK-RPT-04`, `05`, `11` |
@@ -84,7 +84,7 @@ No stage may hide an unmet exit criterion in the next stage. A discovery-shaping
 | 7 | first usable viewport mode, live navigation, progress/reset UX, and Lit comparison | 70-120 h | Stage 6 | `CHK-RPT-02`, `09`, `15`, `16` |
 | 8 | Inline/RGS and D3D12/Vulkan parity | 90-150 h | Stage 7 | `CHK-RPT-07`, `08`, `12` |
 | 9 | minimal evidence capture, EXR/checkpoint/offscreen publication, independent oracle, and failure evidence | 145-250 h | Stage 8 | `CHK-RPT-04` through `13` |
-| 10 | package/adoption evidence, cleanup, completion report | 70-125 h | Stage 9 | `CHK-RPT-01`, `14`, `15`, `16` |
+| 10 | package/adoption evidence, cleanup, completion report | 70-125 h | Stage 9, accepted `ReleaseMapSet`, support identities, `REL-03` | `CHK-RPT-01`, `14`, `15`, `16` |
 | **Total** | full first-release closure | **930-1,560 h** | accepted scope | all applicable `AC-RPT-01` through `20` |
 
 The range is intentionally honest about math review, two APIs, two traversal frontends, artifact safety, and independent evidence. Stage 0 must re-estimate after feature scope, machines, release maps, tolerances, and reusable infrastructure are known. Cutting evidence, raw output, failure behavior, or a required backend is a scope decision, not an “optimization” of this estimate. Ordering artifact work later protects the daily viewport use case; it does not make final evidence optional.
@@ -138,7 +138,7 @@ Produce the exact `PTD-00` evidence package, independently review it, and reconc
 
 1. Re-audit the live current route, selectors, source/shader/generated/CMake membership, Scene/View ownership, RHI frontends, capture/export infrastructure, ApplicationEditor operations, package roots, and release-map requirements.
 2. Ratify or replace every `MATH-*` row and decision slot in [Transport And Estimator](TransportAndEstimator.md): products, equations, direction/measure notation, units/color, PBR material/normal model, light/lobe strategies, MIS, roulette, sampling, accumulation, robust rays, invalid/safety behavior, included/excluded `RPT-FS-*` rows, and permitted oracle claims.
-3. Freeze camera, geometry, texture, material, light, environment, alpha/sidedness, deformation, backend/frontend, raw output, workflow, and package matrices against `ReleaseMapSet` and public reachability.
+3. Freeze camera, geometry, texture, material, light, environment, alpha/sidedness, deformation, backend/frontend, raw output, workflow, and profile matrices against the development `RPTConformanceSet` and development selectors. Isolate future `ReleaseMapSet` and package reconciliation in Stage 10; do not let an unknown release map alter implementation by inference.
 4. Complete the equation-to-code design for camera sampling, BSDF selection/eval/PDF, light PMF/native-to-solid-angle PDF, emission/environment MIS, delta cases, roulette, shading normals, alpha rejection, invalid values, and robust endpoints.
 5. Select the stateless sampler, dimension ledger, accumulation representation, maximum supported SPP, checkpoint layout, OpenEXR channel/schema policy, artifact hashes, budgets, and statistical protocol.
 6. Specify analytic/metamorphic fixtures, minimal event oracle, Falcor/Capsaicin/Mitsuba external interchange scenes, equivalence manifests, independent replicates, thresholds, regions, stop/escalation rules, and controlled fault injections.
@@ -162,7 +162,7 @@ Produce the exact `PTD-00` evidence package, independently review it, and reconc
 ```text
 Execute only Stage 0 of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md.
 
-Apply the plan's Universal Execution Contract. Do not change production code. Complete PTD-D0 through PTD-D4 and the full PTD-00 evidence package from the live repository, not from assumptions in the plan. Freeze the exact SurfaceTransportReference and FinitePathDiagnostic equations/domains; reconcile every RPT-FS row with release maps and public selectors; derive camera, BSDF, light, MIS, roulette, normal, alpha, robust-ray, sampling, accumulation, artifact, backend, viewport/offscreen workflow, and failure contracts; predeclare the oracle/statistical matrices and budgets; pin and classify all external source/license precedents including REF-UE-PT-UX; build a no-orphan traceability and clean-break ledger; and obtain an independent plan-readiness review.
+Apply the plan's Universal Execution Contract. Do not change production code. Complete PTD-D0 through PTD-D4 and the full PTD-00 evidence package from the live repository, not from assumptions in the plan. Freeze the exact SurfaceTransportReference and FinitePathDiagnostic equations/domains; reconcile every RPT-FS row with `RPTConformanceSet` and development selectors; explicitly assign future release-map/package adoption to Stage 10; derive camera, BSDF, light, MIS, roulette, normal, alpha, robust-ray, sampling, accumulation, artifact, backend, viewport/offscreen workflow, and failure contracts; predeclare the oracle/statistical matrices and budgets; pin and classify all external source/license precedents including REF-UE-PT-UX; build a no-orphan traceability and clean-break ledger; and obtain an independent plan-readiness review.
 
 NON-NEGOTIABLE: ratify or replace every MATH-* row and every decision slot in TransportAndEstimator.md, with hand-worked zero/unit/delta/Jacobian/MIS/emission-hit/roulette/finite-depth/invalid/variance cases and independent mathematical plus numerical review. Ratify or replace UserExperience.md with a dry-run first-use review proving the item immediately after Lit, automatic preflight/start, responsive navigation, newest-camera reset/presentation, automatic refinement after motion stops, exact prefix progress, every Editor/Game camera and scene reset, presentation/scheduling non-reset, Lit comparison resume/reset, target-SPP changes, pause/restart, secondary checkpoint/raw save/offscreen equivalence, errors, accessibility, and Shipping exclusion. A remaining inferred PDF measure, probability, unit, camera field, invalidation class, retention/capacity rule, responsiveness threshold, budget, user action, or failure outcome is a BLOCKER.
 
@@ -174,6 +174,10 @@ Use the cheapest claim-falsifying probes first. Do not build the engine or rende
 `PTD-00-R0` is **BLOCKED** at source input `669637cf23b9748f8b94635409e74159d31d0bc2`. The exact report, current-route audit, decision dispositions, matrices, oracle/statistical protocol, revised estimates, independent review record, and unrun checks are retained in [Discovery](Discovery.md#ptd-00-r0-stage-0-execution-report). The mathematical candidate is frozen in [Transport And Estimator](TransportAndEstimator.md#stage-0-decision-freeze), and the product defaults/budgets are frozen in [User Experience](UserExperience.md#frozen-defaults-and-operational-budgets).
 
 The blocking facts are release-owned: no accepted `ReleaseMapSet`, support-hardware/package-root identity, or proved Shipping reachability exists, so exact map-domain reconciliation and final independent signatures cannot pass. Stage 1 is **not authorized**; repeating Stage 0 wholesale is unnecessary, but `PTD-00-R1` must rebase, reconcile the affected matrices, and repeat every independent review after those inputs exist. No production file changed and no implementation evidence is claimed.
+
+### Stage-0 R1 gate reconciliation — 2026-09-10
+
+R1 identifies the R0 dependency as a gate-placement error: final release maps, named support machines, and an already-proved package cannot be prerequisites for implementing the development tracer they must later exercise. [Discovery's R1 reconciliation](Discovery.md#ptd-00-r1-gate-separation-reconciliation) freezes `RPTConformanceSet`, capability-driven refusal, explicit Stage-9 output destinations, six-profile target reachability, and the development-versus-release boundary. Stages 1-9 become eligible only after the repository owner accepts one immutable `PTD-00-R1 PASS`; Stage 10, `FCR-REN-08`, packaged support, and `PTD-03` remain blocked by `ReleaseMapSet`, support identities, `REL-03`, and executable evidence. Current state is **READY FOR OWNER RATIFICATION**, not yet `PASS`; Stage 1 remains unauthorized until that exact acceptance is recorded.
 
 ## Stage 1 - Establish Per-View Session Contracts And One Honest Selector
 
@@ -202,7 +206,7 @@ Install the minimal production per-view session/state contracts and remove the d
 ### Ready-to-use prompt
 
 ```text
-Implement only Stage 1 of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md after verifying the exact PTD-00 PASS revision and REL-03 PASS. Apply the Universal Execution Contract.
+Implement only Stage 1 of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md after verifying the exact immutable PTD-00-R1 PASS revision. Apply the Universal Execution Contract. Do not require or imply REL-03, release-map, support-machine, package, or Shipping proof in this development contract stage; those remain Stage-10 gates.
 
 From the live tree, introduce the smallest Renderer-owned per-view reference request/session-handle/progress/result/state contracts, canonical View intent/observation boundary, immutable Scene/View generation leases, transport digest, strict requested-versus-active capability fields, exact prefix/target and reasoned invalidation state. Define RenderViewMode::ReferencePathTracer as the sole target semantic but keep it unavailable to users until Stage 7 can connect a real implementation. Remove LightingMode::ReferencePathTracer, the GBuffer-seeded reference authority, every producer/consumer/setting that exists only for it, and all duplicate selector authority; update generated metadata, build membership, and docs as one clean break. Do not implement the new estimator, EXR writer, UI, generic job system, compatibility alias, or fallback.
 
@@ -455,11 +459,11 @@ NON-NEGOTIABLE: all four accepted strict combinations execute the same Reference
 Run identical analytic jobs and sample prefixes on every accepted route, compare raw values/counters within the predeclared bitwise or statistical rule, exercise robust endpoints, newest-camera response, automatic post-motion refinement, target completion, and unsupported capability, inspect native validation and compiler identities, run architecture_boundary_check, focused shader/build/editor checks, and git diff --check. Any unexplained validation, backend/frontend divergence, or route-specific viewport behavior blocks the stage.
 ```
 
-## Stage 9 - Add Minimal Evidence Capture And Earn Oracle Authority
+## Stage 9 - Add Minimal Evidence Capture And Prove Oracle-Candidate Readiness
 
 ### Objective
 
-Add the smallest raw capture/checkpoint/offscreen publication route required for durable evidence, then execute the complete defect-detecting oracle and failure ladder. This is the first stage that can support the word “reference,” and only after its criteria pass. It must not expand into a general render-export product or destabilize the usable viewport loop.
+Add the smallest raw capture/checkpoint/offscreen publication route required for durable evidence, then execute the complete defect-detecting oracle and failure ladder. Passing this stage produces the evidence candidate required for later reference authority; it does not itself authorize the word “reference” in an accepted-result claim. Only Stage 10 plus accepted `FCR-REN-08` can grant that bounded authority. This stage must not expand into a general render-export product or destabilize the usable viewport loop.
 
 ### Work
 
@@ -525,7 +529,7 @@ Finish the product boundary, produce release-map references inside the accepted 
 ### Ready-to-use prompt
 
 ```text
-Execute only Stage 10 of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md after Stage 9 evidence is complete. Apply the Universal Execution Contract.
+Execute only Stage 10 of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md after Stage 9 evidence is complete and the exact `ReleaseMapSet`, support-machine identities, and `REL-03 PASS` package revision are accepted. Apply the Universal Execution Contract.
 
 Freeze every applicable release-map camera/configuration within the accepted transport domain and produce PTD-03 raw references with independent replicates, convergence/uncertainty, complete provenance, hashes, full frames/crops, artifact review, and shared-dependency oracle statements. Exercise the exact clean-machine DevelopmentEditor/package workflow, writable-root/read-only-install and spaces/non-ASCII paths, both backends, first use, support diagnostics, budgets, and controlled failures. Keep `ShippingEditor` and `ShippingGame` free of every producer/session factory and user/CLI/export/package route unless release scope explicitly admits them.
 
