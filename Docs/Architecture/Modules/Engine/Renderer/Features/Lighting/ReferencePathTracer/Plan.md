@@ -1,10 +1,10 @@
 # Reference Path Tracer Staged Implementation Plan
 
-**Status:** conditional `PTD-01` delivery plan prepared for review; Stage 0 is active, all production implementation stages remain blocked until `PTD-00 PASS` and `REL-03`
+**Status:** conditional `PTD-01` delivery plan reconciled to **`PTD-00-R0 BLOCKED`**; Stage 0 was executed on 2026-09-10, and all production implementation stages remain blocked until a later exact `PTD-00 PASS` and `REL-03`
 
 **Scope:** deliver `FCR-REN-08` end to end through one Renderer-owned per-view reference session, one semantic path estimator, viewport-first Lit comparison, optional raw evidence publication, D3D12/Vulkan traversal parity, secondary runtime/offscreen workflows, controlled failure, and release-map adoption
 
-**Prepared:** 2026-09-09 against committed `master` revision `20c7bb11`; estimates are planning ranges, not schedule commitments
+**Prepared:** re-audited 2026-09-10 against committed `master` revision `669637cf23b9748f8b94635409e74159d31d0bc2`; estimates are planning ranges, not schedule commitments
 
 **Naming reconciliation:** the 2026-09-09 working-tree clean break makes `ReferencePathTracer` the sole feature name; it does not authorize or complete a plan stage.
 
@@ -74,18 +74,18 @@ No stage may hide an unmet exit criterion in the next stage. A discovery-shaping
 
 | Stage | Focus | Initial effort range | Prerequisite | Primary exit checks |
 | --- | --- | ---: | --- | --- |
-| 0 | discovery closure and plan freeze | 40-80 h | none | `CHK-PTD-01` through `12` as applicable |
-| 1 | contracts, per-view session owner, selector clean break | 40-70 h | `PTD-00 PASS`, `REL-03` | `CHK-RPT-01`, `02`, `16` |
-| 2 | immutable inputs, Editor/Game camera identity, primary rays, sample identity | 65-110 h | Stage 1 | `CHK-RPT-02`, `03`, `07` |
-| 3 | minimal reviewable integrator | 70-120 h | Stage 2 | `CHK-RPT-03`, `04`, `05` |
-| 4 | complete included surface estimator | 90-150 h | Stage 3 | `CHK-RPT-04`, `05`, `11` |
-| 5 | material/geometry coverage and numeric robustness | 65-110 h | Stage 4 | `CHK-RPT-03`, `04`, `08` |
-| 6 | in-memory per-view accumulation/invalidation, live preview, and progress snapshots | 60-105 h | Stage 5 | `CHK-RPT-09`, focused `15` |
-| 7 | first usable viewport mode, live navigation, progress/reset UX, and Lit comparison | 55-100 h | Stage 6 | `CHK-RPT-02`, `09`, `15`, `16` |
-| 8 | Inline/RGS and D3D12/Vulkan parity | 60-110 h | Stage 7 | `CHK-RPT-07`, `08`, `12` |
-| 9 | minimal evidence capture, EXR/checkpoint/offscreen publication, independent oracle, and failure evidence | 125-220 h | Stage 8 | `CHK-RPT-04` through `13` |
-| 10 | package/adoption evidence, cleanup, completion report | 55-100 h | Stage 9 | `CHK-RPT-01`, `14`, `15`, `16` |
-| **Total** | full first-release closure | **725-1,275 h** | accepted scope | all applicable `AC-RPT-01` through `20` |
+| 0 | discovery closure and plan freeze | 70-110 h | none | `CHK-PTD-01` through `12` as applicable |
+| 1 | contracts, per-view session owner, selector clean break | 50-85 h | `PTD-00 PASS`, `REL-03` | `CHK-RPT-01`, `02`, `16` |
+| 2 | immutable inputs, Scene/Game camera identity, primary rays, sample identity | 80-130 h | Stage 1 | `CHK-RPT-02`, `03`, `07` |
+| 3 | minimal reviewable integrator | 75-125 h | Stage 2 | `CHK-RPT-03`, `04`, `05` |
+| 4 | complete included surface estimator | 110-180 h | Stage 3 | `CHK-RPT-04`, `05`, `11` |
+| 5 | material/geometry coverage and numeric robustness | 90-150 h | Stage 4 | `CHK-RPT-03`, `04`, `08` |
+| 6 | in-memory per-view accumulation/invalidation, live preview, and progress snapshots | 80-135 h | Stage 5 | `CHK-RPT-09`, focused `15` |
+| 7 | first usable viewport mode, live navigation, progress/reset UX, and Lit comparison | 70-120 h | Stage 6 | `CHK-RPT-02`, `09`, `15`, `16` |
+| 8 | Inline/RGS and D3D12/Vulkan parity | 90-150 h | Stage 7 | `CHK-RPT-07`, `08`, `12` |
+| 9 | minimal evidence capture, EXR/checkpoint/offscreen publication, independent oracle, and failure evidence | 145-250 h | Stage 8 | `CHK-RPT-04` through `13` |
+| 10 | package/adoption evidence, cleanup, completion report | 70-125 h | Stage 9 | `CHK-RPT-01`, `14`, `15`, `16` |
+| **Total** | full first-release closure | **930-1,560 h** | accepted scope | all applicable `AC-RPT-01` through `20` |
 
 The range is intentionally honest about math review, two APIs, two traversal frontends, artifact safety, and independent evidence. Stage 0 must re-estimate after feature scope, machines, release maps, tolerances, and reusable infrastructure are known. Cutting evidence, raw output, failure behavior, or a required backend is a scope decision, not an “optimization” of this estimate. Ordering artifact work later protects the daily viewport use case; it does not make final evidence optional.
 
@@ -169,6 +169,12 @@ NON-NEGOTIABLE: ratify or replace every MATH-* row and every decision slot in Tr
 Use the cheapest claim-falsifying probes first. Do not build the engine or render representative maps unless a named PTD-00 criterion requires that escalation. Any unresolved item that can alter scope, estimator, architecture, ownership, evidence, or release claims keeps PTD-00 BLOCKED. End with the exact PASS/BLOCKED revision, evidence links, unrun checks, revised estimates, and whether Stage 1 is authorized. Never mark PTD-00 PASS from document completeness alone.
 ```
 
+### Stage-0 execution result — 2026-09-10
+
+`PTD-00-R0` is **BLOCKED** at source input `669637cf23b9748f8b94635409e74159d31d0bc2`. The exact report, current-route audit, decision dispositions, matrices, oracle/statistical protocol, revised estimates, independent review record, and unrun checks are retained in [Discovery](Discovery.md#ptd-00-r0-stage-0-execution-report). The mathematical candidate is frozen in [Transport And Estimator](TransportAndEstimator.md#stage-0-decision-freeze), and the product defaults/budgets are frozen in [User Experience](UserExperience.md#frozen-defaults-and-operational-budgets).
+
+The blocking facts are release-owned: no accepted `ReleaseMapSet`, support-hardware/package-root identity, or proved Shipping reachability exists, so exact map-domain reconciliation and final independent signatures cannot pass. Stage 1 is **not authorized**; repeating Stage 0 wholesale is unnecessary, but `PTD-00-R1` must rebase, reconcile the affected matrices, and repeat every independent review after those inputs exist. No production file changed and no implementation evidence is claimed.
+
 ## Stage 1 - Establish Per-View Session Contracts And One Honest Selector
 
 ### Objective
@@ -202,7 +208,7 @@ From the live tree, introduce the smallest Renderer-owned per-view reference req
 
 NON-NEGOTIABLE: the contracts must represent every accepted per-view lifecycle state, exact committed/target prefix, invalidation class/reason/discarded count, suspension/resume, and stable terminal category needed by UserExperience.md without putting strings, widgets, files, or UI truth in Renderer. Unsupported domain/capability must reject before allocation/sample zero; requested and active values remain distinct; destruction settles leases/resources within the frozen bound; target SPP is not convergence; no selector, progress object, or result may imply authority evidence has not earned.
 
-Exercise invalid scope/capability, identity mutation, state transitions, pause/restart/destruction, ownership/retirement, `RenderViewMode` versus `LightingMode` selector removal, and clean-break claims with focused checks; run architecture_boundary_check if the Renderer/RHI boundary changes and git diff --check. Stop on duplicate scene/session/selector authority or any need to invent a PTD-00 decision. Handoff exact changed/deleted files, checks actually run, evidence, limitations, and Stage 2 readiness.
+Exercise invalid scope/capability, identity mutation, state transitions, pause/restart/destruction, ownership/retirement, `RenderViewMode` versus `LightingMode` selector removal, and clean-break claims with focused checks; run architecture_boundary_check if the Renderer/RHI boundary changes and git diff --check. Stop on duplicate scene/session/selector authority or any need to invent a PTD-00 decision. Handoff exact changed/deleted files, checks actually run, evidence, limitations, and Stage 2 readiness. Do not change either Editor `RenderViewKind::Game` producer in this stage; that camera-semantic clean break belongs to Stage 2.
 ```
 
 ## Stage 2 - Freeze Inputs, Unify Camera Invalidation, Generate Rays, And Stabilize Samples
@@ -214,7 +220,7 @@ Create an independently traceable primary-ray and sample-identity route over fro
 ### Work
 
 1. Publish the accepted immutable Scene generation inputs needed for triangle hits, material/light identity, and AS use without introducing a feature-specific scene database.
-2. Publish one canonical semantic View fingerprint for `RenderViewKind::Editor` and `RenderViewKind::Game`: view/selection/camera identity, position/orientation, projection/lens, admitted shutter/time, crop/filter, and render extent. Normalize semantic values; never hash padding or ordinary TAA jitter.
+2. Publish one canonical semantic View fingerprint for Editor-produced `RenderViewKind::Scene` and runtime `RenderViewKind::Game`: view/selection/camera identity, position/orientation, projection/lens, admitted shutter/time, crop/filter, and render extent. Clean-break both current Editor producers from their incorrect `Game` submission. Normalize semantic values; never hash padding or ordinary TAA jitter.
 3. Implement exact transport-reset classification for every effective camera and contributing generation, plus non-reset classifications for presentation, scheduling, target SPP, and view-mode suspension. Input/cut flags refine the reason but never replace canonical identity.
 4. Implement accepted center/edge/corner/subpixel primary-ray generation independent of GBuffer resources and the stateless sample generator/dimension ledger over session seed, pixel, sample ordinal, and dimension ID.
 5. Allocate and commit non-overlapping half-open sample ranges; separate Renderer frame index and real-time jitter from sample ordinal completely. Reject a stale range before commit.
@@ -393,7 +399,7 @@ Deliver the first usable product milestone: a first-class, one-click Reference P
 4. Make live navigation the scheduling priority: keep Editor and Game controls responsive, present the newest accepted camera's committed prefix at bounded cadence, visibly distinguish brief stale/resetting presentation, coalesce reset notifications without coalescing semantic identity, and refine automatically when motion stops.
 5. Implement the Lit comparison contract: suspend after a complete range, restore untouched Lit state, observe changes while suspended, resume only on full-digest match, otherwise reset with the first reason. Make memory-policy eviction and second-viewport capacity explicit.
 6. Exercise Editor and Game camera producers through the same canonical View path. No UI or input-device state becomes reset authority or Renderer truth.
-7. Keep Shipping consumer and first-run path free of the tool unless accepted release scope explicitly admits it. A developer CVar may diagnose selection but is not the user route.
+7. Keep `ShippingEditor`, `ShippingGame`, and consumer first-run paths free of every feature producer/session factory and user/CLI/export route unless accepted release scope explicitly admits them. A developer CVar may diagnose selection in development profiles but is not the user route.
 
 ### Exit gate
 
@@ -502,7 +508,7 @@ Finish the product boundary, produce release-map references inside the accepted 
 1. Freeze each applicable release-map scene/camera/configuration and verify it lies wholly inside the accepted transport domain.
 2. Produce raw high-sample references, independent replicates, uncertainty/convergence, full frames/crops, artifact checklist, input/output hashes, and shared-dependency oracle statements for `PTD-03`/`MAP-A` through `MAP-H`.
 3. Compare real-time PBR/lighting/debug subjects only against applicable raw reference quantities. Keep display/preview comparisons separately labeled.
-4. Validate the exact DevelopmentEditor/package workflow on clean supported machines, read-only install, writable output root, spaces/non-ASCII, both backends, first use, support output, resource bounds, and controlled failures. Shipping consumer remains free of the tool unless admitted.
+4. Validate the exact DevelopmentEditor/package workflow on clean supported machines, read-only install, writable output root, spaces/non-ASCII, both backends, first use, support output, resource bounds, and controlled failures. Both `ShippingEditor` and `ShippingGame` remain free of every producer/session factory and user/CLI/export/package route unless admitted.
 5. Complete the deletion ledger: old reference producer/history/settings/shaders/selectors/docs/artifacts are removed or retained under an unambiguous non-authoritative role. Remove temporary probes and generated local evidence not permitted for submission.
 6. Verify source/header/shader/generated/CMake/package/SBOM/license/docs membership and dependency direction.
 7. Run the required focused final checks, architecture boundary check, `git diff --check`, and dirty-work audit. Escalate breadth only for claims actually affected.
@@ -521,7 +527,7 @@ Finish the product boundary, produce release-map references inside the accepted 
 ```text
 Execute only Stage 10 of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md after Stage 9 evidence is complete. Apply the Universal Execution Contract.
 
-Freeze every applicable release-map camera/configuration within the accepted transport domain and produce PTD-03 raw references with independent replicates, convergence/uncertainty, complete provenance, hashes, full frames/crops, artifact review, and shared-dependency oracle statements. Exercise the exact clean-machine DevelopmentEditor/package workflow, writable-root/read-only-install and spaces/non-ASCII paths, both backends, first use, support diagnostics, budgets, and controlled failures. Keep Shipping consumer free of the tool unless release scope explicitly admits it.
+Freeze every applicable release-map camera/configuration within the accepted transport domain and produce PTD-03 raw references with independent replicates, convergence/uncertainty, complete provenance, hashes, full frames/crops, artifact review, and shared-dependency oracle statements. Exercise the exact clean-machine DevelopmentEditor/package workflow, writable-root/read-only-install and spaces/non-ASCII paths, both backends, first use, support diagnostics, budgets, and controlled failures. Keep `ShippingEditor` and `ShippingGame` free of every producer/session factory and user/CLI/export/package route unless release scope explicitly admits them.
 
 NON-NEGOTIABLE: ship only the scope proved by the accepted TransportAndEstimator.md revision and only the workflow proved by UserExperience.md. Every view-mode label/order, preset, overlay, reset reason, runtime/offscreen result, manifest, artifact action, map comparison, and support message must preserve the bounded claim and raw/preview distinction. A map outside the domain, nonzero unexplained correctness counter, unresolved MATH-* defect, inaccessible first-use step, stale/mixed prefix, silent capability substitution, plausible partial artifact, or surviving competing selector/estimator authority blocks FCR-REN-08.
 
@@ -550,7 +556,7 @@ Conditional feature work is inserted into the owning input/integrator/evidence s
 
 ## Deletion And Preservation Ledger
 
-The exact file list is frozen from the live tree in Stage 0/1. The intent is already fixed:
+The exact audited-HEAD file list and dispositions are frozen in [Discovery](Discovery.md#ptd-d3-architecture-decision-and-clean-break-ledger); every implementation stage repeats the prescribed delta scan before editing. The intent is fixed:
 
 | Surface | Disposition |
 | --- | --- |

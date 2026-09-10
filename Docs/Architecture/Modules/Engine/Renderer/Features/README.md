@@ -12,6 +12,8 @@
 
 This is the detailed feature map behind the [Renderer overview](../README.md). Start with a family below, then open its child page for the algorithm, selector, limitations, tradeoffs, and local proof contract. The source-coverage tables later on this page are audit reference, not the recommended reading order.
 
+For the documentation-depth decision and upgrade sequence across all 26 first-release feature families, see [Research And Planning Coverage](ResearchAndPlanningCoverage.md).
+
 ```mermaid
 flowchart LR
     Frame[Frame execution] --> Scene[Scene and view preparation]
@@ -64,6 +66,7 @@ A Renderer feature dossier must answer—or explicitly mark unanswered—what re
 | [Post Processing](PostProcessing/README.md) | ordered reconstruction and display families transform scene color into the published image |
 | [Debug Views](DebugViews/README.md) | current diagnostic modes, view/show control, presentation architecture, and acceptance share one feature identity |
 | [Deferred Decals](DeferredDecals/README.md) | current absence, target composition architecture, and acceptance remain one feature family |
+| [Research And Planning Coverage](ResearchAndPlanningCoverage.md) | package-depth classes, all-family coverage, and the order for future research/discovery expansion |
 
 ## Feature Map
 
@@ -89,8 +92,8 @@ A Renderer feature dossier must answer—or explicitly mark unanswered—what re
 | `REN-POST-01` through `REN-POST-03` | [Exposure](PostProcessing/DisplayPipeline/Exposure.md) | scene luminance and per-view settings become one bounded history-aware exposure value |
 | `REN-POST-04` through `REN-POST-06` | [Image Reconstruction and Upscaling](PostProcessing/ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md) | render-extent color and guides become one output-extent resolved color |
 | `REN-POST-07` | [Tone Mapping](PostProcessing/DisplayPipeline/ToneMapping.md) | exposure-weighted scene-referred HDR becomes display-linear color through one of three operators |
-| `REN-POST-11` | [Color Grading](PostProcessing/DisplayPipeline/ColorGrading.md) | explicit negative boundary for grading controls, transforms, and LUT workflows |
-| `REN-POST-12` | [Chromatic Aberration](PostProcessing/DisplayPipeline/ChromaticAberration.md) | explicit negative boundary for a lens/channel distortion effect |
+| `REN-POST-11` | [Color Grading](PostProcessing/DisplayPipeline/ColorGrading/README.md) | admitted first-release grading package with blocked discovery and current absence truth |
+| `REN-POST-12` | [Chromatic Aberration](PostProcessing/DisplayPipeline/ChromaticAberration/README.md) | admitted first-release lens-effect package with blocked discovery and current absence truth |
 | `REN-POST-13` | [Frame Generation](PostProcessing/ReconstructionAndGeneration/FrameGeneration.md) | explicit negative boundary for generated-frame synthesis, pacing, UI, and presentation |
 | `REN-POST-08` through `REN-POST-10` | [Presentation and Output](PostProcessing/DisplayPipeline/PresentationAndOutput.md) | display-linear/debug color becomes one encoded back-buffer or viewport product |
 | `REN-UI-*` | [UI and Viewport Composition](ViewportAndDiagnostics/UiAndViewportComposition.md) | immutable UI packets or viewport textures are composed after graph execution and before submission |

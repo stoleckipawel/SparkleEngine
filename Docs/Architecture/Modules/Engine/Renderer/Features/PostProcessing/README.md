@@ -56,9 +56,9 @@ Color grading, chromatic aberration, HDR10 output, and frame generation do not e
 | Resolution, sampling, and anti-aliasing | `REN-RESO-01` through `REN-RESO-07` plus shared `REN-TEMP-*`/provider boundaries | output/render extent and single-sample/Halton path implemented; MSAA, standalone post AA, and dynamic resolution not found | [Resolution, Sampling, and Anti-Aliasing](ReconstructionAndGeneration/ResolutionSamplingAndAntiAliasing.md) |
 | Tone mapping | `REN-POST-07` | Three selectable operators; proof open | [Tone Mapping](DisplayPipeline/ToneMapping.md) |
 | SDR output and presentation | `REN-POST-08`, `REN-POST-10` | SDR-oriented encoding/publication implemented; exact debug presentation partial | [Presentation and Output](DisplayPipeline/PresentationAndOutput.md) |
-| HDR display output | `REN-POST-09` | First-release target; implementation not found | [HDR Display Output](DisplayPipeline/HDRDisplayOutput.md) |
-| Color grading | `REN-POST-11` | First-release target; implementation not found | [Color Grading](DisplayPipeline/ColorGrading.md) |
-| Chromatic aberration | `REN-POST-12` | First-release target; implementation not found | [Chromatic Aberration](DisplayPipeline/ChromaticAberration.md) |
+| HDR display output | `REN-POST-09` | First-release target; implementation not found; discovery blocked | [HDR Display Output](DisplayPipeline/HDRDisplayOutput/README.md) |
+| Color grading | `REN-POST-11` | First-release target; implementation not found; discovery blocked | [Color Grading](DisplayPipeline/ColorGrading/README.md) |
+| Chromatic aberration | `REN-POST-12` | First-release target; implementation not found; discovery blocked | [Chromatic Aberration](DisplayPipeline/ChromaticAberration/README.md) |
 | Frame generation | `REN-POST-13` | Not found; Reflex is not frame generation | [Frame Generation](ReconstructionAndGeneration/FrameGeneration.md) |
 
 ## Ordering And Ownership Invariants

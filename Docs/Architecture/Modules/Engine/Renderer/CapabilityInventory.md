@@ -282,7 +282,7 @@ Current absence, extension seams, and the separately labeled target architecture
 | Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |
 | --- | --- | --- | --- | --- | --- |
 | `REN-POST-08` | Output encoding | Implemented path | Automatic, Linear, and sRGB encoding selections. | `S` | Pending |
-| `REN-POST-09` | HDR display output | Not found | No PQ, HDR10 color-space/metadata, display-nit contract, or HDR swapchain mode was found in the current Renderer/RHI output selections. [HDR Display Output](Features/PostProcessing/DisplayPipeline/HDRDisplayOutput.md) defines the selected HDR10 target. | `S` | First-release target; `FCR-REN-26` Blocked |
+| `REN-POST-09` | HDR display output | Not found | No PQ, HDR color-space/surface contract, display-nit contract, or HDR swapchain mode was found in the current Renderer/RHI output selections. [HDR Display Output](Features/PostProcessing/DisplayPipeline/HDRDisplayOutput/README.md) owns the discovery-blocked target. | `S` | First-release target; `FCR-REN-26` Blocked |
 | `REN-POST-10` | Exact debug presentation | Partial | Debug views flow through the existing exposure/tone/output chain. The separate exact display-linear versus scene-referred debug presentation described in the target design is not implemented in this snapshot. | `S` | Pending |
 
 ## Debug Views

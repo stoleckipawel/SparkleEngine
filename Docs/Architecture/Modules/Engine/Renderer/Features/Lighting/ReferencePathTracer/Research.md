@@ -6,7 +6,7 @@
 
 **Authority boundary:** the [roadmap](../../../../../../../Strategy/Roadmap.md#reference-path-tracer-truth-first) owns priority, the [discovery acceptance contract](Discovery.md) owns `PTD-00` pass/fail, [Transport And Estimator](TransportAndEstimator.md) owns the proposed formula/algorithm contract, the [execution architecture](ExecutionArchitecture.md) owns the proposed system boundary, [User Experience](UserExperience.md) owns the proposed workflow, the [feature acceptance contract](README.md) owns eventual feature scope and definition of done, current code owns implemented behavior, and the [conditional plan](Plan.md) owns staged delivery without authorizing implementation before `PTD-00 PASS`
 
-**Research snapshot:** NVIDIA, AMD, Epic, and neutral primary sources plus SparkleEngine source were inspected through 2026-09-09; local source baseline is committed `master` revision `20c7bb11`
+**Research snapshot:** NVIDIA, AMD, Epic, and neutral primary sources plus SparkleEngine source were re-inspected through 2026-09-10; local source baseline is committed `master` revision `669637cf23b9748f8b94635409e74159d31d0bc2`
 
 **Naming reconciliation:** the 2026-09-09 working-tree clean break makes `ReferencePathTracer` the sole feature name; research findings and proof status are unchanged.
 
@@ -98,6 +98,25 @@ AMD sources broaden the architectural comparison: Capsaicin supplies a modern D3
 | `REF-FLIP` | NVIDIA Research's [FLIP implementation](https://github.com/NVlabs/flip) | Optional perceptual difference view for localized presentation/artifact inspection after raw radiometric/statistical checks. | FLIP alone is not an unbiasedness, convergence, energy, unit, backend, or shared-dependency oracle. |
 
 ## Cross-Vendor Synthesis
+
+### Stage-0 Source And License Disposition
+
+The exact license files were retrieved again on 2026-09-10 at the pinned commits. This is provenance classification, not legal approval and not permission to copy. No external source or asset enters SparkleEngine from this study.
+
+| Source | Pinned revision / license at that revision | Stage-0 disposition |
+| --- | --- | --- |
+| Falcor | `eb540f6748774680ce0039aaf3ac9279266ec521`; NVIDIA permissive three-condition license in [`LICENSE.md`](https://github.com/NVIDIAGameWorks/Falcor/blob/eb540f6748774680ce0039aaf3ac9279266ec521/LICENSE.md) | Adopt estimator/test decomposition and external recipe; reject V-buffer dependency and copied implementation/assets. |
+| RTXPT | `f08d1c739071e0faad0c7c274d861124c511abab`; custom NVIDIA RTX SDKs License in [`LICENSE.txt`](https://github.com/NVIDIA-RTX/RTXPT/blob/f08d1c739071e0faad0c7c274d861124c511abab/LICENSE.txt) | Adopt reference-hygiene and camera/backend precedent only; reject code/assets/defaults and any redistribution inference. |
+| OptiX Apps | `f17c24d16936112cf4cb87dbd0109ba360cdfb51`; exact pinned [`LICENSE.md`](https://github.com/NVIDIA/OptiX_Apps/blob/f17c24d16936112cf4cb87dbd0109ba360cdfb51/LICENSE.md) | Light/material/invalid-event checklist only. |
+| NVIDIA self-intersection sample | `5a5c45bc61aca5d095032860058481e0497350e0`; exact pinned [`LICENSE`](https://github.com/NVIDIA/self-intersection-avoidance/blob/5a5c45bc61aca5d095032860058481e0497350e0/LICENSE) | Re-derive algorithm/constants and cite; do not copy source by inference. |
+| Ray Tracing Gems II referencePT | `c949ad2b854ea2e982dd50aab889131fd1ffd0d7`; repository license/rights require separate `REL-01` review | Event-flow reading only; no code/asset import. |
+| Capsaicin | `914b91596cd119eda85fbc1d3c7ee6ac391b1452`; MIT-style grant in [`LICENSE`](https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/914b91596cd119eda85fbc1d3c7ee6ac391b1452/LICENSE) | Adopt one-semantic-integrator/thin-frontend precedent and external recipe; reject framework/code/assets by default. |
+| Baikal | `2d5a5d0eb2092d75adf637bf6f381d7e9307e986`; MIT-style grant in [`LICENSE.txt`](https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRender-Baikal/blob/2d5a5d0eb2092d75adf637bf6f381d7e9307e986/LICENSE.txt) | Workflow/bias/wavefront negative precedent only. |
+| RadeonRays SDK | `c8890b96b1f976bedd2cd280cc170dff5d655e0a`; MIT-style grant in [`LICENSE`](https://github.com/GPUOpen-LibrariesAndSDKs/RadeonRays_SDK/blob/c8890b96b1f976bedd2cd280cc170dff5d655e0a/LICENSE) | Traversal-versus-estimator boundary only. |
+| Mitsuba 3 | `e262b493806f518e3151905a271955d1ff3203a9`; BSD three-clause terms in [`LICENSE`](https://github.com/mitsuba-renderer/mitsuba3/blob/e262b493806f518e3151905a271955d1ff3203a9/LICENSE) | External scalar-RGB recipe and statistical challenge; project-authored numeric interchange scenes only. |
+| Epic Path Tracer UX | Official Unreal Engine 5.8 documentation snapshot checked 2026-09-10; no source revision or source license is claimed | Adopt the interaction mental model and dynamic-invalidation negative case; do not copy UI/source/assets. |
+
+`REF-VEACH`, `REF-PBRT-*`, `REF-GLTF-PBR`, `REF-GGX-VNDF`, `REF-SHADING-NORMALS`, `REF-RANDOM123`, `REF-VARIANCE`, and `REF-OPENEXR` remain primary mathematical/specification constraints. Their citation does not authorize code copying or redistribute their examples.
 
 | Question | NVIDIA evidence | AMD evidence | Sparkle decision pressure |
 | --- | --- | --- | --- |
@@ -264,6 +283,6 @@ Until `FCR-REN-08` eventually passes its candidate acceptance:
 
 ## Research Handoff
 
-Current discovery decision: **BLOCKED**. This report establishes the initial precedent, source trace, target hypothesis, and question ledger, but it does not contain reviewed estimator mathematics, executable fixture results, accepted scope, or an independent reproduction.
+Current discovery decision: **`PTD-00-R0 BLOCKED`**. Stage 0 converted the initial questions into explicit decisions or a named external blocker in [Discovery](Discovery.md#ptd-q--disposition), froze the mathematical candidate in [Transport And Estimator](TransportAndEstimator.md#stage-0-decision-freeze), and retained independent reviews. The exact `ReleaseMapSet`, accepted hardware/package reachability, and final independent signatures are still absent; no runtime, image, performance, or package proof was produced.
 
-Next permitted work is the evidence-gathering sequence in the [Reference Path Tracer discovery acceptance contract](Discovery.md) and Stage 0 of the [conditional implementation plan](Plan.md). Starting production implementation, freezing an unresolved provisional choice, or renaming the current route “unbiased” before that gate passes is a process failure.
+Next permitted work is release/content/support reconciliation followed by `PTD-00-R1` review. Stage 1 and all production implementation remain unauthorized until both `PTD-00 PASS` and `REL-03` are recorded.

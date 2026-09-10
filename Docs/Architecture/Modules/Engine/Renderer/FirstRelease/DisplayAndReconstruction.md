@@ -130,56 +130,56 @@ Implement DSP-4 in existing tone-map, debug replacement, presentation/output, vi
 
 ## `DSP-5` — Color Grading
 
-**Goal:** close `FCR-REN-24` with one View-owned scene-referred grading stack after reconstruction and before tone mapping.
+**Goal:** close `FCR-REN-24` with the bounded, independently reviewable color-grading result accepted by `CGRD-00`.
 
-**Non-goals:** local grading volumes, multiple blended LUTs, display-referred legacy looks, OCIO, curves, masks, or timeline animation.
+**Non-goals:** production work before `CGRD-00` passes, or silently expanding beyond the exclusions ratified there.
 
-**Required work:** implement finite slope/offset/power plus saturation controls, neutral identity, one optional `.cube`-derived 3D LUT asset with declared size/domain/color-space metadata and trilinear sampling, cook/package validation, per-view/settings/editor selection, deterministic order, debug/capture labeling, and SDR/HDR-consistent placement. Use the [Color Grading contract](../Features/PostProcessing/DisplayPipeline/ColorGrading.md); external precedent is not local proof.
+**Required work:** first close [Color Grading Discovery](../Features/PostProcessing/DisplayPipeline/ColorGrading/Discovery.md). Only after `CGRD-00` is `PASS`, execute the conditional [feature-local plan](../Features/PostProcessing/DisplayPipeline/ColorGrading/Plan.md) against the frozen semantics, asset, ownership, experience, budget, and evidence decisions. External precedent is not local proof.
 
-**Failure modes:** neutral settings alter pixels; CDL order changes; invalid values create NaN/Inf; LUT metadata or indexing is wrong; missing/corrupt asset silently chooses another look; grading is applied after tone/PQ or twice; two views share mutable look state; package omits the LUT.
+**Failure modes:** implementation starts from an unresolved decision; neutral state alters pixels; parameter/LUT order or domain differs from the accepted semantics; invalid data creates non-finite output or silently substitutes a look; grading is applied twice; views share mutable state; cooked/package identity diverges.
 
 **Phase exit criteria:** `AC-CGR-01` through `AC-CGR-08`, controlled failures, analytic ramps/patches, LUT identity/interpolation, two-view/reset, SDR/HDR-domain, backend, package, cost, and candidate checks pass; `FCR-REN-24` records the evidence.
 
 **Ready-to-use prompt:**
 
 ```text
-Implement DSP-5 from the ColorGrading Architecture dossier and AC-CGR/FM-CGR/CHK-CGR. Extend existing View settings, asset import/cook, frame-graph post-processing, shader binding, editor control, capture metadata, and package owners. Add one scene-referred grading stage after reconstruction and before tone mapping with neutral-safe slope/offset/power and saturation plus one optional validated .cube-derived 3D LUT using declared domain/color metadata and trilinear sampling. Keep state generation-qualified per view and preserve exact debug-view policy. Exercise neutral, analytic patches, primary/secondary ramps, invalid/non-finite controls, valid/invalid LUT dimensions and domains, missing/corrupt/package-absent asset, view isolation, resize/mode/look changes, SDR/HDR domain, D3D12/Vulkan, and cost. Stop on double application, ambiguous color domain, silent asset substitution, or shared mutable state.
+Execute Color Grading Stage 0 only. Resolve CGRD-01 through CGRD-12, complete CGR-EXP-01 through CGR-EXP-06, and record the reviewed CGRD-00 disposition in the feature-local Discovery document. Reconcile the dossier, semantics, architecture, experience, conditional plan, DSP-5, and FCR-REN-24 with the accepted decisions. Do not change production code, assets, build membership, generated surfaces, or candidate evidence while CGRD-00 remains Blocked.
 ```
 
 ## `DSP-6` — Chromatic Aberration
 
-**Goal:** close `FCR-REN-25` with one optional View-owned output-resolution lens pass after grading/tone mapping and before output-device encoding and UI.
+**Goal:** close `FCR-REN-25` with the bounded lens result, stage domain, and authored units accepted by `CHRD-00`.
 
-**Non-goals:** physical lens calibration, spectral or anamorphic simulation, per-channel curves, guard-band expansion, temporal history, local volumes, or multiple quality tiers.
+**Non-goals:** production work before `CHRD-00` passes, or silently expanding beyond the exclusions ratified there.
 
-**Required work:** implement normalized center and start offset, strength expressed in pixels at a 1080-line reference height and scaled by actual output height, bounded radial RGB separation, bilinear sampling, explicit edge clamp, preserved alpha, selector/settings/editor/capture state, correct debug bypass, and no history ownership. Use the [Chromatic Aberration contract](../Features/PostProcessing/DisplayPipeline/ChromaticAberration.md).
+**Required work:** first close [Chromatic Aberration Discovery](../Features/PostProcessing/DisplayPipeline/ChromaticAberration/Discovery.md). Only after `CHRD-00` is `PASS`, execute the conditional [feature-local plan](../Features/PostProcessing/DisplayPipeline/ChromaticAberration/Plan.md) against the frozen coordinate, displacement, channel, filtering, ownership, workflow, budget, and evidence decisions.
 
-**Failure modes:** zero strength changes pixels; resolution changes apparent authored strength; UVs sample out of bounds; alpha changes; effect runs before reconstruction or after encoding/UI; exact debug views are distorted; invalid controls produce non-finite output; views share state.
+**Failure modes:** implementation starts from an unresolved decision; zero state changes pixels; authored behavior varies outside the accepted resolution/aspect rule; sampling leaves the accepted boundary policy; alpha changes; stage/debug/UI policy is violated; invalid controls produce non-finite output; views share state.
 
 **Phase exit criteria:** `AC-CHR-01` through `AC-CHR-08`, zero/known-pattern/edge/alpha/resolution/view/debug/backend/package/cost and controlled-negative checks pass; `FCR-REN-25` records candidate evidence.
 
 **Ready-to-use prompt:**
 
 ```text
-Implement DSP-6 from the ChromaticAberration Architecture dossier and AC-CHR/FM-CHR/CHK-CHR. Extend the existing View settings, display-pipeline frame graph, shader binding, editor control, capture metadata, and package owners. Add one optional output-resolution pass after grading/tone mapping and before output encoding/UI, using normalized center/start offset, strength in 1080-line reference pixels scaled by output height, bounded radial RGB separation, bilinear sampling, edge clamp, and unchanged alpha. Do not add history or a second post stack. Exercise zero and known strengths, center/radial patterns, edge pixels, alpha, multiple output extents, invalid/non-finite controls, view isolation, exact debug bypass, resize/mode changes, D3D12/Vulkan, package, and cost. Stop on domain/order ambiguity, resolution-dependent authored behavior, out-of-bounds sampling, or altered UI/debug data.
+Execute Chromatic Aberration Stage 0 only. Resolve CHRD-01 through CHRD-10, complete CHR-EXP-01 through CHR-EXP-06, and record the reviewed CHRD-00 disposition in the feature-local Discovery document. Reconcile the dossier, semantics, architecture, conditional plan, DSP-6, and FCR-REN-25 with the accepted decisions. Do not change production code, shaders, settings, build membership, generated surfaces, or candidate evidence while CHRD-00 remains Blocked.
 ```
 
 ## `DSP-7` — HDR10 Display Output
 
-**Goal:** close `FCR-REN-26` with a truthful Windows HDR10 route on D3D12 and Vulkan plus mandatory automatic SDR fallback.
+**Goal:** close `FCR-REN-26` with a truthful Windows HDR route on D3D12 and Vulkan plus mandatory automatic SDR fallback, using the output approach accepted by `HDRD-00`.
 
-**Non-goals:** scRGB, HLG, Dolby Vision, dynamic metadata, display calibration, multiple mastering profiles, or claiming that a 10-bit/float surface alone is HDR.
+**Non-goals:** production work before `HDRD-00` passes; HLG, Dolby Vision, dynamic metadata, or claiming that a 10-bit/float surface or metadata alone is active HDR. Whether FP16/scRGB is required for an admitted profile is a discovery decision, not a pre-declared exclusion.
 
-**Required work:** implement the [HDR Display Output contract](../Features/PostProcessing/DisplayPipeline/HDRDisplayOutput.md): Renderer-owned 1000-nit Rec.2020/D65 ST2084 output-device transform and 200-nit SDR-UI mapping; RHI-owned display capability, compatible 10-bit swapchain/color-space activation, static metadata, recreation/present; observable requested/supported/active/fallback state; monitor/OS/resize/fullscreen/device transitions; deterministic ramps and candidate artifacts.
+**Required work:** first close [HDR Display Output Discovery](../Features/PostProcessing/DisplayPipeline/HDRDisplayOutput/Discovery.md), including the UINT10/PQ versus FP16/scRGB route, target-luminance policy, system SDR-white policy, metadata role, and backend eligibility. Only after `HDRD-00` is `PASS`, execute the conditional [feature-local plan](../Features/PostProcessing/DisplayPipeline/HDRDisplayOutput/Plan.md). Renderer owns scene/display semantics; RHI owns native capability, activation, recreation, and present mechanics.
 
-**Failure modes:** incompatible format/color-space tuple; PQ omitted or doubled; metadata disagrees with mastering policy; UI is dim/double encoded; monitor or OS-state change leaves stale active state; backend diverges; activation failure produces black/washed output instead of SDR fallback.
+**Failure modes:** implementation starts from an unresolved platform/color decision; format, color space, transfer, alpha/composition, or Renderer domain disagree; metadata is mistaken for pixel interpretation or active-state proof; UI is dim or double transformed; monitor/OS state leaves stale active state; backends diverge; activation failure does not recover to SDR.
 
 **Phase exit criteria:** `AC-HDR-01` through `AC-HDR-08`, native state inspection, PQ/gamut/luminance/UI fixtures, transition/failure matrix, paired-backend comparison, SDR fallback, package, performance, and candidate checks pass on admitted HDR hardware; `FCR-REN-26` records limitations.
 
 **Ready-to-use prompt:**
 
 ```text
-Implement DSP-7 from HDRDisplayOutput.md and AC-HDR/FM-HDR/CHK-HDR. Keep scene/display policy in Renderer and native output capability, swapchain format/color space, metadata, recreation, and present mechanics in RHI. Add one HDR10 route using Rec.2020/D65, ST2084/PQ, compatible 10-bit output, fixed 1000-nit mastering target, static metadata, and 200-nit SDR UI mapping. Expose requested, supported, active, and fallback state; retain the proven SDR route on every failure. Exercise SDR/HDR displays, unsupported/remote state, OS HDR toggle, monitor move, resize, fullscreen/window, suspend/resume, device recovery, format/color-space/metadata failure, PQ ramps, gamut/peak/black patches, UI, capture interpretation, D3D12/Vulkan, package, and cost. Stop on false active state, black/washed fallback, double transform, stale transition state, or backend semantic divergence.
+Execute HDR Display Output Stage 0 only. Resolve HDRD-01 through HDRD-12, complete HDR-EXP-01 through HDR-EXP-08, and record the reviewed HDRD-00 disposition in the feature-local Discovery document. Reconcile the dossier, semantics, architecture, experience, conditional plan, DSP-7, and FCR-REN-26 with the accepted decisions. Do not change production code, shaders, RHI presentation, build membership, generated surfaces, or candidate evidence while HDRD-00 remains Blocked.
 ```
 
 ## `DSP-8` — Display Candidate Closure

@@ -6,7 +6,7 @@
 
 **Authority boundary:** the [research report](Research.md) owns precedent and initial findings, [Transport And Estimator](TransportAndEstimator.md) owns the proposed mathematical contract and decision slots, [Execution Architecture](ExecutionArchitecture.md) owns the proposed system boundary, [User Experience](UserExperience.md) owns the proposed human/automation workflow, the [conditional plan](Plan.md) owns Stage 0 and the provisional delivery route, the [roadmap](../../../../../../../Strategy/Roadmap.md#reference-path-tracer-truth-first) owns priority, the [feature dossier](README.md) owns the eventual feature set and definition of done, and [`FCR-REN-08`](../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry) owns its result
 
-**Current state:** **In progress / blocked for exit** on 2026-09-10. Cross-vendor research, proposed mathematical/system/experience contracts, and a conditional delivery plan exist; accepted transport scope, completed hand derivation, executable evidence design, concrete algorithm/parameter/budget choices, and independent review do not.
+**Current state:** **Stage 0 executed / BLOCKED** in report `PTD-00-R0` on 2026-09-10 at committed `master` revision `669637cf23b9748f8b94635409e74159d31d0bc2`. The estimator, target architecture, evidence protocol, and UX choices have a candidate freeze; exit is prohibited by the unfrozen `ReleaseMapSet`/support matrix, unresolved public/package reachability, and independent reviews that correctly reproduced those blockers.
 
 **Naming reconciliation:** the 2026-09-09 working-tree clean break makes `ReferencePathTracer` the sole feature name; it changes no behavior, authorization, or evidence claim.
 
@@ -80,7 +80,7 @@ Every row must be `PASS`. “Documented,” “reviewed,” and “accepted” m
 
 ## Discovery Risk Register
 
-All risks are **Open** at this snapshot. Discovery activity does not reduce a risk; only the named retirement evidence does. The owner named here is accountable for obtaining a real assignee in the completion report.
+Risk status is recorded in `PTD-00-R0` below. Discovery activity alone does not reduce a risk; only the named retirement evidence does. The owner named here is accountable for obtaining a real assignee in the completion report.
 
 | ID | Risk and observable trigger | Prevention | Detection | Contingency and owner | Retirement evidence |
 | --- | --- | --- | --- | --- | --- |
@@ -157,8 +157,213 @@ The discovery completion report links, rather than duplicates, these artifacts:
 
 Generated experiment output belongs under the normal ignored evidence/artifact root selected by the evidence owner, not in `Docs`. Documentation retains manifests, summaries, decisions, and links; it does not become an image/blob archive.
 
+## `PTD-00-R0` Stage-0 Execution Report
+
+### Identity, method, and verdict
+
+| Field | Result |
+| --- | --- |
+| Report | `PTD-00-R0` |
+| Repository input | committed `master` `669637cf23b9748f8b94635409e74159d31d0bc2`; clean worktree before Stage-0 documentation edits |
+| Authority used | live code/build configuration, current acceptance/roadmap authorities, this dossier, and pinned primary-source ledger |
+| Cheapest falsifiers | targeted `rg`/file inspection, selector/build/source trace, identifier reconciliation, and independent read-only reviews; no build or render was needed to prove the blocking release/scope facts |
+| Production changes | none permitted and none made |
+| Decision | **BLOCKED**. `AC-PTD-03`, `AC-PTD-13`, and `AC-PTD-17` cannot pass without a frozen `ReleaseMapSet` plus accepted hardware/package reachability and a subsequent independent review of that exact reconciliation. Stage 1 is not authorized; `REL-03` is independently blocked. |
+
+This is a real Stage-0 result, not a claim that document completeness proves the feature. The mathematical and product choices below are frozen candidates so the missing release inputs cannot be disguised as implementation discretion. When the external blockers close, `PTD-00-R1` must rebase to the then-current commit, reconcile only the affected matrices, repeat all independent reviews, and either accept the exact dossier revision or record new blockers.
+
+### `PTD-D0` terminology, claimant, and scope decision
+
+| Term | Frozen meaning |
+| --- | --- |
+| Reference Path Tracer | The development-only viewport product and equivalent automation route defined by this dossier; a name alone grants no oracle authority. |
+| `SurfaceTransportReference` | The unidirectional camera-path estimator of the full accepted opaque reflective surface integral in [Transport And Estimator](TransportAndEstimator.md), with compensated stochastic termination and no valid hard path/distance cap. |
+| `FinitePathDiagnostic(D)` | The explicitly finite diagnostic in the same contract. `D>=1`; it cannot be relabeled or selected as the full product. |
+| Unbiased | The expectation equals the named mathematical target for the frozen domain. It says nothing about completeness of physics, finite-sample error, or shared-dependency independence. |
+| Consistent | Independent prefixes/replicates approach that target under the frozen sampler and finite-variance assumptions. |
+| Converged | The predeclared regional statistical protocol passes; reaching target SPP is only prefix completion. |
+| Raw | Scene-linear linear-sRGB/D65 radiance-equivalent data before display, denoising, reconstruction, clamp, exposure, gamut, encoding, or screenshot conversion. |
+| Preview | A one-way display derivative that names its transform and raw digest and is never numeric oracle input. |
+| Reference candidate | A completed, valid raw prefix plus manifest that has not yet earned claim-specific oracle authority. |
+| Ground truth | Permitted only per comparison claim after the dependency matrix supplies an independent detector for the defect class and uncertainty passes. Never a universal label. |
+| Claimant | The `FCR-REN-08` acceptance owner, not the implementer, UI, file name, or this discovery report. |
+
+The target shape is accepted as one Renderer-owned per-view session, independent camera rays, one semantic megakernel-first estimator, thin Inline/RGS traversal adapters, binary64 transactional accumulation, live viewport presentation, and secondary evidence publication. A wavefront scheduler may be considered only after profiling and semantic equivalence; a GBuffer seed, separate batch renderer, duplicate scene/material system, multiple estimators, or compatibility selector is rejected.
+
+### Frozen feature-domain and release reconciliation
+
+| Surface | `v0.1` candidate disposition | Exact boundary |
+| --- | --- | --- |
+| Camera | Included: perspective pinhole. Excluded: orthographic, panoramic, aperture/DOF, shutter/motion blur, animated-time integration. | Non-perspective or non-frozen time rejects before sample zero. |
+| Geometry | Included: indexed triangles, instances, static and immutable evaluated skin/morph snapshots, affine transforms including nonuniform scale/shear/mirror when robust checks pass. | Curves, points, procedural primitives/displacement, changing deformation inside a prefix are excluded. |
+| Textures | Included: 2D base mip, frozen bilinear/address/color decode and UV transform. | Streaming/mip/anisotropic/derivative changes are excluded from raw v0.1. |
+| Materials | Included: opaque or deterministic mask; base color, metallic, roughness, fixed dielectric F0, normal map, emissive, one-/two-sided reflective surface. | Blend/transmission, physical subsurface/BSSRDF, volume, spectral, clearcoat/sheen/iridescence/anisotropy/procedural lobes are excluded. AO is never transport input. |
+| Lights | Included: point/spot, directional, rectangle, emissive triangles, and environment under the exact unit/PDF contract. | IES, portals, textured analytic lights, arbitrary light shaders, and undeclared falloff/range truncation are excluded. |
+| Backend/frontend | Included target: D3D12 Inline, D3D12 RGS, Vulkan Inline, Vulkan RGS, each strict with requested/active truth and identical estimator/sample semantics. | A missing pair is an excluded product row, never fallback. Current source has only compute/Inline. |
+| Raw output | Included target: exact-extent binary64 prefix state, FLOAT OpenEXR beauty/AOVs, counters/statistics, canonical manifest, SHA-256, optional checkpoint. | BMP/screenshot/UI-scaled/display output is preview only. |
+| Workflow | Included target: DevelopmentEditor live `Scene` view and DevelopmentGame `Game` view semantics; exact offscreen request is secondary. | Debug console/CVar choreography is diagnostic only. |
+| Package | DevelopmentEditor includes selector/UI/CLI/writer after acceptance. DevelopmentGame may expose the semantic only through an approved development UI. ShippingEditor and ShippingGame exclude selector, CVar, CLI, writer, operation, docs promise, and optional dependencies. | Current recursive source/link membership does not establish this exclusion; package proof is required. |
+
+`RPT-FS-01` through `RPT-FS-16` are **Included candidate scope**, `RPT-FS-17` and `RPT-FS-18` are **Excluded**, and `RPT-FS-19` is **Prohibited in raw**. This disposition is not release-ratified: `ReleaseMapSet` does not exist yet. Any admitted map or public selector reaching an excluded row blocks `PTD-00-R1` or forces an explicit scope reopening before implementation.
+
+### Included feature ownership and proof budget
+
+| Rows | Owner / primary phase | Defect-detecting checks | Budget | Independent/shared-dependency oracle |
+| --- | --- | --- | --- | --- |
+| `RPT-FS-01`, `10`, `12`, `15` | Renderer View/session, Editor/Application adapters; Stages 1, 6, 7 | `CHK-RPT-02`, `07`, `09`, `15`, `16` | 255-455 h combined stages; per UX runtime bounds | canonical camera fixtures, state-model traces, non-author first use |
+| `RPT-FS-02`, `03`, `11` | Renderer View/geometry plus RHI traversal; Stages 2, 5 | `CHK-RPT-03`, `04`, `08` | 130-220 h | CPU analytic rays/triangles, NVIDIA/PBRT error-bound challenge, paired backends |
+| `RPT-FS-04`, `05`, `06` | Scene/material/texture producers and Renderer BSDF; Stages 2, 4, 5 | `CHK-RPT-03`, `04`, `05` | 220-370 h overlapping | glTF fixtures, CPU decode/eval, furnace, Mitsuba-equivalent scenes |
+| `RPT-FS-07`, `08`, `09` | Renderer light/integrator; Stages 3, 4 | `CHK-RPT-05`, `11` | 160-270 h | analytic energy/PDF cases, minimal tracer, Falcor/Capsaicin/Mitsuba |
+| `RPT-FS-13`, `14` | Renderer readback, ApplicationEditor publication, evidence owner; Stage 9 | `CHK-RPT-04`-`13` | 145-250 h | SHA-256 replay, analytic/minimal/external ladder, controlled faults |
+| `RPT-FS-16` | release/evidence owner; Stage 10 and `PTD-03` | `CHK-RPT-14`, `16` | 70-125 h plus per-map execution | independent renderer and per-map acceptance owner |
+
+The rows share stage work; budgets must not be summed by row. External precedent constrains design only and does not satisfy any Sparkle result.
+
+### `PTD-D1` live route, build, and dependency audit
+
+| Concern | Live source result at report input | Required clean break |
+| --- | --- | --- |
+| Selectors | [`RenderViewMode.h`](../../../../../../../../Engine/Renderer/Public/Debug/RenderViewMode.h#L5-L23) and [`ViewportTopPanel.cpp`](../../../../../../../../Engine/Editor/Private/Panels/ViewportTopPanel.cpp#L183-L229) contain Lit/debug only. [`LightingMode::ReferencePathTracer`](../../../../../../../../Engine/Renderer/Public/Settings/EngineRenderingRayTracingTypes.h#L18-L22) is global, appears in [`RenderingSettingsPanel.cpp`](../../../../../../../../Engine/Editor/Private/Panels/RenderingSettingsPanel.cpp#L68-L70), persists as `r.Lighting.Mode`, and is reachable through generic command-line/runtime CVar surfaces. | Add `RenderViewMode::ReferencePathTracer` immediately after Lit; remove the Lighting enum value, panel row, CVar/persistence/CLI meaning, and all producers/consumers in the same change. |
+| Editor/Game view identity | The live enum is `Game`, `Scene`, `Preview`, `Thumbnail`, `Debug`; both [`UI.cpp`](../../../../../../../../Engine/Editor/Private/UI.cpp#L38-L44) and [`ViewportPanel.cpp`](../../../../../../../../Engine/Editor/Private/Panels/ViewportPanel.cpp#L33-L37) submit `Game`. | Use existing `Scene` for Editor-produced viewports and `Game` for runtime. Update both Editor producers; no invented `Editor` enum. |
+| Render route | [`Lighting.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/Lighting.cpp#L24-L58) selects separate direct/indirect compute producers, common composite/sky, then frame-history accumulation. [`ReferencePathTracerIndirectLighting.hlsl`](../../../../../../../../Engine/Assets/Shaders/Passes/RayTracing/ReferencePathTracerIndirectLighting.hlsl#L28-L52) starts from `RayTracingGBufferPathSurface`; [`ReferencePathTracerDirectLighting.hlsl`](../../../../../../../../Engine/Assets/Shaders/Passes/RayTracing/ReferencePathTracerDirectLighting.hlsl#L69-L175) loops every analytic light and averages per-frame samples. | Replace with independent camera ray and one semantic estimator; delete the old producer topology after consumers migrate. Preserve real-time GBuffer/lighting only outside reference transport. |
+| Sampling/termination | [`PathSampling.hlsli`](../../../../../../../../Engine/Assets/Shaders/RayTracing/PathSampling.hlsli#L25-L169) uses frame-derived randomness, selected-component diffuse/GGX and current roulette; [`PathTrace.hlsli`](../../../../../../../../Engine/Assets/Shaders/RayTracing/PathTrace.hlsli#L18-L44) uses fixed epsilon/bias/distance and back-face culling. | Replace completely with accepted `MATH-03`, `08`, `09`, and `11`; no compatibility stream/settings. |
+| Scene/View ownership | [`PreparedRenderScene.h`](../../../../../../../../Engine/Renderer/Private/Scene/Preparation/PreparedRenderScene.h#L34-L54) owns canonical scene snapshots; [`RenderView.h`](../../../../../../../../Engine/Renderer/Private/View/RenderView.h#L18-L36) owns viewport/selection/kind/camera/extents/display; `RenderFrame` owns one of each. Current RPT state is one optional hash in [`RenderViewState.h`](../../../../../../../../Engine/Renderer/Private/View/RenderViewState.h#L97-L108) plus a history texture. | Lease immutable Scene generations and canonical View fingerprint into one Renderer per-view session. Do not copy a second scene or expose handles to ApplicationEditor. |
+| Invalidation | [`ReferencePathTracerInvalidation.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/ReferencePathTracer/ReferencePathTracerInvalidation.cpp#L11-L23) hashes lighting state, SPP/bounce/bias/distance, global view mode, and matrices; [`ReferencePathTracerAccumulation.hlsl`](../../../../../../../../Engine/Assets/Shaders/Passes/RayTracing/ReferencePathTracerAccumulation.hlsl#L27-L55) additionally uses a motion-vector epsilon and float mean/count. | Replace with semantic digest, exact committed range, generation rejection, reason taxonomy, target-SPP continuation rules, and presentation/scheduling non-reset. |
+| RHI frontends | The three [`ReferencePathTracer` registrations](../../../../../../../../Engine/Renderer/ShaderRegistrations/ReferencePathTracerIndirectLightingShaders.cpp#L5-L9) are compute shaders requiring Inline RayQuery. Generic D3D12/Vulkan Inline and RGS machinery exists; no RPT RGS adapter exists. | One estimator with thin four-pair traversal adapters; RHI owns mechanism/capability, Renderer owns path semantics. |
+| Source/build/generated | [`Engine/Renderer/CMakeLists.txt`](../../../../../../../../Engine/Renderer/CMakeLists.txt#L8-L18) recursively includes private sources and lines 63-148 include registration sources in runtime/cook objects; Renderer links into ShowcaseEditor and ShowcaseRuntime. Existing cooked shader records are unbound generated artifacts, not report evidence. | Update sources, registrations, shader cook manifests/generated outputs, CMake/profile membership, and stale artifacts atomically. Audit all six configured profiles: `DebugEditor`, `DebugGame`, `DevelopmentEditor`, `DevelopmentGame`, `ShippingEditor`, and `ShippingGame`. |
+| Capture/export | [`ViewportCaptureService`](../../../../../../../../Engine/Renderer/Private/Viewport/ViewportCaptureService.cpp#L75-L139) and both RHI backends provide asynchronous typed readback (capacity three), but [`EditorViewportCaptureCoordinator.cpp`](../../../../../../../../Engine/Application/Private/Editor/Capture/EditorViewportCaptureCoordinator.cpp#L14-L62) requests final SceneColor and writes BMP under workspace `Saved/Captures`. TinyEXR v1.0.7 is loader-owned by TextureCooker; no EXR writer route is present. | Extend typed RHI readback; add a development ApplicationEditor raw writer/transaction after dependency/license review. Never route raw reference through BMP or link TinyEXR into Shipping by convenience. |
+| Application operations | [`EditorOperationService.cpp`](../../../../../../../../Engine/Application/Private/EditorOperations/EditorOperationService.cpp#L29-L148) has cancellable shader-recook and BMP-write work only; no reference operation/progress/offscreen manifest exists. | Add one bounded development operation consuming semantic Renderer snapshots; application owns paths/process results, not estimator state. |
+| Package roots | Development artifacts and runtime discovery contracts exist, but no accepted staged package/installer root or Reference Path Tracer allowlist exists; capture/config still use workspace paths. | `REL-03` must freeze immutable install/mutable-data roots. Raw output uses an explicit writable destination and unique staging sibling. |
+| Release maps | Acceptance and roadmap explicitly say `ReleaseMapSet` is not frozen and map rights/feature coverage are unresolved. | Content/release owners provide the exact manifest; reconcile every used camera/material/light/deformation/alpha semantic before `PTD-00-R1`. |
+
+Shared leaves are allowed only with the following independent detector:
+
+| Shared leaf / injected fault | Independent detector |
+| --- | --- |
+| Camera transform/projection (transpose, Y flip, half-pixel) | CPU known-ray oracle plus Mitsuba camera manifest; constant environment catches filter normalization. |
+| Triangle decode/transform/barycentrics (index, winding, shear) | CPU analytic intersection and metamorphic rigid-transform/scale fixtures; paired frontend hit records. |
+| Texture/material decode (sRGB-as-linear, wrong channel, tangent sign) | CPU texel/material evaluator, glTF known values, flat/normal-mapped furnace, external equivalent scene. |
+| Light units/PDF (missing PMF/Jacobian, wrong cone/side) | hand energy/PDF cases and minimal event tracer; Mitsuba/Falcor only after equivalence. |
+| Traversal/alpha (miss, cull, cutoff equality) | analytic occluders and forced Inline/RGS/D3D12/Vulkan hit/event parity. |
+| Accumulation/output (lost ordinal, float count, display contamination) | host binary64 sequence, checkpoint round trip, raw hash, and injected display transform. |
+
+### `PTD-Q-*` disposition
+
+| Question | `PTD-00-R0` result |
+| --- | --- |
+| `PTD-Q-01` | Resolved: full `SurfaceTransportReference` plus distinct `FinitePathDiagnostic(D)`; no hard cap can produce the full label. |
+| `PTD-Q-02` | Resolved: independent camera rays required; GBuffer seed deleted from the route. |
+| `PTD-Q-03` | Resolved by accepted candidate `MATH-02` through `08` and retained hand cases. |
+| `PTD-Q-04` | Resolved: one-light NEE plus power-heuristic MIS; emissive triangles and environment participate. |
+| `PTD-Q-05` | **Blocked externally:** candidate domain is frozen above, but exact release-map/public-selector reconciliation awaits `ReleaseMapSet`. |
+| `PTD-Q-06` | Resolved: transmission/media/physical subsurface are excluded and must be unreachable. |
+| `PTD-Q-07` | Resolved by exact normal, side, alpha, and immutable deformation contracts. |
+| `PTD-Q-08` | Resolved as a design by `MATH-11`; executable backend conservatism remains Stage-5/8 evidence, not implementation discretion. |
+| `PTD-Q-09` | Resolved by Philox stream, fixed dimension ledger, digest, and clean-break checkpoint policy. |
+| `PTD-Q-10` | Resolved by binary64 mean/M2, uint64 count, ordered range merge, and max `1,048,576` SPP. |
+| `PTD-Q-11` | Resolved by exact-extent OpenEXR/checkpoint/canonical manifest/SHA-256 contract. |
+| `PTD-Q-12` | Resolved: mean/M2/standard error, ray/path/path-length/event and first-invalid counters; no general dashboard. |
+| `PTD-Q-13` | Resolved contractually: four strict pairs with no fallback; executable parity remains later feature evidence. |
+| `PTD-Q-14` | Resolved by the predeclared protocol below. |
+| `PTD-Q-15` | Resolved by the frozen [User Experience](UserExperience.md#frozen-defaults-and-operational-budgets) state/action/budget contract. |
+| `PTD-Q-16` | Resolved fact: no current runtime/image/performance/package evidence exists. That absence blocks feature acceptance, not Stage-0 design; no evidence was fabricated. |
+
+### `PTD-D2` oracle, fixtures, statistics, and fault protocol
+
+Every check starts from a clean session and immutable manifest, performs one named action/injection, retains raw/event/counter output, and restores/removes local temporary data. Default maximums are `2 min` source/trace checks, `5 min` CPU algebra/sampler checks, `15 min` per analytic GPU pair, `30 min` per minimal scene/pair, `4 h` per external renderer scene/replicate, `10 min` per controlled operational fault, and `15 min` first-use. A timeout is `Inconclusive` or the named failure result, never `PASS`.
+
+| Fixture/class | Exact oracle and injected defect |
+| --- | --- |
+| `ANA-CAMERA` | center/corner/subpixel rays, constant-radiance filter, projection rejection; inject transpose, Y flip, missing half-pixel. |
+| `ANA-BSDF` | zero/unit Lambert, reciprocity where applicable, GGX normalization/furnace sweep, mirror limit; omit lobe PMF or use selected-component PDF. |
+| `ANA-LIGHT` | point/directional delta, rectangle/triangle Jacobian, cone, sided emitter, uniform and one-hot environment; omit PMF, distance squared, `sin(theta)`, or emitter side. |
+| `ANA-MIS-RR` | equal/zero PDF, emission-hit split, delta bypass, roulette expectation/tail; double emission, compare delta density, omit survival division, return black at safety depth. |
+| `ANA-GEOM` | barycentric/winding/alpha-equality/two-side plus scale `10^-6..10^6`, translation, shear, mirror, grazing, adjacent/coplanar and thin gaps; replace robust bound with fixed epsilon. |
+| `META` | rigid transform, uniform unit-preserving scale with corresponding light/camera transform, emitter permutation, strategy relabel, batch/reorder/pause/resume/backend invariance; inject frame-index seed or branch-shifted dimensions. |
+| `MIN-EVENT` | repository-local temporary CPU scalar event walker using independent double math and no Renderer BRDF/light helper; compare bounded event/factor records, then remove probe. |
+| `EXT-FALCOR`, `EXT-CAPSAICIN`, `EXT-MITSUBA` | author tiny original scenes from numeric manifests; do not redistribute vendor assets. Pin renderer commit/version/config/output hashes and prove camera, units, base-level textures, material, normals, light shape/side, environment, path domain, and color equivalence first. Non-equivalence is `Inconclusive`. |
+| `FAULT-OPS` | unsupported capability, capacity, timeout, cancel, device loss, OOM/allocation refusal, read-only/full disk, corrupt checkpoint, hash mismatch, late completion, and shutdown; assert state, deadline, cleanup, preserved prefix/prior artifact, and no completion manifest. |
+
+Use eight independently keyed replicates. Evaluate the predeclared SPP ladder `4096, 16384, 65536, 262144, 1048576`; never add a post-hoc seed or crop. Regions are whole image, fixed `8x8` tiles, and manifest-defined masks for each material, light footprint, emissive, environment, alpha edge, silhouette/grazing edge, and robustness gap. Analytic scalar/factor GPU results require absolute error `<=1e-6` or relative error `<=5e-5` versus binary64, with exact event/category/count equality. For each predeclared region compute one value per replicate as the unweighted arithmetic mean of per-pixel linear luminance `Y=0.2126R+0.7152G+0.0722B` over exactly the manifest-listed pixel centers, then compute the replicate mean and unbiased sample standard deviation; the two-sided interval is Student `t` with 7 degrees of freedom and per-look/per-hypothesis `alpha=0.01/(5M)` (Bonferroni), where five is the fixed SPP-ladder look count and `M` is the fixed number of region-plus-whole-image scalar hypotheses in the manifest. The interval must contain the analytic/independent target and the mean must satisfy absolute error `<=5e-4` plus relative error `<=0.5%` when target magnitude is `>=0.1`; darker targets use the absolute rule. External equivalent scenes additionally use luminance `NRMSE=sqrt(mean((Y-Yref)^2))/max(sqrt(mean(Yref^2)),0.1)`, requiring whole-image `<=1%` and each fixed region `<=2%`. Injected `1%` regional luminance bias and duplicate/aliased streams must fail. Pass at the first ladder point meeting every rule; fail when the corrected confidence interval excludes the target beyond threshold; otherwise escalate and report `Inconclusive` at maximum SPP.
+
+Interchange manifests contain source rights, generator/tool revision, metres, camera matrix/FOV/crop/filter, triangle winding/transforms, texture bytes/transfer/address/filter, tangent convention, material formulas, light units/shape/side/PMF, environment mapping, product/depth/RR/MIS, color primaries/white, seed/replicate/SPP, backend/compiler, and hashes. Only project-authored analytic scene data may be retained; external source/assets remain recipes unless rights review explicitly permits redistribution.
+
+A repository-nonmutating PowerShell binary64 probe rechecked the corrected hand cases at R0: midpoint quadrature of `(pi/2)sin(pi v)` over `v in [0,1]` returned `1.0000000000411178`; its divided solid-angle density and `1/(4pi)` both returned `0.079577471545947673`; roulette target `0.2` produced threshold `3355443`, exact mass `0.19999998807907104`, and compensation scale `1`; the area PDF returned `1`, BSDF-hit MIS returned `0.2`, and Welford samples `(1,3)` returned mean/M2/standard-error `(2,2,1)`. This is a bounded arithmetic sanity check, not independent implementation, compiler, or GPU evidence.
+
+### `PTD-D3` architecture decision and clean-break ledger
+
+| Selected | Rejected alternative and reason |
+| --- | --- |
+| One per-view Renderer session; Editor uses existing `Scene`, runtime uses `Game`. | Global lighting branch/frame history cannot represent independent per-view identity or Lit suspension. New `Editor` kind is needless vocabulary. |
+| Camera-ray megakernel semantic core first, thin Inline/RGS adapters. | GBuffer seed shares primary defects. Wavefront-first adds scheduling/state before evidence requires it. Separate frontend estimators permit drift. |
+| Fixed near-uniform integer-partition active-lobe/light PMFs plus NEE/MIS; uniform-sphere environment sampling in v0.1. | Exhaustive lights scales poorly; BSDF-only environment/emissive is impractical; texture/energy importance requires an exact finite-probability contract and may follow profiling as a separately reviewed optimization. |
+| Binary64 mean/M2 and exact uint64 count. | RGBA32F mean/count stalls/loses variance at high SPP; EMA/Kahan-only state does not supply the required uncertainty contract. Strict float64 capability is preferable to silent weak precision. |
+| Existing typed RHI readback plus development ApplicationEditor transaction. | Screenshot/BMP is LDR; Renderer file I/O violates ownership; a second batch renderer risks semantic drift. |
+
+The path-level clean-break ledger at audited HEAD is:
+
+| Disposition | Exact paths |
+| --- | --- |
+| Delete | `Engine/Assets/Shaders/Passes/RayTracing/ReferencePathTracerAccumulation.hlsl`; `ReferencePathTracerDirectLighting.hlsl`; `ReferencePathTracerIndirectLighting.hlsl`; `Engine/Assets/Shaders/RayTracing/ReferencePathTracerUniform.hlsli`; every file under `Engine/Renderer/Private/Passes/Lighting/ReferencePathTracer/`; `Engine/Renderer/Private/Passes/Lighting/Direct/ReferencePathTracerDirectLighting.{h,cpp}`; `Engine/Renderer/Private/Passes/Lighting/ReferencePathTracerIndirectLighting.{h,cpp}`; `Engine/Renderer/Private/Passes/RayTracing/ReferencePathTracer{Accumulation,DirectLighting,IndirectLighting}Shader.h`; `Engine/Renderer/Private/RayTracing/Effects/ReferencePathTracer/ReferencePathTracerAccumulationUniformData.h`, `ReferencePathTracerCVars.{h,cpp}`, `ReferencePathTracerSettings.{h,cpp}`, and `ReferencePathTracerUniformData.h`; `Engine/Renderer/ShaderRegistrations/ReferencePathTracer{Accumulation,DirectLighting,IndirectLighting}Shaders.cpp`. |
+| Modify | `Engine/Renderer/Public/Settings/EngineRenderingRayTracingTypes.h`; `Engine/Renderer/Public/Settings/EngineRenderingSettings.h`; `Engine/Renderer/Public/Debug/RendererCVars.h`; `Engine/Renderer/Private/Debug/RendererCVars.cpp`; `Engine/Renderer/Private/Settings/EngineRenderingSettings.cpp`; `Engine/Renderer/Private/Settings/EngineRenderingSettingsRuntime.cpp`; `Engine/Editor/Private/Panels/RenderingSettingsPanel.cpp`; `Engine/Renderer/Private/Passes/Lighting/Lighting.cpp`; `Engine/Renderer/Private/Resources/History/FrameHistory.{h,cpp}`; `Engine/Renderer/Private/View/RenderViewState.{h,cpp}`; `Engine/Renderer/Private/Frame/FramePipeline.h`; `Engine/Renderer/Private/Frame/FramePipelineGraph.cpp`; `Engine/Renderer/CMakeLists.txt`; `Engine/Editor/Private/UI.cpp`; `Engine/Editor/Private/Panels/ViewportPanel.cpp`; `Config/DefaultEngine.ini` if its serialized numeric lighting mode changes after enum removal. |
+| Regenerate, never hand-edit | `artifacts/dev/projects/Shared/cooked/Shaders/CookedShaderLibrary.slib`; `GlobalShaderMap.smap`; `ShaderDependencies.sdep`; `ShaderPackageRegistry.sreg`; `recook.signal`. Their current bytes are disposable local output and not PTD evidence. |
+| Preserve/extend singular owners | Canonical Scene/View/GPU-scene/material/texture/traversal owners and typed RHI readback; exact new Stage-1/2 files are selected by the owning stage without moving those responsibilities. |
+
+Before either stage edits, repeat `rg -l "ReferencePathTracer|Reference Path Tracer|ReferencePathTraced|LightingMode" Engine Config Projects CMakeLists.txt cmake` against that stage's HEAD and reconcile any path delta into this ledger. No alias, legacy stream, dual selector, or checkpoint migration reader is permitted. Stage 1 deletes the legacy selector/route/state files and edits their direct consumers; Stage 2 alone changes the two Editor `RenderViewKind::Game` producers to `Scene` with the camera/fingerprint slice.
+
+### `PTD-D4` owners, revised estimates, and traceability
+
+Accountable roles are Renderer feature owner (session/integrator/accumulation), Scene/content owners (immutable semantics), RHI owners (capability/traversal/readback), Editor/Application owner (view intent/UI/operation/publication), build/package owner (profile reachability), evidence owner (fixtures/statistics), content/provenance owner (`ReleaseMapSet`/rights), and release acceptance owner (final verdict). Named people are assigned when the release roster exists; lack of a person does not transfer authority to an implementer.
+
+Revised ranges after the live audit are: Stage 0 `70-110 h` including external owner reconciliation/re-review; Stage 1 `50-85 h`; Stage 2 `80-130 h`; Stage 3 `75-125 h`; Stage 4 `110-180 h`; Stage 5 `90-150 h`; Stage 6 `80-135 h`; Stage 7 `70-120 h`; Stage 8 `90-150 h`; Stage 9 `145-250 h`; Stage 10 `70-125 h`; total `930-1,560 h`. The increase covers binary64 strict-capability work, four traversal pairs, exact Scene/Game migration, shader/package clean break, and independent external/statistical evidence. Release-map breadth may revise Stage 5/9/10 only through a new accepted report.
+
+| Check | Owner | Max design/execution budget | Cleanup and escalation |
+| --- | --- | --- | --- |
+| `CHK-PTD-01` | architecture owner | 2 h source probe | no artifacts; unmatched selector/build route blocks |
+| `CHK-PTD-02` | research/rights owners | 8 h plus legal review | links/notes only; moving/unlicensed input rejected |
+| `CHK-PTD-03` | math/numeric reviewers | 16 h | temporary calculations removed; unmatched term blocks |
+| `CHK-PTD-04` | evidence owner | 4 h | retain matrix; surviving shared fault narrows claim |
+| `CHK-PTD-05` | content/evidence owners | 16 h design | retain manifests only; non-equivalence is inconclusive |
+| `CHK-PTD-06` | sampling owner | 8 h design/probe | remove dumps; duplicate/correlation blocks |
+| `CHK-PTD-07` | View/session owner | 8 h model dry-run | remove transient traces; stale/mixed prefix blocks |
+| `CHK-PTD-08` | geometry/RHI owners | 8 h design/probe | remove probe scenes if test-only; tuned epsilon blocks |
+| `CHK-PTD-09` | evidence/Application owners | 8 h schema review | remove staging; missing hash/identity blocks |
+| `CHK-PTD-10` | RHI/runtime owners | 8 h protocol | cleanup tickets/staging; fallback/leak blocks |
+| `CHK-PTD-11` | documentation owner | 2 h mechanical/manual | no artifacts; orphan ID blocks |
+| `CHK-PTD-12` | independent reviewers | 8 h | retain signed result; reopened decision blocks |
+
+Coverage is conjunctive: `CHK-PTD-01` covers `AC-03/04`; `02` covers `AC-01/10/15`; `03` covers `AC-02/05`; `04` covers `AC-06`; `05` covers `AC-03/10`; `06` covers `AC-07/11`; `07` covers `AC-08/09/13`; `08` covers `AC-08/10`; `09` covers `AC-09/12`; `10` covers `AC-13`; `11` covers `AC-14/16`; `12` covers `AC-15/16/17`. `FM-PTD-01..16` and `RISK-PTD-01..12` each appear in their detecting check rows above; mechanical `rg` must return every ID before R1 acceptance. `RISK-PTD-03`, `08`, `10`, and `12` remain Open because their release/support/review evidence is unavailable; all other risk treatments are accepted designs but retire only through later executable evidence.
+
+### Acceptance and independent review record
+
+| Criterion | R0 result | Evidence / blocker |
+| --- | --- | --- |
+| `AC-PTD-01` | PASS | frozen terminology/claimant table |
+| `AC-PTD-02` | PASS (design) | frozen Transport revision and hand cases; not implementation proof |
+| `AC-PTD-03` | **BLOCKED** | no accepted `ReleaseMapSet`; exact map-required semantics cannot be reconciled |
+| `AC-PTD-04` | PASS (source) | revision-pinned live-route/build/dependency audit above |
+| `AC-PTD-05` | PASS (design) | `MATH-01..11` dispositions, equations, hand cases, and equation-to-code owners |
+| `AC-PTD-06` | PASS (design) | shared-leaf fault/oracle matrix |
+| `AC-PTD-07` | PASS (design) | Philox packing/dimension/prefix rules |
+| `AC-PTD-08` | PASS (design) | numeric/invalid/robust endpoint contract and adversarial matrix |
+| `AC-PTD-09` | PASS (design) | state/invalidation/retention/artifact decisions plus UX budgets |
+| `AC-PTD-10` | PASS (design) | analytic through external fixture catalog |
+| `AC-PTD-11` | PASS (design) | replicate/SPP/region/confidence/threshold/stop protocol |
+| `AC-PTD-12` | PASS (design) | raw/checkpoint/EXR/hash and preview separation |
+| `AC-PTD-13` | **BLOCKED** | numeric budgets are frozen, but accepted hardware, maps, package roots, and Shipping reachability are not available to prove the contract is finite/reachable |
+| `AC-PTD-14` | PASS (design) | AC/FM/RISK/CHK ownership and coverage record |
+| `AC-PTD-15` | PASS (design) | selected/rejected target-shape record and revised complexity range |
+| `AC-PTD-16` | **BLOCKED** | path-level ledger and stage ownership are now reconciled, but the exact report revision cannot be signed while release-owned prerequisites and independent reviews remain open |
+| `AC-PTD-17` | **BLOCKED** | independent design re-reviews pass the candidate math, architecture, and UX contracts, but the exact immutable R1 dossier still lacks content/release, support/package, accountable human, and final cross-discipline signatures after release reconciliation |
+
+Three independent read-only agent review tracks were conducted against R0 inputs: mathematical/numerical, architecture/current-route, and evidence/first-use. Initial passes returned **BLOCKED** and exposed the nonexistent `RenderViewKind::Editor`, incorrect environment Jacobian, discretely biased roulette, underspecified MIS/material/sampler/robustness/statistics/artifacts, incomplete lifecycle/CLI/Shipping behavior, current Inline/GBuffer/history route, LDR BMP capture, package reachability, and missing report/clean-break matrices. After reconciliation, the math/numeric and UX/evidence reviewers returned **PASS for the Stage-0 design candidate** with no plan-shaping invention point; the architecture reviewer found the architecture/plan internally coherent and **BLOCKED only by the declared external/evidentiary prerequisites**. These are AI-assisted internal reviews, not a substitute for named accountable human approval or executable evidence. R1 requires fresh independent math, numeric, architecture, evidence, content/release, support/package, and clean first-use signatures against one immutable candidate revision after the release-owned inputs exist.
+
+### Unrun checks
+
+No engine build, shader compile/cook, runtime launch, GPU validation, representative-map render, external-renderer run, package inspection, accessibility session, or clean-machine first use was run. They were unnecessary to falsify R0 exit and cannot be reported as passed. One repository-nonmutating PowerShell binary64 hand-case probe was run as recorded above; it is not implementation evidence. `git diff --check`, documentation-link/ID checks, and the production-file boundary audit are the other handoff validations appropriate after these documentation edits.
+
 ## Gate Decision
 
 `PTD-00` passes only when `AC-PTD-01` through `AC-PTD-17` pass, every applicable `FM-PTD-*` has a detecting `CHK-PTD-*`, all release/technical risks have accepted treatments, and independent review signs the exact report revision.
 
-Current decision: **BLOCKED**. The next permitted step is `PTD-D0` through `PTD-D4`, executed as Stage 0 of the [conditional implementation plan](Plan.md). After a pass, the release owner may freeze `PTD-01` to the accepted report. Neither the conditional plan nor a discovery pass authorizes implementation before `REL-03` opens the `FCR-REN-08` slice.
+Current decision: **`PTD-00-R0 BLOCKED` at `669637cf23b9748f8b94635409e74159d31d0bc2`**. Stage 0 has been executed; repeat only the affected release-map/support/package reconciliation and all independent reviews in `PTD-00-R1` after `REL-01` supplies the exact `ReleaseMapSet` and support identities. Stage 1 is **not authorized**. Neither this candidate freeze nor a future discovery pass authorizes implementation before `REL-03` opens the `FCR-REN-08` slice.

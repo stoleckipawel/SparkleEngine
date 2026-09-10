@@ -241,6 +241,6 @@ Rejected for the current slice because view-mode switching is per-frame state an
 ## Non-Goals
 
 - A raw GPU-resource inspector or lossless GBuffer export. Those require a separate typed capture product that preserves format, range, and metadata.
-- HDR10/PQ or wide-gamut output implementation. The debug contract must compose with the separately admitted [HDR Display Output](../PostProcessing/DisplayPipeline/HDRDisplayOutput.md), but current code supports linear and sRGB only.
+- HDR/PQ or wide-gamut output implementation. The debug contract must compose with the separately admitted [HDR Display Output](../PostProcessing/DisplayPipeline/HDRDisplayOutput/README.md), but current code supports linear and sRGB only.
 - Debug-only exposure history or a second tone-mapper setting.
 - Skipping normal scene rendering work while exact views are active. That optimization needs measurement and a separate graph-lifetime decision after correctness is established.

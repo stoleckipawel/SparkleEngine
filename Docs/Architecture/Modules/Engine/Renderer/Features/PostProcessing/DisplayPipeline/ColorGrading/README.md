@@ -1,16 +1,20 @@
 # Renderer Color Grading
 
-**Status:** first-release target feature dossier plus current source-backed absence; not implementation or acceptance evidence
+**Status:** first-release target feature dossier plus current source-backed absence; `CGRD-00` and production implementation are `Blocked`
 
-**Verified:** 2026-09-06 against source revision `d236da11`; inspected Renderer/shader/asset paths are unchanged from the earlier `8414b5dc` audit
+**Responsibility:** define the bounded color-grading product, current absence, target feature set, acceptance criteria, failures, checks, and conjunctive definition of done for `FCR-REN-24`
+
+**Authority boundary:** [Discovery](Discovery.md) freezes implementation-shaping decisions; [Research](Research.md) owns precedent; [Semantics](Semantics.md) owns math and LUT interpretation; [Execution Architecture](ExecutionArchitecture.md) owns system shape; [User Experience](UserExperience.md) owns developer workflow; [Plan](Plan.md) owns delivery order; code/build configuration owns implementation; `FCR-REN-24` owns candidate results
+
+**Verified:** 2026-09-10 against committed revision `669637cf`; current Renderer/shader/asset/settings/editor/package paths were inspected as source only
 
 **Scope:** `REN-POST-11`; artistic and technical color adjustments distinct from exposure, tone mapping, and output encoding
 
-**Parent family:** [Post Processing](../README.md)
+**Parent family:** [Display Pipeline](../README.md)
 
-**First-release admission:** `FCR-REN-24`; implementation phase [`DSP-5`](../../../FirstRelease/DisplayAndReconstruction.md#dsp-5--color-grading)
+**First-release admission:** `FCR-REN-24`; implementation phase [`DSP-5`](../../../../FirstRelease/DisplayAndReconstruction.md#dsp-5--color-grading)
 
-**Current readiness:** **0/100** — admitted and `Blocked`; no grading controls, transforms, LUT resource, pass, shader, selector, or editor route was found. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **0/100** — admitted and `Blocked`; no grading controls, transforms, LUT resource, pass, shader, selector, or editor route was found. See [Current Feature Readiness](../../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## At A Glance
 
@@ -23,6 +27,19 @@
 
 The admitted contract is larger than a saturation slider: it must carry authored color-space metadata from asset/import/cook through a deterministic per-view transform and a measurable SDR/HDR result.
 
+## Start Here
+
+| Question | Owning document |
+| --- | --- |
+| What must the feature provide and prove? | This dossier |
+| Which decisions block implementation? | [Discovery](Discovery.md) |
+| Which primary sources and local seams informed the design? | [Research](Research.md) |
+| What exactly do slope/offset/power, saturation, and LUT samples mean? | [Semantics](Semantics.md) |
+| Who owns source, cooked, runtime, View, pass, and retirement state? | [Execution Architecture](ExecutionArchitecture.md) |
+| How does a developer author, diagnose, reset, and automate a look? | [User Experience](UserExperience.md) |
+| In what order can work proceed? | [Plan](Plan.md) |
+| What did a candidate prove? | [`FCR-REN-24`](../../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry) and retained evidence |
+
 ## Current Capability
 
 Color grading was not found. Sparkle has no grading pass or shader, per-view grading settings, lift/gamma/gain or slope/offset/power controls, saturation/contrast/hue controls, 1D or 3D grading LUT asset/import/cook path, LUT blend stack, working/display gamut selection, or grading selector/debug product.
@@ -31,7 +48,7 @@ The three tone-mapper operators are fixed HDR-to-display mappings. They do not c
 
 ## First-Release Target Contract
 
-The first-release feature is one scene-referred grading stage after reconstruction and before tone mapping. It owns a deterministic global parametric grade plus one optional 3D LUT generation. Unreal's [scene-referred color-grading guidance](https://dev.epicgames.com/documentation/unreal-engine/color-grading-and-the-filmic-tonemapper-in-unreal-engine?lang=en-US) is precedent for keeping artistic correction before display-specific output; it does not define Sparkle's types or prove its result.
+The first-release candidate is one scene-referred grading stage after reconstruction and before target tone mapping. It owns a deterministic global parametric grade plus one optional 3D LUT generation. The exact working space, exposure relation, negative-value policy, LUT subset/layout/interpolation, and budgets remain blocked by [`CGRD-00`](Discovery.md). External precedent is cataloged in [Research](Research.md); it does not define Sparkle's types or prove its result.
 
 The admitted scope must define and implement:
 
@@ -77,7 +94,7 @@ Local volumes, multiple blended LUTs, display-referred legacy LUTs, OpenColorIO,
 
 - `REN-E26` owns the negative source/build/selector/pass/shader/asset/editor/documentation audit for color grading.
 - No runtime test is implied by this source-only absence finding.
-- Adjacent source routes inspected: [`PostProcessing.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/PostProcessing/PostProcessing.cpp), [`Presentation.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Presentation.cpp), and [`EngineRenderingDisplayTypes.h`](../../../../../../../../Engine/Renderer/Public/Settings/EngineRenderingDisplayTypes.h).
+- Adjacent source routes inspected: [`PostProcessing.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/PostProcessing/PostProcessing.cpp), [`Presentation.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Presentation.cpp), and [`EngineRenderingDisplayTypes.h`](../../../../../../../../../Engine/Renderer/Public/Settings/EngineRenderingDisplayTypes.h).
 
 ### Current Negative Acceptance
 
@@ -85,3 +102,7 @@ Local volumes, multiple blended LUTs, display-referred legacy LUTs, OpenColorIO,
 - `AC-CGR-NEG-02` — tone-mapper and output-encoding choices remain labeled as fixed display mapping/transfer, not an artistic or technical grading stack.
 
 `FM-CGR-NEG-01` occurs when any reachable grading-like vocabulary lacks a real owner/result or when a neighboring transform is mislabeled. `CHK-CGR-NEG-01`/`REN-E26` covers `AC-CGR-NEG-01`, `AC-CGR-NEG-02`, and `FM-CGR-NEG-01` by searching source, build membership, shaders, settings, assets/tools, editor UI, package surfaces, and documentation; any unmatched result fails the negative contract and requires a new current/target dossier before advertisement.
+
+## Definition Of Done
+
+Color grading is complete only when `CGRD-00` passed before implementation, every included control and `.cube` behavior conforms to the accepted semantic revision, the one View/residency/pass ownership path is active on every admitted backend/profile, all `AC-CGR-01` through `08` pass, every `FM-CGR-*` and material risk has controlled detecting evidence, package and authoring journeys pass, excluded surfaces remain unreachable, temporary probes are removed, and the acceptance owner records `FCR-REN-24 PASS` against one immutable candidate. Partial stages do not average into acceptance.

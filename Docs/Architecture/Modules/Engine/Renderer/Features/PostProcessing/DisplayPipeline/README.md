@@ -41,10 +41,10 @@ flowchart LR
 | --- | --- |
 | [Exposure](Exposure.md) | luminance measurement, history, manual/automatic exposure, and frame placement |
 | [Tone Mapping](ToneMapping.md) | selectable scene-referred HDR to display-linear operators and their limits |
-| [Color Grading](ColorGrading.md) | first-release grading controls/LUT contract plus current negative boundary |
-| [Chromatic Aberration](ChromaticAberration.md) | first-release lens-effect contract plus current negative boundary |
+| [Color Grading](ColorGrading/README.md) | feature definition, discovery, research, semantics, architecture, experience, and conditional delivery plan |
+| [Chromatic Aberration](ChromaticAberration/README.md) | feature definition, discovery, research, semantics, architecture, and conditional delivery plan |
 | [Presentation And Output](PresentationAndOutput.md) | current SDR encoding, back-buffer or viewport publication, and debug handoff |
-| [HDR Display Output](HDRDisplayOutput.md) | first-release HDR10 transform, RHI activation, UI, transition, fallback, and proof contract |
+| [HDR Display Output](HDRDisplayOutput/README.md) | feature definition, discovery, research, semantics, architecture, experience, and conditional delivery plan |
 
 The parent [Post Processing](../README.md) dossier owns shared stage order. Each transformation retains a separate input/output and proof contract.
 

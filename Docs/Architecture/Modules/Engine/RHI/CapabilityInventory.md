@@ -177,7 +177,7 @@ Ray tracing is not one boolean. The current contract separates acceleration stru
 | `RHI-PRES-02` | VSync | Implemented path | Runtime setting reaches the presentation path. Tearing/present-mode behavior still needs backend/device evidence. | `S` | Pending |
 | `RHI-PRES-03` | Frame pacing | Implemented path | D3D12 exposes a frame-latency waitable object; Vulkan exposes acquisition throttling in its capability surface. | `S` | Pending |
 | `RHI-PRES-04` | Back-buffer commands | Implemented path | Back-buffer resource/RTV, format, viewport/scissor, transition, submit, and present are available to Renderer. | `S` | Pending |
-| `RHI-PRES-05` | HDR presentation | Not found | The inspected source does not establish HDR10 format/color-space/metadata or swapchain negotiation. Renderer [HDR Display Output](../Renderer/Features/PostProcessing/DisplayPipeline/HDRDisplayOutput.md) defines the admitted target and owns `FCR-REN-26`; RHI owns native mechanics. | `S` | First-release target; Blocked |
+| `RHI-PRES-05` | HDR presentation | Not found | The inspected source does not establish an HDR surface/color-space contract or swapchain negotiation. Renderer [HDR Display Output](../Renderer/Features/PostProcessing/DisplayPipeline/HDRDisplayOutput/README.md) owns the discovery-blocked target and `FCR-REN-26`; RHI owns native mechanics. | `S` | First-release target; Blocked |
 
 ## Diagnostics, Capture, And External Interop
 

@@ -115,8 +115,8 @@ See [Tone Mapping](../PostProcessing/DisplayPipeline/ToneMapping.md) for the thr
 
 | Feature | Current program coverage | Owning dossier |
 | --- | --- | --- |
-| Color grading | No grading or LUT shader registration | [Color Grading](../PostProcessing/DisplayPipeline/ColorGrading.md) |
-| Chromatic aberration | No lens/channel-distortion shader registration | [Chromatic Aberration](../PostProcessing/DisplayPipeline/ChromaticAberration.md) |
+| Color grading | No grading or LUT shader registration | [Color Grading](../PostProcessing/DisplayPipeline/ColorGrading/README.md) |
+| Chromatic aberration | No lens/channel-distortion shader registration | [Chromatic Aberration](../PostProcessing/DisplayPipeline/ChromaticAberration/README.md) |
 | Frame generation | No engine shader or external DLSS-G/frame-generation evaluation | [Frame Generation](../PostProcessing/ReconstructionAndGeneration/FrameGeneration.md) |
 
 ## Registered Stage Coverage Versus Vocabulary

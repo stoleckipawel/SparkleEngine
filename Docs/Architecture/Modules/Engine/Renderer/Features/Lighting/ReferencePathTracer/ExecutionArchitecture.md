@@ -1,12 +1,12 @@
 # Reference Path Tracer Execution Architecture
 
-**Status:** proposed target architecture for `FCR-REN-08`; implementation remains blocked until `PTD-00` accepts the transport/domain decisions and the plan is reconciled to that exact report revision
+**Status:** Stage-0-frozen target-architecture candidate for `FCR-REN-08`; implementation remains blocked by `PTD-00-R0` and `REL-03`
 
 **Scope:** define the owner, contracts, lifetime, execution, sampling, accumulation, viewport interaction, artifact, automation, and clean-break boundaries for SparkleEngine's eventual Reference Path Tracer
 
 **Authority boundary:** [Transport And Estimator](TransportAndEstimator.md) owns equations and estimator semantics, [User Experience](UserExperience.md) owns the viewport/runtime/offscreen experience, [Discovery](Discovery.md) owns ratification, the [feature dossier](README.md) owns acceptance, and the [staged plan](Plan.md) owns delivery order
 
-**Verified:** 2026-09-09 against committed `master` revision `20c7bb11`; current-state statements are source inspection only
+**Verified:** re-audited 2026-09-10 against committed `master` revision `669637cf23b9748f8b94635409e74159d31d0bc2`; current-state statements are source inspection only
 
 **Naming reconciliation:** the 2026-09-09 working-tree clean break makes `ReferencePathTracer` the sole feature name; the verified baseline and all non-claims remain unchanged.
 
@@ -141,7 +141,8 @@ Viewport selects RenderViewMode::ReferencePathTracer
     -> execute exact SampleRange batches through one semantic integrator
     -> before each commit, reject a stale generation/digest and report the first reset reason
     -> publish exact committed/target prefix to the viewport progress snapshot
-    -> stop at target, suspend on mode exit, or resume only on an exact identity match
+    -> stop at target, retain/suspend on mode exit only within budget, otherwise release
+    -> resume only a retained exact-identity prefix
 Optional save/offscreen operation
     -> typed readback of raw sums/counts/AOVs/counters from that session
     -> ApplicationEditor writes staging directory
@@ -179,28 +180,42 @@ stateDiagram-v2
     Inactive --> Validating: select Reference Path Tracer
     Validating --> Accumulating: supported and frozen
     Validating --> Unavailable: unsupported
+    Validating --> Cancelled: Cancel Session
+    Validating --> Inactive: Return to Lit
+    Unavailable --> Validating: repair and Retry
+    Unavailable --> Inactive: Return to Lit
     Accumulating --> Resetting: transport identity changes
     Complete --> Resetting: transport identity changes
     Resetting --> Validating: new identity
     Accumulating --> Complete: committed prefix reaches target
     Accumulating --> Paused: pause
+    Accumulating --> TimedOut: wall limit
+    Accumulating --> Cancelled: Cancel Session
+    Resetting --> Cancelled: Cancel Session
     Paused --> Validating: resume
+    Paused --> Cancelled: Cancel Session
+    Paused --> Suspended: Return to Lit
+    TimedOut --> Validating: Extend And Resume
+    TimedOut --> Resetting: Restart at ordinal zero
+    TimedOut --> Cancelled: Cancel Session
+    TimedOut --> Suspended: Return to Lit
+    TimedOut --> Inactive: Return to Lit with no retained prefix
     Accumulating --> Suspended: leave Reference Path Tracer
+    Accumulating --> Inactive: leave when retention is unavailable
     Complete --> Suspended: leave Reference Path Tracer
+    Complete --> Inactive: leave when retention is unavailable
     Suspended --> Validating: return and revalidate
-    Accumulating --> Checkpointing
-    Checkpointing --> Accumulating
-    Checkpointing --> Paused
-    Complete --> Exporting
-    Accumulating --> Exporting: save exact partial prefix
-    Exporting --> Complete
-    Exporting --> Accumulating
-    Exporting --> ExportFailed: export failed; session preserved
-    ExportFailed --> Complete: source prefix was complete
-    ExportFailed --> Accumulating: source prefix is still running
+    Suspended --> Cancelled: Cancel Session or eviction
     Validating --> Failed
     Accumulating --> Failed
-    Inactive --> [*]
+    Resetting --> Failed
+    Paused --> Failed
+    TimedOut --> Failed
+    Failed --> Validating: repair and Retry
+    Failed --> Inactive: Return to Lit
+    Cancelled --> Validating: Restart
+    Cancelled --> Inactive: Return to Lit
+    Inactive --> [*]: close or shutdown
 ```
 
 State invariants:
@@ -211,12 +226,16 @@ State invariants:
 4. `Complete` means the exact committed prefix met the requested target. It is not a convergence or accepted-oracle verdict, and lowering the target never rewrites the actual prefix.
 5. Leaving Reference Path Tracer reaches `Suspended` only after the current range settles. Returning resumes only after full-digest validation. View-mode selection itself is scheduling state, not a transport input.
 6. `Paused` may retain a bounded in-memory prefix. A durable resume promise requires `Checkpointing` to hash and verify that exact prefix before promised GPU resources retire.
-7. `Exporting` snapshots one complete committed prefix. Estimator progress may continue only when the readback contract guarantees that immutable prefix; the final manifest publishes last.
-8. A failed export does not fail or mutate a valid in-memory session. Failed, cancelled, timed-out, corrupt, partial, or staged output cannot carry a completed-artifact marker.
+7. `Checkpointing` and `Exporting` are orthogonal operation substates bound to an immutable committed prefix, not mutually exclusive session states. Camera/scene changes may reset and continue live accumulation under a new digest while the old immutable export completes; `Checkpoint And Pause` alone pauses after binding the prefix. Cancellation abandons only that operation's staging unless the explicitly selected action is `Cancel After Checkpoint`.
+8. A failed or cancelled export does not fail or mutate a valid in-memory session. Failed, cancelled, timed-out, corrupt, partial, or staged output cannot carry a completed-artifact marker.
 9. Device loss invalidates GPU-resident accumulation and fails the affected session; resume is allowed only from a verified host checkpoint.
 10. Late completion/readback/export callbacks are generation checked and cannot publish into a reset, destroyed view, or later session.
 
-One logical session belongs to each eligible View identity, but initially only one session may own an actively accumulating GPU prefix per Renderer instance. Another viewport or offscreen request receives an explicit capacity state and transfer/cancel choice; it never silently steals or allocates a second unbounded accumulator. A suspended Lit-comparison prefix is retained only within the accepted memory policy, and an eviction is visible.
+`Suspended` records the prior operational state. Revalidation returns an unchanged prefix to `Accumulating`, `Complete`, `Paused`, or `TimedOut` as recorded; a digest change enters `Resetting`, and eviction enters `Cancelled`. `Restart` always discards the current prefix with an explicit reason, enters `Resetting`, validates again, and begins ordinal zero. Mode close/shutdown settles any current state using the frozen cancel policy.
+
+Pause is admitted only when the prefix fits the frozen retention budget; otherwise the action is disabled and the session remains active until checkpoint/cancel/mode change. Transfer first cancels every checkpoint/export staging operation bound to the old session, generation-rejects late callbacks, then settles and releases the old session within the same two-second bound. The capacity slot becomes available only after release; failure to settle leaves the transfer refused and reports the owning failure.
+
+Exactly one logical session allocation exists process-wide, including active, paused, timed-out, or Lit-suspended prefixes. Another viewport or offscreen request receives an explicit capacity state and transfer/cancel choice; it never silently steals or allocates a second accumulator. A suspended prefix is retained only within the accepted memory policy, and an eviction is visible.
 
 ## Frozen Scene And View Inputs
 
@@ -235,7 +254,7 @@ The integrator reconstructs the primary surface from the ray hit. It does not co
 
 The camera fingerprint is built from canonical post-resolution semantic fields, not raw structure bytes: Viewport/selection identity, View kind where it changes semantics, active camera identity, position/orientation, projection kind, unjittered projection/lens values, admitted shutter/time values, crop/filter, and actual render extent. Editor input activity and Game camera cut/teleport signals improve the reason code but are not the authority. Any field that changes generated primary rays resets with no movement epsilon. Ordinary real-time TAA jitter and frame index never enter the reference fingerprint.
 
-Every Editor and Game camera producer converges through the same `RenderViewInput.Camera` and View-state boundary. Editor free-flight, orbit, pilot/eject, focus/bookmark, and scene-camera edits are not special-cased inside the path tracer. Runtime controller motion, animation, cuts, teleports, camera replacement, and lens edits use the same comparison after their owner resolves the effective camera.
+Every Editor and Game camera producer converges through the same `RenderViewInput.Camera` and View-state boundary. Editor-produced viewports use the existing `RenderViewKind::Scene`; runtime viewports use `RenderViewKind::Game`. The live Editor currently submits `Game`, so Stage 2 updates both Editor producers as a clean break rather than inventing a nonexistent `RenderViewKind::Editor`. Editor free-flight, orbit, pilot/eject, focus/bookmark, and scene-camera edits are not special-cased inside the path tracer. Runtime controller motion, animation, cuts, teleports, camera replacement, and lens edits use the same comparison after their owner resolves the effective camera.
 
 ## Invalidation Classification
 
@@ -247,7 +266,7 @@ The Renderer computes an explicit invalidation result, not one opaque history-va
 | `GoalUpdate` | Target SPP | Raising continues the same stream. Lowering to or below the prefix stops at the actual already committed count. No reset. |
 | `PresentationRefresh` | Exposure, tone map, gamut/encoding, raw-derived false color, overlay/UI layout/scale, progress polling | Re-present the same raw prefix and update display lineage. No transport reset. DPI resets only when it changes actual render extent. |
 | `SchedulingUpdate` | Batch size, preview cadence, ETA model, wall-time extension, queue timing | Preserve digest, prefix, and sample identity. Resource failure may explicitly suspend/fail but never silently reset. |
-| `ModeSuspend` | Switching from Reference Path Tracer to Lit/another mode | Stop new work after a complete range and retain one bounded per-view prefix. The selected non-Reference-Path-Tracer mode is not hashed into transport identity. |
+| `ModeSuspend` | Switching from Reference Path Tracer to Lit/another mode | Stop new work after a complete range and retain one bounded prefix only when the retention policy admits it; otherwise settle/release and record no resumable prefix. The selected non-Reference-Path-Tracer mode is not hashed into transport identity. |
 | `ResumeOrReset` | Returning to Reference Path Tracer | Recompute full identity. Resume the retained prefix only on an exact match; otherwise reset and report the first changed semantic. |
 | `Unsupported` | Reachable dynamic/content/capability input lacks accepted semantics or complete generation publication | Reject before sample zero or fail/reset before mixing; never approximate, freeze accidentally, or accumulate streaks. |
 
@@ -264,7 +283,7 @@ RandomValue = Sample(SessionSeed, PixelCoordinate, SampleOrdinal, DimensionId)
 - `SampleOrdinal` starts at zero for one transport digest and is independent of renderer frame index, batch size, queue order, pause, mode suspension, and resume.
 - Every conceptual decision has a named dimension range: film, lens/time when included, light selection, light surface, lobe selection, BSDF sample, roulette, and later-bounce repetitions.
 - The accepted `PTD-00` report selects and pins the generator plus conversion-to-float rule. A counter-based independent generator is the correctness baseline; low-discrepancy sequences may replace it only with an equally explicit dimension/prefix and correlation contract.
-- Restart with the same input digest and committed prefix continues at the next ordinal. It neither replays nor skips a sample.
+- Resume with the same input digest and retained committed prefix continues at the next ordinal. It neither replays nor skips a sample; Restart always discards and begins ordinal zero.
 - Different statistical replicates use explicit independent seeds and retain them; changing the seed does not change any other input identity.
 - A generator or dimension-layout change invalidates prior checkpoints. It is a clean break, not a compatibility path.
 
@@ -359,7 +378,7 @@ Automatic selection may choose only between already accepted routes and records 
 2. **Approved non-Editor view:** a Game-kind RenderView requests the same semantic through its ordinary view-settings owner. Its UI may differ, but canonical camera identity, invalidation, progress, target completion, raw/presentation separation, and failure states cannot.
 3. **Noninteractive ApplicationEditor operation:** a submission manifest creates an offscreen canonical view, observes the same Renderer session, exports a completed prefix, returns stable categories, and enables reproducible evidence without UI automation.
 
-The primary comparison loop is Reference Path Tracer -> Lit -> Reference Path Tracer on one unchanged View. Leaving Reference Path Tracer suspends after a complete range and restores untouched Lit state. Returning resumes only when the full digest still matches; scene/camera changes made while in Lit invalidate the retained prefix. Memory-policy eviction and single-active-view capacity are explicit events, never silent loss.
+The primary comparison loop is Reference Path Tracer -> Lit -> Reference Path Tracer on one unchanged View. Leaving Reference Path Tracer restores untouched Lit state and, only when retention is admitted, suspends after a complete range. Without retention it settles/releases and return validates from ordinal zero. A retained prefix resumes only when the full digest still matches; scene/camera changes made while in Lit invalidate it. Memory-policy eviction and single-active-view capacity are explicit events, never silent loss.
 
 While Reference Path Tracer is selected, navigation is a first-class state transition rather than cancellation of a render job. The viewport may show low-SPP noise during movement, but not an unlabeled old composition or a frozen final frame. After the last movement update, the final identity accumulates immediately without a `Start` or `Restart` action.
 
@@ -367,7 +386,7 @@ The overlay displays exact committed/target prefix, target ratio, last reset rea
 
 Raw export is optional and secondary. `Save Raw Result` or `Save When Complete` reads the same session prefix; `Save Current Prefix` is explicitly partial. Export failure does not destroy the live prefix or a prior result. There is no second render launched merely because the user saves.
 
-The tool is excluded from `ShippingGame` and consumer first run by default. If release scope later exposes it, dependencies, writable roots, support contract, selector reachability, and performance expectations must be admitted explicitly. A developer console/CVar may diagnose selection but is not the product workflow.
+The tool is excluded from `ShippingEditor`, `ShippingGame`, and consumer first run by default. Both Shipping profiles retain the `ReferencePathTracer` enumerator unconditionally in the existing public Renderer `RenderViewMode` source header for source/ABI symmetry, but compile out every producer/session factory and every selector, CVar/CLI, UI, writer, codec/package, and documentation route; an injected value rejects before allocation. If release scope later exposes it, dependencies, writable roots, support contract, selector reachability, and performance expectations must be admitted explicitly. A developer console/CVar may diagnose selection in development profiles but is not the product workflow.
 
 ## Failure And Recovery Contract
 
@@ -377,7 +396,7 @@ The tool is excluded from `ShippingGame` and consumer first run by default. If r
 | Effective Editor or Game camera changes | Discard the old prefix before any new-camera range commits, record the exact cause/discarded count, and restart at ordinal zero. Input flags refine the reason but canonical camera identity is authoritative. |
 | Scene/view/shader/asset identity changes | Discard or reject stale in-flight work, invalidate the old prefix, and begin a new digest. If complete generation observation or immutability cannot be guaranteed, the affected domain is unavailable. |
 | Continuous camera/scene animation | Show repeated reset state and recommend a frozen supported time; never blend frames into streaked reference output. |
-| Switch to Lit and back | Suspend the bounded prefix and restore Lit settings; resume only on exact digest match, otherwise reset with the first changed field. |
+| Switch to Lit and back | Restore Lit settings; retain/suspend only within the budget and resume only on exact digest match. When retention is unavailable, visibly release and return through validation at ordinal zero. |
 | Presentation-only change | Refresh the viewport derivative without resetting raw accumulation. A display control entering the transport digest is an architecture defect. |
 | Invalid PDF/radiance/normal/event or safety-depth reach | Retain counters and bounded event context; fail the affected analytic case and apply the accepted production sample/job invalidation rule. Never hide it with a clamp. |
 | Timeout or user cancellation | Stop new batches, reach terminal state within budget, publish no completion manifest, retain only labeled diagnostics/verified checkpoint, retire resources safely. |
@@ -424,12 +443,12 @@ Exact source deletions are frozen by the plan stage that inspects the live tree.
 | --- | --- | --- |
 | D3D12 + Inline | Required strict route | Source infrastructure present; Reference Path Tracer route unimplemented/unproved. |
 | Vulkan + Inline | Required strict route | Source infrastructure present; Reference Path Tracer route unimplemented/unproved. |
-| D3D12 + Pipeline | Required parity route before final candidate closure unless `PTD-00` explicitly proves it unnecessary | General RGS infrastructure present; Reference Path Tracer adapter absent. |
-| Vulkan + Pipeline | Required parity route before final candidate closure unless `PTD-00` explicitly proves it unnecessary | General RGS infrastructure present; Reference Path Tracer adapter absent. |
+| D3D12 + Pipeline | Required strict route | General RGS infrastructure present; Reference Path Tracer adapter absent. |
+| Vulkan + Pipeline | Required strict route | General RGS infrastructure present; Reference Path Tracer adapter absent. |
 | Editor viewport view mode and progress overlay | Required primary development-product route | Generic view-mode menu exists, but Reference Path Tracer item/session/progress UX are absent. |
 | Game-kind view semantic | Required shared camera/session behavior; product exposure gated separately | Canonical Game camera submission exists, but no Reference Path Tracer view semantic. |
 | Noninteractive Editor offscreen session | Required reproducible secondary route | Absent. |
-| Shipping consumer | Excluded by default | Must remain unreachable and dependency-free. |
+| `ShippingEditor`, `ShippingGame` | Public source-header enum value remains; all producers/session factories and user/CLI/export/package routes are excluded | Must remain unreachable and free of optional artifact dependencies. |
 | Raw EXR/manifest/checkpoint | Required for final evidence; secondary product surface after the live viewport milestone | Existing viewport BMP/readback and TinyEXR dependency are incomplete precedents, not implementation. |
 | Numerical/statistical/runtime/package proof | Required by `FCR-REN-08` | Not produced by this architecture work. |
 

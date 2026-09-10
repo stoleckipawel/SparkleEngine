@@ -17,7 +17,7 @@
 | VSync or pacing request | backend activates, rejects, or reports the effective mode | configuration intent is not proof of timing behavior |
 | resize/minimize/out-of-date | pause/drain and replace swapchain-dependent objects without replacing the device | this is presentation recovery, not whole-device recovery |
 | device or surface failure | exact failure reaches a recoverable presentation state or bounded terminal path | no stale back buffer may be reported as a fresh present |
-| HDR request | unavailable in current source; admitted target | SDR swapchain support does not imply HDR format/color-space/metadata support; the target contract is [HDR Display Output](../../../Renderer/Features/PostProcessing/DisplayPipeline/HDRDisplayOutput.md) |
+| HDR request | unavailable in current source; admitted target | SDR swapchain support does not imply an HDR surface/color-space contract; the discovery-blocked target is [HDR Display Output](../../../Renderer/Features/PostProcessing/DisplayPipeline/HDRDisplayOutput/README.md) |
 
 ## Swapchain Lifecycle
 

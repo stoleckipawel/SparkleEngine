@@ -205,9 +205,9 @@ This contract is **defined but unproved**. Completion requires every `AC-FRM-*` 
 | Exposure and adaptation | [Exposure](Features/PostProcessing/DisplayPipeline/Exposure.md) |
 | Image reconstruction, upscaling, and provider lifetime | [Image Reconstruction and Upscaling](Features/PostProcessing/ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md) |
 | Tone mapping | [Tone Mapping](Features/PostProcessing/DisplayPipeline/ToneMapping.md) |
-| Color-grading target and current absence | [Color Grading](Features/PostProcessing/DisplayPipeline/ColorGrading.md) |
-| Chromatic-aberration target and current absence | [Chromatic Aberration](Features/PostProcessing/DisplayPipeline/ChromaticAberration.md) |
-| HDR10-output target and current absence | [HDR Display Output](Features/PostProcessing/DisplayPipeline/HDRDisplayOutput.md) |
+| Color-grading target and current absence | [Color Grading](Features/PostProcessing/DisplayPipeline/ColorGrading/README.md) |
+| Chromatic-aberration target and current absence | [Chromatic Aberration](Features/PostProcessing/DisplayPipeline/ChromaticAberration/README.md) |
+| HDR-output target and current absence | [HDR Display Output](Features/PostProcessing/DisplayPipeline/HDRDisplayOutput/README.md) |
 | Explicit absence of frame generation | [Frame Generation](Features/PostProcessing/ReconstructionAndGeneration/FrameGeneration.md) |
 | Debug handoff, encoding, and output targets | [Presentation and Output](Features/PostProcessing/DisplayPipeline/PresentationAndOutput.md) and [Debug Views](Features/DebugViews/README.md) |
 | Host UI and editor viewport composition | [UI and Viewport Composition](Features/ViewportAndDiagnostics/UiAndViewportComposition.md) |

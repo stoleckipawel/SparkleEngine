@@ -6,7 +6,7 @@
 
 **Authority boundary:** [Research](Research.md) owns NVIDIA/AMD/Epic/neutral precedent, [`PTD-00`](Discovery.md) owns discovery and implementation authorization, [Transport And Estimator](TransportAndEstimator.md) owns the proposed mathematical contract, [Execution Architecture](ExecutionArchitecture.md) owns the proposed system boundary, [User Experience](UserExperience.md) owns the proposed human/automation workflow, the [conditional staged plan](Plan.md) owns delivery order/prompts, the [roadmap](../../../../../../../Strategy/Roadmap.md#reference-path-tracer-truth-first) owns priority, code owns implemented behavior, and the eventual [`FCR-REN-08`](../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry) report owns results
 
-**Current disposition:** **BLOCKED** on 2026-09-10. The target architecture and conditional delivery route are now explicit, but this document does not accept the current `ReferencePathTracer` implementation, freeze unresolved `PTD-D0` decisions, authorize Stage 1, or report executable evidence.
+**Current disposition:** **`PTD-00-R0 BLOCKED`** on 2026-09-10 at committed `master` `669637cf23b9748f8b94635409e74159d31d0bc2`. Stage 0 froze the candidate estimator, architecture, evidence, and UX contracts, but the exact `ReleaseMapSet`, accepted support/package reachability, and final independent approval remain unavailable. The current `ReferencePathTracer` implementation is not accepted, Stage 1 is not authorized, and no executable feature evidence is claimed.
 
 **Naming reconciliation:** the 2026-09-09 working-tree clean break makes `ReferencePathTracer` the sole feature name; it changes no behavior, readiness score, or evidence claim.
 

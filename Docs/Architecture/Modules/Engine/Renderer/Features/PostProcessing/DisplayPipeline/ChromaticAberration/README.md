@@ -1,16 +1,20 @@
 # Renderer Chromatic Aberration
 
-**Status:** first-release target feature dossier plus current source-backed absence; not implementation or acceptance evidence
+**Status:** first-release target feature dossier plus current source-backed absence; `CHRD-00` and production implementation are `Blocked`
 
-**Verified:** 2026-09-06 against source revision `d236da11`; inspected Renderer/shader/view paths are unchanged from the earlier `8414b5dc` audit
+**Responsibility:** define the bounded lens-effect product, current absence, target surface, acceptance, failures, checks, and definition of done for `FCR-REN-25`
+
+**Authority boundary:** [Discovery](Discovery.md) freezes the model; [Research](Research.md) owns precedent; [Semantics](Semantics.md) owns coordinate/filter rules; [Execution Architecture](ExecutionArchitecture.md) owns state and execution; [Plan](Plan.md) owns delivery; this dossier owns feature acceptance; candidate results remain in `FCR-REN-25`
+
+**Verified:** 2026-09-10 against committed revision `669637cf`; current Renderer/shader/View/debug/capture/editor/package paths were inspected as source only
 
 **Scope:** `REN-POST-12`; intentional wavelength/channel-dependent lens distortion as a post-processing effect
 
-**Parent family:** [Post Processing](../README.md)
+**Parent family:** [Display Pipeline](../README.md)
 
-**First-release admission:** `FCR-REN-25`; implementation phase [`DSP-6`](../../../FirstRelease/DisplayAndReconstruction.md#dsp-6--chromatic-aberration)
+**First-release admission:** `FCR-REN-25`; implementation phase [`DSP-6`](../../../../FirstRelease/DisplayAndReconstruction.md#dsp-6--chromatic-aberration)
 
-**Current readiness:** **0/100** — admitted and `Blocked`; no lens/channel-distortion controls, pass, shader, selector, or editor route was found. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **0/100** — admitted and `Blocked`; no lens/channel-distortion controls, pass, shader, selector, or editor route was found. See [Current Feature Readiness](../../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## At A Glance
 
@@ -23,6 +27,18 @@
 
 The admitted implementation must make zero strength an exact identity transform and keep artifacts from being mislabeled as deliberate output. The retained negative boundary protects both current feature claims and image-quality bug classification until that implementation exists.
 
+## Start Here
+
+| Question | Owning document |
+| --- | --- |
+| What must the feature provide and prove? | This dossier |
+| Which model, unit, order, and budget choices remain blocked? | [Discovery](Discovery.md) |
+| What do mature engine implementations establish or not establish? | [Research](Research.md) |
+| What are the exact candidate coordinates, displacement, filtering, and identity rules? | [Semantics](Semantics.md) |
+| Who owns settings, View state, pass placement, failure, and cost? | [Execution Architecture](ExecutionArchitecture.md) |
+| In what order can it be delivered? | [Plan](Plan.md) |
+| What did a candidate prove? | [`FCR-REN-25`](../../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry) and retained evidence |
+
 ## Current Capability
 
 Chromatic aberration was not found. Sparkle has no per-view lens/aberration settings, selector, pass, shader, radial or spectral distortion model, center/falloff controls, edge sampling policy, history, diagnostic mode, or editor authoring surface.
@@ -31,7 +47,7 @@ Color fringes caused by reconstruction, filtering, motion, texture sampling, or 
 
 ## First-Release Target Contract
 
-The first-release effect is one View-owned, output-resolution lens-fringe pass after tone mapping and grading but before output encoding and UI. It uses normalized center and start offset plus a strength expressed in pixels at a 1080-line reference height; scaling by output height keeps authored intent stable across resolution. RGB samples separate radially with bounded clamp-to-edge sampling. Unreal's [intensity and start-offset model](https://dev.epicgames.com/documentation/unreal-engine/post-process-effects-in-unreal-engine#chromaticaberration) is the reviewed product precedent, not a shader implementation to copy.
+The first-release candidate is one View-owned, output-resolution lens-fringe pass after target tone/gamut mapping and grading but before output encoding and UI. It uses normalized center and start offset plus a strength expressed in pixels at a 1080-line reference height; scaling by output height is intended to keep authored displacement stable across resolution. Exact radius normalization, falloff, channel offsets, domains, and bounds remain blocked by [`CHRD-00`](Discovery.md). [Research](Research.md) records the reviewed product and source precedents; none is a shader implementation to copy.
 
 The admitted scope must define and implement:
 
@@ -76,7 +92,7 @@ Physical lens calibration, spectral rendering, anamorphic models, per-channel au
 
 - `REN-E27` owns the negative source/build/selector/pass/shader/asset/editor/documentation audit for chromatic aberration.
 - No runtime test is implied by this source-only absence finding.
-- Adjacent source routes inspected: [`PostProcessing.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/PostProcessing/PostProcessing.cpp), [`Presentation.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Presentation.cpp), and [`ViewportDisplaySettings.h`](../../../../../../../../Engine/Renderer/Private/View/ViewportDisplaySettings.h).
+- Adjacent source routes inspected: [`PostProcessing.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/PostProcessing/PostProcessing.cpp), [`Presentation.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Presentation.cpp), and [`ViewportDisplaySettings.h`](../../../../../../../../../Engine/Renderer/Private/View/ViewportDisplaySettings.h).
 
 ### Current Negative Acceptance
 
@@ -84,3 +100,7 @@ Physical lens calibration, spectral rendering, anamorphic models, per-channel au
 - `AC-CHR-NEG-02` — reconstruction, filtering, motion, sampling, and encoding fringes remain classified as defects/artifacts rather than intentional feature output.
 
 `FM-CHR-NEG-01` occurs when a reachable aberration-like control/path lacks the complete owner/result contract or an artifact is advertised as support. `CHK-CHR-NEG-01`/`REN-E27` covers `AC-CHR-NEG-01`, `AC-CHR-NEG-02`, and `FM-CHR-NEG-01` by auditing source, CMake, shaders, settings, frame graph, view/editor UI, diagnostics, packages, and documentation; any unmatched result fails the negative contract.
+
+## Definition Of Done
+
+Chromatic aberration is complete only when `CHRD-00` passed before implementation, the accepted model and units drive one per-view pass on every admitted backend/domain, zero is exact no-work identity, all `AC-CHR-01` through `08` pass, every `FM-CHR-*` and risk has controlled detecting evidence, debug/UI/capture/package boundaries are truthful, excluded spectral/volume/history/quality surfaces remain unreachable, temporary probes are removed, and the acceptance owner records `FCR-REN-25 PASS` against one immutable candidate.

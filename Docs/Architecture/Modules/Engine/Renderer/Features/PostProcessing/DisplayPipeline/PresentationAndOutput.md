@@ -6,7 +6,7 @@
 
 **Scope:** `REN-POST-08` and `REN-POST-10`; debug-to-presentation handoff, current SDR output encoding, back-buffer copy, and viewport-product publication. `REN-POST-09` HDR output has its own dossier.
 
-**Current readiness:** **45/100** for current SDR output. [HDR Display Output](HDRDisplayOutput.md) is a separately tracked first-release target at **0/100**. Encoding/format, resize/DPI, capture interpretation, backend present, and artifact proof remains open. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **45/100** for current SDR output. [HDR Display Output](HDRDisplayOutput/README.md) is a separately tracked first-release target at **0/100**. Encoding/format, resize/DPI, capture interpretation, backend present, and artifact proof remains open. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## At A Glance
 
@@ -16,7 +16,7 @@
 | game/host back buffer | encoded output is copied into the acquired presentation target | RHI owns acquire/present mechanics and format capability |
 | editor viewport | final color becomes a typed viewport product and registered texture generation | product/generation must match the UI packet and viewport |
 | debug result | shares the common exposure/tone/encode chain today | exact/bounded diagnostics can be distorted; target architecture remains unimplemented |
-| HDR display | separately admitted target, currently absent | [HDR Display Output](HDRDisplayOutput.md) owns format/color-space negotiation, metadata, display policy, fallback, and evidence |
+| HDR display | separately admitted target, currently absent | [HDR Display Output](HDRDisplayOutput/README.md) owns discovery of the surface/color-space/metadata policy, display policy, fallback, and proof contract |
 
 This stage is the semantic handoff from Renderer image processing to an external consumer. A visible image is not enough: the destination, encoding, extent, alpha, frame, viewport, and generation must all identify the product that was actually published.
 
@@ -38,7 +38,7 @@ ResolvedSceneColor
 | --- | --- | --- |
 | Debug handoff | Lit or one of 15 diagnostic modes | [Debug Views](../../DebugViews/README.md) owns modes/products; current diagnostics still enter the common exposure/tone/output chain |
 | Output encoding | Automatic from output format, Linear, sRGB shader encoding | writes the linear counterpart of the presentation format before copy/publication |
-| HDR display | no current route | mandatory HDR10 target and SDR fallback are defined in [HDR Display Output](HDRDisplayOutput.md) |
+| HDR display | no current route | mandatory HDR target and SDR fallback are defined in [HDR Display Output](HDRDisplayOutput/README.md), with the exact platform route discovery-blocked |
 
 The current debug handoff makes `REN-POST-10` Partial: bounded, false-color, and already-preview-mapped diagnostics can be changed by exposure/tone/encoding. The [Debug View Presentation Architecture](../../DebugViews/PresentationArchitecture.md) defines a target scene-referred versus exact display-linear split; source does not yet implement it.
 

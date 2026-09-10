@@ -107,9 +107,9 @@
 | `FCR-REN-21` | [Visibility And Draw Preparation](../../Modules/Engine/Renderer/Features/GeometryAndResources/VisibilityAndDrawPreparation.md) |
 | `FCR-REN-22` | [Resolution, Sampling, And Anti-Aliasing](../../Modules/Engine/Renderer/Features/PostProcessing/ReconstructionAndGeneration/ResolutionSamplingAndAntiAliasing.md) |
 | `FCR-REN-23` | [Deferred Decals](../../Modules/Engine/Renderer/Features/DeferredDecals/README.md) |
-| `FCR-REN-24` | [Color Grading](../../Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ColorGrading.md) |
-| `FCR-REN-25` | [Chromatic Aberration](../../Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ChromaticAberration.md) |
-| `FCR-REN-26` | [HDR Display Output](../../Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/HDRDisplayOutput.md) |
+| `FCR-REN-24` | [Color Grading](../../Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ColorGrading/README.md) |
+| `FCR-REN-25` | [Chromatic Aberration](../../Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ChromaticAberration/README.md) |
+| `FCR-REN-26` | [HDR Display Output](../../Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/HDRDisplayOutput/README.md) |
 
 ## Release Gates And Risks
 
