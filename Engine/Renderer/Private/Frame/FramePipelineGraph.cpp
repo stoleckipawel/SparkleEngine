@@ -31,9 +31,11 @@ RenderFrameGraphSettings FramePipeline::ResolveFrameGraphSettings() const noexce
 	const RenderViewportExtent outputExtent = ResolveOutputExtent();
 	const ResolvedViewportDisplaySettings displaySettings = ResolvedViewportDisplaySettings::Resolve(m_viewportRenderRequest.Exposure);
 	const ImageProviderPipeline imagePipeline = ImageProviderPipeline::RayReconstruction;
+	const RenderViewMode viewMode = m_viewportRenderRequest.ViewportId == 0 ? CVarRenderViewMode.Get() : m_viewportRenderRequest.ViewMode;
 	return RenderFrameGraphSettings{
 	    .RenderExtent = m_imageProviders.ResolveRenderExtent(outputExtent, imagePipeline),
 	    .OutputExtent = outputExtent,
+	    .ViewMode = viewMode,
 	    .OutputFormat = m_deviceServices.GetRenderHardwareInterface().GetPresentationService().GetPresentColorFormat(),
 	    .ExposureMeteringMethod = displaySettings.ExposureMeteringMethod,
 	    .PresentationTarget = ShouldOutputToBackBuffer() ? FramePresentationTarget::BackBuffer : FramePresentationTarget::ViewportProduct,

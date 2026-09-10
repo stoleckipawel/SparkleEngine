@@ -39,7 +39,7 @@ const ViewportRenderRequest& UI::GetViewportRenderRequest() const noexcept
 	{
 		ViewportRenderRequest request{};
 		request.ViewportId = 1;
-		request.ViewKind = RenderViewKind::Game;
+		request.ViewKind = RenderViewKind::Scene;
 		request.RequestedOutputs = RenderOutputFlags::SceneColor | RenderOutputFlags::SceneDepth;
 		return request;
 	}();

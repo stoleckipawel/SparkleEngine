@@ -2,17 +2,8 @@
 #include "Passes/PostProcessing/PostProcessing.h"
 
 #include "Passes/Debug/Debug.h"
-#include "Passes/PostProcessing/Exposure.h"
 #include "Passes/Presentation/Presentation.h"
 #include "Passes/Presentation/Upscaling.h"
-
-void AddPreReconstructionPostProcessingPasses(
-    FrameGraphBuilder& builder,
-    const RenderFrameGraphSettings& settings,
-    RenderFrameGraphResources& resources)
-{
-	AddExposurePass(builder, settings, resources);
-}
 
 void AddPostProcessingPasses(
     FrameGraphBuilder& builder,

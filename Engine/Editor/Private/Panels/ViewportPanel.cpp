@@ -33,7 +33,7 @@ ViewportPanel::ViewportPanel(float leftInsetPixels, float rightInsetPixels) noex
 {
 	m_renderRequest.ViewportId = 1;
 	m_renderRequest.Generation = 1;
-	m_renderRequest.ViewKind = RenderViewKind::Game;
+	m_renderRequest.ViewKind = RenderViewKind::Scene;
 	m_renderRequest.RequestedOutputs = RenderOutputFlags::SceneColor | RenderOutputFlags::SceneDepth;
 	m_renderRequest.Extent = RenderViewportExtent{1280u, 720u};
 }

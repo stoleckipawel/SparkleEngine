@@ -23,6 +23,7 @@ struct RenderFrameGraphSettings final
 {
 	RenderViewportExtent RenderExtent;
 	RenderViewportExtent OutputExtent;
+	RenderViewMode ViewMode = RenderViewMode::Lit;
 	PixelFormat OutputFormat = PixelFormat::Unknown;
 	EngineExposureMeteringMethod ExposureMeteringMethod = EngineExposureMeteringMethod::ParallelReduction;
 	FramePresentationTarget PresentationTarget = FramePresentationTarget::BackBuffer;
