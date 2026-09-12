@@ -37,7 +37,7 @@ Code and executable build configuration remain authoritative. Reinspect every li
 | --- | --- | --- |
 | `REN-DBG-01` final/material | Lit, Wireframe | Lit uses the selected lighting path. Wireframe changes raster GBuffer fill and has no equivalent ray-GBuffer wireframe frontend. |
 | `REN-DBG-02` GBuffer | Diffuse/Base Color, Normal, Roughness, Metallic, Emissive, Ambient Occlusion, Subsurface Color, Subsurface Strength | Reads one shared GBuffer product/channel and writes visualization color. |
-| `REN-DBG-03` lighting | Direct Diffuse, Direct Specular, Direct Subsurface, Indirect Diffuse, Indirect Specular | Reads the independently documented [Direct](../Lighting/DirectLighting.md) or [Indirect](../Lighting/IndirectLighting.md) lobe. There is no volumetric-lighting debug product. |
+| `REN-DBG-03` lighting | Direct Diffuse, Direct Specular, Direct Subsurface, Indirect Diffuse, Indirect Specular | Reads the independently documented [Direct](../Lighting/DirectLighting/README.md) or [Indirect](../Lighting/IndirectLighting/README.md) lobe. There is no volumetric-lighting debug product. |
 | `REN-DBG-04` scene diagnostics | GPU Scene Instances | Visualizes GPU-scene instance identity rather than a lighting/material quantity. |
 
 View mode is per-viewport intent carried by `ViewportRenderRequest` and copied into `RenderView` by `RenderViewBuilder`; Editor ownership lives in `EditorViewportSession`, not `EngineRenderingSettingsState`. `r.ViewMode` remains only the diagnostic default adapter for a request without viewport identity. Availability depends on the active frontend and produced resources. A selectable name is not evidence that its quantity is numerically correct or meaningful in every mode.

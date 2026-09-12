@@ -1,6 +1,6 @@
 # Renderer Lighting Closure Plan
 
-**Status:** implementation plan for direct/indirect closure and the `PTD-00` handoff; not an Reference Path Tracer implementation plan or evidence
+**Status:** cross-feature release sequence for direct/indirect closure and the `PTD-00` handoff; feature-local implementation order lives in the linked Direct and Indirect plans and no plan is evidence
 
 **Families:** `FCR-REN-06`, `FCR-REN-07`, `FCR-REN-08`
 
@@ -10,14 +10,15 @@
 
 **Parent:** [First Release Renderer Plans](README.md)
 
-**Architecture:** [Lighting](../Features/Lighting/README.md), [Direct Lighting](../Features/Lighting/DirectLighting.md), [Indirect Lighting](../Features/Lighting/IndirectLighting.md), and [Reference Path Tracer](../Features/Lighting/ReferencePathTracer/README.md)
+**Architecture:** [Lighting](../Features/Lighting/README.md), [Direct Lighting](../Features/Lighting/DirectLighting/README.md), [Indirect Lighting](../Features/Lighting/IndirectLighting/README.md), [Volumetric Lighting](../Features/Lighting/VolumetricLighting/README.md), and [Reference Path Tracer](../Features/Lighting/ReferencePathTracer/README.md)
 
 ## Plan At A Glance
 
 ```mermaid
 flowchart LR
-    L0[LGT-0<br/>units and oracle contract] --> L1[LGT-1<br/>direct]
-    L1 --> L2[LGT-2<br/>indirect]
+    L0[LGT-0<br/>shared units and oracle contract] --> D0[DIR-D0 / IND-D0<br/>feature discovery]
+    D0 --> L1[LGT-1<br/>direct plan]
+    L1 --> L2[LGT-2<br/>indirect plan]
     L2 --> D[PTD-00<br/>discovery gate]
     D -->|PASS| P[PTD-01<br/>freeze conditional plan]
     D -->|BLOCKED| S[stop or re-scope release]
@@ -27,8 +28,8 @@ flowchart LR
 | Phase | Primary family | Current boundary |
 | --- | --- | --- |
 | `LGT-0` | all three | source routes exist, but shared units/material/light/reference contract must be reconciled |
-| `LGT-1` | `FCR-REN-06` | direct ReSTIR/analytic-light source exists; correctness/parity/failure/cost proof absent |
-| `LGT-2` | `FCR-REN-07` | indirect temporal/spatial source exists; estimator/history/quality proof absent |
+| `LGT-1` | `FCR-REN-06` | direct source reservoir exists; `DIR-D0` and [the feature plan](../Features/Lighting/DirectLighting/Plan.md) own its correctness-led clean break |
+| `LGT-2` | `FCR-REN-07` | indirect seed-replay source exists; `IND-D0` and [the feature plan](../Features/Lighting/IndirectLighting/Plan.md) own its path/shift/GRIS replacement |
 | `LGT-3` | `FCR-REN-08`, discovery only | `PTD-00` is unpassed; current path cannot be called an unbiased oracle |
 | `PTD-01` | `FCR-REN-08`, implementation | conditional plan exists; it cannot be accepted or advance past Stage 0 until discovery freezes its goals |
 | `LGT-4` | all three | candidate comparison/adoption reports absent |
@@ -58,7 +59,7 @@ Execute LGT-0 without transport implementation. Create ITER-REN-LGT-00 mapped to
 
 ## `LGT-1` — Direct Lighting
 
-**Goal:** close `FCR-REN-06` for all admitted analytic light kinds, material lobes, reservoir reuse, and visibility routes.
+**Goal:** sequence the accepted [Direct Lighting plan](../Features/Lighting/DirectLighting/Plan.md) to close `FCR-REN-06` for all admitted analytic light kinds, material lobes, reservoir reuse, visibility, reconstruction, and many-light behavior.
 
 **Non-goals:** expanding light types, replacing the BRDF, hiding bias/leaks with post effects, or separate inline/RGS lighting implementations.
 
@@ -66,17 +67,17 @@ Execute LGT-0 without transport implementation. Create ITER-REN-LGT-00 mapped to
 
 **Failure modes:** zero/negative/non-finite weight; stale reservoir after identity/reset; self-intersection/acne or light leak; unsupported traversal hidden; light beyond limit corrupts buffer; one lobe receives duplicate/missing energy.
 
-**Phase exit criteria:** all four light kinds and limit boundaries, material/visibility routes, reservoir failures, raw lobe comparisons, backend/native checks, and performance budgets pass or produce an explicit blocker.
+**Phase exit criteria:** `DIR-D0` is accepted and every required stage/criterion in the feature plan passes or produces an explicit blocker in `FCR-REN-06`.
 
 **Ready-to-use prompt:**
 
 ```text
-Implement LGT-1 in the existing direct-light semantic owner and thin visibility traversal adapters. Start from FCR-REN-06 AC/FM/CHK and LGT-0 units/fixtures. Reconcile candidate generation, PDFs/weights/reservoir identity, light buffers and limits, BRDF/lobe outputs, shadow ray spawn/bias, alpha/two-sided/subsurface scope, history reset, debug outputs, graph resources, shaders, and RHI routes. Exercise each light type, boundary counts, known material/occluder geometry, invalid/non-finite inputs, stale history, missing capability, inline/RGS, and D3D12/Vulkan. Compare raw outputs, retain native diagnostics, and measure time/memory. Stop on unexplained energy or route divergence.
+Execute exactly one authorized stage from Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/DirectLighting/Plan.md. Require accepted DIR-D0, the stage prerequisites, and the feature plan's universal execution contract. Keep LGT-0 shared units/oracles and FCR-REN-06 identity fixed; do not collapse or reorder stages, tune the current reservoir before its analytic baseline, or preserve a superseded estimator. Return the stage's exact checks, artifacts, hook/deletion ledger, unrun cells, and blocker/pass disposition before another stage begins.
 ```
 
 ## `LGT-2` — Indirect Lighting
 
-**Goal:** close `FCR-REN-07` for the explicitly admitted estimator, reuse, bounce, material, sky, temporal, and failure domain.
+**Goal:** sequence the accepted [Indirect Lighting plan](../Features/Lighting/IndirectLighting/Plan.md) to close `FCR-REN-07` for the explicitly admitted path, shift, GRIS, reuse, material, sky, temporal, reconstruction, and failure domain.
 
 **Non-goals:** calling the current Reference Path Tracer route ground truth, increasing bounces/features without acceptance need, or tuning away bias without identifying it.
 
@@ -84,12 +85,12 @@ Implement LGT-1 in the existing direct-light semantic owner and thin visibility 
 
 **Failure modes:** zero PDF or exploding weight; reuse crosses view/scene generation; disocclusion ghosts; sky double-counts; firefly clamp biases silently; NaN/Inf enters history; reset leaves stale energy; route/backend diverges statistically.
 
-**Phase exit criteria:** analytic and controlled stochastic cases pass with declared tolerances/confidence; history/failure gallery is complete; raw lobe and parity artifacts plus performance frontiers are candidate-bound.
+**Phase exit criteria:** `IND-D0` is accepted and every required stage/criterion in the feature plan passes or produces an explicit blocker in `FCR-REN-07`.
 
 **Ready-to-use prompt:**
 
 ```text
-Implement LGT-2 in the existing indirect-light estimator/reservoir owner with shared material/ray semantics. Reconcile sample/PDF/weight equations, bounce and sky scope, reservoir identity, temporal/spatial reuse, motion/disocclusion/reset, firefly/non-finite policy, lobe outputs, composite, debug routes, shaders, and graph/RHI dependencies. Use deterministic seeds and LGT-0 analytic cases, then controlled motion/disocclusion and release content. Inject zero/invalid PDFs, stale histories, cuts/resizes/mode changes, missing capability, and route failures. Compare inline/RGS and D3D12/Vulkan statistically with owned tolerances; record raw artifacts and quality/time/memory frontier. Do not use FCR-REN-08 as an oracle before PTD-00.
+Execute exactly one authorized stage from Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/IndirectLighting/Plan.md. Require accepted IND-D0, its stage prerequisites, and the feature plan's universal execution contract. Keep LGT-0 shared units/oracles and FCR-REN-07 identity fixed; do not label the current seed replay ReSTIR GI, skip the explicit path/shift/GRIS clean break, expand path depth early, or use FCR-REN-08 before its accepted oracle gate. Return exact checks, artifacts, hook/deletion ledger, unrun cells, and blocker/pass disposition before another stage begins.
 ```
 
 ## `LGT-3` — Execute `PTD-00` Discovery

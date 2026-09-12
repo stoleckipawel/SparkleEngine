@@ -80,7 +80,7 @@ The native shader-table plan has exactly two current ray types, `Surface` and `S
 
 ReSTIR history invalidates when the prepared-scene invalidation hash changes, when temporal view validity is zero, or when the graph topology changes. The same invalidation also resets image-provider history.
 
-The [Direct Lighting dossier](../Modules/Engine/Renderer/Features/Lighting/DirectLighting.md) owns the direct reservoir/visibility/BRDF result. The [Indirect Lighting dossier](../Modules/Engine/Renderer/Features/Lighting/IndirectLighting.md) owns secondary transport and its histories. No Volumetric Lighting stage participates in this trace; its [negative capability dossier](../Modules/Engine/Renderer/Features/Lighting/VolumetricLighting.md) records the missing media/atmosphere ownership.
+The [Direct Lighting package](../Modules/Engine/Renderer/Features/Lighting/DirectLighting/README.md) owns the direct reservoir/visibility/BRDF result and its replacement plan. The [Indirect Lighting package](../Modules/Engine/Renderer/Features/Lighting/IndirectLighting/README.md) owns the current seed-replay prototype and target path-resampling transport. No Volumetric Lighting stage participates in this trace; its [target and negative capability package](../Modules/Engine/Renderer/Features/Lighting/VolumetricLighting/README.md) records the missing media/atmosphere ownership and post-release delivery gates.
 
 ## Trace 4: Reference Path Tracer Contract Boundary
 

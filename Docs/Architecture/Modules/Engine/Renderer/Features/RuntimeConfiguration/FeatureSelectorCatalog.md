@@ -39,12 +39,12 @@ The settings writer replaces only its owned INI section. Loading silently ignore
 | Selector | Default/domain | Current consumer and effect | Persistence/reachability boundary | Dossier |
 | --- | --- | --- | --- | --- |
 | `r.ViewMode` | Lit, Reference Path Tracer, plus 15 final/debug modes | diagnostic default adapter only when no per-viewport request identity exists; Wireframe also alters raster fill | console-only compatibility-free diagnostic surface; Editor view mode lives in `EditorViewportSession` and is not Renderer settings/persistence | [Debug Views](../DebugViews/README.md) and [Reference Path Tracer](../Lighting/ReferencePathTracer/README.md) |
-| `r.RayTracing.Shadows.Execution` | Automatic, Inline, Pipeline | direct-shadow execution plan and graph topology | console surface; not mirrored by `EngineRenderingSettingsState` | [Direct Lighting](../Lighting/DirectLighting.md) and [Ray Tracing](../RayTracing/README.md) |
-| `r.RayTracedShadows.NormalBias` | 0.01 world units | shadow ray input | console only; inspected frame binding does not clamp it | [Direct Lighting](../Lighting/DirectLighting.md) |
-| `r.RayTracedShadows.MaxDistance` | 100000 world units | directional shadow ray maximum | console only; inspected frame binding does not clamp it | [Direct Lighting](../Lighting/DirectLighting.md) |
-| `r.RayTracing.Restir.Indirect.Bounces` | 2 requested; active clamp 1..8 | ReSTIR indirect candidate path | console only; requested value can differ from active clamped value | [Indirect Lighting](../Lighting/IndirectLighting.md) |
-| `r.RayTracing.Restir.Indirect.NormalBias` | 0.01 requested; active minimum 0 | ReSTIR indirect ray spawn | console only | [Indirect Lighting](../Lighting/IndirectLighting.md) |
-| `r.RayTracing.Restir.Indirect.MaxDistance` | 100000 requested; active minimum 0.001 | ReSTIR indirect traversal | console only | [Indirect Lighting](../Lighting/IndirectLighting.md) |
+| `r.RayTracing.Shadows.Execution` | Automatic, Inline, Pipeline | direct-shadow execution plan and graph topology | console surface; not mirrored by `EngineRenderingSettingsState` | [Direct Lighting](../Lighting/DirectLighting/README.md) and [Ray Tracing](../RayTracing/README.md) |
+| `r.RayTracedShadows.NormalBias` | 0.01 world units | shadow ray input | console only; inspected frame binding does not clamp it | [Direct Lighting](../Lighting/DirectLighting/README.md) |
+| `r.RayTracedShadows.MaxDistance` | 100000 world units | directional shadow ray maximum | console only; inspected frame binding does not clamp it | [Direct Lighting](../Lighting/DirectLighting/README.md) |
+| `r.RayTracing.Restir.Indirect.Bounces` | 2 requested; active clamp 1..8 | source-named ReSTIR indirect candidate path; estimator conformance unproved | console only; requested value can differ from active clamped value | [Indirect Lighting](../Lighting/IndirectLighting/README.md) |
+| `r.RayTracing.Restir.Indirect.NormalBias` | 0.01 requested; active minimum 0 | indirect prototype ray spawn | console only | [Indirect Lighting](../Lighting/IndirectLighting/README.md) |
+| `r.RayTracing.Restir.Indirect.MaxDistance` | 100000 requested; active minimum 0.001 | indirect prototype traversal | console only | [Indirect Lighting](../Lighting/IndirectLighting/README.md) |
 | `r.Diagnostics.MarkerVerbosity` | FramePass; Off/FramePass/Detailed | frame/pass/detailed GPU marker emission | developer console; package exposure must be classified | [Diagnostics](../ViewportAndDiagnostics/DiagnosticsProductsAndCapture.md) |
 | `r.Diagnostics.GpuTiming` | off | timestamp collection/resolution | developer console; observer cost unmeasured | [Diagnostics](../ViewportAndDiagnostics/DiagnosticsProductsAndCapture.md) |
 | `r.FrameGraph.ParallelRecording` | on | Tasks-backed recording chunks | developer console; equivalence/scaling unproved | [Frame Graph](../FrameExecution/FrameGraphAndScheduling.md) |
@@ -63,7 +63,7 @@ These controls affect frame storage and presentation but are not proof that ever
 
 | Capability | Current selector state | Documentation owner |
 | --- | --- | --- |
-| Volumetric lighting, fog, atmosphere, aerial perspective | no Renderer/RHI setting, CVar, viewport request, or editor control was found | [Volumetric Lighting](../Lighting/VolumetricLighting.md); `REN-E24` audits continued absence |
+| Volumetric lighting, fog, atmosphere, aerial perspective | no Renderer/RHI setting, CVar, viewport request, or editor control was found | [Volumetric Lighting](../Lighting/VolumetricLighting/README.md); `REN-E24` audits continued absence and production remains roadmap-blocked |
 | Deferred decals | no authored/editor/runtime selector was found; `GR-5` must add truthful requested/active state with the implementation | [Deferred Decals](../DeferredDecals/README.md); `REN-E25` preserves current absence truth until `FCR-REN-23` is implemented |
 | Color grading | no grading parameter, LUT, transform, or editor selector exists; `DSP-5` must add the admitted surface | [Color Grading](../PostProcessing/DisplayPipeline/ColorGrading/README.md); `REN-E26` preserves current absence truth until `FCR-REN-24` is implemented |
 | Chromatic aberration | no lens/channel effect or viewport selector exists; `DSP-6` must add the admitted surface | [Chromatic Aberration](../PostProcessing/DisplayPipeline/ChromaticAberration/README.md); `REN-E27` preserves current absence truth until `FCR-REN-25` is implemented |

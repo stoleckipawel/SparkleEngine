@@ -89,8 +89,8 @@
 | `FCR-REN-03` | [Frame Graph And Scheduling](../../Modules/Engine/Renderer/Features/FrameExecution/FrameGraphAndScheduling.md) |
 | `FCR-REN-04` | [Geometry, Materials, And GBuffer](../../Modules/Engine/Renderer/Features/GeometryAndResources/GeometryMaterialsAndGBuffer.md) |
 | `FCR-REN-05` | [Renderer Ray Tracing](../../Modules/Engine/Renderer/Features/RayTracing/README.md) and [Geometry/GBuffer](../../Modules/Engine/Renderer/Features/GeometryAndResources/GeometryMaterialsAndGBuffer.md) |
-| `FCR-REN-06` | [Direct Lighting](../../Modules/Engine/Renderer/Features/Lighting/DirectLighting.md) |
-| `FCR-REN-07` | [Indirect Lighting](../../Modules/Engine/Renderer/Features/Lighting/IndirectLighting.md) |
+| `FCR-REN-06` | [Direct Lighting](../../Modules/Engine/Renderer/Features/Lighting/DirectLighting/README.md) |
+| `FCR-REN-07` | [Indirect Lighting](../../Modules/Engine/Renderer/Features/Lighting/IndirectLighting/README.md) |
 | `FCR-REN-08` | [Reference Path Tracer](../../Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md) |
 | `FCR-REN-09` | [Exposure](../../Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/Exposure.md) |
 | `FCR-REN-10` | [Image Reconstruction And Upscaling](../../Modules/Engine/Renderer/Features/PostProcessing/ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md) |

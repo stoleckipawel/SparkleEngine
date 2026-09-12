@@ -184,7 +184,7 @@ Capacities above are hard implementation limits from this snapshot, not recommen
 
 | Capability ID | Mode/effect | State | Exact algorithm and traversal coverage | Evidence | Release disposition |
 | --- | --- | --- | --- | --- | --- |
-| `REN-LGT-01` | ReSTIR path-traced lighting | Capability-gated | Primary GBuffer plus direct-light reservoir generation, temporal reuse, spatial reuse, and ray-traced visibility; indirect reservoir temporal/spatial/resolve; shared lighting composite and sky. | `S` | Pending |
+| `REN-LGT-01` | Source-named ReSTIR lighting route | Capability-gated, conformance unproved | Primary GBuffer plus direct-light reservoir generation, temporal reuse, spatial reuse, and ray-traced visibility; indirect seed-replay reservoir temporal/spatial/resolve; shared lighting composite and sky. Neither direct ReSTIR DI nor indirect ReSTIR GI/GRIS conformance has executable proof. | `S` | Pending |
 | `REN-LGT-04` | Reference Path Tracer | Ordinary selector seam, unavailable | Stage 1 installs one ordinary per-view `RenderViewMode` value, one Private feature owner, and a feature-neutral progress observation with a real Editor reader. It reports only generic unavailability with `0/0` work; no reference-session identity, generation lease, preflight, digest, reset/result contract, estimator, shader, history texture, accumulator, clickable UI, or oracle evidence exists. | `B+S` | Pending Stages 2-10 |
 | `REN-LGT-05` | Accumulation invalidation | Target contract; absent for reference route | The accepted design requires exact prefix, discarded count, target-only updates, generation-scoped stale-work rejection, and reasoned invalidation, but Stage 1 implements none of that state. Stage 2 begins canonical identity/reset work, Stage 6 implements accumulation lifecycle, and ReSTIR retains its separate existing history invalidation. | `B` | Pending |
 | `REN-LGT-06` | Lighting composite | Implemented path | Direct diffuse, direct specular, direct subsurface, indirect diffuse, indirect specular, and GBuffer emissive are combined before post processing. | `S` | Pending |
@@ -195,16 +195,16 @@ Capacities above are hard implementation limits from this snapshot, not recommen
 | --- | --- | --- | --- | --- | --- |
 | `REN-LGT-02` | Direct shadow visibility | Capability-gated | Dual execution: inline ray query or native pipeline. Produces a visibility signal consumed by direct lighting. The four analytic light kinds and active direct BRDF lobes are enumerated under `REN-PBR-*`. | `S` | Pending |
 
-The complete algorithm, light limits, BRDF terms, inputs/outputs, and traversal contract are in [Direct Lighting](Features/Lighting/DirectLighting.md).
+The current audit, target algorithm, light/BRDF/sampling/shadow/reconstruction contract, research, and staged plan are in [Direct Lighting](Features/Lighting/DirectLighting/README.md).
 
 ## Indirect Lighting
 
 | Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |
 | --- | --- | --- | --- | --- | --- |
-| `REN-LGT-03` | ReSTIR indirect | Capability-gated | Inline ray-query path with temporal and spatial reservoir reuse and resolve; configurable bounce count is clamped to 8 in the inspected settings path. No native-pipeline adapter was found. | `S` | Pending |
+| `REN-LGT-03` | Source-named ReSTIR indirect prototype | Capability-gated, conformance unproved | Inline ray-query path with a float-packed pixel/sample/frame seed, temporal and spatial reservoir reuse, and resolve; configurable bounce count is clamped to 8. No explicit path record, shift/inverse/Jacobian, GRIS contribution-weight proof, or native-pipeline adapter was found. | `S` | Pending replacement plan |
 | `REN-LGT-07` | Sky | Implemented path | Dedicated sky lighting and sky motion-vector production are in the graph. Environment/IBL asset breadth is not claimed by this row. | `S` | Pending |
 
-The complete ReSTIR/reference, history, secondary-transport, environment, and oracle boundary is in [Indirect Lighting](Features/Lighting/IndirectLighting.md).
+The current seed-replay audit and target ReSTIR GI/GRIS path, history, secondary-transport, environment, oracle, research, and staged plan are in [Indirect Lighting](Features/Lighting/IndirectLighting/README.md).
 
 ## Volumetric Lighting
 
@@ -214,7 +214,7 @@ The complete ReSTIR/reference, history, secondary-transport, environment, and or
 | `REN-VOL-02` | Volumetric light transport | Not found | No extinction, absorption, phase-function, in-scattering, transmittance, volumetric shadow, multiple-scattering, temporal reconstruction, or composite product was found. | `S` | Excluded unless later admitted |
 | `REN-VOL-03` | Atmosphere and aerial perspective | Not found | Sky background fill exists, but no atmospheric scattering, height fog, aerial perspective, or volumetric-cloud lighting path was found. | `S` | Excluded unless later admitted |
 
-The negative capability boundary and the minimum ownership required for any future proposal are in [Volumetric Lighting](Features/Lighting/VolumetricLighting.md).
+The negative capability boundary and post-release research, semantics, architecture, and staged target for fog, atmosphere/sky, heterogeneous media, and Volumetric ReSTIR are in [Volumetric Lighting](Features/Lighting/VolumetricLighting/README.md).
 
 ## Deferred Decals
 

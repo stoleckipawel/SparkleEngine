@@ -208,9 +208,9 @@ This contract is **defined but unproved**. Completion requires every `AC-FRM-*` 
 | Frame graph, barriers, queues, transients, recording, submission, retirement | [Frame Graph and Scheduling](Features/FrameExecution/FrameGraphAndScheduling.md) |
 | Typed pass ABI, binding layouts, graphics/compute/ray pipeline caches, and shader-generation replacement | [Pipeline Materialization and Typed Binding](Features/ShaderRuntime/PipelineMaterializationAndTypedBinding.md) |
 | Shared lighting-mode and composite boundary | [Lighting](Features/Lighting/README.md) |
-| Analytic lights, direct BRDF lobes, reservoirs, and shadow visibility | [Direct Lighting](Features/Lighting/DirectLighting.md) |
-| ReSTIR/reference secondary transport, histories, environment, and sky | [Indirect Lighting](Features/Lighting/IndirectLighting.md) |
-| Explicit absence of media, fog, atmosphere, and aerial perspective | [Volumetric Lighting](Features/Lighting/VolumetricLighting.md) |
+| Analytic lights, direct BRDF lobes, reservoirs, shadows, and many-light target | [Direct Lighting](Features/Lighting/DirectLighting/README.md) |
+| Current seed-replay prototype, target ReSTIR GI transport, histories, environment, and sky | [Indirect Lighting](Features/Lighting/IndirectLighting/README.md) |
+| Explicit absence plus target media, fog, Volumetric ReSTIR, atmosphere, sky, and aerial perspective | [Volumetric Lighting](Features/Lighting/VolumetricLighting/README.md) |
 | BLAS/TLAS, inline/native execution and shader-table identity | [Ray Tracing](Features/RayTracing/README.md) and [execution architecture](Features/RayTracing/ExecutionArchitecture.md) |
 | Post-processing order and shared invariants | [Post Processing](Features/PostProcessing/README.md) |
 | Exposure and adaptation | [Exposure](Features/PostProcessing/DisplayPipeline/Exposure.md) |

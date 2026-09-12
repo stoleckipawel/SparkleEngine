@@ -36,7 +36,7 @@ Typed readback and minimal durable publication are added after that slice to ear
 | Target provides | Target deliberately does not provide |
 | --- | --- |
 | Independent camera rays; frozen Scene/View inputs; one semantic path estimator; deterministic sample identity | A second scene database, material system, render graph, or general-purpose renderer framework |
-| Live raw HDR accumulation, viewport derivative, exact progress/reset truth; later evidence readback, AOVs, provenance, checkpoints, and atomic completion | Denoising, exposure, tone mapping, output encoding, or screenshot pixels in the oracle value |
+| Live raw HDR accumulation, viewport derivative, exact progress/reset truth; later evidence readback, provenance, checkpoints, and atomic completion | Denoising, exposure, tone mapping, output encoding, or screenshot pixels in the oracle value |
 | Strict D3D12/Vulkan capability truth and thin Inline/RGS traversal adapters | Silent backend/frontend substitution or vendor-specific estimator forks |
 | First-class viewport view mode, truthful progress/reset feedback, Lit comparison retention, raw export, and secondary noninteractive invocation over the same session contract | A mandatory render wizard, second path-tracer executable, or Shipping consumer debug surface by default |
 | Full supported surface-transport mode and a separately named finite-path diagnostic mode | A silently truncated “unbiased” result, contribution clamp, firefly filter, or approximate cache |
@@ -50,7 +50,7 @@ Typed readback and minimal durable publication are added after that slice to ear
 | Estimator | Separate direct and indirect passes, analytic-light iteration, BSDF continuation, fixed bounce/distance limits, and no complete light/BSDF MIS contract. | One reviewed camera-path estimator with event, measure, probability, emission, NEE, MIS, roulette, rejection, and termination correspondence. |
 | Identity | Samples are coupled to render `FrameIndex`. | Stateless view-session/pixel/sample/dimension identity, independent of presentation frame time, queue order, batch size, mode switches, and restart. |
 | State | Temporal frame history plus a hash of lighting state, path settings, view mode, and view/projection matrices; no target completion, reasoned reset, or view-session contract. | View-owned identity plus Renderer-owned exact prefix, reasoned invalidation, Lit-comparison suspension/resume, target completion, optional verified checkpoint, and transactional export states. |
-| Output | Common composite, sky, exposure, reconstruction, tone map, encode, and present remain downstream. | Raw linear radiance and diagnostics publish before presentation; preview is a derivative with explicit lineage. |
+| Output | Common composite, sky, exposure, reconstruction, tone map, encode, and present remain downstream. | Raw linear radiance and immutable provenance publish before presentation; preview is a derivative with explicit lineage. |
 | Authority | Useful source-present candidate; no numerical or runtime oracle proof. | Authority is earned only by the [feature acceptance contract](README.md#acceptance-criteria) and retained `FCR-REN-08` evidence. |
 
 The completion change is therefore a clean break in selection and authority. It may reuse independently testable leaves, but it must not keep the old Lighting selector/frame-history estimator as a second reference producer. The viewport mode selects the one reference semantic directly; it does not mutate persistent Lit settings behind the user's back.
@@ -215,7 +215,7 @@ Viewport selects RenderViewMode::ReferencePathTracer
     -> stop at target, retain/suspend on mode exit only within budget, otherwise release
     -> resume only a retained exact-identity prefix
 Optional save/offscreen operation
-    -> typed readback of raw sums/counts/AOVs/counters from that session
+    -> typed readback of raw radiance and exact prefix identity from that session
     -> ApplicationEditor writes staging directory
     -> hash every artifact and write completion manifest last
     -> atomic publish to final invocation directory
@@ -237,10 +237,10 @@ Names are illustrative until implementation review, but responsibilities are fix
 | `ReferencePathTracerInputDigest` | Private canonical hash of every transport-affecting scene, view, asset, shader, compiler, estimator, backend/frontend, sampler, domain, and resolution value. View-mode selection, target SPP, presentation settings, wall clock, batch size, and invocation-only fields do not enter this digest. |
 | `ReferencePathTracerSession` | Private feature owner for stable identity, accumulation, invalidation, pause/restart/checkpoint/readback, and mutable implementation state. Generic View state does not own or mirror it. |
 | `ViewportRenderProgress` | The small renderer-agnostic UI boundary: selected mode, none/unavailable/rendering/complete state, completed work, and target work. It intentionally has no session generation in Stage 1; Stage 7 may add an exact consumer-checked identity only after the real session owns that truth. Detailed reset, digest, backend, counter, warning, and failure diagnostics remain feature-local. |
-| Feature-local result | Complete/partial/failed state, input digest, committed prefix, counters, uncertainty, and explicit candidate/accepted authority label. It crosses a public boundary only with the later capture/export consumer that needs it. |
+| Feature-local result | Complete/partial/failed state, input digest, committed prefix, uncertainty, and explicit candidate/accepted authority label. It crosses a public boundary only with the later capture/export consumer that needs it. |
 | `ReferencePathTracerSampleRange` | Half-open, non-overlapping sample-ordinal range assigned to a batch. Completion becomes visible only when the entire range is committed. |
 | `ReferencePathTracerSubmission` | Secondary ApplicationEditor-owned serializable project/level/camera locator, output destination, filesystem/disk/wall-time/checkpoint policy, and reference View request. It creates an offscreen canonical view; it is not a second scene or estimator format. |
-| `ReferencePathTracerArtifactManifest` | Product/domain, complete input identity, source/build/compiler/shader/asset hashes, camera/scene semantics, sampler, sample prefix, accumulation policy, backend/frontend, raw/AOV file metadata, counters, budgets, timing, checkpoint lineage, and completion status. |
+| `ReferencePathTracerArtifactManifest` | Product/domain, complete input identity, source/build/compiler/shader/asset hashes, camera/scene semantics, sampler, sample prefix, accumulation policy, backend/frontend, raw file metadata, budgets, timing, checkpoint lineage, and completion status. |
 
 There is no compatibility reader, legacy alias, or dual manifest representation. During alpha development, a contract change invalidates and regenerates local checkpoints/artifacts.
 
@@ -370,7 +370,7 @@ The estimator is one semantic contract shared by traversal frontends. The author
 - camera ray and throughput;
 - current geometric and shading frame;
 - event/lobe and delta classification;
-- accumulated radiance and first-event AOV classification;
+- accumulated radiance;
 - previous strategy PDF information needed for MIS of emissive/environment hits;
 - scattering depth and compensated roulette state;
 - invalid/rejection/failure reason.
@@ -384,29 +384,27 @@ For every non-terminal surface event the reviewed code must make the following c
 5. apply shading-normal correction if accepted, finite checks, and compensated Russian roulette at the frozen rule;
 6. spawn the next ray from robust geometric bounds and continue, or record the precise terminal/failure event.
 
-Delta lights/lobes, zero PDFs, alpha rejection, miss/environment, emissive hits, and roulette survival are explicit branches in the derivation and event trace. `NaN`, infinity, invalid PDF, impossible negative radiance, safety-depth reach, and counter overflow increment retained diagnostics and invalidate the affected sample or job according to the frozen rule; they are never silently clamped away.
+Delta lights/lobes, zero PDFs, alpha rejection, miss/environment, emissive hits, and roulette survival are explicit branches in the derivation and hand-worked cases. `NaN`, infinity, invalid PDF, impossible negative radiance, safety-depth reach, and sample-count overflow fail through the ordinary result contract according to the frozen rule; they are never silently clamped away.
 
 ## Ray Robustness
 
 Primary, continuation, and connection rays use a single Renderer-owned robust endpoint policy derived for Sparkle's vertex formats, transforms, compiler behavior, and both APIs. The policy distinguishes geometric normal from shading normal, carries reconstruction/transform error bounds, chooses the offset side from the outgoing direction, and shortens connection endpoints using receiver/emitter bounds.
 
-The existing fixed `MinT`, normal bias, grazing multiplier, and maximum distance cannot remain hidden controls in raw reference output. They are deleted from the reference authority or confined to an explicitly named diagnostic path. Scale, large translation, nonuniform scale, shear, mirrored instances, grazing incidence, adjacent/coplanar triangles, thin gaps, and strong normal maps are acceptance fixtures, not per-scene tuning opportunities.
+The existing fixed `MinT`, normal bias, grazing multiplier, and maximum distance cannot remain hidden controls in raw reference output. They are deleted from the reference authority. Scale, large translation, nonuniform scale, shear, mirrored instances, grazing incidence, adjacent/coplanar triangles, thin gaps, and strong normal maps are acceptance fixtures, not per-scene tuning opportunities.
 
-## Accumulation, Checkpoint, And Diagnostics
+## Accumulation And Checkpoint
 
 The per-view session accumulator owns one complete fixed sample prefix for every pixel under one transport digest. The accepted precision study chooses the concrete representation; architecture requires:
 
 - radiance sum or an arithmetic-mean representation with compensated/pairwise error control justified at the maximum accepted SPP;
 - exact integer sample count separate from radiance channels;
 - second moment or equivalent data sufficient for variance and standard-error estimates;
-- distinct raw beauty and required lobe/event AOVs without changing path energy;
-- ray, shadow-ray, path-length, roulette, alpha-rejection, invalid-value, safety-depth, and overflow counters;
 - deterministic reduction order within the declared backend tolerance, or a documented statistical rather than bitwise parity contract;
 - mutation-free checkpoint data bound to the full input digest and exact committed prefix.
 
 Adaptive per-pixel stopping is absent from the initial correctness route. It can enter only with a derivation, sampling/variance contract, mask artifact, and evidence that the stop rule does not create an undeclared target. Fixed requested SPP plus independently evaluated statistical acceptance keeps execution and proof separable.
 
-Target SPP is a scheduling/completion goal, not part of the estimator stream. Increasing it continues at the next ordinal. Decreasing it cannot erase already committed samples; the session completes at its actual prefix when that prefix meets the new goal. Progress publishes immutable snapshots containing state, exact committed/target counts, first invalidation reason, discarded prefix, active route, counters, and bounded throughput/ETA data. The UI never derives authoritative progress from frame count.
+Target SPP is a scheduling/completion goal, not part of the estimator stream. Increasing it continues at the next ordinal. Decreasing it cannot erase already committed samples; the session completes at its actual prefix when that prefix meets the new goal. Progress publishes immutable snapshots containing state, exact committed/target counts, first invalidation reason, discarded prefix, active route, and bounded throughput/ETA data. The UI never derives authoritative progress from frame count.
 
 ## Secondary Artifact Contract
 
@@ -417,9 +415,7 @@ The completed directory contains at minimum:
 | Artifact | Required semantics |
 | --- | --- |
 | `beauty.exr` | Raw scene-linear HDR radiance for the accepted sample prefix; no display transform or denoising. |
-| `aov-*.exr` | Included albedo, geometric/shading normal, depth, direct/indirect or first-event classifications, variance/standard error, and other accepted diagnostics. AOV definitions are named in the manifest. |
-| `manifest.json` | Canonical identity, scope, settings, hashes, backend/frontend, counts, counters, budgets, timing, lineage, and completed status; written last. |
-| `events.json` or bounded diagnostic equivalent | Only for requested analytic/minimal cases; deterministic path-event evidence with an explicit size cap. |
+| `manifest.json` | Canonical identity, scope, settings, hashes, backend/frontend, counts, accepted statistical summary, budgets, timing, lineage, and completed status; written last. |
 | `preview.*` | Optional derivative for humans, with exposure/tone/encoding settings and the raw artifact hash. It is never a comparison source. |
 
 OpenEXR is the required high-dynamic-range interchange container unless `PTD-00` records a stronger alternative. Existing readback mechanics should be extended rather than duplicated. The ApplicationEditor writer may use the repository's existing TinyEXR dependency only after ownership, write support, security, rights, build, and package review; TextureCooker ownership does not automatically authorize a Renderer dependency.
@@ -446,7 +442,7 @@ Automatic selection may choose only between already accepted routes and records 
 
 [User Experience](UserExperience.md) owns the complete interaction contract. Architecture requires three consumers in priority order:
 
-1. **Editor viewport:** `Reference Path Tracer` is the second top-level view-mode item, immediately after Lit. Selection preserves Lit settings, performs automatic preflight, starts accumulation on success, remains responsive while the camera moves, and displays the newest accepted composition with a compact progress/reset/completion overlay. Details expose exact settings, pause/restart, and counters without becoming a prerequisite; checkpoint/save appear later under a secondary Evidence/Output group.
+1. **Editor viewport:** `Reference Path Tracer` is the second top-level view-mode item, immediately after Lit. Selection preserves Lit settings, performs automatic preflight, starts accumulation on success, remains responsive while the camera moves, and displays the newest accepted composition with a compact progress/reset/completion overlay. Details expose exact settings and pause/restart without becoming a prerequisite; checkpoint/save appear later under a secondary Evidence/Output group.
 2. **Approved non-Editor view:** a Game-kind RenderView requests the same semantic through its ordinary view-settings owner. Its UI may differ, but canonical camera identity, invalidation, progress, target completion, raw/presentation separation, and failure states cannot.
 3. **Noninteractive ApplicationEditor operation:** a submission manifest creates an offscreen canonical view, observes the same Renderer session, exports a completed prefix, returns stable categories, and enables reproducible evidence without UI automation.
 
@@ -454,7 +450,7 @@ The primary comparison loop is Reference Path Tracer -> Lit -> Reference Path Tr
 
 While Reference Path Tracer is selected, navigation is a first-class state transition rather than cancellation of a render job. The viewport may show low-SPP noise during movement, but not an unlabeled old composition or a frozen final frame. After the last movement update, the final identity accumulates immediately without a `Start` or `Restart` action.
 
-The overlay displays exact committed/target prefix, target ratio, last reset reason, active route, measured throughput, clearly estimated ETA, and correctness counters. A completed compact badge remains visible until the mode changes or identity resets. ETA and target SPP are never convergence or authority criteria.
+The overlay displays exact committed/target prefix, target ratio, last reset reason, active route, measured throughput, and clearly estimated ETA. A completed compact badge remains visible until the mode changes or identity resets. ETA and target SPP are never convergence or authority criteria.
 
 Raw export is optional and secondary. `Save Raw Result` or `Save When Complete` reads the same session prefix; `Save Current Prefix` is explicitly partial. Export failure does not destroy the live prefix or a prior result. There is no second render launched merely because the user saves.
 
@@ -470,10 +466,10 @@ The tool is excluded from `ShippingEditor`, `ShippingGame`, and consumer first r
 | Continuous camera/scene animation | Show repeated reset state and recommend a frozen supported time; never blend frames into streaked reference output. |
 | Switch to Lit and back | Restore Lit settings; retain/suspend only within the budget and resume only on exact digest match. When retention is unavailable, visibly release and return through validation at ordinal zero. |
 | Presentation-only change | Refresh the viewport derivative without resetting raw accumulation. A display control entering the transport digest is an architecture defect. |
-| Invalid PDF/radiance/normal/event or safety-depth reach | Retain counters and bounded event context; fail the affected analytic case and apply the accepted production sample/job invalidation rule. Never hide it with a clamp. |
-| Timeout or user cancellation | Stop new batches, reach terminal state within budget, publish no completion manifest, retain only labeled diagnostics/verified checkpoint, retire resources safely. |
+| Invalid PDF/radiance/normal/event or safety-depth reach | Fail the affected analytic case and apply the accepted production sample/job invalidation rule. Never hide it with a clamp. |
+| Timeout or user cancellation | Stop new batches, reach terminal state within budget, publish no completion manifest, retain only a verified checkpoint when requested, and retire resources safely. |
 | OOM or capacity refusal | Fail before unbounded allocation where predictable; otherwise preserve device/process integrity, classify the failure, and leave the prior valid output intact. |
-| Device loss/TDR | Fail the session, capture available RHI diagnostics, invalidate GPU-only state, and permit resume only from a verified host checkpoint after device recovery. |
+| Device loss/TDR | Fail the session with the available RHI error, invalidate GPU-only state, and permit resume only from a verified host checkpoint after device recovery. |
 | Disk full, access denied, writer/codec error | Fail publication, delete or quarantine only the new staging directory, preserve prior completed artifacts, and report required/available space. |
 | Corrupt or mismatched checkpoint | Reject without partial import, identify the first identity/hash mismatch, and offer a clean session restart. |
 | Backend disagreement or native validation output | Mark evidence `Blocked`/`Inconclusive`; do not average, threshold-tune, or silently prefer one backend. |

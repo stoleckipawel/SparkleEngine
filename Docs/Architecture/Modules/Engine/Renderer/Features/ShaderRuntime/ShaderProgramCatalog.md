@@ -58,7 +58,7 @@ There are exactly 35 registrations: 25 Compute, one Vertex, one Pixel, two RayGe
 | `RestirIndirectSpatialCS` | `/Engine/Passes/RayTracing/RestirIndirectSpatial.hlsl` | `main` | Compute | Inline-query spatial reuse stage over the current indirect reservoir. |
 | `RestirIndirectResolveCS` | `/Engine/Passes/RayTracing/RestirIndirectResolve.hlsl` | `main` | Compute | Inline-query resolve; writes indirect lobes and the four DLSS RR guide targets. |
 
-See [Indirect Lighting](../Lighting/IndirectLighting.md) for the algorithm, history, inputs, limits, and evidence boundary.
+See [Indirect Lighting](../Lighting/IndirectLighting/README.md) for the current prototype audit, target algorithm, history, inputs, limits, and evidence boundary.
 
 ## Reference Path Tracer Programs
 

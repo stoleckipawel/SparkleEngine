@@ -2,7 +2,7 @@
 
 **Status:** Renderer lighting feature-family index; source-backed, not numerical, convergence, visual, performance, or release evidence
 
-**Verified:** 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
+**Verified:** 2026-09-12 against revision `8e4ffba225411965dc51c0b783e5f47a075c7e84`; documentation research added without runtime execution
 
 **Responsibility:** define the shared lighting boundary and route Direct, Indirect, Volumetric, and Reference Path Tracer lighting without treating them as one undifferentiated capability
 
@@ -13,10 +13,10 @@
 | What Sparkle currently has | What remains absent or blocked |
 | --- | --- |
 | Ray-dependent direct lighting for directional, point, spot, and rectangular lights | Shadow-map or other fully non-ray direct-light fallback |
-| ReSTIR direct/indirect products plus a per-view Reference Path Tracer session contract | Reference transport, accumulation, and accepted numerical, convergence, temporal, visual, or performance proof |
+| Source-present direct and indirect reservoir products plus a per-view Reference Path Tracer seam | Direct ReSTIR conformance, indirect path-resampling conformance, reference transport, and accepted numerical, convergence, temporal, visual, or performance proof |
 | Five separate scene-linear lobe products joined with emissive and sky | Participating-media/volumetric lighting |
 | Debug access to direct and indirect lobe products | Exact presentation for every diagnostic lobe |
-| A defined Reference Path Tracer target and discovery gate | An authorized, implemented, independent reference oracle |
+| Deep target packages for Direct, Indirect/ReSTIR GI, Volumetric/ReSTIR, fog, atmosphere, and sky | An authorized, implemented, independent reference oracle; post-`REL-11` admission for volumetric production |
 
 The most important design choice is product separation: direct diffuse, direct specular, direct subsurface, indirect diffuse, and indirect specular remain distinct until one composite. That improves diagnosis and comparison, at the cost of more resources, histories, bandwidth, and synchronization.
 
@@ -24,16 +24,16 @@ The most important design choice is product separation: direct diffuse, direct s
 
 | Domain | Current result | State | Owning dossier |
 | --- | --- | --- | --- |
-| Direct lighting | Direct diffuse, direct specular, and direct subsurface radiance from directional, point, spot, and rect lights with ray-traced visibility. | Implemented, capability-gated; executable correctness and limits remain unproved. | [Direct Lighting](DirectLighting.md) |
-| Indirect lighting | Indirect diffuse and indirect specular radiance from ReSTIR reuse, plus the environment sky/background boundary. | Implemented, capability-gated; convergence, bias, and history behavior remain unproved. | [Indirect Lighting](IndirectLighting.md) |
-| Volumetric lighting | Participating media, fog volumes, extinction, in-scattering, transmittance, atmospheric scattering, and aerial perspective. | Not implemented in the inspected Renderer. | [Volumetric Lighting](VolumetricLighting.md) |
+| Direct lighting | Direct diffuse, direct specular, and direct subsurface radiance from directional, point, spot, and rect lights with ray-traced visibility. | Source-present and capability-gated; current ReSTIR conformance, executable correctness, and limits remain unproved. | [Direct Lighting](DirectLighting/README.md) |
+| Indirect lighting | Indirect diffuse and indirect specular radiance from a seed-replay reservoir prototype, plus the environment sky/background boundary. | Source-present and capability-gated; no ReSTIR GI/GRIS conformance, convergence, bias, or history proof exists. | [Indirect Lighting and ReSTIR GI](IndirectLighting/README.md) |
+| Volumetric lighting | Target domain for participating media, fog, volumetric ReSTIR, physical atmosphere/sky, aerial perspective, heterogeneous volumes, and clouds. | Not implemented; production is excluded until `REL-11` closes and roadmap admission plus `VOL-D0` pass. | [Volumetric Lighting, Fog, Atmosphere, and Sky](VolumetricLighting/README.md) |
 | Reference Path Tracer | A bounded, deterministic, independently defined transport oracle implemented as a specialized route inside the existing per-view frame architecture rather than reuse of the interactive GBuffer surface. | Stage 1 contract-only and deliberately unavailable; estimator, accumulation, UI, parity, and oracle proof remain later work. | [Reference Path Tracer](ReferencePathTracer/README.md) and [`PTD-00` discovery](ReferencePathTracer/Discovery.md) |
 
 This classification is semantic, not merely a source-folder preference. A lighting feature belongs to one domain according to the transport result it produces. Shared material evaluation, history, composite, and presentation remain common infrastructure and are not copied into three implementations.
 
 ## Shared Lighting Contract
 
-The ordinary surface-lighting producer is ReSTIR: direct reservoir temporal/spatial reuse, selected-light visibility, indirect reservoir reuse/resolve, and the shared five-lobe composite. It requires ray-tracing capability; Sparkle currently has no shadow-map, lightmap, probe-only, or non-ray deferred-lighting fallback.
+The ordinary surface-lighting producer is named ReSTIR in source: direct reservoir temporal/spatial reuse, selected-light visibility, indirect seed-reservoir reuse/resolve, and the shared five-lobe composite. Direct ReSTIR DI conformance and indirect ReSTIR GI/GRIS conformance are not established. The route requires ray-tracing capability; Sparkle currently has no shadow-map, lightmap, probe-only, or non-ray deferred-lighting fallback.
 
 `RenderViewMode::ReferencePathTracer` is the sole reference semantic and enters the same `FramePipeline`, Scene, View, frame-graph, and RHI architecture through a per-view request. Stage 1 carries only the dormant semantic to one Private feature owner and leaves the ordinary Lit presentation visible with a generic unavailable observation; it does not invent a session identity, refusal taxonomy, or silently call that presentation reference output. Later stages add the independent camera-ray transport as a specialized frame route rather than a separate renderer. [Reference Path Tracer](ReferencePathTracer/README.md) owns its completion contract and staged implementation.
 
@@ -72,7 +72,7 @@ The composite owns the join point. Direct and indirect producers do not independ
 - Debug views expose the five lobe products, but current presentation can modify them through exposure, tone mapping, and encoding.
 - Exact selectors and persistence live in [Feature Selector Catalog](../RuntimeConfiguration/FeatureSelectorCatalog.md). Row-level states live in the [Capability Inventory](../../CapabilityInventory.md). Release proof remains in `REN-E06` through `REN-E10`, `REN-E18`, and the dedicated volumetric absence check `REN-E24`.
 
-The ordinary lighting family is complete only when [Direct Lighting](DirectLighting.md#acceptance-criteria) and [Indirect Lighting](IndirectLighting.md#acceptance-criteria) pass, the common composite/sky join preserves their documented scene-linear products, and active capability limitations remain visible. [Volumetric Lighting](VolumetricLighting.md) and [Reference Path Tracer](ReferencePathTracer/README.md) retain independent negative/blocked dispositions and cannot inherit that verdict.
+The ordinary surface-lighting family is complete only when [Direct Lighting](DirectLighting/README.md#acceptance-criteria) and [Indirect Lighting](IndirectLighting/README.md#acceptance-criteria) pass, the common composite/sky join preserves their documented scene-linear products, and active capability limitations remain visible. [Volumetric Lighting](VolumetricLighting/README.md) and [Reference Path Tracer](ReferencePathTracer/README.md) retain independent negative/blocked dispositions and cannot inherit that verdict.
 
 ## Primary Source Route
 
