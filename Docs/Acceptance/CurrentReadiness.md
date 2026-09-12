@@ -2,7 +2,7 @@
 
 **Status:** high-level readiness snapshot; orientation only, not feature acceptance or release approval
 
-**Snapshot:** 2026-09-08 against committed `master` revision `ffe60e3a`; implementation source remains unchanged from baseline `8414b5dc`; no candidate-bound feature report was found
+**Snapshot:** 2026-09-12 against committed `master` revision `8b650c7450f8a59fb3bcc18edbb4d217a7b11ed5`; Reference Path Tracer Stage 2 is retained as a source/build integration result only, and no release-approved candidate report was found
 
 **Responsibility:** provide one evidence-weighted 0–100 view of what exists now, what is only partial, what is missing, and which proof or delivery layer blocks each tracked feature
 
@@ -25,7 +25,7 @@
 
 ```mermaid
 flowchart LR
-    I[Implementation<br/>27.7 of 40] --> R[Integration<br/>12.2 of 20]
+    I[Implementation<br/>27.8 of 40] --> R[Integration<br/>12.2 of 20]
     R --> V[Candidate verification<br/>0 of 25]
     V --> D[Delivery and adoption<br/>0 of 15]
     D --> Result[Portfolio projection<br/>40 of 100, Blocked]
@@ -109,7 +109,7 @@ When implementation, scope, or evidence changes, update this snapshot, the ownin
 | `FCR-REN-05` | ray-traced GBuffer execution | **40** | `30/10/0/0` | Capability-gated partial route | strict/automatic selection, inline/native parity, content matrix, failure, and crossover evidence |
 | `FCR-REN-06` | direct lighting | **45** | `30/15/0/0` | Source-present and ray-dependent; ReSTIR DI conformance unproved | analytic baseline, BRDF/light units, PDFs, bias/light translation, visibility/reconstruction, many-light degradation, failure, quality, memory, and cost evidence |
 | `FCR-REN-07` | indirect lighting | **45** | `30/15/0/0` | Source-present seed-replay prototype; ReSTIR GI/GRIS conformance unproved | path/technique accounting, record/shift/GRIS math, history, motion/disocclusion, correlation/bias/noise, reconstruction, sky, quality, memory, and cost evidence |
-| `FCR-REN-08` | Reference Path Tracer | **20** | `15/5/0/0` | `PTD-01-R2 PASS`: ordinary selector, Private stateless owner, generic unavailable/progress reader, and old-route clean break accepted; transport deliberately unavailable and oracle claim blocked | estimator/session identity, deterministic raw result, live accumulation/UX, independence, parity, packaging, and full proof |
+| `FCR-REN-08` | Reference Path Tracer | **25** | `20/5/0/0` | `PTD-02-R0 PASS`: the ordinary selector now keys one host-agnostic Lit/Reference middle-recipe decision in the original frame; DevelopmentEditor and DevelopmentGame builds pass, but transport remains deliberately unavailable | camera rays/sampling, estimator/session identity, deterministic raw result, live accumulation/UX, runtime transition proof, parity, packaging, and full oracle evidence |
 | `FCR-REN-09` | exposure | **45** | `30/15/0/0` | Integrated manual/automatic source path | numeric, adaptation/reset, per-view, scheduling, backend, and color-domain evidence |
 | `FCR-REN-10` | reconstruction and upscaling | **40** | `30/10/0/0` | Linear plus capability-gated NVIDIA routes | requested/active/provider truth, inputs, failure, package, temporal quality, latency, and memory |
 | `FCR-REN-11` | debug views and capture | **40** | `25/15/0/0` | Reachable but presentation-partial | exact signal/display semantics, unavailable state, isolation, sidecars, interpretation, and observer cost |

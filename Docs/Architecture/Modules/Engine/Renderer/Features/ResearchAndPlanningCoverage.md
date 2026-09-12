@@ -40,12 +40,23 @@ The goal is repeatable planning depth, not seven files per feature. A full packa
 
 | Field | Record |
 | --- | --- |
-| Identity | `ITER-REN-LIGHTDOC-01`; owner: Renderer lighting documentation; status: documentation validation in progress; start revision `8e4ffba225411965dc51c0b783e5f47a075c7e84`; user-owned `ReferencePathTracer/ExecutionArchitecture.md` edit preserved |
+| Identity | `ITER-REN-LIGHTDOC-01`; owner: Renderer lighting documentation; status: `PASS` for documentation package only on 2026-09-12; start revision `8e4ffba225411965dc51c0b783e5f47a075c7e84`; package integrated at `8b650c7450f8a59fb3bcc18edbb4d217a7b11ed5`; concurrent user-owned `ReferencePathTracer/ExecutionArchitecture.md` work remained outside this task |
 | North Star | `NS-REAL`, `NS-MATH-DATA`, `NS-EVIDENCE`, `NS-OWNERSHIP`, `NS-ADOPTION`, `NS-SIMPLIFY` |
 | Persona targets | `PGE-02`, `PGE-05` through `PGE-10`, `PGE-13`, `PGE-15`; documentation and planning only |
 | Delivery target | three feature folders with six independent roles each, clean navigation, deep primary research, `DIR-D0`/`IND-D0`/`VOL-D0`, and conditional implementation stages |
 | Risks | estimator terminology inflation, duplicated ownership, stale flat paths, invented budgets, research-as-proof, premature volumetric admission, and overlap with user-owned RPT work |
 | Acceptance/checks | package roles and sibling budget; local links/anchors; source/research pins; `AC/FM/CHK` and stage traceability; placeholder/stale-path/UTF-8/whitespace/scoped-diff review; no runtime/build/GPU/release claim |
+
+### `ITER-REN-LIGHTDOC-01` Validation Result
+
+| Check | 2026-09-12 result |
+| --- | --- |
+| `CHK-LDOC-01` — package shape and authority | `PASS`: Direct, Indirect, and Volumetric Lighting each contain six direct Markdown siblings; all 18 files declare status, responsibility, and authority boundary; each README explains why a separate UX owner is not yet justified. |
+| `CHK-LDOC-02` — research and evidence boundary | `PASS`: 39 numbered source definitions reconcile with their uses; primary papers/specifications and revision-pinned reference implementations are separated from Sparkle evidence and implementation claims. |
+| `CHK-LDOC-03` — decision and delivery traceability | `PASS`: `DIR-D0`, `IND-D0`, and `VOL-D0` are present; the packages define 43 acceptance, 28 failure, and 29 check identities; each plan has nine dependency-ordered stages, nine copy-ready prompts, explicit stop rules, and stage-to-acceptance traceability. |
+| `CHK-LDOC-04` — navigation and stale paths | `PASS`: all local targets in the 36 changed Markdown files resolve; the three package cross-file anchors resolve; repository-wide search finds no references to the deleted flat lighting pages; package placeholder search is empty. |
+| `CHK-LDOC-05` — encoding and whitespace | `PASS`: strict UTF-8 decode and trailing-whitespace checks pass for all 18 package files; `git diff --check 8e4ffba2..8b650c74` exits zero. |
+| `CHK-LDOC-06` — claim boundary | `PASS`: Direct and Indirect remain unaccepted implementation targets, Volumetric remains 0/100 and roadmap-gated, and no build, shader, runtime, GPU, visual, performance, package, FCR, or release result is claimed. |
 
 ## Quality Bar
 

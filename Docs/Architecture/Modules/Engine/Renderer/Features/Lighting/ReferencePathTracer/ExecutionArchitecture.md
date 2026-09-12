@@ -12,7 +12,7 @@
 
 **Priority reconciliation:** 2026-09-10 makes the responsive live viewport slice the first architecture milestone and places durable artifact workflow after it; this changes no current-source or readiness claim.
 
-**Current readiness:** **`PTD-01-R2 PASS`** accepts the Stage-1 ordinary-selector/Private-owner seam and exact `ARCH-RPT-1` feature-enclosure ledger; Stage 2 is authorized. Estimator, session identity, accumulator, clickable UI, and oracle evidence remain absent. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **25/100 (`20/5/0/0`)**. `PTD-02-R0 PASS` accepts the original-frame alternate recipe, topology key, and host/View-kind-independent routing; Stage 3 is authorized. Camera rays, sampling, estimator, session identity, accumulator, clickable UI, runtime transition proof, and oracle evidence remain absent. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 **Non-claims:** the Stage 1 implementation does not provide path transport, shader execution, image output, convergence, backend parity, performance, package, Shipping, or release evidence.
 
@@ -117,6 +117,8 @@ Each committed prefix is bound to immutable leases and identities over Scene/Vie
 
 Sparkle's live frame route is the template: `FramePipeline::OnRender` admits and prepares the frame, `BuildRenderFrameGraph` declares high-level stages, and stage owners such as `GBuffer`, `RestirLighting`, and `Exposure` expose one named composition function while keeping their passes, settings, resources, and shaders with the capability. Reference Path Tracer follows that exact shape. The frame builder selects one middle recipe and then consumes one generic downstream product; provider, upscaler, reconstruction, resource, shader, and fallback policy remain inside the selected composition owner. A feature-specific ternary in the shared tail is an ownership failure. The feature is not dispatched by a second renderer, a side job, or an unrelated post-process/debug path.
 
+`RenderViewKind` and `RenderViewMode` are orthogonal inputs. View kind identifies the existing producer semantics—Editor-authored `Scene` or runtime `Game`—while view mode selects the frame recipe. Any supported kind carrying `ReferencePathTracer` reaches this same branch, feature owner, estimator, session, and downstream product contract. No feature code branches on “Editor versus Game”; host selectors only submit the ordinary mode.
+
 Validation follows the same layering rule. The feature preflight validates externally supplied requests, supported-domain membership, and immutable input identity once before sample zero. Inner camera, sampler, estimator, and accumulation functions consume those established invariants as straightforward math; they do not repeat long defensive condition chains. Only genuinely concurrent or post-preflight transitions, such as stale sample-range completion, are checked at the point of commit.
 
 `FramePipeline` may know only that the selected `RenderViewMode` participates in the frame-recipe key and may retain the feature owner's lifetime. It must not own Reference Path Tracer validation, accumulation counters, reset classification, transport digest, requested/active backend or frontend, sample state, shader binding, resource allocation, or error policy. `BuildRenderFrameGraph` is the one outside-feature recipe-selection site: it constructs the ordinary Lit middle or invokes one `AddReferencePathTracerPasses`-style entry. No Lighting subpass, post-process stage, presentation path, or RHI frontend independently chooses the renderer again.
@@ -135,7 +137,7 @@ flowchart LR
     RPT --> Present
 ```
 
-The Reference Path Tracer recipe replaces the estimator-dependent GBuffer/ReSTIR/ray-reconstruction middle; it does not layer reference transport on their outputs. It still uses the same `RenderFrame`, prepared Scene/View, ray-tracing scene, `FrameGraphBuilder`, compiled graph execution, RHI queues/resources/pipelines, viewport publication, Editor UI packet, and submission/presentation machinery. Its raw accumulator remains feature-owned and bypasses display processing for evidence; only a one-way display derivative enters the ordinary exposure/tone-map/output presentation tail.
+The Reference Path Tracer recipe replaces the estimator-dependent GBuffer/ReSTIR/ray-reconstruction middle; it does not layer reference transport on their outputs. It still uses the same `RenderFrame`, prepared Scene/View, ray-tracing scene, `FrameGraphBuilder`, compiled graph execution, RHI queues/resources/pipelines, viewport publication, host UI packet when present, and submission/presentation machinery. Its raw accumulator remains feature-owned and bypasses display processing for evidence; only a one-way display derivative enters the ordinary exposure/tone-map/output presentation tail.
 
 `RenderViewMode` therefore participates in the generic frame-graph recipe key. A Lit/Reference switch rebuilds or selects the matching graph at the existing safe topology boundary, while the Private Reference Path Tracer owner persists long enough to implement the accepted Lit suspend/revalidate policy. This is one renderer with two recipes, not two renderers and not one monolithic graph that runs both estimators.
 
@@ -149,7 +151,7 @@ This deliberate difference matters:
 - the **feature capsule** owns everything required to implement that mode;
 - the **frame** selects and invokes the capsule in one place;
 - the **RHI** executes generic resource, pipeline, trace, dispatch, barrier, queue, and readback operations; and
-- the **Editor** lists the mode and renders a generic progress observation, without storing Renderer state or transport settings.
+- each approved **host** lists or requests the ordinary mode and renders a generic progress observation, without storing Renderer state or transport settings; Editor and Game adapters do not define separate rendering behavior.
 
 No plugin framework, generic renderer-feature registry, new renderer module, global job system, or feature-specific settings family is introduced to achieve this. Direct composition is preferred while one concrete feature is sufficient.
 
@@ -203,7 +205,7 @@ Do not create a top-level `PathTracer` engine, a new executable, a parallel `Ref
 ## End-To-End View Route
 
 ```text
-Viewport selects RenderViewMode::ReferencePathTracer
+Editor or Game view owner selects RenderViewMode::ReferencePathTracer
     -> View owner preserves Lit settings and resolves canonical RenderView identity/camera/extent
     -> Renderer resolves the accepted reference preset and validates domain/capability/resource budget
     -> acquire immutable SceneGeneration + View semantic identities + shader/asset identities
@@ -232,7 +234,7 @@ Names are illustrative until implementation review, but responsibilities are fix
 
 | Contract | Required content |
 | --- | --- |
-| `RenderViewMode` through `ViewportRenderRequest` | The only shared request surface: one ordinary per-view mode value. Editor selection remains in `EditorViewportSession`; no path-tracer configuration enters `EngineRenderingSettingsState`. |
+| `RenderViewMode` through `ViewportRenderRequest` | The only shared request surface: one ordinary per-view mode value independent of `RenderViewKind`. Editor selection remains in `EditorViewportSession`; a Game host uses its existing view-mode owner. Neither adapter owns path-tracer configuration or Renderer state, and no path-tracer configuration enters `EngineRenderingSettingsState`. |
 | Feature-local configuration | Accepted camera/extent/crop/filter semantics, target product/SPP, seed/replicate, backend/frontend policy, included domain, and bounded batch/memory/checkpoint/readback policy. It remains Private until a concrete UI or command consumer requires a narrow boundary. |
 | `ReferencePathTracerInputDigest` | Private canonical hash of every transport-affecting scene, view, asset, shader, compiler, estimator, backend/frontend, sampler, domain, and resolution value. View-mode selection, target SPP, presentation settings, wall clock, batch size, and invocation-only fields do not enter this digest. |
 | `ReferencePathTracerSession` | Private feature owner for stable identity, accumulation, invalidation, pause/restart/checkpoint/readback, and mutable implementation state. Generic View state does not own or mirror it. |
@@ -324,9 +326,9 @@ The session acquires generation-stable views of canonical render data:
 
 The integrator reconstructs the primary surface from the ray hit. It does not consume GBuffer depth, normal, material, motion, or reconstructed lighting. Shared material or light leaves are allowed only where one canonical implementation prevents drift and the [oracle ladder](Research.md#oracle-ladder) has an independent way to falsify that leaf.
 
-The camera fingerprint is built from canonical post-resolution semantic fields, not raw structure bytes: Viewport/selection identity, View kind where it changes semantics, active camera identity, position/orientation, projection kind, unjittered projection/lens values, admitted shutter/time values, crop/filter, and actual render extent. Editor input activity and Game camera cut/teleport signals improve the reason code but are not the authority. Any field that changes generated primary rays resets with no movement epsilon. Ordinary real-time TAA jitter and frame index never enter the reference fingerprint.
+The camera fingerprint is built from canonical post-resolution semantic fields, not raw structure bytes: Viewport/selection identity, the resolved camera semantics supplied by the View kind, active camera identity, position/orientation, projection kind, unjittered projection/lens values, admitted shutter/time values, crop/filter, and actual render extent. `RenderViewKind` does not select or fork the estimator. Editor input activity and Game camera cut/teleport signals improve the reason code but are not the authority. Any field that changes generated primary rays resets with no movement epsilon. Ordinary real-time TAA jitter and frame index never enter the reference fingerprint.
 
-Every Editor and Game camera producer converges through the same `RenderViewInput.Camera` and View-state boundary. Editor-produced viewports use the existing `RenderViewKind::Scene`; runtime viewports use `RenderViewKind::Game`. The live Editor currently submits `Game`, so Stage 2 updates both Editor producers as a clean break rather than inventing a nonexistent `RenderViewKind::Editor`. Editor free-flight, orbit, pilot/eject, focus/bookmark, and scene-camera edits are not special-cased inside the path tracer. Runtime controller motion, animation, cuts, teleports, camera replacement, and lens edits use the same comparison after their owner resolves the effective camera.
+Every Editor and Game camera producer converges through the same `RenderViewInput.Camera` and View-state boundary. Editor-produced viewports use the existing `RenderViewKind::Scene`; runtime viewports use `RenderViewKind::Game`. Stage 2 updates the two former Editor `Game` submissions as a clean break rather than inventing a nonexistent `RenderViewKind::Editor`. This classification does not make Reference Path Tracer an Editor feature: either kind may carry the same Reference mode. Editor free-flight, orbit, pilot/eject, focus/bookmark, and scene-camera edits are not special-cased inside the path tracer. Runtime controller motion, animation, cuts, teleports, camera replacement, and lens edits use the same comparison after their owner resolves the effective camera.
 
 ## Invalidation Classification
 
@@ -442,8 +444,8 @@ Automatic selection may choose only between already accepted routes and records 
 
 [User Experience](UserExperience.md) owns the complete interaction contract. Architecture requires three consumers in priority order:
 
-1. **Editor viewport:** `Reference Path Tracer` is the second top-level view-mode item, immediately after Lit. Selection preserves Lit settings, performs automatic preflight, starts accumulation on success, remains responsive while the camera moves, and displays the newest accepted composition with a compact progress/reset/completion overlay. Details expose exact settings and pause/restart without becoming a prerequisite; checkpoint/save appear later under a secondary Evidence/Output group.
-2. **Approved non-Editor view:** a Game-kind RenderView requests the same semantic through its ordinary view-settings owner. Its UI may differ, but canonical camera identity, invalidation, progress, target completion, raw/presentation separation, and failure states cannot.
+1. **Editor viewport adapter:** `Reference Path Tracer` is the second top-level view-mode item, immediately after Lit. Selection submits the ordinary mode, preserves Lit settings, performs automatic preflight, starts accumulation on success, remains responsive while the camera moves, and displays the newest accepted composition with a compact progress/reset/completion overlay. Details expose exact settings and pause/restart without becoming a prerequisite; checkpoint/save appear later under a secondary Evidence/Output group.
+2. **Game/runtime viewport adapter:** a Game-kind RenderView selects the same ordinary mode through its approved development view-settings owner. Its UI may differ, but recipe selection, estimator/session behavior, canonical camera identity, invalidation, progress, target completion, raw/presentation separation, and failure states cannot.
 3. **Noninteractive ApplicationEditor operation:** a submission manifest creates an offscreen canonical view, observes the same Renderer session, exports a completed prefix, returns stable categories, and enables reproducible evidence without UI automation.
 
 The primary comparison loop is Reference Path Tracer -> Lit -> Reference Path Tracer on one unchanged View. Leaving Reference Path Tracer restores untouched Lit state and, only when retention is admitted, suspends after a complete range. Without retention it settles/releases and return validates from ordinal zero. A retained prefix resumes only when the full digest still matches; scene/camera changes made while in Lit invalidate it. Memory-policy eviction and single-active-view capacity are explicit events, never silent loss.
@@ -454,7 +456,7 @@ The overlay displays exact committed/target prefix, target ratio, last reset rea
 
 Raw export is optional and secondary. `Save Raw Result` or `Save When Complete` reads the same session prefix; `Save Current Prefix` is explicitly partial. Export failure does not destroy the live prefix or a prior result. There is no second render launched merely because the user saves.
 
-The tool is excluded from `ShippingEditor`, `ShippingGame`, and consumer first run by default. Both Shipping profiles retain the `ReferencePathTracer` enumerator unconditionally in the existing public Renderer `RenderViewMode` source header for source/ABI symmetry, but compile out every producer/session factory and every selector, CVar/CLI, UI, writer, codec/package, and documentation route; an injected value rejects before allocation. If release scope later exposes it, dependencies, writable roots, support contract, selector reachability, and performance expectations must be admitted explicitly. A developer console/CVar may diagnose selection in development profiles but is not the product workflow.
+The tool is excluded from `ShippingEditor`, `ShippingGame`, and consumer first run by default. Both Shipping profiles retain the `ReferencePathTracer` enumerator unconditionally in the existing public Renderer `RenderViewMode` source header for source/ABI symmetry, but compile out every producer/session factory and every selector, CVar/CLI, UI, writer, codec/package, and documentation route; an injected value rejects before allocation. If release scope later exposes it, dependencies, writable roots, support contract, selector reachability, and performance expectations must be admitted explicitly. The existing development CVar may remain a thin ordinary mode-selection adapter for a host without a view-mode UI; it does not own product or Renderer behavior.
 
 ## Failure And Recovery Contract
 

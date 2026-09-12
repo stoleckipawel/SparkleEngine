@@ -4,9 +4,9 @@
 
 **Responsibility:** own the bounded volume/fog/atmosphere/sky promise, negative state, feature tiers, acceptance, failures, checks, and definition of done
 
-**Authority boundary:** [Research](Research.md) owns precedent; [Discovery](Discovery.md) owns `VOL-D0`; [Transport And Composition](TransportAndComposition.md) owns math; [Execution Architecture](ExecutionArchitecture.md) owns system shape; [Plan](Plan.md) owns order; code/build and a future assigned FCR own implementation/results
+**Authority boundary:** [Research](Research.md) owns precedent; [Discovery](Discovery.md) owns `VOL-D0`; [Transport And Composition](TransportAndComposition.md) owns math; [Execution Architecture](ExecutionArchitecture.md) owns system shape; [User Experience](UserExperience.md) owns human and automation behavior; [Plan](Plan.md) owns order; code/build and a future assigned FCR own implementation/results
 
-**Verified:** 2026-09-12 against revision `8e4ffba225411965dc51c0b783e5f47a075c7e84`; no participating-media implementation was found
+**Verified:** 2026-09-12 against revision `8b650c7450f8a59fb3bcc18edbb4d217a7b11ed5`; no participating-media implementation was found
 
 **Scope:** participating media, fog, direct volumetric lighting, transmittance, multiple scattering, aerial perspective, physical sky atmosphere, heterogeneous volumes, volumetric ReSTIR research, composition, reconstruction, diagnostics, and content adoption
 
@@ -28,11 +28,10 @@ The current roadmap excludes volumetric lighting from the first-release scope an
 | primary volume/atmosphere/cloud/ReSTIR research | [Research](Research.md) |
 | radiative transfer, phase, transmittance, froxel, reservoir, and composition math | [Transport And Composition](TransportAndComposition.md) |
 | scene/content owners, frame route, resources, histories, and integration hooks | [Execution Architecture](ExecutionArchitecture.md) |
+| authoring, first use, tier/status disclosure, diagnostics, and automation | [User Experience](UserExperience.md) |
 | staged delivery from negative capability to accepted product | [Plan](Plan.md) |
 | current image-based environment/background owner | [Indirect Lighting](../IndirectLighting/README.md) and current `Sky` source route |
 | independent surface reference; volume support is not implied | [Reference Path Tracer](../ReferencePathTracer/README.md) |
-
-No independent `UserExperience.md` is warranted while the feature is excluded and has no public workflow. The dossier owns the future product/status promise and the architecture owns proposed profiles; authoring UX must be added as an independent role when roadmap discovery admits it.
 
 ## Current Negative Capability
 

@@ -4,9 +4,9 @@
 
 **Responsibility:** own the bounded direct-lighting promise, current state, capability decomposition, acceptance, controlled failures, checks, and definition of done
 
-**Authority boundary:** [Research](Research.md) owns precedent; [Discovery](Discovery.md) owns `DIR-D0`; [Sampling And Shading](SamplingAndShading.md) owns correctness rules; [Execution Architecture](ExecutionArchitecture.md) owns system shape; [Plan](Plan.md) owns delivery order; code/build owns implementation; `FCR-REN-06` owns candidate results
+**Authority boundary:** [Research](Research.md) owns precedent; [Discovery](Discovery.md) owns `DIR-D0`; [Sampling And Shading](SamplingAndShading.md) owns correctness rules; [Execution Architecture](ExecutionArchitecture.md) owns system shape; [User Experience](UserExperience.md) owns human and automation behavior; [Plan](Plan.md) owns delivery order; code/build owns implementation; `FCR-REN-06` owns candidate results
 
-**Verified:** 2026-09-12 against revision `8e4ffba225411965dc51c0b783e5f47a075c7e84`; the user reports the current image is visually broken, but this documentation pass did not run the renderer or localize one runtime defect
+**Verified:** 2026-09-12 against revision `8b650c7450f8a59fb3bcc18edbb4d217a7b11ed5`; the user reports the current image is visually broken, but this documentation pass did not run the renderer or localize one runtime defect
 
 **Scope:** scalable direct illumination, analytic and emissive light selection, PBR surface evaluation, visibility, temporal/spatial reuse, denoising, diagnostics, and adoption
 
@@ -26,10 +26,9 @@ The delivery order is correctness first, controlled stochastic scaling second, d
 | primary papers, SDK/engine precedent, and alternative comparison | [Research](Research.md) |
 | radiometry, BRDF, sampling, reservoir, and visibility equations | [Sampling And Shading](SamplingAndShading.md) |
 | target owner, resources, passes, lifetime, and integration hooks | [Execution Architecture](ExecutionArchitecture.md) |
+| first use, quality selection, diagnostics, failure, and automation | [User Experience](UserExperience.md) |
 | staged production work, gates, deletion ledger, and copy-ready prompts | [Plan](Plan.md) |
 | independent surface-transport oracle | [Reference Path Tracer](../ReferencePathTracer/README.md) |
-
-No independent `UserExperience.md` is warranted before discovery admits a durable public workflow. This dossier owns the bounded product/status promise and the execution architecture owns requested/active profiles; any later author-facing redesign must add the role rather than bury UX decisions in code.
 
 ## Current Source Truth
 

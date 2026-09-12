@@ -4,9 +4,9 @@
 
 **Responsibility:** own the bounded indirect-lighting/ReSTIR GI promise, current prototype classification, feature scope, acceptance, failures, checks, and definition of done
 
-**Authority boundary:** [Research](Research.md) owns precedent; [Discovery](Discovery.md) owns `IND-D0`; [Transport And Estimator](TransportAndEstimator.md) owns math; [Execution Architecture](ExecutionArchitecture.md) owns system shape; [Plan](Plan.md) owns order; code/build and `FCR-REN-07` own implementation/results
+**Authority boundary:** [Research](Research.md) owns precedent; [Discovery](Discovery.md) owns `IND-D0`; [Transport And Estimator](TransportAndEstimator.md) owns math; [Execution Architecture](ExecutionArchitecture.md) owns system shape; [User Experience](UserExperience.md) owns human and automation behavior; [Plan](Plan.md) owns order; code/build and `FCR-REN-07` own implementation/results
 
-**Verified:** 2026-09-12 against revision `8e4ffba225411965dc51c0b783e5f47a075c7e84`; the existing route is source-present, not established as ReSTIR GI/GRIS-correct
+**Verified:** 2026-09-12 against revision `8b650c7450f8a59fb3bcc18edbb4d217a7b11ed5`; the existing route is source-present, not established as ReSTIR GI/GRIS-correct
 
 **Scope:** bounced surface transport, ReSTIR GI/path resampling, environment illumination, temporal/spatial reuse, reconstruction, diagnostics, and adoption
 
@@ -32,10 +32,9 @@ The delivery path is:
 | primary research and alternative GI architecture comparison | [Research](Research.md) |
 | path, proposal, shift, reservoir, reuse, and reconstruction math | [Transport And Estimator](TransportAndEstimator.md) |
 | owner, data flow, histories, resources, and integration hooks | [Execution Architecture](ExecutionArchitecture.md) |
+| first use, path-domain disclosure, diagnostics, failure, and automation | [User Experience](UserExperience.md) |
 | clean-break staged delivery and copy-ready prompts | [Plan](Plan.md) |
 | independent transport oracle and its limitations | [Reference Path Tracer](../ReferencePathTracer/README.md) |
-
-No independent `UserExperience.md` is warranted before discovery admits a durable public workflow. This dossier owns the product/status promise and the execution architecture owns requested/active profiles; later author-facing GI controls require their own reviewed role.
 
 ## Current Source Truth
 

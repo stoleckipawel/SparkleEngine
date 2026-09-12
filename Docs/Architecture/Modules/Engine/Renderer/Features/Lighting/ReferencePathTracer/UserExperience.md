@@ -51,7 +51,7 @@ The numerical bounds are implementation contracts immediately. A development mac
 
 ## Product Pillar
 
-A user opens the viewport View Mode menu, selects **Reference Path Tracer** immediately after **Lit**, and receives a progressively refined image with truthful sample progress. Any effective camera or radiance-affecting scene change invalidates the old prefix before it can mix with the new view. Switching back to Lit enables immediate comparison; returning resumes only a retained exact-identity prefix, while a disclosed no-retention exit restarts at ordinal zero.
+A user selects **Reference Path Tracer** through the current host's ordinary View Mode control—immediately after **Lit** in Editor, or through the approved development view selector in a Game/runtime host—and receives a progressively refined image with truthful sample progress. Any effective camera or radiance-affecting scene change invalidates the old prefix before it can mix with the new view. Switching back to Lit enables immediate comparison; returning resumes only a retained exact-identity prefix, while a disclosed no-retention exit restarts at ordinal zero.
 
 The normal route requires no IDE, developer console, CVar sequence, mandatory setup workspace, or manual `Validate`/`Start` ceremony. Correct defaults, capability validation, accumulation, reset, and preview presentation are consequences of selecting the view mode. A details surface exists for exact settings, actionable errors, pause/restart, and export, but is not a prerequisite for first use.
 
@@ -62,7 +62,7 @@ Four distinctions remain impossible to miss:
 - **complete current-view result versus partial prefix, checkpoint, export staging, failure, or accepted oracle evidence**;
 - **viewport comparison session versus a durable exported artifact**.
 
-The Renderer semantic supports both Editor and Game render views. The Editor exposes the selector in DevelopmentEditor. A non-Editor application may request the same semantic through its normal view configuration, but Shipping exposure remains excluded until release scope explicitly admits its product, dependency, and support obligations.
+The Renderer semantic is host-agnostic and supports both Editor `Scene` views and Game/runtime `Game` views. `RenderViewKind` identifies the ordinary camera producer; it never chooses a different path tracer. `RenderViewMode::ReferencePathTracer` selects the same frame recipe, session semantics, and estimator for either kind. DevelopmentEditor exposes an Editor menu adapter, while DebugGame/DevelopmentGame may expose the same semantic through their approved ordinary view-mode control. Shipping reachability remains a separate release-policy gate, not an architecture fork.
 
 ## Intended People And Jobs
 
@@ -81,7 +81,7 @@ The viewport menu order is stable:
 2. **Reference Path Tracer**
 3. the remaining diagnostic and wireframe modes under their existing organization
 
-The Reference Path Tracer is a `RenderViewMode` semantic. It is not another value in a global real-time lighting-quality selector. On selection, the Renderer resolves one accepted mode preset:
+The Reference Path Tracer is a `RenderViewMode` semantic independent of `RenderViewKind`. It is not another value in a global real-time lighting-quality selector and it is not an Editor-owned renderer. On selection from any supported host, the Renderer resolves one accepted mode preset:
 
 - `SurfaceTransportReference` product;
 - independent camera-ray primary visibility;
@@ -204,7 +204,7 @@ Editor free-fly navigation, an Editor-piloted scene camera, and a Game/runtime c
 - A frame counter, world tick, UI animation, or unchanged camera submission does not reset by itself.
 - A continuously animated camera, material, light, transform, skin/morph state, or time-dependent shader continually creates new identities. The overlay explains the reset loop and recommends pausing simulation or choosing a frozen supported time. It never accumulates streaked/blended history and calls it reference.
 
-The acceptance matrix exercises Editor-produced `RenderViewKind::Scene` and runtime `RenderViewKind::Game` through the same Renderer state path. The live Editor currently submits `Game`; Stage 2 performs a clean break to `Scene` and updates both Editor producers. No nonexistent `RenderViewKind::Editor` is introduced. Shipping reachability is a separate product gate, not a reason to fork camera semantics.
+The acceptance matrix exercises Editor-produced `RenderViewKind::Scene` and runtime `RenderViewKind::Game` through the same Renderer state and recipe path. Stage 2 clean-breaks the two former Editor `Game` submissions to `Scene`; no nonexistent `RenderViewKind::Editor` is introduced. Either kind can carry `RenderViewMode::ReferencePathTracer`, and the feature contains no host-kind branch. Shipping reachability is a separate product gate, not a reason to fork camera or estimator semantics.
 
 ## Lit Comparison And Session Retention
 
@@ -328,7 +328,7 @@ The frozen dry-run matrix is keyboard-only selection/actions/focus order; non-co
 | Profile | Frozen reachability |
 | --- | --- |
 | `DebugEditor`, `DevelopmentEditor` | View-mode selector, overlay/details, semantic Renderer API, exact request CLI, ApplicationEditor operation, raw writer, and support details included. |
-| `DebugGame`, `DevelopmentGame` | Semantic Renderer view mode included; product UI may expose it only through an approved non-console development view selector. Offscreen writer remains ApplicationEditor-owned. |
+| `DebugGame`, `DevelopmentGame` | The same semantic Renderer view mode and session are included and selectable through an approved ordinary development view control; no Editor dependency or Game-specific estimator exists. Offscreen artifact writing remains ApplicationEditor-owned because filesystem publication is a separate tool responsibility. |
 | `ShippingEditor`, `ShippingGame` | The `ReferencePathTracer` enumerator remains unconditionally in the existing public Renderer `RenderViewMode` source header, but every producer and session factory plus selector, CVar, generic command-line reachability, request CLI, writer/operation, support promise, optional artifact dependency, package entry, and public documentation route is compiled out. An injected value returns `UnsupportedCapability` before allocation; no session can start. |
 
 The current repository does not meet this matrix: the global Lighting CVar is generically reachable and Renderer links into editor/runtime profiles. `PTD-00-R0` therefore cannot use this frozen target as Shipping proof.

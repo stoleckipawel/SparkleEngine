@@ -6,7 +6,7 @@
 
 **Authority boundary:** this study informs [Discovery](Discovery.md); it cannot label the current prototype ReSTIR GI, select local product/math/architecture, authorize code, or pass `FCR-REN-07`
 
-**Researched:** 2026-09-12; Sparkle audit at `8e4ffba225411965dc51c0b783e5f47a075c7e84`; repository sources revision-pinned where practical
+**Researched:** 2026-09-12; Sparkle source re-audit at `8b650c7450f8a59fb3bcc18edbb4d217a7b11ed5`; mutable reference repositories were checked against their listed HEAD revisions
 
 ## Research Decision
 
@@ -124,6 +124,126 @@ They use one environment mapping, rotation, radiance generation, and importance 
 | sky available to misses; emissive joined in composite | potential technique/accounting ambiguity requires raw path tests |
 | no dedicated portable indirect denoiser | product-quality path incomplete |
 
+## State-Of-The-Art Transport Taxonomy
+
+“Indirect lighting” spans methods with different estimands, visibility, temporal behavior, memory, and product limits. They cannot be compared by screenshots alone; the ReSTIR course is the cross-family terminology reference, while the original papers remain equation authority.[^19]
+
+| Family | Resampled/stored object | Characteristic strength | Structural limitation | Sparkle decision pressure |
+| --- | --- | --- | --- | --- |
+| independent path tracing | complete sampled path | simplest transport truth and convergence story | too noisy at interactive sample counts | mandatory initial/reference baseline; not the only product path |
+| ReSTIR GI | secondary illumination sample/path, commonly one-bounce reconnection | effective spatiotemporal reuse for dynamic indirect light | reconnection support degrades for glossy/delta paths and disocclusion | preferred first reuse domain after one-bounce proof[^1][^16] |
+| GRIS | weighted random variables plus explicit shift mappings | mathematical framework for correlated/heterogeneous proposals | correctness depends on weight, mapping, support, Jacobian, and correlation assumptions | normative foundation; every code term needs a ledgered equation[^2] |
+| ReSTIR PT | path sample over multiple terminal techniques | broader path-domain reuse and technique unification | larger records, replay/reconnection complexity, spatial bias/invalid mappings | later admitted glossy/multi-bounce increment[^3][^4] |
+| enhanced/splatting/multilayer ReSTIR | reciprocal/footprint or source-to-destination reuse | attacks disocclusion, duplication, and mapping quality | newest methods, more state, rays, and implementation risk | research watchpoints only after base conformance[^5][^7] |
+| path guiding/ReSTIR PG | learned/resampled directional proposal | improves difficult initial path discovery | training/adaptation state and proposal-accounting complexity | candidate only when initial proposal starvation is measured[^6] |
+| bidirectional/ReSTIR BDPT | eye/light subpaths and connection strategies | caustic/specular-diffuse-specular coverage | major technique/MIS/record expansion | separately admitted research domain[^8] |
+| DDGI/probe fields | spatial irradiance probes | stable diffuse, scalable amortization | leaks, update latency, weak glossy/high-frequency visibility | alternative platform tier, never silently combined with path-reservoir claims[^10] |
+| Lumen-like surface/radiance cache | scene parameterization plus traced/cached radiance | broad production GI/reflections on varied hardware | large scene/card/cache/tracing architecture | rejected as an incidental addition; needs its own product admission[^11][^20] |
+| SHaRC/NRC | hashed or learned radiance cache | amortizes later-bounce radiance | cache bias/training/generalization/memory and new lifetime | optional advanced tier only if a specific budget demands it[^12][^13] |
+
+The first target is deliberately narrower than “real-time path tracing”: one independently proved one-bounce estimator, explicit path record, one ratified shift family, GRIS reservoir mathematics, then temporal/spatial reuse. Every additional bounce, lobe, terminal technique, mapping, guide, or cache is a new domain cell with its own support and evidence.
+
+## Reference Execution Pipeline
+
+```text
+primary receiver and material
+  -> choose BSDF/lobe proposal and trace secondary vertex
+  -> evaluate exactly one accounted terminal family:
+       NEE light sample | emissive hit | environment miss | continued path
+  -> record path geometry, techniques, conditional PDFs, throughput, lobe and generations
+  -> form initial weighted sample/reservoir
+  -> map source sample to current receiver (reconnection/replay/hybrid)
+  -> validate inverse/support/Jacobian/visibility and compute GRIS weight
+  -> temporal and spatial resampling with explicit duplication/correlation policy
+  -> final current-scene selected-path evaluation
+  -> raw indirect diffuse/specular and confidence
+  -> optional reconstruction
+  -> lighting composition
+```
+
+Stages must expose the result after each arrow on bounded fixtures. Kernel fusion cannot erase the ability to isolate technique accounting, initial proposals, mapping, reuse, final visibility, or reconstruction.
+
+## Path Technique Accounting Matrix
+
+| Terminal event | Contribution owner | Mandatory probability facts | Double-count prevention |
+| --- | --- | --- | --- |
+| light sampled by NEE at secondary vertex | indirect estimator | BSDF-to-secondary density, light selection PMF, light conditional solid-angle PDF, MIS/technique weight | emissive hit for the same strategy obeys the frozen MIS rule |
+| BSDF path hits emissive surface | indirect estimator unless explicitly assigned elsewhere | every sampled BSDF/path density and terminal emission identity | shared composite emissive is camera-visible material emission only, not another bounce contribution |
+| path misses to environment | indirect estimator | BSDF/path density, environment mapping/radiance and any environment selection PDF | background fill remains a camera-ray result; environment NEE and miss obey one MIS policy |
+| continuation to next bounce | indirect estimator | throughput update, measure conversion, lobe/roulette probability, depth | no earlier vertex may add the same terminal contribution again |
+| delta event | excluded or dedicated replay domain | discrete event probability and exact direction | never force into a continuous reconnection PDF or rough diffuse bucket |
+
+The technique ledger is evaluated with NEE on/off, emitter visible/hidden, environment enabled/black/rotated, one- versus two-bounce, and roulette disabled/enabled. The expected mean changes are predicted before execution.
+
+## Shift-Mapping Decision Matrix
+
+| Mapping | Plausible first domain | State needed | Mandatory rejection | Known pressure |
+| --- | --- | --- | --- | --- |
+| reconnection | diffuse and sufficiently rough first secondary vertex | source/destination receivers, secondary vertex, normals/material/lobe, segment PDFs and geometry factors | occlusion, wrong hemisphere, zero support, singular/invalid Jacobian, excluded lobe/material/generation | loses validity on glossy/specular chains |
+| random replay | identical stochastic choices through a changed receiver/path context | technique and random-dimension identity plus every conditional distribution/version | control-flow/distribution divergence, topology/material/light/environment generation mismatch | a seed is not a path; replay probability must still be derived |
+| hybrid replay/reconnection | specular prefix plus reconnectable rough suffix | explicit prefix vertices/events and suffix mapping state | any delta mismatch or unsupported inverse/support term | record/ray cost and branching complexity |
+| reservoir splatting | source path proposes to multiple destination receivers | source-to-destination footprint/probability and duplication bookkeeping | uncovered/invalid destination, duplicated mass without weight | disocclusion benefit versus atomics/storage/correlation |
+
+For every admitted mapping, the implementation package must contain: domain predicate, forward map, inverse or justified non-bijective formulation, determinant/Jacobian in the correct measure, source and destination support, visibility/retrace policy, material/light/environment generation policy, deterministic rejection codes, hand cases, and statistical comparison. “Rerun this seed here” satisfies none of these by itself.
+
+## Correlation, Bias, And Convergence Investigation
+
+GRIS permits correlated candidates but does not make correlation irrelevant.[^2] Repeated reservoirs can duplicate a high-weight sample across pixels/frames, reduce true diversity, and make stored `M` look more informative than it is. MCMC mutation research specifically targets decorrelation of ReSTIR samplers, reinforcing that stability and effective independence are separate questions.[^17]
+
+Every A/B run therefore records:
+
+- raw per-pixel and regional mean error versus accepted reference as frames/spp grow;
+- selected unique path/light/terminal identities and duplication rate;
+- temporal autocorrelation and recovery time after scene/camera mutation;
+- reservoir `M` and weight distribution separately from effective diversity;
+- rejected mapping reasons, non-finite counts, and confidence/disocclusion classification;
+- equal-time rays, path vertices, bandwidth, persistent/peak replacement memory, and queue timing.
+
+The first accepted mode may be a declared biased real-time estimator, but its approximation must be named, bounded on the acceptance matrix, and never described as unbiased merely because its initial samples are unbiased. Any spatial-bias limitation in the selected reference implementation becomes a local falsifier, not an inherited waiver.
+
+## Reconstruction And Product Separation
+
+SVGF is the classical reference for temporal accumulation, variance estimation, and edge-aware spatial filtering of sparse path-traced GI.[^18] NRD's RELAX/REBLUR interfaces are more product-oriented current precedents.[^14] Neither can reconstruct transport that the raw estimator never sampled, and both can turn lag or correlated bias into a visually stable image.
+
+Required signal separation is:
+
+```text
+estimator history: path/reservoir state only
+raw products: scene-linear indirect diffuse + indirect specular + hit/path/confidence facts
+reconstruction history: filtered moments/radiance and guide identity only
+presentation: exposure/upscale/display after lighting composition
+```
+
+Filtered radiance does not feed back into GRIS weights, path throughput, targets, or the reference oracle. A provider can be swapped only if requested/active/failure semantics and raw results remain unchanged.
+
+## External Source And Provenance Ledger
+
+| Source | Observed fact used | Permitted transfer | Forbidden inference | Provenance action before code |
+| --- | --- | --- | --- | --- |
+| ReSTIR GI/GRIS papers[^1][^2] | path reuse, shift, generalized weighting, correlation framework | equations, terminology, hand/statistical tests | seed replay conforms or published quality transfers | cite exact equation/edition; independently implement and review derivation |
+| RTXDI `a6efab9` GI/PT docs[^3][^16] | current renderer bridge, path context, sample/shift integration shape | executable comparison and differential fixtures | SDK is a full renderer or automatically correct for Sparkle | retain commit, LICENSE/notices, configuration, and modification record before copying code |
+| ReSTIR PT code `8d12332`[^4] | research implementation structure | cross-check records/mappings and reproduce paper cases | production quality, license clearance, backend fit | pin commit and audit LICENSE/dependencies before any transfer |
+| Enhanced/PG/splatting/BDPT research[^5][^6][^7][^8] | current advanced solution space and claimed target failures | hypothesis/admission experiments | mandatory roadmap scope or transferable speedup | citation only until separate code/rights review and local A/B gate |
+| PBRT 4e[^9] | independent transport/NEE/MIS/RR reference procedure | analytic and CPU reference concepts | independence when sharing questioned code | disclose shared code/equations and retain a second oracle |
+| DDGI/Lumen/SHaRC/NRC[^10][^11][^12][^13][^20] | alternative product architectures | comparison dimensions and workload hypotheses | permission to ship parallel GI systems | code-bearing source requires commit/license/notices; otherwise citation only |
+| NRD `bf87718` and SVGF[^14][^18] | reconstruction input/history/failure precedent | provider/interface and motion-test design | raw estimator correctness or local quality | pin source; review license/notices; bind exact configuration and guides |
+| conditional RIS/MCMC[^15][^17] | conditional sampling and decorrelation pressure | future mathematical experiments | repair for an underived base estimator | exact paper citation and separate discovery decision |
+
+Git checks on 2026-09-12 confirmed RTXDI `a6efab9`, ReSTIR PT `8d12332`, SHaRC `4e21b58`, and NRD `bf87718` as repository HEADs. This establishes source identity only.
+
+## Adoption And Rejection Matrix
+
+| Candidate | Current disposition | Admission evidence | Rejection/removal evidence |
+| --- | --- | --- | --- |
+| one-bounce independent path baseline | required | analytic/metamorphic and reference agreement | never removed as oracle; may remain test-only |
+| explicit path record | required clean break | packing/round-trip, ownership, bandwidth and mapping sufficiency | any missing probability/identity fact or duplicate canonical representation |
+| reconnection ReSTIR GI | proposed first reuse | domain/support/Jacobian/visibility statistics plus motion matrix | cannot cover admitted roughness/domain or violates equal-time budget |
+| hybrid/ReSTIR PT | conditional later | specific glossy/multi-bounce product cell and mapping proof | broader record/rays do not improve admitted workloads |
+| enhanced/splatting/MCMC/PG | research only | named failure reproduced and frozen equal-time A/B | base solution passes or advanced state causes regression/duplication |
+| DDGI/Lumen-like/SHaRC/NRC | separate alternatives | platform/product requirement not met by selected path route | no distinct tier need or creates second scene/GI architecture |
+| portable reconstruction | required product layer | exact guide/signal/history contract and raw/reconstructed motion evidence | provider hides unsupported transport or duplicates owner |
+| DLSS RR | optional | same raw semantics and measured supported-profile gain | sole functional path, hidden fallback, or evidence not reproducible |
+
 ## Recommended Architecture To Test
 
 1. Establish one-bounce diffuse/glossy initial estimator with explicit NEE/BSDF/emission/environment technique accounting.
@@ -165,3 +285,8 @@ They use one environment mapping, rotation, radiance generation, and importance 
 [^13]: Müller et al., [Real-Time Neural Radiance Caching for Path Tracing](https://research.nvidia.com/labs/rtr/publication/muller2021nrc/), ACM TOG, 2021.
 [^14]: NVIDIA, [NVIDIA Real-time Denoisers](https://github.com/NVIDIA-RTX/NRD/tree/bf877181058988ec5785f82c4189be0be75c1902), revision `bf87718`, accessed 2026-09-12.
 [^15]: Kettunen et al., [Conditional Resampled Importance Sampling and ReSTIR](https://research.nvidia.com/labs/rtr/publication/kettunen2023conditional/), ACM TOG, 2023.
+[^16]: NVIDIA, [RTXDI ReSTIR GI integration](https://github.com/NVIDIA-RTX/RTXDI/blob/a6efab966b7c3b272da0461578eb56ac61c7cbff/Doc/RestirGI.md), revision `a6efab9`, accessed 2026-09-12.
+[^17]: Sawhney et al., [Decorrelating ReSTIR Samplers via MCMC Mutations](https://research.nvidia.com/labs/prl/sawhney2024decorrelating/restirmcmc2024.pdf), ACM TOG, 2024.
+[^18]: Schied et al., [Spatiotemporal Variance-Guided Filtering](https://research.nvidia.com/labs/rtr/publication/schied2017spatiotemporal/), HPG 2017.
+[^19]: Wyman et al., [A Gentle Introduction to ReSTIR: Path Reuse in Real-time](https://research.nvidia.com/labs/rtr/publication/wyman2023gentle/), SIGGRAPH Courses, 2023.
+[^20]: Wright et al., [Lumen: Real-time Global Illumination in Unreal Engine 5](https://advances.realtimerendering.com/s2022/SIGGRAPH2022-Advances-Lumen-Wright%20et%20al.pdf), SIGGRAPH Advances in Real-Time Rendering, 2022.

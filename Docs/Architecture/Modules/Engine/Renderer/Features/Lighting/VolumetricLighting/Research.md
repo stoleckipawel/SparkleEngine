@@ -6,7 +6,7 @@
 
 **Authority boundary:** this study informs [Discovery](Discovery.md); it cannot admit the feature, select local semantics/architecture, set Sparkle budgets, authorize code, or pass a future FCR
 
-**Researched:** 2026-09-12; Sparkle negative audit at `8e4ffba225411965dc51c0b783e5f47a075c7e84`
+**Researched:** 2026-09-12; Sparkle source re-audit at `8b650c7450f8a59fb3bcc18edbb4d217a7b11ed5`; mutable reference repositories were checked against their listed HEAD revisions
 
 ## Research Decision
 
@@ -165,6 +165,151 @@ Apply only after static semantics pass:
 - pass fusion only when intermediate oracle state remains reproducible;
 - checkerboard/variable-rate sampling only with motion/detail acceptance.
 
+## State-Of-The-Art Architecture Map
+
+The target needs two related but independently provable estimators: a production real-time froxel system for fog/atmosphere and a stochastic volume reference/reservoir track for heterogeneous and multiple-scattering workloads. A single “volumetric lighting” label must not hide which one produced the image.
+
+| Layer | Mature/advanced families | First Sparkle target | Later admission trigger |
+| --- | --- | --- | --- |
+| medium semantics | homogeneous, exponential height, analytic local primitives, dense/sparse fields | inverse-metre coefficients plus global/height medium | authored local and heterogeneous content need |
+| camera integration | analytic slab, deterministic ray march, froxel integration | current-frame analytic/froxel single scattering | measured aliasing/performance justifies adaptive/cascaded layout |
+| light selection | all lights, clustered/tiled lists, stochastic froxel selection, path-space reservoirs | deterministic/clustered admitted analytic lights | fixed-work many-light volume pressure survives clustering |
+| transmittance | analytic, fixed quadrature, delta/ratio/residual ratio tracking, guided/control-variate variants | analytic plus deterministic production march and stochastic reference | heterogeneous quality/cost demonstrates a better estimator[^12][^13] |
+| multiple scattering | empirical compensation, diffusion/ambient approximations, LUTs, probe/froxel final gather, path tracing | explicitly named approximation per tier | reference comparison and product budget admit broader transport |
+| physical atmosphere | Bruneton precomputation, Hillaire scalable LUTs, direct ray march | Hillaire/Bruneton-comparable LUT route with independent hand cases | multiple planets/lights or spectral mode receives separate scope |
+| path resampling | Volumetric ReSTIR with approximate candidate and unbiased selected evaluation | research track after reference transport | equal-time error win in admitted complex-media workload[^1] |
+| sparse volume data | dense 3D texture, OpenVDB cook, NanoVDB GPU hierarchy, bricks/majorants | dense-first unless discovery proves sparse need | representative VDB content and memory/empty-space evidence |
+| reconstruction | reprojection/clamp, variance-guided filtering, separated surface/volume learned denoising | portable transmittance/in-scatter temporal baseline | optional learned provider improves frozen cells without owning semantics[^19] |
+| clouds | froxel/weather fields, procedural ray marching, shadow/ambient/multiple-scatter approximations | separately admitted extension of atmosphere/media | named open-world cloudscape content, authoring, and budget owner |
+
+Frostbite's unified volumetric work, Unity HDRP's froxel implementation, Samurai Cinema's single compute-oriented haze path, and Lumen's froxel final gather show different production decompositions.[^3][^15][^16][^17] They are architectural precedent only. Sparkle must measure its own dimensions, formats, queues, sample counts, and budgets.
+
+## Production Froxel Reference Pipeline
+
+```text
+author medium/atmosphere/local-volume intent
+  -> validate, serialize, cook and publish immutable scene generations
+  -> choose camera-relative froxel grid and depth mapping
+  -> resolve coefficient fields once with deterministic overlap/capacity
+  -> cull/select lights in the volume receiver domain
+  -> evaluate geometry visibility and medium transmittance separately
+  -> accumulate raw single-scatter source and emission per froxel
+  -> integrate front-to-back into premultiplied in-scatter + transmittance
+  -> reproject/reconstruct only with current depth/motion/generation validity
+  -> compose once with opaque surface and chosen sky/environment
+  -> expose raw products, status and capture identity
+```
+
+Each step owns one inspectable product on bounded fixtures. Production may fuse passes only after a diagnostic mode reproduces coefficient, light-source, transmittance, in-scatter, history/confidence, and composition products. Atmosphere LUT generation and heterogeneous asset upload publish atomically; mixed generations are invalid.
+
+## Froxel Design Investigation
+
+| Decision | Required comparison | Failure pressure |
+| --- | --- | --- |
+| XY resolution | full, half, tile-aligned and dynamic profiles at equal time/memory | edge halos, thin shaft loss, cache/bandwidth cost |
+| Z mapping | linear, logarithmic/exponential, and bounded hybrid with exact inverse | near-camera banding versus far-horizon under-sampling |
+| stored quantity | coefficients, source radiance, integrated radiance/transmittance, or normalized source | interpolation correctness, format range, composition and transparency consumers |
+| format | FP16/FP32/R11G11B10-like candidates per semantic product | negative/overflow/underflow, precision at high optical depth, filtering support |
+| light list | screen tiles, 3D clusters, flat bitset, stochastic selection | divergent loops, list overflow, globally large lights, build cost |
+| integration | serial Z, wave/quad-swizzled, scan/prefix alternatives | synchronization, ordering, numerical drift, backend portability |
+| history | integrated versus source/coefficient history, neighborhood clamp and confidence | camera motion, local density edits, moving shadows, disocclusion trails |
+
+The Samurai Cinema presentation is a useful warning: coarse frustum volumes can alias horizon/thin haze, and storing a normalized in-scattered quantity can move opacity evaluation to the final pixel.[^16] This is a candidate representation, not a decision; Sparkle must prove interpolation and composition for its own analytic density fields.
+
+## Heterogeneous Tracking Deep Dive
+
+| Estimator | Required inputs | Strength | Failure/variance mode | Sparkle role |
+| --- | --- | --- | --- | --- |
+| fixed-step quadrature | density sampler, step rule, bounds | deterministic and GPU coherent | bias/aliasing from under-sampling; work in empty space | mandatory product baseline with convergence sweep |
+| delta/Woodcock tracking | valid majorant and extinction samples | unbiased collision sampling under valid majorant | null-collision cost in loose/empty majorants | reference candidate |
+| ratio tracking | majorant and per-channel residual weights | unbiased transmittance estimate | high variance or signed weights depending formulation and spectrum | reference candidate |
+| residual ratio tracking | analytic/control extinction plus residual majorant | can reduce variance in structured media | control/majorant construction and violation handling | advanced reference candidate[^12] |
+| guided/zero-variance-derived tracking | approximate transmittance/control model | principled direction for variance reduction | model/build cost and no free perfect control | research pressure, not first product[^13] |
+
+Every stochastic tracker requires an explicit measure, channel policy, majorant proof/validation, collision/null-event probability, boundary rule, RNG dimension, weight update, termination, and finite behavior. A majorant violation is a terminal invariant failure for evidence; clamping density to hide it changes the estimator and is not recovery. Deterministic marching and stochastic tracking use the same world-to-medium transform and coefficient sampler so discrepancies isolate integration rather than content interpretation.
+
+## Volumetric ReSTIR Deep Dive
+
+The volume paper's pivotal architecture is asymmetric: many candidate paths may use cheap approximate scattering/transmittance for resampling, but the selected path is evaluated with the accepted unbiased estimator so candidate approximation does not directly become the final estimator.[^1] That transfer is valid only if Sparkle freezes:
+
+1. integration domain: camera/media path length, direct versus multiple scattering, environment/emission and surface terminal rules;
+2. sample record: scattering positions/directions, free-flight choices, medium/light/content generations, technique and probability facts;
+3. candidate approximation: exact support, bounded/finite output, deterministic configuration and no false zero for contributing paths;
+4. final evaluation: reference transmittance/collision estimator, visibility, contribution weight, target and normalization;
+5. shift mapping: moved/reconnected vertices, inverse/support/Jacobian, medium-boundary and density-field change policy;
+6. temporal/spatial proposal: receiver/path motion, density/light/majorant mutations, duplication/correlation and disocclusion;
+7. product claim: path-space reservoir versus merely selecting lights for froxels.
+
+| Possible domain | Benefit hypothesis | Blocking risk | Decision |
+| --- | --- | --- | --- |
+| per-froxel direct-light reservoir | bounded many-light source evaluation | receiver distribution differs from surfaces; visibility/transmittance cost | evaluate first if many-light fog alone is the need; do not call path-space ReSTIR |
+| camera single-scatter path reservoir | reuse free-flight/light samples | medium motion/support/Jacobian and transmittance correlation | first plausible path-space experiment after reference tracker |
+| heterogeneous multiple-scatter reservoir | major quality potential in dense complex lighting | large record, expensive shifts/final evaluation, extreme correlation | advanced conditional tier |
+| emissive/environment volume paths | handles nonlocal source complexity | terminal-technique accounting and proposal support | separately admitted cells |
+
+No volume reservoir work begins from a surface `DirectLightReservoir` or `RestirIndirectReservoir` representation. Those may donate immutable light/environment facts only; the receiver domain, path state, history, and estimator remain volume-owned.
+
+## Atmosphere, Sky, And Environment Consistency
+
+The Hillaire and Bruneton references both give testable sky/atmosphere implementations, but use different precomputation and parameterization tradeoffs.[^5][^6] The Hillaire source implementation is pinned here to make the comparison reproducible.[^18]
+
+| Product | Authoritative generation | Prohibited double application |
+| --- | --- | --- |
+| sky background | physical-atmosphere or image-environment mode | separate image Sky fill after physical sky is already composed |
+| aerial perspective | atmosphere generation plus camera/depth | reapplying atmosphere in presentation or fog composite |
+| surface direct sun | shared celestial light identity and atmospheric attenuation policy | both pre-attenuated light and another atmosphere transmittance term |
+| surface indirect environment | one mapping/radiance/PDF generation | background texture and atmosphere LUT sampled as two independent skies |
+| local fog lighting | current medium/light/atmosphere generation | using surface lighting composite as incident radiance without defined split |
+
+Required reference cells include zero atmosphere, pure absorption, Rayleigh-only, aerosol/Mie-only, absorption-band/ozone effect, ground albedo extremes, sun at zenith/horizon/below horizon, observer ground/high-altitude/space, planet shadow, parameter edits, and LUT failure. All comparisons occur in raw radiance/transmittance before exposure.
+
+## Reconstruction And Composition Research
+
+Surface denoisers depend on geometry guides that are not automatically valid inside media. Sparse-volume reconstruction research separates surface and volume layers, reconstructs transmittance/volume information, and combines them explicitly.[^19] Sparkle's first portable route need not be neural, but must respect the same separation:
+
+```text
+raw surface radiance/depth
+raw volume transmittance + premultiplied in-scatter
+volume history/confidence with medium/light generations
+optional surface history/provider
+one composition edge
+presentation after composition
+```
+
+The core oracle is always `Lout = T * Lsurface + Lscatter`. Transparent objects need a separately ratified sampling/composition contract; sampling a camera-integrated froxel product at an arbitrary transparent fragment is not automatically correct. Clouds likewise compose through the same transmittance/radiance algebra and atmosphere generation rather than a special color blend.
+
+## External Source And Provenance Ledger
+
+| Source | Observed fact used | Permitted transfer | Forbidden inference | Provenance action before implementation |
+| --- | --- | --- | --- | --- |
+| Volumetric ReSTIR paper/project[^1] | approximate candidate plus accepted selected evaluation and path-resampling architecture | equations, test scenes/failure hypotheses | source timings, quality, or unbiased claim transfer to Sparkle | cite exact paper; audit any project code/license separately |
+| PBRT 4e[^2] | RTE, medium interfaces, tracking/reference procedures | analytic/CPU reference concepts | real-time architecture or independent oracle if code is shared | cite edition and disclose shared code/equations |
+| Frostbite/HDRP/Samurai/Lumen courses[^3][^15][^16][^17] | production froxel, lighting, temporal, and integration patterns | architecture/workload comparison | exact dimensions, timings or quality become budgets | citation only; record title/year and source-specific assumptions |
+| MegaLights/Epic environment docs[^4][^7][^10][^11] | product interaction and current commercial-engine behavior | UX/failure/workload questions | parity or transferable implementation details | citation/date only unless source code is separately licensed |
+| Hillaire/Bruneton atmosphere[^5][^6][^18] | production LUT and tested reference options | independent comparison, hand cases, possible code study | one implementation is automatically best or license-cleared | pin repo `183ead5`; retain LICENSE/notices and modifications before transfer |
+| OpenVDB/NanoVDB[^8] | sparse asset/runtime structures | content schema and A/B reference | both formats must ship or source assets may parse at runtime | pin chosen code source, audit license/dependencies, record asset rights |
+| Nubis/Epic clouds[^9][^10] | production cloud authoring/rendering precedents | workload and UX requirements | cloud scope is admitted or timings transfer | citation only until separate product/content decision |
+| residual/zero-variance tracking[^12][^13] | unbiased/control-variate transmittance families | reference algorithms and adversarial tests | loose majorants or approximate controls are safe without proof | cite equations; independently implement; document majorant/control source |
+| Pixar production volume course[^14] | production path/medium decomposition and tracking taxonomy | completeness checklist and reference cases | film architecture/cost fits real time | citation only unless code is separately sourced |
+| sparse-volume reconstruction[^19] | surface/volume signal separation and learned reconstruction precedent | interface/failure design and A/B hypothesis | neural denoising is required or source quality transfers | citation first; code/model/assets need separate license and provenance review |
+
+Git checks on 2026-09-12 confirmed `183ead5` as the Hillaire atmosphere repository HEAD and `6f0a32f` as OpenVDB HEAD. The current study references OpenVDB documentation rather than adopting HEAD; any code stage must choose and pin a reviewed release/commit.
+
+## Adoption And Rejection Matrix
+
+| Candidate | Disposition | Admission evidence | Rejection/removal evidence |
+| --- | --- | --- | --- |
+| analytic homogeneous/height fog | required first tier after roadmap gate | Beer/single-scatter/phase/composition conformance and first-use UX | only blocked by product admission or failure to define one coherent owner |
+| unified froxel local-light product | proposed required | grid/inverse, overlap, light/shadow, motion and equal-quality budget evidence | cannot meet composition/history/backend contract |
+| physical atmosphere | proposed distinct tier | Hillaire/Bruneton/analytic raw comparison and one environment-generation proof | double ownership with image sky or budget/product scope rejection |
+| dense heterogeneous texture | proposed first content tier | representative content, transform/filter/range/cook and marching/reference convergence | no product content or memory/bandwidth failure |
+| OpenVDB/NanoVDB | conditional | sparse workload beats dense including cook/upload/memory and rights | duplicate canonical data or insufficient target benefit |
+| residual/guided tracking | reference/advanced | variance win with valid majorants/controls on accepted assets | no equal-work benefit or unsafe violation behavior |
+| per-froxel light reservoir | conditional | many-light fog failure and equal-time improvement | clustering/all-lights baseline satisfies workload |
+| path-space Volumetric ReSTIR | advanced conditional | exact estimator plus equal-time raw error/motion win | missing mapping/final estimator, excess memory/correlation, or no win |
+| learned volume reconstruction | research only | portable baseline fails named workload and provider passes provenance/product gates | sole functional path, non-reproducible model, or hidden raw defects |
+| clouds | separately admitted | content/authoring/weather/scale/budget owner and full workload | no product owner or parallel sky/fog system required |
+
 ## Current Sparkle Gap And Boundary
 
 | Existing fact | Correct interpretation |
@@ -204,3 +349,11 @@ Apply only after static semantics pass:
 [^9]: Guerrilla Games, [Nubis Evolved: Real-Time Volumetric Clouds in Horizon Forbidden West](https://www.guerrilla-games.com/read/nubis-evolved), 2023.
 [^10]: Epic Games, [Volumetric Cloud Component](https://dev.epicgames.com/documentation/unreal-engine/volumetric-cloud-component-in-unreal-engine), accessed 2026-09-12.
 [^11]: Epic Games, [Environmental Light with Fog, Clouds, Sky and Atmosphere](https://dev.epicgames.com/documentation/unreal-engine/environmental-light-with-fog-clouds-sky-and-atmosphere-in-unreal-engine) and [Volumetric Fog](https://dev.epicgames.com/documentation/unreal-engine/volumetric-fog-in-unreal-engine), accessed 2026-09-12.
+[^12]: Novák, Selle, and Jarosz, [Residual Ratio Tracking for Estimating Attenuation in Participating Media](https://www.jannovak.info/publications/RRTracking/index.html), ACM TOG 33(6), 2014.
+[^13]: d'Eon and Novák, [Zero-variance Transmittance Estimation](https://research.nvidia.com/labs/rtr/publication/deon2021zerovar/), EGSR 2021.
+[^14]: Fong et al., [Production Volume Rendering](https://graphics.pixar.com/library/ProductionVolumeRendering/paper.pdf), SIGGRAPH Courses, 2017.
+[^15]: Křivánek et al., [Real-time Volumetric Rendering in Unity High Definition Render Pipeline](https://www.advances.realtimerendering.com/s2018/Siggraph%202018%20HDRP%20talk_with%20notes.pdf), SIGGRAPH Advances in Real-Time Rendering, 2018.
+[^16]: Patry, [Real-Time Samurai Cinema](https://advances.realtimerendering.com/s2021/jpatry_advances2021/index.html), SIGGRAPH Advances in Real-Time Rendering, 2021.
+[^17]: Wright et al., [Lumen: Real-time Global Illumination in Unreal Engine 5](https://advances.realtimerendering.com/s2022/SIGGRAPH2022-Advances-Lumen-Wright%20et%20al.pdf), SIGGRAPH Advances in Real-Time Rendering, 2022.
+[^18]: Hillaire, [UnrealEngineSkyAtmosphere reference implementation](https://github.com/sebh/UnrealEngineSkyAtmosphere/tree/183ead5bdacc701b3b626347a680a2f3cd3d4fbd), revision `183ead5`, accessed 2026-09-12.
+[^19]: Hofmann et al., [Interactive Path Tracing and Reconstruction of Sparse Volumes](https://research.nvidia.com/labs/rtr/publication/hofmann2021volumerecon/), I3D 2021.
