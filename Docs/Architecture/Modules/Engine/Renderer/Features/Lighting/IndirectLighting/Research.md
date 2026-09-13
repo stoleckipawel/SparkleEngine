@@ -288,5 +288,5 @@ Git checks on 2026-09-12 confirmed RTXDI `a6efab9`, ReSTIR PT `8d12332`, SHaRC `
 [^16]: NVIDIA, [RTXDI ReSTIR GI integration](https://github.com/NVIDIA-RTX/RTXDI/blob/a6efab966b7c3b272da0461578eb56ac61c7cbff/Doc/RestirGI.md), revision `a6efab9`, accessed 2026-09-12.
 [^17]: Sawhney et al., [Decorrelating ReSTIR Samplers via MCMC Mutations](https://research.nvidia.com/labs/prl/sawhney2024decorrelating/restirmcmc2024.pdf), ACM TOG, 2024.
 [^18]: Schied et al., [Spatiotemporal Variance-Guided Filtering](https://research.nvidia.com/labs/rtr/publication/schied2017spatiotemporal/), HPG 2017.
-[^19]: Wyman et al., [A Gentle Introduction to ReSTIR: Path Reuse in Real-time](https://research.nvidia.com/labs/rtr/publication/wyman2023gentle/), SIGGRAPH Courses, 2023.
+[^19]: Wyman et al., [A Gentle Introduction to ReSTIR: Path Reuse in Real-time](https://par.nsf.gov/servlets/purl/10519651), SIGGRAPH Courses, 2023; DOI `10.1145/3587423.3595511`.
 [^20]: Wright et al., [Lumen: Real-time Global Illumination in Unreal Engine 5](https://advances.realtimerendering.com/s2022/SIGGRAPH2022-Advances-Lumen-Wright%20et%20al.pdf), SIGGRAPH Advances in Real-Time Rendering, 2022.

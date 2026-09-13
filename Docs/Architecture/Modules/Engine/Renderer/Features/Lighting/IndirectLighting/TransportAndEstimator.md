@@ -207,6 +207,102 @@ Raw indirect diffuse/specular radiance and hit distance remain authoritative. Re
 
 Static accumulation quality, motion response, disocclusion, high-frequency indirect shadow, glossy reflection, emissive toggle, and environment rotation are all evaluated raw and reconstructed.
 
+## Normative Reference Procedure
+
+Once `IND-D0` ratifies the exact domain and equations, CPU/reference and shader paths follow the same semantic stages:
+
+```text
+GenerateInitialPath(receiver, rng):
+    sample first admitted BSDF/lobe and trace the secondary vertex
+    record forward/reverse densities and throughput in their exact measures
+    select/evaluate one terminal technique according to frozen NEE/emission/environment/MIS policy
+    record every vertex, technique, probability, generation and terminal fact needed by shifts
+    compute vector contribution, scalar target and generalized source weight
+    reject non-finite, unsupported or excluded paths before reservoir update
+
+ShiftPath(sourcePath, destinationReceiver, mapping):
+    validate source and destination generations/domains
+    apply mapping and construct destination path
+    evaluate inverse/support/Jacobian, current materials and required visibility
+    return mapped path plus exact generalized contribution weight, or a reason-coded rejection
+
+Resample(destination, freshAndMappedSamples):
+    stream the ratified GRIS weights with bounded effective counts
+    retain one coherent selected path and source/mapping metadata
+    never reinterpret stored M as independent sample count
+
+Resolve(destination, selectedPath):
+    reevaluate the selected path in the current scene according to the final estimator
+    classify its contribution once into admitted raw lobe products
+    publish path/reservoir/confidence facts separately from reconstruction
+```
+
+The no-reuse reference calls `GenerateInitialPath` independently for each sample and never calls `ShiftPath` or reservoir merge code. The offline/reference tracer may be an additional oracle only after its acceptance and shared-code analysis; analytic and external comparisons remain required.
+
+## Minimum Path Record By Proof Obligation
+
+Packing is selected only after the logical facts are complete:
+
+| Proof obligation | Minimum logical facts |
+| --- | --- |
+| re-evaluate source path | vertex positions, geometric/shading normals, materials/lobes, directions, terminal source, throughput factors |
+| compute proposal/technique probability | technique IDs, selection PMFs, conditional PDFs, measures, forward/reverse probabilities, roulette |
+| reconnect | source/destination receivers, anchor vertex, geometry factors, source/destination BSDF support and visibility |
+| replay/hybrid | versioned random dimensions, every distribution/control-flow choice, explicit prefix events and divergence rule |
+| mutate safely | View/object/primitive/material/light/environment/TLAS/shader/provider/content generations |
+| classify outputs | first indirect lobe, path depth, terminal event, excluded/delta flags |
+| reproduce failure | mapping family, rejection reason, finite/clamp state, source pixel/sample/frame integer identity |
+
+A field may be removed only after a proof shows it is derivable from immutable current data without changing probability, mapping, lifetime, or diagnostics. Recomputing a previous material/light from current mutable indices is not derivation.
+
+## Shift Proof Protocol
+
+Every mapping is accepted independently for each path/lobe class:
+
+1. Define source domain, destination domain, forward transformation and all unchanged/moved vertices.
+2. State the density measure on both sides and derive the determinant/Jacobian or the generalized weight that replaces it.
+3. Define the inverse or the theory that permits the chosen non-bijective/conditional form.
+4. Enumerate zero-support, singular, occluded, delta, material/lobe, geometry-motion and generation rejection cases.
+5. Implement deterministic hand paths with analytically known round trip and Jacobian.
+6. Compare mapped-sample distributions and estimator means against independently generated destination samples.
+7. Add the mapping to temporal/spatial reuse only after static proof passes.
+
+No epsilon repairs zero support or a singular Jacobian. A mapping that is valid for diffuse paths can remain rejected for glossy/delta paths without blocking the narrower tier.
+
+## Technique And MIS Ledger
+
+For every path length and terminal event, one table generated during discovery must name:
+
+| Fact | Required entry |
+| --- | --- |
+| construction technique | BSDF sequence, NEE/emitter/environment/continuation selection and discrete probabilities |
+| path density | per-edge conditional density and conversion to the common path measure |
+| alternate techniques | which could construct the same path and their densities |
+| MIS/resampling role | ordinary path MIS, GRIS source weight, or explicit technique exclusion |
+| output owner | indirect diffuse, indirect specular, direct lighting, camera-visible emissive/background, or excluded |
+| reference case | analytic/metamorphic scene and expected change when this technique is disabled |
+
+The ledger is executable input to tests, not prose copied into multiple shaders. Adding a bounce or terminal technique changes this ledger, the record, shift domain, random layout, acceptance cells, and history generation together.
+
+## Statistical And Temporal Evidence Protocol
+
+| Claim | Minimum experiment |
+| --- | --- |
+| initial estimator mean | independent seeds over analytic/Cornell cells with predeclared confidence interval against analytic/external reference |
+| reservoir selection | enumerated discrete samples with known generalized weights and exact expected frequencies |
+| shift validity | hand round trips plus destination-distribution/mean comparison, including rejected support |
+| reuse value | fresh-only, temporal-only, spatial-only and combined equal-time runs |
+| correlation control | unique selected paths, duplication map, temporal autocorrelation and effective diversity versus stored `M` |
+| motion safety | camera, disocclusion, rigid/deformed object, material, light, sky, provider and shader changes with recovery frames |
+| glossy/depth expansion | roughness-by-depth-by-terminal matrix with explicit unsupported cells |
+| reconstruction | identical raw input/guide sequence comparing raw mean, filtered error/lag and detail retention |
+
+The candidate manifest fixes seeds or sequence generator/version, samples/frames, warmup, region/mask, reference spp/artifact, exposure, metric, tolerance and invalid-sample handling before observation. Results from different path domains or histories are not pooled.
+
+## Optimization Admission Rules
+
+Wave compaction, half resolution, fused passes, compact replay, reciprocal neighbors, splatting, path guiding, caches and learned reconstruction enter one at a time. Each optimization must preserve the semantic artifacts above or provide a diagnostic reconstruction of them, and must beat the accepted predecessor on the named equal-time workload without exceeding any required error/lag/memory/backend cell. Rejected experiments are removed; they do not remain behind dormant switches.
+
 ## Numerical And Safety Rules
 
 - Every PDF and Jacobian names its measure and support.

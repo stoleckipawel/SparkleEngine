@@ -243,6 +243,133 @@ Candidate evaluation may use a cheap biased transmittance/scattering approximati
 
 GRIS reservoir semantics follow the [Indirect estimator contract](../IndirectLighting/TransportAndEstimator.md#generalized-resampling-contract), specialized to the admitted volume path. Per-froxel light reservoirs use the simpler Direct-light domain and must not be mislabeled path-space Volumetric ReSTIR.
 
+## Normative Reference Procedures
+
+### Analytic Segment
+
+For a segment with constant coefficients and source `S`, the stable implementation is conceptually:
+
+```text
+tau = sigma_t * distance
+T = exp(-tau)
+factor = distance                         when sigma_t approaches zero
+         -expm1(-tau) / sigma_t          otherwise
+Lsegment = S * factor
+```
+
+RGB extinction evaluates component-wise under an admitted RGB tier. The vacuum and opaque limits are explicit branches/results. Reference tests use higher precision than production formats.
+
+### Deterministic March
+
+```text
+Tacc = 1; Lacc = 0
+for each ordered segment before opaque depth/far boundary:
+    sample/average coefficients and source by the frozen quadrature
+    compute analytic constant-segment Ti and Li
+    Lacc += Tacc * Li
+    Tacc *= Ti
+    terminate only under a predeclared transmittance/error rule
+return (Lacc, Tacc)
+```
+
+Jitter alters quadrature locations but not coefficient units, segment length, bounds, or composition order. Decreasing maximum step size must approach the analytic or stochastic reference on the declared convergence fixtures.
+
+### Ratio-Tracking Reference Shape
+
+For a segment with valid scalar majorant `mu >= sigma_t(x)`, a transmittance reference samples exponential free flights under `mu` and multiplies the ratified null-event weight at each event. The exact spectral/RGB estimator and residual/control form are selected by `VOL-D0-11`; implementation must not infer one from this outline.
+
+```text
+t = segmentStart; weight = 1
+while true:
+    t += SampleExponential(mu, rng)
+    if t >= segmentEnd: return weight
+    sigma = EvaluateExtinction(t)
+    require finite 0 <= sigma <= mu
+    weight *= RatifiedNullWeight(sigma, mu, control)
+    reject on non-finite weight, majorant violation or event-cap policy
+```
+
+The reference manifest records majorant construction/version, bounds, coefficient sampler, RNG sequence, event cap, channel policy, control function, confidence interval and violation count. A deterministic marcher and tracker share content decode but not integration logic.
+
+## Froxel Mapping And Sampling Rules
+
+`VOL-D0-06` produces exact forward and inverse functions:
+
+```text
+world position <-> View position <-> normalized screen/depth <-> froxel coordinate
+```
+
+Tests cover cell centers, all faces/corners, near/far planes, outside rejection, reversed or conventional depth, jitter, resize, projection change and round-trip error. A cell represents a frustum volume, not a point at its center; light/media integration states the spatial quadrature used inside it.
+
+Filtering a field is legal only in a representation with defined interpolation semantics. Coefficients, optical depth, transmittance, normalized source, premultiplied in-scatter and integrated radiance are not interchangeable. If production stores a compressed/normalized representation, decode must reconstruct the semantic pair `(Lscatter,T)` and pass analytic interpolation/composition cases.
+
+## Medium-Light Sampling And MIS
+
+For a light technique selected with PMF `p_select` and conditional direction/shape density `p_conditional`, the volume source uses the combined density in the exact measure of the scattering integral. Phase sampling, light sampling and path continuation can share support; if more than one constructs the same path, `VOL-D0-07/13` freezes ordinary MIS or explicit exclusion before implementation.
+
+| Technique | Required facts | Zero/rejection case |
+| --- | --- | --- |
+| deterministic all-light | eligible light inventory and exact per-light evaluation | capacity overflow is visible; no silent truncation |
+| clustered light list | cell bounds, list construction/generation and overflow order | missing global/large light or list overflow rejects/degrades by policy |
+| stochastic light | technique PMF, light PMF, conditional sample PDF, target and current light generation | contributing light with zero proposal support blocks the profile |
+| phase-sampled path | normalized phase PDF, free-flight/vertex/path probabilities | singular anisotropy or direction outside support rejects |
+| environment/emission | environment mapping/PDF or volume-emission proposal | black/empty source has explicit valid zero distribution |
+
+Geometry visibility and medium transmittance are evaluated on the same segment endpoints but remain separate factors and failure counters. Reusing a surface light distribution is permitted only when its immutable PMF/conditional semantics have support for the volume receiver; its reservoir is never reused.
+
+## Atmosphere LUT Reference Protocol
+
+The selected LUT implementation defines for each texture:
+
+- physical quantity and units;
+- coordinate mapping and inverse/boundaries;
+- dimensions/format/precision;
+- integration domain, quadrature/sample count and approximation;
+- source parameters and `AtmosphereGeneration` cache key;
+- producer order and atomic publication group;
+- consumers and whether they expect transmittance, irradiance, radiance, or multiple-scatter approximation;
+- CPU/high-precision or external reference query for the acceptance cells.
+
+Tests sample inside LUT texels and at boundaries, not only rendered skies. Changing any physical parameter builds a new complete set; a failed generation leaves the previous set active and visibly stale, or no atmosphere if none existed. The sun disk, sky view, aerial perspective, surface-light attenuation, and environment PDF cannot mix generations.
+
+## Volume Reservoir Reference Procedure
+
+After `VOL-D0-13` selects a path domain:
+
+```text
+GenerateVolumeCandidate(cameraRay, rng):
+    sample admitted free-flight/scattering/terminal events
+    store explicit path, technique probabilities and medium/content generations
+    evaluate bounded approximate target for reservoir selection
+
+MapVolumeCandidate(source, destination):
+    transform admitted vertices/events
+    validate support, inverse/Jacobian, boundaries, density/light/majorant generations
+    reject with a deterministic reason or return generalized weight
+
+ResolveVolumeCandidate(selected):
+    re-evaluate the selected current path with the accepted final tracking/transport estimator
+    emit raw transmittance/in-scatter/path/confidence independently of reconstruction/composition
+```
+
+Approximate evaluation may rank candidates but cannot replace the final estimator. A false-zero approximate target that removes a contributing region is a support defect. Tests compare fresh-only, temporal-only, spatial-only and combined modes for raw mean, variance, path duplication, autocorrelation, motion recovery, rays/events/time and memory.
+
+## Error Budget And Tier Isolation
+
+| Error class | Isolation | Required evidence |
+| --- | --- | --- |
+| coefficients/phase | CPU/shader point queries | analytic absolute/relative error, normalization and invalid-input result |
+| deterministic integration | analytic slabs/height and decreasing step/grid size | convergence curve plus finite extreme-optical-depth output |
+| froxel representation | identical analytic field sampled through grid/upsample | spatial/depth error, boundary leakage, format error and memory |
+| light/shadow/transmittance | one light/froxel/segment at a time | source-factor breakdown and visibility/transmittance parity |
+| temporal reconstruction | fixed raw sequences plus motion/mutation | lag, ghost/leak duration, detail loss and reset frames |
+| atmosphere | raw LUT/query/reference cells | radiance/transmittance error by sun/altitude/ground/parameter cell |
+| heterogeneous tracker | analytic/piecewise and independent stochastic runs | mean/confidence, variance, majorant/event statistics and convergence |
+| volume reservoir | base tracker versus reuse at equal time | raw error, correlation/diversity, recovery, rays/events/time/memory |
+| composition | synthetic `(surface, sky, T, Lscatter)` tuples | exact algebra/order before presentation |
+
+Each tier can pass only its own rows. Fog acceptance cannot prove atmosphere, heterogeneous transport, ReSTIR, clouds, transparency, or release readiness.
+
 ## Numerical And Safety Rules
 
 - Optical coefficients and density are non-negative finite; transmittance is finite and within the frozen physical range.

@@ -6,7 +6,7 @@
 
 **Authority boundary:** each feature dossier owns its behavior and acceptance; feature-local Discovery owns implementation-shaping decisions; feature-local Research owns precedent; feature-local Plan owns delivery order; [First Release Renderer Plans](../FirstRelease/README.md) own cross-feature release order; this page owns only documentation-depth classification and upgrade sequence
 
-**Verified:** 2026-09-12; the earlier display-package audit remains recorded below, and Direct Lighting, Indirect Lighting/ReSTIR GI, and Volumetric Lighting/Fog/Atmosphere were re-audited and expanded at revision `8e4ffba225411965dc51c0b783e5f47a075c7e84`. Current source/build routes, the feature-delivery template, strategy/release gates, capability/readiness indexes, and primary external research were inspected. Concurrent edits under `Lighting/ReferencePathTracer` remain user-owned and were not modified by this pass.
+**Verified:** 2026-09-13; the earlier display-package and initial lighting-package audits remain recorded below. Direct Lighting, Indirect Lighting/ReSTIR GI, and Volumetric Lighting/Fog/Atmosphere were then re-audited against the full seven-role feature-delivery template and deepened from revision `8b650c7450f8a59fb3bcc18edbb4d217a7b11ed5` on the current `709e04385c3d98aa3492fb3f09dc9caabe34cb3a` baseline. Current source/build routes, strategy/release gates, capability/readiness indexes, primary research, revision-pinned reference implementations, and every local/external package link were inspected. Concurrent Reference Path Tracer and RHI production work remains user-owned and was not modified by this pass.
 
 **Current readiness:** Not applicable — documentation package depth does not change the Renderer **36/100** portfolio projection or any candidate verdict. See [Current Feature Readiness](../../../../../Acceptance/CurrentReadiness.md#renderer).
 
@@ -18,7 +18,7 @@ The goal is repeatable planning depth, not seven files per feature. A full packa
 | --- | --- |
 | Reference quality bar | retained the seven-role [Reference Path Tracer](Lighting/ReferencePathTracer/README.md) and [Feature Delivery Package](../../../../../Engineering/Workflow/Templates/FeatureDeliveryPackage.md) as precedent |
 | Mandatory absent display features | expanded [Color Grading](PostProcessing/DisplayPipeline/ColorGrading/README.md), [Chromatic Aberration](PostProcessing/DisplayPipeline/ChromaticAberration/README.md), and [HDR Display Output](PostProcessing/DisplayPipeline/HDRDisplayOutput/README.md) into feature-local packages with blocked discovery and conditional delivery |
-| Critical lighting families | expanded [Direct Lighting](Lighting/DirectLighting/README.md), [Indirect Lighting/ReSTIR GI](Lighting/IndirectLighting/README.md), and [Volumetric Lighting/Fog/Atmosphere](Lighting/VolumetricLighting/README.md) into six-role packages with current-source audits, primary research, explicit discovery, mathematical contracts, execution architectures, and conditional staged plans |
+| Critical lighting families | expanded [Direct Lighting](Lighting/DirectLighting/README.md), [Indirect Lighting/ReSTIR GI](Lighting/IndirectLighting/README.md), and [Volumetric Lighting/Fog/Atmosphere](Lighting/VolumetricLighting/README.md) into full seven-role packages with current-source audits, primary research, explicit discovery, mathematical contracts, execution architectures, user experience contracts, and conditional staged plans |
 | Existing substantial packages | preserved [Deferred Decals](DeferredDecals/README.md) and [Debug Views](DebugViews/README.md); their next implementation iteration should add/freeze discovery rather than rewrite stable architecture |
 | Implemented/current families | retained source-backed state while promoting direct and indirect lighting because the current estimators have real independent research, semantic, architecture, and clean-break decisions |
 | Explicit negative capabilities | retained absence contracts; the volumetric package has a conditional post-release plan whose production stages explicitly require `REL-11`, roadmap admission, `VOL-D0`, and an assigned FCR |
@@ -58,6 +58,30 @@ The goal is repeatable planning depth, not seven files per feature. A full packa
 | `CHK-LDOC-05` — encoding and whitespace | `PASS`: strict UTF-8 decode and trailing-whitespace checks pass for all 18 package files; `git diff --check 8e4ffba2..8b650c74` exits zero. |
 | `CHK-LDOC-06` — claim boundary | `PASS`: Direct and Indirect remain unaccepted implementation targets, Volumetric remains 0/100 and roadmap-gated, and no build, shader, runtime, GPU, visual, performance, package, FCR, or release result is claimed. |
 
+## `ITER-REN-LIGHTDOC-02` Deepening Control Record
+
+| Field | Record |
+| --- | --- |
+| Identity | `ITER-REN-LIGHTDOC-02`; owner: Renderer lighting documentation; status: **PASS for documentation depth only** on 2026-09-13; deepening started from `8b650c7450f8a59fb3bcc18edbb4d217a7b11ed5` and was reconciled on the current `709e04385c3d98aa3492fb3f09dc9caabe34cb3a` baseline; concurrent user-owned Reference Path Tracer and RHI production work remained outside this task |
+| North Star | `NS-REAL`, `NS-MATH-DATA`, `NS-EVIDENCE`, `NS-OWNERSHIP`, `NS-ADOPTION`, `NS-SIMPLIFY`; make the three critical lighting packages specific enough to constrain research, design, implementation, diagnosis, and acceptance without mistaking documentation for delivery |
+| Persona targets | `PGE-02`, `PGE-05` through `PGE-10`, `PGE-13`, `PGE-15`; first-use authoring, expert diagnosis, automation-equivalent capture, accessible state disclosure, predictable failure, and portable-backend adoption are explicit UX targets; none is current product evidence |
+| Delivery target | three full seven-role packages: dossier, discovery, research, semantics, execution architecture, user experience, and plan; state-of-the-art direct/ReSTIR DI, indirect/ReSTIR GI/GRIS, volumetric transport/ReSTIR/fog/atmosphere/sky research; normative estimator procedures; bounded ownership; and nine non-drifting stages per feature |
+| Complexity budget | exactly seven direct Markdown siblings per feature; no duplicate renderer, scene, light, material, ray, sky, reconstruction, acceptance, or release owner; every production stage must name prerequisites, deletions, non-goals, risks, smallest falsifier, exit evidence, stop conditions, and a copy-ready prompt |
+| Risks | cargo-culting reference implementations, conflating precedent with proof, mathematically invalid reuse, correlation hidden by denoising, unstable history identity, duplicated feature state, invented budgets, silent degraded states, stale links, and production authorization leaking through a target document |
+| Decision | `CHK-LDOC2-01` through `07` passed for the documentation candidate below. Direct and Indirect remain unaccepted **45/100** source-present capabilities, Volumetric remains **0/100** and admission-gated, and executable feature evidence is unchanged. |
+
+### `ITER-REN-LIGHTDOC-02` Validation Result
+
+| Check | 2026-09-13 result |
+| --- | --- |
+| `CHK-LDOC2-01` — package and template shape | `PASS`: all three feature folders contain exactly seven direct Markdown siblings; all 21 documents declare status, responsibility, and authority; each independent dossier, discovery, research, semantics, execution, UX, and plan role contains the applicable Feature Delivery Package contracts. |
+| `CHK-LDOC2-02` — research depth and provenance | `PASS`: 59 numbered source definitions reconcile with 59 cited identities; 60 unique external URLs resolve without HTTP/network failure; primary papers/specifications, publisher material, and six revision-pinned reference implementations remain precedent rather than Sparkle proof. |
+| `CHK-LDOC2-03` — decisions, mathematics, and architecture | `PASS`: 44 `DIR-D0`/`IND-D0`/`VOL-D0` decisions name alternatives, required evidence, owners, status, and blocking consequence; normative reference procedures, equation/code ledgers, numerical/error policies, pass/resource contracts, lifetime rules, feature-enclosure budgets, and failure recovery are explicit. |
+| `CHK-LDOC2-04` — experience and delivery specificity | `PASS`: 15 feature-local UX criteria cover first use, state/action truth, authoring, diagnostics, automation, accessibility, recovery, and support; all 27 stages have a delivery-contract row and local prompt, while each plan makes the mandatory prerequisite/deletion/non-goal/risk/evidence/stop handoff tail part of every prompt. |
+| `CHK-LDOC2-05` — acceptance traceability | `PASS`: 43 feature acceptance criteria, 28 controlled failure modes, and 29 checks remain owned by the three dossiers and mapped into stage exits; plan completion still requires the applicable exact-candidate FCR rather than a documentation verdict. |
+| `CHK-LDOC2-06` — navigation and hygiene | `PASS`: all relative targets and cross-file anchors in the 21 package documents resolve; source-footnote sets have no undefined or unused identities; placeholder and deleted flat-page searches are empty; strict UTF-8, trailing-whitespace, and `git diff --check` checks pass. |
+| `CHK-LDOC2-07` — scope and claim boundary | `PASS`: scoped diff review contains only the three lighting packages, their lighting-family index, and this coverage ledger; concurrent Renderer/RHI implementation files were not modified by this pass. No engine build, shader compilation, runtime, GPU, visual, statistical, performance, package, FCR, or release check was run or inferred. |
+
 ## Quality Bar
 
 The Reference Path Tracer package is valuable because each document answers a different question:
@@ -94,8 +118,8 @@ Promote a feature to a larger class when active work introduces an unresolved eq
 | `FCR-REN-03` | frame graph and scheduling | [Frame Graph And Scheduling](FrameExecution/FrameGraphAndScheduling.md), `FS-3` | `C`; discovery is required before queue/aliasing/scheduler redesign |
 | `FCR-REN-04` | raster/GBuffer surfaces | [Geometry, Materials, And GBuffer](GeometryAndResources/GeometryMaterialsAndGBuffer.md), `GR-2` | `C`; use a semantic companion when the material/GBuffer contract changes |
 | `FCR-REN-05` | ray-traced GBuffer | [Ray Tracing](RayTracing/README.md), [Execution Architecture](RayTracing/ExecutionArchitecture.md), `GR-4` | `B`; next active dual-execution change should add Research, Discovery, and Plan before code |
-| `FCR-REN-06` | direct lighting | [Direct Lighting package](Lighting/DirectLighting/README.md), `DIR-D0`, `DIR-PLAN-01` | `A/B`; research, discovery, semantics, architecture, and staged replacement plan exist; implementation/evidence remain gated |
-| `FCR-REN-07` | indirect lighting | [Indirect Lighting package](Lighting/IndirectLighting/README.md), `IND-D0`, `IND-PLAN-01` | `A/B`; seed-replay gap audit and target ReSTIR GI/GRIS package exist; implementation/evidence remain gated |
+| `FCR-REN-06` | direct lighting | [Direct Lighting package](Lighting/DirectLighting/README.md), `DIR-D0`, `DIR-PLAN-02` | `A`; seven-role ReSTIR DI/MegaLights-class research, semantics, UX, execution architecture, and staged clean-break plan exist; implementation/evidence remain gated |
+| `FCR-REN-07` | indirect lighting | [Indirect Lighting package](Lighting/IndirectLighting/README.md), `IND-D0`, `IND-PLAN-02` | `A`; seven-role seed-replay gap audit and target ReSTIR GI/GRIS transport, UX, architecture, and staged clean-break plan exist; implementation/evidence remain gated |
 | `FCR-REN-08` | Reference Path Tracer | [full feature package](Lighting/ReferencePathTracer/README.md), `PTD-00`, `LGT-3` | `A`; precedent; production remains blocked by its own discovery |
 | `FCR-REN-09` | exposure | [Exposure](PostProcessing/DisplayPipeline/Exposure.md), `DSP-2` | `C`; separate Semantics if metering/adaptation equations change |
 | `FCR-REN-10` | reconstruction/providers | [Image Reconstruction And Upscaling](PostProcessing/ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md), `DSP-3` | `C/B`; provider/version/product admission change requires discovery/research refresh |
@@ -120,7 +144,7 @@ Promote a feature to a larger class when active work introduces an unresolved eq
 
 | Capability | Current owner | Planning rule |
 | --- | --- | --- |
-| volumetric lighting/media | [Volumetric Lighting package](Lighting/VolumetricLighting/README.md), `VOL-D0`, `VOL-PLAN-01` | `A/B` target package; current capability remains 0/100 and production stages stay blocked until `REL-11` plus roadmap admission |
+| volumetric lighting/media | [Volumetric Lighting package](Lighting/VolumetricLighting/README.md), `VOL-D0`, `VOL-PLAN-02` | `A` target package; current capability remains 0/100 and production stages stay blocked until `REL-11` plus roadmap admission |
 | frame generation | [Frame Generation](PostProcessing/ReconstructionAndGeneration/FrameGeneration.md) | `D`; latency/provider adjacency is not support. Admission requires product, platform, fallback, pacing, UI, and evidence discovery. |
 | non-ray lighting fallback | [Lighting](Lighting/README.md) | `D`; admit as a separate traversal/product decision rather than hiding fallback inside direct/indirect plans. |
 | occlusion, LOD, GPU-driven/indirect, stereo, multiview | [Visibility And Draw Preparation](GeometryAndResources/VisibilityAndDrawPreparation.md) | `D` per capability; do not create one generic “advanced visibility” plan. |

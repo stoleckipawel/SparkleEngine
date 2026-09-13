@@ -204,6 +204,97 @@ The raw direct estimate is authoritative. Reconstruction receives immutable same
 
 Reconstruction history has its own validity and cap. It cannot write back altered radiance, hit distance, or confidence into reservoir history unless a future accepted estimator explicitly owns that feedback loop.
 
+## Normative Reference Procedure
+
+After `DIR-D0` ratifies the remaining choices, the CPU and shader implementations must be traceable to one reference procedure. Names below describe semantic values, not required C++ types.
+
+```text
+EvaluateDirect(receiver, sample):
+    require receiver and sample generations are current
+    decode stable light identity and conditional light sample
+    evaluate light radiance, direction, distance, shape normal and sidedness
+    evaluate admitted BRDF lobes and receiver geometric support
+    compute vector unshadowed contribution C and scalar target pHat
+    return invalid unless all values and the source density are finite and supported
+
+GenerateInitial(receiver, rng):
+    repeat N_initial times:
+        choose proposal technique t with PMF alpha_t
+        sample light/shape/direction y from q_t
+        q_mix = sum_j alpha_j * q_j(y) for every technique able to evaluate y
+        candidate = EvaluateDirect(receiver, y)
+        stream candidate with weight pHat(candidate) / q_mix
+    return reservoir with selected sample, Wsum, M, target and source facts
+
+Reuse(receiver, sourceReservoir):
+    translate stable light identity to the current generation
+    reject incompatible receiver/sample/generation before resource access
+    reevaluate selected sample and every term required by the ratified correction
+    merge using the ratified mode; source M is bounded before accumulation
+
+Resolve(receiver, reservoir):
+    reject invalid, zero-M, zero-target or non-finite state to finite black
+    replay selected sample in the current scene
+    evaluate current finite-segment visibility exactly once
+    multiply vector contribution by the ratified reservoir normalization
+    emit raw lobes, hit/light facts, confidence and rejection counters
+```
+
+The exhaustive reference is the same `EvaluateDirect` called over every admitted light and a deterministic or high-sample quadrature of finite shapes. It does not call reservoir stream/merge code. Any shared light/BRDF kernel is disclosed in the oracle-independence manifest and cross-checked by closed-form or separately generated cases.
+
+## Proposal Mixture Contract
+
+If technique `t` is selected with probability `alpha_t` and produces a sample with density `q_t(y)` in the same measure, the one-sample mixture density is
+
+```text
+q_mix(y) = sum_t alpha_t * q_t(y).
+```
+
+The initial weight uses `q_mix` when the chosen estimator treats the proposals as a mixture; using only the selected component density is a different estimator and requires explicit MIS derivation. Every `alpha_t` is finite, non-negative, sums to one over active techniques, and is zero only when that technique is not sampled. Every candidate that can contribute must have nonzero aggregate support.
+
+| Proposal | Required normalization/support test | Required mutation test |
+| --- | --- | --- |
+| uniform analytic light | discrete frequency over exact eligible inventory | add/remove/reorder/disable/capacity |
+| power-weighted light | PMF sum and zero/large-power boundaries | intensity/color/range/shape change and black light |
+| finite-shape conditional | sampled point/direction histogram in declared measure | transform/extent/sidedness and receiver inside/near emitter |
+| environment | texel PMF times within-texel directional density and pole/seam handling | texture/rotation/brightness/black-map generation |
+| emissive triangle | inventory PMF, triangle-area/texture density and material emission | mesh/material/texture/transform/animation/reload |
+| world-space/ReGIR | conditional cell/onion distribution plus fallback support | camera/light/geometry movement, cell rebuild and overflow |
+
+Proposal construction and sampling are immutable for a frame generation. A rebuild publishes distribution and mapping together; readers never combine a new PMF with old light data.
+
+## Reservoir Merge Invariants
+
+For a reused source representing `m_source` candidates, the incoming scalar weight is not generally the source reservoir's stored `Wsum` copied verbatim. It is the exact value produced by the ratified bias/MIS correction after current-receiver reevaluation. The merge contract must state whether source `M`, capped `M`, or another effective count enters normalization.
+
+Regardless of mode:
+
+- selection probability is proportional to finite non-negative incoming weight;
+- `Wsum` is the sum of exactly the weights offered to that reservoir;
+- `M` cannot decrease, wrap, round through float identity, or exceed the frozen cap;
+- a rejected mapping contributes neither selected state nor hidden mass;
+- selected sample, target, weight, `M`, light generation and source metadata describe one coherent update;
+- zero total weight yields a valid empty reservoir, not an arbitrary previously selected sample;
+- merge order/random dimensions are reproducible under the test seed and named when order affects a biased mode.
+
+CPU tests enumerate tiny proposal sets so exact selection probabilities and expected estimates can be calculated. Monte Carlo tests then use confidence intervals and a predeclared seed/sample count; passing a single seed or matching one image is insufficient.
+
+## Error Budget And Conformance Matrix
+
+`DIR-D0-14` freezes numeric values, but every accepted implementation must partition error rather than hide it in one image metric:
+
+| Error source | Isolation mode | Required statistic/artifact |
+| --- | --- | --- |
+| light/radiometry/BRDF | exhaustive unshadowed, no reuse/filter | absolute/relative analytic error per lobe and parameter sweep |
+| shape/proposal PDF | fixed receiver and sampled distribution | normalization, histogram/goodness-of-fit and estimator mean/confidence |
+| reservoir stream/merge | enumerated discrete candidates | selection frequency, expected estimate, `M/Wsum/target` decode |
+| reuse/bias/correlation | fresh-only versus temporal/spatial increments | raw mean error, variance, duplication, autocorrelation, convergence curve |
+| visibility | selected sample with forced visible/occluded geometry | provider parity, hit/reason identity and finite-segment boundaries |
+| reconstruction | identical raw sequence and guides | temporal lag, disocclusion error, detail loss, raw-versus-filtered captures |
+| product scale | overlap/light-count/power/range sweep at fixed budgets | error percentile, selected diversity, rays/time, peak/history memory |
+
+Thresholds are chosen before candidate observation. A clamp, denoiser, exposure change, or invalid-pixel discard is reported as part of the estimator/configuration and cannot silently improve the score.
+
 ## Precision And Numerical Rules
 
 - Stable IDs, frame/sample indices, and counts use integer storage; do not round long-lived identities through binary32.

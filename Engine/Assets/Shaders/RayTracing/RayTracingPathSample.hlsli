@@ -15,9 +15,11 @@ namespace RayTracingPathSample
 		float3 DirectionWorld;
 		float Pdf;
 		float CosineTerm;
+		float3 CompleteContinuousF;
 		float3 Throughput;
 		uint Lobe;
 		bool Mirror;
+		bool HasSupport;
 		uint RejectionReason;
 	};
 

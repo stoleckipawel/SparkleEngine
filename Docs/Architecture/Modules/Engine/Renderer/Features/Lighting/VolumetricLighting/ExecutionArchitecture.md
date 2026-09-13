@@ -260,6 +260,46 @@ Every additional feature-named edit outside the capsule is ledgered. A wrapper w
 - Device loss/cancel/shutdown drains/abandons current work and retires resources by completed submission.
 - Quality overload reports degraded state/budget; it does not randomly drop media/lights without documented selection.
 
+## Detailed Pass And Publication Contracts
+
+| Producer/pass | Reads | Writes/publishes | Omission/stop | Primary falsifier |
+| --- | --- | --- | --- | --- |
+| authoring/cook validation | typed medium/atmosphere/asset intent | canonical authored/cooked value plus validation/provenance | current negative state exposes no unfinished type | invalid units/transform/content/rights and save/load round trip |
+| scene extraction/preparation | immutable world publication and cooked leases | validated medium/atmosphere/content generations | no admitted medium means no volume scene state | add/remove/edit/reload/cancel and generation retirement |
+| atmosphere LUT build | accepted atmosphere parameters and celestial-light identity | complete immutable LUT group/environment candidate | failed/partial group never publishes | parameter mutation/failure plus analytic/Hillaire/Bruneton query cells |
+| froxel coefficient resolve | View/grid plus current medium/content generations | one coefficient/phase/emission representation and capacity status | absent/off graph omits it | analytic field, overlap, boundary, transform and overflow matrix |
+| volume light source | coefficients, admitted light list/distribution, shadows/TLAS/environment | raw source radiance, visibility/transmittance facts | no admitted lights yields finite emission-only/zero source | one-light analytic, light count, shadow and medium-segment cases |
+| front-to-back integrate | source/coefficient cells, opaque depth and grid mapping | premultiplied in-scatter plus transmittance | never for active fog tier | slab/height/convergence and synthetic composition cases |
+| temporal reconstruction | raw current volume, depth/motion/generations, previous immutable history | reconstructed current volume/confidence/history | current-only/first frame/cut/incompatible state | camera/density/light/extent/dual-view matrix |
+| volume ReSTIR subgraph | current medium/light/environment plus explicit volume paths | volume-owned path reservoir and raw final evaluation | omitted unless Stage 6 admission/conformance passes | analytic/tracking reference and equal-time reuse study |
+| compose | selected raw/reconstructed pair, opaque surface and selected sky/environment | one scene-linear composition edge | Off is exact identity/graph omission | exact `T*surface+scatter`, depth/sky/transparency-order cells |
+
+## Resource Access, Barriers, And Replacement Memory
+
+| Resource class | Lifetime | Access/order | Budget requirement |
+| --- | --- | --- | --- |
+| authored/cooked medium assets | persistent content generation | immutable leases; no runtime parsing/mutation of source asset | source, cooked, upload and replacement overlap reported separately |
+| prepared medium/light/environment views | scene/frame generation | complete before graph; read-only during frame | only feature-specific prepared state charged to feature |
+| atmosphere LUT group | persistent generation | all textures build then publish atomically; readers use one generation | old + building + current + retirement overlap |
+| coefficient/source/integrated froxel volumes | frame/transient or history input | explicit UAV producer/SRV consumer dependencies; aliases only after last read | worst admitted dimensions/formats, diagnostic overlap and resize replacement |
+| previous/current volume history | per-View persistent | previous immutable, current unpublished until complete | dual views, current/previous and provider replacement included |
+| density bricks/majorants/residency | content generation | asset upload publishes complete index/data/majorant set | sparse metadata, empty-space structures and worst replacement spike |
+| volume path reservoirs | frame/per-View only for admitted ReSTIR | isolated from surface reservoirs and filter history | explicit logical/packed record, stages and correlation diagnostics |
+
+FrameGraph owns backend resource states, UAV ordering, queue transfer and synchronization. Manual feature barriers/fences require an accepted missing-abstraction decision and paired-backend evidence. Compute/async work cannot outlive its View/content/LUT/TLAS leases.
+
+## Capacity And Scaling Policy
+
+Every bounded collection has a declared capacity, ordering/culling rule, first-overflow result, requested/active/degraded status and counter: local media, coefficient contributors, lights per froxel, density assets/bricks, atmosphere lights/LUT dimensions, tracking events, volume paths, histories and debug captures. Arbitrary iteration-order dropping is prohibited.
+
+Scaling studies vary one axis at a time—render/froxel extent, depth slices, media overlap, light count, optical depth, density frequency, step/event count, path depth, history count—and record raw error, bandwidth, rays/events, GPU timing distribution, persistent/transient/replacement memory and first degraded state. Source-engine numbers never fill these fields.
+
+## Architecture Fitness Gate
+
+Every stage retains the feature-enclosure ledger across GameFramework authoring, level parser, source import/cook, world publication, RenderScene/preparation, Renderer frame graph, shared light/sky/ray semantics, RHI capabilities, settings/editor, tests and package/docs. Each hook names owner, direction, lifetime, reason, deletion and defect-detecting check.
+
+The stage blocks on an unledgered fog/sky/cloud switch in generic orchestration, duplicate canonical medium/environment/light data, parallel sky or cloud renderer, runtime source parser, volume state on a surface reservoir, manual backend policy, forwarding-only abstraction, or public type with no end-to-end consumer. Bounded removal must restore the prior negative graph and eliminate selectors, types, parsers, assets, passes, shaders, histories, build members and documentation for the removed tier.
+
 ## Architecture Invariants
 
 1. One physical medium contract feeds fog, atmosphere, heterogeneous, reservoir, and cloud tiers.

@@ -92,7 +92,7 @@ namespace CommonSampling
 		    SafeNormalize(tangent * (cos(phi) * sinTheta) + bitangent * (sin(phi) * sinTheta) + SafeNormalize(normal) * cosTheta,
 		                  SafeNormalize(normal));
 		result.Cosine = saturate(dot(SafeNormalize(normal), result.DirectionWorld));
-		result.Pdf = max(result.Cosine * INV_PI, 1.0e-4f);
+		result.Pdf = result.Cosine * INV_PI;
 		return result;
 	}
 }

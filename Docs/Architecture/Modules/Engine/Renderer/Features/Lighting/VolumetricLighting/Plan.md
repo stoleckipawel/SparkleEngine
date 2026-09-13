@@ -4,9 +4,9 @@
 
 **Responsibility:** own the post-admission dependency order, stage scopes, estimates, non-goals, gates, copy-ready prompts, optional-tier decisions, and stop rules
 
-**Authority boundary:** this plan consumes accepted Strategy/Discovery/Semantics/Architecture and cannot admit or redefine them; code/build proves implementation and a future assigned FCR owns results
+**Authority boundary:** this plan consumes accepted Strategy/Discovery/Semantics/Architecture/User Experience and cannot admit or redefine them; code/build proves implementation and a future assigned FCR owns results
 
-**Plan revision:** `VOL-PLAN-01`, prepared 2026-09-12 from repository revision `8e4ffba225411965dc51c0b783e5f47a075c7e84`
+**Plan revision:** `VOL-PLAN-02`, deepened 2026-09-13 from repository revision `8b650c7450f8a59fb3bcc18edbb4d217a7b11ed5`
 
 ## Outcome
 
@@ -59,6 +59,34 @@ Every stage:
 - stops when admission, math, units, content rights, backend capability, oracle, threshold, budget, or failure behavior is unresolved.
 
 New test-only production additions may be local-only but must not be submitted; temporary probes are removed before handoff.
+
+## Stage Delivery Contract Matrix
+
+This matrix is normative. Stage 0 replaces owner surfaces with exact source/header/shader/CMake/registration/generated/content/package files and the accepted hook budget before any production stage.
+
+| Stage | Prerequisites | Required production delta and deletion | Explicit non-goals | Retained deliverables | Smallest stage falsifier |
+| --- | --- | --- | --- | --- | --- |
+| 0 | approved `REL-11` closeout/new-feature Go; current negative audit; product/content/platform/FCR reviewers | discovery/reference prototypes only; no reachable production vocabulary; remove probes | authoring types, passes, shaders, selectors, readiness promotion | admission record, accepted decision/tier matrix, UX dry run, oracle/content-rights/profile/threshold table, exact hooks/files/build map, estimates/review | admission/FCR absent or any Stage-1 unit/composition/owner/UX/threshold decision open |
+| 1 | Stage 0 authorizes `VOL-Q1`; accepted coefficients/phase/height/light/composition and first-use contract | add one authored global medium through serialization/world publication/RenderScene/preparation/feature pass/raw products/compose/status; update negative capability for exact slice | local media, history, atmosphere, heterogeneous assets, ReSTIR, clouds, generic framework | authoring round trips, CPU/shader analytic cases, raw `T/Lscatter`, composition/Off/invalid artifacts, hook/removal and package map | no exact Beer/phase/composition agreement, invalid edit partially publishes, or Off is not graph/compose identity |
+| 2 | Stage 1 pass; frozen grid/format/overlap/capacity/light/shadow contracts | add one volume-owned froxel coefficient/light/integration graph and admitted local shapes through existing authoring/scene/light/ray hooks; delete temporary Stage-1 integration path if replaced | history, atmosphere, heterogeneous assets, volume path reservoirs | grid inverse/boundary, overlap/capacity, per-light/visibility/transmittance, convergence/scaling time/memory and raw slice artifacts | arbitrary volume/light loss, surface reservoir reuse, wrong segment semantics, or grid error exceeds threshold |
+| 3 | Stage 2 static pass; accepted jitter/reprojection/history/confidence/UX and replacement-memory budget | add per-View immutable previous/current volume histories, reconstruct/publish/retire path and status; delete any temporary accumulation | atmosphere, heterogeneous assets, ReSTIR, learned provider | camera/density/emission/light/shadow/resize/dual-view/reload/cancel matrix, raw/reconstructed lag/leak/detail/time/memory | stale/cross-view/partial/non-finite history publishes or mutation recovery exceeds bound |
+| 4 | Stage 3 pass; atmosphere model/LUT/reference/sky/environment decisions accepted; cross-feature hooks reviewed | add atmosphere authoring/preparation, atomic LUT group, physical sky/sun/aerial perspective, image-vs-physical mode and one environment generation; replace conflicting image-sky write in that mode | clouds, arbitrary planets/lights, heterogeneous volume, second sky owner | raw LUT/query and rendered reference cells, generation/failure tests, direct/indirect environment identity and double-count proof, UX | mixed LUT/environment generation, double sun/sky/transmittance, or reference cell misses threshold |
+| 5 | Stage 4 pass where required; exact dense-or-sparse content schema/rights and tracker/majorant contracts | add one import/cook/runtime lease/upload/density sampling path, fixed-march product and stochastic reference; delete source runtime parser/duplicate canonical forms/failed acceleration | both dense and sparse canonical paths, ReSTIR, clouds | provenance/cook/load/reload/malformed results, transform/filter/range/majorant tests, march convergence/tracker statistics, memory/upload/retirement | majorant violation hidden, missing asset succeeds, representations diverge, or product does not approach reference |
+| 6 | Stage 5 reference pass; exactly one froxel-light or path-space reservoir domain admitted with equal-time baseline | implement explicit volume sample/proposal/mapping/GRIS/history and final evaluation in volume owner; remove experiment completely if gate fails | borrowing surface reservoir, conflating light selection with path ReSTIR, clouds, unapproved multiple scattering | equation/code ledger, record/packing, shift/support/statistics, approximate-vs-final artifacts, mutation/correlation/error/time/memory A/B, adoption/rejection record | exact final estimator absent, false-zero support, no equal-time win, unsafe mutation, or required regression/budget fails |
+| 7 | separately approved cloud product/content/UX/budget record; Stages 4/5 required foundations pass | extend the same atmosphere/medium/content/light/history/composition owners with one cloud tier; delete failed prototype/assets/settings | parallel cloud renderer/sky/fog state, unrelated surface-sky changes, cloud admission by visual appeal | weather/density authoring/cook, scale/LOD/empty-space/light/shadow/temporal cases, close/inside/horizon/flight A/B, UX/time/memory | no product/content owner, duplicate architecture, unacceptable fly-through/history behavior, or budget failure |
+| 8 | exact included tier candidate, devices/backends/content/reference/rights and FCR owner ready | evidence/status/docs/package closure only; fixes require new candidate; remove stale negative or unsupported positive claims exactly | redesign/tuning during evidence, inheriting proof between tiers/backends, unrelated fixes | per-tier FCR, analytic/workload/raw/composed/reference, temporal/failure/backend/native validation, authoring/automation/accessibility/cook/package/time/memory/enclosure results | any included AC/FM/CHK lacks candidate-bound result or absent/deferred tier is presented as supported |
+
+## Required Stage Handoff
+
+Every stage reports start/end revision and dirty boundary; release/discovery prerequisite evidence; changed/deleted files by authored/content/scene/render/shader/build/package responsibility; hook and bounded-removal ledgers; semantic-rule mapping; exact commands/configurations/raw artifacts/results; content/code provenance; cleanup; every unrun check; remaining tier limits; and binary authorization for the next stage. Fog, atmosphere, heterogeneous, ReSTIR and cloud verdicts remain independent.
+
+## Copy-Ready Prompt Contract
+
+Every stage prompt is the local quotation plus this mandatory tail; copy both:
+
+> NON-NEGOTIABLE: verify release/admission and the stage matrix prerequisites plus accepted Discovery/Transport/Architecture/User Experience contracts before editing. Keep all volume algorithms/state/content generations/LUTs/froxels/histories/reservoirs/diagnostics/failures in the frozen feature enclosure; generic owners only perform ledgered authoring, cook, scene, light/environment, frame, RHI, settings and package hooks. Preserve raw analytic/reference products, execute the listed clean break, and do not invent a unit, coefficient, composition order, grid, tracker, majorant, estimator, identity, lifetime, fallback, public control, threshold, budget, provider, content format, compatibility path, wrapper or tier.
+>
+> STOP: report `BLOCKED` before production mutation if `REL-11`/admission/FCR or any prerequisite/equation/oracle/threshold/owner/rights/capability is absent, evidence contradicts the contract, concurrent work overlaps the owned boundary, or scope exceeds the one stage. Handoff quotes every deliverable/exit gate with candidate-bound proof, lists hooks/deletions and exact checks/artifacts/results/provenance/cleanup/unrun work, and states whether the next stage is authorized.
 
 ## Stage 0 — Obtain Admission And Close `VOL-D0`
 

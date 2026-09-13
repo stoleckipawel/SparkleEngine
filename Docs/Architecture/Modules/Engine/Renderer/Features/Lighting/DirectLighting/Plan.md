@@ -4,9 +4,9 @@
 
 **Responsibility:** own dependency order, stage scope, prerequisites, estimates, clean-break work, non-goals, exit gates, prompts, and stop rules
 
-**Authority boundary:** this plan consumes accepted Discovery/Semantics/Architecture and cannot change them; code/build proves implementation and `FCR-REN-06` alone owns candidate results
+**Authority boundary:** this plan consumes accepted Discovery/Semantics/Architecture/User Experience and cannot change them; code/build proves implementation and `FCR-REN-06` alone owns candidate results
 
-**Plan revision:** `DIR-PLAN-01`, prepared 2026-09-12 from repository revision `8e4ffba225411965dc51c0b783e5f47a075c7e84`
+**Plan revision:** `DIR-PLAN-02`, deepened 2026-09-13 from repository revision `8b650c7450f8a59fb3bcc18edbb4d217a7b11ed5`
 
 ## Outcome
 
@@ -62,6 +62,45 @@ Every stage prompt inherits these rules:
 - select the cheapest check that can falsify the stage claim; never infer build/runtime/GPU/visual/performance evidence from static checks;
 - stop when a frozen semantic is missing, a required owner is concurrently changed, or the proposed work exceeds the stage's admission.
 
+## Stage Delivery Contract Matrix
+
+This matrix is part of each stage, not optional guidance. “Production delta” names the responsibility to change; Stage 0 must replace it with exact files and build/generated members before authorizing that stage.
+
+| Stage | Prerequisites | Required production delta and deletion | Explicit non-goals | Retained deliverables | Smallest stage falsifier |
+| --- | --- | --- | --- | --- | --- |
+| 0 | current revision/status/source trace; release owner available; raw capture route or bounded probe | documentation/fixtures/probes only; no estimator behavior change; delete temporary probes before handoff | tuning constants, rewriting shaders, enabling an SDK | accepted decision register, raw-failure manifest, oracle/threshold/profile table, exact hook/deletion/build map, revised estimate, review record | any `DIR-D0-*` choice, threshold, owner, rights action, or first-slice file remains unresolved |
+| 1 | accepted `DIR-D0-01/02/03/04/11/14`; admitted work; fixture/reference rights | add independent CPU/closed-form oracle and bounded exhaustive GPU product through existing light/material/ray/frame routes; remove only proved obsolete temporary diagnostic code | reservoir change, temporal reuse, denoising, new lobes/providers | analytic vectors, exhaustive raw lobes, per-light breakdown, invalid/capacity results, shared-code analysis, commands/configuration | analytic or exhaustive result misses a frozen threshold, or oracle depends entirely on questioned production code |
+| 2 | Stage 1 pass; frozen equations/units/lobes/shapes; exact semantic call sites | establish one shared focused evaluation/sampling/PDF semantic owner and update all production/reference consumers; delete duplicated/replaced light/BRDF/PDF rules | reservoir/reuse, emissive inventory, ReGIR, reconstruction, new material model | equation-to-code review, CPU/shader parity, furnace/shape/PDF artifacts, source/build/deletion map | any consumer retains a competing formula or sampling PDF disagrees with evaluation/support |
+| 3 | Stage 2 pass; accepted target/proposals/record/precision; frozen old-state deletion list | replace initial reservoir/sample representation, pass bindings, shaders and registrations atomically; retain exhaustive oracle; delete old representation/readers/writers | temporal/spatial reuse, visibility caching, reconstruction, advanced proposals not admitted | logical/packed layouts, round-trip/max/finite tests, discrete/statistical results, fresh-only raw/reference captures, stale-symbol search | old and new representations coexist, a contributing light has zero support, or mean/selection statistics fail |
+| 4 | Stage 3 pass; accepted correction mode, light translation, history/compatibility/random layout and budgets | add immutable previous/current per-View reservoirs/surface metadata, temporal/spatial passes, transactional publication/retirement; delete obsolete coarse history path | reconstruction, new light classes/providers, pass fusion or large-kernel research | mutation matrix, decoded histories/rejections, diversity/autocorrelation/convergence curves, long-run/dual-view/resize artifacts, memory overlap | wrong-light/stale/cross-view reuse, non-finite publication, or reuse increases error beyond frozen bound |
+| 5 | Stage 4 pass; accepted Inline/Pipeline support matrix and ray semantics; backend fixtures | reconcile provider lowering/bindings/program/SBT/TLAS/material access to one finite visibility contract; delete divergent duplicate semantics | screen trace, VSM/shadow-map system, OMM, generic provider framework | paired raw visibility/hit artifacts, alpha/two-sided/self-hit/segment cases, capability-fault results, architecture boundary result | providers disagree outside accepted tolerance or strict unavailability schedules partial work |
+| 6 | Stages 4/5 pass; frozen portable reconstruction signal/history/UX and optional-provider policy | add portable reconstruction through existing provider owner, exact guides/confidence/history/status and optional RR adapter; delete temporary filter experiments | feeding filtered values to estimator, tuning around raw bias, learned sole path | raw/reconstructed sequences, guide manifests, lag/detail/error/time/memory, provider fault/bypass/reload results, first-use/automation UX | filter hides failed raw estimator, stale guides survive, or portable baseline is unavailable on a mandatory profile |
+| 7 | Stage 6 pass; exactly one `DIR-D0` expansion admitted from a reproduced failing workload | add only environment candidates, emissive triangles, ReGIR, or another specifically admitted increment through existing scene/content owners; delete failed experiment if gate misses | bundling expansions, shadow architecture, new material lobes, “unlimited” claim | source/provenance record, distribution/update/generation tests, equal-time A/B, mutation/retirement, hook/removal ledger | no frozen equal-time benefit, duplicated light/content ownership, unsupported zero-probability source, or budget breach |
+| 8 | all included stages pass; exact candidate/configuration/hardware/content/reference ready; `FCR-REN-06` owner available | no feature redesign; only candidate-bound fixes explicitly re-admitted as a new candidate; update current docs/build/package/generated surfaces and remove stale prototype names | opportunistic tuning/refactor, borrowing proof across backends/providers, repairing unrelated failures | complete FCR evidence bundle, UX/automation/accessibility, workload/backend/native-validation, time/memory distributions, enclosure/removal and package results | any included AC/FM/CHK lacks observed candidate-bound disposition or any production claim exceeds evidence |
+
+## Required Stage Handoff
+
+Every stage retains:
+
+1. start/end revision and dirty-boundary statement;
+2. accepted prerequisite decision IDs and links to their evidence;
+3. changed and deleted files grouped by responsibility, including build/generated/package membership;
+4. complete outside-feature hook ledger and bounded-removal result;
+5. semantic-rule-to-code/check mapping and public-surface delta;
+6. exact commands, configurations, raw artifacts, results and cleanup;
+7. failed/unavailable/unrun build, runtime, GPU, backend, visual, performance, package, accessibility and clean-machine checks;
+8. remaining risks/limitations and a binary statement that the next stage is `Authorized` or `Blocked`.
+
+No stage hands off a partial history, compatibility mode, dormant experiment, unowned diagnostic, or result detached from candidate identity.
+
+## Copy-Ready Prompt Contract
+
+Every stage prompt is the stage-specific quotation plus the following mandatory tail; copy both together:
+
+> NON-NEGOTIABLE: verify the stage's matrix prerequisites and accepted Discovery/Semantics/Architecture/User Experience contracts before editing. Keep all mechanism and state in the frozen feature home; generic owners may only perform the ledgered selection, publication, composition, capability, content, or build hook. Make the listed clean-break deletions in the same change, preserve the independent raw/oracle path, and do not add an unratified algorithm, unit, identity, lifetime, fallback, public control, threshold, budget, provider, compatibility path, wrapper, or diagnostic subsystem.
+>
+> STOP: report `BLOCKED` before production mutation if a prerequisite/equation/oracle/threshold/owner/rights/capability is absent, current evidence contradicts the contract, concurrent work overlaps an owned path, or the diff exceeds the stage. Handoff must quote every stage deliverable and exit condition with candidate-bound proof, list all changed/deleted hooks and exact checks/results/artifacts, state cleanup and every unrun check, and explicitly say whether the next stage is authorized.
+
 ## Stage 0 — Close Discovery And Authorize The First Slice
 
 ### Objective
@@ -71,7 +110,7 @@ Turn the user's visual-failure report and this research package into frozen, rev
 ### Work
 
 1. Capture the current failure in raw direct lobes, selected light/sample, reservoir state, visibility, and final preview with exact candidate identity.
-2. Execute the `DIR-D0-01` through `DIR-D0-14` experiments and fill the evidence package.
+2. Execute `DIR-X-01` through `DIR-X-09`, resolve `DIR-D0-01` through `DIR-D0-14`, and fill the evidence package.
 3. Freeze formulas, units, light identities, target/bias mode, compatibility, visibility, denoiser, quality profiles, artifacts, thresholds, budgets, hook ledger, and clean-break deletions.
 4. Reconcile first-release admission and assign owners/revised estimates.
 5. Obtain independent review of the gate; retain `Open` or `Blocked` for every unresolved cell.
@@ -84,7 +123,7 @@ Turn the user's visual-failure report and this research package into frozen, rev
 
 ### Ready-To-Use Prompt
 
-> Execute Direct Lighting Stage 0 from `DirectLighting/Plan.md`. Treat the task as discovery and evidence, not a renderer rewrite. Reproduce the reported visual failure with raw direct lobe, reservoir, selected-light/PDF, and visibility artifacts; close every `DIR-D0-*` decision; freeze thresholds and budgets before candidate observation; produce the exact hook/deletion ledger and revised estimates; and request independent gate review. Do not change production estimator behavior. Preserve unrelated work and report every unrun check.
+> Execute Direct Lighting Stage 0 from `DirectLighting/Plan.md`. Treat the task as discovery and evidence, not a renderer rewrite. Run `DIR-X-01` through `DIR-X-09`, reproduce the reported visual failure with raw direct lobe, reservoir, selected-light/PDF, and visibility artifacts; close every `DIR-D0-*` decision; freeze thresholds and budgets before candidate observation; produce the exact hook/deletion ledger and revised estimates; and request independent gate review. Do not change production estimator behavior. Preserve unrelated work and report every unrun check.
 
 ## Stage 1 — Establish Analytic And Exhaustive Truth
 
@@ -286,7 +325,7 @@ Prove the complete candidate in representative content and publish an honest `FC
 
 | Stage | Acceptance | Failures/checks |
 | --- | --- | --- |
-| 0 | scope for all | `FM-DIR-D0-*`; discovery package |
+| 0 | scope for all | `DIR-X-*`; `FM-DIR-D0-*`; discovery package |
 | 1 | `AC-DIR-01/02/03` foundation | `FM-DIR-01`; `CHK-DIR-01` |
 | 2 | `AC-DIR-01/02/03` production semantics | `CHK-DIR-01/09` |
 | 3 | `AC-DIR-03/04` initial estimator | `FM-DIR-04`; `CHK-DIR-02` |

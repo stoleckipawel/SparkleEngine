@@ -226,7 +226,7 @@ Reference Path Tracer view mode immediately after Lit
          -> NEE/light sampling and MIS when selected
          -> compensated Russian roulette
          -> robust ray spawn and visibility endpoints
-    -> raw high-precision accumulation + exact target progress/reset reason
+    -> raw binary32 accumulation + exact integer target progress/reset reason
     -> viewport display derivative
     -> optional atomic linear-HDR/AOV/provenance export
     -> analytic/minimal/external/statistical comparison

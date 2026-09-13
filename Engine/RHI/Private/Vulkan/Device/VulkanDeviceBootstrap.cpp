@@ -224,6 +224,7 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 	m_featureStatus.SupportsSamplerAnisotropy = selected.Features.features.samplerAnisotropy == VK_TRUE;
 	m_featureStatus.SupportsFillModeNonSolid = selected.Features.features.fillModeNonSolid == VK_TRUE;
 	m_featureStatus.SupportsShaderInt64 = selected.Features.features.shaderInt64 == VK_TRUE;
+	m_featureStatus.SupportsShaderFloat64 = selected.Features.features.shaderFloat64 == VK_TRUE;
 	m_featureStatus.SupportsStorageImageReadWithoutFormat = selected.Features.features.shaderStorageImageReadWithoutFormat == VK_TRUE;
 	m_featureStatus.SupportsStorageImageWriteWithoutFormat = selected.Features.features.shaderStorageImageWriteWithoutFormat == VK_TRUE;
 	m_featureStatus.SupportsSampledImageArrayNonUniformIndexing = selected.Features12.shaderSampledImageArrayNonUniformIndexing == VK_TRUE;
@@ -295,6 +296,7 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	enabledFeatures.features.samplerAnisotropy = m_featureStatus.SupportsSamplerAnisotropy ? VK_TRUE : VK_FALSE;
 	enabledFeatures.features.fillModeNonSolid = m_featureStatus.SupportsFillModeNonSolid ? VK_TRUE : VK_FALSE;
 	enabledFeatures.features.shaderInt64 = m_featureStatus.SupportsShaderInt64 ? VK_TRUE : VK_FALSE;
+	enabledFeatures.features.shaderFloat64 = m_featureStatus.SupportsShaderFloat64 ? VK_TRUE : VK_FALSE;
 	enabledFeatures.features.shaderStorageImageReadWithoutFormat =
 	    m_featureStatus.SupportsStorageImageReadWithoutFormat ? VK_TRUE : VK_FALSE;
 	enabledFeatures.features.shaderStorageImageWriteWithoutFormat =
@@ -302,6 +304,7 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	m_featureStatus.EnabledSamplerAnisotropy = enabledFeatures.features.samplerAnisotropy == VK_TRUE;
 	m_featureStatus.EnabledFillModeNonSolid = enabledFeatures.features.fillModeNonSolid == VK_TRUE;
 	m_featureStatus.EnabledShaderInt64 = enabledFeatures.features.shaderInt64 == VK_TRUE;
+	m_featureStatus.EnabledShaderFloat64 = enabledFeatures.features.shaderFloat64 == VK_TRUE;
 	m_featureStatus.EnabledStorageImageReadWithoutFormat = enabledFeatures.features.shaderStorageImageReadWithoutFormat == VK_TRUE;
 	m_featureStatus.EnabledStorageImageWriteWithoutFormat = enabledFeatures.features.shaderStorageImageWriteWithoutFormat == VK_TRUE;
 	VkPhysicalDeviceVulkan13Features enabledFeatures13{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};

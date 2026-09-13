@@ -1,5 +1,32 @@
 #pragma once
 
+struct RayTracingHitSurfaceData
+{
+	bool Valid;
+	float3 PositionWorld;
+	float3 PreviousPositionWorld;
+	float3 NormalWorld;
+	float3 TangentWorld;
+	float3 BitangentWorld;
+	float3 NormalTangent;
+	float TangentSign;
+	float2 TexCoord0;
+	uint MaterialSlot;
+	uint GeometryFlags;
+	uint RejectionReason;
+	float3 BaseColor;
+	float3 EmissiveColor;
+	float3 SubsurfaceColor;
+	float Roughness;
+	float Metallic;
+	float DielectricF0;
+	float AmbientOcclusion;
+	float Alpha;
+	float SubsurfaceStrength;
+	uint AlphaMode;
+	uint GpuSceneSlot;
+};
+
 namespace RayTracingHitSurface
 {
 	static const uint AlphaModeOpaque = 0u;

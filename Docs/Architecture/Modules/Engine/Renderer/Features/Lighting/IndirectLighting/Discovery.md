@@ -91,6 +91,40 @@ Freeze the feature capsule and exact seed-replay deletions. Record dispositions 
 
 Freeze quality profiles, requested/active status, exclusions/degraded reasons, raw artifact schema, metrics/tolerances before observation, D3D12/Vulkan/device/driver/compiler/shader identity, capture windows, and `FCR-REN-07` ownership. Separate estimator, temporal, visual, denoiser, performance, memory, backend, and release verdicts.
 
+## Decision Closure Register
+
+| Decision | Options that must be compared | Required retained evidence | Decision owner/reviewer | Status | Consequence while open |
+| --- | --- | --- | --- | --- | --- |
+| `IND-D0-01` | one/multi-bounce, diffuse/rough-glossy, Inline/Pipeline, explicit exclusions | release/profile/path-domain table and workload need | Renderer owner / release owner | Open | no production domain is authorized |
+| `IND-D0-02` | NEE/emission/environment/continuation/MIS and lobe split variants | technique ledger, analytic/metamorphic toggles and raw AOVs | transport semantics / independent math reviewer | Open | current path accounting cannot be trusted |
+| `IND-D0-03` | analytic, external, accepted RPT and content fixtures | oracle manifest, shared-code analysis, metrics/tolerances | verification / independent reference reviewer | Open | no scene-level correctness claim |
+| `IND-D0-04` | BSDF/lobe/light/environment candidate mixtures and counts | PDF/support/variance/ray-cost study | initial generator / estimator reviewer | Open | no initial reservoir implementation |
+| `IND-D0-05` | explicit vertices/factors versus proved compact replay | logical record, pack/round-trip, mapping sufficiency and bandwidth | path record owner / data-lifetime reviewer | Open | seed payload cannot be grandfathered |
+| `IND-D0-06` | reconnection, replay, hybrid, splatting by path class | domain/inverse/support/Jacobian/visibility hand and statistical tests | shift owner / independent estimator reviewer | Open | no cross-receiver reuse |
+| `IND-D0-07` | exact GRIS target/contribution/resampling/bias/correlation modes | equation ledger and enumerated/distribution tests | reservoir owner / GRIS reviewer | Open | no ReSTIR GI/GRIS conformance claim |
+| `IND-D0-08` | reprojection/backprojection/splatting, ordering/neighbors/disocclusion | mutation, duplication, autocorrelation, convergence and recovery artifacts | reuse owner / temporal reviewer | Open | no temporal/spatial product reuse |
+| `IND-D0-09` | robust ray/material/alpha/animation semantics and provider matrix | ray hand cases, deformed motion, generation/lifetime faults | shared ray/material owners / RHI reviewer | Open | animated/path provider scope excluded |
+| `IND-D0-10` | image/physical environment roles and direct-light sharing | mapping/PDF/generation and double-count tests | sky/environment + indirect owners / cross-feature reviewer | Open | environment claims remain partial |
+| `IND-D0-11` | portable reconstruction and optional DLSS RR | raw/guide/history contract and motion/provider-fault A/B | reconstruction owner / product reviewer | Open | no reconstructed product claim |
+| `IND-D0-12` | depth/rays/records/history/render scale/queue profiles | equal-quality/time/memory/replacement study by domain | performance owner / platform reviewers | Open | no default profile/budget |
+| `IND-D0-13` | selected path-reservoir route versus separately admitted probes/caches/guiding | architecture A/B, feature-home/hook/deletion ledger | Renderer architecture / module owner | Open | no optional GI architecture may enter |
+| `IND-D0-14` | settings/status, diagnostics, metrics, artifact schema and FCR cells | [UX](UserExperience.md) dry run, candidate manifest, check/FCR review | editor/verification / `FCR-REN-07` owner | Open | no public workflow or candidate verdict |
+
+## Gate Resolution Protocol
+
+Each row closes only after hypotheses and thresholds are fixed, the exact candidate/baseline/dirty boundary is recorded, the smallest differentiating experiment runs, raw artifacts and shared-code dependencies are retained, alternatives receive explicit `Accepted/Rejected/Deferred/Excluded` reasons, and the named reviewer signs the result. Accepted decisions are copied into their single semantic/architecture/UX owner before dependent plan stages unlock. New path classes or surprising convergence/motion results reopen the relevant row.
+
+## Risk Register
+
+| Risk | Leading indicator | Containment | Escalation trigger |
+| --- | --- | --- | --- |
+| seed replay looks plausible but has no mapped density | stable images with destination-dependent mean drift | explicit path records and shift distribution tests | current prototype cannot state source/destination probability |
+| techniques double count emission/environment | energy changes incorrectly as NEE/depth toggles | executable technique ledger and metamorphic cases | predicted toggle relation fails |
+| stored `M` overstates correlated diversity | `M` grows while unique paths plateau | duplication/autocorrelation/effective-diversity artifacts | convergence worsens with added reuse |
+| broader glossy/depth scope hides base defects | failures appear only after multiple simultaneous changes | one lobe/depth/terminal increment per gate | Stage 1 one-bounce mean is not proved |
+| shared reference repeats same defect | RPT and product agree but analytic/external case disagrees | shared-code disclosure and second oracle | all available references share questioned code |
+| optional cache/guiding becomes second GI system | new scene state or lifetime appears in optimization | separate product admission and removal-on-fail | new generic owner/provider is required |
+
 ## Proposed Domain Disposition
 
 | Capability | Proposed first disposition | Rationale |

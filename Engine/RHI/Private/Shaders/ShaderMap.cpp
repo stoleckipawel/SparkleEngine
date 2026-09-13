@@ -230,7 +230,8 @@ GlobalShaderMap GlobalShaderMap::Open(const std::filesystem::path& path, const C
 		const std::uint32_t featureBits = static_cast<std::uint32_t>(entry.Features);
 		constexpr std::uint32_t knownFeatureBits = static_cast<std::uint32_t>(ShaderFeatureFlags::UsesInlineRayQuery)
 		    | static_cast<std::uint32_t>(ShaderFeatureFlags::UsesAccelerationStructure)
-		    | static_cast<std::uint32_t>(ShaderFeatureFlags::UsesDescriptorIndexing);
+		    | static_cast<std::uint32_t>(ShaderFeatureFlags::UsesDescriptorIndexing)
+		    | static_cast<std::uint32_t>(ShaderFeatureFlags::UsesFloat64);
 		if (entry.ShaderType == 0 || entry.CodeHash == 0 || entry.ParameterSignature == 0 || entry.CompileInputHash == 0
 		    || entry.BackendVersion == 0 || entry.Stage >= ShaderStage::Count || !IsShaderTarget(entry.Target)
 		    || (featureBits & ~knownFeatureBits) != 0 || !ordered)

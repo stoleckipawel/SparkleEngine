@@ -105,6 +105,42 @@ Freeze one feature home and an integration-hook ledger. Decide exact old reservo
 
 Freeze every tolerance before candidate observation, exact D3D12/Vulkan configurations, driver/compiler/shader publication identities, fixture hashes, warmup/capture windows, raw artifact schema, performance statistics, and `FCR-REN-06` ownership. Separate numerical, temporal, visual, memory, time, failure, backend, and release verdicts.
 
+## Decision Closure Register
+
+Every row is independently reviewed. `Proposed` means the documents contain a candidate, not that the decision is closed.
+
+| Decision | Options that must be compared | Required retained evidence | Decision owner/reviewer | Status | Consequence while open |
+| --- | --- | --- | --- | --- | --- |
+| `DIR-D0-01` | first-release repair, later release, or excluded profiles; D3D12/Vulkan and traversal matrix | product/release admission and feature/profile table | Renderer owner / release owner | Open | no production replacement scope |
+| `DIR-D0-02` | explicit photometric-to-working conversion and shape models | dimensional derivation, analytic light matrix, importer/authoring trace | lighting semantics / independent math reviewer | Open | no unit or reference comparison claim |
+| `DIR-D0-03` | current versus corrected lobe energy, GGX sampling/energy variants | BRDF evaluation/PDF/furnace sweeps and per-lobe allocation | material-lighting semantics / RPT reviewer | Open | no reservoir target or lobe acceptance |
+| `DIR-D0-04` | CPU analytic, exhaustive GPU, accepted RPT, external artifacts | oracle manifest, shared-code analysis, tolerances before results | verification owner / independent reviewer | Open | no visual-correctness root-cause verdict |
+| `DIR-D0-05` | stable logical ID plus translation or full reset | add/remove/reorder/mutation captures and packing/round-trip tests | prepared-light owner / lifetime reviewer | Open | no temporal reuse across light changes |
+| `DIR-D0-06` | uniform, power mixture, cluster/BVH, ReGIR, environment/emissive proposals | normalization/support/variance/time/memory study | Direct sampler owner / estimator reviewer | Open | initial proposal remains unratified |
+| `DIR-D0-07` | reuse off, canonical correction modes, visibility-reuse choices, advanced pairwise/MCMC | equation-to-code table and enumerated/statistical reservoir tests | reservoir owner / independent estimator reviewer | Open | no ReSTIR conformance claim |
+| `DIR-D0-08` | reprojection, compatibility, neighbor/disocclusion policies | mutation matrix, rejection reasons, diversity/correlation/recovery | reuse owner / motion reviewer | Open | surviving current history remains unproved |
+| `DIR-D0-09` | Inline, Pipeline and any separately admitted non-ray provider | finite-segment/alpha/two-sided parity and injected capability failures | ray semantics / RHI reviewers | Open | provider support matrix cannot be promoted |
+| `DIR-D0-10` | portable signal/filter plus optional DLSS RR | raw/guide contract, motion/disocclusion A/B and failure behavior | reconstruction owner / product reviewer | Open | no product-quality reconstructed claim |
+| `DIR-D0-11` | measured profile budgets and queue placement | fixed workload quality/rays/time/memory/replacement curves | performance owner / platform reviewers | Open | no default profile or performance promise |
+| `DIR-D0-12` | recommended/strict settings, status/reasons, debug/capture route | [UX](UserExperience.md) dry run, automation/accessibility/failure matrix | editor/runtime owners / artist and automation reviewers | Open | no durable public workflow |
+| `DIR-D0-13` | private feature home, exact hooks/deletions, bounded oracle retention | source/build graph, hook ledger, bounded-removal and stale-symbol audit | Renderer architecture / module owner | Open | Stage 1 file scope not authorized |
+| `DIR-D0-14` | metrics, masks, fixtures, hardware/backends and artifact schema | frozen candidate manifest, acceptance/check trace and FCR owner review | verification / `FCR-REN-06` owner | Open | no candidate may receive a pass verdict |
+
+## Gate Resolution Protocol
+
+For each row: freeze hypotheses and thresholds; capture the committed baseline and dirty boundary; run the smallest differentiating experiment; retain raw inputs/results/configuration; record why each alternative was accepted, rejected, deferred or excluded; obtain the named independent review; then update the semantic/architecture/UX owner before marking `Accepted`. A surprising result reopens the row and every dependent row. Missing hardware, provider, content, rights or oracle marks `Blocked`, never `Accepted by assumption`.
+
+## Risk Register
+
+| Risk | Leading indicator | Containment | Escalation trigger |
+| --- | --- | --- | --- |
+| visually broken source has multiple causes | analytic, visibility and temporal artifacts change independently | isolate exhaustive/unshadowed/reuse-off/raw modes | no single defect class explains captured error |
+| familiar ReSTIR formula is applied in wrong measure | analytic small set passes but finite-shape/statistical mean drifts | equation-to-measure ledger and enumerated tests | confidence interval excludes reference mean |
+| denoising conceals bias or stale identity | reconstructed view stabilizes while raw mean/IDs fail | raw artifacts and separate verdicts mandatory | raw and reconstructed conclusions disagree |
+| advanced method expands first slice | ReGIR/VSM/MCMC/OMM fields appear before base conformance | admission matrix and one-candidate A/B stages | new owner/resource/provider required |
+| fixed budget silently drops light energy | selected diversity plateaus or important light never sampled | support/overlap sweep and degraded status | any contributing admitted light has zero proposal support |
+| feature diffuses into generic owners | repeated settings/scene/RHI switches appear | per-stage hook ledger and bounded-removal check | any unledgered outside edit |
+
 ## Proposed First-Scope Decision Matrix
 
 | Capability | Proposed disposition | Reason |
@@ -123,6 +159,20 @@ Freeze every tolerance before candidate observation, exact D3D12/Vulkan configur
 | VSM/shadow maps | Deferred decision | no current non-ray product requirement is frozen |
 | opacity micromaps | Deferred | depends on measured alpha traversal cost and content pipeline |
 | new OpenPBR lobes | Excluded from this delivery | material feature expansion, not a direct-lighting repair |
+
+## Required Experiments
+
+| ID | Controlled exercise and raw products | Primary decision falsified |
+| --- | --- | --- |
+| `DIR-X-01` | reproduce reported defect with direct lobes, unshadowed contribution, selected stable light/sample, PDFs, reservoir decode, visibility and presented image | whether one visual symptom identifies estimator, shading, visibility, reconstruction, or composition |
+| `DIR-X-02` | CPU/closed-form plus shader-query directional/point/spot/rectangle unit, attenuation, cone, shape, sidedness and invalid-input matrix | `DIR-D0-02` |
+| `DIR-X-03` | BRDF evaluation/sampling/PDF histograms and furnace/per-lobe energy over roughness/metallic/F0/subsurface/shading-normal extremes | `DIR-D0-03` |
+| `DIR-X-04` | exhaustive small-light GPU resolve and finite-shape quadrature against analytic/external/accepted-RPT artifacts with shared-code disclosure | `DIR-D0-04` |
+| `DIR-X-05` | uniform/power/mixture/environment/emissive candidate support, normalization, selection frequencies, raw mean/variance and equal-work cost | `DIR-D0-06/07` |
+| `DIR-X-06` | light add/remove/reorder/disable/move/color/shape plus camera/disocclusion/material/object/alpha/resize/dual-view/reload mutation sequence | `DIR-D0-05/08` |
+| `DIR-X-07` | paired Inline/Pipeline finite segment, self-hit, grazing, opaque/alpha/two-sided/area-light fixtures and injected capability/program/SBT/TLAS/material faults | `DIR-D0-09` |
+| `DIR-X-08` | identical raw sequence through portable and optional reconstruction for static, motion, cut, disocclusion, thin geometry, light toggle and invalid guides/provider | `DIR-D0-10/12` |
+| `DIR-X-09` | one-to-thousands overlap plus distributed-light, broad-light, alpha and motion workloads across candidate/ray/profile/render-scale cells | `DIR-D0-11/14` and ReGIR/provider admission |
 
 ## Discovery Evidence Package
 

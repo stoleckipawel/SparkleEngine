@@ -3,7 +3,7 @@
 
 RaytracingAccelerationStructure SceneTlas;
 
-#include "/Engine/RayTracing/RayTracingTraceQuery.hlsli"
+#include "/Engine/RayTracing/RayTracingMaterialTraceQuery.hlsli"
 
 namespace RayTracingSceneTlas
 {

@@ -11,12 +11,7 @@
 #include "/Engine/Passes/GBuffer/GBufferPacking.hlsli"
 #include "/Engine/Passes/GBuffer/MotionVector.hlsli"
 
-cbuffer RayTracingGBufferConstants
-{
-	uint RayTracingHitInstanceCount;
-	uint RayTracingHitMaterialCount;
-};
-
+#include "/Engine/RayTracing/RayTracingHitUniformData.hlsli"
 #include "/Engine/RayTracing/RayTracingMaterialHit.hlsli"
 #include "/Engine/RayTracing/RayTracingShaderTableLayout.hlsli"
 

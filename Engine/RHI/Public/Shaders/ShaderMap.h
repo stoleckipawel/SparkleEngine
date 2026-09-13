@@ -28,6 +28,7 @@ enum class ShaderFeatureFlags : std::uint32_t
 	UsesInlineRayQuery = 1u << 0u,
 	UsesAccelerationStructure = 1u << 1u,
 	UsesDescriptorIndexing = 1u << 2u,
+	UsesFloat64 = 1u << 3u,
 };
 
 struct RayTracingShaderMetadata final

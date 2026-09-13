@@ -1,7 +1,7 @@
 #ifndef SPARKLE_RAY_TRACING_PATH_SURFACE_HLSLI
 #define SPARKLE_RAY_TRACING_PATH_SURFACE_HLSLI
 
-#include "/Engine/RayTracing/RayTracingMaterialHit.hlsli"
+#include "/Engine/RayTracing/RayTracingHitSurface.hlsli"
 
 struct RayTracingPathSurface
 {
@@ -10,6 +10,7 @@ struct RayTracingPathSurface
 	float3 NormalWorld;
 	float3 ViewDirWorld;
 	float3 BaseColor;
+	float3 EmissiveColor;
 	float Roughness;
 	float Metallic;
 	float DielectricF0;
@@ -29,6 +30,7 @@ RayTracingPathSurface BuildPrimaryRayTracingPathSurface(float3 positionWorld,
 	surface.NormalWorld = normalWorld;
 	surface.ViewDirWorld = viewDirWorld;
 	surface.BaseColor = baseColor;
+	surface.EmissiveColor = 0.0f.xxx;
 	surface.Roughness = roughness;
 	surface.Metallic = metallic;
 	surface.DielectricF0 = dielectricF0;
@@ -43,6 +45,7 @@ RayTracingPathSurface BuildHitRayTracingPathSurface(RayTracingHitSurfaceData hit
 	surface.NormalWorld = hitSurface.NormalWorld;
 	surface.ViewDirWorld = normalize(-incomingRayDirectionWorld);
 	surface.BaseColor = hitSurface.BaseColor;
+	surface.EmissiveColor = hitSurface.EmissiveColor;
 	surface.Roughness = hitSurface.Roughness;
 	surface.Metallic = hitSurface.Metallic;
 	surface.DielectricF0 = hitSurface.DielectricF0;

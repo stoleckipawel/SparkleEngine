@@ -192,6 +192,48 @@ When the canonical reservoir stage lands, update all callers, history layouts, s
 - Shader reload/device loss/cancel never promotes partial current history.
 - Quality-budget overload reports the active budget and degraded status; no important light is deterministically discarded without declared culling semantics.
 
+## Detailed Pass Contracts
+
+| Pass/product | Reads | Writes | Can omit when | Primary falsifier |
+| --- | --- | --- | --- | --- |
+| light preparation/distribution | immutable prepared analytic/emissive/environment facts and previous light table | current compact inventory, stable-ID translation, proposal tables, generation/status | never for an active profile; exhaustive oracle may omit proposal tables | add/remove/reorder/mutate light while decoding selected stable IDs |
+| exhaustive oracle | receiver GBuffer, full admitted light inventory, current visibility mode | raw direct lobes and optional per-light breakdown | shipping profile only; retained in bounded checks | analytic four-light and finite-shape quadrature agreement |
+| initial candidates | receiver GBuffer, proposal tables, current lights/materials, random layout | initial reservoir and rejection counters | no-reuse oracle may write direct samples instead | discrete selection/PDF/reservoir statistics |
+| temporal reuse | immutable previous reservoir/surface/light translation, current receiver/lights | temporal current reservoir/confidence | first frame, cut, invalid generation or `Off` reuse | cut/disocclusion/light-reorder matrix |
+| spatial reuse | temporal/current reservoirs, current receiver/lights, neighbor sequence | final current reservoir/confidence | diagnostic initial/temporal-only mode | deterministic neighbors, incompatibility and correlation curve |
+| selected resolve | final reservoir, current lights/materials, traversal provider/TLAS | raw lobes, visibility/hit-distance/sample facts | never for active stochastic profile | forced visible/blocked finite segments and frontend parity |
+| reconstruction | raw lobes/guides/confidence plus separate previous filter history | reconstructed lobes and current filter history/status | raw/debug or explicit accepted bypass | identical raw motion/disocclusion/provider-fault sequence |
+| composition | authoritative direct products and existing lighting inputs | one lighting composite contribution | Direct Lighting `Off`/unavailable graph path | synthetic lobe sum and graph-omission identity |
+
+The graph declares each read/write explicitly. No pass reaches into a feature object through hidden mutable globals; console/settings values are resolved into immutable per-frame configuration before scheduling.
+
+## Resource Access, Barriers, And Replacement Memory
+
+| Resource class | Lifetime | Access/order rule | Replacement accounting |
+| --- | --- | --- | --- |
+| prepared light inventory/translation/PDFs | scene or frame generation | built completely before sampling; read-only during frame | new and old generations both count until last GPU use retires |
+| receiver/GBuffer/guides | frame | produced before lighting; immutable to all direct passes | shared input, not charged as feature-owned unless feature duplicates it |
+| previous reservoir/surface metadata | per-View persistent generation | SRV only during current build; never overwritten in place | previous + current + retirement overlap at resize/reconfigure |
+| initial/temporal/final reservoirs | frame/transient except published final | UAV producer then declared SRV consumer; alias only when live ranges and diagnostics permit | worst active diagnostic/profile path, not optimistic alias plan |
+| raw lobes/visibility/confidence | frame products | resolve writes; reconstruction/capture/composition read | all simultaneously live consumers included |
+| reconstruction history/output | per-View persistent/frame | provider owns history; raw estimator never reads filtered radiance | provider replacement and previous/current generations included |
+
+UAV ordering, state transitions, queue ownership and cross-queue synchronization are expressed through FrameGraph dependencies. Manual backend barriers in the feature are rejected unless the RHI/FrameGraph contract proves no representation exists; such an exception requires a ledgered architecture decision and paired-backend check.
+
+## Data Access And Divergence Budget
+
+- Candidate generation groups work by receiver and proposal class; proposal tables are contiguous read-only data for the frame.
+- Final shading evaluates one selected light per reservoir. Material/light dispatch uses existing typed shader data and explicit light-class branches measured on target workloads, not a feature-specific call framework.
+- Alpha visibility is permitted to diverge by content but its material/texture access is the existing ray semantic path. Duplicating material decode into Direct Lighting is prohibited.
+- Random dimensions derive from View/pixel/frame/stage/candidate/neighbor semantic IDs and are versioned; no hidden global RNG state crosses passes.
+- Wave/subgroup operations, half precision, pass fusion and async compute are optimizations. They require scalar/portable equivalence or an explicit backend profile, and cannot change reservoir order/meaning invisibly.
+
+## Architecture Fitness Gate
+
+Every stage retains an outside-feature hook ledger with file, owner, reason, data direction, lifetime, deletion/reversal method and defect-detecting check. The gate fails on an unledgered `DirectLighting` field/switch in generic Scene/View/RHI/settings/frame orchestration, duplicate light/material/history state, a second shader-binding convention, or a wrapper that only forwards a call.
+
+Bounded-removal proof must show that deleting the private feature home plus the listed hooks restores the previous graph without leaving selectors, build entries, shaders, generated surfaces, histories, docs or package assets. Search results for feature symbols and repeated policy switches are retained as artifacts. The hook budget is re-ratified at every stage; convenience is not justification.
+
 ## Architecture Invariants
 
 1. One authored light has one stable logical identity and one active semantic record.

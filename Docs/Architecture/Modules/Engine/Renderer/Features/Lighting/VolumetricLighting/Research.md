@@ -352,7 +352,7 @@ Git checks on 2026-09-12 confirmed `183ead5` as the Hillaire atmosphere reposito
 [^12]: Novák, Selle, and Jarosz, [Residual Ratio Tracking for Estimating Attenuation in Participating Media](https://www.jannovak.info/publications/RRTracking/index.html), ACM TOG 33(6), 2014.
 [^13]: d'Eon and Novák, [Zero-variance Transmittance Estimation](https://research.nvidia.com/labs/rtr/publication/deon2021zerovar/), EGSR 2021.
 [^14]: Fong et al., [Production Volume Rendering](https://graphics.pixar.com/library/ProductionVolumeRendering/paper.pdf), SIGGRAPH Courses, 2017.
-[^15]: Křivánek et al., [Real-time Volumetric Rendering in Unity High Definition Render Pipeline](https://www.advances.realtimerendering.com/s2018/Siggraph%202018%20HDRP%20talk_with%20notes.pdf), SIGGRAPH Advances in Real-Time Rendering, 2018.
+[^15]: Lagarde and Golubev, [The Road toward Unified Rendering with Unity's High Definition Render Pipeline](https://www.advances.realtimerendering.com/s2018/Siggraph%202018%20HDRP%20talk_with%20notes.pdf), SIGGRAPH Advances in Real-Time Rendering, 2018.
 [^16]: Patry, [Real-Time Samurai Cinema](https://advances.realtimerendering.com/s2021/jpatry_advances2021/index.html), SIGGRAPH Advances in Real-Time Rendering, 2021.
 [^17]: Wright et al., [Lumen: Real-time Global Illumination in Unreal Engine 5](https://advances.realtimerendering.com/s2022/SIGGRAPH2022-Advances-Lumen-Wright%20et%20al.pdf), SIGGRAPH Advances in Real-Time Rendering, 2022.
 [^18]: Hillaire, [UnrealEngineSkyAtmosphere reference implementation](https://github.com/sebh/UnrealEngineSkyAtmosphere/tree/183ead5bdacc701b3b626347a680a2f3cd3d4fbd), revision `183ead5`, accessed 2026-09-12.

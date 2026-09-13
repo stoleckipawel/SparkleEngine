@@ -1,5 +1,5 @@
 #include "/Engine/Passes/RayTracing/RayTracingGBufferCommon.hlsli"
-#include "/Engine/RayTracing/RayTracingTraceQuery.hlsli"
+#include "/Engine/RayTracing/RayTracingMaterialTraceQuery.hlsli"
 
 [numthreads(8, 8, 1)]
 void RayTracingGBufferInline(uint3 dispatchThreadId : SV_DispatchThreadID)

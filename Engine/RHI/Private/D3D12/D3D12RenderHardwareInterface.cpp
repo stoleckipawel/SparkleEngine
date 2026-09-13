@@ -110,6 +110,10 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 	}
 	capabilities.Diagnostics = BuildBackendDiagnosticsSupport();
 	capabilities.RayTracing = m_rhi->GetRayTracingCapabilities();
+	D3D12_FEATURE_DATA_D3D12_OPTIONS options{};
+	capabilities.SupportsShaderFloat64 =
+	    SUCCEEDED(m_rhi->GetDevice()->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options)))
+	    && options.DoublePrecisionFloatShaderOps != FALSE;
 	capabilities.SupportsMeshShaders = false;
 	capabilities.SupportsTaskShaders = false;
 	capabilities.Queues.Set(ERhiQueueType::Graphics, true, true);

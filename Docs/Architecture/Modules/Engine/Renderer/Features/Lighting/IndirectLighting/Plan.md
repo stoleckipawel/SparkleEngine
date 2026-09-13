@@ -4,9 +4,9 @@
 
 **Responsibility:** own dependency order, staged clean break, prerequisites, estimates, non-goals, exit evidence, copy-ready prompts, and stop rules
 
-**Authority boundary:** this plan consumes accepted Discovery/Semantics/Architecture without changing them; code/build proves implementation and `FCR-REN-07` owns candidate results
+**Authority boundary:** this plan consumes accepted Discovery/Semantics/Architecture/User Experience without changing them; code/build proves implementation and `FCR-REN-07` owns candidate results
 
-**Plan revision:** `IND-PLAN-01`, prepared 2026-09-12 from repository revision `8e4ffba225411965dc51c0b783e5f47a075c7e84`
+**Plan revision:** `IND-PLAN-02`, deepened 2026-09-13 from repository revision `8b650c7450f8a59fb3bcc18edbb4d217a7b11ed5`
 
 ## Outcome
 
@@ -56,6 +56,34 @@ Every stage:
 - stops when an equation, mapping, oracle, admission, ownership boundary, or failure response is unresolved.
 
 New test-only files/classes/executables may be local-only but must not be submitted. Temporary probes are removed before handoff.
+
+## Stage Delivery Contract Matrix
+
+This matrix is normative for the stage. Stage 0 replaces responsibility names with exact files, CMake/shader registration/generated members and hooks before Stage 1 is authorized.
+
+| Stage | Prerequisites | Required production delta and deletion | Explicit non-goals | Retained deliverables | Smallest stage falsifier |
+| --- | --- | --- | --- | --- | --- |
+| 0 | current revision/status/source trace; release/reference owners reachable; bounded probe route | discovery artifacts/probes only; no estimator behavior change; remove temporary probes | renaming seed replay, increasing bounces/candidates, implementing a cache | accepted decision/technique/domain registers, seed-replay equation trace, oracle/metric/profile table, exact hook/deletion map, revised estimates and review | any `IND-D0-*` choice, equation, threshold, owner, rights or first-slice file remains unresolved |
+| 1 | accepted `IND-D0-01/02/03/04/09/10/12/14`; admitted work and independent fixtures | add CPU/analytic/metamorphic reference plus bounded no-reuse one-bounce GPU estimator/raw lobes; correct only ledgered shared semantic defects | reservoir/path-record replacement, cross-pixel/frame reuse, reconstruction, broader depth | executable technique ledger, raw per-terminal/lobe artifacts, reference/independence manifest, ray/path/finite counters | NEE/emission/environment/depth toggles violate predictions or initial mean misses threshold |
+| 2 | Stage 1 pass; frozen logical path record/packing/identity and seed-replay deletion list | establish private feature owner and explicit path/initial-reservoir state; update bindings/shaders/captures/build together; delete float seed payload and replay readers/writers | shifts, temporal/spatial reuse, record compaction beyond proof, compatibility schema | logical/packed record spec, max/round-trip/long-run tests, fresh-only equivalence and stale-symbol/deletion audit | any required probability/generation fact is absent, integer identity loses precision, or old path survives |
+| 3 | Stage 2 pass; exact admitted shift domains/inverses/support/Jacobians/GRIS weights and static fixtures | implement mapping and reservoir owners plus deterministic same-frame/CPU paths; no persistent history publication | temporal reuse, broader lobes/depth, reconstruction, guiding/cache | hand round trips, rejection taxonomy, enumerated/statistical distributions, destination mean comparison, finite/extreme tests | mapping cannot be derived in one measure, rejected sample adds mass, or statistics exclude reference |
+| 4 | Stage 3 pass; frozen reprojection/splat, ordering/neighbors/correlation and mutation policies | add per-View previous/current path/receiver state, temporal/spatial proposals, confidence, transactional publication/retirement | reconstruction, path-depth/lobe expansion, pass fusion/advanced splatting | mutation/dual-view/cancel/long-run artifacts, duplication/autocorrelation/diversity/error curves, replacement memory | stale/cross-view path publishes, current scene mutation maps without proof, or reuse exceeds error/correlation bounds |
+| 5 | Stage 4 pass; next path depth/lobe/terminal class separately admitted; accepted RPT/external reference | extend technique ledger, logical/packed record, initial generator, mapping/GRIS and resolve together for one increment | multiple increments, unapproved delta/transmission/caustics, reconstruction tuning | roughness-depth-terminal matrix, raw reference/convergence, ray/path/state budgets, explicit exclusions/status | new domain lacks alternate-technique/MIS/mapping support or regresses previously accepted cells |
+| 6 | included Stage 5 domain passes; portable reconstruction and optional-provider contract accepted | add portable lobe reconstruction through existing provider owner, guides/confidence/history/status and optional RR adapter | filter feedback into estimator, using denoising to admit unsupported transport, sole vendor path | raw/reconstructed motion/disocclusion/glossy/emissive/sky sequences, guide/fault manifests, lag/detail/time/memory, UX route | raw failure is hidden, guides/history mismatch, or mandatory portable profile cannot recover safely |
+| 7 | Stage 6 pass; one named failing workload and one optimization admission with frozen A/B | integrate only selected enhanced reuse/splatting/guiding/cache mechanism; update semantics/history/hooks/tests; remove entirely on failure | another GI architecture, bundled optimizations, permanent experiment switch | reproduced baseline failure, equal-time A/B, correlation/lag/time/memory/backend regressions, provenance/hook/removal record | no measured benefit, semantic core changes, duplicate scene/GI state, or any required regression fails |
+| 8 | all included stages pass; exact candidate/hardware/content/reference/provider matrix; `FCR-REN-07` owner ready | evidence and stale-state closure only; production fix requires new candidate/re-admission; remove final prototype names/docs | redesign/tuning during evidence, borrowed proof across domains/backends, unrelated repair | full FCR bundle, path/domain/status UX, backend/native validation, workload/raw/reference, convergence/time/memory/package/enclosure results | any included AC/FM/CHK or exclusion lacks candidate-bound disposition, or seed-replay residue remains |
+
+## Required Stage Handoff
+
+Every stage reports start/end revision and dirty boundary; accepted prerequisites; changed/deleted files by responsibility including build/generated/package; external hook and bounded-removal ledgers; semantic/technique mapping; exact commands/configurations/artifacts/results; cleanup; all unrun checks; remaining domain/quality/backend limits; and a binary next-stage authorization. Raw estimator, mapping, reservoir and reconstruction verdicts remain separate.
+
+## Copy-Ready Prompt Contract
+
+Every stage prompt is the local quotation plus this mandatory tail; copy both:
+
+> NON-NEGOTIABLE: verify the stage matrix prerequisites and accepted Discovery/Transport/Architecture/User Experience contracts before editing. Keep path generation, records, mappings, reservoirs, histories, diagnostics and feature failures in the frozen feature home; generic owners only expose the ledgered scene/light/environment/ray/frame/build/publication hooks. Preserve the independent no-reuse/raw oracle, perform the listed clean-break deletions atomically, and do not invent a path domain, technique, PDF, shift, Jacobian, GRIS weight, identity, lifetime, fallback, public control, threshold, budget, provider, compatibility path, wrapper, or cache.
+>
+> STOP: report `BLOCKED` before production mutation if any prerequisite/equation/oracle/threshold/owner/rights/capability is absent, evidence contradicts the contract, concurrent work overlaps the owned boundary, or the change exceeds the single stage. Handoff quotes every deliverable/exit condition with candidate-bound proof, lists hooks/deletions and exact checks/artifacts/results/cleanup/unrun work, and states whether the next stage is authorized.
 
 ## Stage 0 — Close `IND-D0`
 

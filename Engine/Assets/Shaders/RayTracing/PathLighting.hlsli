@@ -4,6 +4,7 @@
 #include "/Engine/Resources/FrameUniformData.hlsli"
 
 #include "/Engine/Lighting/Sky.hlsli"
+#include "/Engine/RayTracing/PathTracer.hlsli"
 #include "/Engine/RayTracing/PathSampling.hlsli"
 #include "/Engine/RayTracing/PathTrace.hlsli"
 #include "/Engine/RayTracing/RayTracingHitLighting.hlsli"
@@ -94,11 +95,11 @@ namespace RayTracingPathLighting
 		result.FirstHitSurface = (RayTracingHitSurfaceData)0;
 
 		RayTracingPathSurface surface = primarySurface;
-		float3 throughput = 1.0f.xxx;
+		PathTracer::PathState path = (PathTracer::PathState)0;
+		path.Throughput = 1.0f.xxx;
 		const uint sanitizedBounceCount = max(bounceCount, 1u);
 
-		[loop]
-		for (uint bounceIndex = 0u; bounceIndex < sanitizedBounceCount; ++bounceIndex)
+		[loop] for (uint bounceIndex = 0u; bounceIndex < sanitizedBounceCount; ++bounceIndex)
 		{
 			const RayTracingPathSampling::RandomSamples randomSamples =
 			    RayTracingPathSampling::GenerateRandomSamples(pixelCoord, bounceIndex, sampleIndex, randomFrameIndex);
@@ -114,31 +115,34 @@ namespace RayTracingPathLighting
 				break;
 			}
 
-			throughput *= sample.Throughput;
-			if (max(max(throughput.r, throughput.g), throughput.b) <= 0.0f)
+			if (!PathTracer::ApplyDirectionSample(path, sample))
 			{
 				break;
 			}
-			if (!RayTracingPathSampling::SurvivesRussianRoulette(throughput, randomSamples.Roulette, bounceIndex))
+			if (!RayTracingPathSampling::SurvivesRussianRoulette(path.Throughput, randomSamples.Roulette, bounceIndex))
 			{
 				break;
 			}
 
 			float3 rayOriginWorld = 0.0f.xxx;
 			const RayTracingTraceResult trace =
-			    RayTracingPathTrace::TraceSurfaceRay(surface, sample.DirectionWorld, traceSettings, rayOriginWorld);
+			    RayTracingPathTrace::TraceSurfaceRay(surface, path.DirectionWorld, traceSettings, rayOriginWorld);
+			path.OriginWorld = rayOriginWorld;
 			RayTracingHitSurfaceData hitSurface;
 			RayTracingPathSample::LightingResult lighting = ResolveLighting(trace,
 			                                                                sample,
-			                                                                rayOriginWorld,
+			                                                                path.OriginWorld,
 			                                                                skyTexture,
 			                                                                skySampler,
 			                                                                sampleIndex,
 			                                                                bounceIndex,
 			                                                                randomFrameIndex,
 			                                                                hitSurface);
-			lighting.Contribution = lighting.IncidentRadiance * throughput;
-			result.FinalContribution += lighting.Contribution;
+			lighting.Contribution = lighting.IncidentRadiance * path.Throughput;
+			if (!PathTracer::TryAddRadiance(result.FinalContribution, path.Throughput, lighting.IncidentRadiance))
+			{
+				break;
+			}
 
 			if (bounceIndex == 0u)
 			{
@@ -151,7 +155,7 @@ namespace RayTracingPathLighting
 				break;
 			}
 
-			surface = BuildHitRayTracingPathSurface(hitSurface, sample.DirectionWorld);
+			surface = BuildHitRayTracingPathSurface(hitSurface, path.DirectionWorld);
 		}
 
 		return result;

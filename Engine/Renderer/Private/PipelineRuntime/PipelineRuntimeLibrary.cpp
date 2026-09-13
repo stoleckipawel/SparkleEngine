@@ -46,6 +46,14 @@ void PipelineRuntimeLibrary::ValidateShaderCapabilities(
 		        shaderName,
 		        RhiBackendApiToString(capabilities.BackendApi)));
 	}
+	if (HasShaderFeature(shader.Entry->Features, ShaderFeatureFlags::UsesFloat64) && !capabilities.SupportsShaderFloat64)
+	{
+		throw Diagnostics::Error(
+		    std::format(
+		        "Shader '{}' requires float64 arithmetic, but backend '{}' does not support it.",
+		        shaderName,
+		        RhiBackendApiToString(capabilities.BackendApi)));
+	}
 }
 
 std::unique_ptr<RenderBindingLayout> PipelineRuntimeLibrary::CreateBindingLayout(

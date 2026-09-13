@@ -97,6 +97,43 @@ Measure candidate layouts before freezing. Record render/upscale resolution, fro
 
 Freeze one feature home, authored/cooked/scene/GPU/frame/RHI integration hooks, requested/active modes and reason codes, default/quality profiles, raw diagnostics through existing infrastructure, acceptance fixtures/artifact schema/thresholds, D3D12/Vulkan cells, and the candidate report ID. No feature dashboard, generic volume framework, or speculative public type.
 
+## Decision Closure Register
+
+| Decision | Options that must be compared | Required retained evidence | Decision owner/reviewer | Status | Consequence while open |
+| --- | --- | --- | --- | --- | --- |
+| `VOL-D0-01` | admitted post-release tiers/platforms versus continued exclusion | `REL-11` closeout, product/persona/workload and FCR assignment | product/release owners | Open/Blocked | no production feature or selector |
+| `VOL-D0-02` | scalar/RGB coefficient and photometric conversion policies | dimensional derivation, coefficient/scale/finite hand cases | volume semantics / math reviewer | Open | no medium record can publish |
+| `VOL-D0-03` | global/height/local shapes and additive/priority/blend overlap | field/boundary/overlap/capacity/authoring study | content + volume owners / artist reviewer | Open | only smallest ratified global field may enter Stage 1 |
+| `VOL-D0-04` | dense, sparse, procedural and deferred source formats | representative assets, rights, cook schema, memory/upload/error results | content/cook owner / provenance reviewer | Open | heterogeneous tier remains absent |
+| `VOL-D0-05` | analytic, CPU/high precision, PBRT/tracker and external sky reference | oracle manifest, shared-code analysis, tolerances | verification / independent renderer reviewer | Open | no physical-quality verdict |
+| `VOL-D0-06` | grid/depth/layout/format/representation/integration variants | forward/inverse tests and error/bandwidth/time/memory sweeps | froxel owner / backend reviewer | Open | no persistent production grid contract |
+| `VOL-D0-07` | all-light/clustered/stochastic/reservoir plus visibility/transmittance | one/many-light raw source tests and scale curve | volume-light owner / Direct/RHI reviewers | Open | first tier limited to admitted light path |
+| `VOL-D0-08` | segment integration, sky/surface/transparency ordering and early termination | analytic tuples, opaque/miss/depth/order captures | composition owner / lighting reviewer | Open | no scene-color composition hook |
+| `VOL-D0-09` | raw/source/integrated history, reprojection/clamp/confidence | full camera/density/light/extent/dual-view matrix | temporal owner / motion reviewer | Open | no history or product stability claim |
+| `VOL-D0-10` | Hillaire/Bruneton/direct-march LUT scope, atmosphere model and sky mode | raw LUT/query reference matrix and atomic generation failure | atmosphere owner / independent sky reviewer | Open | physical atmosphere remains absent |
+| `VOL-D0-11` | background/sun/aerial/direct/indirect environment generation roles | mapping/radiance/PDF/generation and double-count tests | environment + lighting owners / cross-feature reviewer | Open | no physical-sky bridge |
+| `VOL-D0-12` | fixed march and delta/ratio/residual tracking plus acceleration | majorant/reference statistics and density-frequency/empty-space A/B | heterogeneous owner / estimator reviewer | Open | no heterogeneous transport claim |
+| `VOL-D0-13` | froxel-light reservoir versus camera/path-space ReSTIR domains | exact sample/shift/weight/final estimator and equal-time reference study | volume estimator / GRIS reviewer | Open | no reservoir code or ReSTIR label |
+| `VOL-D0-14` | clouds excluded, deferred or separately admitted with exact scope | content/authoring/weather/lighting/temporal/workload budget | product/content owner / artist reviewer | Deferred | no cloud type, setting, pass or claim |
+| `VOL-D0-15` | profile dimensions, samples/steps/rays, queues, time/memory and failure budgets | local target-device quality/time/memory/replacement curves | performance owner / platform reviewers | Open | no default profile or performance promise |
+| `VOL-D0-16` | feature home, hooks, authoring/status/debug/automation and FCR schema | [UX](UserExperience.md) dry run, hook/removal ledger, candidate/check review | architecture/editor/verification owners | Open | no public workflow or implementation stage |
+
+## Gate Resolution Protocol
+
+The release owner first closes admission. Each admitted row then fixes options, fixtures, metrics and thresholds before a bounded prototype or reference run; retains exact source/content/build/backend/dirty identity and raw artifacts; records explicit accepted/rejected/deferred/excluded reasons; completes rights/provenance review where assets/code are involved; obtains the named independent review; and updates the single semantic/architecture/UX owner. Missing admission, reference, content rights, capability or target hardware yields `Blocked`. A paper or another engine cannot close a local row.
+
+## Risk Register
+
+| Risk | Leading indicator | Containment | Escalation trigger |
+| --- | --- | --- | --- |
+| cosmetic fog ships without physical contract | depth-color blend appears before coefficient/Beer tests | Stage 1 analytic medium and composition oracle | no inverse-metre representation or raw `T/Lscatter` |
+| fog, atmosphere, sky and clouds become parallel systems | multiple environment generations/composition writes | one feature enclosure and environment bridge | second sky/background or medium state owner appears |
+| froxel temporal stability hides integration bias | smooth result changes with grid/step in raw mean | current-only convergence plus separate history verdict | decreasing step/grid does not approach reference |
+| majorant/content errors are clamped away | violations disappear but energy changes | terminal counters and invalid publication | any density exceeds claimed majorant in accepted run |
+| Volumetric ReSTIR is only light selection | sample lacks volume path/free-flight/final estimator | exact domain naming and estimator ledger | product label exceeds stored/resampled object |
+| external timings become Sparkle budget | plan/profile contains source hardware numbers | local workload/device measurement required | no Sparkle candidate measurement exists |
+| content source lacks durable rights/schema | test asset cannot be redistributed or recooked | provenance manifest and synthetic fallback fixture | acceptance depends on inaccessible asset |
+
 ## Proposed Admission Matrix
 
 | Capability | Proposed disposition | Dependency |

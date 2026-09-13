@@ -69,7 +69,7 @@ namespace RayTracingGBufferPasses
 		    {
 			    const auto& rayTracing = scene.gpuBindings->RayTracing;
 			    fields.MaterialTextureTable = scene.materialTextureTable.Binding;
-			    fields.RayTracingGBufferConstants = RayTracingGBufferUniformData{
+			    fields.RayTracingHitConstants = RayTracingHitUniformData{
 			        .RayTracingHitInstanceCount = rayTracing.InstanceCount,
 			        .RayTracingHitMaterialCount = rayTracing.MaterialCount};
 		    });

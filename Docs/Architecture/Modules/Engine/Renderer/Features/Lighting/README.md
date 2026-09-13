@@ -2,11 +2,11 @@
 
 **Status:** Renderer lighting feature-family index; source-backed, not numerical, convergence, visual, performance, or release evidence
 
-**Verified:** 2026-09-12 against revision `8e4ffba225411965dc51c0b783e5f47a075c7e84`; documentation research added without runtime execution
+**Verified:** 2026-09-13 against revision `709e04385c3d98aa3492fb3f09dc9caabe34cb3a`; Direct, Indirect, and Volumetric package depth was rechecked without renderer/runtime execution, while concurrent Reference Path Tracer production work remained outside this pass
 
 **Responsibility:** define the shared lighting boundary and route Direct, Indirect, Volumetric, and Reference Path Tracer lighting without treating them as one undifferentiated capability
 
-**Current readiness:** **28/100** across described lighting capabilities — direct/indirect surface paths are **45/100**, the Reference Path Tracer is **20/100**, and volumetric lighting is **0/100**. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **29/100** across described lighting capabilities — direct/indirect surface paths are **45/100**, the Reference Path Tracer is **25/100**, and volumetric lighting is **0/100**. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## At A Glance
 
@@ -17,6 +17,8 @@
 | Five separate scene-linear lobe products joined with emissive and sky | Participating-media/volumetric lighting |
 | Debug access to direct and indirect lobe products | Exact presentation for every diagnostic lobe |
 | Deep target packages for Direct, Indirect/ReSTIR GI, Volumetric/ReSTIR, fog, atmosphere, and sky | An authorized, implemented, independent reference oracle; post-`REL-11` admission for volumetric production |
+
+Each of the three critical lighting packages now uses the full seven-role high-assurance route: dossier, discovery, primary research, mathematical semantics, execution architecture, user/automation experience, and staged plan. The extra depth changes no capability or evidence score.
 
 The most important design choice is product separation: direct diffuse, direct specular, direct subsurface, indirect diffuse, and indirect specular remain distinct until one composite. That improves diagnosis and comparison, at the cost of more resources, histories, bandwidth, and synchronization.
 

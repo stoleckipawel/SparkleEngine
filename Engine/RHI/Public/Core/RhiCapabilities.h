@@ -177,6 +177,7 @@ struct RhiCapabilities
 	std::array<RhiFormatSupport, kRhiCapabilityPixelFormats.size()> FormatSupport = {};
 	RhiBackendDiagnosticsSupport Diagnostics;
 	RhiRayTracingCapabilities RayTracing;
+	bool SupportsShaderFloat64 = false;
 	bool SupportsMeshShaders = false;
 	bool SupportsTaskShaders = false;
 	RhiQueueCapabilities Queues;

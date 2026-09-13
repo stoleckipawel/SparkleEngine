@@ -208,6 +208,7 @@ RhiCapabilities VulkanRenderHardwareInterface::BuildCapabilities() const noexcep
 	}
 	capabilities.Diagnostics = BuildBackendDiagnosticsSupport();
 	capabilities.RayTracing = m_rhi->GetRayTracingCapabilities();
+	capabilities.SupportsShaderFloat64 = m_rhi->GetFeatureStatus().EnabledShaderFloat64;
 	capabilities.SupportsMeshShaders = false;
 	capabilities.SupportsTaskShaders = false;
 	const bool hasComputeQueue = m_rhi->GetQueue(ERhiQueueType::Compute) != VK_NULL_HANDLE;

@@ -7,6 +7,7 @@ struct RayTracingGBufferPayload
 	uint PrimitiveIndex;
 	float2 Barycentrics;
 	uint Hit;
+	uint FrontFace;
 };
 
 [shader("raygeneration")]
@@ -26,6 +27,7 @@ void RayTracingGBufferRayGeneration()
 
 	RayTracingTraceResult trace = (RayTracingTraceResult)0;
 	trace.Hit = payload.Hit != 0u;
+	trace.FrontFace = payload.FrontFace != 0u;
 	trace.RayT = payload.RayT;
 	trace.InstanceId = payload.InstanceId;
 	trace.PrimitiveIndex = payload.PrimitiveIndex;
@@ -60,4 +62,5 @@ void RayTracingGBufferClosestHit(inout RayTracingGBufferPayload payload,
 	payload.PrimitiveIndex = PrimitiveIndex();
 	payload.Barycentrics = attributes.barycentrics;
 	payload.Hit = 1u;
+	payload.FrontFace = HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE ? 1u : 0u;
 }

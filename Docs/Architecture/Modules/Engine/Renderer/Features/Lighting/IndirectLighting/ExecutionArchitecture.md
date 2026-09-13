@@ -181,6 +181,46 @@ The path-record stage updates passes, shaders, typed layouts, history allocation
 - Optional reconstruction failure follows explicit bypass/last-good/reset policy and never changes raw estimator status.
 - Cancel/reload/shutdown drains or retires GPU generations; partial state cannot appear complete.
 
+## Detailed Pass Contracts
+
+| Pass/product | Reads | Writes | Omission/stop | Primary falsifier |
+| --- | --- | --- | --- | --- |
+| initial path generation | receiver/material, current scene/TLAS/lights/environment, proposal/random layout | explicit initial path records/reservoirs, raw technique facts/counters | active domain stops if one-bounce accounting/oracle fails | NEE/emission/environment/depth metamorphic matrix |
+| static shift/GRIS fixture | source path records and destination receivers | mapped paths, Jacobian/support/rejection and reservoir facts | production graph omits until mapping suite passes | hand round-trip and enumerated generalized-weight statistics |
+| temporal proposal | immutable previous path/reservoir/receiver generations and current scene | current temporal reservoirs/confidence | first frame/cut/disocclusion/incompatible generation | motion/animation/light/sky/provider mutation matrix |
+| spatial proposal | current temporal/fresh paths, receiver neighborhood sequence | final current path reservoir/confidence/duplication facts | diagnostic initial/temporal-only mode | neighbor support, duplication and autocorrelation tests |
+| final path evaluation | selected current path, materials/lights/environment/TLAS | raw indirect diffuse/specular, hit/path facts | never for active profile | reference comparison by depth/lobe/terminal class |
+| reconstruction | raw lobes/hit distance/guides/confidence and provider history | reconstructed lobes, current filter history/status | raw mode or explicit accepted bypass | identical raw motion/disocclusion/provider-fault sequence |
+| composition | raw/reconstructed selected products and existing lighting terms | single indirect contribution | Indirect Lighting `Off`/unavailable route | synthetic contribution ownership and graph omission |
+
+No temporal or spatial pass reruns an opaque seed and calls it a transported sample. Replay, when ratified, reads an explicit versioned technique/random record and participates in a proved mapping.
+
+## Resource Access, Barriers, And Replacement Memory
+
+| Resource | Lifetime | Access/order rule | Budget requirement |
+| --- | --- | --- | --- |
+| current/previous scene, light, environment and TLAS generations | scene/frame | immutable throughout one frame/capture | provider/scene replacement overlap is named, not charged as zero |
+| initial/temporal/final path reservoirs | frame/transient plus published previous final | each UAV producer completes before SRV consumers; previous is never overwritten | logical record, packed format, all simultaneous stages and debug expansion measured |
+| previous receiver/path metadata | per-View persistent | current frame reads immutable prior generation, then atomically publishes current | previous + current + retire/cancel/resize overlap included |
+| raw lobe/hit/path/confidence products | frame | final evaluation writes; capture/reconstruction/composition read | simultaneous lobe and diagnostic products included |
+| reconstruction histories/output | per-View/provider plus frame | provider state is separate; estimator never consumes filtered radiance | provider reload/switch and replacement generations included |
+
+FrameGraph owns resource states, UAV ordering, queue ownership and synchronization. A feature-authored manual RHI barrier or queue fence requires a proved missing abstraction, an accepted RHI change and paired-backend falsifier. Cancellation/device loss prevents publication and retires all submitted resources by submission fence.
+
+## Path Work And Divergence Budget
+
+- The active domain fixes maximum depth, lobe classes, terminal techniques and roulette before scheduling; no shader branch expands transport opportunistically.
+- Path records use the format chosen from measured bandwidth and mapping needs. Compact representations preserve integer identities and reproduce the logical record in capture fixtures.
+- Candidate, mapping and final-evaluation rays are counted separately. “One sample” never hides multiple retraces or visibility rays.
+- Ray/material execution uses shared semantic functions and current scene data, not a feature-local material graph, light store or TLAS.
+- Compaction, sorting, wave operations, half precision, fused passes, async compute, path guiding and caches are separate A/B optimizations after a portable scalar/reference route.
+
+## Architecture Fitness Gate
+
+Each stage records every edit outside the private Indirect Lighting home with owner, need, data direction, lifetime, cleanup and defect-detecting check. Unledgered feature fields/switches in generic Scene/View/RHI/settings/frame code, duplicated scene/light/environment/material state, a second GI service, a forwarding-only interface, or path state owned by a denoiser blocks the stage.
+
+Bounded removal deletes the feature capsule and listed hooks and must leave no shader registration, build/package member, selector, generated surface, history, CVar, doc, or stale seed-replay representation. The old float-packed `RandomPixel/SampleIndex/RandomFrameIndex` route is deleted in the accepted replacement stage, not retained behind a mode.
+
 ## Architecture Invariants
 
 1. The resampled object is an explicit mathematical path/sample, not an unexplained seed.

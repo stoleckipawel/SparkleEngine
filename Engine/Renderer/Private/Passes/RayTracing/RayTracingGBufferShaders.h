@@ -7,7 +7,7 @@
 #include "Renderer/Private/Scene/Materials/MaterialTextureTableCapability.h"
 #include "ShaderData/MeshInstanceShaderData.h"
 #include "ShaderData/MorphTargetShaderData.h"
-#include "ShaderData/RayTracingGBufferUniformData.h"
+#include "ShaderData/RayTracingHitUniformData.h"
 #include "ShaderData/ViewCameraUniformData.h"
 #include "ShaderData/ViewTemporalUniformData.h"
 #include "ShaderData/ViewUniformData.h"
@@ -27,7 +27,7 @@ public:
 	SHADER_PARAMETER_CBUFFER(ViewUniformData, View)
 	SHADER_PARAMETER_CBUFFER(ViewCameraUniformData, ViewCamera)
 	SHADER_PARAMETER_CBUFFER(ViewTemporalUniformData, ViewTemporal)
-	SHADER_PARAMETER_CBUFFER(RayTracingGBufferUniformData, RayTracingGBufferConstants)
+	SHADER_PARAMETER_CBUFFER(RayTracingHitUniformData, RayTracingHitConstants)
 	SHADER_PARAMETER_BUFFER_SRV(RayTracingHitVertex, RayTracingHitVertices)
 	SHADER_PARAMETER_BUFFER_SRV(MorphTargetDeltaData, MorphTargetDeltas)
 	SHADER_PARAMETER_BUFFER_SRV(uint32_t, RayTracingHitIndices)
@@ -45,7 +45,7 @@ public:
 
 	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
 	static constexpr RayTracingShaderMetadata kRayTracingMetadata{
-	    .PayloadSizeInBytes = 24u,
+	    .PayloadSizeInBytes = 28u,
 	    .AttributeSizeInBytes = sizeof(float) * 2u,
 	    .MinimumRecursionDepth = 1u};
 };

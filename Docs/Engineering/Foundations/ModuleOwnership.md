@@ -88,6 +88,14 @@ The change fails placement review when callers repeat the same policy, transform
 
 Do not merge code merely because syntax looks similar. Different semantic owners, lifetimes, failure contracts, or cost models may justify local repetition; duplicated authority never does.
 
+### Feature Policy Versus Shared Capability
+
+A feature home owns the behavior that makes the feature distinct: its product policy, estimator or workflow semantics, private state, resource composition, and feature-specific failure decisions. It MUST NOT become the owner of a feature-prefixed implementation of a domain operation that is independent of that feature, such as generic ray traversal, camera-ray construction, numeric primitives, resource transitions, or material-hit decoding.
+
+When feature work touches such an operation, first search the owning domain for an existing implementation and extend that owner instead of copying it. Extract or generalize into the narrowest shared domain owner only when the contract is genuinely feature-independent and the change has a current production consumer, removes a semantic duplicate, or repairs an existing shared capability. Prospective reuse alone does not justify a utility, framework, facade, or public API. The feature then depends inward on the shared capability and retains only its feature-specific adaptation and policy. Review must search for semantic duplicates, reject feature names on shared mechanisms, and verify that removing the feature leaves the strengthened shared capability coherent for its remaining consumers.
+
+When multiple products belong to one algorithm family, separate family invariants from product policy. A correctness/reference variant, an optimized or deliberately biased variant, a cache-backed variant, and a reconstructed or denoised variant should share only operations whose inputs, outputs, units, probability meaning, and failure behavior are genuinely identical. Target definition, approximation, sampling schedule, cache/reuse, filtering, convergence, evidence, and product labels remain with the variant that owns them. Every implementation stage that changes the family must audit current sibling consumers and named likely extensions, classify each changed operation as shared invariant or variant policy, compile or exercise affected current consumers, and delete semantic duplicates. Likely future reuse challenges the boundary but cannot justify speculative types, frameworks, or unused code.
+
 ## Orchestration and Capabilities
 
 An orchestrator owns ordering, lifecycle, policy selection, and composition. Its primary function should expose the workflow:
