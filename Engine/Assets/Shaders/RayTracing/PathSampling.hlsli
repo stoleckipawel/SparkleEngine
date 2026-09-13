@@ -3,11 +3,9 @@
 
 #include "/Engine/Resources/FrameUniformData.hlsli"
 
-#include "/Engine/BRDF/BRDF.hlsli"
-#include "/Engine/BRDF/SpecularSampling.hlsli"
 #include "/Engine/Common/Random.hlsli"
-#include "/Engine/Common/Sampling.hlsli"
 #include "/Engine/Lighting/SurfaceLighting.hlsli"
+#include "/Engine/RayTracing/PathBsdf.hlsli"
 #include "/Engine/RayTracing/PathTracer.hlsli"
 #include "/Engine/RayTracing/PathSurface.hlsli"
 #include "/Engine/RayTracing/RayTracingPathSample.hlsli"
@@ -55,66 +53,9 @@ namespace RayTracingPathSampling
 
 	RayTracingPathSample::DirectionSample InvalidSample(uint lobe)
 	{
-		return PathTracer::InvalidDirectionSample(lobe);
-	}
-
-	RayTracingPathSample::DirectionSample SampleDiffuseLobe(RayTracingPathSurface surface, float lobePdf, float2 randomSample)
-	{
-		RayTracingPathSample::DirectionSample result = PathTracer::SampleLambertian(surface, randomSample, lobePdf);
-
-		const BRDF::ShadingData shadingData = BRDF::ComputeShadingData(surface.NormalWorld, surface.ViewDirWorld, result.DirectionWorld);
-		if (result.RejectionReason != RayTracingPathSample::RejectionReasonNone || shadingData.NoL <= 0.0f || shadingData.NoV <= 0.0f)
-		{
-			return InvalidSample(RayTracingPathSample::LobeDiffuse);
-		}
-
-		const float3 f0 = SurfaceLighting::BuildF0(surface.BaseColor, surface.Metallic, surface.DielectricF0);
-		const float3 fresnel = BRDF::Fresnel::EvaluateDirect(shadingData.VoH, f0);
-		const float3 diffuseWeight = (1.0f.xxx - fresnel) * (1.0f - surface.Metallic);
-		const float3 diffuseBrdf = BRDF::Diffuse::EvaluateDirect(surface.BaseColor, surface.Roughness, shadingData) * diffuseWeight;
-
-		result.CompleteContinuousF = diffuseBrdf;
-		result.Throughput = max(diffuseBrdf * (result.CosineTerm / result.Pdf), 0.0f.xxx);
-		result.HasSupport = any(result.Throughput > 0.0f);
-		result.RejectionReason = RayTracingPathSample::RejectionReasonNone;
-		return result;
-	}
-
-	RayTracingPathSample::DirectionSample SampleSpecularLobe(RayTracingPathSurface surface,
-	                                                         uint sampleMode,
-	                                                         float lobePdf,
-	                                                         float2 randomSample)
-	{
-		const BRDF::SpecularSampling::LobeSample specularSample = BRDF::SpecularSampling::SampleReflectionLobe(surface.NormalWorld,
-		                                                                                                       surface.ViewDirWorld,
-		                                                                                                       surface.Roughness,
-		                                                                                                       sampleMode,
-		                                                                                                       randomSample);
-
-		RayTracingPathSample::DirectionSample result = InvalidSample(RayTracingPathSample::LobeSpecular);
-		result.DirectionWorld = specularSample.DirectionWorld;
-		result.Pdf = specularSample.Pdf * lobePdf;
-		result.Mirror = specularSample.Mirror;
-		if (!specularSample.Valid || result.Pdf <= 0.0f)
-		{
-			return result;
-		}
-
-		const BRDF::ShadingData shadingData = BRDF::ComputeShadingData(surface.NormalWorld, surface.ViewDirWorld, result.DirectionWorld);
-		result.CosineTerm = shadingData.NoL;
-		if (shadingData.NoL <= 0.0f || shadingData.NoV <= 0.0f)
-		{
-			return result;
-		}
-
-		const float3 f0 = SurfaceLighting::BuildF0(surface.BaseColor, surface.Metallic, surface.DielectricF0);
-		const float3 fresnel = BRDF::Fresnel::EvaluateDirect(shadingData.VoH, f0);
-		result.CompleteContinuousF =
-		    specularSample.Mirror ? 0.0f.xxx : BRDF::Specular::EvaluateDirect(shadingData, surface.Roughness, fresnel);
-		result.Throughput = specularSample.Mirror ? max(fresnel / lobePdf, 0.0f.xxx)
-		                                          : max(result.CompleteContinuousF * (shadingData.NoL / result.Pdf), 0.0f.xxx);
-		result.HasSupport = any(result.Throughput > 0.0f);
-		result.RejectionReason = RayTracingPathSample::RejectionReasonNone;
+		RayTracingPathSample::DirectionSample result = (RayTracingPathSample::DirectionSample)0;
+		result.Lobe = lobe;
+		result.RejectionReason = RayTracingPathSample::RejectionReasonInvalidSample;
 		return result;
 	}
 
@@ -126,22 +67,19 @@ namespace RayTracingPathSampling
 		}
 
 		const float3 f0 = SurfaceLighting::BuildF0(surface.BaseColor, surface.Metallic, surface.DielectricF0);
-		const float diffusePdf = DiffuseLobeProbability(surface, f0);
-		if (randomSamples.Lobe < diffusePdf)
-		{
-			if (diffusePdf <= 0.0f)
-			{
-				return InvalidSample(RayTracingPathSample::LobeDiffuse);
-			}
-			return SampleDiffuseLobe(surface, diffusePdf, randomSamples.Direction);
-		}
-
-		const float specularPdf = 1.0f - diffusePdf;
-		if (specularPdf <= 0.0f)
+		const float diffuseMass = DiffuseLobeProbability(surface, f0);
+		PathBsdf::LobeMasses masses;
+		masses.Diffuse = diffuseMass;
+		masses.Specular = 1.0f - diffuseMass;
+		masses.Count = (masses.Diffuse > 0.0f ? 1u : 0u) + (masses.Specular > 0.0f ? 1u : 0u);
+		masses.SpecularDelta = surface.Roughness == 0.0f;
+		if (specularSampleMode != SpecularSampleModeStochasticGGX && !masses.SpecularDelta)
 		{
 			return InvalidSample(RayTracingPathSample::LobeSpecular);
 		}
-		return SampleSpecularLobe(surface, specularSampleMode, specularPdf, randomSamples.Direction);
+		const uint selectedLobe = randomSamples.Lobe < diffuseMass ? RayTracingPathSample::LobeDiffuse
+		                                                            : RayTracingPathSample::LobeSpecular;
+		return PathBsdf::Sample(surface, masses, selectedLobe, randomSamples.Direction);
 	}
 
 	bool SurvivesRussianRoulette(inout float3 throughput, float randomValue, uint bounceIndex)
@@ -157,7 +95,7 @@ namespace RayTracingPathSampling
 			return false;
 		}
 
-		throughput /= survivalProbability;
+		PathTracer::ApplySurvivalCompensation(throughput, survivalProbability);
 		return true;
 	}
 }

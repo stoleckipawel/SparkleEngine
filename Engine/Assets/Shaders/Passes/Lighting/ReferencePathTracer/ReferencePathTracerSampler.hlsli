@@ -9,17 +9,13 @@ namespace ReferencePathTracerSampler
 	static const uint FilmY = 1u;
 	static const uint SurfaceDimensionBegin = 8u;
 	static const uint SurfaceDimensionStride = 8u;
+	static const uint LightChoiceOffset = 0u;
+	static const uint LightShapeXOffset = 1u;
+	static const uint LightShapeYOffset = 2u;
+	static const uint LobeChoiceOffset = 3u;
 	static const uint BsdfDirectionXOffset = 4u;
 	static const uint BsdfDirectionYOffset = 5u;
-	static const uint MaximumDimension = 32775u;
-	static const uint MaximumPixelCoordinate = 16383u;
-	static const uint MaximumSampleOrdinal = 1048575u;
-
-	bool IsValidIdentity(uint2 pixelCoord, uint sampleOrdinal, uint dimensionId)
-	{
-		return all(pixelCoord <= MaximumPixelCoordinate) && sampleOrdinal <= MaximumSampleOrdinal && dimensionId <= MaximumDimension;
-	}
-
+	static const uint RouletteOffset = 6u;
 	uint Word(uint2 pixelCoord, uint sampleOrdinal, uint dimensionId, uint sessionSeed, uint replicateId)
 	{
 		const uint dimensionBlock = dimensionId >> 2u;

@@ -253,6 +253,11 @@ std::uint32_t RenderGpuRayTracingPayloadBuilder::BuildMaterialFlags(const Materi
 	{
 		flags |= RayTracingHitData::MaterialFlag_Textured;
 	}
+	if (material.emissiveColor.x > 0.0f || material.emissiveColor.y > 0.0f
+	    || material.emissiveColor.z > 0.0f)
+	{
+		flags |= RayTracingHitData::MaterialFlag_Emissive;
+	}
 	return flags;
 }
 

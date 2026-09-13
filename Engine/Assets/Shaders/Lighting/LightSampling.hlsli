@@ -27,6 +27,9 @@ namespace LightSampling
 		float3 SamplePositionWorld;
 		float VisibilityDistance;
 		bool IsDirectional;
+		bool Delta;
+		uint TargetInstanceId;
+		uint TargetPrimitiveIndex;
 	};
 
 	DirectLightSample InvalidDirectLightSample()
@@ -42,6 +45,9 @@ namespace LightSampling
 		result.SamplePositionWorld = 0.0f.xxx;
 		result.VisibilityDistance = 0.0f;
 		result.IsDirectional = false;
+		result.Delta = false;
+		result.TargetInstanceId = 0xFFFFFFFFu;
+		result.TargetPrimitiveIndex = 0xFFFFFFFFu;
 		return result;
 	}
 
@@ -58,6 +64,9 @@ namespace LightSampling
 		result.SamplePositionWorld = 0.0f.xxx;
 		result.VisibilityDistance = distanceToLight;
 		result.IsDirectional = isDirectional;
+		result.Delta = true;
+		result.TargetInstanceId = 0xFFFFFFFFu;
+		result.TargetPrimitiveIndex = 0xFFFFFFFFu;
 		return result;
 	}
 
@@ -105,6 +114,88 @@ namespace LightSampling
 		result.SamplePositionWorld = samplePositionWorld;
 		result.VisibilityDistance = distanceToLight;
 		result.IsDirectional = false;
+		result.Delta = false;
+		result.TargetInstanceId = 0xFFFFFFFFu;
+		result.TargetPrimitiveIndex = 0xFFFFFFFFu;
+		return result;
+	}
+
+	float3 PhotometricRgbToRadiometric(float3 color, float quantity)
+	{
+		const float luminance = max(dot(color, float3(0.2126f, 0.7152f, 0.0722f)), 0x1.0p-24f);
+		return quantity * color / (683.0f * luminance);
+	}
+
+	DirectLightSample RadiometricDirectionalLightSample(float3 directionWorld, float3 irradiance)
+	{
+		DirectLightSample result = (DirectLightSample)0;
+		result.Valid = true;
+		result.DirectionWorld = normalize(directionWorld);
+		result.Distance = FLT_MAX;
+		result.IncidentRadiance = irradiance;
+		result.PdfW = 0.0f;
+		result.LightSelectionPdf = 1.0f;
+		result.VisibilityDistance = FLT_MAX;
+		result.IsDirectional = true;
+		result.Delta = true;
+		result.TargetInstanceId = 0xFFFFFFFFu;
+		result.TargetPrimitiveIndex = 0xFFFFFFFFu;
+		return result;
+	}
+
+	DirectLightSample RadiometricPointLightSample(float3 positionWorld, float3 lightPositionWorld, float3 radiantIntensity)
+	{
+		DirectLightSample result = (DirectLightSample)0;
+		const float3 toLight = lightPositionWorld - positionWorld;
+		const float distance2 = dot(toLight, toLight);
+		const float distance = sqrt(distance2);
+		result.Valid = true;
+		result.DirectionWorld = toLight / distance;
+		result.Distance = distance;
+		result.IncidentRadiance = radiantIntensity / distance2;
+		result.PdfW = 0.0f;
+		result.LightSelectionPdf = 1.0f;
+		result.SamplePositionWorld = lightPositionWorld;
+		result.VisibilityDistance = distance;
+		result.IsDirectional = false;
+		result.Delta = true;
+		result.TargetInstanceId = 0xFFFFFFFFu;
+		result.TargetPrimitiveIndex = 0xFFFFFFFFu;
+		return result;
+	}
+
+	DirectLightSample RadiometricAreaLightSample(float3 positionWorld,
+	                                             float3 samplePositionWorld,
+	                                             float3 emitterNormalWorld,
+	                                             float3 emittedRadiance,
+	                                             float pdfA,
+	                                             bool twoSided)
+	{
+		DirectLightSample result = (DirectLightSample)0;
+		const float3 toLight = samplePositionWorld - positionWorld;
+		const float distance2 = dot(toLight, toLight);
+		const float distance = sqrt(distance2);
+		const float3 directionWorld = toLight / distance;
+		const float3 normalWorld = normalize(emitterNormalWorld);
+		const float emitterCosine = dot(normalWorld, -directionWorld);
+		const float absoluteEmitterCosine = twoSided ? abs(emitterCosine) : emitterCosine;
+		if (absoluteEmitterCosine <= 0.0f)
+		{
+			return (DirectLightSample)0;
+		}
+		result.Valid = true;
+		result.DirectionWorld = directionWorld;
+		result.Distance = distance;
+		result.IncidentRadiance = emittedRadiance;
+		result.PdfW = pdfA * distance2 / absoluteEmitterCosine;
+		result.LightSelectionPdf = 1.0f;
+		result.EmitterNormalWorld = normalWorld;
+		result.SamplePositionWorld = samplePositionWorld;
+		result.VisibilityDistance = distance;
+		result.IsDirectional = false;
+		result.Delta = false;
+		result.TargetInstanceId = 0xFFFFFFFFu;
+		result.TargetPrimitiveIndex = 0xFFFFFFFFu;
 		return result;
 	}
 

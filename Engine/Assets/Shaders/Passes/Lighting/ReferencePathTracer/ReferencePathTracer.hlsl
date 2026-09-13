@@ -1,31 +1,31 @@
-#include "/Engine/Lighting/Sky.hlsli"
 #include "/Engine/Resources/ViewCameraRay.hlsli"
 
-#include "/Engine/RayTracing/RayTracingHitUniformData.hlsli"
+#include "/Engine/RayTracing/PathBsdf.hlsli"
 #include "/Engine/RayTracing/PathTracer.hlsli"
+#include "/Engine/RayTracing/PathVisibility.hlsli"
 #include "/Engine/RayTracing/RayTracingHitPathSurface.hlsli"
+#include "/Engine/RayTracing/RayTracingHitUniformData.hlsli"
 #include "/Engine/RayTracing/RayTracingTraceQuery.hlsli"
+#include "/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerLightSampling.hlsli"
 #include "/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerSampler.hlsli"
 
 RWTexture2D<float4> SceneColor;
 RaytracingAccelerationStructure SceneTlas;
 Texture2D SkyTexture;
-SamplerState SamplerLinearClamp;
+SamplerState SamplerLinearWrapClamp;
 
 cbuffer ReferencePathTracerConstants
 {
 	uint SessionSeed;
 	uint ReplicateId;
 	uint SampleOrdinal;
-	uint MaximumSurfaceVertices;
-	float ContinuationNormalBiasMeters;
-	uint3 ReferencePathTracerPadding;
+	uint FinitePathDiagnosticSurfaceVertices;
 };
 
 [numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
-	uint width = 0u;
-	uint height = 0u;
+	uint width;
+	uint height;
 	SceneColor.GetDimensions(width, height);
 	const uint2 pixelCoord = dispatchThreadId.xy;
 	if (pixelCoord.x >= width || pixelCoord.y >= height)
@@ -33,34 +33,25 @@ cbuffer ReferencePathTracerConstants
 		return;
 	}
 
-	float3 contribution = 0.0f.xxx;
-	bool complete = false;
-	if (MaximumSurfaceVertices == 0u
-	    || !ReferencePathTracerSampler::IsValidIdentity(pixelCoord, SampleOrdinal, ReferencePathTracerSampler::FilmY))
-	{
-		SceneColor[pixelCoord] = PathTracer::InvalidRadiance();
-		return;
-	}
-
+	const ReferencePathTracerLightSampling::Counts lightCounts = ReferencePathTracerLightSampling::GetCounts();
 	const float2 filmSample = float2(
 	    CommonRandom::OpenUnitInterval(
 	        ReferencePathTracerSampler::Word(pixelCoord, SampleOrdinal, ReferencePathTracerSampler::FilmX, SessionSeed, ReplicateId)),
 	    CommonRandom::OpenUnitInterval(
 	        ReferencePathTracerSampler::Word(pixelCoord, SampleOrdinal, ReferencePathTracerSampler::FilmY, SessionSeed, ReplicateId)));
 	const ViewCameraRay cameraRay = BuildPerspectiveViewCameraRay(pixelCoord, uint2(width, height), filmSample);
-	if (!cameraRay.Valid)
-	{
-		SceneColor[pixelCoord] = PathTracer::InvalidRadiance();
-		return;
-	}
 
 	PathTracer::PathState path;
 	path.OriginWorld = cameraRay.OriginWorld;
 	path.DirectionWorld = cameraRay.DirectionWorld;
-	path.Throughput = 1.0.xxx;
+	path.Throughput = 1.0f.xxx;
 	path.SurfaceDepth = 0u;
 	float traversalTMin = cameraRay.TMin;
 	float traversalTMax = cameraRay.TMax;
+	float3 contribution = 0.0f.xxx;
+	float3 previousPositionWorld = 0.0f.xxx;
+	float previousBsdfPdfW = 0.0f;
+	bool previousEventDelta = true;
 
 	[loop] for (;;)
 	{
@@ -73,72 +64,133 @@ cbuffer ReferencePathTracerConstants
 		                                                        0xFFu);
 		if (!trace.Hit)
 		{
-			const float3 environmentRadiance = SampleSkyRadiance(SkyTexture, SamplerLinearClamp, path.DirectionWorld);
-			if (!PathTracer::TryAddRadiance(contribution, path.Throughput, environmentRadiance))
+			const float lightPdfW = ReferencePathTracerLightSampling::EnvironmentPdfW(lightCounts);
+			const float misWeight = previousEventDelta ? 1.0f : PathTracer::PowerHeuristic(previousBsdfPdfW, lightPdfW);
+			const float3 environmentRadiance =
+			    SampleSkyRadiance(SkyTexture, SamplerLinearWrapClamp, path.DirectionWorld) * misWeight;
+			PathTracer::AddRadiance(contribution, path.Throughput, environmentRadiance);
+			break;
+		}
+
+		const RayTracingPathSurface surface = BuildStaticOpaquePathSurface(trace, -path.DirectionWorld);
+		const uint surfaceVertexCount = path.SurfaceDepth + 1u;
+		if (FinitePathDiagnosticSurfaceVertices == 0u && surfaceVertexCount > 4096u)
+		{
+			SceneColor[pixelCoord] = PathTracer::InvalidRadiance();
+			return;
+		}
+
+		float emissionMisWeight = 1.0f;
+		if (!previousEventDelta && any(surface.EmissiveColor > 0.0f))
+		{
+			const float lightPdfW =
+			    ReferencePathTracerLightSampling::EmissiveTrianglePdfW(lightCounts, previousPositionWorld, surface);
+			emissionMisWeight = PathTracer::PowerHeuristic(previousBsdfPdfW, lightPdfW);
+		}
+		PathTracer::AddRadiance(contribution, path.Throughput, surface.EmissiveColor * emissionMisWeight);
+
+		const PathBsdf::LobeMasses lobeMasses = PathBsdf::BuildEqualLobeMasses(surface);
+		if (lightCounts.Total != 0u
+		    && (lobeMasses.Diffuse > 0.0f || (lobeMasses.Specular > 0.0f && !lobeMasses.SpecularDelta)))
+		{
+			const uint lightChoiceDimension = ReferencePathTracerSampler::SurfaceDimension(
+			    path.SurfaceDepth, ReferencePathTracerSampler::LightChoiceOffset);
+			const uint lightShapeXDimension = ReferencePathTracerSampler::SurfaceDimension(
+			    path.SurfaceDepth, ReferencePathTracerSampler::LightShapeXOffset);
+			const uint lightShapeYDimension = ReferencePathTracerSampler::SurfaceDimension(
+			    path.SurfaceDepth, ReferencePathTracerSampler::LightShapeYOffset);
+			const ReferencePathTracerLightSampling::Selection selection = ReferencePathTracerLightSampling::Select(
+			    lightCounts,
+			    ReferencePathTracerSampler::Word(pixelCoord, SampleOrdinal, lightChoiceDimension, SessionSeed, ReplicateId));
+			const float2 lightShapeSample = float2(
+			    CommonRandom::OpenUnitInterval(ReferencePathTracerSampler::Word(
+			        pixelCoord, SampleOrdinal, lightShapeXDimension, SessionSeed, ReplicateId)),
+			    CommonRandom::OpenUnitInterval(ReferencePathTracerSampler::Word(
+			        pixelCoord, SampleOrdinal, lightShapeYDimension, SessionSeed, ReplicateId)));
+			const LightSampling::DirectLightSample light = ReferencePathTracerLightSampling::Sample(
+			    selection, surface.PositionWorld, lightShapeSample, SkyTexture, SamplerLinearWrapClamp);
+			const PathBsdf::Evaluation bsdf = PathBsdf::EvaluateContinuous(surface, light.DirectionWorld, lobeMasses);
+			if (bsdf.HasSupport)
 			{
-				SceneColor[pixelCoord] = PathTracer::InvalidRadiance();
-				return;
+				if (PathVisibility::IsUnoccluded(SceneTlas, surface.PositionWorld, light))
+				{
+					const float lightProbability =
+					    light.LightSelectionPdf * (light.Delta ? 1.0f : light.PdfW);
+					const float misWeight =
+					    light.Delta ? 1.0f : PathTracer::PowerHeuristic(lightProbability, bsdf.PdfW);
+					const float3 directRadiance =
+					    bsdf.F * light.IncidentRadiance * bsdf.Cosine * misWeight / lightProbability;
+					PathTracer::AddRadiance(contribution, path.Throughput, directRadiance);
+				}
 			}
-			complete = true;
+		}
+
+		if (FinitePathDiagnosticSurfaceVertices != 0u
+		    && surfaceVertexCount == FinitePathDiagnosticSurfaceVertices)
+		{
+			break;
+		}
+		if (lobeMasses.Count == 0u)
+		{
 			break;
 		}
 
-		const RayTracingPathSurface surface = BuildStaticOpaqueLambertianPathSurface(trace, -path.DirectionWorld);
-		if (!surface.Valid)
+		const uint lobeChoiceDimension = ReferencePathTracerSampler::SurfaceDimension(
+		    path.SurfaceDepth, ReferencePathTracerSampler::LobeChoiceOffset);
+		const CommonRandom::CategoricalSample lobeChoice = CommonRandom::SampleCategorical(
+		    ReferencePathTracerSampler::Word(pixelCoord, SampleOrdinal, lobeChoiceDimension, SessionSeed, ReplicateId),
+		    lobeMasses.Count);
+		uint selectedLobe = RayTracingPathSample::LobeSpecular;
+		if (lobeMasses.Diffuse > 0.0f && lobeChoice.Index == 0u)
 		{
-			SceneColor[pixelCoord] = PathTracer::InvalidRadiance();
-			return;
+			selectedLobe = RayTracingPathSample::LobeDiffuse;
 		}
-		if (!PathTracer::TryAddRadiance(contribution, path.Throughput, surface.EmissiveColor))
-		{
-			SceneColor[pixelCoord] = PathTracer::InvalidRadiance();
-			return;
-		}
-
-		if (path.SurfaceDepth + 1u == MaximumSurfaceVertices)
-		{
-			complete = true;
-			break;
-		}
-
-		const uint bsdfXDimension =
-		    ReferencePathTracerSampler::SurfaceDimension(path.SurfaceDepth, ReferencePathTracerSampler::BsdfDirectionXOffset);
-		const uint bsdfYDimension =
-		    ReferencePathTracerSampler::SurfaceDimension(path.SurfaceDepth, ReferencePathTracerSampler::BsdfDirectionYOffset);
-		if (!ReferencePathTracerSampler::IsValidIdentity(pixelCoord, SampleOrdinal, bsdfYDimension))
-		{
-			SceneColor[pixelCoord] = PathTracer::InvalidRadiance();
-			return;
-		}
-
-		const float2 bsdfSample =
-		    float2(CommonRandom::OpenUnitInterval(
-		               ReferencePathTracerSampler::Word(pixelCoord, SampleOrdinal, bsdfXDimension, SessionSeed, ReplicateId)),
-		           CommonRandom::OpenUnitInterval(
-		               ReferencePathTracerSampler::Word(pixelCoord, SampleOrdinal, bsdfYDimension, SessionSeed, ReplicateId)));
-		const float lobeSelectionMass = 1.0f;
-		const RayTracingPathSample::DirectionSample bsdf = PathTracer::SampleLambertian(surface, bsdfSample, lobeSelectionMass);
-		if (bsdf.RejectionReason != RayTracingPathSample::RejectionReasonNone)
-		{
-			SceneColor[pixelCoord] = PathTracer::InvalidRadiance();
-			return;
-		}
+		const uint bsdfXDimension = ReferencePathTracerSampler::SurfaceDimension(
+		    path.SurfaceDepth, ReferencePathTracerSampler::BsdfDirectionXOffset);
+		const uint bsdfYDimension = ReferencePathTracerSampler::SurfaceDimension(
+		    path.SurfaceDepth, ReferencePathTracerSampler::BsdfDirectionYOffset);
+		const float2 bsdfSample = float2(
+		    CommonRandom::OpenUnitInterval(ReferencePathTracerSampler::Word(
+		        pixelCoord, SampleOrdinal, bsdfXDimension, SessionSeed, ReplicateId)),
+		    CommonRandom::OpenUnitInterval(ReferencePathTracerSampler::Word(
+		        pixelCoord, SampleOrdinal, bsdfYDimension, SessionSeed, ReplicateId)));
+		const RayTracingPathSample::DirectionSample bsdf = PathBsdf::Sample(surface, lobeMasses, selectedLobe, bsdfSample);
 		if (!bsdf.HasSupport)
 		{
-			complete = true;
 			break;
 		}
-		if (!PathTracer::ApplyDirectionSample(path, bsdf))
+
+		previousPositionWorld = surface.PositionWorld;
+		previousBsdfPdfW = bsdf.PdfW;
+		previousEventDelta = bsdf.Delta;
+		PathTracer::ApplyDirectionSample(path, bsdf);
+
+		if (path.SurfaceDepth >= 3u)
 		{
-			SceneColor[pixelCoord] = PathTracer::InvalidRadiance();
-			return;
+			const float targetSurvival =
+			    clamp(max(path.Throughput.r, max(path.Throughput.g, path.Throughput.b)), 0.05f, 0.95f);
+			const float scaledSurvival = targetSurvival * 16777216.0f;
+			const uint lowerThreshold = (uint)floor(scaledSurvival);
+			const float thresholdFraction = scaledSurvival - (float)lowerThreshold;
+			const uint roundedThreshold = lowerThreshold
+			    + (thresholdFraction > 0.5f || (thresholdFraction == 0.5f && (lowerThreshold & 1u) != 0u) ? 1u : 0u);
+			const uint threshold = min(max(roundedThreshold, 1u), 16777215u);
+			const uint rouletteDimension = ReferencePathTracerSampler::SurfaceDimension(
+			    surfaceVertexCount - 1u, ReferencePathTracerSampler::RouletteOffset);
+			const uint rouletteValue = ReferencePathTracerSampler::Word(
+			                                   pixelCoord, SampleOrdinal, rouletteDimension, SessionSeed, ReplicateId)
+			                             >> 8u;
+			if (rouletteValue >= threshold)
+			{
+				break;
+			}
+			PathTracer::ApplySurvivalCompensation(path.Throughput, (float)threshold * 0x1.0p-24f);
 		}
 
-		path.OriginWorld = surface.PositionWorld + surface.NormalWorld * ContinuationNormalBiasMeters;
+		path.OriginWorld = surface.PositionWorld;
 		traversalTMin = 0.0f;
-		traversalTMax = 3.402823466e+38f;
+		traversalTMax = FLT_MAX;
 	}
 
-	SceneColor[pixelCoord] =
-	    complete && PathTracer::IsFiniteNonNegative(contribution) ? float4(contribution, 1.0f) : PathTracer::InvalidRadiance();
+	SceneColor[pixelCoord] = float4(contribution, 1.0f);
 }

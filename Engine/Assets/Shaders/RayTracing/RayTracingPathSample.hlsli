@@ -13,12 +13,13 @@ namespace RayTracingPathSample
 	struct DirectionSample
 	{
 		float3 DirectionWorld;
-		float Pdf;
+		float PdfW;
+		float EventProbability;
 		float CosineTerm;
 		float3 CompleteContinuousF;
 		float3 Throughput;
 		uint Lobe;
-		bool Mirror;
+		bool Delta;
 		bool HasSupport;
 		uint RejectionReason;
 	};

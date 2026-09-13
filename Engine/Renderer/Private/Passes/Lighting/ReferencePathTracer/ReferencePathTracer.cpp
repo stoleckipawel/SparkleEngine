@@ -17,10 +17,17 @@ void ReferencePathTracer::AddPass(FrameGraphBuilder& builder, RenderViewportExte
 	parameters->SceneColor = builder.CreateUAV(resources.Transient.Scene.SceneColor);
 	parameters->SceneTlas = builder.CreateAccelerationStructureBinding(resources.SceneTlas);
 	parameters->SkyTexture = builder.CreateSRV(resources.ImportedScene.Sky);
-	parameters->SamplerLinearClamp = RhiSamplerDesc{
+	parameters->SamplerLinearWrapClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
-	    .MipFilter = RhiSamplerMipFilter::Linear,
-	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Clamp)};
+	    .MipFilter = RhiSamplerMipFilter::None,
+	    .Address = RhiSamplerAddressModes{
+	        .U = RhiSamplerAddressMode::Wrap,
+	        .V = RhiSamplerAddressMode::Clamp,
+	        .W = RhiSamplerAddressMode::Clamp}};
+	parameters->DirectionalLights = builder.CreateSRV(resources.ImportedScene.Scene.Lighting.DirectionalLights);
+	parameters->PointLights = builder.CreateSRV(resources.ImportedScene.Scene.Lighting.PointLights);
+	parameters->SpotLights = builder.CreateSRV(resources.ImportedScene.Scene.Lighting.SpotLights);
+	parameters->RectLights = builder.CreateSRV(resources.ImportedScene.Scene.Lighting.RectLights);
 	parameters->RayTracingHitVertices = builder.CreateSRV(resources.ImportedScene.Scene.RayTracing.Vertices);
 	parameters->RayTracingHitIndices = builder.CreateSRV(resources.ImportedScene.Scene.RayTracing.Indices);
 	parameters->RayTracingHitInstances = builder.CreateSRV(resources.ImportedScene.Scene.RayTracing.Instances);
@@ -32,13 +39,14 @@ void ReferencePathTracer::AddPass(FrameGraphBuilder& builder, RenderViewportExte
 	    [](auto& fields, const PreparedRenderScene& scene)
 	    {
 		    fields.Sky = MakeSkyUniformData(scene.sky);
+		    fields.SceneLighting = scene.gpuBindings->Lighting.Uniform;
 		    fields.ReferencePathTracerConstants = ReferencePathTracerUniformData{};
 		    fields.RayTracingHitConstants = RayTracingHitUniformData{
 		        .RayTracingHitInstanceCount = scene.gpuBindings->RayTracing.InstanceCount,
 		        .RayTracingHitMaterialCount = scene.gpuBindings->RayTracing.MaterialCount};
 	    });
 	builder.Dispatch<ReferencePathTracerCS>(
-	    "ReferencePathTracer.FinitePathDiagnostic.D2",
+	    "ReferencePathTracer.SurfaceTransportReference",
 	    parameters,
 	    ComputeDispatchDesc{MathUtils::DivideRoundUp(extent.Width, 8u), MathUtils::DivideRoundUp(extent.Height, 8u), 1u});
 }

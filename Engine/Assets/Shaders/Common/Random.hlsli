@@ -62,6 +62,60 @@ namespace CommonRandom
 		return ((float)(word >> 8u) + 0.5f) * 0x1.0p-24f;
 	}
 
+	struct CategoricalSample
+	{
+		uint Index;
+		float ProbabilityMass;
+	};
+
+	uint CategoricalBoundary(uint index, uint count)
+	{
+		uint quotient = 0u;
+		uint remainder = index;
+		const uint halfCeiling = (count >> 1u) + (count & 1u);
+		[unroll] for (uint bit = 0u; bit < 32u; ++bit)
+		{
+			quotient <<= 1u;
+			if (remainder >= halfCeiling)
+			{
+				remainder -= count - remainder;
+				quotient |= 1u;
+			}
+			else
+			{
+				remainder += remainder;
+			}
+		}
+		return quotient + (remainder != 0u ? 1u : 0u);
+	}
+
+	CategoricalSample SampleCategorical(uint word, uint count)
+	{
+		CategoricalSample result = (CategoricalSample)0;
+		if (count == 1u)
+		{
+			result.ProbabilityMass = 1.0f;
+			return result;
+		}
+
+		result.Index = MultiplyHighLow(word, count).x;
+		const uint lower = CategoricalBoundary(result.Index, count);
+		const uint bucketSize = result.Index + 1u == count ? 0u - lower : CategoricalBoundary(result.Index + 1u, count) - lower;
+		result.ProbabilityMass = (float)bucketSize * 0x1.0p-32f;
+		return result;
+	}
+
+	float CategoricalProbabilityMass(uint index, uint count)
+	{
+		if (count == 1u)
+		{
+			return 1.0f;
+		}
+		const uint lower = CategoricalBoundary(index, count);
+		const uint bucketSize = index + 1u == count ? 0u - lower : CategoricalBoundary(index + 1u, count) - lower;
+		return (float)bucketSize * 0x1.0p-32f;
+	}
+
 	float InterleavedGradientNoise(float2 pixelCoord, uint frameIndex, float2 offset)
 	{
 		const float frameOffset = InterleavedGradientNoiseFrameStep * (float)(frameIndex & 63u);

@@ -115,10 +115,7 @@ namespace RayTracingPathLighting
 				break;
 			}
 
-			if (!PathTracer::ApplyDirectionSample(path, sample))
-			{
-				break;
-			}
+			PathTracer::ApplyDirectionSample(path, sample);
 			if (!RayTracingPathSampling::SurvivesRussianRoulette(path.Throughput, randomSamples.Roulette, bounceIndex))
 			{
 				break;
@@ -139,10 +136,7 @@ namespace RayTracingPathLighting
 			                                                                randomFrameIndex,
 			                                                                hitSurface);
 			lighting.Contribution = lighting.IncidentRadiance * path.Throughput;
-			if (!PathTracer::TryAddRadiance(result.FinalContribution, path.Throughput, lighting.IncidentRadiance))
-			{
-				break;
-			}
+			PathTracer::AddRadiance(result.FinalContribution, path.Throughput, lighting.IncidentRadiance);
 
 			if (bounceIndex == 0u)
 			{

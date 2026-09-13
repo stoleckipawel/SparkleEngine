@@ -50,6 +50,35 @@ StructuredBuffer<uint> RayTracingHitIndices;
 StructuredBuffer<RayTracingHitInstance> RayTracingHitInstances;
 StructuredBuffer<RayTracingHitMaterial> RayTracingHitMaterials;
 
+struct RayTracingHitTriangle
+{
+	RayTracingHitInstance Instance;
+	RayTracingHitMaterial Material;
+	float3 BarycentricWeights;
+	uint3 VertexIndices;
+	RayTracingHitVertex V0;
+	RayTracingHitVertex V1;
+	RayTracingHitVertex V2;
+};
+
+RayTracingHitTriangle LoadRayTracingHitTriangle(uint instanceId, uint primitiveIndex, float2 barycentrics)
+{
+	RayTracingHitTriangle triangle;
+	triangle.Instance = RayTracingHitInstances[instanceId];
+	triangle.Material = RayTracingHitMaterials[triangle.Instance.MaterialSlot];
+	triangle.BarycentricWeights = float3(1.0f - barycentrics.x - barycentrics.y, barycentrics.x, barycentrics.y);
+	const uint primitiveFirstLocalIndex = primitiveIndex * 3u;
+	triangle.VertexIndices =
+	    triangle.Instance.FirstVertex
+	    + uint3(RayTracingHitIndices[triangle.Instance.FirstIndex + primitiveFirstLocalIndex + 0u],
+	            RayTracingHitIndices[triangle.Instance.FirstIndex + primitiveFirstLocalIndex + 1u],
+	            RayTracingHitIndices[triangle.Instance.FirstIndex + primitiveFirstLocalIndex + 2u]);
+	triangle.V0 = RayTracingHitVertices[triangle.VertexIndices.x];
+	triangle.V1 = RayTracingHitVertices[triangle.VertexIndices.y];
+	triangle.V2 = RayTracingHitVertices[triangle.VertexIndices.z];
+	return triangle;
+}
+
 bool TryLoadRayTracingHitTriangle(uint instanceId,
                                   uint primitiveIndex,
                                   float2 barycentrics,
@@ -106,12 +135,13 @@ bool TryLoadRayTracingHitTriangle(uint instanceId,
 		return false;
 	}
 
-	barycentricWeights = float3(1.0f - barycentrics.x - barycentrics.y, barycentrics.x, barycentrics.y);
-	vertexIndices = uint3(i0, i1, i2);
-	v0 = RayTracingHitVertices[i0];
-	v1 = RayTracingHitVertices[i1];
-	v2 = RayTracingHitVertices[i2];
-	material = RayTracingHitMaterials[hitInstance.MaterialSlot];
+	const RayTracingHitTriangle triangle = LoadRayTracingHitTriangle(instanceId, primitiveIndex, barycentrics);
+	barycentricWeights = triangle.BarycentricWeights;
+	vertexIndices = triangle.VertexIndices;
+	v0 = triangle.V0;
+	v1 = triangle.V1;
+	v2 = triangle.V2;
+	material = triangle.Material;
 	return true;
 }
 

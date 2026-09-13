@@ -42,6 +42,7 @@ namespace RayTracingHitSurface
 	static const uint GeometryFlagAlphaBlended = 1u << 3u;
 	static const uint GeometryFlagTexturedMaterial = 1u << 4u;
 	static const uint GeometryFlagDoubleSided = 1u << 5u;
+	static const uint MaterialFlagEmissive = 1u << 5u;
 
 	static const uint ReasonNone = 0u;
 	static const uint ReasonNoHit = 1u;

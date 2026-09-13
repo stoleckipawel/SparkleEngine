@@ -38,6 +38,7 @@ namespace RayTracingHitData
 	inline constexpr std::uint32_t MaterialFlag_AlphaTested = 1u << 2u;
 	inline constexpr std::uint32_t MaterialFlag_AlphaBlended = 1u << 3u;
 	inline constexpr std::uint32_t MaterialFlag_Textured = 1u << 4u;
+	inline constexpr std::uint32_t MaterialFlag_Emissive = 1u << 5u;
 }
 
 struct RayTracingHitVertex

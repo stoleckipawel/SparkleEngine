@@ -156,6 +156,10 @@ Code review searches both direct calls such as `Consumer(CVarName.Get())` and in
 
 Shader formatting may use a scoped executable override when C++ parsing produces unsafe or unreadable output. A shader-style change requires representative DXIL and SPIR-V compilation, reflection/layout checks, and package validation. Renderer shader semantics live in [Renderer Engineering](../Modules/Renderer.md); backend contracts live in [RHI Engineering](../Modules/RHI.md).
 
+Shader kernels and reusable math consume invariants established by the owning resource-construction or dispatch-admission boundary. Do not scatter `IsValid`/`IsSupported` predicates, `Try*` call chains, finite/range rechecks, diagnostic sentinels, or boolean validity plumbing through inner BSDF, lighting, sampling, traversal, and accumulation code. A product whose domain is narrower than its source data validates or converts that domain once at its feature preflight; a source type whose values are universally constrained enforces them at construction/publication. The inner shader branches only for mathematical support, visibility/topology, stochastic outcomes, and required terminal policy. If an invariant is not actually established at the root, repair that root instead of compensating at every consumer.
+
+Code review searches touched shader call chains for repeated validation of the same input and for `Valid`, `Invalid`, `Supported`, or `Try` state introduced only to carry defensive checks between pure operations. Retain a local check only when the value can genuinely change after admission or when the branch is part of the estimator itself, such as zero measure, sidedness, occlusion, roulette, or a specified safety failure.
+
 Shader attributes MUST appear on a separate line immediately before the declaration or control statement they govern:
 
 ```hlsl
