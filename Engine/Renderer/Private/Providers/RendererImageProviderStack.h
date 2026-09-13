@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Providers/ImageProviderPipeline.h"
 #include "Viewport/ViewportContracts.h"
 #include "RHI/Public/Commands/RhiQueue.h"
 
@@ -21,12 +22,6 @@ struct ImageProviderGraphKey final
 	bool operator==(const ImageProviderGraphKey&) const noexcept = default;
 };
 
-enum class ImageProviderPipeline : std::uint8_t
-{
-	PresentationUpscaling,
-	RayReconstruction
-};
-
 class RendererImageProviderStack final
 {
 public:
@@ -41,7 +36,7 @@ public:
 	void ResetHistory() noexcept;
 	void Refresh() noexcept;
 	void PollRetiredGenerations() noexcept;
-	void SetupFrame(const ImageProviderFrameInput& frameInput);
+	void SetupFrame(const ImageProviderFrameInput& frameInput, ImageProviderPipeline pipeline);
 	RenderViewportExtent ResolveRenderExtent(RenderViewportExtent outputExtent, ImageProviderPipeline pipeline) noexcept;
 
 	ImageProviderGraphKey GetFrameGraphKey() const noexcept;

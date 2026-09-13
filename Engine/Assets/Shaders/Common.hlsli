@@ -12,4 +12,4 @@
 
 #include "/Engine/BRDF/BRDF.hlsli"
 
-#include "/Engine/Debug/ViewModes.hlsli"
+#include "/Engine/Debug/Visualization.hlsli"

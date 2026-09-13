@@ -1,10 +1,10 @@
-# Debug View Modes And Show Flags
+# Editor View Modes And Renderer Show Controls
 
 **Status:** target architecture; design-only, not implementation proof
 
 **Date:** 2026-09-07
 
-**Responsibility:** per-viewport view-mode intent, typed show-flag semantics, preset and override resolution, editor controls, and immutable publication into `RenderView`
+**Responsibility:** Editor-owned view-mode intent and UX, translation to concrete Renderer visualization/feature controls, typed show-control semantics, and strict exclusion of frontend identity from Renderer View and RHI contracts
 
 **Current readiness:** **40/100** for the existing debug-view feature; the per-viewport show-flag target described here is not implemented and adds no readiness credit. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
@@ -12,8 +12,8 @@
 
 Sparkle should adopt an Unreal-like show-flag model at Sparkle's scale:
 
-- `RenderViewMode` is the higher-level visualization preset.
-- A typed `RenderShowFlagSet` is resolved for each viewport and copied into the immutable one-frame `RenderView`.
+- `Visualization` is the Renderer-side concrete debug/final selection. Editor view-mode names and ordering stay in Editor and map to either that CVar domain or a feature selector.
+- A typed Renderer show-flag control may be resolved from frontend intent, but the Editor view-mode identity itself is never copied into `RenderView`.
 - Show flags control implemented rendering features for that view; they are not global renderer state and are not scalability settings.
 - View-mode presets own their default flags and presentation domain; deliberate per-viewport overrides produce a visibly customized view.
 
@@ -69,35 +69,35 @@ struct RenderShowFlagOverrides final
 
 ## Resolution And Ownership
 
-The application/editor owns editable show-flag overrides for each stable `ViewportId`. The renderer owns default and preset resolution. `RenderViewBuilder` resolves them once for the submitted frame:
+The application/editor owns editable view-mode and show-flag UX. It maps each action to concrete Renderer controls. Renderer owns visualization behavior and any resolved render-feature bits; it does not reconstruct or retain the UI preset identity:
 
 ```text
-RenderViewKind baseline
+EditorViewportViewMode selection
         |
         v
-RenderViewMode preset set/clear masks
+Editor-owned mapping to Renderer CVars
         |
         v
-per-viewport enable/disable overrides
+Renderer visualization/show-feature resolution
         |
         v
-dependency and capability validation
+shader/pass consumption
         |
-        +--> immutable RenderView.ShowFlags
-        +--> focused graph key bits, pass parameters, and view uniforms
+        +--> focused graph key bits and pass parameters
+        +--> minimal scalar/bit shader uniforms
 ```
 
 The order is normative:
 
-1. `RenderViewKind` establishes Game, Scene, Preview, Thumbnail, or Debug defaults.
-2. The exhaustive `RenderViewMode` preset establishes visualization and presentation defaults.
-3. Explicit overrides for that viewport apply last.
-4. The renderer validates parent/child dependencies and unavailable capabilities; it reports an invalid combination rather than silently mutating unrelated flags.
-5. The final bitset is immutable for the frame and is the only value passes consume.
+1. `EditorViewportViewMode` establishes the frontend preset and remains Editor-owned.
+2. One Editor mapping writes the concrete Renderer visualization and feature controls owned by that preset.
+3. Explicit Editor overrides update those same concrete controls; no second request representation is created.
+4. Renderer resolves dependencies and capabilities at the owning composition/pass boundary.
+5. Passes and shaders consume only the concrete scalar/bits required for rendering, never the originating UI mode.
 
 Selecting a new view mode clears overrides for the flags that mode explicitly owns, then applies the new preset; unrelated choices such as gizmo visibility remain. A later manual change to a mode-owned flag is allowed, but the viewport shows a **Custom** indicator and offers **Reset Show Flags**. This keeps the normal path deterministic while retaining expert control.
 
-The resolved set is per view, never a process-global renderer singleton. Two viewports may therefore render the same scene with different flags. Console variables continue to own scalability, implementation selection, and developer forcing; if a CVar forces a show flag for diagnostics, that force is resolved before publication and is visible in diagnostics and capture metadata rather than read independently by passes.
+The current Sparkle implementation has one active Renderer visualization CVar rather than a per-view visualization request. Per-viewport visualizations would require a new renderer-semantic use case and a deliberate contract; they must not be obtained by leaking `EditorViewportViewMode` through generic View state. Console variables continue to own implementation selection and developer forcing.
 
 ## Editor Experience
 
@@ -108,13 +108,13 @@ The menu also provides:
 - **Reset Show Flags**, which removes the viewport's explicit deltas and returns to kind and mode defaults;
 - category-level **Show All** and **Hide All** actions that edit the same individual bits;
 - a visible **Custom** marker whenever resolved mode-owned flags differ from the stock preset;
-- a tooltip identifying whether the value came from the view-kind baseline, view-mode preset, viewport override, or diagnostic CVar force.
+- a tooltip identifying whether the value came from the view-kind baseline, visualization contract, viewport override, or diagnostic CVar force.
 
 Do not expose raw bit indices, hexadecimal masks, CVar names, or graph-rebuild terminology in the normal UI. The View Mode menu remains the default workflow; Show is progressive disclosure for investigation and capture setup.
 
 ## View Modes As Presets
 
-Each `RenderViewMode` entry owns a preset containing its signal domain plus explicit set and clear masks. The stock presets set both presentation flags for scene-referred HDR modes and clear both for display-linear exact modes:
+Each `Visualization` entry owns a rendering contract containing its signal domain plus explicit set and clear masks. The stock contracts set both presentation flags for scene-referred HDR choices and clear both for display-linear exact choices:
 
 | Stock mode domain | `Exposure` | `Tonemapper` | Contract |
 | --- | --- | --- | --- |
@@ -136,7 +136,7 @@ Only the unmodified stock `DisplayLinearExact` preset may claim exact displayed 
 
 The earlier generic `RenderFeatureFlags` representation no longer exists. `ViewportRenderRequest` already keeps selection and requested render products distinct from view kind, extent, and exposure. Do not recreate that removed mixed-purpose bitset when show flags are added.
 
-The clean break moves `RenderViewMode` from direct `CVarRenderViewMode` consumption into the viewport and view request and adds only the typed show-flag override value. The final request contains one mode, one show-flag override value, and one requested-output value with no compatibility alias or dual representation. A CVar may remain only as an explicit developer force resolved at the boundary, not as the renderer's normal source of truth.
+The clean break keeps `EditorViewportViewMode` entirely in Editor and translates it once to `CVarVisualization` plus any orthogonal Renderer feature CVar. `ViewportRenderRequest`, `RenderView`, capture contracts, graph settings, and RHI contain no UI mode or visualization-selector mirror. Shader uniforms may carry only the current scalar required by the shader. Feature selectors such as `r.ReferencePathTracer` remain independent of visualization presets.
 
 ## External Precedent
 
@@ -144,7 +144,7 @@ The clean break moves `RenderViewMode` from direct `CVarRenderViewMode` consumpt
 
 ## Rejected Alternatives
 
-- **Global debug-view or show-flag state:** rejected because one process-global value cannot describe multiple viewports and makes captures ambiguous.
+- **A Renderer-owned UI view-mode mirror:** rejected because it duplicates Editor taxonomy and couples Renderer requests, Views, captures, and RHI to frontend identity. The current global `r.Visualization` control is an intentionally narrower Renderer selection; independent per-viewport visualization remains outside the accepted scope.
 - **Show flags implemented as independently consumed CVars:** rejected because CVars are process-wide policy and already own scalability, algorithm selection, and developer forcing.
 - **Dynamic flag registry:** rejected because the current closed enum has one renderer owner and a small implemented consumer set. Revisit only when a real module must contribute flags without modifying Renderer.
 - **One flag per algorithm or quality choice:** rejected because those choices belong to rendering settings, selectors, and capability resolution rather than feature visibility.

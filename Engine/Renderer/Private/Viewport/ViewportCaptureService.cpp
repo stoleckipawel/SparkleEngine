@@ -122,8 +122,6 @@ bool ViewportCaptureService::BeginCapture(
 	        .SourceState = source.State,
 	        .OutputPath = request.OutputPath,
 	        .FrameId = frameId,
-	        .ViewMode = request.ViewMode,
-	        .ViewModeName = request.ViewModeName,
 	        .DebugName = request.DebugName});
 	if (!ticket)
 	{

@@ -2,13 +2,11 @@
 #include "Frame/FramePipeline.h"
 
 #include "Diagnostics/FrameExecutionDiagnostics.h"
-#include "Debug/RendererCVars.h"
 #include "UI/UiFrameRenderer.h"
 #include "Frame/RenderFrame.h"
 #include "Frame/Graph/ExecuteRenderFrameGraph.h"
 #include "Frame/Graph/RenderProductGraphHandle.h"
 #include "Frame/RenderFrameTime.h"
-#include "Frame/Graph/RenderFrameGraphFactory.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Diagnostics/RendererMemoryMonitor.h"
 #include "Pipeline/RenderPassRuntimeCache.h"
@@ -58,7 +56,7 @@ FramePipeline::FramePipeline(
     m_taskExecutor(taskExecutor),
     m_uiFrameRenderer(std::make_unique<UiFrameRenderer>(deviceServices, enableUiRenderPackets)),
     m_viewportCaptureService(std::make_unique<ViewportCaptureService>(deviceServices)),
-    m_referencePathTracer(std::make_unique<ReferencePathTracer>())
+    m_referencePathTracer(std::make_unique<ReferencePathTracer>(deviceServices, memoryMonitor))
 {
 	m_windowExtent = {static_cast<std::uint32_t>(m_window.GetWidth()), static_cast<std::uint32_t>(m_window.GetHeight())};
 
@@ -214,6 +212,10 @@ RenderRayTracingFrameBindings FramePipeline::PrepareFrame(const RenderViewInput&
 
 void FramePipeline::ExecuteFrame(const RenderRayTracingFrameBindings& rayTracingBindings)
 {
+	if (!m_frameGraphExecutable)
+	{
+		return;
+	}
 	const std::uint32_t frameIndex = m_deviceServices.GetRenderHardwareInterface().GetCurrentFrameIndex();
 	const RenderFrame& frame = *m_renderFrames[frameIndex];
 	RenderFrameGraphExecution::Execute(
@@ -243,17 +245,12 @@ RenderFrame& FramePipeline::PrepareRenderFrame(const RenderViewInput& viewInput,
 	frame.FrameInFlightIndex = frameIndex;
 
 	m_renderScenePreparation.Execute(scene, frame.PreparedScene);
-	ViewportRenderRequest resolvedViewportRequest = m_viewportRenderRequest;
-	if (resolvedViewportRequest.ViewportId == 0)
-	{
-		resolvedViewportRequest.ViewMode = CVarRenderViewMode.Get();
-	}
 	m_renderViewBuilder.Build(
 	    frame.View,
 	    m_renderViewState,
 	    RenderViewBuildRequest{
 	        .Input = viewInput,
-	        .ViewportRequest = resolvedViewportRequest,
+	        .ViewportRequest = m_viewportRenderRequest,
 	        .RenderExtent = m_frameGraphSettings.RenderExtent,
 	        .OutputExtent = m_frameGraphSettings.OutputExtent,
 	        .FrameId = frame.Identity.FrameId,
@@ -261,9 +258,11 @@ RenderFrame& FramePipeline::PrepareRenderFrame(const RenderViewInput& viewInput,
 	        .ShaderGeneration = frame.Identity.ShaderGeneration,
 	        .ImageProviderGeneration = frame.Identity.ImageProviderGeneration,
 	        .GraphTopologyGeneration = m_graphTopologyGeneration});
-	m_viewportRenderProducts.SetProgress(m_referencePathTracer->Update(frame.View));
 	m_renderViewPreparation.Prepare(frame.PreparedScene, frame.View, m_renderViewState);
 	frame.PreparedScene.gpuBindings = &scene.UpdateGpuScene(frame.PreparedScene, frame.View, frame.FrameInFlightIndex);
+	m_viewportRenderProducts.SetProgress(m_referencePathTracer
+	        ->Update(m_builtReferencePathTracer, frame.View, frame.PreparedScene, frame.Identity, frame.Time, scene.GetSceneGeneration()));
+	m_frameGraphExecutable = m_referencePathTracer->BindResources(*m_frameGraph);
 	return *frameSlot;
 }
 
@@ -277,7 +276,8 @@ void FramePipeline::SetupImageProviderFrame(const RenderFrame& frame)
 	        .ProviderGeneration = frame.Identity.ImageProviderGeneration,
 	        .Camera = frame.View.cameraUniform,
 	        .Temporal = frame.View.temporalUniform,
-	        .ResetHistory = frame.View.temporalUniform.HistoryValid == 0u});
+	        .ResetHistory = frame.View.temporalUniform.HistoryValid == 0u},
+	    m_frameGraphSettings.ImagePipeline);
 }
 
 void FramePipeline::SubmitAndPresent(const UiRenderPacket& packet) noexcept
@@ -285,6 +285,10 @@ void FramePipeline::SubmitAndPresent(const UiRenderPacket& packet) noexcept
 	m_uiFrameRenderer->Render(packet, m_frameGraph.get(), m_viewportRenderProducts);
 	m_deviceServices.SubmitFrame(m_frameId);
 	const RhiSubmissionToken graphicsToken = m_deviceServices.GetLastSubmittedToken(ERhiQueueType::Graphics);
+	if (m_frameGraphExecutable)
+	{
+		m_referencePathTracer->RecordSubmission(graphicsToken);
+	}
 	m_textureCache.RecordUploadSubmission(graphicsToken);
 	m_gpuMeshCache.RecordUploadSubmission(graphicsToken);
 	m_deviceServices.AdvanceFrameInFlight();

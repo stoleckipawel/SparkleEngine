@@ -2,70 +2,82 @@
 
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracer.h"
 
-#include "Core/Public/Math/MathUtils.h"
-#include "Frame/Graph/RenderFrameGraphResources.h"
-#include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerShader.h"
-#include "Scene/GpuScene/RenderSceneGpuBindings.h"
-#include "Scene/Preparation/PreparedRenderScene.h"
-#include "ShaderData/SkyUniformData.h"
-#include "View/RenderView.h"
+#include "Frame/Graph/RenderFrameGraphSettings.h"
+#include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerPasses.h"
+#include "Passes/PostProcessing/Exposure.h"
+#include "Passes/Presentation/Upscaling.h"
 
-void ReferencePathTracer::AddPass(FrameGraphBuilder& builder, RenderViewportExtent extent, const RenderFrameGraphResources& resources)
+ReferencePathTracer::ReferencePathTracer(RenderDeviceServices& deviceServices, RendererMemoryMonitor& memoryMonitor) noexcept :
+    m_resources(deviceServices, memoryMonitor),
+    m_session(deviceServices)
 {
-	auto& parameters = builder.AllocParameters<ReferencePathTracerCS>();
-	parameters->SceneColor = builder.CreateUAV(resources.Transient.Scene.SceneColor);
-	parameters->SceneTlas = builder.CreateAccelerationStructureBinding(resources.SceneTlas);
-	parameters->SkyTexture = builder.CreateSRV(resources.ImportedScene.Sky);
-	parameters->SamplerLinearWrapClamp = RhiSamplerDesc{
-	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
-	    .MipFilter = RhiSamplerMipFilter::None,
-	    .Address = RhiSamplerAddressModes{
-	        .U = RhiSamplerAddressMode::Wrap,
-	        .V = RhiSamplerAddressMode::Clamp,
-	        .W = RhiSamplerAddressMode::Clamp}};
-	parameters->DirectionalLights = builder.CreateSRV(resources.ImportedScene.Scene.Lighting.DirectionalLights);
-	parameters->PointLights = builder.CreateSRV(resources.ImportedScene.Scene.Lighting.PointLights);
-	parameters->SpotLights = builder.CreateSRV(resources.ImportedScene.Scene.Lighting.SpotLights);
-	parameters->RectLights = builder.CreateSRV(resources.ImportedScene.Scene.Lighting.RectLights);
-	parameters->RayTracingHitVertices = builder.CreateSRV(resources.ImportedScene.Scene.RayTracing.Vertices);
-	parameters->SkinInfluences = builder.CreateSRV(resources.ImportedScene.Scene.RayTracing.SkinInfluences);
-	parameters->MorphTargetDeltas = builder.CreateSRV(resources.ImportedScene.Scene.RayTracing.MorphTargetDeltas);
-	parameters->RayTracingHitIndices = builder.CreateSRV(resources.ImportedScene.Scene.RayTracing.Indices);
-	parameters->RayTracingHitInstances = builder.CreateSRV(resources.ImportedScene.Scene.RayTracing.Instances);
-	parameters->RayTracingHitMaterials = builder.CreateSRV(resources.ImportedScene.Scene.RayTracing.Materials);
-	parameters->MeshInstances = builder.CreateSRV(resources.ImportedScene.Scene.Geometry.MeshInstances);
-	parameters->JointMatrices = builder.CreateSRV(resources.ImportedScene.Scene.Geometry.JointMatrices);
-	parameters->MorphWeights = builder.CreateSRV(resources.ImportedScene.Scene.Geometry.MorphWeights);
-	builder.AddParameterSetup<RenderView>(parameters, [](auto& fields, const RenderView& view) { fields.ViewCamera = view.cameraUniform; });
-	builder.AddParameterSetup<PreparedRenderScene>(
-	    parameters,
-	    [](auto& fields, const PreparedRenderScene& scene)
-	    {
-		    fields.Sky = MakeSkyUniformData(scene.sky);
-		    fields.SceneLighting = scene.gpuBindings->Lighting.Uniform;
-		    fields.ReferencePathTracerConstants = ReferencePathTracerUniformData{};
-		    fields.RayTracingHitConstants = RayTracingHitUniformData{
-		        .RayTracingHitInstanceCount = scene.gpuBindings->RayTracing.InstanceCount,
-		        .RayTracingHitMaterialCount = scene.gpuBindings->RayTracing.MaterialCount};
-		    fields.MaterialTextureTable = scene.materialTextureTable.Binding;
-	    });
-	builder.Dispatch<ReferencePathTracerCS>(
-	    "ReferencePathTracer.SurfaceTransportReference",
-	    parameters,
-	    ComputeDispatchDesc{MathUtils::DivideRoundUp(extent.Width, 8u), MathUtils::DivideRoundUp(extent.Height, 8u), 1u});
 }
 
-ViewportRenderProgress ReferencePathTracer::Update(const RenderView& view) const noexcept
+void ReferencePathTracer::AddPasses(
+    FrameGraphBuilder& builder,
+    const RenderFrameGraphSettings& settings,
+    RenderFrameGraphResources& resources)
 {
-	if (view.viewMode != RenderViewMode::ReferencePathTracer)
-	{
-		return {};
-	}
+	m_resources.ReserveGraphResources(builder, settings.RenderExtent);
+	AddReferencePathTracerGpuPasses(
+	    builder,
+	    settings.RenderExtent,
+	    resources,
+	    m_resources.GetGraphResources(),
+	    m_session.GetUniformData(),
+	    ReferencePathTracerSession::WorkRowsPerDispatch);
+	AddExposurePass(builder, settings, resources);
+	AddUpscalingPasses(builder, settings.RenderExtent, settings.OutputExtent, nullptr, resources);
+	resources.ViewportProducts.SceneDepth = FrameGraphTextureHandle::Invalid();
+}
 
-	return ViewportRenderProgress{
-	    .ViewMode = RenderViewMode::ReferencePathTracer,
-	    .State = ViewportRenderProgressState::Unavailable,
-	    .CompletedWork = 0,
-	    .TargetWork = 0};
+ViewportRenderProgress ReferencePathTracer::Update(
+    bool active,
+    const RenderView& view,
+    const PreparedRenderScene& scene,
+    const RenderFrameIdentity& frame,
+    const RenderFrameTime& time,
+    std::uint64_t sceneGeneration) noexcept
+{
+	return m_session.Update(active, view, scene, frame, time, sceneGeneration, m_resources);
+}
+
+bool ReferencePathTracer::BindResources(FrameGraph& frameGraph) const noexcept
+{
+	return !m_session.IsSelected() || m_resources.Bind(frameGraph);
+}
+
+void ReferencePathTracer::RecordSubmission(RhiSubmissionToken token) noexcept
+{
+	m_session.RecordSubmission(token, m_resources);
+}
+
+void ReferencePathTracer::SetTargetSampleCount(std::uint32_t target) noexcept
+{
+	m_session.SetTargetSampleCount(target);
+}
+
+void ReferencePathTracer::Pause() noexcept
+{
+	m_session.Pause();
+}
+
+void ReferencePathTracer::Resume() noexcept
+{
+	m_session.Resume();
+}
+
+void ReferencePathTracer::Restart() noexcept
+{
+	m_session.Restart(m_resources);
+}
+
+void ReferencePathTracer::Cancel() noexcept
+{
+	m_session.Cancel(m_resources);
+}
+
+ReferencePathTracerProgress ReferencePathTracer::GetProgress() const noexcept
+{
+	return m_session.GetProgress();
 }

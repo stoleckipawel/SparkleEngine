@@ -2,9 +2,9 @@
 
 #include "/Engine/Resources/ViewUniformData.hlsli"
 
-#include "/Engine/Debug/RenderViewModeConstants.hlsli"
+#include "/Engine/Debug/VisualizationConstants.hlsli"
 
-namespace ViewMode
+namespace Visualization
 {
 	float3 PreviewScalar(float v)
 	{
@@ -30,7 +30,7 @@ namespace ViewMode
 	               float3 indirectDiffuse,
 	               float3 indirectSpecular)
 	{
-		switch (ViewModeIndex)
+		switch (VisualizationIndex)
 		{
 			case Lit:
 			case Wireframe:

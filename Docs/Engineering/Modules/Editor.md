@@ -22,6 +22,9 @@ Continuous edits coalesce into bounded main-thread transactions with determinist
 
 ## UI And Render Boundary
 
+- Editor owns view-mode enums, serialized ordering, labels, icons, menu grouping, shortcuts, selection state, and widget visibility. A view-mode action translates at the frontend boundary into the smallest concrete Renderer controls it needs, such as a feature CVar and a visualization CVar; the UI enum itself never crosses the module boundary.
+- Renderer feature selection is not stored in `ViewportRenderRequest`, copied into `RenderView`, or attached to capture/RHI payloads merely because the Editor exposes it in a viewport menu. Requests carry only data that is intrinsically scoped to the requested view and consumed as such by Renderer.
+- One UI choice may set several orthogonal Renderer controls, but the mapping has one Editor owner and resets controls owned by the previous choice. Renderer must remain independently usable by Game/runtime or console code setting those same controls without loading Editor.
 - Copy ImGui draw data into packet-owned vertices, indices, clip rectangles, texture handles, and commands.
 - Never send `ImDrawData*` or a live editor pointer to the render coordinator.
 - Viewport requests/products use stable IDs or tokens plus explicit release or bounded retirement.
@@ -60,6 +63,7 @@ Expert access means better inspection and an explicit override, not ownership of
 ## Editor Review Questions
 
 - Does Editor main retain UI, selection, transaction, and model authority?
+- Are view-mode names/order/state contained in Editor and translated once into concrete Renderer controls rather than exported as a renderer-wide UI taxonomy?
 - Do panels use immutable models and semantic commands only?
 - Does the normal workflow ask for user intent while deriving safe backend detail, with advanced deviations explicit and resettable?
 - Are cross-thread UI/render products owned and late-result safe?

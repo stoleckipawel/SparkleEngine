@@ -20,7 +20,10 @@ public:
 	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::InlineRayQuery;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, )
-	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, SceneColor)
+	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, WorkingMean)
+	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, WorkingM2)
+	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, CommittedMean)
+	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, CommittedM2)
 	SHADER_PARAMETER_ACCELERATION_STRUCTURE(SceneTlas)
 	SHADER_PARAMETER_CBUFFER(ViewCameraUniformData, ViewCamera)
 	SHADER_PARAMETER_CBUFFER(SkyUniformData, Sky)
@@ -43,5 +46,18 @@ public:
 	SHADER_PARAMETER_BUFFER_SRV(JointMatrixData, JointMatrices)
 	SHADER_PARAMETER_BUFFER_SRV(float, MorphWeights)
 	SHADER_PARAMETER_TEXTURE_SRV_ARRAY(Texture2D, MaterialTextureTable, MaterialTextureTableFixedCapacity)
+	END_SHADER_PARAMETER_STRUCT()
+};
+
+class ReferencePathTracerDisplayCS final : public GlobalShader<ReferencePathTracerDisplayCS>
+{
+public:
+	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, )
+	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, WorkingMean)
+	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, WorkingM2)
+	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, CommittedMean)
+	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, CommittedM2)
+	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, SceneColor)
+	SHADER_PARAMETER_CBUFFER(ReferencePathTracerUniformData, ReferencePathTracerConstants)
 	END_SHADER_PARAMETER_STRUCT()
 };

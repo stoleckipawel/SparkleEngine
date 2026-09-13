@@ -1,6 +1,6 @@
 #include "/Engine/Resources/ViewUniformData.hlsli"
 
-#include "/Engine/Debug/RenderViewModeConstants.hlsli"
+#include "/Engine/Debug/VisualizationConstants.hlsli"
 #include "/Engine/Passes/GBuffer/GBufferUtils.hlsli"
 
 RWTexture2D<float4> SceneColor;
@@ -26,10 +26,9 @@ float3 PreviewHdr(float3 color)
 	return safeColor / (1.0f + safeColor);
 }
 
-[numthreads(8, 8, 1)]
-void main(uint3 dispatchThreadId : SV_DispatchThreadID)
+[numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
-	if (ViewModeIndex == ViewMode::Lit)
+	if (VisualizationIndex == Visualization::Lit)
 	{
 		return;
 	}
@@ -52,48 +51,48 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 	const float3 indirectSpecular = IndirectSpecular.Load(pixel).rgb;
 
 	float3 outputColor = 0.0f;
-	switch (ViewModeIndex)
+	switch (VisualizationIndex)
 	{
-		case ViewMode::GBufferDiffuse:
+		case Visualization::GBufferDiffuse:
 			outputColor = saturate(gBuffer.BaseColor);
 			break;
-		case ViewMode::GBufferNormal:
+		case Visualization::GBufferNormal:
 			outputColor = PreviewNormal(gBuffer.NormalWorld);
 			break;
-		case ViewMode::GBufferRoughness:
+		case Visualization::GBufferRoughness:
 			outputColor = PreviewScalar(gBuffer.Roughness);
 			break;
-		case ViewMode::GBufferMetallic:
+		case Visualization::GBufferMetallic:
 			outputColor = PreviewScalar(gBuffer.Metallic);
 			break;
-		case ViewMode::GBufferEmissive:
+		case Visualization::GBufferEmissive:
 			outputColor = PreviewHdr(gBuffer.Emissive);
 			break;
-		case ViewMode::GBufferAmbientOcclusion:
+		case Visualization::GBufferAmbientOcclusion:
 			outputColor = PreviewScalar(gBuffer.AmbientOcclusion);
 			break;
-		case ViewMode::GBufferSubsurfaceColor:
+		case Visualization::GBufferSubsurfaceColor:
 			outputColor = saturate(gBuffer.SubsurfaceColor);
 			break;
-		case ViewMode::GBufferSubsurfaceStrength:
+		case Visualization::GBufferSubsurfaceStrength:
 			outputColor = PreviewScalar(gBuffer.SubsurfaceStrength);
 			break;
-		case ViewMode::DirectDiffuse:
+		case Visualization::DirectDiffuse:
 			outputColor = PreviewHdr(directDiffuse);
 			break;
-		case ViewMode::DirectSpecular:
+		case Visualization::DirectSpecular:
 			outputColor = PreviewHdr(directSpecular);
 			break;
-		case ViewMode::DirectSubsurface:
+		case Visualization::DirectSubsurface:
 			outputColor = PreviewHdr(directSubsurface);
 			break;
-		case ViewMode::IndirectDiffuse:
+		case Visualization::IndirectDiffuse:
 			outputColor = PreviewHdr(indirectDiffuse);
 			break;
-		case ViewMode::IndirectSpecular:
+		case Visualization::IndirectSpecular:
 			outputColor = PreviewHdr(indirectSpecular);
 			break;
-		case ViewMode::GpuSceneInstances:
+		case Visualization::GpuSceneInstances:
 			outputColor = saturate(gBuffer.BaseColor);
 			break;
 		default:

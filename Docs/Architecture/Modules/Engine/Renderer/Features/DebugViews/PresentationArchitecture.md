@@ -12,16 +12,16 @@
 
 ## Decision
 
-Sparkle should classify every debug-view producer as either scene-referred HDR or display-linear exact, then route both domains through one explicit display-mapping and output-encoding path. The per-viewport [`RenderViewMode` and show-flag contract](ViewModesAndShowFlags.md) supplies the selected mode and the resolved `Exposure` and `Tonemapper` flags; this document owns what those inputs mean for presentation.
+Sparkle should classify every debug-view producer as either scene-referred HDR or display-linear exact, then route both domains through one explicit display-mapping and output-encoding path. The [`Visualization` and show-flag contract](ViewModesAndShowFlags.md) supplies the concrete Renderer selection and the resolved `Exposure` and `Tonemapper` flags; this document owns what those inputs mean for presentation.
 
-Every view-mode preset must also declare the domain of the color it publishes:
+Every Renderer visualization must also declare the domain of the color it publishes:
 
 - **Scene-referred HDR** is exposed and tone mapped exactly once, then output encoded.
 - **Display-linear exact** bypasses exposure and the tone curve, then is output encoded.
 
 Output encoding is mandatory for both domains. An sRGB swap chain still needs a linear-to-sRGB transfer for a display-linear diagnostic value to appear correctly; bypassing that transfer would not be a more exact visualization.
 
-The stock view-mode preset owns the correct `Exposure` and `Tonemapper` defaults. A deliberate override creates a customized view and the full resolved flag set travels with captures. Correctness therefore never depends on a process-global editor toggle or a name heuristic.
+The stock visualization contract owns the correct `Exposure` and `Tonemapper` defaults. A deliberate override creates a customized view. Correctness therefore never depends on a UI label or frontend mode identity reaching Renderer.
 
 This proposal does not change code. The current implementation remains authoritative until the [delivery plan](Plan.md) is implemented and the adjacent [feature acceptance contract](Acceptance.md) passes.
 
@@ -37,7 +37,7 @@ The current presentation path, owners, and observed double-mapping problem live 
 
 ## Terms And Invariants
 
-The invariants in this section define unmodified stock view-mode presets. A deliberate presentation-flag override follows the custom behavior table in [View Modes And Show Flags](ViewModesAndShowFlags.md) and forfeits the stock HDR/exact claim until reset.
+The invariants in this section define unmodified stock visualization contracts. A deliberate presentation-flag override follows the custom behavior table in [View Modes And Show Flags](ViewModesAndShowFlags.md) and forfeits the stock HDR/exact claim until reset.
 
 ### Scene-Referred HDR
 
@@ -76,10 +76,10 @@ selected view color -> display mapping -> DisplayLinearColor -> output encoding 
 
 ## Selected Architecture
 
-The renderer keeps one presentation topology and resolves view-mode and show-flag policy before any pass executes:
+The renderer keeps one presentation topology and resolves visualization and show-control policy before any pass executes:
 
 ```text
-             active RenderViewMode + viewport show-flag overrides
+        active Visualization + resolved show controls
                                       |
                                       v
                           RenderViewBuilder resolution
@@ -101,30 +101,30 @@ The renderer keeps one presentation topology and resolves view-mode and show-fla
 
 ### One Preset And Classification Owner
 
-Add one renderer-private, exhaustive view-mode preset resolver. Conceptually:
+Add one renderer-private, exhaustive visualization-contract resolver. Conceptually:
 
 ```cpp
-enum class ViewModeSignalDomain : std::uint8_t
+enum class VisualizationSignalDomain : std::uint8_t
 {
 	SceneReferredHdr,
 	DisplayLinearExact,
 };
 
-struct RenderViewModePreset final
+struct VisualizationContract final
 {
-	ViewModeSignalDomain SignalDomain;
+	VisualizationSignalDomain SignalDomain;
 	RenderShowFlagSet SetFlags;
 	RenderShowFlagSet ClearFlags;
 };
 
-RenderViewModePreset ResolveRenderViewModePreset(RenderViewMode viewMode) noexcept;
+VisualizationContract ResolveVisualizationContract(Visualization visualization) noexcept;
 ```
 
 The exact names may follow implementation review, but the responsibilities may not split:
 
-- `RenderViewMode` remains the stable mode identity shared with the editor and shaders.
-- The renderer-private resolver is the only mode-to-signal-domain and mode-to-show-flag-default table.
-- Editor labels, mode menu categories, and the Show menu do not repeat view-mode preset policy.
+- `Visualization` remains the stable Renderer-to-shader selection. Editor owns its broader view-mode taxonomy and maps entries explicitly.
+- The renderer-private resolver is the only visualization-to-signal-domain and visualization-to-show-control-default table.
+- Editor labels, view-mode menu categories, and the Show menu do not repeat Renderer visualization policy.
 - The display-mapping shader receives focused resolved booleans; it does not maintain a second mode-to-presentation-policy list.
 - An unknown or `Count` value is rejected by the narrow resolver rather than silently becoming an exact diagnostic.
 
@@ -139,7 +139,7 @@ The pass receives:
 - selected view color;
 - current exposure texture;
 - selected tone mapper;
-- resolved `ViewModeSignalDomain` for producer-contract validation/diagnostics;
+- resolved `VisualizationSignalDomain` for producer-contract validation/diagnostics;
 - focused `ApplyExposure` and `ApplyTonemapper` booleans derived once from `RenderView.ShowFlags`.
 
 Its stock behavior is closed and simple:
@@ -161,7 +161,7 @@ Keep `VisualizeBuffers` as the single visualization producer for the current GBu
 - use explicit source-to-output coordinate mapping when render and output extents differ;
 - use point selection for exact buffer values so upscaling does not invent category IDs, material values, or false colors.
 
-The currently unused `Debug/ViewModes.hlsli` duplicates preview mappings implemented by `Passes/Debug/VisualizeBuffers.hlsl`. If implementation-time search still finds no consumer of `ViewMode::Resolve` or its preview helpers, remove that duplicate and its broad include rather than updating two visualization authorities.
+The former unused `Debug/ViewModes.hlsli` duplicated preview mappings implemented by `Passes/Debug/VisualizeBuffers.hlsl` and has been removed. `Debug/Visualization.hlsli` now contains only the shared mappings consumed by current shader paths.
 
 The existing post-reconstruction placement can remain for the first slice: lit output is reconstructed normally, then an active debug visualization overwrites it at output extent. This avoids temporal reconstruction, sharpening, or scene post effects changing exact views. The visualization pass must not assume its GBuffer and lighting inputs have the same extent as `FinalSceneColor`.
 
@@ -177,21 +177,21 @@ Show-flag resolution is per frame, but not every flag is a graph-rebuild key. `E
 
 Do not query show flags by name or branch on a broad bitset inside shader inner loops. Resolve them into the narrow booleans, zero-input bindings, or pass scheduling decisions owned by each consumer.
 
-Every captured viewport product records:
+Capture transport remains neutral. When an evidence workflow needs presentation provenance, its higher-level sidecar joins the completed product identity with:
 
-- base `RenderViewKind` and `RenderViewMode`;
+- base `RenderViewKind` and the resolved `Visualization` value;
 - the complete resolved `RenderShowFlagSet` and explicit override masks;
-- `ViewModeSignalDomain` plus resolved exposure/tone-mapper application;
+- `VisualizationSignalDomain` plus resolved exposure/tone-mapper application;
 - exposure mode/value, tone-mapper selection, and output encoding;
 - whether a diagnostic CVar force changed a flag.
 
-This metadata makes stock and customized views distinguishable and permits deterministic capture replay. A capture labelled only `GBufferRoughness` is insufficient once show-flag overrides exist.
+This metadata does not enter Renderer or RHI capture requests/results. It makes stock and customized evidence distinguishable without teaching the readback mechanism about Editor modes or Renderer features. A sidecar labelled only `GBufferRoughness` is insufficient once show-control overrides exist.
 
 ## Initial Mode Classification
 
 This table classifies the signals produced by current shaders. If a producer changes meaning, its entry and tests must change in the same changelist.
 
-| `RenderViewMode` | Domain | Stock presentation flags | Producer requirement | Rationale |
+| `Visualization` | Domain | Stock presentation flags | Producer requirement | Rationale |
 | --- | --- | --- | --- | --- |
 | `Lit` | Scene-referred HDR | Exposure + Tonemapper | Publish composed linear scene color | Normal rendering needs exposure and the selected tone mapper. |
 | `Wireframe` | Scene-referred HDR | Exposure + Tonemapper | Keep current lit wireframe shading | The current mode changes rasterization while retaining lit color. If it later becomes a fixed palette, reclassify it explicitly. |

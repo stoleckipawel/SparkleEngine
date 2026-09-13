@@ -87,15 +87,6 @@ void ViewportPanel::SetExposureOverrides(const ViewportExposureOverrides& overri
 	}
 }
 
-void ViewportPanel::SetRenderViewMode(RenderViewMode viewMode) noexcept
-{
-	if (m_renderRequest.ViewMode != viewMode)
-	{
-		m_renderRequest.ViewMode = viewMode;
-		++m_renderRequest.Generation;
-	}
-}
-
 const ViewportRenderRequest& ViewportPanel::GetRenderRequest() const noexcept
 {
 	return m_renderRequest;
@@ -133,7 +124,7 @@ void ViewportPanel::BuildEmptyState() noexcept
 void ViewportPanel::BuildProgressOverlay() noexcept
 {
 	const ViewportRenderProgress& progress = m_renderProducts.GetProgress();
-	if (progress.State == ViewportRenderProgressState::None || progress.ViewMode != m_renderRequest.ViewMode)
+	if (!m_renderProgressVisible || progress.State == ViewportRenderProgressState::None)
 	{
 		return;
 	}

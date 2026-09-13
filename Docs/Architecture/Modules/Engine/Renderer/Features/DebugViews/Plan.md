@@ -16,12 +16,12 @@ This plan owns implementation slices and their delivery order. It does not redef
 
 | Slice | Makes true | Must not claim yet |
 | --- | --- | --- |
-| 1. ownership | typed per-viewport mode/flag intent has one resolver and real consumers | pixel correctness or usable editor workflow |
+| 1. ownership | Editor mode mapping and typed per-viewport show-control intent have one owner and real consumers | pixel correctness or usable editor workflow |
 | 2. presentation | exposure, tone mapping, exact diagnostic mapping, and output encoding are explicit | all scene/lighting flags or capture replay |
 | 3. integration | accepted flags reach their owners, editor controls, and capture state | feature acceptance or backend parity |
 | 4. proof | numeric, visual, isolation, extent, replay, and D3D12/Vulkan evidence is retained | release completion until the feature report records it |
 
-The slices deliberately move ownership before appearance. Keeping the old process-global CVar as a normal input or retaining local preview curves would create two authorities and fail the clean break even if screenshots look unchanged.
+The slices deliberately move ownership before appearance. Keeping the old Renderer-owned UI view-mode mirror or retaining local preview curves would create two authorities and fail the clean break even if screenshots look unchanged. The concrete `r.Visualization` Renderer control is not a UI-mode representation.
 
 ## Delivery Plan
 
@@ -30,7 +30,7 @@ These are implementation workstreams. If delivered with the Scene/View/Frame ref
 ### Slice 1: establish show-flag ownership
 
 1. Inventory the producer, consumer, disabled behavior, and graph impact of every proposed initial flag; remove any entry without a real first consumer.
-2. Extend `ViewportRenderRequest` in one clean break with `RenderViewMode` and `RenderShowFlagOverrides`, keep selection and `RenderOutputFlags` in their existing categories, and stop using `CVarRenderViewMode` as normal renderer input.
+2. Keep `ViewportRenderRequest` free of UI mode and visualization-selector state. Editor owns `EditorViewportViewMode` and maps it once to `CVarVisualization` plus any orthogonal Renderer feature selectors; Renderer passes and shaders consume only concrete controls.
 3. Add the fixed `RenderShowFlag` enum, bitset operations, exhaustive editor metadata, kind baselines, and mode presets.
 4. Resolve the immutable final set in `RenderViewBuilder`; expose only narrow values to graph keys, pass parameters, and `ViewUniformData`.
 5. Add focused tests for precedence, non-overlapping overrides, mode selection, reset, invalid values, and two independent viewports.
@@ -42,7 +42,7 @@ These are implementation workstreams. If delivered with the Scene/View/Frame ref
 3. Preserve current scene-based exposure metering/history and keep output encoding unconditional.
 4. Remove local HDR preview curves from emissive and lighting contribution modes.
 5. Keep one exact mapping for scalar, normal, material-color, and instance-ID modes.
-6. Delete the unused duplicate `Debug/ViewModes.hlsli` path if repository-wide search still proves it has no caller.
+6. Keep the removed duplicate `Debug/ViewModes.hlsli` path absent; maintain one shared `Debug/Visualization.hlsli` mapping used by real shader consumers.
 7. Make render-to-output coordinate selection explicit and deterministic for mismatched extents.
 
 ### Slice 3: wire scene, lighting, and editor flags

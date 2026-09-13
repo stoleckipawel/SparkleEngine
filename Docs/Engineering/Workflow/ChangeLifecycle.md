@@ -127,6 +127,12 @@ Do not accumulate a large AI-generated diff and use a full engine, game, editor,
 - Keep generated and AI-assisted batches bounded, inspect their scoped diff immediately, and treat every changed line as untrusted until independently reviewed and proportionally validated.
 - Stop when a product or architecture decision exceeds the task's authority.
 
+### Finish With Responsibility Refinement
+
+Every implementation stage MUST end with a deliberate source-shape pass before validation and handoff. Re-read the complete changed production path using the [responsibility audit](../Foundations/ModuleOwnership.md#responsibility-audit), not only the newest lines, and record one responsibility sentence for each substantive changed file, class, and function. Split a unit when that sentence joins independently changing policy, state, lifetime, orchestration, allocation, encoding, backend, or presentation responsibilities. Keep a cohesive state machine or algorithm together when a split would only create forwarding wrappers, one-method collaborators, numbered fragments, or navigation without knowledge removal.
+
+The refinement pass MUST also remove dead scaffolding, duplicate state or policy, ceremonial helpers/namespaces, speculative abstractions, needless validation or diagnostics, and implementation details that leaked into an orchestrator or public contract. Reinspect includes, names, build membership, direct callers, dependency direction, and the feature integration-hook ledger after the final shape is known. A stage is not ready for handoff while a changed god function, god class, god file, diffuse feature mechanism, or unexplained abstraction remains, even when formatting, static checks, or a build succeed.
+
 ## Review and Acceptance
 
 Use the [SparkleEngine Code Review](CodeReview.md) procedure and run the review section or acceptance rules in every selected subject standard; do not recreate those checklists in the change description. Then verify the integration itself:

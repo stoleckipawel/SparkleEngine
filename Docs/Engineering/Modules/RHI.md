@@ -16,6 +16,8 @@ This standard owns RHI and backend change guardrails. The canonical [Renderer an
 | how is output presented? | output product and display intent | swapchain acquisition, resize, encoding-compatible native path, and present result |
 | why did native work fail? | preserves requesting feature/pass/resource identity | engine invariant rejection, API validation, device/driver diagnostics, and native error context |
 
+UI mode names, menu indices, labels, progress-widget state, editor selection, and Renderer feature identities never belong in RHI requests or results. Capture contracts identify resources, formats, extents, frame/generation identity, destination, and native failure only; a higher layer may join UI provenance after readback without teaching RHI about the feature that requested it.
+
 If an implementation needs a vendor name, native handle, swapchain image, or API enum above this boundary, first prove that the public neutral contract cannot express the real semantic difference. If backend code chooses lighting, quality, graph topology, or fallback, the policy is already too low.
 
 ## Neutral Contract Ownership

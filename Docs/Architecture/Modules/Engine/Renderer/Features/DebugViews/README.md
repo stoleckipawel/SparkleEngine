@@ -31,7 +31,7 @@ Code and executable build configuration remain authoritative. Reinspect every li
 
 ## Source-Backed Snapshot And Problem
 
-`RenderViewMode` exposes 16 current final/debug modes. The seventeenth enum value is the separate `ReferencePathTracer` product semantic, not a debug-buffer visualization:
+`Visualization` exposes exactly 16 concrete Renderer debug/final choices. The Editor's ordered view-mode list is a UI concern: its **Reference Path Tracer** entry selects `r.ReferencePathTracer`, while ordinary entries map to `r.Visualization`.
 
 | Capability | Modes | Current product and boundary |
 | --- | --- | --- |
@@ -40,7 +40,7 @@ Code and executable build configuration remain authoritative. Reinspect every li
 | `REN-DBG-03` lighting | Direct Diffuse, Direct Specular, Direct Subsurface, Indirect Diffuse, Indirect Specular | Reads the independently documented [Direct](../Lighting/DirectLighting/README.md) or [Indirect](../Lighting/IndirectLighting/README.md) lobe. There is no volumetric-lighting debug product. |
 | `REN-DBG-04` scene diagnostics | GPU Scene Instances | Visualizes GPU-scene instance identity rather than a lighting/material quantity. |
 
-View mode is per-viewport intent carried by `ViewportRenderRequest` and copied into `RenderView` by `RenderViewBuilder`; Editor ownership lives in `EditorViewportSession`, not `EngineRenderingSettingsState`. `r.ViewMode` remains only the diagnostic default adapter for a request without viewport identity. Availability depends on the active frontend and produced resources. A selectable name is not evidence that its quantity is numerically correct or meaningful in every mode.
+Editor view-mode labels, ordering, and selection remain in `EditorViewportSession`. That frontend owner translates ordinary debug entries into the Renderer-owned `r.Visualization` CVar and translates **Reference Path Tracer** into `r.ReferencePathTracer` plus Lit visualization. No view-mode or visualization selector is carried by `ViewportRenderRequest` or `RenderView`; `RenderViewBuilder` copies only the current visualization scalar into the shader uniform that consumes it. Availability depends on the active frontend and produced resources. A selectable name is not evidence that its quantity is numerically correct or meaningful in every mode.
 
 Sparkle currently has one unconditional presentation path:
 
@@ -59,8 +59,8 @@ The path is visible in these current owners:
 - [`Passes/Presentation/Presentation.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Presentation/Presentation.cpp) always schedules `ToneMappingPass` and `OutputEncodingPass`.
 - [`Passes/Presentation/ToneMapping.hlsl`](../../../../../../../Engine/Assets/Shaders/Passes/Presentation/ToneMapping.hlsl) always multiplies by the exposure texture and applies the selected tone mapper.
 - [`Passes/Debug/VisualizeBuffers.hlsl`](../../../../../../../Engine/Assets/Shaders/Passes/Debug/VisualizeBuffers.hlsl) maps HDR lighting and emissive values with `x / (1 + x)` before the global tone mapper runs.
-- [`Viewport/ViewportContracts.h`](../../../../../../../Engine/Renderer/Public/Viewport/ViewportContracts.h) separates view kind, selection, requested outputs, extent, exposure, and view-mode intent; it has no `RenderFeatureFlags` or show-flag field.
-- [`View/RenderViewBuilder.cpp`](../../../../../../../Engine/Renderer/Private/View/RenderViewBuilder.cpp) consumes the resolved per-viewport mode. Only the no-identity runtime adapter in `FramePipeline` may read `CVarRenderViewMode`.
+- [`Viewport/ViewportContracts.h`](../../../../../../../Engine/Renderer/Public/Viewport/ViewportContracts.h) carries view kind, selection, requested outputs, extent, and exposure; it contains no UI view mode, Renderer visualization selector, Reference selector, `RenderFeatureFlags`, or show-flag field.
+- [`View/RenderViewBuilder.cpp`](../../../../../../../Engine/Renderer/Private/View/RenderViewBuilder.cpp) reads `CVarVisualization` where it prepares the scalar shader input; no frontend aggregate is retained in `RenderView`.
 
 The producer-local HDR preview curve followed by unconditional exposure and tone mapping causes double mapping for HDR diagnostic views. The same global presentation step also changes bounded quantities and false colors: a roughness value, encoded normal, or instance-ID palette no longer reaches the display as the visualization shader authored it.
 
@@ -68,7 +68,7 @@ Exposure metering itself is already ordered usefully. It reads the original scen
 
 ## Ownership, Failure, And Evidence
 
-- The selected `RenderViewMode` is view intent; `VisualizeBuffers` owns conversion from the requested source product to visualization color; the shared presentation chain owns exposure, tone mapping, and output encoding.
+- The selected `Visualization` value is concrete Renderer behavior; `VisualizeBuffers` owns conversion from the selected source product to visualization color; the shared presentation chain owns exposure, tone mapping, and output encoding.
 - Missing or inapplicable source products must not be presented as a valid diagnostic result. Requested mode, resolved mode/product, viewport/frame/scene identity, and presentation transform need capture-visible provenance.
 - Current `REN-POST-10` state is Partial because diagnostic color still passes through the common presentation transform. [Debug View Presentation Architecture](PresentationArchitecture.md) defines scene-referred HDR versus exact display-linear domains, while [View Modes And Show Flags](ViewModesAndShowFlags.md) owns viewport resolution; neither is implemented merely because this dossier links it.
 - `REN-E18` owns representative output and transform checks for all modes. `REN-E21` owns product attribution and capture provenance. The acceptance contract owns the completion verdict.

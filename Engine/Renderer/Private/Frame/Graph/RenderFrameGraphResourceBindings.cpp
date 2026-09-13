@@ -166,7 +166,7 @@ void CreateRenderFrameGraphResources(
 	resources.Transient.Exposure = exposure;
 	resources.ImportedScene.Sky = sky;
 	resources.ImportedScene.Scene = DeclareRenderSceneGpuResources(builder);
-	resources.History = DeclareFrameHistoryResources(builder, settings.RenderExtent);
+	resources.History = DeclareFrameHistoryResources(builder);
 	resources.ViewportProducts.SceneDepth = sceneDepth;
 }
 

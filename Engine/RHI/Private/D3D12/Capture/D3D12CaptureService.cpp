@@ -178,8 +178,6 @@ bool D3D12CaptureService::TryTakeTextureReadback(RhiCaptureTicket ticket, RhiCap
 	    .Status = ERhiCaptureStatus::Succeeded,
 	    .BackendApi = ERhiBackendApi::D3D12,
 	    .FrameId = pending->Request.FrameId,
-	    .ViewMode = pending->Request.ViewMode,
-	    .ViewModeName = pending->Request.ViewModeName,
 	    .ArtifactPath = pending->Request.OutputPath};
 	readback.Width = pending->Footprint.Footprint.Width;
 	readback.Height = pending->Footprint.Footprint.Height;

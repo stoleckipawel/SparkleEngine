@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../Editor/EditorTextureHandle.h"
-#include "../Debug/RenderViewMode.h"
 #include "../RendererAPI.h"
 #include "../Settings/EngineRenderingDisplayTypes.h"
 #include "RHI/Public/Formats/PixelFormat.h"
@@ -108,8 +107,6 @@ struct SPARKLE_RENDERER_API ViewportCaptureRequest
 	// Zero accepts the currently published frame. A non-zero value rejects a
 	// capture if the requested render product has already advanced.
 	std::uint64_t ExpectedFrameId = 0;
-	std::uint32_t ViewMode = 0;
-	std::string ViewModeName;
 	std::string DebugName;
 };
 
@@ -159,7 +156,6 @@ struct SPARKLE_RENDERER_API ViewportRenderRequest
 	RenderViewKind ViewKind = RenderViewKind::Game;
 	RenderViewportExtent Extent = {};
 	RenderViewSelectionToken ViewSelection = {};
-	RenderViewMode ViewMode = RenderViewMode::Lit;
 	RenderOutputFlags RequestedOutputs = RenderOutputFlags::SceneColor;
 	ViewportExposureOverrides Exposure;
 };
@@ -174,7 +170,6 @@ enum class ViewportRenderProgressState : std::uint8_t
 
 struct SPARKLE_RENDERER_API ViewportRenderProgress final
 {
-	RenderViewMode ViewMode = RenderViewMode::Lit;
 	ViewportRenderProgressState State = ViewportRenderProgressState::None;
 	std::uint64_t CompletedWork = 0;
 	std::uint64_t TargetWork = 0;

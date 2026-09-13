@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Frame/Graph/BuildRenderFrameGraph.h"
+#include "Frame/Graph/RenderFrameGraphSettings.h"
 #include "Frame/Retirement/FrameExecutionRetirementQueue.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "RayTracing/Effects/GBuffer/RayTracingGBufferExecutionPlan.h"
@@ -22,6 +22,7 @@ class FrameExecutionDiagnostics;
 class UiFrameRenderer;
 struct RenderFrame;
 class FrameGraph;
+class FrameGraphBuilder;
 class RenderDeviceServices;
 class GpuMeshCache;
 class RendererImageProviderStack;
@@ -78,6 +79,7 @@ public:
 private:
 	void InitializeFrameStorage();
 	void InitializeRenderFrames();
+	RenderFrameGraphResources BuildRenderFrameGraph(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings);
 	void InitializeFrameGraph() noexcept;
 	void InitializeFrameGraph(const RenderFrameGraphSettings& settings) noexcept;
 	void RefreshFrameExecution(const RenderFrameGraphSettings& settings) noexcept;
@@ -135,5 +137,7 @@ private:
 	std::unique_ptr<ReferencePathTracer> m_referencePathTracer;
 	bool m_resizePending = false;
 	bool m_windowMinimized = false;
+	bool m_frameGraphExecutable = true;
+	bool m_builtReferencePathTracer = false;
 	ImageProviderGraphKey m_imageProviderFrameGraphKey = {};
 };

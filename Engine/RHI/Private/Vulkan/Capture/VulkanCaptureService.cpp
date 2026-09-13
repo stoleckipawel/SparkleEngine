@@ -245,8 +245,6 @@ bool VulkanCaptureService::TryTakeTextureReadback(RhiCaptureTicket ticket, RhiCa
 	    .Status = ERhiCaptureStatus::Succeeded,
 	    .BackendApi = ERhiBackendApi::Vulkan,
 	    .FrameId = pending->Request.FrameId,
-	    .ViewMode = pending->Request.ViewMode,
-	    .ViewModeName = pending->Request.ViewModeName,
 	    .ArtifactPath = pending->Request.OutputPath};
 	readback.Width = pending->Request.Width;
 	readback.Height = pending->Request.Height;

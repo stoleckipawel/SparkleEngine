@@ -1,17 +1,11 @@
 #pragma once
 
-#include "Frame/Graph/RenderFrameGraphResources.h"
+#include "Providers/ImageProviderPipeline.h"
 #include "Renderer/Public/Settings/EngineRenderingDisplayTypes.h"
-#include "RHI/Public/Formats/PixelFormat.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
+#include "RHI/Public/Formats/PixelFormat.h"
 
 #include <cstdint>
-
-class FrameGraphBuilder;
-class GpuMeshCache;
-class IRayReconstructionProvider;
-class IUpscalerProvider;
-class RenderRayTracingScene;
 
 enum class FramePresentationTarget : std::uint8_t
 {
@@ -23,7 +17,7 @@ struct RenderFrameGraphSettings final
 {
 	RenderViewportExtent RenderExtent;
 	RenderViewportExtent OutputExtent;
-	RenderViewMode ViewMode = RenderViewMode::Lit;
+	ImageProviderPipeline ImagePipeline = ImageProviderPipeline::RayReconstruction;
 	PixelFormat OutputFormat = PixelFormat::Unknown;
 	EngineExposureMeteringMethod ExposureMeteringMethod = EngineExposureMeteringMethod::ParallelReduction;
 	FramePresentationTarget PresentationTarget = FramePresentationTarget::BackBuffer;
@@ -31,11 +25,3 @@ struct RenderFrameGraphSettings final
 
 	bool operator==(const RenderFrameGraphSettings&) const noexcept = default;
 };
-
-RenderFrameGraphResources BuildRenderFrameGraph(
-    FrameGraphBuilder& builder,
-    const RenderFrameGraphSettings& settings,
-    GpuMeshCache& gpuMeshCache,
-    RenderRayTracingScene& rayTracingScene,
-    IUpscalerProvider* upscalerProvider,
-    IRayReconstructionProvider* rayReconstructionProvider);

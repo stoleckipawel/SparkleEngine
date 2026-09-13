@@ -22,7 +22,6 @@ void EditorViewportCaptureCoordinator::Request(Renderer& renderer, std::uint64_t
 	        .Output = RenderOutputFlags::SceneColor,
 	        .OutputPath = BuildOutputPath(frameId),
 	        .ExpectedFrameId = 0,
-	        .ViewModeName = "Editor viewport",
 	        .DebugName = "Editor viewport capture"});
 }
 

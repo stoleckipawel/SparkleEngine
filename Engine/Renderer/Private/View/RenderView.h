@@ -20,7 +20,6 @@ struct RenderView final
 	std::uint64_t viewportId = 0u;
 	RenderViewSelectionToken selection = {};
 	RenderViewKind kind = RenderViewKind::Game;
-	RenderViewMode viewMode = RenderViewMode::Lit;
 	RenderViewportExtent renderExtent = {};
 	RenderViewportExtent outputExtent = {};
 	RenderViewCameraData camera = {};

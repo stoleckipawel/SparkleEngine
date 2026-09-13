@@ -2,7 +2,20 @@
 
 #include "Viewport/EditorViewportSession.h"
 
+#include "Renderer/Public/Debug/RendererCVars.h"
+
 #include <utility>
+
+static Visualization ResolveVisualization(EditorViewportViewMode viewMode) noexcept
+{
+	if (viewMode == EditorViewportViewMode::ReferencePathTracer)
+	{
+		return Visualization::Lit;
+	}
+
+	const std::uint32_t value = static_cast<std::uint32_t>(viewMode);
+	return static_cast<Visualization>(value > static_cast<std::uint32_t>(EditorViewportViewMode::ReferencePathTracer) ? value - 1u : value);
+}
 
 EditorViewportSession::EditorViewportSession() = default;
 
@@ -104,10 +117,12 @@ void EditorViewportSession::SetExposureOverrides(ViewportExposureOverrides overr
 	(void) m_settings.SetExposureOverrides(overrides);
 }
 
-void EditorViewportSession::SetViewMode(RenderViewMode viewMode) noexcept
+void EditorViewportSession::SetViewMode(EditorViewportViewMode viewMode) noexcept
 {
-	if (viewMode < RenderViewMode::Count)
+	if (viewMode < EditorViewportViewMode::Count)
 	{
 		m_viewMode = viewMode;
+		CVarReferencePathTracer.Set(viewMode == EditorViewportViewMode::ReferencePathTracer);
+		CVarVisualization.Set(ResolveVisualization(viewMode));
 	}
 }

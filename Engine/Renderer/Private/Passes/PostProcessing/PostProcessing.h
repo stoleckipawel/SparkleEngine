@@ -1,12 +1,7 @@
 #pragma once
 
-#include "Frame/Graph/BuildRenderFrameGraph.h"
+#include "Frame/Graph/RenderFrameGraphSettings.h"
 
 class FrameGraphBuilder;
-class IUpscalerProvider;
 
-void AddPostProcessingPasses(
-    FrameGraphBuilder& builder,
-    const RenderFrameGraphSettings& settings,
-    IUpscalerProvider* upscalerProvider,
-    RenderFrameGraphResources& resources);
+void AddPostProcessingPasses(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings, RenderFrameGraphResources& resources);

@@ -2,8 +2,8 @@
 #include "Frame/FramePipeline.h"
 
 #include "Debug/RendererCVars.h"
-#include "Frame/Graph/RenderFrameGraphFactory.h"
 #include "Frame/RenderFrame.h"
+#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "Pipeline/RenderPassRuntimeCache.h"
@@ -15,6 +15,32 @@
 #include "Scene/RayTracing/RenderRayTracingScene.h"
 #include "Scene/RenderScene.h"
 #include "View/ViewportDisplaySettings.h"
+
+#include <string_view>
+
+static void ExportTextureIfValid(FrameGraphBuilder& builder, FrameGraphTextureHandle handle, std::string_view name) noexcept
+{
+	if (handle.IsValid())
+	{
+		builder.ExportTexture(handle, name);
+	}
+}
+
+static void ExportFrameProductRoots(
+    FrameGraphBuilder& builder,
+    const RenderFrameGraphSettings& settings,
+    const RenderFrameGraphResources& resources) noexcept
+{
+	ExportTextureIfValid(builder, resources.ViewportProducts.FinalSceneColor, "Viewport.FinalSceneColor");
+	if (HasAnyRenderOutputFlags(settings.RequestedOutputs, RenderOutputFlags::SceneDepth))
+	{
+		ExportTextureIfValid(builder, resources.ViewportProducts.SceneDepth, "Viewport.SceneDepth");
+	}
+	if (HasAnyRenderOutputFlags(settings.RequestedOutputs, RenderOutputFlags::Normals))
+	{
+		ExportTextureIfValid(builder, resources.ViewportProducts.Normals, "Viewport.Normals");
+	}
+}
 
 RenderViewportExtent FramePipeline::ResolveOutputExtent() const noexcept
 {
@@ -30,12 +56,12 @@ RenderFrameGraphSettings FramePipeline::ResolveFrameGraphSettings() const noexce
 {
 	const RenderViewportExtent outputExtent = ResolveOutputExtent();
 	const ResolvedViewportDisplaySettings displaySettings = ResolvedViewportDisplaySettings::Resolve(m_viewportRenderRequest.Exposure);
-	const ImageProviderPipeline imagePipeline = ImageProviderPipeline::RayReconstruction;
-	const RenderViewMode viewMode = m_viewportRenderRequest.ViewportId == 0 ? CVarRenderViewMode.Get() : m_viewportRenderRequest.ViewMode;
+	const ImageProviderPipeline imagePipeline =
+	    CVarReferencePathTracer.Get() ? ImageProviderPipeline::NativeResolution : ImageProviderPipeline::RayReconstruction;
 	return RenderFrameGraphSettings{
 	    .RenderExtent = m_imageProviders.ResolveRenderExtent(outputExtent, imagePipeline),
 	    .OutputExtent = outputExtent,
-	    .ViewMode = viewMode,
+	    .ImagePipeline = imagePipeline,
 	    .OutputFormat = m_deviceServices.GetRenderHardwareInterface().GetPresentationService().GetPresentColorFormat(),
 	    .ExposureMeteringMethod = displaySettings.ExposureMeteringMethod,
 	    .PresentationTarget = ShouldOutputToBackBuffer() ? FramePresentationTarget::BackBuffer : FramePresentationTarget::ViewportProduct,
@@ -55,27 +81,21 @@ void FramePipeline::InitializeFrameGraph() noexcept
 void FramePipeline::InitializeFrameGraph(const RenderFrameGraphSettings& settings) noexcept
 {
 	m_renderScene.GetRayTracingScene().GetShaderTablePlan().BeginMaterializationSet();
-	const RenderFrameGraphDependencies dependencies{
-	    .renderHardwareInterface = m_deviceServices.GetRenderHardwareInterface(),
-	    .renderPassRuntimeCache = m_renderPassRuntimeCache,
-	    .gpuMeshCache = m_gpuMeshCache,
-	    .rayTracingScene = m_renderScene.GetRayTracingScene(),
-	    .upscalerProvider = m_imageProviders.GetUpscalerProvider(),
-	    .rayReconstructionProvider = m_imageProviders.GetRayReconstructionProvider(),
-	    .window = m_window,
-	    .settings = settings};
+	auto frameGraph = std::make_unique<FrameGraph>(&m_deviceServices.GetRenderHardwareInterface(), &m_window);
+	FrameGraphBuilder builder(*frameGraph, m_renderPassRuntimeCache);
+	RenderFrameGraphResources resources = BuildRenderFrameGraph(builder, settings);
+	ExportFrameProductRoots(builder, settings, resources);
 
-	RenderFrameGraphFactory frameGraphFactory(dependencies);
-	RenderFrameGraphBuildResult buildResult = frameGraphFactory.Build();
 	m_frameGraphSettings = settings;
 	m_builtGBufferAlgorithm = CVarGBufferAlgorithm.Get();
 	m_builtGBufferExecutionPlan = ResolveRayTracingGBufferExecutionPlan(m_renderScene.GetRayTracingScene().GetCapabilityReport());
 	m_builtShadowExecutionPlan = ResolveRayTracingShadowExecutionPlan(m_renderScene.GetRayTracingScene().GetCapabilityReport());
 	m_builtShaderTablePlanGeneration = m_renderScene.GetRayTracingScene().GetShaderTablePlan().GetGeneration();
 	m_builtShaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration();
-	m_frameResources = buildResult.Resources;
+	m_builtReferencePathTracer = CVarReferencePathTracer.Get();
+	m_frameResources = resources;
 	m_imageProviderFrameGraphKey = m_imageProviders.GetFrameGraphKey();
-	m_frameGraph = std::move(buildResult.Graph);
+	m_frameGraph = std::move(frameGraph);
 	++m_graphTopologyGeneration;
 }
 
@@ -143,11 +163,12 @@ void FramePipeline::RefreshGraphForTopology() noexcept
 	    ResolveRayTracingShadowExecutionPlan(m_renderScene.GetRayTracingScene().GetCapabilityReport());
 	const std::uint64_t shaderTablePlanGeneration = m_renderScene.GetRayTracingScene().GetShaderTablePlan().GetGeneration();
 	const std::uint64_t shaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration();
+	const bool referencePathTracerChanged = CVarReferencePathTracer.Get() != m_builtReferencePathTracer;
 	const bool usesSceneShaderTable = gBufferExecutionPlan.Active == RayTracingExecutionFrontend::Pipeline
 	    || shadowExecutionPlan.Active == RayTracingExecutionFrontend::Pipeline
 	    || m_builtGBufferExecutionPlan.Active == RayTracingExecutionFrontend::Pipeline
 	    || m_builtShadowExecutionPlan.Active == RayTracingExecutionFrontend::Pipeline;
-	if (providerChanged || settings != m_frameGraphSettings || gBufferAlgorithm != m_builtGBufferAlgorithm
+	if (providerChanged || referencePathTracerChanged || settings != m_frameGraphSettings || gBufferAlgorithm != m_builtGBufferAlgorithm
 	    || gBufferExecutionPlan != m_builtGBufferExecutionPlan || shadowExecutionPlan != m_builtShadowExecutionPlan
 	    || shaderGeneration != m_builtShaderGeneration
 	    || (usesSceneShaderTable && shaderTablePlanGeneration != m_builtShaderTablePlanGeneration))

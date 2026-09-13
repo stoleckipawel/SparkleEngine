@@ -86,11 +86,12 @@ The [Direct Lighting package](../Modules/Engine/Renderer/Features/Lighting/Direc
 
 | Step | Operation | Exact contract | Boundary |
 | --- | --- | --- | --- |
-| Semantic request | `ViewportRenderRequest.ViewMode = RenderViewMode::ReferencePathTracer` | The same single per-view mode field used by every view mode | Editor owns selection in `EditorViewportSession`; Stage 1 keeps the item out of the clickable menu |
-| Existing View boundary | `RenderViewBuilder` -> `RenderView` -> `FramePipeline` | Canonical View data carries only the selected mode; no path-tracer request/result/session fields are added to generic View state | No Scene/View deep copy or mutable cross-thread reference |
-| Feature-local owner | `Passes/Lighting/ReferencePathTracer/ReferencePathTracer` | Private owner recognizes only the ordinary selected mode; it does not manufacture Scene/View/session identity | Stage 1 deliberately reports generic unavailable `0/0` and allocates or dispatches nothing |
-| Observation | `ViewportRenderProducts.GetProgress()` -> `ViewportPanel` | Renderer-agnostic mode/state/completed/target payload has one real Editor reader and suppresses a different selected mode | Detailed transport identity, reset, estimator, backend, result, and artifact state remains absent until its owning implementation stage |
-| Clean break | Renderer lighting graph/settings/history and shader membership | ReSTIR remains the ordinary lighting route; the former GBuffer-seeded reference shaders, history, setting, CVar, registrations, and selector are removed | `RenderViewMode::ReferencePathTracer` is the sole semantic name; Lit is only the retained presentation while transport is unavailable |
+| UI selection | `EditorViewportViewMode::ReferencePathTracer` | Editor owns the label and ordered value `1`, mapping it to `r.ReferencePathTracer` | No Editor enum, label, or ordering enters Renderer, View, frame-graph, shader, or RHI contracts |
+| Renderer selection | `FramePipeline::BuildRenderFrameGraph` reads `r.ReferencePathTracer` | One direct branch selects Lit scheduling or the feature-local Reference owner | The original frame shell, prepared Scene/View, frame graph, RHI submission, viewport product, and presentation remain shared |
+| Existing View boundary | `RenderViewBuilder` -> `RenderView` -> `FramePipeline` | Canonical View carries camera and view-owned rendering data; the builder writes only the Renderer visualization scalar needed by shaders | No UI view-mode/selector identity, path-tracer camera copy, Scene/View deep copy, or mutable cross-thread reference |
+| Feature-local owner | `Passes/Lighting/ReferencePathTracer/ReferencePathTracer` | Session, resources, identity, passes, and transport stay in the feature capsule | Lit and Reference middle products are mutually exclusive; neither route consumes the other's estimator products |
+| Observation | `ViewportRenderProducts.GetProgress()` -> `ViewportPanel` | Generic progress crosses the Renderer boundary; Editor decides whether its Reference UX displays it | Renderer does not carry UI labels, progress-widget visibility, or view-mode ordering |
+| Clean break | Renderer visualization, frame composition, and capture contracts | Renderer owns the concrete `Visualization` CVar domain; RHI capture owns texture readback data only | No Renderer `ViewMode`, recipe/factory hierarchy, GBuffer-seeded reference authority, or UI metadata remains in Renderer/RHI |
 
 ## Trace 5: External Image Provider Lifecycle
 

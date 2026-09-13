@@ -40,12 +40,19 @@ public:
 	}
 };
 
-FrameHistoryResourceLayout DeclareFrameHistoryResources(FrameGraphBuilder& builder, RenderViewportExtent renderExtent)
+FrameHistoryResourceLayout DeclareFrameHistoryResources(FrameGraphBuilder& builder)
 {
 	return FrameHistoryResourceLayout{
-	    .Exposure = builder.CreateTextureHistory(FrameGraphTextureDesc::CreateColor("Exposure", 1u, 1u, PixelFormat::R32G32B32A32_Float)),
-	    .DirectLightReservoir = ReservoirFrameHistory::DeclareReservoirHistory(builder, renderExtent, "DirectLightReservoir"),
-	    .RestirIndirectReservoir = ReservoirFrameHistory::DeclareReservoirHistory(builder, renderExtent, "RestirIndirectReservoir")};
+	    .Exposure = builder.CreateTextureHistory(FrameGraphTextureDesc::CreateColor("Exposure", 1u, 1u, PixelFormat::R32G32B32A32_Float))};
+}
+
+void DeclareRestirLightingHistoryResources(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent renderExtent,
+    FrameHistoryResourceLayout& history)
+{
+	history.DirectLightReservoir = ReservoirFrameHistory::DeclareReservoirHistory(builder, renderExtent, "DirectLightReservoir");
+	history.RestirIndirectReservoir = ReservoirFrameHistory::DeclareReservoirHistory(builder, renderExtent, "RestirIndirectReservoir");
 }
 
 void InvalidateFrameHistory(FrameGraph& frameGraph, const FrameHistoryResourceLayout& history) noexcept
@@ -68,7 +75,8 @@ void UpdateFrameHistory(
     RenderViewState& viewState,
     RendererImageProviderStack& imageProviders)
 {
-	if (viewState.UpdateRestirLightingHistory(BuildRestirLightingHistoryInvalidationHash(preparedScene)))
+	if (history.DirectLightReservoir.Sample.IsValid()
+	    && viewState.UpdateRestirLightingHistory(BuildRestirLightingHistoryInvalidationHash(preparedScene)))
 	{
 		InvalidateRestirLightingHistory(frameGraph, history);
 		imageProviders.ResetHistory();

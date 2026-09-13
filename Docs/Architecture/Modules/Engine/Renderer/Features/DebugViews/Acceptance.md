@@ -49,10 +49,10 @@ These are seeds for the live risk ledger in the `FCR-REN-11` candidate report; o
 
 Implementation is accepted only when all of the following are demonstrated:
 
-- `AC-DVP-01` — every `RenderViewMode` other than `Count` has exactly one signal domain and one explicit show-flag preset;
+- `AC-DVP-01` — every `Visualization` other than `Count` has exactly one signal domain and one explicit show-flag contract;
 - `AC-DVP-02` — every `RenderShowFlag` other than `Count` has exactly one metadata entry, a real producer/consumer path, deterministic disabled behavior, and classified graph impact;
 - `AC-DVP-03` — no generic `RenderFeatureFlags` definition is reintroduced; selection, view-mode presets, requested outputs, and show flags each have one target representation;
-- `AC-DVP-04` — the active mode and show-flag overrides arrive through the viewport/view request; normal pass behavior does not read `CVarRenderViewMode` or another process-global substitute;
+- `AC-DVP-04` — Editor view-mode identity remains absent from Renderer/RHI contracts; the active Renderer visualization comes from its dedicated CVar and only the scalar/bits required by passes or shaders are propagated;
 - `AC-DVP-05` — `RenderViewBuilder` is the only resolver, and two viewports can resolve different show-flag sets without global-state races or cross-talk;
 - `AC-DVP-06` — stock `Lit`, `GBufferEmissive`, and direct/indirect lighting modes enable Exposure and Tonemapper; changing exposure compensation or tone mapper changes them;
 - `AC-DVP-07` — those stock HDR modes contain no producer-local display curve and are tone mapped once;
@@ -64,7 +64,7 @@ Implementation is accepted only when all of the following are demonstrated:
 - `AC-DVP-13` — exact views do not pass through temporal reconstruction, sharpening, bloom, color grading, or future scene post effects;
 - `AC-DVP-14` — exposure continues to meter the lit scene while an exact view is active, and returning to `Lit` does not reset adaptation history;
 - `AC-DVP-15` — render/output extent mismatch has an explicit point-sampling result with no out-of-bounds reads;
-- `AC-DVP-16` — captured viewport-product metadata and replay record the view kind, mode, resolved flags, override deltas, presentation values, output encoding, and any CVar force; stock and Custom captures are distinguishable;
+- `AC-DVP-16` — a higher-level evidence sidecar can join view kind, Editor mode, resolved visualization/show controls, override deltas, presentation values, output encoding, and any CVar force to a completed product identity without adding UI or feature identity to Renderer/RHI capture contracts; stock and Custom captures are distinguishable;
 - `AC-DVP-17` — no runtime pass reads editor state, resolves a flag by string, or independently consults a CVar for behavior already represented by the resolved show-flag set;
 - `AC-DVP-18` — the Show menu exposes only implemented flags, grouped by purpose, with working reset/category actions and no raw bit/CVar UI;
 - `AC-DVP-19` — documentation does not describe the encoded viewport image as a raw GBuffer dump;

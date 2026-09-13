@@ -31,6 +31,8 @@ Application / Editor
 - Common RHI code never includes either backend implementation. Backend selection may name an API, but native types and calls stay in `Private/D3D12` or `Private/Vulkan`.
 - D3D12 and Vulkan compile as separate static backend targets. `SparkleRHI` exposes the common contract and privately selects the enabled backend targets.
 
+The top boundary is also one way. Application/Editor owns view-mode menus, labels, ordering, shortcuts, and selection state, then translates a choice into concrete Renderer controls. Renderer owns feature and visualization policy, but not the frontend mode identity that happened to select it. RHI receives only neutral GPU work, capability, resource, presentation, and readback contracts; neither UI terminology nor Renderer feature names cross into RHI.
+
 ## Ownership
 
 | Responsibility | Owner |

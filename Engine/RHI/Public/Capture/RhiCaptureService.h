@@ -35,8 +35,6 @@ struct RhiTextureCaptureRequest final
 	ResourceState SourceState = ResourceState::Common;
 	std::filesystem::path OutputPath;
 	std::uint64_t FrameId = 0;
-	std::uint32_t ViewMode = 0;
-	std::string ViewModeName;
 	std::string DebugName;
 };
 
@@ -45,8 +43,6 @@ struct RhiCaptureResult final
 	ERhiCaptureStatus Status = ERhiCaptureStatus::Failed;
 	ERhiBackendApi BackendApi = ERhiBackendApi::Unknown;
 	std::uint64_t FrameId = 0;
-	std::uint32_t ViewMode = 0;
-	std::string ViewModeName;
 	std::filesystem::path ArtifactPath;
 	std::string FailureReason;
 };

@@ -32,6 +32,16 @@ Prefer persistent indexed state plus dirty ranges over full scene rebuild/upload
 - A supported alternate renderer path must produce the same declared product contract, be selected explicitly by the owning Renderer policy, and carry its own correctness evidence. A deferred implementation is not a fallback.
 - Shadow visibility consumed by direct lighting is mandatory. Schedule the selected real producer without a high-level capability guard; shader/runtime/RHI owners expose an unavailable implementation through their normal materialization or execution failure contract.
 
+## Frame-Graph Composition
+
+- `FramePipeline::BuildRenderFrameGraph` is the existing composition root. It reads renderer policy at the branch that consumes it and directly schedules exactly one concrete middle-frame implementation; it does not manufacture a recipe object, registry, factory dependency bag, callback, or selector hierarchy.
+- The selected feature owns its passes, resources, state, and local policy. The composition root owns only shared resource creation, shared scene publication, the one mutually exclusive Lit-versus-alternate branch, shared downstream processing, and the common product contract.
+- UI view modes are frontend presentation state. Editor translates them into concrete Renderer controls; UI enums, labels, ordering, grouping, and selection identity do not enter viewport requests, `RenderView`, graph settings, capture payloads, RHI requests/results, shader constants, or feature session identity.
+- Renderer owns renderable facts and mechanisms: canonical scene/view data, feature CVars, graph composition, passes, resources, shader parameters, feature lifecycle, and generic products/progress. It does not own a frontend aggregate whose only purpose is to remember which menu item produced those controls.
+- A visualization selector is a concrete Renderer/debug capability, not a view-mode mirror. Read it where its raster/shader behavior is resolved; carry only the scalar shader parameter required by the executing shader. A rendering-route selector is independent and is read at the composition point that replaces the affected frame stages.
+- Read CVar-controlled implementation policy at the narrow composition/pass owner that consumes it. Retain a resolved value only when it is required for graph topology identity, extent, thread handoff, or another named lifetime boundary; never copy it through request/settings/context layers merely to reach the decision.
+- A frame-graph helper or factory must not accumulate concrete feature objects. When the existing `FramePipeline` already owns a feature's lifetime, its graph-composition member invokes that feature directly instead of threading it through lower-level constructors or function parameters.
+
 ## Shader Parameter Identity
 
 - A shader parameter has one authoritative name. The C++ parameter member, generated graph/layout metadata, reflected HLSL binding, cooked binding record, and runtime lookup all use that exact name.
@@ -70,6 +80,8 @@ Parallel CPU recording does not prove GPU overlap. Add GPU queue concurrency onl
 
 - Does the change preserve the Renderer side of every applicable dependency, ownership, frame-graph, lifetime, recording, parity, and enforcement rule?
 - Does every required render product have one real producer, with missing capability rejected before scheduling rather than hidden by fabricated output?
+- Does the frame composition contain one readable renderer-policy branch, with feature mechanism enclosed and no recipe hierarchy, dependency bag, repeated selector, UI vocabulary, or RHI leakage?
+- Can Editor be removed while the same Renderer feature remains selectable by its own control, and can Renderer be removed without leaving UI taxonomy in RHI or Application contracts?
 - Does every shader parameter have one exact C++/metadata/HLSL binding name with no alias or reflection fallback?
 - Does graphics setup state only non-derivable raster intent while attachments, geometry, shaders, and the pipeline owner supply their own facts exactly once?
 - Is every materialized graphics pipeline keyed by the complete state and created only when an actual draw requests it?

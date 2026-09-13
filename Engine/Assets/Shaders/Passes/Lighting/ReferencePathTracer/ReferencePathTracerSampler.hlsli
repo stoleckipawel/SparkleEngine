@@ -3,10 +3,10 @@
 
 #include "/Engine/Common/Random.hlsli"
 
-namespace ReferencePathTracerSampler
+namespace ReferencePathTracer
 {
-	static const uint FilmX = 0u;
-	static const uint FilmY = 1u;
+	static const uint FilmXDimension = 0u;
+	static const uint FilmYDimension = 1u;
 	static const uint SurfaceDimensionBegin = 8u;
 	static const uint SurfaceDimensionStride = 8u;
 	static const uint LightChoiceOffset = 0u;
@@ -16,12 +16,21 @@ namespace ReferencePathTracerSampler
 	static const uint BsdfDirectionXOffset = 4u;
 	static const uint BsdfDirectionYOffset = 5u;
 	static const uint RouletteOffset = 6u;
-	uint Word(uint2 pixelCoord, uint sampleOrdinal, uint dimensionId, uint sessionSeed, uint replicateId)
+
+	struct SampleIdentity
+	{
+		uint2 PixelCoord;
+		uint SampleOrdinal;
+		uint SessionSeed;
+		uint ReplicateId;
+	};
+
+	uint RandomWord(SampleIdentity identity, uint dimensionId)
 	{
 		const uint dimensionBlock = dimensionId >> 2u;
-		const uint packedPixel = (pixelCoord.y << 14u) | pixelCoord.x;
-		const uint4 result =
-		    CommonRandom::Philox4x32(uint4(packedPixel, sampleOrdinal, dimensionBlock, 0x52505431u), uint2(sessionSeed, replicateId));
+		const uint packedPixel = (identity.PixelCoord.y << 14u) | identity.PixelCoord.x;
+		const uint4 result = CommonRandom::Philox4x32(uint4(packedPixel, identity.SampleOrdinal, dimensionBlock, 0x52505431u),
+		                                              uint2(identity.SessionSeed, identity.ReplicateId));
 		return result[dimensionId & 3u];
 	}
 
@@ -29,7 +38,6 @@ namespace ReferencePathTracerSampler
 	{
 		return SurfaceDimensionBegin + SurfaceDimensionStride * surfaceDepth + offset;
 	}
-
 }
 
 #endif

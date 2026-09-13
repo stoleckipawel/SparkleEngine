@@ -196,7 +196,8 @@ void UI::Update()
 	Build();
 	if (m_viewportPanel && m_viewportSession)
 	{
-		m_viewportPanel->SetRenderViewMode(m_viewportSession->GetViewMode());
+		const EditorViewportViewMode viewMode = m_viewportSession->GetViewMode();
+		m_viewportPanel->SetRenderProgressVisible(viewMode == EditorViewportViewMode::ReferencePathTracer);
 	}
 	m_renderPacket = m_renderPacketBuilder->Build(*ImGui::GetDrawData(), UiPresentationMode::EditorViewport, m_viewportGeneration);
 }

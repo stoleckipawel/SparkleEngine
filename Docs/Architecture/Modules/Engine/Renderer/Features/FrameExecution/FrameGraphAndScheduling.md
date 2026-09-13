@@ -4,6 +4,8 @@
 
 **Verified:** 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
+**Recipe-composition amendment:** refreshed 2026-09-13 against source input `9689e6ba870a01ef703da723648d3837e6b20863` plus the current scoped working tree; no build, runtime, GPU, native-validation, performance, or release proof is implied
+
 **Scope:** `REN-FG-01` through `REN-FG-08` and the frame-graph portion of `REN-OWN-04`/`REN-OWN-06`; defines how Renderer feature declarations become resources, dependencies, barriers, queue submissions, and retirement
 
 **Current readiness:** **50/100** — dependency compilation, barriers, transients, queues, recording, and submission exist in source; correctness, failure, parity, and cost evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
@@ -31,7 +33,7 @@ This is infrastructure used by features, not a visual feature by itself. Its obs
 | Phase | Current operation | Owned result |
 | --- | --- | --- |
 | Topology resolution | `FramePipeline` resolves extents, output target/format, lighting/GBuffer modes, ray frontends, provider key, shader generation, and relevant SBT-plan generation. | `RenderFrameGraphSettings` plus topology identity |
-| Graph construction | `RenderFrameGraphFactory` calls `BuildRenderFrameGraph`; feature helpers create/import/reserve resources and add typed raster, compute, ray tracing, transfer, or external-provider passes. | Persistent `FrameGraph` declaration and `RenderFrameGraphResources` handles |
+| Graph construction | `FramePipeline` constructs the graph and its `BuildRenderFrameGraph` composition member owns the sole Lit-versus-Reference branch; feature helpers create/import/reserve resources and add typed raster, compute, ray tracing, transfer, or external-provider passes. Common exposure history is declared before the branch, while ReSTIR reservoir histories are declared only inside Lit. | Persistent `FrameGraph` declaration and `RenderFrameGraphResources` handles |
 | Per-frame binding | Current TLAS, sky, GPU-scene buffers, frame/scene/view/display/shadow parameters, and resource-production callbacks are applied. | Current native resources and parameter instances bound to persistent graph handles |
 | Setup and compile | Pass setup runs; texture histories and imported accesses synchronize; compiler builds resource versions, dependencies, queues, transient lifetimes/blocks, aliasing/state barriers, submission batches, and recording plan. | `FrameGraphPlan` for this execution |
 | Materialize and record | Transients are materialized, initial barriers recorded, batches recorded serially or through bounded Tasks chunks, and waits derived from producer batch tokens. | One or more RHI command-recording batches |
@@ -63,7 +65,7 @@ Queue existence does not prove useful overlap. When any non-graphics queue is us
 
 ## Rebuild And Invalidation
 
-The graph rebuilds when output/render extent or output target/format changes, GBuffer frontend changes, active ray execution plan changes, image-provider graph key changes, shader generation changes, or a graph using the scene SBT observes a new table-plan generation. A future active Reference Path Tracer route will add its per-view product/topology identity here; the Stage 1 contract-only selector does not fabricate a graph branch. Resize drains/rebuilds swapchain-coupled execution; other changes retire the old graph asynchronously.
+The graph rebuilds when output/render extent or output target/format changes, `r.ReferencePathTracer` changes the middle-frame topology, GBuffer frontend changes, active ray execution plan changes, image-provider graph key changes, shader generation changes, or a graph using the scene SBT observes a new table-plan generation. `FramePipeline::BuildRenderFrameGraph` reads the Reference switch at the one composition point and schedules either Lit or Reference passes directly. Resize drains/rebuilds swapchain-coupled execution; other changes retire the old graph asynchronously.
 
 Rebuild invalidates view/frame/provider history. The tradeoff is simple, inspectable immutable topology at the cost of rebuild/materialization churn. Current source still performs setup and compile work per executed frame; its CPU cost and the value of further caching are unmeasured.
 

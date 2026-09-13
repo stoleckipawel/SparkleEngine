@@ -17,7 +17,7 @@ A registered name is not automatically a feature. A trustworthy selector has a p
 
 ## Persisted Renderer Settings Section
 
-`EngineRenderingSettingsPersistence` owns 26 names under `/Script/SparkleRenderer.EngineRenderingSettings` in workspace `Config/DefaultEngine.ini`. The editor settings section captures/applies the same state. View mode is not a Renderer setting: each Editor viewport owns it in `EditorViewportSession`, and the request boundary carries it to Renderer.
+`EngineRenderingSettingsPersistence` owns 26 names under `/Script/SparkleRenderer.EngineRenderingSettings` in workspace `Config/DefaultEngine.ini`. The editor settings section captures/applies the same state. Editor view mode is not a Renderer setting: `EditorViewportSession` owns its label and ordering and maps each entry directly to concrete Renderer CVars.
 
 | Feature | Persisted selectors | Default/request boundary | Active owner and effect |
 | --- | --- | --- | --- |
@@ -27,7 +27,7 @@ A registered name is not automatically a feature. A trustworthy selector has a p
 | Upscaling | `r.Upscaler.Provider`, `r.Upscaler.QualityMode` | Linear, NativeAA | [reconstruction/upscaling](../PostProcessing/ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md) provider stack and graph key; external provider may resolve back to Linear |
 | Ray reconstruction | `r.RayReconstruction.Mode` | Off | [reconstruction/upscaling](../PostProcessing/ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md) provider stack; ReSTIR only; unavailable path resolves Off |
 | GBuffer | `r.GBuffer.Algorithm`, `r.GBuffer.RayTracingExecution` | Rasterized, Automatic | graph topology plus ray-GBuffer execution plan |
-| Reference Path Tracer | `ViewportRenderRequest.ViewMode = RenderViewMode::ReferencePathTracer` | Lit | Per-view semantic contract in the existing frame pipeline; no clickable Stage 1 UI, transport allocation, or fallback |
+| Reference Path Tracer | `r.ReferencePathTracer` | off | Renderer lighting-route selector read once by `FramePipeline::BuildRenderFrameGraph`; Editor may drive it from its own view-mode UX without publishing that UI taxonomy into Renderer or RHI |
 | Mesh work | `r.MeshAutoBatching` | on | per-view raster batch construction |
 | Classic TLAS | `r.RayTracing.Tlas.Refit` | on | classic TLAS strategy after initial build |
 | PTLAS | `r.RayTracing.PreferPartitionedTlas`, `r.RayTracing.Ptlas.PartitionsPerAxis`, `r.RayTracing.Ptlas.PartitionUpdateMode`, `r.RayTracing.Ptlas.MarkAllDynamicInPartition`, `r.RayTracing.Ptlas.ModeChangeDistance` | off, 8, AlwaysUpdatePartition, false, 100 | RHI capability preference plus per-view partition planner; actual current execution remains the narrow one-operation/no-update/no-translation strategy |
@@ -38,7 +38,8 @@ The settings writer replaces only its owned INI section. Loading silently ignore
 
 | Selector | Default/domain | Current consumer and effect | Persistence/reachability boundary | Dossier |
 | --- | --- | --- | --- | --- |
-| `r.ViewMode` | Lit, Reference Path Tracer, plus 15 final/debug modes | diagnostic default adapter only when no per-viewport request identity exists; Wireframe also alters raster fill | console-only compatibility-free diagnostic surface; Editor view mode lives in `EditorViewportSession` and is not Renderer settings/persistence | [Debug Views](../DebugViews/README.md) and [Reference Path Tracer](../Lighting/ReferencePathTracer/README.md) |
+| `r.Visualization` | Lit plus 15 debug choices | active Renderer visualization selector; `RenderViewBuilder` writes its scalar shader input and Wireframe also alters raster fill | console surface; Editor maps its own view-mode entries to it, but no UI mode or selector copy enters viewport/view/RHI contracts | [Debug Views](../DebugViews/README.md) |
+| `r.ReferencePathTracer` | off/on | selects the mutually exclusive Reference middle inside `FramePipeline::BuildRenderFrameGraph`; changing it rebuilds topology | console feature selector; Editor may drive it from its own ordered view-mode UX, but no UI identity enters Renderer/RHI contracts | [Reference Path Tracer](../Lighting/ReferencePathTracer/README.md) |
 | `r.RayTracing.Shadows.Execution` | Automatic, Inline, Pipeline | direct-shadow execution plan and graph topology | console surface; not mirrored by `EngineRenderingSettingsState` | [Direct Lighting](../Lighting/DirectLighting/README.md) and [Ray Tracing](../RayTracing/README.md) |
 | `r.RayTracedShadows.NormalBias` | 0.01 world units | shadow ray input | console only; inspected frame binding does not clamp it | [Direct Lighting](../Lighting/DirectLighting/README.md) |
 | `r.RayTracedShadows.MaxDistance` | 100000 world units | directional shadow ray maximum | console only; inspected frame binding does not clamp it | [Direct Lighting](../Lighting/DirectLighting/README.md) |

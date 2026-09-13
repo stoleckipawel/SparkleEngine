@@ -146,8 +146,12 @@ void RendererImageProviderStack::ResetHistory() noexcept
 	m_resetHistoryPending = true;
 }
 
-void RendererImageProviderStack::SetupFrame(const ImageProviderFrameInput& frameInput)
+void RendererImageProviderStack::SetupFrame(const ImageProviderFrameInput& frameInput, ImageProviderPipeline pipeline)
 {
+	if (pipeline == ImageProviderPipeline::NativeResolution)
+	{
+		return;
+	}
 	ImageProviderFrameInput providerInput = frameInput;
 	providerInput.ResetHistory |= m_resetHistoryPending;
 	m_resetHistoryPending = false;
@@ -155,7 +159,7 @@ void RendererImageProviderStack::SetupFrame(const ImageProviderFrameInput& frame
 	{
 		m_upscaler->SetupFrame(providerInput);
 	}
-	if (m_rayReconstruction != nullptr)
+	if (pipeline == ImageProviderPipeline::RayReconstruction && m_rayReconstruction != nullptr)
 	{
 		m_rayReconstruction->SetupFrame(providerInput);
 	}
@@ -165,6 +169,10 @@ RenderViewportExtent RendererImageProviderStack::ResolveRenderExtent(
     RenderViewportExtent outputExtent,
     ImageProviderPipeline pipeline) noexcept
 {
+	if (pipeline == ImageProviderPipeline::NativeResolution)
+	{
+		return outputExtent;
+	}
 	if (pipeline == ImageProviderPipeline::RayReconstruction && m_rayReconstruction != nullptr)
 	{
 		return m_rayReconstruction->ResolveRenderExtent(outputExtent);
