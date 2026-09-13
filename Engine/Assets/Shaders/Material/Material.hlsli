@@ -96,7 +96,7 @@ namespace Material
 			return float3(0.0f, 0.0f, 1.0f);
 		}
 
-		return UnpackMaterialNormal(TextureNormal.Sample(SamplerAniso16xWrap, UV).xy);
+		return UnpackMaterialNormal(TextureNormal.Sample(SamplerAniso16xWrap, UV).rgb, 1.0f);
 	}
 
 	float SampleRoughness(float2 UV)

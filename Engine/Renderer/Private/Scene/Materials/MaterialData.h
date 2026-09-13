@@ -3,6 +3,7 @@
 #include "Core/Public/Assets/TextureGroup.h"
 #include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "ShaderData/PerObjectConstantBufferData.h"
+#include "ShaderData/MaterialTextureMappingData.h"
 
 #include <DirectXMath.h>
 #include <array>
@@ -56,6 +57,7 @@ struct MaterialData
 	    InvalidMaterialTextureIndex,
 	    InvalidMaterialTextureIndex,
 	    InvalidMaterialTextureIndex};
+	std::array<MaterialTextureMappingData, MaterialTextureSlots::Count> materialTextureMappings = {};
 
 	RhiDescriptorTableBinding rasterTextureTable = {};
 

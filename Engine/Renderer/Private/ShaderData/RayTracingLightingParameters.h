@@ -21,12 +21,6 @@ void RegisterRayTracingLightingParameterSetups(FrameGraphBuilder& builder, TPara
 		    .MipFilter = RhiSamplerMipFilter::Linear,
 		    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Clamp)};
 	}
-	parameterFields->MaterialTextureSampler = RhiSamplerDesc{
-	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
-	    .MipFilter = RhiSamplerMipFilter::Linear,
-	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Wrap),
-	    .MaxAnisotropy = RhiSamplerAnisotropy::X1};
-
 	if constexpr (requires { parameterFields->Frame; })
 	{
 		builder.AddParameterSetup<FrameUniformData>(parameters, [](auto& fields, const FrameUniformData& frame) { fields.Frame = frame; });

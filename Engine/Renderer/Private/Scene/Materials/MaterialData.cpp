@@ -2,6 +2,8 @@
 #include "Scene/Materials/MaterialData.h"
 #include "Scene/Materials/MaterialDesc.h"
 
+#include <cmath>
+
 MaterialGpuHandle::operator bool() const noexcept
 {
 	return Index != UINT32_MAX && Generation != 0u;
@@ -23,22 +25,33 @@ MaterialData MaterialData::FromDesc(const MaterialDesc& desc)
 	mat.alphaCutoff = desc.alphaCutoff;
 	mat.doubleSided = desc.doubleSided;
 
-	auto setTextureFlag = [&mat, &desc](TextureGroup textureGroup)
+	auto setTexture = [&mat, &desc](TextureGroup textureGroup, std::uint32_t slot)
 	{
-		if (desc.HasTextureReference(textureGroup))
+		if (const Assets::CookedTextureReference* texture = desc.FindTextureReference(textureGroup))
 		{
 			mat.textureFlags |= GetTextureGroupFlag(textureGroup);
+			const float cosine = std::cos(texture->mapping.Rotation);
+			const float sine = std::sin(texture->mapping.Rotation);
+			mat.materialTextureMappings[slot] = MaterialTextureMappingData{
+			    .UvLinear = {cosine * texture->mapping.Scale.x,
+			                 -sine * texture->mapping.Scale.y,
+			                 sine * texture->mapping.Scale.x,
+			                 cosine * texture->mapping.Scale.y},
+			    .UvOffset = texture->mapping.Offset,
+			    .Strength = texture->mapping.Strength,
+			    .AddressModes = static_cast<std::uint32_t>(texture->mapping.AddressU)
+			        | (static_cast<std::uint32_t>(texture->mapping.AddressV) << 2u)};
 		}
 	};
 
-	setTextureFlag(TextureGroup::Diffuse);
-	setTextureFlag(TextureGroup::NormalMap);
-	setTextureFlag(TextureGroup::Roughness);
-	setTextureFlag(TextureGroup::Metallic);
-	setTextureFlag(TextureGroup::AmbientOcclusion);
-	setTextureFlag(TextureGroup::Emissive);
-	setTextureFlag(TextureGroup::SubsurfaceColor);
-	setTextureFlag(TextureGroup::SubsurfaceStrength);
+	setTexture(TextureGroup::Diffuse, MaterialTextureSlots::BaseColor);
+	setTexture(TextureGroup::NormalMap, MaterialTextureSlots::Normal);
+	setTexture(TextureGroup::Roughness, MaterialTextureSlots::Roughness);
+	setTexture(TextureGroup::Metallic, MaterialTextureSlots::Metallic);
+	setTexture(TextureGroup::AmbientOcclusion, MaterialTextureSlots::Occlusion);
+	setTexture(TextureGroup::Emissive, MaterialTextureSlots::Emissive);
+	setTexture(TextureGroup::SubsurfaceColor, MaterialTextureSlots::SubsurfaceColor);
+	setTexture(TextureGroup::SubsurfaceStrength, MaterialTextureSlots::SubsurfaceStrength);
 
 	return mat;
 }

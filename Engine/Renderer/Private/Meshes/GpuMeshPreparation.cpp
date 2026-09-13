@@ -66,7 +66,12 @@ void GpuMeshPreparation::BuildBoundsAndRayTracing(GpuMeshPreparedData& output)
 		}
 
 		output.RayTracingVertices.push_back(
-		    RayTracingHitVertex{.Position = vertex.position, .Normal = vertex.normal, .Tangent = vertex.tangent, .TexCoord0 = vertex.uv});
+		    RayTracingHitVertex{
+		        .Position = vertex.position,
+		        .Normal = vertex.normal,
+		        .Tangent = vertex.tangent,
+		        .TexCoord0 = vertex.uv,
+		        .Color = vertex.color});
 	}
 
 	output.RayTracingIndices.assign(meshData.indices.begin(), meshData.indices.end());

@@ -109,6 +109,14 @@ public:
 		{
 			hash = Hash::ContinueFnv1a64Value(hash, textureIndex);
 		}
+		for (const MaterialTextureMappingData& mapping : material.materialTextureMappings)
+		{
+			hash = LightingStateHash::AppendFloat4(hash, mapping.UvLinear);
+			hash = Hash::ContinueFnv1a64Value(hash, mapping.UvOffset.x);
+			hash = Hash::ContinueFnv1a64Value(hash, mapping.UvOffset.y);
+			hash = Hash::ContinueFnv1a64Value(hash, mapping.Strength);
+			hash = Hash::ContinueFnv1a64Value(hash, mapping.AddressModes);
+		}
 		hash = Hash::ContinueFnv1a64Value(hash, material.gpuHandle.Index);
 		return Hash::ContinueFnv1a64Value(hash, material.gpuHandle.Generation);
 	}

@@ -56,7 +56,6 @@ public:
 	SHADER_PARAMETER_BUFFER_SRV(SpotLightGpuData, SpotLights)
 	SHADER_PARAMETER_BUFFER_SRV(RectLightGpuData, RectLights)
 	SHADER_PARAMETER_TEXTURE_SRV_ARRAY(Texture2D, MaterialTextureTable, MaterialTextureTableFixedCapacity)
-	SHADER_PARAMETER_SAMPLER(SamplerState, MaterialTextureSampler)
 	SHADER_PARAMETER_CBUFFER(RestirIndirectLightingUniformData, RestirIndirectConstants)
 	END_SHADER_PARAMETER_STRUCT()
 };

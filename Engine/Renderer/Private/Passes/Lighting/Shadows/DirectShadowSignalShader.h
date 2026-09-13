@@ -36,7 +36,6 @@ public:
 	SHADER_PARAMETER_BUFFER_SRV(RayTracingHitInstance, RayTracingHitInstances)
 	SHADER_PARAMETER_BUFFER_SRV(RayTracingHitMaterial, RayTracingHitMaterials)
 	SHADER_PARAMETER_TEXTURE_SRV_ARRAY(Texture2D, MaterialTextureTable, MaterialTextureTableFixedCapacity)
-	SHADER_PARAMETER_SAMPLER(SamplerState, MaterialTextureSampler)
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, GBufferNormal)
 	SHADER_PARAMETER_ACCELERATION_STRUCTURE(SceneTlas)
 	END_SHADER_PARAMETER_STRUCT()

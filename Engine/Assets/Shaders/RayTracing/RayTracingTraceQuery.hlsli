@@ -12,7 +12,7 @@ RayTracingTraceResult TraceOpaqueRayQuery(RaytracingAccelerationStructure sceneT
                                           uint instanceMask)
 {
 	RayDesc ray;
-	ray.Direction = normalize(directionWorld);
+	ray.Direction = directionWorld;
 	ray.Origin = originWorld;
 	ray.TMin = tMin;
 	ray.TMax = tMax;

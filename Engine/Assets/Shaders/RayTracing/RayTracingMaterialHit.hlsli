@@ -1,26 +1,11 @@
 #pragma once
 
-#include "/Engine/Resources/MeshInstanceShaderData.hlsli"
-
-#include "/Engine/Common/Math.hlsli"
 #include "/Engine/Geometry/Basis.hlsli"
-#include "/Engine/Geometry/Morphing.hlsli"
-#include "/Engine/Geometry/Skinning.hlsli"
 #include "/Engine/Material/MaterialNormal.hlsli"
-#include "/Engine/Material/MaterialTextureTable.hlsli"
-#include "/Engine/RayTracing/RayTracingHitData.hlsli"
+#include "/Engine/RayTracing/RayEndpoints.hlsli"
 #include "/Engine/RayTracing/RayTracingHitSurface.hlsli"
+#include "/Engine/RayTracing/RayTracingMaterialAlpha.hlsli"
 #include "/Engine/RayTracing/RayTracingTraceResult.hlsli"
-
-Texture2D MaterialTextureTable[4096];
-SamplerState MaterialTextureSampler;
-
-float4 SampleRayTracingMaterialTexture(RayTracingHitMaterial material, uint textureSlot, float2 uv)
-{
-	const uint textureIndex =
-	    MaterialTextureTableSampling::ResolveTextureIndex(material.TextureIndices0, material.TextureIndices1, textureSlot);
-	return MaterialTextureTableSampling::SampleLevel(MaterialTextureTable, MaterialTextureSampler, textureIndex, uv);
-}
 
 void ResolveRayTracingHitMaterialTextures(RayTracingHitMaterial material,
                                           float2 uv,
@@ -44,288 +29,163 @@ void ResolveRayTracingHitMaterialTextures(RayTracingHitMaterial material,
 
 	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotNormal))
 	{
-		normalTangent =
-		    UnpackMaterialNormal(SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotNormal, uv).xy);
+		const MaterialTextureMappingData mapping = material.TextureMappings[MaterialTextureTableSampling::TextureSlotNormal];
+		normalTangent = UnpackMaterialNormal(
+		    SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotNormal, uv).rgb, mapping.Strength);
 	}
-
 	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotBaseColor))
 	{
 		baseColor = SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotBaseColor, uv) * material.BaseColor;
 	}
-
 	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotRoughness))
 	{
-		roughness =
-		    SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotRoughness, uv).r * material.Roughness;
+		roughness = SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotRoughness, uv).r * material.Roughness;
 	}
-
 	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotMetallic))
 	{
 		metallic = SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotMetallic, uv).r * material.Metallic;
 	}
-
 	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotEmissive))
 	{
-		emissive =
-		    SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotEmissive, uv).rgb * material.EmissiveColor;
+		emissive = SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotEmissive, uv).rgb
+		         * material.EmissiveColor;
 	}
-
 	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotOcclusion))
 	{
-		ambientOcclusion = SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotOcclusion, uv).r;
+		const MaterialTextureMappingData mapping = material.TextureMappings[MaterialTextureTableSampling::TextureSlotOcclusion];
+		const float sampledOcclusion =
+		    SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotOcclusion, uv).r;
+		ambientOcclusion = lerp(1.0f, sampledOcclusion, mapping.Strength);
 	}
-
 	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotSubsurfaceColor))
 	{
 		subsurfaceColor = SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotSubsurfaceColor, uv).rgb
-		    * material.SubsurfaceColor;
+		                * material.SubsurfaceColor;
 	}
-
 	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotSubsurfaceStrength))
 	{
-		subsurfaceStrength = SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotSubsurfaceStrength, uv).r
+		subsurfaceStrength =
+		    SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotSubsurfaceStrength, uv).r
 		    * material.SubsurfaceStrength;
 	}
 }
 
-bool ResolveRayTracingCandidateAlpha(uint instanceId,
-                                     uint primitiveIndex,
-                                     float2 barycentrics,
-                                     out float sampledAlpha,
-                                     out float alphaCutoff)
+RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult trace, float3 rayDirectionWorld)
 {
-	sampledAlpha = 1.0f;
-	alphaCutoff = 0.5f;
+	const RayTracingEvaluatedTriangle triangle =
+	    EvaluateRayTracingTriangle(trace.InstanceId, trace.PrimitiveIndex, trace.Barycentrics);
+	const MeshInstanceData mesh = MeshInstances[trace.InstanceId];
+	const float3 positionObject = InterpolateRayTracingPosition(triangle);
+	const float3 positionWorld = mul(float4(positionObject, 1.0f), mesh.WorldMatrix).xyz;
+	const float3 p0World = mul(float4(triangle.V0.Position, 1.0f), mesh.WorldMatrix).xyz;
+	const float3 p1World = mul(float4(triangle.V1.Position, 1.0f), mesh.WorldMatrix).xyz;
+	const float3 p2World = mul(float4(triangle.V2.Position, 1.0f), mesh.WorldMatrix).xyz;
+	const float3 normalObject = cross(triangle.V1.Position - triangle.V0.Position, triangle.V2.Position - triangle.V0.Position);
+	const float3 outwardGeometricNormal = normalize(cross(p1World - p0World, p2World - p0World));
+	const bool twoSided = (triangle.Instance.Flags & RayTracingHitSurface::InstanceFlagTwoSided) != 0u;
 
-	RayTracingHitInstance hitInstance = (RayTracingHitInstance)0;
-	RayTracingHitMaterial material = (RayTracingHitMaterial)0;
-	float3 barycentricWeights = 0.0f.xxx;
-	uint3 vertexIndices = 0u.xxx;
-	RayTracingHitVertex v0 = (RayTracingHitVertex)0;
-	RayTracingHitVertex v1 = (RayTracingHitVertex)0;
-	RayTracingHitVertex v2 = (RayTracingHitVertex)0;
-	uint rejectionReason = RayTracingHitSurface::ReasonNone;
-	if (!TryLoadRayTracingHitTriangle(instanceId,
-	                                  primitiveIndex,
-	                                  barycentrics,
-	                                  hitInstance,
-	                                  material,
-	                                  barycentricWeights,
-	                                  vertexIndices,
-	                                  v0,
-	                                  v1,
-	                                  v2,
-	                                  rejectionReason))
-	{
-		return true;
-	}
-
-	if (material.AlphaMode == RayTracingHitSurface::AlphaModeBlended)
-	{
-		return true;
-	}
-	if (material.AlphaMode != RayTracingHitSurface::AlphaModeTested)
-	{
-		return true;
-	}
-
-	const float2 uv = v0.TexCoord0 * barycentricWeights.x + v1.TexCoord0 * barycentricWeights.y + v2.TexCoord0 * barycentricWeights.z;
-	float4 baseColor = material.BaseColor;
-	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotBaseColor))
-	{
-		baseColor = SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotBaseColor, uv) * material.BaseColor;
-	}
-
-	sampledAlpha = saturate(baseColor.a);
-	alphaCutoff = saturate(material.AlphaCutoff);
-	return sampledAlpha >= alphaCutoff;
-}
-
-RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult trace, float3 rayOriginWorld, float3 rayDirectionWorld)
-{
-	RayTracingHitSurfaceData surface;
-	surface.Valid = false;
-	surface.PositionWorld = rayOriginWorld + rayDirectionWorld * trace.RayT;
-	surface.PreviousPositionWorld = surface.PositionWorld;
-	surface.NormalWorld = 0.0f.xxx;
-	surface.TangentWorld = 0.0f.xxx;
-	surface.BitangentWorld = 0.0f.xxx;
-	surface.NormalTangent = float3(0.0f, 0.0f, 1.0f);
-	surface.TangentSign = 1.0f;
-	surface.TexCoord0 = 0.0f.xx;
-	surface.MaterialSlot = 0u;
-	surface.GeometryFlags = 0u;
-	surface.RejectionReason = trace.Hit ? RayTracingHitSurface::ReasonInvalidHitData : RayTracingHitSurface::ReasonNoHit;
-	surface.BaseColor = 0.0f.xxx;
-	surface.EmissiveColor = 0.0f.xxx;
-	surface.SubsurfaceColor = 0.0f.xxx;
-	surface.Roughness = 1.0f;
-	surface.Metallic = 0.0f;
-	surface.DielectricF0 = 0.04f;
-	surface.AmbientOcclusion = 1.0f;
-	surface.Alpha = 1.0f;
-	surface.SubsurfaceStrength = 0.0f;
-	surface.AlphaMode = RayTracingHitSurface::AlphaModeOpaque;
-	surface.GpuSceneSlot = 0u;
-
-	if (!trace.Hit)
-	{
-		return surface;
-	}
-
-	RayTracingHitInstance hitInstance = (RayTracingHitInstance)0;
-	RayTracingHitMaterial material = (RayTracingHitMaterial)0;
-	float3 barycentricWeights = 0.0f.xxx;
-	uint3 vertexIndices = 0u.xxx;
-	RayTracingHitVertex v0 = (RayTracingHitVertex)0;
-	RayTracingHitVertex v1 = (RayTracingHitVertex)0;
-	RayTracingHitVertex v2 = (RayTracingHitVertex)0;
-	uint rejectionReason = RayTracingHitSurface::ReasonNone;
-	if (!TryLoadRayTracingHitTriangle(trace.InstanceId,
-	                                  trace.PrimitiveIndex,
-	                                  trace.Barycentrics,
-	                                  hitInstance,
-	                                  material,
-	                                  barycentricWeights,
-	                                  vertexIndices,
-	                                  v0,
-	                                  v1,
-	                                  v2,
-	                                  rejectionReason))
-	{
-		surface.MaterialSlot = hitInstance.MaterialSlot;
-		surface.GeometryFlags = hitInstance.GeometryFlags;
-		surface.RejectionReason = rejectionReason;
-		return surface;
-	}
-	surface.MaterialSlot = hitInstance.MaterialSlot;
-	surface.GeometryFlags = hitInstance.GeometryFlags;
-	surface.RejectionReason = hitInstance.RejectionReason;
-	surface.AlphaMode = hitInstance.AlphaMode;
-
-	const MeshInstanceData meshInstance = MeshInstances[trace.InstanceId];
-	const MorphedVertexAttributes morphed0 = ApplyMorphing(meshInstance,
-	                                                       hitInstance.MorphTargetDeltaOffset,
-	                                                       vertexIndices.x - hitInstance.FirstVertex,
-	                                                       v0.Position,
-	                                                       v0.Normal,
-	                                                       v0.Tangent.xyz);
-	const MorphedVertexAttributes morphed1 = ApplyMorphing(meshInstance,
-	                                                       hitInstance.MorphTargetDeltaOffset,
-	                                                       vertexIndices.y - hitInstance.FirstVertex,
-	                                                       v1.Position,
-	                                                       v1.Normal,
-	                                                       v1.Tangent.xyz);
-	const MorphedVertexAttributes morphed2 = ApplyMorphing(meshInstance,
-	                                                       hitInstance.MorphTargetDeltaOffset,
-	                                                       vertexIndices.z - hitInstance.FirstVertex,
-	                                                       v2.Position,
-	                                                       v2.Normal,
-	                                                       v2.Tangent.xyz);
-	const MorphedVertexAttributes previousMorphed0 = ApplyPreviousMorphing(meshInstance,
-	                                                                       hitInstance.MorphTargetDeltaOffset,
-	                                                                       vertexIndices.x - hitInstance.FirstVertex,
-	                                                                       v0.Position,
-	                                                                       v0.Normal,
-	                                                                       v0.Tangent.xyz);
-	const MorphedVertexAttributes previousMorphed1 = ApplyPreviousMorphing(meshInstance,
-	                                                                       hitInstance.MorphTargetDeltaOffset,
-	                                                                       vertexIndices.y - hitInstance.FirstVertex,
-	                                                                       v1.Position,
-	                                                                       v1.Normal,
-	                                                                       v1.Tangent.xyz);
-	const MorphedVertexAttributes previousMorphed2 = ApplyPreviousMorphing(meshInstance,
-	                                                                       hitInstance.MorphTargetDeltaOffset,
-	                                                                       vertexIndices.z - hitInstance.FirstVertex,
-	                                                                       v2.Position,
-	                                                                       v2.Normal,
-	                                                                       v2.Tangent.xyz);
-	const SkinnedVertexAttributes skinned0 =
-	    ApplySkinning(meshInstance, vertexIndices.x, morphed0.Position, morphed0.Normal, morphed0.Tangent);
-	const SkinnedVertexAttributes skinned1 =
-	    ApplySkinning(meshInstance, vertexIndices.y, morphed1.Position, morphed1.Normal, morphed1.Tangent);
-	const SkinnedVertexAttributes skinned2 =
-	    ApplySkinning(meshInstance, vertexIndices.z, morphed2.Position, morphed2.Normal, morphed2.Tangent);
-	const SkinnedVertexAttributes previousSkinned0 =
-	    ApplyPreviousSkinning(meshInstance, vertexIndices.x, previousMorphed0.Position, previousMorphed0.Normal, previousMorphed0.Tangent);
-	const SkinnedVertexAttributes previousSkinned1 =
-	    ApplyPreviousSkinning(meshInstance, vertexIndices.y, previousMorphed1.Position, previousMorphed1.Normal, previousMorphed1.Tangent);
-	const SkinnedVertexAttributes previousSkinned2 =
-	    ApplyPreviousSkinning(meshInstance, vertexIndices.z, previousMorphed2.Position, previousMorphed2.Normal, previousMorphed2.Tangent);
-	const float3 localPosition =
-	    skinned0.Position * barycentricWeights.x + skinned1.Position * barycentricWeights.y + skinned2.Position * barycentricWeights.z;
-	const float3 previousLocalPosition = previousSkinned0.Position * barycentricWeights.x + previousSkinned1.Position * barycentricWeights.y
-	    + previousSkinned2.Position * barycentricWeights.z;
-	const float3 localNormal =
-	    skinned0.Normal * barycentricWeights.x + skinned1.Normal * barycentricWeights.y + skinned2.Normal * barycentricWeights.z;
-	const float3 localTangent =
-	    skinned0.Tangent * barycentricWeights.x + skinned1.Tangent * barycentricWeights.y + skinned2.Tangent * barycentricWeights.z;
-	const float tangentSign =
-	    (v0.Tangent.w * barycentricWeights.x + v1.Tangent.w * barycentricWeights.y + v2.Tangent.w * barycentricWeights.z) >= 0.0f ? 1.0f
-	                                                                                                                              : -1.0f;
-	const float3x3 worldInverseTranspose = (float3x3)meshInstance.WorldInverseTranspose;
-	const float3x3 worldMatrix = (float3x3)meshInstance.WorldMatrix;
-	float3 normalWorld = normalize(mul(localNormal, worldInverseTranspose));
-	float3 tangentWorld = normalize(mul(localTangent, worldMatrix));
-	const bool twoSided = (hitInstance.Flags & RayTracingHitSurface::InstanceFlagTwoSided) != 0u;
-	const bool frontFacing = dot(normalWorld, -rayDirectionWorld) >= 0.0f;
-	if (!frontFacing && !twoSided)
+	RayTracingHitSurfaceData surface = (RayTracingHitSurfaceData)0;
+	if (!trace.FrontFace && !twoSided)
 	{
 		surface.RejectionReason = RayTracingHitSurface::ReasonOneSidedBackface;
 		return surface;
 	}
-	tangentWorld = OrthonormalizeTangent(tangentWorld, normalWorld);
-	const float3 bitangentWorld = ComputeBitangentFromSign(normalWorld, tangentWorld, tangentSign);
+
+	const float faceSign = trace.FrontFace ? 1.0f : -1.0f;
+	const float3 geometricNormal = outwardGeometricNormal * faceSign;
+	const float3 localNormal = triangle.V0.Normal * triangle.BarycentricWeights.x
+	                         + triangle.V1.Normal * triangle.BarycentricWeights.y
+	                         + triangle.V2.Normal * triangle.BarycentricWeights.z;
+	const float3 localTangent = triangle.V0.Tangent * triangle.BarycentricWeights.x
+	                          + triangle.V1.Tangent * triangle.BarycentricWeights.y
+	                          + triangle.V2.Tangent * triangle.BarycentricWeights.z;
+	const float tangentSign = triangle.V0.TangentSign * triangle.BarycentricWeights.x
+	                        + triangle.V1.TangentSign * triangle.BarycentricWeights.y
+	                        + triangle.V2.TangentSign * triangle.BarycentricWeights.z
+	                            >= 0.0f
+	                        ? 1.0f
+	                        : -1.0f;
+	float3 vertexNormal = normalize(mul(localNormal, (float3x3)mesh.WorldInverseTranspose));
+	float3 tangentWorld = normalize(mul(localTangent, (float3x3)mesh.WorldMatrix));
+	if (dot(vertexNormal, outwardGeometricNormal) < 0.0f)
+	{
+		vertexNormal = -vertexNormal;
+	}
+	tangentWorld = OrthonormalizeTangent(tangentWorld, vertexNormal);
+	float3 bitangentWorld = ComputeBitangentFromSign(vertexNormal, tangentWorld, tangentSign);
+
+	float4 baseColor;
+	float roughness;
+	float metallic;
+	float3 emissive;
+	float3 normalTangent;
+	float ambientOcclusion;
+	float3 subsurfaceColor;
+	float subsurfaceStrength;
+	const float2 texCoord0 = InterpolateRayTracingTexCoord0(triangle);
+	ResolveRayTracingHitMaterialTextures(triangle.Material,
+	                                     texCoord0,
+	                                     baseColor,
+	                                     roughness,
+	                                     metallic,
+	                                     emissive,
+	                                     normalTangent,
+	                                     ambientOcclusion,
+	                                     subsurfaceColor,
+	                                     subsurfaceStrength);
+	baseColor *= InterpolateRayTracingColor(triangle);
+	float3 shadingNormal = TransformTangentNormalToWorld(normalTangent, vertexNormal, tangentWorld, bitangentWorld);
+	shadingNormal *= faceSign;
+	tangentWorld *= faceSign;
+	bitangentWorld *= faceSign;
+	if (dot(shadingNormal, geometricNormal) <= 0.0f)
+	{
+		surface.RejectionReason = RayTracingHitSurface::ReasonInvalidHitData;
+		return surface;
+	}
 
 	surface.Valid = true;
-	surface.PositionWorld = mul(float4(localPosition, 1.0f), meshInstance.WorldMatrix).xyz;
-	surface.PreviousPositionWorld = mul(float4(previousLocalPosition, 1.0f), meshInstance.PreviousWorldMatrix).xyz;
-	surface.NormalWorld = normalWorld;
+	surface.PositionWorld = positionWorld;
+	surface.PreviousPositionWorld = positionWorld;
+	surface.GeometricNormalWorld = geometricNormal;
+	surface.PositionError = RayEndpoints::SurfaceErrorBound(
+	    triangle, mesh, positionObject, positionWorld, normalObject, geometricNormal);
+	surface.NormalWorld = shadingNormal;
 	surface.TangentWorld = tangentWorld;
 	surface.BitangentWorld = bitangentWorld;
+	surface.NormalTangent = normalTangent;
 	surface.TangentSign = tangentSign;
-	surface.TexCoord0 = v0.TexCoord0 * barycentricWeights.x + v1.TexCoord0 * barycentricWeights.y + v2.TexCoord0 * barycentricWeights.z;
-	surface.MaterialSlot = hitInstance.MaterialSlot;
-	surface.GeometryFlags = hitInstance.GeometryFlags;
+	surface.TexCoord0 = texCoord0;
+	surface.MaterialSlot = triangle.Instance.MaterialSlot;
+	surface.GeometryFlags = triangle.Instance.GeometryFlags;
 	surface.RejectionReason = RayTracingHitSurface::ReasonNone;
-	surface.AlphaMode = material.AlphaMode;
-	surface.GpuSceneSlot = meshInstance.GpuSceneSlot;
+	surface.BaseColor = baseColor.rgb;
+	surface.EmissiveColor = emissive;
+	surface.SubsurfaceColor = subsurfaceColor;
+	surface.Roughness = roughness;
+	surface.Metallic = metallic;
+	surface.DielectricF0 = triangle.Material.F0;
+	surface.AmbientOcclusion = ambientOcclusion;
+	surface.Alpha = baseColor.a;
+	surface.SubsurfaceStrength = subsurfaceStrength;
+	surface.AlphaMode = triangle.Material.AlphaMode;
+	surface.GpuSceneSlot = mesh.GpuSceneSlot;
+	surface.InstanceId = trace.InstanceId;
+	surface.PrimitiveIndex = trace.PrimitiveIndex;
+	surface.EmissionTwoSided = twoSided;
+	return surface;
+}
 
-	float4 resolvedBaseColor = material.BaseColor;
-	float resolvedRoughness = material.Roughness;
-	float resolvedMetallic = material.Metallic;
-	float3 resolvedEmissive = material.EmissiveColor;
-	float3 resolvedNormalTangent = float3(0.0f, 0.0f, 1.0f);
-	float resolvedAmbientOcclusion = 1.0f;
-	float3 resolvedSubsurfaceColor = material.SubsurfaceColor;
-	float resolvedSubsurfaceStrength = material.SubsurfaceStrength;
-	ResolveRayTracingHitMaterialTextures(material,
-	                                     surface.TexCoord0,
-	                                     resolvedBaseColor,
-	                                     resolvedRoughness,
-	                                     resolvedMetallic,
-	                                     resolvedEmissive,
-	                                     resolvedNormalTangent,
-	                                     resolvedAmbientOcclusion,
-	                                     resolvedSubsurfaceColor,
-	                                     resolvedSubsurfaceStrength);
-
-	surface.NormalTangent = resolvedNormalTangent;
-	surface.NormalWorld = TransformTangentNormalToWorld(resolvedNormalTangent, normalWorld, tangentWorld, bitangentWorld);
-	if (!frontFacing)
+RayTracingHitSurfaceData ReconstructRayTracingHitSurfaceWithPrevious(RayTracingTraceResult trace, float3 rayDirectionWorld)
+{
+	RayTracingHitSurfaceData surface = ReconstructRayTracingHitSurface(trace, rayDirectionWorld);
+	if (surface.Valid)
 	{
-		surface.NormalWorld = -surface.NormalWorld;
-		surface.TangentWorld = -surface.TangentWorld;
-		surface.BitangentWorld = -surface.BitangentWorld;
+		const RayTracingHitTriangle triangle =
+		    LoadRayTracingHitTriangle(trace.InstanceId, trace.PrimitiveIndex, trace.Barycentrics);
+		const MeshInstanceData mesh = MeshInstances[trace.InstanceId];
+		const float3 previousPositionObject = EvaluatePreviousRayTracingPosition(triangle, mesh);
+		surface.PreviousPositionWorld = mul(float4(previousPositionObject, 1.0f), mesh.PreviousWorldMatrix).xyz;
 	}
-	surface.BaseColor = saturate(resolvedBaseColor.rgb);
-	surface.EmissiveColor = max(resolvedEmissive, 0.0f.xxx);
-	surface.SubsurfaceColor = saturate(resolvedSubsurfaceColor);
-	surface.Roughness = saturate(resolvedRoughness);
-	surface.Metallic = saturate(resolvedMetallic);
-	surface.DielectricF0 = saturate(material.F0);
-	surface.AmbientOcclusion = saturate(resolvedAmbientOcclusion);
-	surface.Alpha = saturate(resolvedBaseColor.a);
-	surface.SubsurfaceStrength = saturate(resolvedSubsurfaceStrength);
 	return surface;
 }

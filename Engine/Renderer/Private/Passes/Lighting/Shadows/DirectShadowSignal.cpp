@@ -11,7 +11,6 @@
 #include "RayTracing/Effects/Shadows/RayTracedShadowPassInput.h"
 #include "RayTracing/Effects/Shadows/RayTracingShadowExecutionPlan.h"
 #include "RayTracing/RayTracingPipelineComposition.h"
-#include "RHI/Public/Samplers/RhiSamplerDesc.h"
 #include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 #include "Scene/RayTracing/RenderRayTracingScene.h"
@@ -45,11 +44,6 @@ namespace DirectShadowSignalPasses
 		descriptorParameters->RayTracingHitInstances = builder.CreateSRV(externalResources.Scene.RayTracing.Instances);
 		descriptorParameters->RayTracingHitMaterials = builder.CreateSRV(externalResources.Scene.RayTracing.Materials);
 		descriptorParameters->SceneTlas = builder.CreateAccelerationStructureBinding(sceneTlas);
-		descriptorParameters->MaterialTextureSampler = RhiSamplerDesc{
-		    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
-		    .MipFilter = RhiSamplerMipFilter::Linear,
-		    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Wrap),
-		    .MaxAnisotropy = RhiSamplerAnisotropy::X1};
 		builder.AddParameterSetup<RenderView>(
 		    descriptorParameters,
 		    [](auto& fields, const RenderView& view)

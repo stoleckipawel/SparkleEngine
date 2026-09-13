@@ -5,8 +5,6 @@
 #include <DirectXMath.h>
 #include <cgltf.h>
 
-#include <algorithm>
-
 void GltfMaterialPropertyMapper::Apply(const cgltf_material& material, ImportedMaterial& importedMaterial)
 {
 	importedMaterial.emissiveColor =
@@ -46,8 +44,7 @@ void GltfMaterialPropertyMapper::Apply(const cgltf_material& material, ImportedM
 
 	if (material.has_ior)
 	{
-		const float ior = (std::max) (material.ior.ior, 0.0f);
-		const float f0 = ior > 0.0f ? (ior - 1.0f) / (ior + 1.0f) : 0.0f;
-		importedMaterial.f0 = (std::clamp) (f0 * f0, 0.0f, 1.0f);
+		const float f0 = (material.ior.ior - 1.0f) / (material.ior.ior + 1.0f);
+		importedMaterial.f0 = f0 * f0;
 	}
 }

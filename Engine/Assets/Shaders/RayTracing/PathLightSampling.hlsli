@@ -6,7 +6,7 @@
 #include "/Engine/Resources/SceneLightingUniformData.hlsli"
 
 #include "/Engine/Lighting/LightSampling.hlsli"
-#include "/Engine/RayTracing/RayTracingHitData.hlsli"
+#include "/Engine/RayTracing/RayTracingMaterialHit.hlsli"
 
 namespace PathLightSampling
 {
@@ -14,6 +14,8 @@ namespace PathLightSampling
 	{
 		RayTracingHitInstance Instance;
 		RayTracingHitMaterial Material;
+		RayTracingEvaluatedTriangle Evaluated;
+		MeshInstanceData Mesh;
 		float3 P0;
 		float3 P1;
 		float3 P2;
@@ -75,20 +77,23 @@ namespace PathLightSampling
 		const float3 bitangent = cross(normal, tangent);
 		const float3 samplePosition = light.Position + tangent * ((sample.x - 0.5f) * light.Width)
 		                            + bitangent * ((sample.y - 0.5f) * light.Height);
-		return LightSampling::RadiometricAreaLightSample(
+		LightSampling::DirectLightSample result = LightSampling::RadiometricAreaLightSample(
 		    positionWorld, samplePosition, normal, RectRadiance(lightIndex), rcp(light.Width * light.Height), false);
+		result.SamplePositionError = RayEndpoints::AnalyticPositionError(samplePosition, normal);
+		return result;
 	}
 
 	EmissiveTriangle LoadEmissiveTriangle(uint instanceId, uint primitiveIndex)
 	{
-		const RayTracingHitTriangle hit = LoadRayTracingHitTriangle(instanceId, primitiveIndex, 0.0f.xx);
+		const RayTracingEvaluatedTriangle evaluated = EvaluateRayTracingTriangle(instanceId, primitiveIndex, 0.0f.xx);
 		EmissiveTriangle triangle;
-		triangle.Instance = hit.Instance;
-		triangle.Material = hit.Material;
-		const MeshInstanceData mesh = MeshInstances[instanceId];
-		triangle.P0 = mul(float4(hit.V0.Position, 1.0f), mesh.WorldMatrix).xyz;
-		triangle.P1 = mul(float4(hit.V1.Position, 1.0f), mesh.WorldMatrix).xyz;
-		triangle.P2 = mul(float4(hit.V2.Position, 1.0f), mesh.WorldMatrix).xyz;
+		triangle.Instance = evaluated.Instance;
+		triangle.Material = evaluated.Material;
+		triangle.Evaluated = evaluated;
+		triangle.Mesh = MeshInstances[instanceId];
+		triangle.P0 = mul(float4(evaluated.V0.Position, 1.0f), triangle.Mesh.WorldMatrix).xyz;
+		triangle.P1 = mul(float4(evaluated.V1.Position, 1.0f), triangle.Mesh.WorldMatrix).xyz;
+		triangle.P2 = mul(float4(evaluated.V2.Position, 1.0f), triangle.Mesh.WorldMatrix).xyz;
 		const float3 normalUnnormalized = cross(triangle.P1 - triangle.P0, triangle.P2 - triangle.P0);
 		const float twiceArea = length(normalUnnormalized);
 		triangle.Normal = normalUnnormalized / twiceArea;
@@ -106,9 +111,28 @@ namespace PathLightSampling
 		const float3 barycentrics = float3(1.0f - root, root * (1.0f - sample.y), root * sample.y);
 		const float3 samplePosition =
 		    triangle.P0 * barycentrics.x + triangle.P1 * barycentrics.y + triangle.P2 * barycentrics.z;
+		const float2 barycentrics12 = barycentrics.yz;
+		const RayTracingEvaluatedTriangle sampledTriangle =
+		    EvaluateRayTracingTriangle(instanceId, primitiveIndex, barycentrics12);
+		float3 emittedRadiance = triangle.Material.EmissiveColor;
+		if (MaterialTextureTableSampling::HasTexture(
+		        triangle.Material.TextureFlags, MaterialTextureTableSampling::TextureSlotEmissive))
+		{
+			emittedRadiance *= SampleRayTracingMaterialTexture(
+			                       triangle.Material,
+			                       MaterialTextureTableSampling::TextureSlotEmissive,
+			                       InterpolateRayTracingTexCoord0(sampledTriangle))
+			                       .rgb;
+		}
 		const bool twoSided = (triangle.Instance.Flags & RayTracingHitSurface::InstanceFlagTwoSided) != 0u;
 		LightSampling::DirectLightSample result = LightSampling::RadiometricAreaLightSample(
-		    positionWorld, samplePosition, triangle.Normal, triangle.Material.EmissiveColor, rcp(triangle.Area), twoSided);
+		    positionWorld, samplePosition, triangle.Normal, emittedRadiance, rcp(triangle.Area), twoSided);
+		const float3 positionObject = InterpolateRayTracingPosition(sampledTriangle);
+		const float3 normalObject = cross(
+		    sampledTriangle.V1.Position - sampledTriangle.V0.Position,
+		    sampledTriangle.V2.Position - sampledTriangle.V0.Position);
+		result.SamplePositionError = RayEndpoints::SurfaceErrorBound(
+		    sampledTriangle, triangle.Mesh, positionObject, samplePosition, normalObject, triangle.Normal);
 		result.TargetInstanceId = instanceId;
 		result.TargetPrimitiveIndex = primitiveIndex;
 		return result;

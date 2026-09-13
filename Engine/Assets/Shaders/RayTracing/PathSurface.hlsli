@@ -7,6 +7,7 @@ struct RayTracingPathSurface
 {
 	bool Valid;
 	float3 PositionWorld;
+	float PositionError;
 	float3 GeometricNormalWorld;
 	float3 NormalWorld;
 	float3 ViewDirWorld;
@@ -31,6 +32,7 @@ RayTracingPathSurface BuildPrimaryRayTracingPathSurface(float3 positionWorld,
 	RayTracingPathSurface surface;
 	surface.Valid = true;
 	surface.PositionWorld = positionWorld;
+	surface.PositionError = 0x1.0p-23f * dot(abs(normalWorld), abs(positionWorld));
 	surface.GeometricNormalWorld = normalWorld;
 	surface.NormalWorld = normalWorld;
 	surface.ViewDirWorld = viewDirWorld;
@@ -50,7 +52,8 @@ RayTracingPathSurface BuildHitRayTracingPathSurface(RayTracingHitSurfaceData hit
 	RayTracingPathSurface surface;
 	surface.Valid = hitSurface.Valid;
 	surface.PositionWorld = hitSurface.PositionWorld;
-	surface.GeometricNormalWorld = hitSurface.NormalWorld;
+	surface.PositionError = hitSurface.PositionError;
+	surface.GeometricNormalWorld = hitSurface.GeometricNormalWorld;
 	surface.NormalWorld = hitSurface.NormalWorld;
 	surface.ViewDirWorld = normalize(-incomingRayDirectionWorld);
 	surface.BaseColor = hitSurface.BaseColor;
@@ -58,9 +61,9 @@ RayTracingPathSurface BuildHitRayTracingPathSurface(RayTracingHitSurfaceData hit
 	surface.Roughness = hitSurface.Roughness;
 	surface.Metallic = hitSurface.Metallic;
 	surface.DielectricF0 = hitSurface.DielectricF0;
-	surface.InstanceId = 0xFFFFFFFFu;
-	surface.PrimitiveIndex = 0xFFFFFFFFu;
-	surface.EmissionTwoSided = false;
+	surface.InstanceId = hitSurface.InstanceId;
+	surface.PrimitiveIndex = hitSurface.PrimitiveIndex;
+	surface.EmissionTwoSided = hitSurface.EmissionTwoSided;
 	return surface;
 }
 

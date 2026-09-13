@@ -17,7 +17,7 @@ namespace Assets
 		Blend = 2,
 	};
 
-	inline constexpr std::uint32_t kCookedMaterialAssetMagic = 0x54414D53u;
+	inline constexpr std::uint32_t kCookedMaterialAssetMagic = 0x32414D53u;
 
 	struct SPARKLE_ENGINE_API CookedMaterialAssetHeader
 	{

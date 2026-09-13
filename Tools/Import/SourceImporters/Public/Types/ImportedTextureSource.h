@@ -10,4 +10,5 @@ struct ImportedTextureSource
 	TextureGroup textureGroup = TextureGroup::Default;
 	std::filesystem::path sourcePath;
 	TextureChannelMask channelMask = TextureChannelMask::Rgba;
+	TextureCoordinateMapping mapping;
 };

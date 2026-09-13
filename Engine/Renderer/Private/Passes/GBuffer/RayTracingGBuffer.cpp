@@ -9,7 +9,6 @@
 #include "Passes/RayTracing/RayTracingGBufferShaders.h"
 #include "RayTracing/Effects/GBuffer/RayTracingGBufferExecutionPlan.h"
 #include "RayTracing/RayTracingPipelineComposition.h"
-#include "RHI/Public/Samplers/RhiSamplerDesc.h"
 #include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 #include "View/RenderView.h"
@@ -50,11 +49,6 @@ namespace RayTracingGBufferPasses
 		parameters->PreviousJointMatrices = builder.CreateSRV(externalResources.Scene.Geometry.PreviousJointMatrices);
 		parameters->MorphWeights = builder.CreateSRV(externalResources.Scene.Geometry.MorphWeights);
 		parameters->PreviousMorphWeights = builder.CreateSRV(externalResources.Scene.Geometry.PreviousMorphWeights);
-		parameters->MaterialTextureSampler = RhiSamplerDesc{
-		    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
-		    .MipFilter = RhiSamplerMipFilter::Linear,
-		    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Wrap),
-		    .MaxAnisotropy = RhiSamplerAnisotropy::X1};
 		builder.AddParameterSetup<RenderView>(
 		    parameters,
 		    [](auto& fields, const RenderView& view)

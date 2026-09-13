@@ -36,9 +36,11 @@ private:
 	    ImportedMaterialIndex materialIndex,
 	    const std::filesystem::path& sourceDirectory,
 	    std::string_view slotName);
+	static TextureCoordinateMapping BuildTextureMapping(const cgltf_texture_view& textureView);
 	static void SetTextureSource(
 	    ImportedMaterial& importedMaterial,
 	    TextureGroup textureGroup,
 	    const std::optional<std::filesystem::path>& texturePath,
-	    TextureChannelMask channelMask = TextureChannelMask::Rgba);
+	    TextureChannelMask channelMask = TextureChannelMask::Rgba,
+	    TextureCoordinateMapping mapping = {});
 };

@@ -4,6 +4,7 @@ struct MeshInstanceData
 {
 	row_major float4x4 WorldMatrix;
 	row_major float4x4 PreviousWorldMatrix;
+	row_major float4x4 WorldInverseMatrix;
 	row_major float3x4 WorldInverseTranspose;
 	uint MaterialSlot;
 	uint Flags;

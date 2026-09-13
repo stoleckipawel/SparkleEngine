@@ -29,10 +29,14 @@ void ReferencePathTracer::AddPass(FrameGraphBuilder& builder, RenderViewportExte
 	parameters->SpotLights = builder.CreateSRV(resources.ImportedScene.Scene.Lighting.SpotLights);
 	parameters->RectLights = builder.CreateSRV(resources.ImportedScene.Scene.Lighting.RectLights);
 	parameters->RayTracingHitVertices = builder.CreateSRV(resources.ImportedScene.Scene.RayTracing.Vertices);
+	parameters->SkinInfluences = builder.CreateSRV(resources.ImportedScene.Scene.RayTracing.SkinInfluences);
+	parameters->MorphTargetDeltas = builder.CreateSRV(resources.ImportedScene.Scene.RayTracing.MorphTargetDeltas);
 	parameters->RayTracingHitIndices = builder.CreateSRV(resources.ImportedScene.Scene.RayTracing.Indices);
 	parameters->RayTracingHitInstances = builder.CreateSRV(resources.ImportedScene.Scene.RayTracing.Instances);
 	parameters->RayTracingHitMaterials = builder.CreateSRV(resources.ImportedScene.Scene.RayTracing.Materials);
 	parameters->MeshInstances = builder.CreateSRV(resources.ImportedScene.Scene.Geometry.MeshInstances);
+	parameters->JointMatrices = builder.CreateSRV(resources.ImportedScene.Scene.Geometry.JointMatrices);
+	parameters->MorphWeights = builder.CreateSRV(resources.ImportedScene.Scene.Geometry.MorphWeights);
 	builder.AddParameterSetup<RenderView>(parameters, [](auto& fields, const RenderView& view) { fields.ViewCamera = view.cameraUniform; });
 	builder.AddParameterSetup<PreparedRenderScene>(
 	    parameters,
@@ -44,6 +48,7 @@ void ReferencePathTracer::AddPass(FrameGraphBuilder& builder, RenderViewportExte
 		    fields.RayTracingHitConstants = RayTracingHitUniformData{
 		        .RayTracingHitInstanceCount = scene.gpuBindings->RayTracing.InstanceCount,
 		        .RayTracingHitMaterialCount = scene.gpuBindings->RayTracing.MaterialCount};
+		    fields.MaterialTextureTable = scene.materialTextureTable.Binding;
 	    });
 	builder.Dispatch<ReferencePathTracerCS>(
 	    "ReferencePathTracer.SurfaceTransportReference",

@@ -1,7 +1,7 @@
 #ifndef SPARKLE_RAY_TRACING_MATERIAL_TRACE_QUERY_HLSLI
 #define SPARKLE_RAY_TRACING_MATERIAL_TRACE_QUERY_HLSLI
 
-#include "/Engine/RayTracing/RayTracingMaterialHit.hlsli"
+#include "/Engine/RayTracing/RayTracingMaterialAlpha.hlsli"
 
 RayTracingTraceResult TraceRayQueryWithAlphaTest(RaytracingAccelerationStructure sceneTlas,
                                                  float3 originWorld,
@@ -12,7 +12,7 @@ RayTracingTraceResult TraceRayQueryWithAlphaTest(RaytracingAccelerationStructure
                                                  uint instanceMask)
 {
 	RayDesc ray;
-	ray.Direction = normalize(directionWorld);
+	ray.Direction = directionWorld;
 	ray.Origin = originWorld;
 	ray.TMin = tMin;
 	ray.TMax = tMax;
@@ -32,6 +32,7 @@ RayTracingTraceResult TraceRayQueryWithAlphaTest(RaytracingAccelerationStructure
 			const bool commitCandidate = ResolveRayTracingCandidateAlpha(query.CandidateInstanceID(),
 			                                                             query.CandidatePrimitiveIndex(),
 			                                                             query.CandidateTriangleBarycentrics(),
+			                                                             query.CandidateTriangleFrontFace(),
 			                                                             alphaCandidateValue,
 			                                                             alphaCandidateCutoff);
 			if (commitCandidate)

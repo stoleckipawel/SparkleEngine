@@ -4,9 +4,7 @@
 cbuffer RestirIndirectConstants
 {
 	uint RestirIndirectBounceCount;
-	float RestirIndirectNormalBias;
-	float RestirIndirectMaxDistance;
-	uint RestirIndirectPadding;
+	uint3 RestirIndirectPadding;
 };
 
 #endif

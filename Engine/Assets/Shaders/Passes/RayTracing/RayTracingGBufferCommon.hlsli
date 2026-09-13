@@ -94,7 +94,7 @@ namespace RayTracingGBuffer
 			StoreMiss(pixelCoord);
 			return;
 		}
-		const RayTracingHitSurfaceData surface = ReconstructRayTracingHitSurface(trace, ray.OriginWorld, ray.DirectionWorld);
+		const RayTracingHitSurfaceData surface = ReconstructRayTracingHitSurfaceWithPrevious(trace, ray.DirectionWorld);
 		if (!surface.Valid)
 		{
 			StoreMiss(pixelCoord);

@@ -98,11 +98,6 @@ namespace RestirIndirectReservoir
 		return reservoir;
 	}
 
-	RayTracingPathTrace::TraceSettings BuildTraceSettings()
-	{
-		return RayTracingPathTrace::BuildSurfaceTraceSettings(RestirIndirectNormalBias, RestirIndirectMaxDistance);
-	}
-
 	RayTracingPathLighting::Result EvaluateCandidate(Surface surface, Candidate candidate, Texture2D skyTexture, SamplerState skySampler)
 	{
 		return RayTracingPathLighting::TraceSurfacePathWithRandomFrame(skyTexture,
@@ -112,8 +107,7 @@ namespace RestirIndirectReservoir
 		                                                               candidate.SampleIndex,
 		                                                               RayTracingPathSampling::SpecularSampleModeStochasticGGX,
 		                                                               RestirIndirectBounceCount,
-		                                                               candidate.RandomFrameIndex,
-		                                                               BuildTraceSettings());
+		                                                               candidate.RandomFrameIndex);
 	}
 
 	float EvaluateTarget(RayTracingPathLighting::Result path)

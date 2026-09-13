@@ -1,5 +1,5 @@
 #include "/Engine/Passes/Lighting/Shadows/DirectShadowSignalCommon.hlsli"
-#include "/Engine/RayTracing/RayTracingMaterialHit.hlsli"
+#include "/Engine/RayTracing/RayTracingMaterialAlpha.hlsli"
 #include "/Engine/RayTracing/RayTracingShaderTableLayout.hlsli"
 
 RaytracingAccelerationStructure SceneTlas;
@@ -65,7 +65,8 @@ void DirectShadowSignalAnyHit(inout DirectShadowSignalPayload payload,
 	(void)payload;
 	float sampledAlpha = 1.0f;
 	float alphaCutoff = 0.5f;
-	if (!ResolveRayTracingCandidateAlpha(InstanceID(), PrimitiveIndex(), attributes.barycentrics, sampledAlpha, alphaCutoff))
+	if (!ResolveRayTracingCandidateAlpha(
+	        InstanceID(), PrimitiveIndex(), attributes.barycentrics, HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE, sampledAlpha, alphaCutoff))
 	{
 		IgnoreHit();
 	}

@@ -2,6 +2,7 @@
 #define SPARKLE_RAY_TRACING_HIT_DATA_HLSLI
 
 #include "/Engine/RayTracing/RayTracingHitSurface.hlsli"
+#include "/Engine/Resources/MaterialTextureMappingData.hlsli"
 
 struct RayTracingHitVertex
 {
@@ -9,7 +10,7 @@ struct RayTracingHitVertex
 	float3 Normal;
 	float4 Tangent;
 	float2 TexCoord0;
-	float2 Padding0;
+	float4 Color;
 };
 
 struct RayTracingHitInstance
@@ -43,6 +44,7 @@ struct RayTracingHitMaterial
 	uint Flags;
 	uint4 TextureIndices0;
 	uint4 TextureIndices1;
+	MaterialTextureMappingData TextureMappings[8];
 };
 
 StructuredBuffer<RayTracingHitVertex> RayTracingHitVertices;
@@ -79,70 +81,16 @@ RayTracingHitTriangle LoadRayTracingHitTriangle(uint instanceId, uint primitiveI
 	return triangle;
 }
 
-bool TryLoadRayTracingHitTriangle(uint instanceId,
-                                  uint primitiveIndex,
-                                  float2 barycentrics,
-                                  out RayTracingHitInstance hitInstance,
-                                  out RayTracingHitMaterial material,
-                                  out float3 barycentricWeights,
-                                  out uint3 vertexIndices,
-                                  out RayTracingHitVertex v0,
-                                  out RayTracingHitVertex v1,
-                                  out RayTracingHitVertex v2,
-                                  out uint rejectionReason)
+float2 InterpolateRayTracingHitTexCoord0(RayTracingHitTriangle triangle)
 {
-	hitInstance = (RayTracingHitInstance)0;
-	material = (RayTracingHitMaterial)0;
-	barycentricWeights = 0.0f.xxx;
-	vertexIndices = 0u.xxx;
-	v0 = (RayTracingHitVertex)0;
-	v1 = (RayTracingHitVertex)0;
-	v2 = (RayTracingHitVertex)0;
-	rejectionReason = RayTracingHitSurface::ReasonNone;
+	return triangle.V0.TexCoord0 * triangle.BarycentricWeights.x + triangle.V1.TexCoord0 * triangle.BarycentricWeights.y
+	     + triangle.V2.TexCoord0 * triangle.BarycentricWeights.z;
+}
 
-	if (instanceId >= RayTracingHitInstanceCount)
-	{
-		rejectionReason = RayTracingHitSurface::ReasonInstanceOutOfRange;
-		return false;
-	}
-
-	hitInstance = RayTracingHitInstances[instanceId];
-	if ((hitInstance.Flags & RayTracingHitSurface::InstanceFlagValid) == 0u)
-	{
-		rejectionReason = hitInstance.RejectionReason;
-		return false;
-	}
-	if (hitInstance.MaterialSlot >= RayTracingHitMaterialCount)
-	{
-		rejectionReason = RayTracingHitSurface::ReasonInvalidMaterial;
-		return false;
-	}
-
-	const uint primitiveFirstLocalIndex = primitiveIndex * 3u;
-	if (primitiveFirstLocalIndex + 2u >= hitInstance.IndexCount)
-	{
-		rejectionReason = RayTracingHitSurface::ReasonInvalidPrimitive;
-		return false;
-	}
-
-	const uint i0 = hitInstance.FirstVertex + RayTracingHitIndices[hitInstance.FirstIndex + primitiveFirstLocalIndex + 0u];
-	const uint i1 = hitInstance.FirstVertex + RayTracingHitIndices[hitInstance.FirstIndex + primitiveFirstLocalIndex + 1u];
-	const uint i2 = hitInstance.FirstVertex + RayTracingHitIndices[hitInstance.FirstIndex + primitiveFirstLocalIndex + 2u];
-	const uint vertexEnd = hitInstance.FirstVertex + hitInstance.VertexCount;
-	if (i0 >= vertexEnd || i1 >= vertexEnd || i2 >= vertexEnd)
-	{
-		rejectionReason = RayTracingHitSurface::ReasonInvalidVertexIndex;
-		return false;
-	}
-
-	const RayTracingHitTriangle triangle = LoadRayTracingHitTriangle(instanceId, primitiveIndex, barycentrics);
-	barycentricWeights = triangle.BarycentricWeights;
-	vertexIndices = triangle.VertexIndices;
-	v0 = triangle.V0;
-	v1 = triangle.V1;
-	v2 = triangle.V2;
-	material = triangle.Material;
-	return true;
+float4 InterpolateRayTracingHitColor(RayTracingHitTriangle triangle)
+{
+	return triangle.V0.Color * triangle.BarycentricWeights.x + triangle.V1.Color * triangle.BarycentricWeights.y
+	     + triangle.V2.Color * triangle.BarycentricWeights.z;
 }
 
 #endif

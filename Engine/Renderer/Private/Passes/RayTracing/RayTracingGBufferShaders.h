@@ -40,7 +40,6 @@ public:
 	SHADER_PARAMETER_BUFFER_SRV(float, MorphWeights)
 	SHADER_PARAMETER_BUFFER_SRV(float, PreviousMorphWeights)
 	SHADER_PARAMETER_TEXTURE_SRV_ARRAY(Texture2D, MaterialTextureTable, MaterialTextureTableFixedCapacity)
-	SHADER_PARAMETER_SAMPLER(SamplerState, MaterialTextureSampler)
 	END_SHADER_PARAMETER_STRUCT()
 
 	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;

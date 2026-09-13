@@ -1,8 +1,7 @@
 #pragma once
 
-float3 UnpackMaterialNormal(float2 encodedNormal)
+float3 UnpackMaterialNormal(float3 encodedNormal, float normalScale)
 {
-	const float2 normalXY = encodedNormal * 2.0f - 1.0f;
-	const float normalZ = sqrt(saturate(1.0f - dot(normalXY, normalXY)));
-	return normalize(float3(normalXY, normalZ));
+	const float3 decoded = encodedNormal * 2.0f - 1.0f;
+	return normalize(float3(decoded.xy * normalScale, decoded.z));
 }

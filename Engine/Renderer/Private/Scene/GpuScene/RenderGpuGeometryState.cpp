@@ -166,9 +166,14 @@ void RenderGpuGeometryState::UpdateDeformation(const PreparedRenderScene& prepar
 
 MeshInstanceData RenderGpuGeometryState::BuildMeshInstance(const MeshDraw& draw) noexcept
 {
+	DirectX::XMFLOAT4X4 worldInverse;
+	DirectX::XMStoreFloat4x4(
+	    &worldInverse,
+	    DirectX::XMMatrixInverse(nullptr, DirectX::XMLoadFloat4x4(&draw.Transform.WorldMatrix)));
 	return MeshInstanceData{
 	    .WorldMatrix = draw.Transform.WorldMatrix,
 	    .PreviousWorldMatrix = draw.Transform.PreviousWorldMatrix,
+	    .WorldInverseMatrix = worldInverse,
 	    .WorldInverseTranspose = draw.Transform.WorldInvTranspose,
 	    .MaterialSlot = draw.MaterialSlot,
 	    .Flags =
@@ -188,6 +193,7 @@ bool RenderGpuGeometryState::HasSameMeshInstance(const MeshInstanceData& left, c
 {
 	return std::memcmp(&left.WorldMatrix, &right.WorldMatrix, sizeof(left.WorldMatrix)) == 0
 	    && std::memcmp(&left.PreviousWorldMatrix, &right.PreviousWorldMatrix, sizeof(left.PreviousWorldMatrix)) == 0
+	    && std::memcmp(&left.WorldInverseMatrix, &right.WorldInverseMatrix, sizeof(left.WorldInverseMatrix)) == 0
 	    && std::memcmp(&left.WorldInverseTranspose, &right.WorldInverseTranspose, sizeof(left.WorldInverseTranspose)) == 0
 	    && left.MaterialSlot == right.MaterialSlot && left.Flags == right.Flags && left.JointMatrixOffset == right.JointMatrixOffset
 	    && left.MorphWeightOffset == right.MorphWeightOffset && left.MorphTargetCount == right.MorphTargetCount

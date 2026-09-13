@@ -1,13 +1,16 @@
 #pragma once
 
+#include "ShaderData/MaterialTextureMappingData.h"
+
 #include <DirectXMath.h>
 
+#include <array>
 #include <cstdint>
 #include <type_traits>
 
 namespace RayTracingHitData
 {
-	inline constexpr std::uint32_t AbiVersion = 4u;
+	inline constexpr std::uint32_t AbiVersion = 5u;
 
 	inline constexpr std::uint32_t InstanceFlag_Valid = 1u << 0u;
 	inline constexpr std::uint32_t InstanceFlag_Opaque = 1u << 1u;
@@ -47,12 +50,12 @@ struct RayTracingHitVertex
 	DirectX::XMFLOAT3 Normal = {};
 	DirectX::XMFLOAT4 Tangent = {1.0f, 0.0f, 0.0f, 1.0f};
 	DirectX::XMFLOAT2 TexCoord0 = {};
-	DirectX::XMFLOAT2 Padding0 = {};
+	DirectX::XMFLOAT4 Color = {1.0f, 1.0f, 1.0f, 1.0f};
 };
 
 static_assert(std::is_standard_layout_v<RayTracingHitVertex>, "RayTracingHitVertex must be standard-layout");
 static_assert(std::is_trivially_copyable_v<RayTracingHitVertex>, "RayTracingHitVertex must be trivially copyable");
-static_assert(sizeof(RayTracingHitVertex) == 56, "RayTracingHitVertex must match the shader layout");
+static_assert(sizeof(RayTracingHitVertex) == 64, "RayTracingHitVertex must match the shader layout");
 
 struct RayTracingHitInstance
 {
@@ -89,8 +92,9 @@ struct RayTracingHitMaterial
 	std::uint32_t Flags = 0u;
 	DirectX::XMUINT4 TextureIndices0 = {UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX};
 	DirectX::XMUINT4 TextureIndices1 = {UINT32_MAX, UINT32_MAX, UINT32_MAX, UINT32_MAX};
+	std::array<MaterialTextureMappingData, 8> TextureMappings = {};
 };
 
 static_assert(std::is_standard_layout_v<RayTracingHitMaterial>, "RayTracingHitMaterial must be standard-layout");
 static_assert(std::is_trivially_copyable_v<RayTracingHitMaterial>, "RayTracingHitMaterial must be trivially copyable");
-static_assert(sizeof(RayTracingHitMaterial) == 104, "RayTracingHitMaterial must match the shader layout");
+static_assert(sizeof(RayTracingHitMaterial) == 360, "RayTracingHitMaterial must match the shader layout");

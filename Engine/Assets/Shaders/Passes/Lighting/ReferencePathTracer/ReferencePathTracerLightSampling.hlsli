@@ -41,7 +41,8 @@ namespace ReferencePathTracerLightSampling
 		[loop] for (uint instanceId = 0u; instanceId < RayTracingHitInstanceCount; ++instanceId)
 		{
 			const RayTracingHitInstance instance = RayTracingHitInstances[instanceId];
-			if ((RayTracingHitMaterials[instance.MaterialSlot].Flags & RayTracingHitSurface::MaterialFlagEmissive) != 0u)
+			if ((instance.Flags & RayTracingHitSurface::InstanceFlagValid) != 0u
+			    && (RayTracingHitMaterials[instance.MaterialSlot].Flags & RayTracingHitSurface::MaterialFlagEmissive) != 0u)
 			{
 				count += instance.IndexCount / 3u;
 			}
@@ -93,8 +94,8 @@ namespace ReferencePathTracerLightSampling
 		[loop] for (uint candidateInstance = 0u; candidateInstance < RayTracingHitInstanceCount; ++candidateInstance)
 		{
 			const RayTracingHitInstance instance = RayTracingHitInstances[candidateInstance];
-			const uint primitiveCount =
-			    (RayTracingHitMaterials[instance.MaterialSlot].Flags & RayTracingHitSurface::MaterialFlagEmissive) != 0u
+			const uint primitiveCount = (instance.Flags & RayTracingHitSurface::InstanceFlagValid) != 0u
+			        && (RayTracingHitMaterials[instance.MaterialSlot].Flags & RayTracingHitSurface::MaterialFlagEmissive) != 0u
 			        ? instance.IndexCount / 3u
 			        : 0u;
 			if (ordinal < primitiveCount)
@@ -169,7 +170,8 @@ namespace ReferencePathTracerLightSampling
 		[loop] for (uint instanceId = 0u; instanceId < surface.InstanceId; ++instanceId)
 		{
 			const RayTracingHitInstance instance = RayTracingHitInstances[instanceId];
-			if ((RayTracingHitMaterials[instance.MaterialSlot].Flags & RayTracingHitSurface::MaterialFlagEmissive) != 0u)
+			if ((instance.Flags & RayTracingHitSurface::InstanceFlagValid) != 0u
+			    && (RayTracingHitMaterials[instance.MaterialSlot].Flags & RayTracingHitSurface::MaterialFlagEmissive) != 0u)
 			{
 				ordinal += instance.IndexCount / 3u;
 			}

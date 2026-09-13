@@ -41,7 +41,8 @@ void RayTracingGBufferAnyHit(inout RayTracingGBufferPayload payload,
 {
 	float sampledAlpha = 1.0f;
 	float alphaCutoff = 0.5f;
-	if (!ResolveRayTracingCandidateAlpha(InstanceID(), PrimitiveIndex(), attributes.barycentrics, sampledAlpha, alphaCutoff))
+	if (!ResolveRayTracingCandidateAlpha(
+	        InstanceID(), PrimitiveIndex(), attributes.barycentrics, HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE, sampledAlpha, alphaCutoff))
 	{
 		IgnoreHit();
 	}

@@ -32,7 +32,8 @@ namespace Assets
 			materialAsset.textureReferences.push_back(
 			    CookedTextureReference{
 			        .texturePath = reader.ReadString(textureReferenceRecord.texturePathByteCount),
-			        .textureGroup = textureReferenceRecord.textureGroup});
+			        .textureGroup = textureReferenceRecord.textureGroup,
+			        .mapping = textureReferenceRecord.mapping});
 		}
 
 		if (reader.GetRemainingByteCount() != 0)

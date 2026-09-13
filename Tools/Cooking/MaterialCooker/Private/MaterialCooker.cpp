@@ -102,7 +102,8 @@ void MaterialCookPipeline::AppendTextureReference(const ImportedTextureSource& t
 	const TextureCookRequest request =
 	    TextureCookRequestBuilder::Build(textureSource.sourcePath, textureSource.textureGroup, textureSource.channelMask);
 
-	materialAsset.textureReferences.push_back({BuildCookedTextureReferencePath(request), textureSource.textureGroup});
+	materialAsset.textureReferences.push_back(
+	    {BuildCookedTextureReferencePath(request), textureSource.textureGroup, textureSource.mapping});
 }
 
 void MaterialCookPipeline::AppendTextureRequest(const ImportedTextureSource& textureSource, TextureCookRequestSet& requestSet)
@@ -183,7 +184,9 @@ std::vector<Assets::CookedTextureReferenceRecord> MaterialCookPipeline::BuildTex
 		}
 
 		records.push_back(
-		    {.texturePathByteCount = static_cast<std::uint32_t>(reference.texturePath.size()), .textureGroup = reference.textureGroup});
+		    {.texturePathByteCount = static_cast<std::uint32_t>(reference.texturePath.size()),
+		     .textureGroup = reference.textureGroup,
+		     .mapping = reference.mapping});
 	}
 
 	return records;

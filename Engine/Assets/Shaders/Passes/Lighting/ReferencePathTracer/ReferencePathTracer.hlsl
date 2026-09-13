@@ -3,9 +3,10 @@
 #include "/Engine/RayTracing/PathBsdf.hlsli"
 #include "/Engine/RayTracing/PathTracer.hlsli"
 #include "/Engine/RayTracing/PathVisibility.hlsli"
-#include "/Engine/RayTracing/RayTracingHitPathSurface.hlsli"
+#include "/Engine/RayTracing/RayEndpoints.hlsli"
+#include "/Engine/RayTracing/RayTracingMaterialHit.hlsli"
+#include "/Engine/RayTracing/RayTracingMaterialTraceQuery.hlsli"
 #include "/Engine/RayTracing/RayTracingHitUniformData.hlsli"
-#include "/Engine/RayTracing/RayTracingTraceQuery.hlsli"
 #include "/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerLightSampling.hlsli"
 #include "/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerSampler.hlsli"
 
@@ -40,14 +41,14 @@ cbuffer ReferencePathTracerConstants
 	    CommonRandom::OpenUnitInterval(
 	        ReferencePathTracerSampler::Word(pixelCoord, SampleOrdinal, ReferencePathTracerSampler::FilmY, SessionSeed, ReplicateId)));
 	const ViewCameraRay cameraRay = BuildPerspectiveViewCameraRay(pixelCoord, uint2(width, height), filmSample);
+	RayEndpoints::Ray traversal =
+	    RayEndpoints::Primary(cameraRay.OriginWorld, cameraRay.DirectionWorld, cameraRay.TMin, cameraRay.TMax);
 
 	PathTracer::PathState path;
-	path.OriginWorld = cameraRay.OriginWorld;
-	path.DirectionWorld = cameraRay.DirectionWorld;
+	path.OriginWorld = traversal.Origin;
+	path.DirectionWorld = traversal.Direction;
 	path.Throughput = 1.0f.xxx;
 	path.SurfaceDepth = 0u;
-	float traversalTMin = cameraRay.TMin;
-	float traversalTMax = cameraRay.TMax;
 	float3 contribution = 0.0f.xxx;
 	float3 previousPositionWorld = 0.0f.xxx;
 	float previousBsdfPdfW = 0.0f;
@@ -55,13 +56,14 @@ cbuffer ReferencePathTracerConstants
 
 	[loop] for (;;)
 	{
-		const RayTracingTraceResult trace = TraceOpaqueRayQuery(SceneTlas,
-		                                                        path.OriginWorld,
-		                                                        path.DirectionWorld,
-		                                                        traversalTMin,
-		                                                        traversalTMax,
-		                                                        RAY_FLAG_SKIP_CLOSEST_HIT_SHADER,
-		                                                        0xFFu);
+		const RayTracingTraceResult trace = TraceRayQueryWithAlphaTest(SceneTlas,
+		                                                                path.OriginWorld,
+		                                                                path.DirectionWorld,
+		                                                                traversal.TMin,
+		                                                                traversal.TMax,
+		                                                                RAY_FLAG_SKIP_CLOSEST_HIT_SHADER
+		                                                                    | RAY_FLAG_CULL_BACK_FACING_TRIANGLES,
+		                                                                0xFFu);
 		if (!trace.Hit)
 		{
 			const float lightPdfW = ReferencePathTracerLightSampling::EnvironmentPdfW(lightCounts);
@@ -72,7 +74,13 @@ cbuffer ReferencePathTracerConstants
 			break;
 		}
 
-		const RayTracingPathSurface surface = BuildStaticOpaquePathSurface(trace, -path.DirectionWorld);
+		const RayTracingHitSurfaceData hitSurface = ReconstructRayTracingHitSurface(trace, path.DirectionWorld);
+		if (!hitSurface.Valid)
+		{
+			SceneColor[pixelCoord] = PathTracer::InvalidRadiance();
+			return;
+		}
+		const RayTracingPathSurface surface = BuildHitRayTracingPathSurface(hitSurface, path.DirectionWorld);
 		const uint surfaceVertexCount = path.SurfaceDepth + 1u;
 		if (FinitePathDiagnosticSurfaceVertices == 0u && surfaceVertexCount > 4096u)
 		{
@@ -112,7 +120,7 @@ cbuffer ReferencePathTracerConstants
 			const PathBsdf::Evaluation bsdf = PathBsdf::EvaluateContinuous(surface, light.DirectionWorld, lobeMasses);
 			if (bsdf.HasSupport)
 			{
-				if (PathVisibility::IsUnoccluded(SceneTlas, surface.PositionWorld, light))
+				if (PathVisibility::IsUnoccluded(SceneTlas, surface, light))
 				{
 					const float lightProbability =
 					    light.LightSelectionPdf * (light.Delta ? 1.0f : light.PdfW);
@@ -187,9 +195,10 @@ cbuffer ReferencePathTracerConstants
 			PathTracer::ApplySurvivalCompensation(path.Throughput, (float)threshold * 0x1.0p-24f);
 		}
 
-		path.OriginWorld = surface.PositionWorld;
-		traversalTMin = 0.0f;
-		traversalTMax = FLT_MAX;
+		traversal = RayEndpoints::Continuation(
+		    surface.PositionWorld, surface.GeometricNormalWorld, surface.PositionError, path.DirectionWorld);
+		path.OriginWorld = traversal.Origin;
+		path.DirectionWorld = traversal.Direction;
 	}
 
 	SceneColor[pixelCoord] = float4(contribution, 1.0f);

@@ -23,7 +23,6 @@ namespace RayTracingPathLighting
 
 	RayTracingPathSample::LightingResult ResolveLighting(RayTracingTraceResult trace,
 	                                                     RayTracingPathSample::DirectionSample sample,
-	                                                     float3 rayOriginWorld,
 	                                                     Texture2D skyTexture,
 	                                                     SamplerState skySampler,
 	                                                     uint pathSampleIndex,
@@ -53,7 +52,7 @@ namespace RayTracingPathLighting
 
 		if (trace.Hit)
 		{
-			const RayTracingHitSurfaceData hitSurface = ReconstructRayTracingHitSurface(trace, rayOriginWorld, sample.DirectionWorld);
+			const RayTracingHitSurfaceData hitSurface = ReconstructRayTracingHitSurface(trace, sample.DirectionWorld);
 			outHitSurface = hitSurface;
 			result.Hit = hitSurface.Valid;
 			result.RejectionReason =
@@ -82,8 +81,7 @@ namespace RayTracingPathLighting
 	                                       uint sampleIndex,
 	                                       uint specularSampleMode,
 	                                       uint bounceCount,
-	                                       uint randomFrameIndex,
-	                                       RayTracingPathTrace::TraceSettings traceSettings)
+	                                       uint randomFrameIndex)
 	{
 		Result result = (Result)0;
 		result.PrimaryLobe = RayTracingPathSample::LobeNone;
@@ -122,13 +120,11 @@ namespace RayTracingPathLighting
 			}
 
 			float3 rayOriginWorld = 0.0f.xxx;
-			const RayTracingTraceResult trace =
-			    RayTracingPathTrace::TraceSurfaceRay(surface, path.DirectionWorld, traceSettings, rayOriginWorld);
+			const RayTracingTraceResult trace = RayTracingPathTrace::TraceSurfaceRay(surface, path.DirectionWorld, rayOriginWorld);
 			path.OriginWorld = rayOriginWorld;
 			RayTracingHitSurfaceData hitSurface;
 			RayTracingPathSample::LightingResult lighting = ResolveLighting(trace,
 			                                                                sample,
-			                                                                path.OriginWorld,
 			                                                                skyTexture,
 			                                                                skySampler,
 			                                                                sampleIndex,
@@ -161,8 +157,7 @@ namespace RayTracingPathLighting
 	                        uint2 pixelCoord,
 	                        uint sampleIndex,
 	                        uint specularSampleMode,
-	                        uint bounceCount,
-	                        RayTracingPathTrace::TraceSettings traceSettings)
+	                        uint bounceCount)
 	{
 		return TraceSurfacePathWithRandomFrame(skyTexture,
 		                                       skySampler,
@@ -171,8 +166,7 @@ namespace RayTracingPathLighting
 		                                       sampleIndex,
 		                                       specularSampleMode,
 		                                       bounceCount,
-		                                       FrameIndex,
-		                                       traceSettings);
+		                                       FrameIndex);
 	}
 }
 

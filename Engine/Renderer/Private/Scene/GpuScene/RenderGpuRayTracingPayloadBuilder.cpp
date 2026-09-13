@@ -88,8 +88,7 @@ void RenderGpuRayTracingPayloadBuilder::AppendMaterials(const PreparedRenderScen
 	payloads.Materials.reserve(preparedScene.materials.size());
 	for (const MaterialData& material : preparedScene.materials)
 	{
-		payloads.Materials.push_back(
-		    RayTracingHitMaterial{
+		RayTracingHitMaterial rayTracingMaterial{
 		        .BaseColor = material.baseColor,
 		        .EmissiveColor = material.emissiveColor,
 		        .Metallic = material.metallic,
@@ -111,7 +110,9 @@ void RenderGpuRayTracingPayloadBuilder::AppendMaterials(const PreparedRenderScen
 		            material.materialTextureIndices[MaterialTextureSlots::Occlusion],
 		            material.materialTextureIndices[MaterialTextureSlots::Emissive],
 		            material.materialTextureIndices[MaterialTextureSlots::SubsurfaceColor],
-		            material.materialTextureIndices[MaterialTextureSlots::SubsurfaceStrength]}});
+		            material.materialTextureIndices[MaterialTextureSlots::SubsurfaceStrength]},
+		        .TextureMappings = material.materialTextureMappings};
+		payloads.Materials.push_back(rayTracingMaterial);
 	}
 }
 

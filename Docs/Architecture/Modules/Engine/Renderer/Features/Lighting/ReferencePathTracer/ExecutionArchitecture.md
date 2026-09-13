@@ -1,6 +1,6 @@
 # Reference Path Tracer Execution Architecture
 
-**Status:** Stage-0-frozen target architecture accepted by `PTD-00-R1 PASS`; Stages 1-2 pass their development gates and Stage 3 is **IMPLEMENTED / VALIDATION DEFERRED** with real raw GPU oracle evidence retained in the validation backlog; release/package acceptance remains unavailable until its evidence gates pass
+**Status:** Stage-0-frozen target architecture accepted by `PTD-00-R1 PASS`; Stages 1-2 pass their development gates and Stages 3-5 are **IMPLEMENTED / VALIDATION DEFERRED** with real raw GPU oracle evidence retained in the validation backlog; release/package acceptance remains unavailable until its evidence gates pass
 
 **Scope:** define the owner, contracts, lifetime, execution, sampling, accumulation, viewport interaction, artifact, automation, and clean-break boundaries for SparkleEngine's eventual Reference Path Tracer
 
@@ -12,9 +12,9 @@
 
 **Priority reconciliation:** 2026-09-10 makes the responsive live viewport slice the first architecture milestone and places durable artifact workflow after it; this changes no current-source or readiness claim.
 
-**Current readiness:** **35/100 (`30/5/0/0`)**. Stage 3 retains the original-frame alternate recipe plus a minimal camera/Lambertian/emissive/environment-miss GPU source slice and reconciled shared ray-tracing capabilities. The latest shared-family refactor is not compiled or cooked, and real raw GPU analytic/fault evidence is absent. Those owner-operated checks are deferred rather than a development stop, so later implementation may continue without adding readiness credit; the full estimator, session identity, accumulator, clickable UI, runtime transition proof, and oracle authority remain undelivered or unverified. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **40/100 (`35/5/0/0`)**. The original-frame alternate recipe now composes the included estimator over shared camera, evaluated triangle, material/texture, path, light, visibility, MIS, roulette, and robust endpoint owners. Accepted UV0, alpha, side, normal-map, emission, and frozen deformation semantics are source-present, and existing ray/path consumers use the same changed contracts. The current tree is not compiled or cooked and real raw GPU analytic/fault/robustness evidence is absent. Those owner-operated checks are deferred rather than a development stop; session identity, accumulation, clickable UI, runtime transition proof, and oracle authority remain undelivered or unverified. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
-**Non-claims:** the current minimal transport source and predecessor builds/cooks do not prove the current shader's execution, raw radiance correctness, convergence, backend parity, performance, package, Shipping, or release evidence.
+**Non-claims:** the current transport/material/endpoint source and predecessor builds/cooks do not prove the current shader's execution, decode correctness, endpoint conservatism, raw radiance correctness, convergence, backend parity, performance, package, Shipping, or release evidence.
 
 The target is one bounded, restartable **per-view reference session** selected as `RenderViewMode::ReferencePathTracer` immediately after Lit. It is a specialized setup and execution route inside the existing Renderer, `FramePipeline`, frame graph, Scene, View, and RHI architecture—not a separate renderer. It traces camera paths over immutable Scene- and View-owned generations, accumulates automatically while the effective view is unchanged, invalidates before mixing changed inputs, and can publish raw scene-linear evidence atomically. A secondary offscreen run uses the same session semantics. It is not a quality preset layered onto the retired GBuffer-seeded branch, and it does not duplicate frame ownership.
 

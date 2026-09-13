@@ -44,10 +44,7 @@ void AddRestirIndirectResolvePass(FrameGraphBuilder& builder, RenderViewportExte
 	    [](auto& fields)
 	    {
 		    const RestirIndirectLightingSettings settings = BuildRestirIndirectLightingSettings();
-		    fields.RestirIndirectConstants = RestirIndirectLightingUniformData{
-		        .BounceCount = settings.BounceCount,
-		        .NormalBias = settings.NormalBias,
-		        .MaxDistance = settings.MaxDistance};
+		    fields.RestirIndirectConstants = RestirIndirectLightingUniformData{.BounceCount = settings.BounceCount};
 	    });
 	builder.Dispatch<RestirIndirectResolveCS>(
 	    parameters,

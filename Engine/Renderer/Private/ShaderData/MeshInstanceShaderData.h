@@ -10,6 +10,7 @@ struct MeshInstanceData
 {
 	DirectX::XMFLOAT4X4 WorldMatrix;
 	DirectX::XMFLOAT4X4 PreviousWorldMatrix;
+	DirectX::XMFLOAT4X4 WorldInverseMatrix;
 	DirectX::XMFLOAT3X4 WorldInverseTranspose;
 	uint32_t MaterialSlot = 0;
 	uint32_t Flags = 0;
@@ -22,7 +23,7 @@ struct MeshInstanceData
 };
 static_assert(std::is_standard_layout_v<MeshInstanceData>, "MeshInstanceData must be standard-layout");
 static_assert(std::is_trivially_copyable_v<MeshInstanceData>, "MeshInstanceData must be trivially-copyable");
-static_assert(sizeof(MeshInstanceData) == 208, "MeshInstanceData must match the HLSL structured-buffer stride");
+static_assert(sizeof(MeshInstanceData) == 272, "MeshInstanceData must match the HLSL structured-buffer stride");
 
 inline constexpr std::uint32_t MeshInstanceFlag_Skinned = 1u << 0u;
 inline constexpr std::uint32_t MeshInstanceFlag_Morphed = 1u << 1u;
