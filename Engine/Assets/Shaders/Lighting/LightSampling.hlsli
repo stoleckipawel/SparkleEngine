@@ -130,8 +130,8 @@ namespace LightSampling
 
 	float3 PhotometricRgbToRadiometric(float3 color, float quantity)
 	{
-		const float luminance = max(dot(color, float3(0.2126f, 0.7152f, 0.0722f)), 0x1.0p-24f);
-		return quantity * color / (683.0f * luminance);
+		const float luminance = dot(color, float3(0.2126f, 0.7152f, 0.0722f));
+		return luminance > 0.0f ? quantity * color / (683.0f * luminance) : 0.0f.xxx;
 	}
 
 	DirectLightSample RadiometricDirectionalLightSample(float3 directionWorld, float3 irradiance)

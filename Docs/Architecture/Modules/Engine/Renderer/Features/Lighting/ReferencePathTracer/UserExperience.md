@@ -346,6 +346,28 @@ An independent read-only reviewer attempted to reconstruct first use from source
 - Resource limits fail or suspend explicitly before unsafe allocation. TDR-safe batching may change schedule, never the sample stream.
 - Completed output is never overwritten in place. A retry/export gets a new invocation directory and lineage.
 
+## Epic Path Tracer Product Correspondence
+
+Epic's official Unreal Engine 5.8 Path Tracer documentation is the primary interaction precedent, not Sparkle's implementation authority. The complete NVIDIA/Epic capability disposition is retained in [Research](Research.md#nvidia-and-epic-mid-delivery-alignment--2026-09-13). Sparkle adopts the behaviors that make the mode useful for daily lighting comparison:
+
+- ordinary viewport View Mode selection, automatic progressive accumulation, a visible target-SPP progress bar, and immediate noisy feedback;
+- invalidation on effective camera, view, object, material, light, environment, or admitted deformation change;
+- the same semantic being reachable from an approved Game/runtime viewport rather than existing only as an Editor batch tool;
+- raw radiance remaining distinct from denoised radiance, albedo/normal/variance guides, display transforms, screenshots, and final file output;
+- bounce/sample/filter controls being mode semantics rather than mutations of the user's Lit configuration; and
+- bounded GPU work so camera interaction and the operating-system watchdog are not hostage to one uninterruptible render.
+
+Sparkle deliberately tightens or differs from the Epic behavior where reference use requires it:
+
+- Unreal documents animated elements that can fail to invalidate and appear blurred or streaked; Sparkle must observe a contributing generation or reject that content before sample zero.
+- Unreal's `Max Path Intensity` reduces fireflies by losing energy; Sparkle raw radiance has no path-intensity/firefly clamp. A clean presentation cannot replace an unchanged estimator mean.
+- Unreal can denoise when the target is reached and can toggle denoising without rebuilding accumulation; Sparkle may later do the same only as a labeled derivative. Raw accumulation and completion remain unchanged.
+- Unreal exposes broad transmission, atmosphere, volume, hair, Nanite/fallback, particle, and material-switch behavior. Sparkle v0.1 exposes only its frozen reflective surface domain and names unsupported content before allocation; feature breadth is never inferred from the view-mode label.
+- Unreal documents emitter and sky-representation combinations that can double-count lighting. Sparkle exposes the actual analytic, emissive, and environment semantics in preflight/equivalence evidence and does not guess whether intentionally colocated emitters are duplicates.
+- Unreal may hide the progress bar after completion; Sparkle retains an unobtrusive exact completed-prefix state so switching to Lit and back never obscures whether the retained result is current.
+
+This correspondence is a Stage-6/7 delivery contract. It does not claim that the current source already has accumulation, invalidation, progress UI, runtime selection, or denoising.
+
 ## Common Experience Failure Points
 
 | Failure | Why it is unacceptable | Required design response |
