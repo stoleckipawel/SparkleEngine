@@ -6,11 +6,11 @@
 
 **Authority boundary:** the [research report](Research.md) owns precedent and initial findings, [Transport And Estimator](TransportAndEstimator.md) owns the proposed mathematical contract and decision slots, [Execution Architecture](ExecutionArchitecture.md) owns the proposed system boundary, [User Experience](UserExperience.md) owns the proposed human/automation workflow, the [conditional plan](Plan.md) owns Stage 0 and the provisional delivery route, the [roadmap](../../../../../../../Strategy/Roadmap.md#reference-path-tracer-truth-first) owns priority, the [feature dossier](README.md) owns the eventual feature set and definition of done, and [`FCR-REN-08`](../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry) owns its result
 
-**Current state:** **`PTD-00-R1 PASS`** remains the historical immutable discovery baseline accepted by the repository owner on 2026-09-10 at dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300` against committed source input `30597d7d0bb70af9f2836ab01d81d47c3e20bcde`. On 2026-09-13 the repository owner explicitly replaced its shader/accumulator binary64 choice with ordinary binary32 while retaining generic backend float64 capabilities for unrelated future shaders. The amended precision contract is frozen in [Transport And Estimator](TransportAndEstimator.md#stage-0-decision-freeze), but its independent numerical review is still required before Stage 3 can pass or Stage 4 can begin. Stage 10 and release claims remain separately gated.
+**Current state:** **`PTD-00-R1 PASS`** remains the historical immutable discovery baseline accepted by the repository owner on 2026-09-10 at dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300` against committed source input `30597d7d0bb70af9f2836ab01d81d47c3e20bcde`. On 2026-09-13 the repository owner explicitly replaced its shader/accumulator binary64 choice with ordinary binary32 while retaining generic backend float64 capabilities for unrelated future shaders. The amended precision contract is frozen in [Transport And Estimator](TransportAndEstimator.md#stage-0-decision-freeze). Its independent numerical review remains in the validation backlog and is required for final evidence acceptance, but its deferral does not prevent Stage 4 implementation. Stage 10 and release claims remain separately gated.
 
 **Naming reconciliation:** the 2026-09-09 working-tree clean break makes `ReferencePathTracer` the sole feature name; it changes no behavior, authorization, or evidence claim.
 
-**Current readiness:** `PTD-01-R2 PASS` and `PTD-02-R0 PASS` remain valid because the precision amendment changes neither selector nor frame ownership. `PTD-03-R0` remains blocked on real raw GPU/fault evidence and now also requires independent review of binary32 error at the frozen SPP/radiance bounds. No estimator-authority, image, oracle, package, or release evidence is inferred. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** `PTD-01-R2 PASS` and `PTD-02-R0 PASS` remain valid because the precision amendment changes neither selector nor frame ownership. Stage 3 is **IMPLEMENTED / VALIDATION DEFERRED**; real raw GPU/fault evidence and independent review of binary32 error at the frozen SPP/radiance bounds remain unrun and receive no readiness credit. No estimator-authority, image, oracle, package, or release evidence is inferred. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## Gate At A Glance
 
@@ -126,7 +126,7 @@ Each check specification produced during discovery must include initial state, a
 
 | Check | Criteria, failures, and risks falsified | Minimum action and oracle | Required artifact | Escalation |
 | --- | --- | --- | --- | --- |
-| `CHK-PTD-01` current-route reconciliation | `AC-PTD-03`, `AC-PTD-04`; `FM-PTD-02`, `FM-PTD-08`; `RISK-PTD-01`, `RISK-PTD-03`, `RISK-PTD-08` | Search public selectors, build membership, owners, CPU graph, shader includes, resources, history, output, and both backend bindings; every contribution and fallback must land in one matrix row. | revision-pinned line links, dependency graph, unmatched-search record | Any unmatched selector/contribution blocks scope. |
+| `CHK-PTD-01` current-route reconciliation | `AC-PTD-03`, `AC-PTD-04`; `FM-PTD-02`, `FM-PTD-08`; `RISK-PTD-01`, `RISK-PTD-03`, `RISK-PTD-08` | Search public selectors, build membership, owners, host frame graph, shader includes, resources, history, output, and both backend bindings; every contribution and fallback must land in one matrix row. | revision-pinned line links, dependency graph, unmatched-search record | Any unmatched selector/contribution blocks scope. |
 | `CHK-PTD-02` primary-precedent audit | `AC-PTD-01`, `AC-PTD-10`, `AC-PTD-15`; `FM-PTD-01`, `FM-PTD-14`; `RISK-PTD-11` | Pin NVIDIA/AMD revisions; inspect Falcor minimal/full tracer, RTXPT reference controls, NVIDIA robustness, Capsaicin shared Inline/DXR tracer, Baikal's bias/wavefront/workflow disclosures, RadeonRays separation, and neutral math/format sources; distinguish adopted, rejected, and unknown lessons. | source URL/SHA ledger and comparison table | A secondary summary or unpinned moving claim cannot decide target shape. |
 | `CHK-PTD-03` estimator review | `AC-PTD-02`, `AC-PTD-05`; `FM-PTD-03`, `FM-PTD-04`; `RISK-PTD-02`, `RISK-PTD-04`, `RISK-PTD-09` | Expand every sampled path probability and contribution in one notation; hand-evaluate zero, unit, delta, two-strategy, roulette, cutoff, and invalid cases. | derivation, reviewer annotations, hand-case outputs | Any unmatched term/probability blocks planning. |
 | `CHK-PTD-04` dependency fault analysis | `AC-PTD-06`; `FM-PTD-02`; `RISK-PTD-01` | For each shared component, posit a concrete wrong value/branch and show which independent level detects it. | shared-dependency/fault/oracle matrix | A fault surviving all proposed oracles forces new independence or narrower claims. |
@@ -211,8 +211,8 @@ The target shape is accepted as one Renderer-owned per-view session, independent
 | Rows | Owner / primary phase | Defect-detecting checks | Budget | Independent/shared-dependency oracle |
 | --- | --- | --- | --- | --- |
 | `RPT-FS-01`, `10`, `12`, `15` | Renderer View/session, Editor/Application adapters; Stages 1, 6, 7 | `CHK-RPT-02`, `07`, `09`, `15`, `16` | 255-455 h combined stages; per UX runtime bounds | canonical camera fixtures, state-model traces, non-author first use |
-| `RPT-FS-02`, `03`, `11` | Renderer View/geometry plus RHI traversal; Stages 2, 5 | `CHK-RPT-03`, `04`, `08` | 130-220 h | CPU analytic rays/triangles, NVIDIA/PBRT error-bound challenge, paired backends |
-| `RPT-FS-04`, `05`, `06` | Scene/material/texture producers and Renderer BSDF; Stages 2, 4, 5 | `CHK-RPT-03`, `04`, `05` | 220-370 h overlapping | glTF fixtures, CPU decode/eval, furnace, Mitsuba-equivalent scenes |
+| `RPT-FS-02`, `03`, `11` | Renderer View/geometry plus RHI traversal; Stages 2, 5 | `CHK-RPT-03`, `04`, `08` | 130-220 h | hand-derived ray/triangle expectations executed through production GPU transport, NVIDIA/PBRT error-bound challenge, paired backends |
+| `RPT-FS-04`, `05`, `06` | Scene/material/texture producers and Renderer BSDF; Stages 2, 4, 5 | `CHK-RPT-03`, `04`, `05` | 220-370 h overlapping | glTF fixtures, hand-derived decode/eval expectations executed on the GPU, furnace, Mitsuba-equivalent scenes |
 | `RPT-FS-07`, `08`, `09` | Renderer light/integrator; Stages 3, 4 | `CHK-RPT-05`, `11` | 160-270 h | analytic energy/PDF cases, minimal tracer, Falcor/Capsaicin/Mitsuba |
 | `RPT-FS-13`, `14` | Renderer readback, ApplicationEditor publication, evidence owner; Stage 9 | `CHK-RPT-04`-`13` | 145-250 h | SHA-256 replay, analytic/minimal/external ladder, controlled faults |
 | `RPT-FS-16` | release/evidence owner; Stage 10 and `PTD-03` | `CHK-RPT-14`, `16` | 70-125 h plus per-map execution | independent renderer and per-map acceptance owner |
@@ -240,9 +240,9 @@ Shared leaves are allowed only with the following independent detector:
 
 | Shared leaf / injected fault | Independent detector |
 | --- | --- |
-| Camera transform/projection (transpose, Y flip, half-pixel) | CPU known-ray oracle plus Mitsuba camera manifest; constant environment catches filter normalization. |
-| Triangle decode/transform/barycentrics (index, winding, shear) | CPU analytic intersection and metamorphic rigid-transform/scale fixtures; paired frontend hit records. |
-| Texture/material decode (sRGB-as-linear, wrong channel, tangent sign) | CPU texel/material evaluator, glTF known values, flat/normal-mapped furnace, external equivalent scene. |
+| Camera transform/projection (transpose, Y flip, half-pixel) | Hand-calculated known rays exercised through the production GPU shader plus a Mitsuba camera manifest; constant environment catches filter normalization. |
+| Triangle decode/transform/barycentrics (index, winding, shear) | Hand-calculated intersections and metamorphic rigid-transform/scale fixtures exercised through production GPU traversal; paired frontend hit results. |
+| Texture/material decode (sRGB-as-linear, wrong channel, tangent sign) | Hand-derived texel/material values exercised through the production GPU shader, glTF known values, flat/normal-mapped furnace, and external equivalent scene. |
 | Light units/PDF (missing PMF/Jacobian, wrong cone/side) | hand energy/PDF cases and minimal event tracer; Mitsuba/Falcor only after equivalence. |
 | Traversal/alpha (miss, cull, cutoff equality) | analytic occluders and forced Inline/RGS/D3D12/Vulkan hit/event parity. |
 | Accumulation/output (lost ordinal, float count, display contamination) | host binary64 sequence, checkpoint round trip, raw hash, and injected display transform. |
@@ -270,7 +270,7 @@ Shared leaves are allowed only with the following independent detector:
 
 ### `PTD-D2` oracle, fixtures, statistics, and fault protocol
 
-Every check starts from a clean session and immutable manifest, performs one named action/injection, retains raw/event/counter output, and restores/removes local temporary data. Default maximums are `2 min` source/trace checks, `5 min` CPU algebra/sampler checks, `15 min` per analytic GPU pair, `30 min` per minimal scene/pair, `4 h` per external renderer scene/replicate, `10 min` per controlled operational fault, and `15 min` first-use. A timeout is `Inconclusive` or the named failure result, never `PASS`.
+Every check starts from a clean session and immutable manifest, performs one named action/injection, retains the minimum required raw result, and restores/removes local temporary data. Default maximums are `2 min` source/trace checks, `5 min` hand-calculation review, `15 min` per analytic GPU pair, `30 min` per minimal scene/pair, `4 h` per external renderer scene/replicate, `10 min` per controlled operational fault, and `15 min` first-use. A timeout is `Inconclusive` or the named failure result, never `PASS`.
 
 | Fixture/class | Exact oracle and injected defect |
 | --- | --- |
@@ -280,7 +280,7 @@ Every check starts from a clean session and immutable manifest, performs one nam
 | `ANA-MIS-RR` | equal/zero PDF, emission-hit split, delta bypass, roulette expectation/tail; double emission, compare delta density, omit survival division, return black at safety depth. |
 | `ANA-GEOM` | barycentric/winding/alpha-equality/two-side plus scale `10^-6..10^6`, translation, shear, mirror, grazing, adjacent/coplanar and thin gaps; replace robust bound with fixed epsilon. |
 | `META` | rigid transform, uniform unit-preserving scale with corresponding light/camera transform, emitter permutation, strategy relabel, batch/reorder/pause/resume/backend invariance; inject frame-index seed or branch-shifted dimensions. |
-| `MIN-EVENT` | repository-local temporary CPU scalar event walker using independent double math and no Renderer BRDF/light helper; compare bounded event/factor records, then remove probe. |
+| `MIN-EVENT` | Source-independent hand-worked bounded event/factor tables predict tiny analytic-scene outputs that are compared with the production GPU raw result. No second event walker, tracer, or submitted diagnostic path is created. |
 | `EXT-FALCOR`, `EXT-CAPSAICIN`, `EXT-MITSUBA` | author tiny original scenes from numeric manifests; do not redistribute vendor assets. Pin renderer commit/version/config/output hashes and prove camera, units, base-level textures, material, normals, light shape/side, environment, path domain, and color equivalence first. Non-equivalence is `Inconclusive`. |
 | `FAULT-OPS` | unsupported capability, capacity, timeout, cancel, device loss, OOM/allocation refusal, read-only/full disk, corrupt checkpoint, hash mismatch, late completion, and shutdown; assert state, deadline, cleanup, preserved prefix/prior artifact, and no completion manifest. |
 
