@@ -19,30 +19,17 @@ RayTracingTraceResult TraceRayQueryWithAlphaTest(RaytracingAccelerationStructure
 
 	RayQuery<RAY_FLAG_NONE> query;
 	query.TraceRayInline(sceneTlas, rayFlags, instanceMask, ray);
-	float alphaCandidateValue = 1.0f;
-	float alphaCandidateCutoff = 0.5f;
-	bool alphaCandidateSeen = false;
-	bool alphaCandidateAccepted = false;
-	bool alphaCandidateRejected = false;
 	while (query.Proceed())
 	{
 		if (query.CandidateType() == CANDIDATE_NON_OPAQUE_TRIANGLE)
 		{
-			alphaCandidateSeen = true;
 			const bool commitCandidate = ResolveRayTracingCandidateAlpha(query.CandidateInstanceID(),
 			                                                             query.CandidatePrimitiveIndex(),
 			                                                             query.CandidateTriangleBarycentrics(),
-			                                                             query.CandidateTriangleFrontFace(),
-			                                                             alphaCandidateValue,
-			                                                             alphaCandidateCutoff);
+			                                                             query.CandidateTriangleFrontFace());
 			if (commitCandidate)
 			{
-				alphaCandidateAccepted = true;
 				query.CommitNonOpaqueTriangleHit();
-			}
-			else
-			{
-				alphaCandidateRejected = true;
 			}
 		}
 	}
@@ -54,11 +41,6 @@ RayTracingTraceResult TraceRayQueryWithAlphaTest(RaytracingAccelerationStructure
 	result.InstanceId = result.Hit ? query.CommittedInstanceID() : 0u;
 	result.PrimitiveIndex = result.Hit ? query.CommittedPrimitiveIndex() : 0u;
 	result.Barycentrics = result.Hit ? query.CommittedTriangleBarycentrics() : 0.0f.xx;
-	result.AlphaCandidateSeen = alphaCandidateSeen;
-	result.AlphaCandidateAccepted = alphaCandidateAccepted && result.Hit;
-	result.AlphaCandidateRejected = alphaCandidateRejected;
-	result.AlphaCandidateValue = alphaCandidateValue;
-	result.AlphaCandidateCutoff = alphaCandidateCutoff;
 	return result;
 }
 

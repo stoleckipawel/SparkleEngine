@@ -2,10 +2,6 @@
 
 namespace RayTracingPathSample
 {
-	static const uint RejectionReasonNone = 0u;
-	static const uint RejectionReasonInvalidSample = 1u;
-	static const uint RejectionReasonTraceMiss = 2u;
-	static const uint RejectionReasonHitSurfaceRejected = 3u;
 	static const uint LobeNone = 0u;
 	static const uint LobeDiffuse = 1u;
 	static const uint LobeSpecular = 2u;
@@ -14,35 +10,16 @@ namespace RayTracingPathSample
 	{
 		float3 DirectionWorld;
 		float PdfW;
-		float EventProbability;
-		float CosineTerm;
-		float3 CompleteContinuousF;
 		float3 Throughput;
 		uint Lobe;
 		bool Delta;
 		bool HasSupport;
-		uint RejectionReason;
-	};
-
-	struct TraceState
-	{
-		bool Hit;
-		float HitDistance;
-		uint RejectionReason;
 	};
 
 	struct LightingResult
 	{
-		bool TraceHit;
 		bool Hit;
 		float3 IncidentRadiance;
-		float3 Contribution;
-		float HitDistance;
 		float3 HitPositionWorld;
-		float3 HitNormalWorld;
-		float3 MaterialBaseColor;
-		float3 MissRadiance;
-		uint SurfaceRejectionReason;
-		uint RejectionReason;
 	};
 }

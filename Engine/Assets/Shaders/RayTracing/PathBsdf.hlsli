@@ -159,7 +159,6 @@ namespace PathBsdf
 	{
 		RayTracingPathSample::DirectionSample result = (RayTracingPathSample::DirectionSample)0;
 		result.Lobe = selectedLobe;
-		result.RejectionReason = RayTracingPathSample::RejectionReasonNone;
 		if (selectedLobe == RayTracingPathSample::LobeDiffuse)
 		{
 			const CommonSampling::CosineHemisphereSample direction =
@@ -174,12 +173,10 @@ namespace PathBsdf
 				const float3 f0 = lerp(surface.DielectricF0.xxx, surface.BaseColor, surface.Metallic);
 				const float cosine = abs(dot(surface.ViewDirWorld, surface.NormalWorld));
 				const float correction = ShadingNormalCorrection(surface, result.DirectionWorld);
-				result.EventProbability = masses.Specular;
-				result.Throughput = FresnelSchlick(cosine, f0) * correction / result.EventProbability;
+				result.Throughput = FresnelSchlick(cosine, f0) * correction / masses.Specular;
 				result.Lobe = RayTracingPathSample::LobeSpecular;
 				result.Delta = true;
 				result.HasSupport = any(result.Throughput > 0.0f);
-				result.RejectionReason = RayTracingPathSample::RejectionReasonNone;
 				return result;
 			}
 			const float3 halfVector = SampleVisibleGGXHalfVector(surface, sample);
@@ -187,8 +184,6 @@ namespace PathBsdf
 		}
 		const Evaluation evaluation = EvaluateContinuous(surface, result.DirectionWorld, masses);
 		result.PdfW = evaluation.PdfW;
-		result.CosineTerm = evaluation.Cosine;
-		result.CompleteContinuousF = evaluation.F;
 		result.Throughput = evaluation.HasSupport ? evaluation.F * evaluation.Cosine / evaluation.PdfW : 0.0f.xxx;
 		result.Delta = false;
 		result.HasSupport = evaluation.HasSupport;

@@ -18,6 +18,12 @@ namespace RayEndpoints
 		float TMax;
 	};
 
+	struct SurfaceEndpointError
+	{
+		float BaseOffset;
+		float4 TraversalSensitivity;
+	};
+
 	Ray Primary(float3 origin, float3 direction, float tMin, float tMax)
 	{
 		Ray ray;
@@ -28,21 +34,50 @@ namespace RayEndpoints
 		return ray;
 	}
 
-	float NextFloat(float value, float direction)
+	float3 TransformPosition(float3 position, row_major float4x4 transform)
 	{
-		if (value == 0.0f)
-		{
-			return direction > 0.0f ? asfloat(1u) : asfloat(0x80000001u);
-		}
-		const uint increment = (value > 0.0f) == (direction > 0.0f) ? 1u : 0xFFFFFFFFu;
-		return asfloat(asuint(value) + increment);
+		precise float3 result;
+		result.x = transform._41
+		         + mad(position.x, transform._11, mad(position.y, transform._21, position.z * transform._31));
+		result.y = transform._42
+		         + mad(position.x, transform._12, mad(position.y, transform._22, position.z * transform._32));
+		result.z = transform._43
+		         + mad(position.x, transform._13, mad(position.y, transform._23, position.z * transform._33));
+		return result;
 	}
 
-	float3 RoundOutward(float3 position, float3 displacement)
+	float3 TransformGeometricNormal(float3 normalObject, MeshInstanceData mesh)
 	{
-		return float3(displacement.x == 0.0f ? position.x : NextFloat(position.x, displacement.x),
-		              displacement.y == 0.0f ? position.y : NextFloat(position.y, displacement.y),
-		              displacement.z == 0.0f ? position.z : NextFloat(position.z, displacement.z));
+		const float3 transformedNormal = mul(normalObject, (float3x3)mesh.WorldInverseTranspose);
+		return transformedNormal * rsqrt(dot(transformedNormal, transformedNormal));
+	}
+
+	SurfaceEndpointError BuildSurfaceEndpointError(
+	    RayTracingEvaluatedTriangle triangle,
+	    MeshInstanceData mesh,
+	    float3 positionObject,
+	    float3 normalObject)
+	{
+		const float3 edge1 = triangle.V1.Position - triangle.V0.Position;
+		const float3 edge2 = triangle.V2.Position - triangle.V0.Position;
+		const float3 extent3 = abs(edge1) + abs(edge2) + abs(abs(edge1) - abs(edge2));
+		const float extent = max(extent3.x, max(extent3.y, extent3.z));
+		const float3 objectError =
+		    ReconstructionError * abs(triangle.V0.Position) + TriangleIntersectionError * extent;
+		const float3x3 worldLinear = (float3x3)mesh.WorldMatrix;
+		const float3 worldTranslation = float3(mesh.WorldMatrix._41, mesh.WorldMatrix._42, mesh.WorldMatrix._43);
+		const float3 worldError = TriangleIntersectionError * mul(abs(positionObject), abs(worldLinear))
+		                        + TransformError * abs(worldTranslation);
+		const float3 transformedNormal = mul(normalObject, (float3x3)mesh.WorldInverseTranspose);
+		const float inverseNormalLength = rsqrt(dot(transformedNormal, transformedNormal));
+		const float3 normalWorld = transformedNormal * inverseNormalLength;
+
+		SurfaceEndpointError result;
+		result.BaseOffset = dot(abs(normalWorld), worldError)
+		                  + inverseNormalLength * dot(abs(normalObject), objectError);
+		result.TraversalSensitivity = TransformError * inverseNormalLength
+		                            * mul(abs(mesh.WorldInverseMatrix), float4(abs(normalObject), 0.0f));
+		return result;
 	}
 
 	float SurfaceErrorBound(
@@ -50,33 +85,18 @@ namespace RayEndpoints
 	    MeshInstanceData mesh,
 	    float3 positionObject,
 	    float3 positionWorld,
-	    float3 normalObject,
-	    float3 normalWorld)
+	    float3 normalObject)
 	{
-		const float3 edge1 = triangle.V1.Position - triangle.V0.Position;
-		const float3 edge2 = triangle.V2.Position - triangle.V0.Position;
-		const float3 extent = abs(edge1) + abs(edge2) + abs(abs(edge1) - abs(edge2));
-		float3 objectError = ReconstructionError * abs(triangle.V0.Position) + TriangleIntersectionError * extent;
-		const float3x3 worldLinear = (float3x3)mesh.WorldMatrix;
-		const float3 worldTranslation = float3(mesh.WorldMatrix._41, mesh.WorldMatrix._42, mesh.WorldMatrix._43);
-		const float3 worldError = mul(objectError, abs(worldLinear))
-		                        + TransformError * (abs(mul(positionObject, worldLinear)) + abs(worldTranslation));
-		objectError += TransformError * mul(float4(abs(positionWorld), 1.0f), abs(mesh.WorldInverseMatrix)).xyz;
-		const float3 transformedNormal = mul(normalObject, (float3x3)mesh.WorldInverseTranspose);
-		const float inverseNormalLength = rsqrt(dot(transformedNormal, transformedNormal));
-		return dot(abs(normalWorld), worldError) + dot(abs(normalObject), objectError) * inverseNormalLength;
+		const SurfaceEndpointError error =
+		    BuildSurfaceEndpointError(triangle, mesh, positionObject, normalObject);
+		return error.BaseOffset + dot(float4(abs(positionWorld), 1.0f), error.TraversalSensitivity);
 	}
 
 	float3 OffsetSurface(float3 position, float3 geometricNormal, float errorBound, float3 direction)
 	{
 		const float side = dot(direction, geometricNormal) >= 0.0f ? 1.0f : -1.0f;
-		const float3 displacement = side * errorBound * geometricNormal;
-		return RoundOutward(position + displacement, displacement);
-	}
-
-	float AnalyticPositionError(float3 position, float3 normal)
-	{
-		return TransformError * dot(abs(normal), abs(position));
+		precise float3 result = mad(side * errorBound, geometricNormal, position);
+		return result;
 	}
 
 	Ray Continuation(float3 position, float3 geometricNormal, float errorBound, float3 direction)
@@ -94,16 +114,19 @@ namespace RayEndpoints
 	               float errorBound,
 	               float3 targetPosition,
 	               float3 targetGeometricNormal,
-	               float targetErrorBound)
+	               float targetBaseOffset,
+	               float4 targetTraversalSensitivity)
 	{
 		const float3 semanticDirection = normalize(targetPosition - position);
 		const float3 source = OffsetSurface(position, geometricNormal, errorBound, semanticDirection);
-		const float3 target = targetErrorBound == 0.0f
-		    ? RoundOutward(targetPosition, -semanticDirection)
-		    : OffsetSurface(targetPosition, targetGeometricNormal, targetErrorBound, -semanticDirection);
+		precise float3 direction = targetPosition - source;
+		const float targetError = targetBaseOffset
+		                        + dot(float4(abs(source) + abs(direction), 1.0f), targetTraversalSensitivity);
+		const float targetSide = dot(-direction, targetGeometricNormal) >= 0.0f ? 1.0f : -1.0f;
+		direction = mad(targetSide * targetError, targetGeometricNormal, direction);
 		Ray ray;
 		ray.Origin = source;
-		ray.Direction = target - source;
+		ray.Direction = direction;
 		ray.TMin = 0.0f;
 		ray.TMax = asfloat(asuint(1.0f) - 1u);
 		return ray;

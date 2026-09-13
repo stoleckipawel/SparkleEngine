@@ -64,9 +64,11 @@ RayTracingEvaluatedTriangle EvaluateRayTracingTriangle(uint instanceId, uint pri
 
 float3 InterpolateRayTracingPosition(RayTracingEvaluatedTriangle triangle)
 {
-	const float3 edge1 = triangle.V1.Position - triangle.V0.Position;
-	const float3 edge2 = triangle.V2.Position - triangle.V0.Position;
-	return triangle.V0.Position + triangle.BarycentricWeights.y * edge1 + triangle.BarycentricWeights.z * edge2;
+	precise float3 edge1 = triangle.V1.Position - triangle.V0.Position;
+	precise float3 edge2 = triangle.V2.Position - triangle.V0.Position;
+	precise float3 position =
+	    triangle.V0.Position + mad(triangle.BarycentricWeights.y, edge1, triangle.BarycentricWeights.z * edge2);
+	return position;
 }
 
 float3 EvaluatePreviousRayTracingPosition(RayTracingHitTriangle triangle, MeshInstanceData mesh)
@@ -86,7 +88,10 @@ float3 EvaluatePreviousRayTracingPosition(RayTracingHitTriangle triangle, MeshIn
 	    ApplyPreviousSkinning(mesh, triangle.VertexIndices.y, morphed1.Position, morphed1.Normal, morphed1.Tangent).Position;
 	const float3 p2 =
 	    ApplyPreviousSkinning(mesh, triangle.VertexIndices.z, morphed2.Position, morphed2.Normal, morphed2.Tangent).Position;
-	return p0 + triangle.BarycentricWeights.y * (p1 - p0) + triangle.BarycentricWeights.z * (p2 - p0);
+	precise float3 edge1 = p1 - p0;
+	precise float3 edge2 = p2 - p0;
+	precise float3 position = p0 + mad(triangle.BarycentricWeights.y, edge1, triangle.BarycentricWeights.z * edge2);
+	return position;
 }
 
 float2 InterpolateRayTracingTexCoord0(RayTracingEvaluatedTriangle triangle)

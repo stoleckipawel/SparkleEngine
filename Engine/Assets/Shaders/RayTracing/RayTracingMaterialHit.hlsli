@@ -76,12 +76,9 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	    EvaluateRayTracingTriangle(trace.InstanceId, trace.PrimitiveIndex, trace.Barycentrics);
 	const MeshInstanceData mesh = MeshInstances[trace.InstanceId];
 	const float3 positionObject = InterpolateRayTracingPosition(triangle);
-	const float3 positionWorld = mul(float4(positionObject, 1.0f), mesh.WorldMatrix).xyz;
-	const float3 p0World = mul(float4(triangle.V0.Position, 1.0f), mesh.WorldMatrix).xyz;
-	const float3 p1World = mul(float4(triangle.V1.Position, 1.0f), mesh.WorldMatrix).xyz;
-	const float3 p2World = mul(float4(triangle.V2.Position, 1.0f), mesh.WorldMatrix).xyz;
+	const float3 positionWorld = RayEndpoints::TransformPosition(positionObject, mesh.WorldMatrix);
 	const float3 normalObject = cross(triangle.V1.Position - triangle.V0.Position, triangle.V2.Position - triangle.V0.Position);
-	const float3 outwardGeometricNormal = normalize(cross(p1World - p0World, p2World - p0World));
+	const float3 outwardGeometricNormal = RayEndpoints::TransformGeometricNormal(normalObject, mesh);
 	const bool twoSided = (triangle.Instance.Flags & RayTracingHitSurface::InstanceFlagTwoSided) != 0u;
 
 	RayTracingHitSurfaceData surface = (RayTracingHitSurfaceData)0;
@@ -149,7 +146,7 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	surface.PreviousPositionWorld = positionWorld;
 	surface.GeometricNormalWorld = geometricNormal;
 	surface.PositionError = RayEndpoints::SurfaceErrorBound(
-	    triangle, mesh, positionObject, positionWorld, normalObject, geometricNormal);
+	    triangle, mesh, positionObject, positionWorld, normalObject);
 	surface.NormalWorld = shadingNormal;
 	surface.TangentWorld = tangentWorld;
 	surface.BitangentWorld = bitangentWorld;
@@ -185,7 +182,7 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurfaceWithPrevious(RayTracingT
 		    LoadRayTracingHitTriangle(trace.InstanceId, trace.PrimitiveIndex, trace.Barycentrics);
 		const MeshInstanceData mesh = MeshInstances[trace.InstanceId];
 		const float3 previousPositionObject = EvaluatePreviousRayTracingPosition(triangle, mesh);
-		surface.PreviousPositionWorld = mul(float4(previousPositionObject, 1.0f), mesh.PreviousWorldMatrix).xyz;
+		surface.PreviousPositionWorld = RayEndpoints::TransformPosition(previousPositionObject, mesh.PreviousWorldMatrix);
 	}
 	return surface;
 }

@@ -9,11 +9,6 @@ struct RayTracingTraceResult
 	uint InstanceId;
 	uint PrimitiveIndex;
 	float2 Barycentrics;
-	bool AlphaCandidateSeen;
-	bool AlphaCandidateAccepted;
-	bool AlphaCandidateRejected;
-	float AlphaCandidateValue;
-	float AlphaCandidateCutoff;
 };
 
 #endif

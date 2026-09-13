@@ -14,39 +14,31 @@ float4 SampleRayTracingMaterialTexture(RayTracingHitMaterial material, uint text
 	return MaterialTextureTableSampling::SampleBaseLevelBilinear(MaterialTextureTable, textureIndex, mappedUv, mapping.AddressModes);
 }
 
+bool PassesRayTracingMaterialAlpha(RayTracingHitMaterial material, float2 texCoord0, float4 vertexColor)
+{
+	if (material.AlphaMode != RayTracingHitSurface::AlphaModeTested)
+	{
+		return true;
+	}
+
+	float alpha = material.BaseColor.a;
+	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotBaseColor))
+	{
+		alpha *= SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotBaseColor, texCoord0).a;
+	}
+	return alpha * vertexColor.a >= material.AlphaCutoff;
+}
+
 bool ResolveRayTracingCandidateAlpha(uint instanceId,
                                      uint primitiveIndex,
                                      float2 barycentrics,
-                                     bool frontFace,
-                                     out float sampledAlpha,
-                                     out float alphaCutoff)
+                                     bool frontFace)
 {
 	const RayTracingHitTriangle triangle = LoadRayTracingHitTriangle(instanceId, primitiveIndex, barycentrics);
 	if (!frontFace && (triangle.Instance.Flags & RayTracingHitSurface::InstanceFlagTwoSided) == 0u)
 	{
-		sampledAlpha = 1.0f;
-		alphaCutoff = triangle.Material.AlphaCutoff;
 		return false;
 	}
-	if (triangle.Material.AlphaMode != RayTracingHitSurface::AlphaModeTested)
-	{
-		sampledAlpha = 1.0f;
-		alphaCutoff = triangle.Material.AlphaCutoff;
-		return true;
-	}
-
-	float4 baseColor = triangle.Material.BaseColor;
-	if (MaterialTextureTableSampling::HasTexture(
-	        triangle.Material.TextureFlags, MaterialTextureTableSampling::TextureSlotBaseColor))
-	{
-		baseColor = SampleRayTracingMaterialTexture(
-		                triangle.Material,
-		                MaterialTextureTableSampling::TextureSlotBaseColor,
-		                InterpolateRayTracingHitTexCoord0(triangle))
-		          * triangle.Material.BaseColor;
-	}
-	baseColor *= InterpolateRayTracingHitColor(triangle);
-	sampledAlpha = baseColor.a;
-	alphaCutoff = triangle.Material.AlphaCutoff;
-	return sampledAlpha >= alphaCutoff;
+	return PassesRayTracingMaterialAlpha(
+	    triangle.Material, InterpolateRayTracingHitTexCoord0(triangle), InterpolateRayTracingHitColor(triangle));
 }

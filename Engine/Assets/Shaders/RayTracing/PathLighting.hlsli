@@ -15,14 +15,11 @@ namespace RayTracingPathLighting
 	{
 		uint PrimaryLobe;
 		float3 FinalContribution;
-		RayTracingPathSample::DirectionSample FirstSample;
 		RayTracingPathSample::LightingResult FirstLighting;
-		RayTracingTraceResult FirstTrace;
-		RayTracingHitSurfaceData FirstHitSurface;
 	};
 
 	RayTracingPathSample::LightingResult ResolveLighting(RayTracingTraceResult trace,
-	                                                     RayTracingPathSample::DirectionSample sample,
+	                                                     float3 directionWorld,
 	                                                     Texture2D skyTexture,
 	                                                     SamplerState skySampler,
 	                                                     uint pathSampleIndex,
@@ -32,45 +29,22 @@ namespace RayTracingPathLighting
 	{
 		outHitSurface = (RayTracingHitSurfaceData)0;
 
-		RayTracingPathSample::LightingResult result;
-		result.TraceHit = trace.Hit;
+		RayTracingPathSample::LightingResult result = (RayTracingPathSample::LightingResult)0;
 		result.Hit = trace.Hit;
-		result.HitDistance = trace.RayT;
-		result.RejectionReason = sample.RejectionReason;
-		result.IncidentRadiance = 0.0f.xxx;
-		result.Contribution = 0.0f.xxx;
-		result.HitPositionWorld = 0.0f.xxx;
-		result.HitNormalWorld = 0.0f.xxx;
-		result.MaterialBaseColor = 0.0f.xxx;
-		result.MissRadiance = 0.0f.xxx;
-		result.SurfaceRejectionReason = trace.Hit ? RayTracingHitSurface::ReasonInvalidHitData : RayTracingHitSurface::ReasonNoHit;
-
-		if (sample.RejectionReason != RayTracingPathSample::RejectionReasonNone)
-		{
-			return result;
-		}
 
 		if (trace.Hit)
 		{
-			const RayTracingHitSurfaceData hitSurface = ReconstructRayTracingHitSurface(trace, sample.DirectionWorld);
+			const RayTracingHitSurfaceData hitSurface = ReconstructRayTracingHitSurface(trace, directionWorld);
 			outHitSurface = hitSurface;
 			result.Hit = hitSurface.Valid;
-			result.RejectionReason =
-			    hitSurface.Valid ? RayTracingPathSample::RejectionReasonNone : RayTracingPathSample::RejectionReasonHitSurfaceRejected;
-			result.SurfaceRejectionReason = hitSurface.RejectionReason;
 			result.HitPositionWorld = hitSurface.Valid ? hitSurface.PositionWorld : 0.0f.xxx;
-			result.HitNormalWorld = hitSurface.Valid ? hitSurface.NormalWorld : 0.0f.xxx;
-			result.MaterialBaseColor = hitSurface.Valid ? hitSurface.BaseColor : 0.0f.xxx;
 			result.IncidentRadiance = hitSurface.Valid
-			    ? ShadeRayTracingHitIncidentRadiance(hitSurface, sample.DirectionWorld, pathSampleIndex, bounceIndex, randomFrameIndex)
+			    ? ShadeRayTracingHitIncidentRadiance(hitSurface, directionWorld, pathSampleIndex, bounceIndex, randomFrameIndex)
 			    : 0.0f.xxx;
 			return result;
 		}
 
-		result.RejectionReason = RayTracingPathSample::RejectionReasonTraceMiss;
-		result.SurfaceRejectionReason = RayTracingHitSurface::ReasonNoHit;
-		result.MissRadiance = SampleSkyRadiance(skyTexture, skySampler, sample.DirectionWorld);
-		result.IncidentRadiance = result.MissRadiance;
+		result.IncidentRadiance = SampleSkyRadiance(skyTexture, skySampler, directionWorld);
 		return result;
 	}
 
@@ -85,12 +59,6 @@ namespace RayTracingPathLighting
 	{
 		Result result = (Result)0;
 		result.PrimaryLobe = RayTracingPathSample::LobeNone;
-		result.FirstSample = RayTracingPathSampling::InvalidSample(RayTracingPathSample::LobeNone);
-		result.FirstLighting = (RayTracingPathSample::LightingResult)0;
-		result.FirstLighting.SurfaceRejectionReason = RayTracingHitSurface::ReasonNoHit;
-		result.FirstLighting.RejectionReason = RayTracingPathSample::RejectionReasonTraceMiss;
-		result.FirstTrace = (RayTracingTraceResult)0;
-		result.FirstHitSurface = (RayTracingHitSurfaceData)0;
 
 		RayTracingPathSurface surface = primarySurface;
 		PathTracer::PathState path = (PathTracer::PathState)0;
@@ -106,9 +74,8 @@ namespace RayTracingPathLighting
 			if (bounceIndex == 0u)
 			{
 				result.PrimaryLobe = sample.Lobe;
-				result.FirstSample = sample;
 			}
-			if (sample.RejectionReason != RayTracingPathSample::RejectionReasonNone)
+			if (!sample.HasSupport)
 			{
 				break;
 			}
@@ -124,21 +91,18 @@ namespace RayTracingPathLighting
 			path.OriginWorld = rayOriginWorld;
 			RayTracingHitSurfaceData hitSurface;
 			RayTracingPathSample::LightingResult lighting = ResolveLighting(trace,
-			                                                                sample,
+			                                                                sample.DirectionWorld,
 			                                                                skyTexture,
 			                                                                skySampler,
 			                                                                sampleIndex,
 			                                                                bounceIndex,
 			                                                                randomFrameIndex,
 			                                                                hitSurface);
-			lighting.Contribution = lighting.IncidentRadiance * path.Throughput;
 			PathTracer::AddRadiance(result.FinalContribution, path.Throughput, lighting.IncidentRadiance);
 
 			if (bounceIndex == 0u)
 			{
 				result.FirstLighting = lighting;
-				result.FirstTrace = trace;
-				result.FirstHitSurface = hitSurface;
 			}
 			if (!lighting.Hit)
 			{

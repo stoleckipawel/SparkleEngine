@@ -170,11 +170,15 @@ MeshInstanceData RenderGpuGeometryState::BuildMeshInstance(const MeshDraw& draw)
 	DirectX::XMStoreFloat4x4(
 	    &worldInverse,
 	    DirectX::XMMatrixInverse(nullptr, DirectX::XMLoadFloat4x4(&draw.Transform.WorldMatrix)));
+	DirectX::XMFLOAT3X4 worldInverseTranspose;
+	DirectX::XMStoreFloat3x4(
+	    &worldInverseTranspose,
+	    DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&worldInverse)));
 	return MeshInstanceData{
 	    .WorldMatrix = draw.Transform.WorldMatrix,
 	    .PreviousWorldMatrix = draw.Transform.PreviousWorldMatrix,
 	    .WorldInverseMatrix = worldInverse,
-	    .WorldInverseTranspose = draw.Transform.WorldInvTranspose,
+	    .WorldInverseTranspose = worldInverseTranspose,
 	    .MaterialSlot = draw.MaterialSlot,
 	    .Flags =
 	        (draw.Geometry.MeshKind == RenderMeshKind::Skeletal && draw.Skinning.JointMatrixOffset != kInvalidMeshInstanceJointMatrixOffset

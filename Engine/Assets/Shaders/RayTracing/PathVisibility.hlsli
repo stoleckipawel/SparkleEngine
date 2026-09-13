@@ -20,7 +20,8 @@ namespace PathVisibility
 		                               surface.PositionError,
 		                               lightSample.SamplePositionWorld,
 		                               lightSample.EmitterNormalWorld,
-		                               lightSample.SamplePositionError);
+		                               lightSample.EmitterEndpointBaseOffset,
+		                               lightSample.EmitterEndpointTraversalSensitivity);
 		const RayTracingTraceResult trace = TraceRayQueryWithAlphaTest(sceneTlas,
 		                                                                  ray.Origin,
 		                                                                  ray.Direction,

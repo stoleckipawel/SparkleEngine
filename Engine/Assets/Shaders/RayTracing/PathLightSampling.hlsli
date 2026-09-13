@@ -14,7 +14,6 @@ namespace PathLightSampling
 	{
 		RayTracingHitInstance Instance;
 		RayTracingHitMaterial Material;
-		RayTracingEvaluatedTriangle Evaluated;
 		MeshInstanceData Mesh;
 		float3 P0;
 		float3 P1;
@@ -79,7 +78,6 @@ namespace PathLightSampling
 		                            + bitangent * ((sample.y - 0.5f) * light.Height);
 		LightSampling::DirectLightSample result = LightSampling::RadiometricAreaLightSample(
 		    positionWorld, samplePosition, normal, RectRadiance(lightIndex), rcp(light.Width * light.Height), false);
-		result.SamplePositionError = RayEndpoints::AnalyticPositionError(samplePosition, normal);
 		return result;
 	}
 
@@ -89,14 +87,16 @@ namespace PathLightSampling
 		EmissiveTriangle triangle;
 		triangle.Instance = evaluated.Instance;
 		triangle.Material = evaluated.Material;
-		triangle.Evaluated = evaluated;
 		triangle.Mesh = MeshInstances[instanceId];
-		triangle.P0 = mul(float4(evaluated.V0.Position, 1.0f), triangle.Mesh.WorldMatrix).xyz;
-		triangle.P1 = mul(float4(evaluated.V1.Position, 1.0f), triangle.Mesh.WorldMatrix).xyz;
-		triangle.P2 = mul(float4(evaluated.V2.Position, 1.0f), triangle.Mesh.WorldMatrix).xyz;
+		triangle.P0 = RayEndpoints::TransformPosition(evaluated.V0.Position, triangle.Mesh.WorldMatrix);
+		triangle.P1 = RayEndpoints::TransformPosition(evaluated.V1.Position, triangle.Mesh.WorldMatrix);
+		triangle.P2 = RayEndpoints::TransformPosition(evaluated.V2.Position, triangle.Mesh.WorldMatrix);
 		const float3 normalUnnormalized = cross(triangle.P1 - triangle.P0, triangle.P2 - triangle.P0);
+		const float3 normalObject = cross(
+		    evaluated.V1.Position - evaluated.V0.Position,
+		    evaluated.V2.Position - evaluated.V0.Position);
 		const float twiceArea = length(normalUnnormalized);
-		triangle.Normal = normalUnnormalized / twiceArea;
+		triangle.Normal = RayEndpoints::TransformGeometricNormal(normalObject, triangle.Mesh);
 		triangle.Area = 0.5f * twiceArea;
 		return triangle;
 	}
@@ -109,11 +109,16 @@ namespace PathLightSampling
 		const EmissiveTriangle triangle = LoadEmissiveTriangle(instanceId, primitiveIndex);
 		const float root = sqrt(sample.x);
 		const float3 barycentrics = float3(1.0f - root, root * (1.0f - sample.y), root * sample.y);
-		const float3 samplePosition =
-		    triangle.P0 * barycentrics.x + triangle.P1 * barycentrics.y + triangle.P2 * barycentrics.z;
 		const float2 barycentrics12 = barycentrics.yz;
 		const RayTracingEvaluatedTriangle sampledTriangle =
 		    EvaluateRayTracingTriangle(instanceId, primitiveIndex, barycentrics12);
+		const float3 positionObject = InterpolateRayTracingPosition(sampledTriangle);
+		const float3 samplePosition = RayEndpoints::TransformPosition(positionObject, triangle.Mesh.WorldMatrix);
+		if (!PassesRayTracingMaterialAlpha(
+		        triangle.Material, InterpolateRayTracingTexCoord0(sampledTriangle), InterpolateRayTracingColor(sampledTriangle)))
+		{
+			return (LightSampling::DirectLightSample)0;
+		}
 		float3 emittedRadiance = triangle.Material.EmissiveColor;
 		if (MaterialTextureTableSampling::HasTexture(
 		        triangle.Material.TextureFlags, MaterialTextureTableSampling::TextureSlotEmissive))
@@ -127,12 +132,13 @@ namespace PathLightSampling
 		const bool twoSided = (triangle.Instance.Flags & RayTracingHitSurface::InstanceFlagTwoSided) != 0u;
 		LightSampling::DirectLightSample result = LightSampling::RadiometricAreaLightSample(
 		    positionWorld, samplePosition, triangle.Normal, emittedRadiance, rcp(triangle.Area), twoSided);
-		const float3 positionObject = InterpolateRayTracingPosition(sampledTriangle);
 		const float3 normalObject = cross(
 		    sampledTriangle.V1.Position - sampledTriangle.V0.Position,
 		    sampledTriangle.V2.Position - sampledTriangle.V0.Position);
-		result.SamplePositionError = RayEndpoints::SurfaceErrorBound(
-		    sampledTriangle, triangle.Mesh, positionObject, samplePosition, normalObject, triangle.Normal);
+		const RayEndpoints::SurfaceEndpointError endpointError =
+		    RayEndpoints::BuildSurfaceEndpointError(sampledTriangle, triangle.Mesh, positionObject, normalObject);
+		result.EmitterEndpointBaseOffset = endpointError.BaseOffset;
+		result.EmitterEndpointTraversalSensitivity = endpointError.TraversalSensitivity;
 		result.TargetInstanceId = instanceId;
 		result.TargetPrimitiveIndex = primitiveIndex;
 		return result;

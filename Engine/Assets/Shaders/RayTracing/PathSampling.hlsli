@@ -55,7 +55,6 @@ namespace RayTracingPathSampling
 	{
 		RayTracingPathSample::DirectionSample result = (RayTracingPathSample::DirectionSample)0;
 		result.Lobe = lobe;
-		result.RejectionReason = RayTracingPathSample::RejectionReasonInvalidSample;
 		return result;
 	}
 

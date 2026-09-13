@@ -25,7 +25,8 @@ namespace LightSampling
 		float LightSelectionPdf;
 		float3 EmitterNormalWorld;
 		float3 SamplePositionWorld;
-		float SamplePositionError;
+		float EmitterEndpointBaseOffset;
+		float4 EmitterEndpointTraversalSensitivity;
 		float VisibilityDistance;
 		bool IsDirectional;
 		bool Delta;
@@ -44,7 +45,8 @@ namespace LightSampling
 		result.LightSelectionPdf = 1.0f;
 		result.EmitterNormalWorld = 0.0f.xxx;
 		result.SamplePositionWorld = 0.0f.xxx;
-		result.SamplePositionError = 0.0f;
+		result.EmitterEndpointBaseOffset = 0.0f;
+		result.EmitterEndpointTraversalSensitivity = 0.0f.xxxx;
 		result.VisibilityDistance = 0.0f;
 		result.IsDirectional = false;
 		result.Delta = false;
@@ -64,7 +66,8 @@ namespace LightSampling
 		result.LightSelectionPdf = 1.0f;
 		result.EmitterNormalWorld = 0.0f.xxx;
 		result.SamplePositionWorld = 0.0f.xxx;
-		result.SamplePositionError = 0.0f;
+		result.EmitterEndpointBaseOffset = 0.0f;
+		result.EmitterEndpointTraversalSensitivity = 0.0f.xxxx;
 		result.VisibilityDistance = distanceToLight;
 		result.IsDirectional = isDirectional;
 		result.Delta = true;
@@ -115,7 +118,8 @@ namespace LightSampling
 		result.LightSelectionPdf = 1.0f;
 		result.EmitterNormalWorld = normalWorld;
 		result.SamplePositionWorld = samplePositionWorld;
-		result.SamplePositionError = 0.0f;
+		result.EmitterEndpointBaseOffset = 0.0f;
+		result.EmitterEndpointTraversalSensitivity = 0.0f.xxxx;
 		result.VisibilityDistance = distanceToLight;
 		result.IsDirectional = false;
 		result.Delta = false;
@@ -160,7 +164,8 @@ namespace LightSampling
 		result.PdfW = 0.0f;
 		result.LightSelectionPdf = 1.0f;
 		result.SamplePositionWorld = lightPositionWorld;
-		result.SamplePositionError = 0.0f;
+		result.EmitterEndpointBaseOffset = 0.0f;
+		result.EmitterEndpointTraversalSensitivity = 0.0f.xxxx;
 		result.VisibilityDistance = distance;
 		result.IsDirectional = false;
 		result.Delta = true;
@@ -196,7 +201,8 @@ namespace LightSampling
 		result.LightSelectionPdf = 1.0f;
 		result.EmitterNormalWorld = normalWorld;
 		result.SamplePositionWorld = samplePositionWorld;
-		result.SamplePositionError = 0.0f;
+		result.EmitterEndpointBaseOffset = 0.0f;
+		result.EmitterEndpointTraversalSensitivity = 0.0f.xxxx;
 		result.VisibilityDistance = distance;
 		result.IsDirectional = false;
 		result.Delta = false;
