@@ -63,19 +63,19 @@ A show flag is a fixed Renderer semantic with one owner, at least one production
 
 Show flags do not select backend APIs, hardware capabilities, quality tiers, sample counts, denoisers, ReSTIR algorithms, or other implementation policy. They do not report capability and they do not replace requested render products.
 
-The target first set is deliberately small:
+The implemented set grows only with real consumers. The Reference migration introduces exactly one flag; the remaining rows are frozen target vocabulary for later presentation work and must not exist in code before the same change wires their named consumer:
 
-| Category | Flag | Meaning when disabled | Graph impact / first consumer |
-| --- | --- | --- | --- |
-| Rendering | `ReferencePathTracer` | Use the ordinary Lit middle recipe. | Topology; `FramePipeline::BuildRenderFrameGraph` selects exactly one middle. |
-| Scene | `Sky` | Do not composite the sky into this view. | Scheduling/composite. |
-| Lighting | `DirectLighting` | Publish zero direct-light contributions. | Scheduling/resolve. |
-| Lighting | `IndirectLighting` | Publish zero indirect-light contributions. | Scheduling/resolve. |
-| Lighting | `Shadows` | Use fully visible shadow terms while retaining lighting. | Planning/resolve. |
-| Post Processing | `Exposure` | Use neutral exposure in display mapping. | Pass parameter. |
-| Post Processing | `Tonemapper` | Bypass the filmic curve and use linear display mapping. | Pass parameter. |
-| Editor | `DebugOverlay` | Omit Renderer debug overlays. | Scheduling. |
-| Editor | `GizmoOverlay` | Omit Editor gizmos. | Editor overlay scheduling. |
+| Delivery | Category | Flag | Meaning when disabled | Graph impact / first consumer |
+| --- | --- | --- | --- | --- |
+| Reference selector clean break | Rendering | `ReferencePathTracer` | Use the ordinary Lit middle recipe. | Topology; `FramePipeline::BuildRenderFrameGraph` selects exactly one middle. |
+| Later presentation stage | Scene | `Sky` | Do not composite the sky into this view. | Scheduling/composite. |
+| Later presentation stage | Lighting | `DirectLighting` | Publish zero direct-light contributions. | Scheduling/resolve. |
+| Later presentation stage | Lighting | `IndirectLighting` | Publish zero indirect-light contributions. | Scheduling/resolve. |
+| Later presentation stage | Lighting | `Shadows` | Use fully visible shadow terms while retaining lighting. | Planning/resolve. |
+| Later presentation stage | Post Processing | `Exposure` | Use neutral exposure in display mapping. | Pass parameter. |
+| Later presentation stage | Post Processing | `Tonemapper` | Bypass the filmic curve and use linear display mapping. | Pass parameter. |
+| Later presentation stage | Editor | `DebugOverlay` | Omit Renderer debug overlays. | Scheduling. |
+| Later presentation stage | Editor | `GizmoOverlay` | Omit Editor gizmos. | Editor overlay scheduling. |
 
 `Exposure` is intentionally broader than Unreal's `EyeAdaptation` label: Sparkle's exact-view promise must bypass both automatic and manual exposure application. The automatic exposure mode and its tuning remain viewport display settings; the show flag only decides whether the resolved exposure affects this view.
 
@@ -83,31 +83,19 @@ Add a flag only in the change that supplies its owner, consumer, disabled behavi
 
 ## Typed Representation And Metadata
 
-Use a fixed enum plus bitset, with one exhaustive metadata table for editor name, category, and help text. The table is static renderer/editor integration data, not an extensible registry:
+Use a fixed enum plus compact bitset. At the Reference selector stage its complete vocabulary is deliberately only:
 
 ```cpp
 enum class RenderShowFlag : std::uint8_t
 {
 	ReferencePathTracer,
-	Sky,
-	DirectLighting,
-	IndirectLighting,
-	Shadows,
-	Exposure,
-	Tonemapper,
-	DebugOverlay,
-	GizmoOverlay,
 	Count,
-};
-
-struct RenderShowFlagOverrides final
-{
-	RenderShowFlagSet Enable;
-	RenderShowFlagSet Disable;
 };
 ```
 
-`Enable` and `Disable` are sparse frontend override deltas and never overlap. The ordinary Renderer request carries the final resolved `RenderShowFlagSet`, not the Editor preset or its saved deltas. This gives Renderer one immutable answer for the frame while letting new preset defaults apply without rewriting every saved viewport.
+`RenderShowFlagSet` supplies only construction, equality, `Set`, and `IsEnabled` operations actually consumed by the request, topology comparison, and feature. It has no registry, reflection, string lookup, logging, serialization, shader-global mask, or metadata table. A later Show-menu change adds a flag and its Editor metadata only with the production consumer. Sparse `Enable`/`Disable` override deltas likewise do not enter production until the optional Show menu owns them.
+
+The ordinary Renderer request carries the final resolved `RenderShowFlagSet`, never the Editor preset or saved deltas. This gives Renderer one immutable answer for the frame while allowing frontend defaults to evolve without adding UI identity to Renderer.
 
 The concrete request surface is intentionally small:
 
@@ -124,14 +112,14 @@ These fields are not a UI leak: both are Renderer semantics consumed for that sp
 
 ## Preset Resolution And Precedence
 
-The viewport owner applies the following order before submitting the request:
+The final target viewport owner applies the following order before submitting the request:
 
 1. start from the baseline for the viewport kind;
 2. apply the selected view-mode preset's explicit `Visualization`, enable mask, and disable mask;
 3. apply saved per-viewport show-flag overrides;
 4. submit the final `Visualization` and `RenderShowFlagSet` with the view request.
 
-Selecting a new mode clears overrides only for flags explicitly owned by the old or new preset, then applies the new preset. Unrelated user choices such as gizmo visibility remain. A later manual change to a mode-owned flag marks the viewport **Custom** and **Reset Show Flags** removes the override deltas.
+The initial Reference delivery stops after step 2 because no Show menu or sparse override storage exists yet. When overrides are implemented, selecting a new mode clears overrides only for flags explicitly owned by the old or new preset, then applies the new preset. Unrelated user choices such as gizmo visibility remain. A later manual change to a mode-owned flag marks the viewport **Custom** and **Reset Show Flags** removes the override deltas.
 
 The initial implementation has no CVar force layer. If a future developer-force requirement is accepted, it must be a separate, visibly forced mask applied by Renderer after request admission, with explicit precedence and per-view isolation consequences. It may not silently become the normal view-mode transport.
 
@@ -139,13 +127,13 @@ The initial implementation has no CVar force layer. If a future developer-force 
 
 The stock **Reference Path Tracer** view mode is defined by frontend data, not an imperative callback chain:
 
-| Concrete setting | Value |
-| --- | --- |
-| `Visualization` | `Lit` |
-| `ReferencePathTracer` | enabled |
-| `Exposure` | enabled |
-| `Tonemapper` | enabled |
-| Lit-only estimator contributions | disabled by the mutually exclusive frame recipe, not by individually toggling every Lit flag |
+| Concrete setting | Value | Delivery |
+| --- | --- | --- |
+| `Visualization` | `Lit` | Visualization migration |
+| `ReferencePathTracer` | enabled | Reference selector clean break |
+| `Exposure` | enabled | Later presentation stage, when the flag gains its pass consumer |
+| `Tonemapper` | enabled | Later presentation stage, when the flag gains its pass consumer |
+| Lit-only estimator contributions | disabled by the mutually exclusive frame recipe, not by individually toggling every Lit flag | Reference selector clean break |
 
 The corresponding Lit preset clears `ReferencePathTracer`. `BuildRenderFrameGraph` tests that one resolved flag and directly invokes either the existing Lit middle or the feature-local Reference middle. Provider, reconstruction, history, and resource decisions remain inside the selected composition. The shared frame shell and presentation tail contain no Reference-specific ternary.
 
@@ -195,6 +183,18 @@ The staged migration removes, in the same change that replaces their final consu
 - any Renderer-side `RenderViewMode` or UI enumeration.
 
 There is no compatibility alias or period with two live selectors. The current CVar-command seam is transitional source state and must not be extended during the prerequisite stages.
+
+## Frozen Migration Route
+
+The clean break is intentionally split so no unused show-flag substrate lands:
+
+1. Migrate `Visualization` first. The Editor viewport owner resolves every current ordered mode to the existing concrete Renderer `Visualization`, stores that value on its ordinary `ViewportRenderRequest`, and increments that request's existing generation when it changes. `RenderViewBuilder` freezes it into `RenderView` and derives the existing shader scalar from the View. The Reference menu row remains unavailable in this slice.
+2. In the next slice, add the compact show-flag type and its first and only bit, `ReferencePathTracer`, together with all of that bit's consumers. The Editor Reference preset becomes selectable and submits `Visualization::Lit` plus the bit; Game/runtime may submit the same concrete request values without importing the Editor enum.
+3. Add presentation, scene, lighting, and overlay flags later only alongside their production consumers and, where applicable, their optional Show-menu metadata and override storage.
+
+`UI` is the Editor composition boundary that owns both the session and viewport panel. Its local view-mode-change handling resolves frontend preset data and updates the panel-owned request; the panel remains the sole owner that increments `ViewportRenderRequest::Generation`. The Application-level callback, Renderer command, and global selector writes disappear. This is a focused frontend event boundary, not a cross-module imperative callback chain.
+
+Before `RenderView` exists, `FramePipeline` reads the already submitted request to resolve provider/render extent and compare the topology-affecting Reference bit with the built graph. `BuildRenderFrameGraph` contains the one execution branch that schedules Lit or Reference. After View construction, the Reference feature reads the frozen View bit for its selected/suspended lifecycle. These are observations of one accepted request/View value: no graph-settings copy, built selector CVar, command boolean, or independently resolved flag exists.
 
 ## External Precedent
 

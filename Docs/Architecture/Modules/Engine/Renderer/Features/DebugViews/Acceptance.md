@@ -50,7 +50,7 @@ These are seeds for the live risk ledger in the `FCR-REN-11` candidate report; o
 Implementation is accepted only when all of the following are demonstrated:
 
 - `AC-DVP-01` — every `Visualization` other than `Count` has exactly one signal domain and one explicit show-flag contract;
-- `AC-DVP-02` — every `RenderShowFlag` other than `Count` has exactly one metadata entry, a real producer/consumer path, deterministic disabled behavior, and classified graph impact;
+- `AC-DVP-02` — every `RenderShowFlag` other than `Count` has exactly one contract row, a real producer/consumer path, deterministic disabled behavior, and classified graph impact; Editor metadata is required only when the flag is exposed in the optional Show menu;
 - `AC-DVP-03` — no generic `RenderFeatureFlags` or settings bag is introduced; Editor view-mode state, concrete Renderer visualization, requested outputs, and show flags each have one target representation;
 - `AC-DVP-04` — Editor view-mode identity remains absent from Renderer/RHI contracts; the ordinary viewport request carries the concrete `Visualization` and `RenderShowFlagSet`, and only focused scalar/bits required by a pass or shader propagate below the immutable View;
 - `AC-DVP-05` — the viewport owner resolves preset plus overrides once, Renderer freezes that accepted state into `RenderView`, and two viewports can hold different visualization/show-flag values without global-state races or cross-talk;
@@ -86,7 +86,7 @@ Implementation is accepted only when all of the following are demonstrated:
 
 | Check ID | Key test element and oracle | Coverage |
 | --- | --- | --- |
-| `CHK-DVP-01` | Enumerate every mode/flag and trace its one owner, preset/metadata row, producer/consumer, disabled behavior, and graph impact; reject omissions, duplicates, generic flag bags, and runtime global reads. | `AC-DVP-01`–`AC-DVP-04`, `AC-DVP-17`, `AC-DVP-19` |
+| `CHK-DVP-01` | Enumerate every implemented mode/flag and trace its one owner, preset/contract row, producer/consumer, disabled behavior, delivery stage, and graph impact; require Editor metadata only for a Show-menu row and reject speculative enum members, omissions, duplicates, generic flag bags, and runtime global reads. | `AC-DVP-01`–`AC-DVP-04`, `AC-DVP-17`, `AC-DVP-19` |
 | `CHK-DVP-02` | Run a dual-viewport interaction sequence over selection, custom overrides, reset, unavailable producers, and return to Lit; compare resolved state on each submitted frame. | `AC-DVP-05`, `AC-DVP-09`, `AC-DVP-11`, `AC-DVP-14`, `AC-DVP-18`; `FM-DVP-02`, `FM-DVP-03` |
 | `CHK-DVP-03` | Use fixed numeric/reference inputs for every signal domain across four presentation combinations, sRGB/linear output, and mismatched extents; compare decoded pixels to predeclared values/tolerance. | `AC-DVP-06`–`AC-DVP-08`, `AC-DVP-10`, `AC-DVP-12`, `AC-DVP-13`, `AC-DVP-15`; `FM-DVP-01`, `FM-DVP-04` |
 | `CHK-DVP-04` | Capture and replay stock/custom/unavailable states; schema-validate identity and deliberately remove or alter one field to prove the verifier detects it. | `AC-DVP-16`; `FM-DVP-03`, `FM-DVP-05` |

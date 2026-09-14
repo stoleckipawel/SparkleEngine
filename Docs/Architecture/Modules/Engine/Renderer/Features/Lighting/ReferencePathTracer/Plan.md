@@ -1,6 +1,6 @@
 # Reference Path Tracer Staged Implementation Plan
 
-**Status:** **`PTD-00-R1 PASS`** remains the historical immutable discovery prerequisite; the 2026-09-13 repository-owner amendment replaces its Reference-shader binary64 policy with ordinary binary32 and must be included in the next independent numeric review; Stages 1-2 retain their historical frame/clean-break results; Stages 3-6 are **IMPLEMENTED / VALIDATION DEFERRED**; the transitional CVar selector is superseded by the newly required Stages 6A-6C, so Stage 6A is next and Stage 7 is not authorized yet; final reference/release acceptance remains separately gated by the retained GPU validation backlog, `REL-03`, release maps, support identities, and executable evidence
+**Status:** **`PTD-00-R1 PASS`** remains the historical immutable discovery prerequisite; the 2026-09-13 repository-owner amendment replaces its Reference-shader binary64 policy with ordinary binary32 and must be included in the next independent numeric review; Stages 1-2 retain their historical frame/clean-break results; Stages 3-6 are **IMPLEMENTED / VALIDATION DEFERRED**; **Stage 6A PASS** freezes the per-view migration against source input `928bd53bb38dbceb73ac40637e6aea3f34a291d9`, so Stage 6B is authorized and Stage 7 is not authorized yet; final reference/release acceptance remains separately gated by the retained GPU validation backlog, `REL-03`, release maps, support identities, and executable evidence
 
 **Scope:** deliver `FCR-REN-08` end to end through one feature-local Renderer per-view session, one Reference estimator policy composed over a shared path-tracing semantic core, viewport-first Lit comparison, optional raw evidence publication, D3D12/Vulkan traversal parity, secondary runtime/offscreen workflows, controlled failure, and release-map adoption
 
@@ -101,8 +101,8 @@ No stage may hide an unmet exit criterion: deferred owner-operated validation re
 | 5 | material/geometry coverage and numeric robustness | 90-150 h | Stage 4 | `CHK-RPT-03`, `04`, `08`, `17`, `18`, `19`, `20` |
 | 6 | canonical digest/invalidation, ranges, in-memory accumulation, live preview, and progress snapshots | 115-185 h | Stage 5 | `CHK-RPT-02`, `07`, `09`, focused `15`, `17`, `18`, `19`, `20` |
 | 6A | per-view show-flag contract/source audit and clean-break freeze | 12-20 h | Stage 6 source handoff | `CHK-DVP-01`, `CHK-DVP-06`, `CHK-RPT-18` |
-| 6B | per-view visualization/show-flag substrate and existing-mode migration | 30-55 h | Stage 6A | `CHK-DVP-01`, `CHK-DVP-02`, `CHK-RPT-17`, `18` |
-| 6C | Reference show-flag topology/session integration and CVar deletion | 20-40 h | Stage 6B | `CHK-DVP-02`, `CHK-DVP-06`, `CHK-RPT-17`, `18` |
+| 6B | per-view visualization migration and global visualization-selector deletion | 24-45 h | Stage 6A | `CHK-DVP-01`, `CHK-DVP-02`, `CHK-RPT-17`, `18` |
+| 6C | minimal show-flag substrate, Reference topology/session integration, and CVar deletion | 26-50 h | Stage 6B | `CHK-DVP-02`, `CHK-DVP-06`, `CHK-RPT-17`, `18` |
 | 7 | first usable viewport mode, live navigation, progress/reset UX, and Lit comparison | 70-120 h | Stage 6C | `CHK-RPT-02`, `09`, `15`, `16`, `17`, `18`, `19`, `20` |
 | 8 | Inline/RGS and D3D12/Vulkan parity | 90-150 h | Stage 7 | `CHK-RPT-07`, `08`, `12`, `17`, `18`, `19`, `20` |
 | 9 | minimal evidence capture, EXR/checkpoint/offscreen publication, independent oracle, and failure evidence | 145-250 h | Stage 8 | `CHK-RPT-04` through `13`, plus `17`, `18`, `19`, `20` |
@@ -613,32 +613,91 @@ Freeze the ordinary per-view control architecture that all viewport modes will u
 Execute only Stage 6A of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md. Apply the Universal Execution Contract, but make no production-code changes. Re-audit the live viewport, visualization, request/View, frame-topology, Reference session, capture, and RHI route. Ratify or replace the per-view show-flag architecture and reconcile the DebugViews dossier, Reference Path Tracer architecture/UX/acceptance, and Renderer/Editor/RHI engineering boundaries. Freeze exact preset precedence, flag vocabulary, topology timing, and a no-orphan deletion ledger for both selector CVars and the command bridge. A remaining second authority, UI enum in Renderer, show flag in RHI, process-global normal selection, or unresolved graph-before-View decision is BLOCKED. Add no diagnostics, generic settings system, registry, or production code. End with PASS/BLOCKED, evidence, unrun checks, and Stage 6B authorization.
 ```
 
+### Stage-6A execution result — 2026-09-14
+
+`RPT-6A-R0` is **PASS** against committed source input `928bd53bb38dbceb73ac40637e6aea3f34a291d9`. The worktree was clean at audit start. This result freezes architecture and migration order only: no production file changed, no implementation check is claimed, and the transitional CVar/command route remains current source until Stages 6B and 6C replace it.
+
+#### Live route audit
+
+| Surface | Source-present result and disposition |
+| --- | --- |
+| Editor selection | `EditorViewportViewMode` is Editor-only and contiguous: Lit `0`, Reference `1`, Wireframe `2` through GPU Scene Instances `16`, Count `17`. The Reference row is labeled unavailable and is not currently clickable. Keep the enum, labels, and ordering in Editor. |
+| Current command bridge | `EditorViewportSession` raises a mode-change event; `UI` forwards it through `EditorHostServices`; `EditorApplication` maps the UI enum to Renderer `Visualization` and calls `Renderer::SubmitVisualization`; `VisualizationCommand` then writes both global CVars on the Renderer owner thread. This is one coherent transitional route but process-global and unsuitable for per-view authority. Stage 6B retargets the Editor-local event to the panel-owned request and deletes every Application/Renderer command leg. |
+| Ordinary request and product | `ViewportRenderRequest` already carries viewport identity, one generation, `RenderViewKind`, extent, view selection, requested outputs, and exposure. `ViewportPanel` owns the Editor request and increments its generation for accepted request changes; Application/runtime/Renderer already submit the same value route. Product publication binds its generation to `request.Generation`. Keep this route and extend it with concrete Renderer semantics only. |
+| View and shader input | `RenderViewBuilder` currently reads global `CVarVisualization` and writes `ViewUniformData::VisualizationIndex`; neither `ViewportRenderRequest` nor `RenderView` owns the concrete value. Stage 6B moves the existing `Visualization` value to request/View and keeps only the focused scalar below View. |
+| Frame topology | `BeginFrame` accepts the submission and refreshes topology before `PrepareRenderFrame` constructs `RenderView`. `ResolveFrameGraphSettings`, graph construction, and topology comparison currently read `CVarReferencePathTracer`; `BuildRenderFrameGraph` owns the actual Lit/Reference branch. The submitted request is already available at all pre-View sites, so no second selector or early View is required. |
+| Reference lifecycle | `FramePipeline` currently forwards the built CVar value to `ReferencePathTracer::Update`; the feature session uses it for select/suspend. Stage 6C removes that boolean parameter and lets the feature read the immutable View flag, keeping lifecycle policy in the capsule. |
+| Capture and RHI | Viewport publication and capture resolve requested products, frame/scene/provider identities, resource handles, formats, and readback state. Focused searches found no Editor view mode, `Visualization`, show flag, or Reference selector in RHI. Preserve both boundaries unchanged; controls do not enter capture or RHI merely for this migration. |
+| Build membership | Application, Editor, Renderer, and RHI use recursive `CONFIGURE_DEPENDS` source/header membership; Renderer shader registration remains explicit and is unaffected because Stages 6B/6C add no shader. New/deleted C++ paths therefore require no manual source list, while orphan includes and generated/public surfaces still require focused checks. |
+
+#### Frozen control and staging decisions
+
+| Decision | Accepted contract |
+| --- | --- |
+| Ownership | `EditorViewportViewMode` is frontend preset identity. `Visualization` and `RenderShowFlagSet` are concrete Renderer values for one view. `RenderViewKind` remains producer/camera identity. CVars remain global algorithm/scalability/developer policy, not normal viewport selection. RHI owns none of them. |
+| Migration order | Stage 6B migrates `Visualization` alone and removes its global command path. Stage 6C introduces the compact flag set with its first and only member, `ReferencePathTracer`, in the same change that wires every consumer and deletes the Reference CVar. No unused show-flag substrate lands in Stage 6B. |
+| Initial flag | `ReferencePathTracer` disabled means ordinary Lit middle; enabled means the feature-local Reference middle. It is topology-affecting, preset-owned, host-agnostic, and consumes no backend/sample/capability/quality policy. `Sky`, lighting, presentation, and overlay rows remain later target vocabulary and do not enter the enum until their production consumers land. |
+| Request/View surface | Stage 6B adds one `Visualization` value to `ViewportRenderRequest` and immutable `RenderView`. Stage 6C adds one compact final `RenderShowFlagSet` to both. No UI enum, label, string, override delta, capability state, metadata registry, settings bag, or shader-global flag mask crosses the boundary. |
+| Editor route | `UI` remains the composition boundary owning `EditorViewportSession` and `ViewportPanel`. Its local mode-change handling resolves one exhaustive Editor preset and updates the panel-owned request. `ViewportPanel` remains the sole request-generation owner. Application and Renderer see only the ordinary request. |
+| Runtime route | Game/runtime may submit the same concrete request values directly through `RuntimeApplication::SubmitViewportRenderRequest`; it never imports `EditorViewportViewMode` or gains a Reference-specific command. Defaults remain Lit and the same route is usable for Scene and Game views. |
+| Precedence | Initial delivery applies the viewport-kind baseline, then the selected frontend preset, then submits final values. There is no CVar force layer, manual Show menu, sparse override storage, or Custom state yet. Later overrides apply after the preset and remain frontend-owned. |
+| Graph-before-View | Before View construction, `ResolveFrameGraphSettings` may observe the submitted Reference bit only to select the required native provider/render extent, and topology refresh observes the resulting settings. `BuildRenderFrameGraph` contains the sole execution branch. After construction, the feature reads the frozen View bit for select/suspend. All reads observe one accepted request/View value; no graph-settings flag copy, built selector cache, command boolean, or independent resolver remains. |
+| High-level shape | The original `FramePipeline`/Scene/View/frame graph/RHI/presentation shell remains. The high-level frame owns only necessary generic request freezing, provider/topology observation, and the one plainly visible Lit-versus-Reference branch. Transport, session, resources, and shader policy remain feature-local. |
+
+#### Clean-break ledger
+
+| Current surface | Stage | Exact disposition |
+| --- | --- | --- |
+| `CVarVisualization` declaration, definition, and `RenderViewBuilder` read | 6B | Delete the CVar; replace its only behavior with request-to-View freezing and the existing focused shader scalar. |
+| `EditorApplication::ResolveVisualization`, `EditorHostServices::SubmitViewportViewMode`, and Application callback | 6B | Delete. Preset resolution and request mutation remain inside the Editor viewport owner. |
+| `Renderer::SubmitVisualization`, coordinator method, `VisualizationCommand`, execution-context branch, and related includes | 6B | Delete with all producers/consumers; no alias or generic replacement command. |
+| `EditorViewportSession` mode-change notification | 6B | Keep only as an Editor-local UI event and retarget it directly to the panel-owned request; it no longer crosses Application or Renderer. |
+| `ViewportRenderRequest`, `ViewportPanel`, `RenderViewBuilder`, `RenderView` | 6B/6C | Add the concrete values in the consumer-owning stages; panel increments its existing generation on an accepted value change. |
+| `CVarReferencePathTracer`, `ReferencePathTracerCVar.h`, registration/definition, and all direct includes/reads | 6C | Delete after the request/View bit reaches settings, composition, and lifecycle; no console alias or fallback. |
+| `m_builtReferencePathTracer` and command boolean | 6C | Delete. Provider/settings comparison covers the pre-View topology change; no feature-specific built-selector cache remains. |
+| `ReferencePathTracer::Update(bool active, ...)` | 6C | Remove the boolean parameter; the feature derives selected/suspended state from the canonical View flag. |
+| Capture contracts, RHI contracts, frame-graph settings flag fields, shader flag masks | never for this migration | Remain unchanged and absent. |
+| `Sky`, direct/indirect lighting, shadows, exposure, tonemapper, debug/gizmo flags and Show overrides | later DebugViews stages | Add individually only with their named production consumer and focused check; none is prepaid by Stages 6B/6C. |
+
+#### Traceability and evidence disposition
+
+- `AC-DVP-01` through `05`, `17`, and `22` are frozen to one staged request/View representation; `AC-DVP-02` now requires a contract row for every implemented flag and Editor metadata only when a Show-menu row exists. `AC-DVP-06` through `16` and `18` through `21` remain later presentation/evidence gates.
+- `FM-DVP-02` and `07` require two-view isolation and Lit/Reference/Lit topology proof in Stages 6B/6C; `FM-DVP-01` and `03` through `06` remain assigned to later presentation, unavailable-product, capture, and backend stages.
+- `CHK-DVP-01` enumerates only implemented flags and rejects speculative members; `CHK-DVP-02` proves per-view isolation; `CHK-DVP-06` traces the one Reference bit through request, topology, View, execution branch, and feature lifecycle while searching for every deleted authority.
+- `AC-RPT-22`, `FM-RPT-20`, `FM-RPT-21`, and `CHK-RPT-18` retain the one-frame/two-middle, feature-enclosure, host-neutral, and no-RHI-leak requirements. Necessary observations of the same request value are not additional selectors; a second execution branch or independently resolved value fails the gate.
+
+#### Checks run, unrun work, and authorization
+
+Focused `rg` live-source searches covered Editor/Application/Renderer producers and consumers, request/product generation, View shader input, all Reference CVar reads, frame timing, feature lifecycle, capture, RHI absence, and recursive CMake membership. A strict UTF-8 and relative-link-target check passed for all five changed documents. `cmake -DSPARKLE_REPO_ROOT=<repository> -P CMake/ArchitectureBoundaryCheck.cmake` passed with no new violations. `git diff --check` passed with line-ending conversion warnings only. `git diff --name-only` contains documentation paths only. The documentation owner, staged flag vocabulary, acceptance wording, DebugViews delivery plan, and this plan were reconciled without changing production code.
+
+No compile, shader cook, runtime, GPU, two-viewport interaction, Lit/Reference/Lit transition, or backend check ran; those are Stage 6B/6C implementation evidence and are not marked passed. There is no unresolved Stage-6A ownership, precedence, vocabulary, topology-timing, or deletion decision. **Stage 6B is authorized. Stage 6C and Stage 7 are not yet authorized.**
+
 ## Stage 6B - Establish Per-View Controls And Migrate Existing Modes
 
 ### Objective
 
-Install the smallest typed per-view show-flag substrate and migrate every existing visualization mode away from process-global selection before Reference controls the alternate frame recipe.
+Migrate every existing visualization mode to the ordinary per-view request/View route and delete process-global visualization selection. Do not add show flags before their first consumer.
 
 ### Work
 
-1. Add fixed `RenderShowFlag`/`RenderShowFlagSet` value types at the narrow Renderer boundary shared by viewport producers and Renderer. Include only flags with a current or same-stage consumer.
-2. Add concrete `Visualization` and final `RenderShowFlagSet` fields to `ViewportRenderRequest`; freeze them into `RenderView`. The request is available before topology refresh, so topology and View construction consume the same submitted value.
-3. Add one exhaustive Editor-owned preset table for the existing ordered view modes. Store UI mode plus sparse override deltas only in the viewport owner; submit resolved Renderer values with each request. Game/runtime submits the same concrete values without the Editor enum.
-4. Migrate existing visualization consumers to immutable View/request state and clean-break `CVarVisualization`, `Renderer::SubmitVisualization`, `VisualizationCommand`, the Editor-to-Application callback, and all orphan API/includes. Preserve the existing focused visualization shader scalar; do not upload the whole flag set to shaders.
-5. Establish default-equivalent flags and only the minimum bitset operations used now. Do not implement the Reference topology bit until Stage 6C, the optional Show menu until the DebugViews presentation stage, or any generic registry/settings/diagnostic framework.
+1. Add the existing concrete `Visualization` value to `ViewportRenderRequest` and freeze it into `RenderView`. Preserve the focused `VisualizationIndex` shader scalar derived from View state.
+2. Add one exhaustive Editor-owned preset resolver for the existing ordered view modes. The Reference row resolves to Lit visualization but remains unavailable until Stage 6C. Keep numeric values contiguous and keep UI identity inside Editor.
+3. Retarget the Editor-local mode-change event to the panel-owned request; `ViewportPanel` remains the sole owner that increments request generation. Game/runtime submits concrete visualization through the same ordinary request without importing the Editor enum.
+4. Clean-break `CVarVisualization`, `Renderer::SubmitVisualization`, `VisualizationCommand`, the Editor-to-Application callback/translation, execution-context branch, and all orphan APIs/includes.
+5. Do not add `RenderShowFlag`, override storage, a Show menu, metadata registry, generic settings/diagnostic framework, capture field, or RHI field in this stage.
 
 ### Exit gate
 
 - Every current view mode reaches its existing concrete visualization through one ordinary per-view request.
-- Two viewports may hold different visualization/show-flag values without process-global cross-talk.
-- `EditorViewportViewMode` remains Editor-only; RHI has no visualization/show-flag field.
+- Two viewport requests may hold different visualizations without process-global cross-talk.
+- `EditorViewportViewMode` remains Editor-only; RHI has no visualization field.
 - `CVarVisualization` and its command bridge have zero remaining normal-selection consumers or compatibility aliases.
 - Focused source/compile checks and the Renderer/RHI architecture-boundary check cover the changed public boundary; owner-run builds may remain explicitly deferred, not passed.
 
 ### Ready-to-use prompt
 
 ```text
-Implement only Stage 6B of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md after Stage 6A PASS. Add the smallest fixed Renderer RenderShowFlag/RenderShowFlagSet contract, concrete Visualization and final ShowFlags on ViewportRenderRequest, and the corresponding immutable RenderView state. Use the submitted request value for any pre-View topology comparison; do not invent a second resolved selector. Add one exhaustive Editor-owned preset table for all current contiguous view modes and migrate Editor plus runtime producers to the ordinary request path. In one clean break delete CVarVisualization as normal authority, Renderer::SubmitVisualization, VisualizationCommand, the callback/translation chain, and every orphan include/API. Preserve current shader behavior through focused View-derived parameters. Do not add ReferencePathTracer topology selection yet, a Renderer view-mode enum, generic settings bag, registry, diagnostics, capture schema, Show menu, or RHI fields. Run focused checks, architecture_boundary_check, and git diff --check; report any deferred build/runtime work honestly.
+Implement only Stage 6B of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md after the Stage-6A PASS revision. Put the existing concrete Visualization on ViewportRenderRequest and immutable RenderView, preserve the focused View-derived shader scalar, and add one exhaustive Editor-owned resolver for all current contiguous view modes. Retarget the Editor-local mode event to the panel-owned request and keep that panel as the sole request-generation owner. Migrate Game/runtime producers without importing the Editor enum. In one clean break delete CVarVisualization as normal authority, Renderer::SubmitVisualization, VisualizationCommand, the Application callback/translation chain, its execution-context branch, and every orphan include/API. Keep Reference unavailable until Stage 6C. Do not add RenderShowFlag, override storage, a Renderer view-mode enum, generic settings bag, registry, diagnostics, capture schema, Show menu, or RHI fields. Run focused checks, architecture_boundary_check, and git diff --check; report any deferred build/runtime work honestly.
 ```
 
 ## Stage 6C - Make The Reference Show Flag The Sole Frame Selector
@@ -649,9 +708,9 @@ Connect the already implemented Reference middle/session to the same ordinary pe
 
 ### Work
 
-1. Add `RenderShowFlag::ReferencePathTracer`. Disabled means the ordinary Lit middle; enabled means the feature-local Reference middle. It selects composition only and does not encode backend, sample count, capability, or estimator settings.
-2. Make the Editor Reference preset select `Visualization::Lit`, enable `ReferencePathTracer`, and establish its stock presentation flags. Make Lit explicitly clear the flag. Game/runtime may submit the same concrete bit through its ordinary viewport owner.
-3. Make `FramePipeline::BuildRenderFrameGraph` read the accepted request flag once and directly schedule exactly one middle. Include the same topology bit in graph reconstruction identity and pass the accepted active/suspended value to the existing feature lifecycle without copying it into graph settings or feature configuration.
+1. Add the compact `RenderShowFlagSet` and its first and only enum member, `RenderShowFlag::ReferencePathTracer`, to `ViewportRenderRequest` and immutable `RenderView`. Supply only operations used by current consumers. Disabled means the ordinary Lit middle; enabled means the feature-local Reference middle. It does not encode backend, sample count, capability, or estimator settings.
+2. Make the Editor Reference preset select `Visualization::Lit` and enable `ReferencePathTracer`; make Lit clear the flag. Game/runtime may submit the same concrete bit through its ordinary viewport owner.
+3. Before View construction, observe the accepted request bit only where necessary to resolve the native provider/render extent and graph topology. Make `FramePipeline::BuildRenderFrameGraph` contain the sole execution branch and directly schedule exactly one middle. Let `ReferencePathTracer` read the frozen View bit for its selected/suspended lifecycle; do not copy it into graph settings or feature configuration.
 4. Clean-break `CVarReferencePathTracer`, `ReferencePathTracerCVar.h`, its definition/registration, the built-CVar cache, the old command boolean, and every remaining source/document consumer. Do not retain a console alias or fallback.
 5. Preserve the shared frame shell, canonical Scene/Game camera path, feature-local transport/session/resource policy, generic progress product, shared presentation tail, and RHI neutrality. Run the mandatory enclosure/generalization/source-shape review.
 
@@ -659,14 +718,14 @@ Connect the already implemented Reference middle/session to the same ordinary pe
 
 - `RenderShowFlag::ReferencePathTracer` is the sole selector for both Scene and Game views.
 - Lit/Reference/Lit changes rebuild safely, never schedule both middles, and drive the existing suspend/revalidate contract from the same accepted request value.
-- No Reference CVar, dedicated selector command, Renderer view-mode enum, repeated show-flag test, graph-settings copy, or RHI field remains.
+- No Reference CVar, dedicated selector command, Renderer view-mode enum, repeated execution branch, graph-settings copy, built selector cache, or RHI field remains.
 - Removing the flag branch and feature owner leaves the ordinary Lit frame coherent.
 - `CHK-DVP-01`, `CHK-DVP-02`, `CHK-DVP-06`, `CHK-RPT-17`, and `CHK-RPT-18` cover ownership, isolation, topology, host equivalence, and clean-break claims. Manual visual/build checks may be deferred but are never reported as passed.
 
 ### Ready-to-use prompt
 
 ```text
-Implement only Stage 6C of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md after Stage 6B. Add RenderShowFlag::ReferencePathTracer as the sole per-view selector for the already integrated alternate middle. The Editor Reference preset selects Visualization::Lit and enables the flag; Lit clears it; Game/runtime uses the same concrete request semantic. BuildRenderFrameGraph reads the accepted request flag exactly once, topology identity compares that same bit, and the existing Reference lifecycle receives only the resulting active/suspended fact. Delete CVarReferencePathTracer, ReferencePathTracerCVar.h, its registration, built cache, old command boolean, and every orphan source/document consumer in one clean break. Keep the original FramePipeline/Scene/View/frame-graph/RHI/presentation shell, one direct branch, feature-local mechanism, and generic progress output. Do not add a Renderer view-mode enum, selector alias, recipe hierarchy, settings bag, diagnostics, Show menu, capture schema, or RHI flag. Run focused source/compile checks, the enclosure/generalization review, architecture_boundary_check, and git diff --check; record deferred manual checks without blocking source continuation.
+Implement only Stage 6C of Docs/Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md after Stage 6B. Add the smallest RenderShowFlagSet plus only RenderShowFlag::ReferencePathTracer to ViewportRenderRequest and immutable RenderView. The Editor Reference preset submits Visualization::Lit plus the flag; Lit clears it; Game/runtime uses the same concrete request semantic. Observe the request bit only for necessary pre-View native-provider/render-extent and topology decisions, keep the sole Lit-versus-Reference execution branch in BuildRenderFrameGraph, and let the Reference feature read the frozen View bit for lifecycle state. Delete CVarReferencePathTracer, ReferencePathTracerCVar.h, its registration, built selector cache, old command boolean, bool Update parameter, and every orphan source/document consumer in one clean break. Keep the original FramePipeline/Scene/View/frame-graph/RHI/presentation shell, one direct branch, feature-local mechanism, and generic progress output. Do not add unrelated flags, metadata/overrides, a Renderer view-mode enum, selector alias, recipe hierarchy, settings bag, diagnostics, Show menu, capture schema, or RHI flag. Run focused source/compile checks, the enclosure/generalization review, architecture_boundary_check, and git diff --check; record deferred manual checks without blocking source continuation.
 ```
 
 ## Stage 7 - Deliver The Reference Path Tracer View Mode And Lit Comparison
