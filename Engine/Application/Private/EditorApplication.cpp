@@ -7,6 +7,7 @@
 #include "EditorOperations/EditorOperationService.h"
 #include "Input/InputSystem.h"
 #include "Renderer.h"
+#include "Renderer/Public/Debug/Visualization.h"
 #include "RuntimeApplication.h"
 #include "ShaderRecook/ShaderConsoleCommands.h"
 #include "ShaderRecook/ShaderRecookCoordinator.h"
@@ -14,6 +15,17 @@
 #include "World/GameWorld.h"
 
 #include <utility>
+
+static Visualization ResolveVisualization(EditorViewportViewMode viewMode) noexcept
+{
+	if (viewMode == EditorViewportViewMode::ReferencePathTracer)
+	{
+		return Visualization::Lit;
+	}
+
+	const std::uint32_t value = static_cast<std::uint32_t>(viewMode);
+	return static_cast<Visualization>(value > static_cast<std::uint32_t>(EditorViewportViewMode::ReferencePathTracer) ? value - 1u : value);
+}
 
 EditorApplication::EditorApplication() = default;
 
@@ -101,6 +113,12 @@ EditorHostServices EditorApplication::BuildUiHostServices(Renderer& renderer, Ga
 	    .SubmitWorldEdit = [&world](WorldEditCommand command, std::uint64_t generation)
 	    { return world.SubmitEdit(std::move(command), generation); },
 	    .SubmitRenderingSettings = [&renderer](EngineRenderingSettingsState settings) { renderer.SubmitRenderingSettings(settings); },
+	    .SubmitViewportViewMode = [&renderer](EditorViewportViewMode viewMode)
+	    {
+		    renderer.SubmitVisualization(
+		        ResolveVisualization(viewMode),
+		        viewMode == EditorViewportViewMode::ReferencePathTracer);
+	    },
 	    .HostWindow = m_runtimeApplication->GetWindow(),
 	    .Input = m_runtimeApplication->GetInputSystem()};
 }

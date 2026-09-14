@@ -2,7 +2,6 @@
 
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerSession.h"
 
-#include "Frame/RenderFrameTime.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerResources.h"
 #include "RHI/Public/Core/RhiCapabilities.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
@@ -37,13 +36,8 @@ bool ReferencePathTracerSession::Supports(const RenderView& view, const Prepared
 	    [](const MaterialData& material) { return material.alphaMode == 2u || material.subsurfaceStrength != 0.0f; });
 }
 
-void ReferencePathTracerSession::BeginIdentity(
-    const ReferencePathTracerIdentity& identity,
-    ReferencePathTracerResetReason reason,
-    double now) noexcept
+void ReferencePathTracerSession::BeginIdentity(const ReferencePathTracerIdentity& identity) noexcept
 {
-	m_discardedSamples = m_committedSamples;
-	m_lastReset = reason;
 	m_identity = identity;
 	m_hasIdentity = true;
 	m_committedSamples = 0u;
@@ -52,15 +46,7 @@ void ReferencePathTracerSession::BeginIdentity(
 	m_workPrepared = false;
 	m_clearDisplay = true;
 	m_suspensionPending = false;
-	m_cancelled = false;
-	m_timedOut = false;
 	m_supportRejected = false;
-	if (m_sessionStartSeconds == 0.0)
-	{
-		m_sessionStartSeconds = now;
-	}
-	m_firstCommitSeconds = 0.0;
-	m_lastCommitSeconds = 0.0;
 	++m_executionGeneration;
 }
 
@@ -69,7 +55,6 @@ void ReferencePathTracerSession::UpdateIdentity(
     const PreparedRenderScene& scene,
     const RenderFrameIdentity& frame,
     std::uint64_t sceneGeneration,
-    double now,
     ReferencePathTracerResources& resources) noexcept
 {
 	const ReferencePathTracerIdentity identity =
@@ -80,7 +65,6 @@ void ReferencePathTracerSession::UpdateIdentity(
 	}
 	if (!Supports(view, scene))
 	{
-		m_discardedSamples = m_committedSamples;
 		m_committedSamples = 0u;
 		m_pendingCommit = {};
 		m_workPrepared = false;
@@ -89,16 +73,13 @@ void ReferencePathTracerSession::UpdateIdentity(
 		m_identity = identity;
 		m_hasIdentity = true;
 		m_supportRejected = true;
-		m_cancelled = true;
 		return;
 	}
-	const ReferencePathTracerResetReason reason =
-	    m_hasIdentity ? ClassifyReferencePathTracerIdentityChange(m_identity, identity) : ReferencePathTracerResetReason::View;
 	resources.Allocate(view.renderExtent);
-	BeginIdentity(identity, reason, now);
+	BeginIdentity(identity);
 }
 
-void ReferencePathTracerSession::CompletePendingCommit(double now) noexcept
+void ReferencePathTracerSession::CompletePendingCommit() noexcept
 {
 	if (!m_pendingCommit || !m_deviceServices.IsSubmissionComplete(m_pendingCommit.Submission))
 	{
@@ -107,11 +88,6 @@ void ReferencePathTracerSession::CompletePendingCommit(double now) noexcept
 	if (m_pendingCommit.ExecutionGeneration == m_executionGeneration)
 	{
 		m_committedSamples = m_pendingCommit.Prefix;
-		m_lastCommitSeconds = now;
-		if (m_firstCommitSeconds == 0.0)
-		{
-			m_firstCommitSeconds = now;
-		}
 	}
 	m_pendingCommit = {};
 }
@@ -141,13 +117,10 @@ ViewportRenderProgress ReferencePathTracerSession::Update(
     const RenderView& view,
     const PreparedRenderScene& scene,
     const RenderFrameIdentity& frame,
-    const RenderFrameTime& time,
     std::uint64_t sceneGeneration,
     ReferencePathTracerResources& resources) noexcept
 {
-	const double now = time.UnscaledTime.count();
-	m_lastUpdateSeconds = now;
-	CompletePendingCommit(now);
+	CompletePendingCommit();
 	if (!active)
 	{
 		m_selected = false;
@@ -157,20 +130,11 @@ ViewportRenderProgress ReferencePathTracerSession::Update(
 	m_selected = true;
 	m_suspended = false;
 	m_suspensionPending = false;
-	if (m_requiresRestart)
-	{
-		return ProjectProgress();
-	}
 
-	UpdateIdentity(view, scene, frame, sceneGeneration, now, resources);
+	UpdateIdentity(view, scene, frame, sceneGeneration, resources);
 	if (m_supportRejected)
 	{
-		return ProjectProgress();
-	}
-	if (now - m_sessionStartSeconds >= std::chrono::duration<double>(SessionTimeout).count())
-	{
-		m_timedOut = true;
-		m_workPrepared = false;
+		return GetProgress();
 	}
 
 	m_uniformData = {};
@@ -178,11 +142,11 @@ ViewportRenderProgress ReferencePathTracerSession::Update(
 	{
 		m_uniformData.WorkFlags = ReferencePathTracerUniformData::WorkFlagClearDisplay;
 	}
-	if (!m_paused && !m_cancelled && !m_timedOut && !m_pendingCommit && m_committedSamples < m_targetSamples)
+	if (!m_pendingCommit && m_committedSamples < TargetSampleCount)
 	{
 		PrepareWork(view.renderExtent);
 	}
-	return ProjectProgress();
+	return GetProgress();
 }
 
 void ReferencePathTracerSession::RecordSubmission(RhiSubmissionToken token, ReferencePathTracerResources& resources) noexcept
@@ -207,52 +171,6 @@ void ReferencePathTracerSession::RecordSubmission(RhiSubmissionToken token, Refe
 	m_workPrepared = false;
 	m_clearDisplay = false;
 	m_uniformData = {};
-}
-
-void ReferencePathTracerSession::SetTargetSampleCount(std::uint32_t target) noexcept
-{
-	m_targetSamples = (std::clamp) (target, 1u, MaximumSampleCount);
-}
-
-void ReferencePathTracerSession::Pause() noexcept
-{
-	m_paused = true;
-}
-
-void ReferencePathTracerSession::Resume() noexcept
-{
-	m_paused = false;
-}
-
-void ReferencePathTracerSession::Restart(ReferencePathTracerResources& resources) noexcept
-{
-	const bool canRestartExistingPrefix = m_hasIdentity && resources.IsAllocated() && !m_supportRejected;
-	m_requiresRestart = false;
-	m_supportRejected = false;
-	m_cancelled = false;
-	m_timedOut = false;
-	m_sessionStartSeconds = m_lastUpdateSeconds;
-	if (canRestartExistingPrefix)
-	{
-		BeginIdentity(m_identity, ReferencePathTracerResetReason::Restart, m_lastUpdateSeconds);
-	}
-	else
-	{
-		m_hasIdentity = false;
-	}
-}
-
-void ReferencePathTracerSession::Cancel(ReferencePathTracerResources& resources) noexcept
-{
-	m_discardedSamples = m_committedSamples;
-	m_cancelled = true;
-	m_requiresRestart = true;
-	m_pendingCommit = {};
-	m_workPrepared = false;
-	m_suspensionPending = false;
-	m_hasIdentity = false;
-	resources.Release();
-	++m_executionGeneration;
 }
 
 void ReferencePathTracerSession::Suspend(ReferencePathTracerResources& resources) noexcept
@@ -287,39 +205,18 @@ void ReferencePathTracerSession::FinalizeSuspension(ReferencePathTracerResources
 	++m_executionGeneration;
 	if (!resources.CanRetain())
 	{
-		m_discardedSamples = m_committedSamples;
-		m_cancelled = true;
-		m_requiresRestart = true;
 		resources.Release();
 		m_hasIdentity = false;
 	}
 }
 
-ReferencePathTracerProgress ReferencePathTracerSession::GetProgress() const noexcept
+ViewportRenderProgress ReferencePathTracerSession::GetProgress() const noexcept
 {
-	double eta = -1.0;
-	if (m_firstCommitSeconds > 0.0 && m_lastCommitSeconds > m_firstCommitSeconds && m_committedSamples > 1u)
-	{
-		const double secondsPerSample = (m_lastCommitSeconds - m_firstCommitSeconds) / static_cast<double>(m_committedSamples - 1u);
-		eta = secondsPerSample * static_cast<double>(m_targetSamples > m_committedSamples ? m_targetSamples - m_committedSamples : 0u);
-	}
-	return ReferencePathTracerProgress{
-	    .State = m_cancelled || m_timedOut          ? ViewportRenderProgressState::Unavailable
-	        : m_committedSamples >= m_targetSamples ? ViewportRenderProgressState::Complete
-	                                                : ViewportRenderProgressState::Rendering,
-	    .CommittedSamples = m_committedSamples,
-	    .TargetSamples = m_targetSamples,
-	    .LastReset = m_lastReset,
-	    .ActiveRoute = m_cancelled || m_timedOut ? ReferencePathTracerRoute::Unavailable : ReferencePathTracerRoute::InlineRayQuery,
-	    .DiscardedSamples = m_discardedSamples,
-	    .EstimatedSecondsRemaining = eta};
-}
-
-ViewportRenderProgress ReferencePathTracerSession::ProjectProgress() const noexcept
-{
-	const ReferencePathTracerProgress progress = GetProgress();
+	const ViewportRenderProgressState state = m_supportRejected
+	    ? ViewportRenderProgressState::Unavailable
+	    : (m_committedSamples >= TargetSampleCount ? ViewportRenderProgressState::Complete : ViewportRenderProgressState::Rendering);
 	return ViewportRenderProgress{
-	    .State = progress.State,
-	    .CompletedWork = progress.CommittedSamples,
-	    .TargetWork = progress.TargetSamples};
+	    .State = state,
+	    .CompletedWork = m_committedSamples,
+	    .TargetWork = TargetSampleCount};
 }

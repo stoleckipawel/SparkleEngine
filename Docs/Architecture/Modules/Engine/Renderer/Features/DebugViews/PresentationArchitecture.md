@@ -76,13 +76,13 @@ selected view color -> display mapping -> DisplayLinearColor -> output encoding 
 
 ## Selected Architecture
 
-The renderer keeps one presentation topology and resolves visualization and show-control policy before any pass executes:
+The viewport owner resolves frontend preset/override policy before submission, and Renderer freezes those concrete semantics before any pass executes:
 
 ```text
-        active Visualization + resolved show controls
+    ViewportRenderRequest.Visualization + ShowFlags
                                       |
                                       v
-                          RenderViewBuilder resolution
+                          RenderViewBuilder copy
                                       |
                        immutable RenderView.ShowFlags
                                       |
@@ -99,7 +99,7 @@ The renderer keeps one presentation topology and resolves visualization and show
                           viewport / back buffer
 ```
 
-### One Preset And Classification Owner
+### One Signal-Domain Classification Owner
 
 Add one renderer-private, exhaustive visualization-contract resolver. Conceptually:
 
@@ -113,8 +113,6 @@ enum class VisualizationSignalDomain : std::uint8_t
 struct VisualizationContract final
 {
 	VisualizationSignalDomain SignalDomain;
-	RenderShowFlagSet SetFlags;
-	RenderShowFlagSet ClearFlags;
 };
 
 VisualizationContract ResolveVisualizationContract(Visualization visualization) noexcept;
@@ -123,12 +121,12 @@ VisualizationContract ResolveVisualizationContract(Visualization visualization) 
 The exact names may follow implementation review, but the responsibilities may not split:
 
 - `Visualization` remains the stable Renderer-to-shader selection. Editor owns its broader view-mode taxonomy and maps entries explicitly.
-- The renderer-private resolver is the only visualization-to-signal-domain and visualization-to-show-control-default table.
-- Editor labels, view-mode menu categories, and the Show menu do not repeat Renderer visualization policy.
+- The renderer-private resolver is the only visualization-to-signal-domain table.
+- The Editor-owned preset table establishes stock show-flag defaults while labels, menu categories, and the Show menu do not repeat signal-domain classification.
 - The display-mapping shader receives focused resolved booleans; it does not maintain a second mode-to-presentation-policy list.
 - An unknown or `Count` value is rejected by the narrow resolver rather than silently becoming an exact diagnostic.
 
-A polymorphic view-mode hierarchy, per-mode CVar, dynamic show-flag registry, and public presentation API are unnecessary for the current closed enums. The exhaustive preset table and fixed show-flag metadata table are the two static authorities: one owns rendering policy and one owns editor presentation.
+A polymorphic view-mode hierarchy, per-mode CVar, dynamic show-flag registry, and public presentation API are unnecessary for the current closed enums. The Renderer signal-domain table and Editor preset/metadata tables have separate responsibilities and are checked exhaustively for compatible stock defaults.
 
 ### Display-Mapping Pass
 

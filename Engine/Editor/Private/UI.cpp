@@ -161,6 +161,10 @@ UI::UI(EditorHostServices hostServices) :
 	}
 
 	InitializeDefaultPanels();
+	if (m_viewportSession)
+	{
+		m_viewportSession->SetViewModeChangedHandler(std::move(hostServices.SubmitViewportViewMode));
+	}
 	if (m_renderingSettings)
 	{
 		m_renderingSettings->SetCommitHandler(std::move(hostServices.SubmitRenderingSettings));
@@ -194,11 +198,6 @@ void UI::Update()
 
 	NewFrame();
 	Build();
-	if (m_viewportPanel && m_viewportSession)
-	{
-		const EditorViewportViewMode viewMode = m_viewportSession->GetViewMode();
-		m_viewportPanel->SetRenderProgressVisible(viewMode == EditorViewportViewMode::ReferencePathTracer);
-	}
 	m_renderPacket = m_renderPacketBuilder->Build(*ImGui::GetDrawData(), UiPresentationMode::EditorViewport, m_viewportGeneration);
 }
 

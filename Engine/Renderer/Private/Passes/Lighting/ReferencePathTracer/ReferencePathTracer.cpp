@@ -3,9 +3,12 @@
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracer.h"
 
 #include "Frame/Graph/RenderFrameGraphSettings.h"
+#include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerCVar.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerPasses.h"
 #include "Passes/PostProcessing/Exposure.h"
 #include "Passes/Presentation/Upscaling.h"
+
+ConsoleVariable<bool> CVarReferencePathTracer("r.ReferencePathTracer", false, "Use the Reference Path Tracer frame composition.");
 
 ReferencePathTracer::ReferencePathTracer(RenderDeviceServices& deviceServices, RendererMemoryMonitor& memoryMonitor) noexcept :
     m_resources(deviceServices, memoryMonitor),
@@ -36,10 +39,9 @@ ViewportRenderProgress ReferencePathTracer::Update(
     const RenderView& view,
     const PreparedRenderScene& scene,
     const RenderFrameIdentity& frame,
-    const RenderFrameTime& time,
     std::uint64_t sceneGeneration) noexcept
 {
-	return m_session.Update(active, view, scene, frame, time, sceneGeneration, m_resources);
+	return m_session.Update(active, view, scene, frame, sceneGeneration, m_resources);
 }
 
 bool ReferencePathTracer::BindResources(FrameGraph& frameGraph) const noexcept
@@ -50,34 +52,4 @@ bool ReferencePathTracer::BindResources(FrameGraph& frameGraph) const noexcept
 void ReferencePathTracer::RecordSubmission(RhiSubmissionToken token) noexcept
 {
 	m_session.RecordSubmission(token, m_resources);
-}
-
-void ReferencePathTracer::SetTargetSampleCount(std::uint32_t target) noexcept
-{
-	m_session.SetTargetSampleCount(target);
-}
-
-void ReferencePathTracer::Pause() noexcept
-{
-	m_session.Pause();
-}
-
-void ReferencePathTracer::Resume() noexcept
-{
-	m_session.Resume();
-}
-
-void ReferencePathTracer::Restart() noexcept
-{
-	m_session.Restart(m_resources);
-}
-
-void ReferencePathTracer::Cancel() noexcept
-{
-	m_session.Cancel(m_resources);
-}
-
-ReferencePathTracerProgress ReferencePathTracer::GetProgress() const noexcept
-{
-	return m_session.GetProgress();
 }

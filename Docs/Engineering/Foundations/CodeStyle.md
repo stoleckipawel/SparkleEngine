@@ -150,6 +150,8 @@ Runtime code MUST NOT pass a console variable, or a value copied solely from a c
 
 Cached topology owners may retain the resolved topology they actually built so they can detect when reconstruction is required. That cache is observation state, not another policy authority, and MUST NOT be forwarded back into feature construction. Editor and persistence boundaries may capture or apply complete settings state because their responsibility is explicitly to present or serialize CVar values; this exception does not permit runtime CVar plumbing.
 
+A frontend or simulation thread MUST NOT mutate a Renderer-owned CVar directly when rendering may execute on another thread. Intrinsically per-view rendering choices, including visualization and show flags, travel as concrete values on the ordinary viewport request and are frozen into the corresponding View; they are not CVars. A genuinely process-global CVar action crosses the existing sequenced Renderer control boundary and is applied on the Renderer owner thread. Neither route carries frontend enums, labels, widget state, or a generic settings/context mirror into FrameGraph, feature state, or RHI.
+
 Code review searches both direct calls such as `Consumer(CVarName.Get())` and indirect copies placed in `*Settings`, `*Context`, `*Options`, or similarly generic records. Remove the carrier and update the consumer to query its CVar owner in the same change.
 
 ### HLSL/HLSLI

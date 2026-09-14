@@ -22,7 +22,6 @@ public:
 	void SetSideInsets(float leftInsetPixels, float rightInsetPixels) noexcept;
 	void SetRequestedExtent(RenderViewportExtent extent) noexcept;
 	void SetExposureOverrides(const ViewportExposureOverrides& overrides) noexcept;
-	void SetRenderProgressVisible(bool visible) noexcept { m_renderProgressVisible = visible; }
 	void SetRenderProducts(const ViewportRenderProducts& renderProducts) noexcept;
 	void SetSceneColorTexture(EditorTextureHandle texture) noexcept;
 	const ViewportRenderRequest& GetRenderRequest() const noexcept;
@@ -47,5 +46,4 @@ private:
 	float m_inputRight = 0.0f;
 	float m_inputBottom = 0.0f;
 	bool m_hasInputBounds = false;
-	bool m_renderProgressVisible = false;
 };

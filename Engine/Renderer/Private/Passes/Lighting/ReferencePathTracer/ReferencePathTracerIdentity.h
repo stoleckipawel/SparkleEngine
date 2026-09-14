@@ -10,21 +10,6 @@ struct PreparedRenderScene;
 struct RenderFrameIdentity;
 struct RenderView;
 
-enum class ReferencePathTracerResetReason : std::uint8_t
-{
-	None,
-	View,
-	Camera,
-	Geometry,
-	Deformation,
-	Material,
-	Light,
-	Environment,
-	Shader,
-	Transport,
-	Restart,
-};
-
 struct ReferencePathTracerIdentity final
 {
 	static constexpr std::size_t ComponentCount = 9u;
@@ -40,7 +25,3 @@ ReferencePathTracerIdentity BuildReferencePathTracerIdentity(
     const RenderFrameIdentity& frame,
     std::uint64_t sceneGeneration,
     ERhiBackendApi backendApi) noexcept;
-
-ReferencePathTracerResetReason ClassifyReferencePathTracerIdentityChange(
-    const ReferencePathTracerIdentity& current,
-    const ReferencePathTracerIdentity& next) noexcept;

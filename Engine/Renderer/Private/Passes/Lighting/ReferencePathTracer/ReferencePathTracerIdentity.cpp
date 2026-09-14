@@ -68,27 +68,3 @@ ReferencePathTracerIdentity BuildReferencePathTracerIdentity(
 	identity.Components[BackendComponent] = Hash::FinalizeFnv1a64(Hash::ContinueFnv1a64Value(Hash::kFnv64OffsetBasis, backendApi));
 	return identity;
 }
-
-ReferencePathTracerResetReason ClassifyReferencePathTracerIdentityChange(
-    const ReferencePathTracerIdentity& current,
-    const ReferencePathTracerIdentity& next) noexcept
-{
-	static constexpr std::array reasons = {
-	    ReferencePathTracerResetReason::View,
-	    ReferencePathTracerResetReason::Camera,
-	    ReferencePathTracerResetReason::Geometry,
-	    ReferencePathTracerResetReason::Deformation,
-	    ReferencePathTracerResetReason::Material,
-	    ReferencePathTracerResetReason::Light,
-	    ReferencePathTracerResetReason::Environment,
-	    ReferencePathTracerResetReason::Shader,
-	    ReferencePathTracerResetReason::Transport};
-	for (std::size_t index = 0u; index < next.Components.size(); ++index)
-	{
-		if (next.Components[index] != current.Components[index])
-		{
-			return reasons[index];
-		}
-	}
-	return ReferencePathTracerResetReason::None;
-}

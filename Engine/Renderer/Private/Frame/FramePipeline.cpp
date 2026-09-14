@@ -261,7 +261,7 @@ RenderFrame& FramePipeline::PrepareRenderFrame(const RenderViewInput& viewInput,
 	m_renderViewPreparation.Prepare(frame.PreparedScene, frame.View, m_renderViewState);
 	frame.PreparedScene.gpuBindings = &scene.UpdateGpuScene(frame.PreparedScene, frame.View, frame.FrameInFlightIndex);
 	m_viewportRenderProducts.SetProgress(m_referencePathTracer
-	        ->Update(m_builtReferencePathTracer, frame.View, frame.PreparedScene, frame.Identity, frame.Time, scene.GetSceneGeneration()));
+	        ->Update(m_builtReferencePathTracer, frame.View, frame.PreparedScene, frame.Identity, scene.GetSceneGeneration()));
 	m_frameGraphExecutable = m_referencePathTracer->BindResources(*m_frameGraph);
 	return *frameSlot;
 }

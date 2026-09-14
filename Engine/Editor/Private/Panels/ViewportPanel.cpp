@@ -124,7 +124,7 @@ void ViewportPanel::BuildEmptyState() noexcept
 void ViewportPanel::BuildProgressOverlay() noexcept
 {
 	const ViewportRenderProgress& progress = m_renderProducts.GetProgress();
-	if (!m_renderProgressVisible || progress.State == ViewportRenderProgressState::None)
+	if (progress.State == ViewportRenderProgressState::None)
 	{
 		return;
 	}

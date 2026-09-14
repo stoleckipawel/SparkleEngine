@@ -12,7 +12,7 @@
 
 ## Unreal Engine
 
-Epic documents `FEngineShowFlags` as bits stored in the view family for artists and developers to customize/debug rendering. View modes are higher-level presets that can manipulate flags, while scalability belongs to console variables. `FSceneViewFamily` owns resolved flags; `FEditorViewportClient` owns current and previous editor-viewport flag sets.
+Epic documents `FEngineShowFlags` as bits stored in the view family for artists and developers to customize/debug rendering. View modes are higher-level presets that can manipulate flags, while scalability belongs to console variables. `FSceneViewFamily` owns resolved flags; `FEditorViewportClient` owns current and previous editor-viewport flag sets. Epic's runtime `EnablePathTracing` API is explicitly equivalent to setting `ShowFlag.PathTracing` for the current Game viewport, demonstrating that a renderer-changing mode can still be expressed as per-viewport show state rather than a process-global UI enum.
 
 The editor exposes View Mode and Show Flags as neighboring controls. Buffer-visualization records can also carry per-visualization auto-exposure intent rather than assuming every buffer uses the lit presentation path.
 
@@ -20,6 +20,7 @@ Transferable lessons:
 
 - one view owns an immutable resolved flag set; passes do not read mutable global editor state;
 - view modes are coherent presets over individual feature switches;
+- a path-tracing view can be activated through a per-viewport `PathTracing` show flag in both editor and runtime workflows;
 - exposure and the tone curve are separate decisions;
 - show flags are not scalability or backend-capability policy.
 
@@ -28,6 +29,7 @@ Sparkle should adopt the ownership/preset separation with a fixed local enum and
 Primary sources:
 
 - Epic, [`FEngineShowFlags`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/FEngineShowFlags)
+- Epic, [`UKismetRenderingLibrary::EnablePathTracing`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/UKismetRenderingLibrary/EnablePathTracing)
 - Epic, [`FSceneViewFamily`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/FSceneViewFamily)
 - Epic, [`FEditorViewportClient`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Editor/UnrealEd/FEditorViewportClient)
 - Epic, [Viewport Toolbar: View Mode and Show Flag Options](https://dev.epicgames.com/documentation/en-us/unreal-engine/viewport-toolbar#viewporttoolbarviewmodeandshowflagoptions)

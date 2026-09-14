@@ -3,7 +3,6 @@
 #include "Renderer/Public/Debug/RendererCVars.h"
 
 ConsoleVariable<Visualization> CVarVisualization("r.Visualization", Visualization::Lit, "Select the active Renderer visualization.");
-ConsoleVariable<bool> CVarReferencePathTracer("r.ReferencePathTracer", false, "Use the Reference Path Tracer frame composition.");
 ConsoleVariable<GBufferAlgorithm> CVarGBufferAlgorithm(
     "r.GBuffer.Algorithm",
     GBufferAlgorithm::Rasterized,

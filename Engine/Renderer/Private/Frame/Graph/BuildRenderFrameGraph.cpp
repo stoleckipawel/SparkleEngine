@@ -2,6 +2,7 @@
 #include "Frame/FramePipeline.h"
 
 #include "Debug/RendererCVars.h"
+#include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerCVar.h"
 #include "Frame/Graph/RenderFrameGraphResourceBindings.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/GBuffer/GBuffer.h"

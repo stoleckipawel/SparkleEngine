@@ -18,7 +18,7 @@ This file is part of the Debug Views feature dossier and owns the proof contract
 
 | The gate proves | Why a plausible screenshot is insufficient |
 | --- | --- |
-| every mode and flag has one exhaustive semantic classification | an image can look reasonable while exposure, tone mapping, or a feature contribution is applied twice |
+| every mode and flag has one exhaustive semantic classification | an image can look reasonable while exposure, tone mapping, a feature contribution, or the wrong middle recipe is active |
 | requests are resolved per viewport into immutable view state | a single-viewport smoke cannot reveal process-global state or cross-viewport contamination |
 | exact and scene-referred signals follow different display mapping but one output encoding contract | bypassing all presentation can produce numerically wrong display output while appearing “unmodified” |
 | unavailable resources and custom overrides remain explicit in UI and capture metadata | a capture without the resolved state cannot be trusted, compared, or replayed |
@@ -51,9 +51,9 @@ Implementation is accepted only when all of the following are demonstrated:
 
 - `AC-DVP-01` — every `Visualization` other than `Count` has exactly one signal domain and one explicit show-flag contract;
 - `AC-DVP-02` — every `RenderShowFlag` other than `Count` has exactly one metadata entry, a real producer/consumer path, deterministic disabled behavior, and classified graph impact;
-- `AC-DVP-03` — no generic `RenderFeatureFlags` definition is reintroduced; selection, view-mode presets, requested outputs, and show flags each have one target representation;
-- `AC-DVP-04` — Editor view-mode identity remains absent from Renderer/RHI contracts; the active Renderer visualization comes from its dedicated CVar and only the scalar/bits required by passes or shaders are propagated;
-- `AC-DVP-05` — `RenderViewBuilder` is the only resolver, and two viewports can resolve different show-flag sets without global-state races or cross-talk;
+- `AC-DVP-03` — no generic `RenderFeatureFlags` or settings bag is introduced; Editor view-mode state, concrete Renderer visualization, requested outputs, and show flags each have one target representation;
+- `AC-DVP-04` — Editor view-mode identity remains absent from Renderer/RHI contracts; the ordinary viewport request carries the concrete `Visualization` and `RenderShowFlagSet`, and only focused scalar/bits required by a pass or shader propagate below the immutable View;
+- `AC-DVP-05` — the viewport owner resolves preset plus overrides once, Renderer freezes that accepted state into `RenderView`, and two viewports can hold different visualization/show-flag values without global-state races or cross-talk;
 - `AC-DVP-06` — stock `Lit`, `GBufferEmissive`, and direct/indirect lighting modes enable Exposure and Tonemapper; changing exposure compensation or tone mapper changes them;
 - `AC-DVP-07` — those stock HDR modes contain no producer-local display curve and are tone mapped once;
 - `AC-DVP-08` — stock roughness, metallic, ambient occlusion, subsurface strength, normals, diffuse/subsurface material colors, and instance palette views disable Exposure and Tonemapper; changing exposure compensation or tone mapper does not change their decoded display-linear pixels;
@@ -69,7 +69,8 @@ Implementation is accepted only when all of the following are demonstrated:
 - `AC-DVP-18` — the Show menu exposes only implemented flags, grouped by purpose, with working reset/category actions and no raw bit/CVar UI;
 - `AC-DVP-19` — documentation does not describe the encoded viewport image as a raw GBuffer dump;
 - `AC-DVP-20` — representative D3D12 and Vulkan results agree within the target format's quantization tolerance;
-- `AC-DVP-21` — `git diff --check`, the selected shader cook, focused tests, and the required backend smokes report exact commands and results.
+- `AC-DVP-21` — `git diff --check`, the selected shader cook, focused tests, and the required backend smokes report exact commands and results;
+- `AC-DVP-22` — `RenderShowFlag::ReferencePathTracer` is the sole Scene/Game selector for the alternate middle-frame recipe; Lit and Reference are mutually exclusive, and no `r.ReferencePathTracer`, Renderer view-mode enum, selector command, or RHI copy remains.
 
 ## Failure Modes And Key Checks
 
@@ -81,6 +82,7 @@ Implementation is accepted only when all of the following are demonstrated:
 | `FM-DVP-04` | Resize across render/output extent mismatch and switch sRGB/linear output. | Sampling stays in bounds and the declared mapping/encoding occurs once without clipping beyond the stated linear-path policy. | `CHK-DVP-03` |
 | `FM-DVP-05` | Replay a capture with missing, inconsistent, or forced-mode metadata. | Verification rejects the mismatch and identifies mode, flags, presentation, encoding, and force source; it does not compare incomparable images. | `CHK-DVP-04` |
 | `FM-DVP-06` | Exercise representative modes on both advertised backends. | Results remain within the predeclared tolerance and native diagnostics contain no uncategorized issue. | `CHK-DVP-05` |
+| `FM-DVP-07` | Toggle Lit/Reference/Lit in one viewport while another remains Lit. | Only the selected viewport rebuilds to the requested middle, never schedules both middles, and the other viewport remains unchanged. | `CHK-DVP-02`, `CHK-DVP-06` |
 
 | Check ID | Key test element and oracle | Coverage |
 | --- | --- | --- |
@@ -89,3 +91,4 @@ Implementation is accepted only when all of the following are demonstrated:
 | `CHK-DVP-03` | Use fixed numeric/reference inputs for every signal domain across four presentation combinations, sRGB/linear output, and mismatched extents; compare decoded pixels to predeclared values/tolerance. | `AC-DVP-06`–`AC-DVP-08`, `AC-DVP-10`, `AC-DVP-12`, `AC-DVP-13`, `AC-DVP-15`; `FM-DVP-01`, `FM-DVP-04` |
 | `CHK-DVP-04` | Capture and replay stock/custom/unavailable states; schema-validate identity and deliberately remove or alter one field to prove the verifier detects it. | `AC-DVP-16`; `FM-DVP-03`, `FM-DVP-05` |
 | `CHK-DVP-05` | Run the selected cook and focused D3D12/Vulkan smokes with native validation, then compare representative decoded outputs within quantization tolerance and retain exact commands/artifacts. | `AC-DVP-20`, `AC-DVP-21`; `FM-DVP-06` |
+| `CHK-DVP-06` | Trace the accepted `ReferencePathTracer` bit from frontend preset through `ViewportRenderRequest`, topology key, immutable `RenderView`, one `BuildRenderFrameGraph` branch, and feature session activation; search for competing CVars, commands, enums, repeated switches, and RHI fields. | `AC-DVP-02`, `AC-DVP-04`, `AC-DVP-05`, `AC-DVP-17`, `AC-DVP-22`; `FM-DVP-07` |

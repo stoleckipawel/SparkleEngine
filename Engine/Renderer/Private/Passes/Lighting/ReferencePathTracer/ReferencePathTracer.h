@@ -13,7 +13,6 @@ struct PreparedRenderScene;
 struct RenderFrameGraphResources;
 struct RenderFrameGraphSettings;
 struct RenderFrameIdentity;
-struct RenderFrameTime;
 struct RenderView;
 
 class ReferencePathTracer final
@@ -30,17 +29,9 @@ public:
 	    const RenderView& view,
 	    const PreparedRenderScene& scene,
 	    const RenderFrameIdentity& frame,
-	    const RenderFrameTime& time,
 	    std::uint64_t sceneGeneration) noexcept;
 	bool BindResources(FrameGraph& frameGraph) const noexcept;
 	void RecordSubmission(RhiSubmissionToken token) noexcept;
-
-	void SetTargetSampleCount(std::uint32_t target) noexcept;
-	void Pause() noexcept;
-	void Resume() noexcept;
-	void Restart() noexcept;
-	void Cancel() noexcept;
-	ReferencePathTracerProgress GetProgress() const noexcept;
 
 private:
 	ReferencePathTracerResources m_resources;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RendererAPI.h"
+#include "Debug/Visualization.h"
 #include "Diagnostics/RendererMemoryDiagnostics.h"
 #include "Meshes/MeshDiagnostics.h"
 #include "Diagnostics/MeshPreviewGeometry.h"
@@ -33,6 +34,7 @@ public:
 	void SubmitRenderFrame(RenderFrameSubmission submission) noexcept;
 	void SubmitUiRenderPacket(UiRenderPacket packet) noexcept;
 	void SubmitRenderingSettings(EngineRenderingSettingsState settings) noexcept;
+	void SubmitVisualization(Visualization visualization, bool referencePathTracer) noexcept;
 	void BeginSimulationFrame(std::uint64_t frameId) noexcept;
 	void EndSimulationFrame(std::uint64_t frameId) noexcept;
 
