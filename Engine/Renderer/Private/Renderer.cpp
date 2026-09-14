@@ -79,11 +79,6 @@ void Renderer::SubmitRenderingSettings(EngineRenderingSettingsState settings) no
 	m_state->Coordinator.SubmitRenderingSettings(settings);
 }
 
-void Renderer::SubmitVisualization(Visualization visualization, bool referencePathTracer) noexcept
-{
-	m_state->Coordinator.SubmitVisualization(visualization, referencePathTracer);
-}
-
 void Renderer::BeginSimulationFrame(std::uint64_t frameId) noexcept
 {
 	m_state->ExternalRuntime.BeginSimulationFrame(frameId);

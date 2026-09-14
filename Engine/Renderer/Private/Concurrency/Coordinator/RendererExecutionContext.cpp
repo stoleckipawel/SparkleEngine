@@ -2,7 +2,6 @@
 #include "Concurrency/Coordinator/RendererExecutionContext.h"
 
 #include "Core/Public/Diagnostics/Error.h"
-#include "Debug/RendererCVars.h"
 #include "Diagnostics/MeshDiagnosticsCollector.h"
 #include "Diagnostics/RendererMemoryMonitor.h"
 #include "Frame/FramePipeline.h"
@@ -10,7 +9,6 @@
 #include "Host/RendererHost.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "Pipeline/RenderPassRuntimeCache.h"
-#include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerCVar.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "Renderer/Public/Concurrency/RendererExecutionConfig.h"
 
@@ -86,11 +84,6 @@ void RendererExecutionContext::ExecuteControl(RenderControlPayload payload) noex
 			    m_rendererHost->GetImageProviders().Refresh();
 		    else if constexpr (std::is_same_v<TCommand, RenderSettingsChangedCommand>)
 			    ApplyEngineRenderingSettingsStateToCVars(command.Settings);
-		    else if constexpr (std::is_same_v<TCommand, VisualizationCommand>)
-		    {
-			    CVarVisualization.Set(command.Selected);
-			    CVarReferencePathTracer.Set(command.ReferencePathTracer);
-		    }
 		    else if constexpr (std::is_same_v<TCommand, RenderShutdownCommand>)
 			    SettleRendererBeforeDestruction();
 		    else

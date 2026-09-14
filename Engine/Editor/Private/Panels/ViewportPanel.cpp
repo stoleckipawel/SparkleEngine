@@ -68,6 +68,15 @@ void ViewportPanel::SetRequestedExtent(RenderViewportExtent extent) noexcept
 	}
 }
 
+void ViewportPanel::SetVisualization(Visualization visualization) noexcept
+{
+	if (m_renderRequest.ActiveVisualization != visualization)
+	{
+		m_renderRequest.ActiveVisualization = visualization;
+		++m_renderRequest.Generation;
+	}
+}
+
 void ViewportPanel::SetRenderProducts(const ViewportRenderProducts& renderProducts) noexcept
 {
 	m_renderProducts = renderProducts;

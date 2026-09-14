@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Core/Public/Console/CVar.h"
-#include "Renderer/Public/Debug/Visualization.h"
 #include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
 #include "Renderer/Public/RendererAPI.h"
 
@@ -14,7 +13,6 @@ enum class RendererDiagnosticMarkerVerbosity : std::uint8_t
 	Detailed = 2,
 };
 
-extern SPARKLE_RENDERER_API ConsoleVariable<Visualization> CVarVisualization;
 extern SPARKLE_RENDERER_API ConsoleVariable<GBufferAlgorithm> CVarGBufferAlgorithm;
 extern SPARKLE_RENDERER_API ConsoleVariable<RayTracingExecutionMode> CVarGBufferRayTracingExecutionMode;
 extern SPARKLE_RENDERER_API ConsoleVariable<RayTracingExecutionMode> CVarShadowRayTracingExecutionMode;

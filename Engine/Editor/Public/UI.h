@@ -1,7 +1,6 @@
 #pragma once
 
 #include "EditorAPI.h"
-#include "Viewport/EditorViewportViewMode.h"
 #include "Renderer/Public/Diagnostics/MeshPreviewGeometry.h"
 #include "../../Core/Public/Events/ScopedEventHandle.h"
 #include "../../Renderer/Public/Diagnostics/RendererMemoryDiagnostics.h"
@@ -50,7 +49,6 @@ struct EditorHostServices final
 	std::function<WorldMaterialVariantView()> MaterialVariants;
 	std::function<WorldEditResult(WorldEditCommand, std::uint64_t)> SubmitWorldEdit;
 	std::function<void(EngineRenderingSettingsState)> SubmitRenderingSettings;
-	std::function<void(EditorViewportViewMode)> SubmitViewportViewMode;
 	Window& HostWindow;
 	InputSystem& Input;
 };

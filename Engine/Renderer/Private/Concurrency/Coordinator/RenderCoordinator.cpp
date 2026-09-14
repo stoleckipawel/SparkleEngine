@@ -77,17 +77,6 @@ void RenderCoordinator::SubmitRenderingSettings(EngineRenderingSettingsState set
 	ApplyEngineRenderingSettingsStateToCVars(settings);
 }
 
-void RenderCoordinator::SubmitVisualization(Visualization visualization, bool referencePathTracer)
-{
-	m_producerOwner.AssertAccess();
-	if (m_config.IsThreaded())
-	{
-		SubmitControl(VisualizationCommand{visualization, referencePathTracer});
-		return;
-	}
-	GetSerialContext().ExecuteControl(VisualizationCommand{visualization, referencePathTracer});
-}
-
 void RenderCoordinator::SubmitViewportRequest(ViewportRenderRequest request)
 {
 	m_producerOwner.AssertAccess();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Debug/Visualization.h"
 #include "../Editor/EditorTextureHandle.h"
 #include "../RendererAPI.h"
 #include "../Settings/EngineRenderingDisplayTypes.h"
@@ -154,6 +155,7 @@ struct SPARKLE_RENDERER_API ViewportRenderRequest
 	std::uint64_t ViewportId = 0;
 	std::uint64_t Generation = 0;
 	RenderViewKind ViewKind = RenderViewKind::Game;
+	Visualization ActiveVisualization = Visualization::Lit;
 	RenderViewportExtent Extent = {};
 	RenderViewSelectionToken ViewSelection = {};
 	RenderOutputFlags RequestedOutputs = RenderOutputFlags::SceneColor;

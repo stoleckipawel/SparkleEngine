@@ -23,7 +23,7 @@ This plan owns implementation slices and their delivery order. It does not redef
 | `DVP-4` remaining flags and Show UX | each accepted scene/lighting/overlay flag lands with its consumer and optional per-viewport controls | backend/visual acceptance |
 | `DVP-5` proof | isolation, topology, numeric presentation, interaction, and advertised backend evidence is retained | release completion until the feature report accepts it |
 
-These stages are an architecture prerequisite for the next Reference Path Tracer UX slice. They do not add a second renderer, a Renderer view-mode enum, a generic settings framework, or a diagnostics surface. The current `SubmitVisualization`/CVar command path is transitional source state: do not extend it while this migration is pending.
+These stages are an architecture prerequisite for the next Reference Path Tracer UX slice. They do not add a second renderer, a Renderer view-mode enum, a generic settings framework, or a diagnostics surface. DVP-1 has removed the former `SubmitVisualization`/`r.Visualization` command path; the remaining private Reference selector is transitional until DVP-2.
 
 ## Stage DVP-0 - Freeze The Per-View Control Contract
 
@@ -72,6 +72,8 @@ Execute only Stage DVP-0 of Docs/Architecture/Modules/Engine/Renderer/Features/D
 ```text
 Implement only Stage DVP-1 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after DVP-0 PASS. Put the existing concrete Visualization on ViewportRenderRequest and immutable RenderView, add one exhaustive Editor-owned resolver for the current contiguous view modes, and update the panel-owned request generation when its resolved visualization changes. Migrate Game/runtime producers without the Editor enum. In one clean break delete CVarVisualization as normal authority, Renderer::SubmitVisualization, VisualizationCommand, the Application callback/translation chain, and every orphan include/API. Preserve current shader behavior through the focused View-derived scalar. Keep Reference unavailable. Do not add RenderShowFlag, override storage, a Renderer view-mode enum, generic settings bag, registry, diagnostics, capture schema, Show menu, or RHI fields. Run focused compile/source checks, architecture_boundary_check, and git diff --check; report unrun runtime work honestly.
 ```
+
+`DVP-1` is **IMPLEMENTED / VALIDATION DEFERRED** by the [Reference Path Tracer Stage-6B source handoff](../Lighting/ReferencePathTracer/Plan.md#stage-6b-source-handoff--2026-09-15). DVP-2 is authorized; no show-flag or Reference-route implementation is claimed here.
 
 ## Stage DVP-2 - Add The First Show Flag And Select The Reference Middle
 

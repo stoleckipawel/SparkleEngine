@@ -42,7 +42,7 @@ The motivation is one coherent editor transaction and deterministic render-threa
 | Surface | Current coverage | Boundary |
 | --- | --- | --- |
 | aggregate public state | 26 fields: presentation/device, tone/output, exposure, upscale/RR, GBuffer/RT, batching, and TLAS/PTLAS | value snapshot; it does not contain per-viewport UI state or active provider/capability/fallback reasons |
-| persisted allowlist | 26 exact `r.*` names in `/Script/SparkleRenderer.EngineRenderingSettings` | Editor view mode is deliberately not Renderer settings or a render request field; Editor owns its label/order in `EditorViewportSession`, while `r.Visualization` and `r.ReferencePathTracer` are non-persisted Renderer selectors |
+| persisted allowlist | 26 exact `r.*` names in `/Script/SparkleRenderer.EngineRenderingSettings` | Editor view mode is deliberately not Renderer settings; Editor owns its label/order in `EditorViewportSession`, concrete visualization is a non-persisted per-view request value, and `r.ReferencePathTracer` remains a transitional non-persisted selector |
 | persistence file | workspace `Config/DefaultEngine.ini`; writer replaces its one section and retains other loaded lines/sections | not an atomic temp-and-replace write; error/status is not returned |
 | startup | `Application` applies persisted settings before command-line CVar overrides | malformed values are currently attempted and their error text is discarded |
 | editor commit | each changed setter writes persistence, then invokes the bound host callback or directly applies CVars | whole snapshot is resent; unchanged fields are skipped by CVar comparison |

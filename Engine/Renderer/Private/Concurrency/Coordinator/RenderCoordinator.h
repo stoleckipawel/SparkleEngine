@@ -4,7 +4,7 @@
 #include "Concurrency/FrameQueue/RenderFrameQueue.h"
 #include "Host/RendererBackendConfiguration.h"
 #include "Renderer/Public/Concurrency/RendererExecutionConfig.h"
-#include "Renderer/Public/Debug/Visualization.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "Core/Public/Events/ScopedEventHandle.h"
 #include "Core/Public/Threading/ThreadOwnership.h"
 
@@ -34,7 +34,6 @@ public:
 	void StageFrameSubmission(RenderFrameSubmission submission);
 	void StageUiRenderPacket(UiRenderPacket packet);
 	void SubmitRenderingSettings(EngineRenderingSettingsState settings);
-	void SubmitVisualization(Visualization visualization, bool referencePathTracer);
 	void SubmitViewportRequest(ViewportRenderRequest request);
 	void RenderFrame();
 

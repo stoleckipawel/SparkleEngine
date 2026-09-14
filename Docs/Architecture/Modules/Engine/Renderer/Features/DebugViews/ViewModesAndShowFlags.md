@@ -6,7 +6,7 @@
 
 **Responsibility:** Editor-owned view-mode presets and UX, concrete per-view Renderer visualization and show flags, immutable View consumption, and strict exclusion of frontend identity from Renderer and RHI contracts
 
-**Current readiness:** **40/100** for the existing debug-view feature; this per-view control architecture is not implemented and adds no readiness credit. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **40/100** for the existing debug-view feature; the per-view `Visualization` slice is source-present but uncompiled and unexercised, while show flags, presentation correction, optional overrides, and acceptance evidence remain unimplemented. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## Decision
 

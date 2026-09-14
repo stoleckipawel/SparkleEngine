@@ -3,7 +3,7 @@
 #include "Concurrency/Control/RenderControlCompletion.h"
 #include "Concurrency/FrameQueue/RenderFrameQueue.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
-#include "Renderer/Public/Debug/Visualization.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 
 #include <cstdint>
 #include <memory>
@@ -60,12 +60,6 @@ struct RenderSettingsChangedCommand final
 	EngineRenderingSettingsState Settings;
 };
 
-struct VisualizationCommand final
-{
-	Visualization Selected = Visualization::Lit;
-	bool ReferencePathTracer = false;
-};
-
 struct RenderShutdownCommand final
 {
 };
@@ -79,7 +73,6 @@ using RenderControlPayload = std::variant<
     RenderCaptureCommand,
     RenderRefreshProvidersCommand,
     RenderSettingsChangedCommand,
-	VisualizationCommand,
     RenderShutdownCommand>;
 
 struct RenderControlCommand final
