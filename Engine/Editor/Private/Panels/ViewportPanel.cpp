@@ -1,10 +1,10 @@
 #include "PCH.h"
 #include "Panels/ViewportPanel.h"
 
+#include "Panels/ReferencePathTracer/ReferencePathTracerOverlay.h"
 #include "Util/UiUtil.h"
 
 #include <algorithm>
-#include <cstdio>
 
 #include <imgui.h>
 
@@ -140,33 +140,7 @@ void ViewportPanel::BuildProgressOverlay() noexcept
 
 	const ImVec2 viewportMin = ImGui::GetWindowPos();
 	ImGui::SetCursorScreenPos(ImVec2(viewportMin.x + 12.0f, viewportMin.y + 12.0f));
-	ImGui::BeginChild(
-	    "##ViewportRenderProgress",
-	    ImVec2(260.0f, progress.State == ViewportRenderProgressState::Unavailable ? 34.0f : 58.0f),
-	    ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY,
-	    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoInputs);
-
-	if (progress.State == ViewportRenderProgressState::Unavailable)
-	{
-		ImGui::TextUnformatted("Selected view mode is unavailable");
-	}
-	else
-	{
-		const float fraction = progress.TargetWork == 0
-		    ? 0.0f
-		    : (std::min) (1.0f, static_cast<float>(progress.CompletedWork) / static_cast<float>(progress.TargetWork));
-		char label[64] = {};
-		std::snprintf(
-		    label,
-		    sizeof(label),
-		    "%llu / %llu",
-		    static_cast<unsigned long long>(progress.CompletedWork),
-		    static_cast<unsigned long long>(progress.TargetWork));
-		ImGui::TextUnformatted(progress.State == ViewportRenderProgressState::Complete ? "Complete" : "Rendering");
-		ImGui::ProgressBar(fraction, ImVec2(-1.0f, 0.0f), label);
-	}
-
-	ImGui::EndChild();
+	DrawReferencePathTracerOverlay(progress, m_renderRequest);
 }
 
 void ViewportPanel::BuildUI(bool disableInteraction)

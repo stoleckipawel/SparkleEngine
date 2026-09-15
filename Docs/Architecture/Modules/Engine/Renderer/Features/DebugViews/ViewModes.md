@@ -1,6 +1,6 @@
 # Render View Modes
 
-**Status:** target architecture reconciled with the source-present Stage 6C route; not build, runtime, visual, or release proof
+**Status:** target architecture reconciled with the source-present Stage 7 route; not build, runtime, visual, or release proof
 
 **Date:** 2026-09-15
 

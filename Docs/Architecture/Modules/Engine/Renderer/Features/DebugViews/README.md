@@ -32,7 +32,7 @@ The former process-global visualization selection, Editor mirror enum/preset res
 | `REN-DBG-02` GBuffer | Diffuse, Normal, Roughness, Metallic, Emissive, Ambient Occlusion, Subsurface Color, Subsurface Strength | `VisualizeBuffersCS` reads the selected GBuffer channel |
 | `REN-DBG-03` lighting | Direct Diffuse, Direct Specular, Direct Subsurface, Indirect Diffuse, Indirect Specular | `VisualizeBuffersCS` reads the selected lighting lobe |
 | `REN-DBG-04` scene | GPU Scene Instances | instance identity visualization |
-| `REN-LGT-04` reference | Reference Path Tracer | private Reference middle/session; source-present, not yet user-exposed or executable-proved |
+| `REN-LGT-04` reference | Reference Path Tracer | private Reference middle/session with Editor menu and operational overlay; source-present, not executable-proved |
 
 ## Presentation Limitation
 

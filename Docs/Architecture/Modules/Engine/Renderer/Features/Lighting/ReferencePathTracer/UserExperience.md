@@ -1,12 +1,12 @@
 # Reference Path Tracer User Experience Contract
 
-**Status:** Stage-0-frozen development-product experience accepted by `PTD-00-R1 PASS` at immutable dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300`; product implementation remains absent
+**Status:** Stage-0-frozen development-product experience accepted by `PTD-00-R1 PASS` at immutable dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300`; Stage-7 menu/progress/action source is **IMPLEMENTED / VALIDATION DEFERRED**, while executable first-use and later evidence/output workflow remain unproved
 
 **Responsibility:** define how a developer, lighting engineer, or technical artist discovers, enters, navigates, observes, compares, resets, pauses, diagnoses, and secondarily exports or automates the Reference Path Tracer
 
 **Authority boundary:** the [feature dossier](README.md) owns binary acceptance and failure verdicts, [Transport And Estimator](TransportAndEstimator.md) owns mathematical meaning, [Execution Architecture](ExecutionArchitecture.md) owns per-view session/state/data ownership, [Discovery](Discovery.md) owns ratification, and the [staged plan](Plan.md) owns implementation order and prompts
 
-**Prepared:** re-audited 2026-09-10 against committed `master` revision `669637cf23b9748f8b94635409e74159d31d0bc2`; no UI, command, package, accessibility, or clean-machine workflow was implemented or exercised
+**Prepared:** re-audited 2026-09-10 against committed `master` revision `669637cf23b9748f8b94635409e74159d31d0bc2`; Stage-7 source reconciled 2026-09-15 from base `7fa195192e81101990d7a3f31057680c07717b9d`; no current-candidate build, interactive, accessibility, package, or clean-machine workflow was exercised
 
 **Naming reconciliation:** the 2026-09-09 working-tree clean break makes `ReferencePathTracer` the sole feature name; no UX capability or acceptance result is thereby implied.
 
@@ -41,7 +41,7 @@ These are Stage-0 design inputs, not claims about the current implementation. A 
 | Work quantum | Reference batches are dynamically sized/partitioned so a submitted non-preemptible quantum targets `<= 100 ms` and must be `<= 500 ms` on the accepted support/map matrix. Failure to meet the hard bound blocks that matrix row rather than freezing navigation. |
 | Preview/progress | Present the newest completely committed current-identity prefix at least every `250 ms` while work completes; publish progress at `10 Hz` maximum and accessible announcements at `1 Hz` maximum. First current-identity prefix must appear within `2 s` on the accepted support/map matrix. |
 | Pause/cancel/close | Stop assigning work immediately. Late results are generation-rejected. Reach `Paused`, `Cancelled`, or a named device failure within `2 s` after the current quantum. Closing a viewport and normal application shutdown default to cancel-without-checkpoint; verified earlier results remain intact. |
-| Retention | Suspension retains the one prefix while its reference allocations remain within `min(2 GiB, 25% of reported local GPU budget)`. On UMA use reported local/available device memory. If budget is zero/unknown or the session exceeds it, `Pause` is disabled with `Retention unavailable` and offers available `Checkpoint And Pause` or `Cancel Session`; switching to Lit cancels/releases the prefix after settlement and creates no `Suspended` state, so returning starts validation at ordinal zero. Pressure eviction of an already suspended prefix enters `Cancelled`, announces the release, and leaves no implied resume. |
+| Retention | Suspension retains the one prefix while its reference allocations remain within `min(2 GiB, 25% of reported local GPU budget)`. On UMA use reported local/available device memory. If budget is zero/unknown or the session exceeds it, `Pause` is disabled with `Retention unavailable`; switching to Lit settles and releases the prefix, so returning starts validation at ordinal zero. Stage 9 may add checkpoint-backed alternatives without changing this in-memory rule. Pressure eviction of an already suspended prefix announces the release and leaves no implied resume. |
 | Duration | Interactive and offscreen sessions default to an `8 h` wall-time limit; reaching it enters `TimedOut` and never publishes completion. If retention is available, it preserves the prefix and `Extend And Resume` continues it; otherwise it releases the prefix after settlement, labels `No resumable prefix`, and both `Extend And Resume` and `Restart` revalidate and begin ordinal zero. |
 | Disk | Preflight requires predicted staging plus final output plus `10%`, and refuses a single invocation predicted above `64 GiB`. No partial result is promoted on exhaustion. |
 | Evidence actions | `Pause` is memory-only. `Checkpoint And Pause`, `Save Current Prefix`, and `Save When Complete` are P3 Expert actions. An identity change cancels a pending save intent; it never retargets it automatically. `Cancel After Checkpoint` means finish and verify the current checkpoint transaction, then stop; ordinary `Cancel` abandons staging. |
@@ -53,7 +53,7 @@ The numerical bounds are implementation contracts immediately. A development mac
 
 A user selects **Reference Path Tracer** through the current host's ordinary View Mode control—immediately after **Lit** in Editor, or through the approved development view selector in a Game/runtime host—and receives a progressively refined image with truthful sample progress. Any effective camera or radiance-affecting scene change invalidates the old prefix before it can mix with the new view. Switching back to Lit enables immediate comparison; returning resumes only a retained exact-identity prefix, while a disclosed no-retention exit restarts at ordinal zero.
 
-The normal route requires no IDE, developer console, CVar sequence, mandatory setup workspace, or manual `Validate`/`Start` ceremony. Correct defaults, capability validation, accumulation, reset, and preview presentation are consequences of selecting the view mode. A details surface exists for exact settings, actionable errors, pause/restart, and export, but is not a prerequisite for first use.
+The normal route requires no IDE, developer console, CVar sequence, mandatory setup workspace, or manual `Validate`/`Start` ceremony. Correct defaults, capability validation, accumulation, reset, and preview presentation are consequences of selecting the view mode. A details surface exists for current state, route/backend truth, raw-versus-display meaning, pause/restart, and actionable unavailability, but is not a prerequisite for first use. Export remains a later Evidence/Output capability.
 
 Four distinctions remain impossible to miss:
 
@@ -331,11 +331,17 @@ The frozen dry-run matrix is keyboard-only selection/actions/focus order; non-co
 | `DebugGame`, `DevelopmentGame` | The same Renderer `ReferencePathTracer` mode and session are included and selectable through an approved ordinary viewport control; no Editor dependency or Game-specific estimator exists. Offscreen artifact writing remains ApplicationEditor-owned because filesystem publication is a separate tool responsibility. |
 | `ShippingEditor`, `ShippingGame` | The Reference mode producer/control and every session factory, generic command-line reachability, request CLI, writer/operation, support promise, optional artifact dependency, package entry, and public documentation route are compiled out. RHI exposes no Reference value; no session can start. |
 
-The current repository does not meet this matrix: the transitional global Reference composition CVar is removed, but Renderer still links into editor/runtime profiles and no package/Shipping exclusion proof has run. `PTD-00-R0` therefore cannot use this frozen target as Shipping proof.
+The current repository does not yet prove this matrix: the transitional global Reference composition CVar is removed and development-host source uses one ordinary request, but Renderer still links into shipping profiles and no package/Shipping exclusion proof has run. Source presence is not Shipping reachability evidence.
 
 ## Stage-0 First-Use Dry Run
 
 An independent read-only reviewer attempted to reconstruct first use from source and this contract at `669637cf23b9748f8b94635409e74159d31d0bc2`. Executable result: **BLOCKED before interaction**. The live view-mode menu has no Reference Path Tracer item, the feature is a global Lighting setting, Editor views submit `RenderViewKind::Game`, progress/session actions do not exist, and capture produces LDR BMP. Iterative contract re-review first found state, cancellation, capacity, Shipping, CLI, retention, and restart/resume invention points; after reconciliation the reviewer returned **PASS for the Stage-0 UX/evidence design candidate**. The intended flow is Lit -> Reference Path Tracer -> automatic preflight/start -> current-identity progress -> camera reset/refine -> Lit comparison with retained-or-released truth -> exact return revalidation -> pause/resume or cancel -> optional raw save. This is design evidence only; a clean executable first-use transcript remains required in Stages 7/9.
+
+## Stage-7 Source Reconciliation
+
+The current Stage-7 working tree exposes the mode immediately after Lit, starts the existing feature session automatically, reports exact committed/target SPP, distinguishes reset/accumulation/pause/completion/unavailability, retains the latest reset and discarded prefix, estimates throughput/ETA, discloses route/backend and raw-versus-display meaning, and provides pause/resume/restart plus explicit single-session transfer. Unsupported selection offers a direct return to Lit and never relabels Lit output as Reference. Editor strings and controls live in one private feature overlay; the viewport panel contains one call. Game/runtime continues through the same public `ViewportRenderRequest` and `RuntimeApplication::SubmitViewportRenderRequest` route without importing Editor code.
+
+This is source evidence only. No build, GPU run, interactive camera exercise, response-budget measurement, keyboard/focus/DPI/accessibility review, Game host workflow, backend comparison, or Shipping exclusion proof has run. Timeout, durable cancellation/checkpoint, raw save, and offscreen automation remain later-stage work and cannot be inferred from the overlay.
 
 ## Professional Defaults And Guardrails
 

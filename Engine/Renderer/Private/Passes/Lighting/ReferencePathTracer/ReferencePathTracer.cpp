@@ -33,17 +33,18 @@ void ReferencePathTracer::AddPasses(
 }
 
 ViewportRenderProgress ReferencePathTracer::Update(
+    const ViewportRenderRequest& request,
     const RenderView& view,
     const PreparedRenderScene& scene,
     const RenderFrameIdentity& frame,
     std::uint64_t sceneGeneration) noexcept
 {
-	return m_session.Update(view.viewMode == RenderViewMode::ReferencePathTracer, view, scene, frame, sceneGeneration, m_resources);
+	return m_session.Update(request, view, scene, frame, sceneGeneration, m_resources);
 }
 
 bool ReferencePathTracer::BindResources(FrameGraph& frameGraph) const noexcept
 {
-	return !m_session.IsSelected() || m_resources.Bind(frameGraph);
+	return !m_session.IsSelected() || (m_session.CanBindResources() && m_resources.Bind(frameGraph));
 }
 
 void ReferencePathTracer::RecordSubmission(RhiSubmissionToken token) noexcept

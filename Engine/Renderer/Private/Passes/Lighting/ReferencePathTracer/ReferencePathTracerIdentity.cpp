@@ -9,7 +9,7 @@
 #include "Scene/Preparation/PreparedRenderScene.h"
 #include "View/RenderView.h"
 
-enum ReferencePathTracerIdentityComponent : std::size_t
+enum IdentityComponentIndex : std::size_t
 {
 	ViewComponent,
 	CameraComponent,
@@ -23,6 +23,19 @@ enum ReferencePathTracerIdentityComponent : std::size_t
 };
 
 static_assert(BackendComponent + 1u == ReferencePathTracerIdentity::ComponentCount);
+
+ReferencePathTracerIdentityComponent ReferencePathTracerIdentity::FindFirstDifference(
+    const ReferencePathTracerIdentity& other) const noexcept
+{
+	for (std::size_t componentIndex = 0; componentIndex < Components.size(); ++componentIndex)
+	{
+		if (Components[componentIndex] != other.Components[componentIndex])
+		{
+			return static_cast<ReferencePathTracerIdentityComponent>(componentIndex + 1u);
+		}
+	}
+	return ReferencePathTracerIdentityComponent::None;
+}
 
 ReferencePathTracerIdentity BuildReferencePathTracerIdentity(
     const RenderView& view,

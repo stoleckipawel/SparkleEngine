@@ -28,7 +28,7 @@ static ViewModePresentation DescribeViewMode(RenderViewMode viewMode) noexcept
 		case RenderViewMode::Lit:
 			return {UiUtil::EditorIcon::ViewLit, "Lit"};
 		case RenderViewMode::ReferencePathTracer:
-			return {UiUtil::EditorIcon::ViewLit, "Reference Path Tracer (Unavailable)"};
+			return {UiUtil::EditorIcon::ViewLit, "Reference Path Tracer"};
 		case RenderViewMode::Wireframe:
 			return {UiUtil::EditorIcon::ViewMode, "Wireframe"};
 		case RenderViewMode::GBufferDiffuse:
@@ -103,10 +103,7 @@ static void DrawViewModeCategory(const char* label) noexcept
 	ImGui::TextDisabled("%s", categoryLabel.c_str());
 }
 
-static void DrawViewModeOption(
-    EditorViewportSession* viewportSession,
-    RenderViewMode option,
-    RenderViewMode currentViewMode) noexcept
+static void DrawViewModeOption(EditorViewportSession* viewportSession, RenderViewMode option, RenderViewMode currentViewMode) noexcept
 {
 	const bool selected = option == currentViewMode;
 	const ViewModePresentation presentation = DescribeViewMode(option);
@@ -167,6 +164,7 @@ void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction, bool compact)
 	if (ImGui::BeginCombo("##ViewportViewMode", previewLabel.c_str()))
 	{
 		DrawViewModeOption(m_viewportSession, RenderViewMode::Lit, currentViewMode);
+		DrawViewModeOption(m_viewportSession, RenderViewMode::ReferencePathTracer, currentViewMode);
 		DrawViewModeOption(m_viewportSession, RenderViewMode::Wireframe, currentViewMode);
 		DrawViewModeOption(m_viewportSession, RenderViewMode::GpuSceneInstances, currentViewMode);
 

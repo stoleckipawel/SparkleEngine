@@ -4,6 +4,7 @@
 #include "../RendererAPI.h"
 #include "../Settings/EngineRenderingDisplayTypes.h"
 #include "RenderViewMode.h"
+#include "RHI/Public/Core/RhiBackendApi.h"
 #include "RHI/Public/Formats/PixelFormat.h"
 
 #include <cstdint>
@@ -150,12 +151,23 @@ struct SPARKLE_RENDERER_API ViewportCaptureReadback
 
 SPARKLE_RENDERER_API bool WriteViewportCaptureBmp(const ViewportCaptureReadback& readback) noexcept;
 
+enum class ViewportRenderAction : std::uint8_t
+{
+	None = 0,
+	Pause,
+	Resume,
+	Restart,
+	Transfer,
+};
+
 struct SPARKLE_RENDERER_API ViewportRenderRequest
 {
 	std::uint64_t ViewportId = 0;
 	std::uint64_t Generation = 0;
+	std::uint64_t RenderActionSequence = 0;
 	RenderViewKind ViewKind = RenderViewKind::Game;
 	RenderViewMode ViewMode = RenderViewMode::Lit;
+	ViewportRenderAction RenderAction = ViewportRenderAction::None;
 	RenderViewportExtent Extent = {};
 	RenderViewSelectionToken ViewSelection = {};
 	RenderOutputFlags RequestedOutputs = RenderOutputFlags::SceneColor;
@@ -165,16 +177,55 @@ struct SPARKLE_RENDERER_API ViewportRenderRequest
 enum class ViewportRenderProgressState : std::uint8_t
 {
 	None = 0,
+	Resetting,
+	Accumulating,
+	Paused,
 	Unavailable,
-	Rendering,
 	Complete,
+};
+
+enum class ViewportRenderProgressReason : std::uint8_t
+{
+	None = 0,
+	ViewChanged,
+	CameraChanged,
+	GeometryChanged,
+	DeformationChanged,
+	MaterialChanged,
+	LightingChanged,
+	EnvironmentChanged,
+	ShaderChanged,
+	BackendChanged,
+	ManualRestart,
+	Resumed,
+	RetentionReleased,
+	UnsupportedView,
+	UnsupportedContent,
+	UnsupportedCapability,
+	SessionCapacity,
+};
+
+enum class ViewportRenderProgressRoute : std::uint8_t
+{
+	None = 0,
+	Automatic,
+	InlineRayTracing,
 };
 
 struct SPARKLE_RENDERER_API ViewportRenderProgress final
 {
 	ViewportRenderProgressState State = ViewportRenderProgressState::None;
+	ViewportRenderProgressReason Reason = ViewportRenderProgressReason::None;
+	ViewportRenderProgressRoute RequestedRoute = ViewportRenderProgressRoute::None;
+	ViewportRenderProgressRoute ActiveRoute = ViewportRenderProgressRoute::None;
+	ERhiBackendApi BackendApi = ERhiBackendApi::Unknown;
 	std::uint64_t CompletedWork = 0;
 	std::uint64_t TargetWork = 0;
+	std::uint64_t DiscardedWork = 0;
+	std::uint64_t OwnerViewportId = 0;
+	double SamplesPerSecond = 0.0;
+	double EstimatedSecondsRemaining = 0.0;
+	bool RetentionAvailable = false;
 };
 
 struct SPARKLE_RENDERER_API ViewportRenderProducts

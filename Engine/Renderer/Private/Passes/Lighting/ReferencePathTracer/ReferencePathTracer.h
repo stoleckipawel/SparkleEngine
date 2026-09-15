@@ -25,6 +25,7 @@ public:
 
 	void AddPasses(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings, RenderFrameGraphResources& resources);
 	ViewportRenderProgress Update(
+	    const ViewportRenderRequest& request,
 	    const RenderView& view,
 	    const PreparedRenderScene& scene,
 	    const RenderFrameIdentity& frame,
