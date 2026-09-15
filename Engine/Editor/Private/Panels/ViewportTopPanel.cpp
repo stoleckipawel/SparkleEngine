@@ -90,7 +90,7 @@ void ViewportTopPanel::SetGeometry(float leftPixels, float topPixels, float widt
 	m_widthPixels = widthPixels;
 }
 
-void ViewportTopPanel::DrawViewModeCategory(const char* label) noexcept
+static void DrawViewModeCategory(const char* label) noexcept
 {
 	ImGui::Spacing();
 	ImGui::Separator();
@@ -103,16 +103,19 @@ void ViewportTopPanel::DrawViewModeCategory(const char* label) noexcept
 	ImGui::TextDisabled("%s", categoryLabel.c_str());
 }
 
-void ViewportTopPanel::DrawViewModeOption(RenderViewMode option, RenderViewMode currentViewMode) noexcept
+static void DrawViewModeOption(
+    EditorViewportSession* viewportSession,
+    RenderViewMode option,
+    RenderViewMode currentViewMode) noexcept
 {
 	const bool selected = option == currentViewMode;
 	const ViewModePresentation presentation = DescribeViewMode(option);
 	const std::string optionLabel = UiUtil::MakeIconLabel(presentation.Icon, presentation.Label);
 	if (ImGui::Selectable(optionLabel.c_str(), selected))
 	{
-		if (m_viewportSession != nullptr)
+		if (viewportSession != nullptr)
 		{
-			m_viewportSession->SetViewMode(option);
+			viewportSession->SetViewMode(option);
 		}
 	}
 
@@ -163,29 +166,29 @@ void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction, bool compact)
 	const std::string previewLabel = UiUtil::MakeIconLabel(currentPresentation.Icon, currentPresentation.Label);
 	if (ImGui::BeginCombo("##ViewportViewMode", previewLabel.c_str()))
 	{
-		DrawViewModeOption(RenderViewMode::Lit, currentViewMode);
-		DrawViewModeOption(RenderViewMode::Wireframe, currentViewMode);
-		DrawViewModeOption(RenderViewMode::GpuSceneInstances, currentViewMode);
+		DrawViewModeOption(m_viewportSession, RenderViewMode::Lit, currentViewMode);
+		DrawViewModeOption(m_viewportSession, RenderViewMode::Wireframe, currentViewMode);
+		DrawViewModeOption(m_viewportSession, RenderViewMode::GpuSceneInstances, currentViewMode);
 
 		DrawViewModeCategory("GBuffer");
 		ImGui::Indent(8.0f);
-		DrawViewModeOption(RenderViewMode::GBufferDiffuse, currentViewMode);
-		DrawViewModeOption(RenderViewMode::GBufferNormal, currentViewMode);
-		DrawViewModeOption(RenderViewMode::GBufferRoughness, currentViewMode);
-		DrawViewModeOption(RenderViewMode::GBufferMetallic, currentViewMode);
-		DrawViewModeOption(RenderViewMode::GBufferEmissive, currentViewMode);
-		DrawViewModeOption(RenderViewMode::GBufferAmbientOcclusion, currentViewMode);
-		DrawViewModeOption(RenderViewMode::GBufferSubsurfaceColor, currentViewMode);
-		DrawViewModeOption(RenderViewMode::GBufferSubsurfaceStrength, currentViewMode);
+		DrawViewModeOption(m_viewportSession, RenderViewMode::GBufferDiffuse, currentViewMode);
+		DrawViewModeOption(m_viewportSession, RenderViewMode::GBufferNormal, currentViewMode);
+		DrawViewModeOption(m_viewportSession, RenderViewMode::GBufferRoughness, currentViewMode);
+		DrawViewModeOption(m_viewportSession, RenderViewMode::GBufferMetallic, currentViewMode);
+		DrawViewModeOption(m_viewportSession, RenderViewMode::GBufferEmissive, currentViewMode);
+		DrawViewModeOption(m_viewportSession, RenderViewMode::GBufferAmbientOcclusion, currentViewMode);
+		DrawViewModeOption(m_viewportSession, RenderViewMode::GBufferSubsurfaceColor, currentViewMode);
+		DrawViewModeOption(m_viewportSession, RenderViewMode::GBufferSubsurfaceStrength, currentViewMode);
 		ImGui::Unindent(8.0f);
 
 		DrawViewModeCategory("Lighting");
 		ImGui::Indent(8.0f);
-		DrawViewModeOption(RenderViewMode::DirectDiffuse, currentViewMode);
-		DrawViewModeOption(RenderViewMode::DirectSpecular, currentViewMode);
-		DrawViewModeOption(RenderViewMode::DirectSubsurface, currentViewMode);
-		DrawViewModeOption(RenderViewMode::IndirectDiffuse, currentViewMode);
-		DrawViewModeOption(RenderViewMode::IndirectSpecular, currentViewMode);
+		DrawViewModeOption(m_viewportSession, RenderViewMode::DirectDiffuse, currentViewMode);
+		DrawViewModeOption(m_viewportSession, RenderViewMode::DirectSpecular, currentViewMode);
+		DrawViewModeOption(m_viewportSession, RenderViewMode::DirectSubsurface, currentViewMode);
+		DrawViewModeOption(m_viewportSession, RenderViewMode::IndirectDiffuse, currentViewMode);
+		DrawViewModeOption(m_viewportSession, RenderViewMode::IndirectSpecular, currentViewMode);
 		ImGui::Unindent(8.0f);
 
 		ImGui::EndCombo();

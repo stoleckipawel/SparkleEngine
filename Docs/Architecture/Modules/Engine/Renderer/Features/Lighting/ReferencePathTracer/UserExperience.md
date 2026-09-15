@@ -45,7 +45,7 @@ These are Stage-0 design inputs, not claims about the current implementation. A 
 | Duration | Interactive and offscreen sessions default to an `8 h` wall-time limit; reaching it enters `TimedOut` and never publishes completion. If retention is available, it preserves the prefix and `Extend And Resume` continues it; otherwise it releases the prefix after settlement, labels `No resumable prefix`, and both `Extend And Resume` and `Restart` revalidate and begin ordinal zero. |
 | Disk | Preflight requires predicted staging plus final output plus `10%`, and refuses a single invocation predicted above `64 GiB`. No partial result is promoted on exhaustion. |
 | Evidence actions | `Pause` is memory-only. `Checkpoint And Pause`, `Save Current Prefix`, and `Save When Complete` are P3 Expert actions. An identity change cancels a pending save intent; it never retargets it automatically. `Cancel After Checkpoint` means finish and verify the current checkpoint transaction, then stop; ordinary `Cancel` abandons staging. |
-| Shipping | `ShippingEditor` and `ShippingGame` compile out the Editor Reference view-mode row, `RenderShowFlag::ReferencePathTracer`, and every producer, session factory, overlay, request parser, ApplicationEditor operation, writer, optional codec dependency, package entry, and public documentation route. RHI contains no Reference enumerator or show flag. Source presence elsewhere is not consumer reachability. |
+| Shipping | `ShippingEditor` and `ShippingGame` compile out the Reference mode producer/control and every session factory, overlay, request parser, ApplicationEditor operation, writer, optional codec dependency, package entry, and public documentation route. RHI contains no Reference enumerator or mode field. Source presence elsewhere is not consumer reachability. |
 
 The numerical bounds are implementation contracts immediately. A development machine either meets the capability/resource predicates and reports measured behavior or returns the frozen unavailable/capacity result; it does not invent different limits. Naming minimum/reference release machines and claiming those bounds as supported-product performance remains a Stage-10 release gate.
 
@@ -62,7 +62,7 @@ Four distinctions remain impossible to miss:
 - **complete current-view result versus partial prefix, checkpoint, export staging, failure, or accepted oracle evidence**;
 - **viewport comparison session versus a durable exported artifact**.
 
-The Renderer semantic is host-agnostic and supports both Editor `Scene` views and Game/runtime `Game` views. `RenderViewKind` identifies the ordinary camera producer; it never chooses a different path tracer. `RenderShowFlag::ReferencePathTracer` selects the same frame composition, session semantics, and estimator for either kind. DevelopmentEditor exposes an Editor-owned view-mode preset, while DebugGame/DevelopmentGame may submit the same concrete per-view flag through their approved control. Shipping reachability remains a separate release-policy gate, not an architecture fork.
+The Renderer semantic is host-agnostic and supports both Editor `Scene` views and Game/runtime `Game` views. `RenderViewKind` identifies the ordinary camera producer; it never chooses a different path tracer. `RenderViewMode::ReferencePathTracer` selects the same frame composition, session semantics, and estimator for either kind. DevelopmentEditor exposes the mode through its viewport UI, while DebugGame/DevelopmentGame may submit the same value through their approved control. Shipping reachability remains a separate release-policy gate, not an architecture fork.
 
 ## Intended People And Jobs
 
@@ -81,7 +81,7 @@ The viewport menu order is stable:
 2. **Reference Path Tracer**
 3. the remaining diagnostic and wireframe modes under their existing organization
 
-The Reference Path Tracer is selected by a typed per-view Renderer show flag independent of `RenderViewKind`. Editor presents it as `EditorViewportViewMode::ReferencePathTracer`; that UI value is resolved to `VisualizationTarget::None` plus `RenderShowFlag::ReferencePathTracer` and is not copied into Renderer or RHI. It is not a debug-product target, another value in a global real-time lighting-quality selector, or an Editor-owned renderer. On selection from any supported host, Renderer consumes one accepted feature preset:
+The Reference Path Tracer is selected by the typed per-view `RenderViewMode::ReferencePathTracer`, independent of `RenderViewKind`. Editor presents that Renderer semantic directly while owning only its label, icon, ordering, and interaction. There is no Editor mirror enum, visualization target, show-flag translation, global real-time lighting-quality selector, or Editor-owned renderer. On selection from any supported host, Renderer consumes one accepted mode:
 
 - `SurfaceTransportReference` product;
 - independent camera-ray primary visibility;
@@ -204,7 +204,7 @@ Editor free-fly navigation, an Editor-piloted scene camera, and a Game/runtime c
 - A frame counter, world tick, UI animation, or unchanged camera submission does not reset by itself.
 - A continuously animated camera, material, light, transform, skin/morph state, or time-dependent shader continually creates new identities. The overlay explains the reset loop and recommends pausing simulation or choosing a frozen supported time. It never accumulates streaked/blended history and calls it reference.
 
-The acceptance matrix exercises Editor-produced `RenderViewKind::Scene` and runtime `RenderViewKind::Game` through the same Renderer state and composition path. Stage 2 clean-breaks the two former Editor `Game` submissions to `Scene`; no nonexistent `RenderViewKind::Editor` is introduced. Either kind can render when its request enables `RenderShowFlag::ReferencePathTracer`, and the feature contains no host-kind branch. Shipping reachability is a separate product gate, not a reason to fork camera or estimator semantics.
+The acceptance matrix exercises Editor-produced `RenderViewKind::Scene` and runtime `RenderViewKind::Game` through the same Renderer state and composition path. Stage 2 clean-breaks the two former Editor `Game` submissions to `Scene`; no nonexistent `RenderViewKind::Editor` is introduced. Either kind can render when its request selects `RenderViewMode::ReferencePathTracer`, and the feature contains no host-kind branch. Shipping reachability is a separate product gate, not a reason to fork camera or estimator semantics.
 
 ## Lit Comparison And Session Retention
 
@@ -287,7 +287,7 @@ The submission contains serializable Application intent only. It never serialize
 
 Stable noninteractive terminal categories are `Completed`, `InvalidRequest`, `UnsupportedDomain`, `UnsupportedCapability`, `Cancelled`, `TimedOut`, `CapacityExceeded`, `DeviceLost`, `PublicationFailed`, `CheckpointRejected`, and `InternalFailure`. Equivalent viewport/offscreen intent resolves the same canonical Renderer digest and sample stream; invocation identity and wall-clock timing may differ.
 
-A non-Editor interactive application enables `RenderShowFlag::ReferencePathTracer` on its ordinary viewport request and presents progress through its own UI. It does not need or receive the Editor view-mode enum.
+A non-Editor interactive application selects `RenderViewMode::ReferencePathTracer` on its ordinary viewport request and presents progress through its own UI. It does not depend on Editor code.
 
 ## Error Message Contract
 
@@ -328,8 +328,8 @@ The frozen dry-run matrix is keyboard-only selection/actions/focus order; non-co
 | Profile | Frozen reachability |
 | --- | --- |
 | `DebugEditor`, `DevelopmentEditor` | View-mode selector, overlay/details, semantic Renderer API, exact request CLI, ApplicationEditor operation, raw writer, and support details included. |
-| `DebugGame`, `DevelopmentGame` | The same Renderer `ReferencePathTracer` show flag and session are included and selectable through an approved ordinary viewport control; no Editor dependency or Game-specific estimator exists. Offscreen artifact writing remains ApplicationEditor-owned because filesystem publication is a separate tool responsibility. |
-| `ShippingEditor`, `ShippingGame` | The Editor Reference view-mode row and every producer/session factory plus the `ReferencePathTracer` show flag, generic command-line reachability, request CLI, writer/operation, support promise, optional artifact dependency, package entry, and public documentation route are compiled out. RHI exposes no Reference value; no session can start. |
+| `DebugGame`, `DevelopmentGame` | The same Renderer `ReferencePathTracer` mode and session are included and selectable through an approved ordinary viewport control; no Editor dependency or Game-specific estimator exists. Offscreen artifact writing remains ApplicationEditor-owned because filesystem publication is a separate tool responsibility. |
+| `ShippingEditor`, `ShippingGame` | The Reference mode producer/control and every session factory, generic command-line reachability, request CLI, writer/operation, support promise, optional artifact dependency, package entry, and public documentation route are compiled out. RHI exposes no Reference value; no session can start. |
 
 The current repository does not meet this matrix: the transitional global Reference composition CVar is removed, but Renderer still links into editor/runtime profiles and no package/Shipping exclusion proof has run. `PTD-00-R0` therefore cannot use this frozen target as Shipping proof.
 
@@ -372,7 +372,7 @@ This correspondence is a Stage-6/7 delivery contract. It does not claim that the
 
 | Failure | Why it is unacceptable | Required design response |
 | --- | --- | --- |
-| Reference remains only a Lighting setting, console-only control, visualization target, or separate wizard | The main comparison route is hidden and disconnected from the viewport mental model. | One Editor-owned `EditorViewportViewMode::ReferencePathTracer` item immediately after Lit, resolved to `VisualizationTarget::None` plus the per-view `ReferencePathTracer` show flag; details/export are secondary. |
+| Reference remains only a Lighting setting, console-only control, or separate wizard | The main comparison route is hidden and disconnected from the viewport mental model. | One `RenderViewMode::ReferencePathTracer` item immediately after Lit in the Editor viewport menu and equivalent non-Editor control; details/export are secondary. |
 | Selecting the mode mutates persistent Lit settings | Returning to Lit is surprising and comparison is no longer controlled. | Resolve mode-internal reference semantics; restore untouched Lit state on exit. |
 | User must click Validate and Start for the supported default | Routine comparison carries batch-tool ceremony. | Automatic preflight and start on view-mode selection; block only with an actionable reason. |
 | Viewport freezes, displays the old composition, or turns black throughout camera movement | The feature behaves like an offline dialog instead of a view mode and makes composition search impractical. | Prioritize the newest camera identity, visibly mark transition state, present its newest committed prefix at bounded cadence, and refine automatically when motion stops. |

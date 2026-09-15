@@ -96,7 +96,7 @@ Implement RD-2 in the existing renderer settings aggregate, persistence owner, C
 
 **Non-goals:** building the separate Performance Diagnostics product, exposing private development data in Shipping, or making debug output an unqualified colorimetric oracle.
 
-**Required work:** inventory Lit/wireframe/GBuffer/lighting/GPU-scene modes and required resources; close per-view selection/show flags, labels, unavailable reasons, exposure/tone/encoding mapping, stable visualization ranges/legends, capture readback/format/sidecar/provenance, bounded observer cost, privacy and Shipping erasure; select only required phases from [Debug View Presentation](../Features/DebugViews/Plan.md).
+**Required work:** inventory Lit/wireframe/GBuffer/lighting/GPU-scene modes and required resources; close the one per-view mode route, labels, unavailable reasons, exposure/tone/encoding mapping, stable visualization ranges/legends, capture readback/format/sidecar/provenance, bounded observer cost, privacy and Shipping erasure; select only required phases from [Debug View Presentation](../Features/DebugViews/Plan.md).
 
 **Failure modes:** process-global mode leaks across viewports; unavailable resource displays stale data; mode goes through wrong tone/encoding; legend/range changes without metadata; capture generation mismatches frame; private path/content leaks; observer changes timing materially.
 
