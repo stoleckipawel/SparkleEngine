@@ -2,7 +2,6 @@
 #include "Frame/FramePipeline.h"
 
 #include "Debug/RendererCVars.h"
-#include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerCVar.h"
 #include "Frame/RenderFrame.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
@@ -57,8 +56,9 @@ RenderFrameGraphSettings FramePipeline::ResolveFrameGraphSettings() const noexce
 {
 	const RenderViewportExtent outputExtent = ResolveOutputExtent();
 	const ResolvedViewportDisplaySettings displaySettings = ResolvedViewportDisplaySettings::Resolve(m_viewportRenderRequest.Exposure);
-	const ImageProviderPipeline imagePipeline =
-	    CVarReferencePathTracer.Get() ? ImageProviderPipeline::NativeResolution : ImageProviderPipeline::RayReconstruction;
+	const ImageProviderPipeline imagePipeline = m_viewportRenderRequest.ViewMode == RenderViewMode::ReferencePathTracer
+	    ? ImageProviderPipeline::NativeResolution
+	    : ImageProviderPipeline::RayReconstruction;
 	return RenderFrameGraphSettings{
 	    .RenderExtent = m_imageProviders.ResolveRenderExtent(outputExtent, imagePipeline),
 	    .OutputExtent = outputExtent,
@@ -93,7 +93,6 @@ void FramePipeline::InitializeFrameGraph(const RenderFrameGraphSettings& setting
 	m_builtShadowExecutionPlan = ResolveRayTracingShadowExecutionPlan(m_renderScene.GetRayTracingScene().GetCapabilityReport());
 	m_builtShaderTablePlanGeneration = m_renderScene.GetRayTracingScene().GetShaderTablePlan().GetGeneration();
 	m_builtShaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration();
-	m_builtReferencePathTracer = CVarReferencePathTracer.Get();
 	m_frameResources = resources;
 	m_imageProviderFrameGraphKey = m_imageProviders.GetFrameGraphKey();
 	m_frameGraph = std::move(frameGraph);
@@ -164,12 +163,11 @@ void FramePipeline::RefreshGraphForTopology() noexcept
 	    ResolveRayTracingShadowExecutionPlan(m_renderScene.GetRayTracingScene().GetCapabilityReport());
 	const std::uint64_t shaderTablePlanGeneration = m_renderScene.GetRayTracingScene().GetShaderTablePlan().GetGeneration();
 	const std::uint64_t shaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration();
-	const bool referencePathTracerChanged = CVarReferencePathTracer.Get() != m_builtReferencePathTracer;
 	const bool usesSceneShaderTable = gBufferExecutionPlan.Active == RayTracingExecutionFrontend::Pipeline
 	    || shadowExecutionPlan.Active == RayTracingExecutionFrontend::Pipeline
 	    || m_builtGBufferExecutionPlan.Active == RayTracingExecutionFrontend::Pipeline
 	    || m_builtShadowExecutionPlan.Active == RayTracingExecutionFrontend::Pipeline;
-	if (providerChanged || referencePathTracerChanged || settings != m_frameGraphSettings || gBufferAlgorithm != m_builtGBufferAlgorithm
+	if (providerChanged || settings != m_frameGraphSettings || gBufferAlgorithm != m_builtGBufferAlgorithm
 	    || gBufferExecutionPlan != m_builtGBufferExecutionPlan || shadowExecutionPlan != m_builtShadowExecutionPlan
 	    || shaderGeneration != m_builtShaderGeneration
 	    || (usesSceneShaderTable && shaderTablePlanGeneration != m_builtShaderTablePlanGeneration))

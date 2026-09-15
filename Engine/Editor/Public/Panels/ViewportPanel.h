@@ -21,7 +21,7 @@ public:
 	void SetBottomInset(float bottomInsetPixels) noexcept;
 	void SetSideInsets(float leftInsetPixels, float rightInsetPixels) noexcept;
 	void SetRequestedExtent(RenderViewportExtent extent) noexcept;
-	void SetVisualization(Visualization visualization) noexcept;
+	void SetViewMode(RenderViewMode viewMode) noexcept;
 	void SetExposureOverrides(const ViewportExposureOverrides& overrides) noexcept;
 	void SetRenderProducts(const ViewportRenderProducts& renderProducts) noexcept;
 	void SetSceneColorTexture(EditorTextureHandle texture) noexcept;

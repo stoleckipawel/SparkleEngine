@@ -8,7 +8,6 @@
 #include "Passes/GBuffer/GBufferShaders.h"
 #include "Pipeline/RasterPassRenderState.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
-#include "Renderer/Public/Debug/Visualization.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 #include "View/RenderView.h"
 
@@ -58,7 +57,7 @@ void AddRasterizedGBufferMeshPass(
 		    frameInput->View = std::cref(view);
 		    frameInput->Viewport = view.viewport;
 		    frameInput->Scissor = view.scissorRect;
-		    frameInput->Wireframe = view.uniform.VisualizationIndex == static_cast<std::uint32_t>(Visualization::Wireframe);
+		    frameInput->Wireframe = view.viewMode == RenderViewMode::Wireframe;
 		    fields.Shader.Vertex.ViewCamera = view.cameraUniform;
 		    fields.Shader.Vertex.ViewTemporal = view.temporalUniform;
 		    fields.Shader.Pixel.View = view.uniform;

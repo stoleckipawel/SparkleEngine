@@ -65,7 +65,7 @@ Queue existence does not prove useful overlap. When any non-graphics queue is us
 
 ## Rebuild And Invalidation
 
-The graph rebuilds when output/render extent or output target/format changes, `r.ReferencePathTracer` changes the middle-frame topology, GBuffer frontend changes, active ray execution plan changes, image-provider graph key changes, shader generation changes, or a graph using the scene SBT observes a new table-plan generation. `FramePipeline::BuildRenderFrameGraph` reads the Reference switch at the one composition point and schedules either Lit or Reference passes directly. Resize drains/rebuilds swapchain-coupled execution; other changes retire the old graph asynchronously.
+The graph rebuilds when output/render extent or output target/format changes, the per-view Reference mode changes the native-provider/render-extent topology, GBuffer frontend changes, active ray execution plan changes, image-provider graph key changes, shader generation changes, or a graph using the scene SBT observes a new table-plan generation. `FramePipeline::BuildRenderFrameGraph` selects `RenderViewMode::ReferencePathTracer` at the composition point and schedules either Lit or Reference passes directly. Resize drains/rebuilds swapchain-coupled execution; other changes retire the old graph asynchronously.
 
 Rebuild invalidates view/frame/provider history. The tradeoff is simple, inspectable immutable topology at the cost of rebuild/materialization churn. Current source still performs setup and compile work per executed frame; its CPU cost and the value of further caching are unmeasured.
 

@@ -15,54 +15,56 @@
 #include <cstdio>
 #include <string>
 
-class ViewModePresentation final
+struct ViewModePresentation final
 {
-public:
-	static UiUtil::EditorIcon GetViewModeIcon(EditorViewportViewMode viewMode) noexcept
-	{
-		switch (viewMode)
-		{
-			case EditorViewportViewMode::Lit:
-				return UiUtil::EditorIcon::ViewLit;
-			case EditorViewportViewMode::ReferencePathTracer:
-				return UiUtil::EditorIcon::ViewLit;
-			case EditorViewportViewMode::Wireframe:
-				return UiUtil::EditorIcon::ViewMode;
-			case EditorViewportViewMode::GBufferDiffuse:
-				return UiUtil::EditorIcon::ViewDiffuse;
-			case EditorViewportViewMode::GBufferNormal:
-				return UiUtil::EditorIcon::ViewNormal;
-			case EditorViewportViewMode::GBufferRoughness:
-				return UiUtil::EditorIcon::ViewRoughness;
-			case EditorViewportViewMode::GBufferMetallic:
-				return UiUtil::EditorIcon::ViewMetallic;
-			case EditorViewportViewMode::GBufferEmissive:
-				return UiUtil::EditorIcon::ViewEmissive;
-			case EditorViewportViewMode::GBufferAmbientOcclusion:
-				return UiUtil::EditorIcon::ViewAmbientOcclusion;
-			case EditorViewportViewMode::GBufferSubsurfaceColor:
-				return UiUtil::EditorIcon::ViewSubsurfaceColor;
-			case EditorViewportViewMode::GBufferSubsurfaceStrength:
-				return UiUtil::EditorIcon::ViewSubsurfaceStrength;
-			case EditorViewportViewMode::DirectDiffuse:
-				return UiUtil::EditorIcon::ViewDirectDiffuse;
-			case EditorViewportViewMode::DirectSpecular:
-				return UiUtil::EditorIcon::ViewDirectSpecular;
-			case EditorViewportViewMode::DirectSubsurface:
-				return UiUtil::EditorIcon::ViewDirectSubsurface;
-			case EditorViewportViewMode::IndirectDiffuse:
-				return UiUtil::EditorIcon::ViewDirectDiffuse;
-			case EditorViewportViewMode::IndirectSpecular:
-				return UiUtil::EditorIcon::ViewDirectSpecular;
-			case EditorViewportViewMode::GpuSceneInstances:
-				return UiUtil::EditorIcon::ViewMode;
-			case EditorViewportViewMode::Count:
-				break;
-		}
-
-		return UiUtil::EditorIcon::ViewLit;
-	}
+	UiUtil::EditorIcon Icon;
+	const char* Label;
 };
+
+static ViewModePresentation DescribeViewMode(RenderViewMode viewMode) noexcept
+{
+	switch (viewMode)
+	{
+		case RenderViewMode::Lit:
+			return {UiUtil::EditorIcon::ViewLit, "Lit"};
+		case RenderViewMode::ReferencePathTracer:
+			return {UiUtil::EditorIcon::ViewLit, "Reference Path Tracer (Unavailable)"};
+		case RenderViewMode::Wireframe:
+			return {UiUtil::EditorIcon::ViewMode, "Wireframe"};
+		case RenderViewMode::GBufferDiffuse:
+			return {UiUtil::EditorIcon::ViewDiffuse, "GBuffer Diffuse"};
+		case RenderViewMode::GBufferNormal:
+			return {UiUtil::EditorIcon::ViewNormal, "GBuffer Normal"};
+		case RenderViewMode::GBufferRoughness:
+			return {UiUtil::EditorIcon::ViewRoughness, "GBuffer Roughness"};
+		case RenderViewMode::GBufferMetallic:
+			return {UiUtil::EditorIcon::ViewMetallic, "GBuffer Metallic"};
+		case RenderViewMode::GBufferEmissive:
+			return {UiUtil::EditorIcon::ViewEmissive, "GBuffer Emissive"};
+		case RenderViewMode::GBufferAmbientOcclusion:
+			return {UiUtil::EditorIcon::ViewAmbientOcclusion, "GBuffer Ambient Occlusion"};
+		case RenderViewMode::GBufferSubsurfaceColor:
+			return {UiUtil::EditorIcon::ViewSubsurfaceColor, "GBuffer Subsurface Color"};
+		case RenderViewMode::GBufferSubsurfaceStrength:
+			return {UiUtil::EditorIcon::ViewSubsurfaceStrength, "GBuffer Subsurface Strength"};
+		case RenderViewMode::DirectDiffuse:
+			return {UiUtil::EditorIcon::ViewDirectDiffuse, "Direct Diffuse"};
+		case RenderViewMode::DirectSpecular:
+			return {UiUtil::EditorIcon::ViewDirectSpecular, "Direct Specular"};
+		case RenderViewMode::DirectSubsurface:
+			return {UiUtil::EditorIcon::ViewDirectSubsurface, "Direct Subsurface"};
+		case RenderViewMode::IndirectDiffuse:
+			return {UiUtil::EditorIcon::ViewDirectDiffuse, "Indirect Diffuse"};
+		case RenderViewMode::IndirectSpecular:
+			return {UiUtil::EditorIcon::ViewDirectSpecular, "Indirect Specular"};
+		case RenderViewMode::GpuSceneInstances:
+			return {UiUtil::EditorIcon::ViewMode, "GPU Scene Instances"};
+		case RenderViewMode::Count:
+			break;
+	}
+
+	return {UiUtil::EditorIcon::ViewLit, "Lit"};
+}
 
 ViewportTopPanel::ViewportTopPanel(
     LevelSession* levelSession,
@@ -88,51 +90,6 @@ void ViewportTopPanel::SetGeometry(float leftPixels, float topPixels, float widt
 	m_widthPixels = widthPixels;
 }
 
-const char* ViewportTopPanel::GetViewModeLabel(EditorViewportViewMode viewMode) noexcept
-{
-	switch (viewMode)
-	{
-		case EditorViewportViewMode::Lit:
-			return "Lit";
-		case EditorViewportViewMode::ReferencePathTracer:
-			return "Reference Path Tracer (Unavailable)";
-		case EditorViewportViewMode::Wireframe:
-			return "Wireframe";
-		case EditorViewportViewMode::GBufferDiffuse:
-			return "GBuffer Diffuse";
-		case EditorViewportViewMode::GBufferNormal:
-			return "GBuffer Normal";
-		case EditorViewportViewMode::GBufferRoughness:
-			return "GBuffer Roughness";
-		case EditorViewportViewMode::GBufferMetallic:
-			return "GBuffer Metallic";
-		case EditorViewportViewMode::GBufferEmissive:
-			return "GBuffer Emissive";
-		case EditorViewportViewMode::GBufferAmbientOcclusion:
-			return "GBuffer Ambient Occlusion";
-		case EditorViewportViewMode::GBufferSubsurfaceColor:
-			return "GBuffer Subsurface Color";
-		case EditorViewportViewMode::GBufferSubsurfaceStrength:
-			return "GBuffer Subsurface Strength";
-		case EditorViewportViewMode::DirectDiffuse:
-			return "Direct Diffuse";
-		case EditorViewportViewMode::DirectSpecular:
-			return "Direct Specular";
-		case EditorViewportViewMode::DirectSubsurface:
-			return "Direct Subsurface";
-		case EditorViewportViewMode::IndirectDiffuse:
-			return "Indirect Diffuse";
-		case EditorViewportViewMode::IndirectSpecular:
-			return "Indirect Specular";
-		case EditorViewportViewMode::GpuSceneInstances:
-			return "GPU Scene Instances";
-		case EditorViewportViewMode::Count:
-			break;
-	}
-
-	return "Lit";
-}
-
 void ViewportTopPanel::DrawViewModeCategory(const char* label) noexcept
 {
 	ImGui::Spacing();
@@ -146,10 +103,11 @@ void ViewportTopPanel::DrawViewModeCategory(const char* label) noexcept
 	ImGui::TextDisabled("%s", categoryLabel.c_str());
 }
 
-void ViewportTopPanel::DrawViewModeOption(EditorViewportViewMode option, EditorViewportViewMode currentViewMode) noexcept
+void ViewportTopPanel::DrawViewModeOption(RenderViewMode option, RenderViewMode currentViewMode) noexcept
 {
 	const bool selected = option == currentViewMode;
-	const std::string optionLabel = UiUtil::MakeIconLabel(ViewModePresentation::GetViewModeIcon(option), GetViewModeLabel(option));
+	const ViewModePresentation presentation = DescribeViewMode(option);
+	const std::string optionLabel = UiUtil::MakeIconLabel(presentation.Icon, presentation.Label);
 	if (ImGui::Selectable(optionLabel.c_str(), selected))
 	{
 		if (m_viewportSession != nullptr)
@@ -186,10 +144,10 @@ void ViewportTopPanel::BuildLevelName(bool compact) const noexcept
 
 void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction, bool compact) noexcept
 {
-	EditorViewportViewMode currentViewMode = m_viewportSession != nullptr ? m_viewportSession->GetViewMode() : EditorViewportViewMode::Lit;
-	if (currentViewMode >= EditorViewportViewMode::Count)
+	RenderViewMode currentViewMode = m_viewportSession != nullptr ? m_viewportSession->GetViewMode() : RenderViewMode::Lit;
+	if (currentViewMode >= RenderViewMode::Count)
 	{
-		currentViewMode = EditorViewportViewMode::Lit;
+		currentViewMode = RenderViewMode::Lit;
 	}
 
 	if (!compact)
@@ -201,33 +159,33 @@ void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction, bool compact)
 	}
 	ImGui::SetNextItemWidth(compact ? 145.0f : 180.0f);
 	ImGui::BeginDisabled(disableInteraction);
-	const std::string previewLabel =
-	    UiUtil::MakeIconLabel(ViewModePresentation::GetViewModeIcon(currentViewMode), GetViewModeLabel(currentViewMode));
+	const ViewModePresentation currentPresentation = DescribeViewMode(currentViewMode);
+	const std::string previewLabel = UiUtil::MakeIconLabel(currentPresentation.Icon, currentPresentation.Label);
 	if (ImGui::BeginCombo("##ViewportViewMode", previewLabel.c_str()))
 	{
-		DrawViewModeOption(EditorViewportViewMode::Lit, currentViewMode);
-		DrawViewModeOption(EditorViewportViewMode::Wireframe, currentViewMode);
-		DrawViewModeOption(EditorViewportViewMode::GpuSceneInstances, currentViewMode);
+		DrawViewModeOption(RenderViewMode::Lit, currentViewMode);
+		DrawViewModeOption(RenderViewMode::Wireframe, currentViewMode);
+		DrawViewModeOption(RenderViewMode::GpuSceneInstances, currentViewMode);
 
 		DrawViewModeCategory("GBuffer");
 		ImGui::Indent(8.0f);
-		DrawViewModeOption(EditorViewportViewMode::GBufferDiffuse, currentViewMode);
-		DrawViewModeOption(EditorViewportViewMode::GBufferNormal, currentViewMode);
-		DrawViewModeOption(EditorViewportViewMode::GBufferRoughness, currentViewMode);
-		DrawViewModeOption(EditorViewportViewMode::GBufferMetallic, currentViewMode);
-		DrawViewModeOption(EditorViewportViewMode::GBufferEmissive, currentViewMode);
-		DrawViewModeOption(EditorViewportViewMode::GBufferAmbientOcclusion, currentViewMode);
-		DrawViewModeOption(EditorViewportViewMode::GBufferSubsurfaceColor, currentViewMode);
-		DrawViewModeOption(EditorViewportViewMode::GBufferSubsurfaceStrength, currentViewMode);
+		DrawViewModeOption(RenderViewMode::GBufferDiffuse, currentViewMode);
+		DrawViewModeOption(RenderViewMode::GBufferNormal, currentViewMode);
+		DrawViewModeOption(RenderViewMode::GBufferRoughness, currentViewMode);
+		DrawViewModeOption(RenderViewMode::GBufferMetallic, currentViewMode);
+		DrawViewModeOption(RenderViewMode::GBufferEmissive, currentViewMode);
+		DrawViewModeOption(RenderViewMode::GBufferAmbientOcclusion, currentViewMode);
+		DrawViewModeOption(RenderViewMode::GBufferSubsurfaceColor, currentViewMode);
+		DrawViewModeOption(RenderViewMode::GBufferSubsurfaceStrength, currentViewMode);
 		ImGui::Unindent(8.0f);
 
 		DrawViewModeCategory("Lighting");
 		ImGui::Indent(8.0f);
-		DrawViewModeOption(EditorViewportViewMode::DirectDiffuse, currentViewMode);
-		DrawViewModeOption(EditorViewportViewMode::DirectSpecular, currentViewMode);
-		DrawViewModeOption(EditorViewportViewMode::DirectSubsurface, currentViewMode);
-		DrawViewModeOption(EditorViewportViewMode::IndirectDiffuse, currentViewMode);
-		DrawViewModeOption(EditorViewportViewMode::IndirectSpecular, currentViewMode);
+		DrawViewModeOption(RenderViewMode::DirectDiffuse, currentViewMode);
+		DrawViewModeOption(RenderViewMode::DirectSpecular, currentViewMode);
+		DrawViewModeOption(RenderViewMode::DirectSubsurface, currentViewMode);
+		DrawViewModeOption(RenderViewMode::IndirectDiffuse, currentViewMode);
+		DrawViewModeOption(RenderViewMode::IndirectSpecular, currentViewMode);
 		ImGui::Unindent(8.0f);
 
 		ImGui::EndCombo();

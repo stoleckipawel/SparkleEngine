@@ -138,6 +138,5 @@ private:
 	bool m_resizePending = false;
 	bool m_windowMinimized = false;
 	bool m_frameGraphExecutable = true;
-	bool m_builtReferencePathTracer = false;
 	ImageProviderGraphKey m_imageProviderFrameGraphKey = {};
 };

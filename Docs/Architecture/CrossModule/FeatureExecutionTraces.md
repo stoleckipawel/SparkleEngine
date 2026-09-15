@@ -44,7 +44,7 @@ The source ownership rule is concrete: `RenderScene` owns persistent scene data,
 | Pipeline materialization | `GBufferMeshPass` -> runtime pass cache -> RHI | Typed `GBufferVS/GBufferPS`, binding layout, graphics PSO and material descriptors | Shader generation and material/pipeline keys control reuse |
 | Draw | Batch drawer -> graphics command list | Indexed triangle draws write the GBuffer | Alpha mask can discard; no blend pass follows |
 | Derived buffers | `SkyMotionVectorCS` and `SceneDepthCS` | Completes background motion and writes linear `R32_Float` scene depth | Runs after either raster or ray GBuffer frontend |
-| Lighting | ReSTIR lighting producers -> composite -> sky | Reads common GBuffer semantics and produces HDR `SceneColor` | Raster GBuffer does not imply non-ray lighting: the current ordinary lighting route still traces rays; the Reference Path Tracer selector is contract-only and unavailable until its specialized frame route exists |
+| Lighting | ReSTIR lighting producers -> composite -> sky, or the feature-local Reference middle | Lit reads common GBuffer semantics and produces HDR `SceneColor`; the per-view Reference flag instead selects independent camera transport and accumulation | Raster GBuffer does not imply non-ray lighting, and the source-present Reference middle remains unbuilt/GPU-unproved and unavailable through the Editor menu until Stage 7 |
 | Post Processing | exposure -> optional reconstruction/upscale -> debug -> tone map -> encode -> copy | Output extent/color format becomes back buffer or viewport product | Current debug views still pass through presentation semantics; color grading, chromatic aberration, and frame generation are absent |
 
 Vertical completeness risk: importer/cooker fidelity for every material role remains a separate asset-pipeline audit. This trace proves the Renderer-side consumer path exists, not that every source format populates it correctly.
@@ -86,12 +86,12 @@ The [Direct Lighting package](../Modules/Engine/Renderer/Features/Lighting/Direc
 
 | Step | Operation | Exact contract | Boundary |
 | --- | --- | --- | --- |
-| UI selection | `EditorViewportViewMode::ReferencePathTracer` | Editor owns the label and ordered value `1`, mapping it to `r.ReferencePathTracer` | No Editor enum, label, or ordering enters Renderer, View, frame-graph, shader, or RHI contracts |
-| Renderer selection | `FramePipeline::BuildRenderFrameGraph` reads `r.ReferencePathTracer` | One direct branch selects Lit scheduling or the feature-local Reference owner | The original frame shell, prepared Scene/View, frame graph, RHI submission, viewport product, and presentation remain shared |
-| Existing View boundary | `RenderViewBuilder` -> `RenderView` -> `FramePipeline` | Canonical View carries camera and view-owned rendering data; the builder writes only the Renderer visualization scalar needed by shaders | No UI view-mode/selector identity, path-tracer camera copy, Scene/View deep copy, or mutable cross-thread reference |
+| UI selection | `RenderViewMode::ReferencePathTracer` | Renderer owns the execution semantic and ordered value `1`; Editor owns only its label, icon, menu placement, and interaction | No Editor mirror enum, preset translation, label, or icon enters View, frame graph, shader, or RHI contracts |
+| Renderer selection | `FramePipeline::BuildRenderFrameGraph` reads the accepted request flag | One direct branch selects Lit scheduling or the feature-local Reference owner | The original frame shell, prepared Scene/View, frame graph, RHI submission, viewport product, and presentation remain shared |
+| Existing View boundary | `RenderViewBuilder` -> `RenderView` -> `FramePipeline` | Canonical View carries camera and view-owned rendering data; the builder freezes the one mode from the ordinary request | No UI presentation state, path-tracer camera copy, Scene/View deep copy, or mutable cross-thread reference |
 | Feature-local owner | `Passes/Lighting/ReferencePathTracer/ReferencePathTracer` | Session, resources, identity, passes, and transport stay in the feature capsule | Lit and Reference middle products are mutually exclusive; neither route consumes the other's estimator products |
 | Observation | `ViewportRenderProducts.GetProgress()` -> `ViewportPanel` | Generic progress crosses the Renderer boundary; Editor decides whether its Reference UX displays it | Renderer does not carry UI labels, progress-widget visibility, or view-mode ordering |
-| Clean break | Renderer visualization, frame composition, and capture contracts | Renderer owns the concrete `Visualization` CVar domain; RHI capture owns texture readback data only | No Renderer `ViewMode`, recipe/factory hierarchy, GBuffer-seeded reference authority, or UI metadata remains in Renderer/RHI |
+| Clean break | Renderer mode, frame composition, and capture contracts | Renderer owns one per-view `RenderViewMode`; RHI capture owns texture readback data only | No selector CVar, target/flag split, Editor mirror enum, recipe/factory hierarchy, GBuffer-seeded reference authority, or UI metadata remains in Renderer/RHI |
 
 ## Trace 5: External Image Provider Lifecycle
 

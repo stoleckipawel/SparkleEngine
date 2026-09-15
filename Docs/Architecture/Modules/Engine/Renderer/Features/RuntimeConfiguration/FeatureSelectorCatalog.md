@@ -17,7 +17,7 @@ A registered name is not automatically a feature. A trustworthy selector has a p
 
 ## Persisted Renderer Settings Section
 
-`EngineRenderingSettingsPersistence` owns 26 names under `/Script/SparkleRenderer.EngineRenderingSettings` in workspace `Config/DefaultEngine.ini`. The editor settings section captures/applies the same state. Editor view mode is not a Renderer setting: `EditorViewportSession` owns its label and ordering and maps each entry directly to concrete Renderer CVars.
+`EngineRenderingSettingsPersistence` owns 26 names under `/Script/SparkleRenderer.EngineRenderingSettings` in workspace `Config/DefaultEngine.ini`. The editor settings section captures/applies the same state. View mode is not a Renderer setting: it is one non-persisted `RenderViewMode` selected by each viewport owner; Editor owns only its presentation and interaction.
 
 | Feature | Persisted selectors | Default/request boundary | Active owner and effect |
 | --- | --- | --- | --- |
@@ -27,7 +27,6 @@ A registered name is not automatically a feature. A trustworthy selector has a p
 | Upscaling | `r.Upscaler.Provider`, `r.Upscaler.QualityMode` | Linear, NativeAA | [reconstruction/upscaling](../PostProcessing/ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md) provider stack and graph key; external provider may resolve back to Linear |
 | Ray reconstruction | `r.RayReconstruction.Mode` | Off | [reconstruction/upscaling](../PostProcessing/ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md) provider stack; ReSTIR only; unavailable path resolves Off |
 | GBuffer | `r.GBuffer.Algorithm`, `r.GBuffer.RayTracingExecution` | Rasterized, Automatic | graph topology plus ray-GBuffer execution plan |
-| Reference Path Tracer | `r.ReferencePathTracer` | off | Transitional Renderer lighting-route selector read by frame settings/topology/composition; the Editor Reference row remains unavailable until the per-view show-flag replacement |
 | Mesh work | `r.MeshAutoBatching` | on | per-view raster batch construction |
 | Classic TLAS | `r.RayTracing.Tlas.Refit` | on | classic TLAS strategy after initial build |
 | PTLAS | `r.RayTracing.PreferPartitionedTlas`, `r.RayTracing.Ptlas.PartitionsPerAxis`, `r.RayTracing.Ptlas.PartitionUpdateMode`, `r.RayTracing.Ptlas.MarkAllDynamicInPartition`, `r.RayTracing.Ptlas.ModeChangeDistance` | off, 8, AlwaysUpdatePartition, false, 100 | RHI capability preference plus per-view partition planner; actual current execution remains the narrow one-operation/no-update/no-translation strategy |
@@ -38,8 +37,7 @@ The settings writer replaces only its owned INI section. Loading silently ignore
 
 | Selector | Default/domain | Current consumer and effect | Persistence/reachability boundary | Dossier |
 | --- | --- | --- | --- | --- |
-| `ViewportRenderRequest::ActiveVisualization` | Lit plus 15 debug choices | `RenderViewBuilder` freezes the per-view value into `RenderView`, writes its focused scalar shader input, and Wireframe also alters raster fill | ordinary non-persisted per-view request; Editor resolves its own ordered mode locally, while Game/runtime may submit the concrete Renderer value directly | [Debug Views](../DebugViews/README.md) |
-| `r.ReferencePathTracer` | off/on | selects the mutually exclusive Reference middle inside `FramePipeline::BuildRenderFrameGraph`; changing it rebuilds topology | transitional console-only feature selector until the per-view Reference show-flag clean break; the Editor Reference row remains unavailable | [Reference Path Tracer](../Lighting/ReferencePathTracer/README.md) |
+| `ViewportRenderRequest::ViewMode` | Lit, Reference Path Tracer, Wireframe, and 14 debug modes | `RenderViewBuilder` freezes the one mode into `RenderView`; frame composition, raster GBuffer, and debug shaders consume it only at their owning decisions | ordinary non-persisted per-view request; Editor and Game/runtime submit the same Renderer semantic; the Editor Reference row remains unavailable until Stage 7 | [Debug Views](../DebugViews/README.md) and [Reference Path Tracer](../Lighting/ReferencePathTracer/README.md) |
 | `r.RayTracing.Shadows.Execution` | Automatic, Inline, Pipeline | direct-shadow execution plan and graph topology | console surface; not mirrored by `EngineRenderingSettingsState` | [Direct Lighting](../Lighting/DirectLighting/README.md) and [Ray Tracing](../RayTracing/README.md) |
 | `r.RayTracedShadows.NormalBias` | 0.01 world units | shadow ray input | console only; inspected frame binding does not clamp it | [Direct Lighting](../Lighting/DirectLighting/README.md) |
 | `r.RayTracedShadows.MaxDistance` | 100000 world units | directional shadow ray maximum | console only; inspected frame binding does not clamp it | [Direct Lighting](../Lighting/DirectLighting/README.md) |

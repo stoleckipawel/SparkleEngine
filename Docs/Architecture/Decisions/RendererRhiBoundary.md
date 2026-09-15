@@ -31,7 +31,7 @@ Application / Editor
 - Common RHI code never includes either backend implementation. Backend selection may name an API, but native types and calls stay in `Private/D3D12` or `Private/Vulkan`.
 - D3D12 and Vulkan compile as separate static backend targets. `SparkleRHI` exposes the common contract and privately selects the enabled backend targets.
 
-The top boundary is also one way. Application/Editor owns view-mode menus, labels, ordering, shortcuts, selection state, and per-viewport overrides, then resolves a choice into concrete Renderer `Visualization` and `RenderShowFlagSet` values on the ordinary viewport request. Renderer owns those per-view semantics and graph/pass behavior, but not the frontend mode identity that produced them. Process-global CVars remain global implementation policy rather than view-selection transport. RHI receives only neutral GPU work, capability, resource, presentation, and readback contracts; neither UI terminology, show flags, nor Renderer feature names cross into RHI.
+The top boundary is also one way. Renderer owns the host-independent `RenderViewMode` execution semantic; Application/Editor owns its menus, labels, icons, shortcuts, selection interaction, and per-viewport UI state. The ordinary viewport request carries the selected mode directly and Renderer freezes it into the immutable View. There is no Editor mirror enum, preset translation, process-global selection CVar, parallel visualization-target/show-flag taxonomy, or graph-settings copy. RHI receives only neutral GPU work, capability, resource, presentation, and readback contracts; neither UI presentation nor Renderer view-mode/feature names cross into RHI.
 
 ## Ownership
 

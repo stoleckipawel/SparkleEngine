@@ -68,11 +68,11 @@ void ViewportPanel::SetRequestedExtent(RenderViewportExtent extent) noexcept
 	}
 }
 
-void ViewportPanel::SetVisualization(Visualization visualization) noexcept
+void ViewportPanel::SetViewMode(RenderViewMode viewMode) noexcept
 {
-	if (m_renderRequest.ActiveVisualization != visualization)
+	if (m_renderRequest.ViewMode != viewMode)
 	{
-		m_renderRequest.ActiveVisualization = visualization;
+		m_renderRequest.ViewMode = viewMode;
 		++m_renderRequest.Generation;
 	}
 }

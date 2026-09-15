@@ -81,7 +81,7 @@ The viewport menu order is stable:
 2. **Reference Path Tracer**
 3. the remaining diagnostic and wireframe modes under their existing organization
 
-The Reference Path Tracer is selected by a typed per-view Renderer show flag independent of `RenderViewKind`. Editor presents it as `EditorViewportViewMode::ReferencePathTracer`; that UI value is resolved to `Visualization::Lit` plus `RenderShowFlag::ReferencePathTracer` and is not copied into Renderer or RHI. It is not another value in a global real-time lighting-quality selector and it is not an Editor-owned renderer. On selection from any supported host, Renderer consumes one accepted feature preset:
+The Reference Path Tracer is selected by a typed per-view Renderer show flag independent of `RenderViewKind`. Editor presents it as `EditorViewportViewMode::ReferencePathTracer`; that UI value is resolved to `VisualizationTarget::None` plus `RenderShowFlag::ReferencePathTracer` and is not copied into Renderer or RHI. It is not a debug-product target, another value in a global real-time lighting-quality selector, or an Editor-owned renderer. On selection from any supported host, Renderer consumes one accepted feature preset:
 
 - `SurfaceTransportReference` product;
 - independent camera-ray primary visibility;
@@ -331,7 +331,7 @@ The frozen dry-run matrix is keyboard-only selection/actions/focus order; non-co
 | `DebugGame`, `DevelopmentGame` | The same Renderer `ReferencePathTracer` show flag and session are included and selectable through an approved ordinary viewport control; no Editor dependency or Game-specific estimator exists. Offscreen artifact writing remains ApplicationEditor-owned because filesystem publication is a separate tool responsibility. |
 | `ShippingEditor`, `ShippingGame` | The Editor Reference view-mode row and every producer/session factory plus the `ReferencePathTracer` show flag, generic command-line reachability, request CLI, writer/operation, support promise, optional artifact dependency, package entry, and public documentation route are compiled out. RHI exposes no Reference value; no session can start. |
 
-The current repository does not meet this matrix: the working source still contains a transitional global Reference composition CVar, and Renderer links into editor/runtime profiles. `PTD-00-R0` therefore cannot use this frozen target as Shipping proof.
+The current repository does not meet this matrix: the transitional global Reference composition CVar is removed, but Renderer still links into editor/runtime profiles and no package/Shipping exclusion proof has run. `PTD-00-R0` therefore cannot use this frozen target as Shipping proof.
 
 ## Stage-0 First-Use Dry Run
 
@@ -372,7 +372,7 @@ This correspondence is a Stage-6/7 delivery contract. It does not claim that the
 
 | Failure | Why it is unacceptable | Required design response |
 | --- | --- | --- |
-| Reference remains only a Lighting setting, console-only control, or separate wizard | The main comparison route is hidden and disconnected from the viewport mental model. | One Editor-owned `EditorViewportViewMode::ReferencePathTracer` item immediately after Lit, resolved to `Visualization::Lit` plus the per-view `ReferencePathTracer` show flag; details/export are secondary. |
+| Reference remains only a Lighting setting, console-only control, visualization target, or separate wizard | The main comparison route is hidden and disconnected from the viewport mental model. | One Editor-owned `EditorViewportViewMode::ReferencePathTracer` item immediately after Lit, resolved to `VisualizationTarget::None` plus the per-view `ReferencePathTracer` show flag; details/export are secondary. |
 | Selecting the mode mutates persistent Lit settings | Returning to Lit is surprising and comparison is no longer controlled. | Resolve mode-internal reference semantics; restore untouched Lit state on exit. |
 | User must click Validate and Start for the supported default | Routine comparison carries batch-tool ceremony. | Automatic preflight and start on view-mode selection; block only with an actionable reason. |
 | Viewport freezes, displays the old composition, or turns black throughout camera movement | The feature behaves like an offline dialog instead of a view mode and makes composition search impractical. | Prioritize the newest camera identity, visibly mark transition state, present its newest committed prefix at bounded cadence, and refine automatically when motion stops. |

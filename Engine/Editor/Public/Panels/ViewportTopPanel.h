@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Editor/Public/Viewport/EditorViewportViewMode.h"
+#include "Renderer/Public/Viewport/RenderViewMode.h"
 
 class LevelSession;
 class EngineRenderingSettingsSection;
@@ -26,9 +26,8 @@ public:
 	float GetHeight() const noexcept { return m_heightPixels; }
 
 private:
-	static const char* GetViewModeLabel(EditorViewportViewMode viewMode) noexcept;
 	static void DrawViewModeCategory(const char* label) noexcept;
-	void DrawViewModeOption(EditorViewportViewMode option, EditorViewportViewMode currentViewMode) noexcept;
+	void DrawViewModeOption(RenderViewMode option, RenderViewMode currentViewMode) noexcept;
 
 	void BuildLevelName(bool compact) const noexcept;
 	void BuildViewModeCombo(bool disableInteraction, bool compact) noexcept;

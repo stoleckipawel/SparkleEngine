@@ -22,10 +22,11 @@ Continuous edits coalesce into bounded main-thread transactions with determinist
 
 ## UI And Render Boundary
 
-- Editor owns view-mode enums, serialized ordering, labels, icons, menu grouping, shortcuts, selection state, sparse per-viewport show-flag overrides, and widget visibility. One exhaustive Editor preset maps each mode to concrete Renderer `Visualization` plus show-flag enable/disable masks; the UI enum never enters Renderer.
-- Concrete visualization and the final resolved `RenderShowFlagSet` are intrinsically per-view render facts, so Editor publishes them through the ordinary `ViewportRenderRequest` and Renderer freezes them into that `RenderView`. Editor state and override deltas do not cross. Show flags never enter RHI.
+- Editor owns view-mode presentation: labels, icons, menu grouping, shortcuts, selection interaction, and widget visibility. The selected value is the Renderer-owned `RenderViewMode`; Editor does not mirror it in a second enum or translate it through a preset object.
+- The panel-owned `ViewportRenderRequest` is the single publication boundary. A mode change writes `ViewportRenderRequest::ViewMode` and advances that request's generation once; Renderer freezes the value into the corresponding `RenderView`. No mode value enters Renderer settings, Application command translation, or RHI.
+- A mode must not be decomposed into overlapping target and flag authorities. If future independently selectable visibility controls are required, Editor may own their presentation and overrides, but they must have distinct Renderer consumers and must not reproduce the selected mode.
 - A normal view-mode action never mutates process-global Renderer CVars. Renderer settings/CVars remain algorithm, scalability, or explicit developer policy; a genuinely global action uses the sequenced Renderer control boundary rather than direct Editor mutation.
-- One UI choice may set several orthogonal per-view controls, but the preset has one frontend owner and clears only flags it owns. Renderer remains usable by Game/runtime code submitting the same concrete Renderer semantics without loading Editor or importing its enum.
+- Renderer remains usable by Game/runtime code submitting the same `RenderViewMode` without loading Editor. The Editor menu is a presentation of that contract, not its owner.
 - Copy ImGui draw data into packet-owned vertices, indices, clip rectangles, texture handles, and commands.
 - Never send `ImDrawData*` or a live editor pointer to the render coordinator.
 - Viewport requests/products use stable IDs or tokens plus explicit release or bounded retirement.
@@ -64,7 +65,7 @@ Expert access means better inspection and an explicit override, not ownership of
 ## Editor Review Questions
 
 - Does Editor main retain UI, selection, transaction, and model authority?
-- Are view-mode names/order/state contained in Editor and resolved once into concrete per-view Renderer visualization/show flags rather than exported as a renderer-wide UI taxonomy or global CVar mutation?
+- Does Editor present and select the one Renderer `RenderViewMode` without defining a mirror enum, preset translation, global CVar route, or duplicate target/flag authority?
 - Do panels use immutable models and semantic commands only?
 - Does the normal workflow ask for user intent while deriving safe backend detail, with advanced deviations explicit and resettable?
 - Are cross-thread UI/render products owned and late-result safe?

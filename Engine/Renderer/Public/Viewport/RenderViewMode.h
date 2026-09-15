@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-enum class EditorViewportViewMode : std::uint32_t
+enum class RenderViewMode : std::uint32_t
 {
 	Lit = 0,
 	ReferencePathTracer = 1,

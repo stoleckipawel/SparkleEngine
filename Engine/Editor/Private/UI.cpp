@@ -25,7 +25,6 @@
 #include "Scene/Transactions/EditorTransactionHistory.h"
 #include "Settings/EditorRestartService.h"
 #include "Viewport/EditorViewportSession.h"
-#include "Viewport/EditorViewportViewModePreset.h"
 #include "Window/Window.h"
 
 #include <backends/imgui_impl_win32.h>
@@ -165,7 +164,7 @@ UI::UI(EditorHostServices hostServices) :
 	if (m_viewportSession && m_viewportPanel)
 	{
 		m_viewportSession->SetViewModeChangedHandler(
-		    [this](EditorViewportViewMode viewMode) { m_viewportPanel->SetVisualization(ResolveEditorViewportVisualization(viewMode)); });
+		    [this](RenderViewMode viewMode) { m_viewportPanel->SetViewMode(viewMode); });
 	}
 	if (m_renderingSettings)
 	{

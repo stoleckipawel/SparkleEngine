@@ -2,7 +2,6 @@
 #include "Frame/FramePipeline.h"
 
 #include "Debug/RendererCVars.h"
-#include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerCVar.h"
 #include "Frame/Graph/RenderFrameGraphResourceBindings.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/GBuffer/GBuffer.h"
@@ -22,7 +21,7 @@ RenderFrameGraphResources FramePipeline::BuildRenderFrameGraph(FrameGraphBuilder
 	RenderFrameGraphResources resources = {};
 	CreateRenderFrameGraphResources(builder, settings, resources);
 	AddRayTracingScenePasses(builder, rayTracingScene, resources);
-	if (CVarReferencePathTracer.Get())
+	if (m_viewportRenderRequest.ViewMode == RenderViewMode::ReferencePathTracer)
 	{
 		m_referencePathTracer->AddPasses(builder, settings, resources);
 	}

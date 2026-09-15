@@ -2,243 +2,94 @@
 
 **Status:** target architecture; design-only, not implementation proof
 
-**Date:** 2026-08-18
-
-**Last source reconciliation:** 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
-
-**Responsibility:** debug-view signal-domain classification, display mapping, output encoding, visualization producer requirements, and capture-visible presentation state
-
-**Current readiness:** **40/100** for the existing debug-view feature; the corrected presentation target described here is not implemented and adds no readiness credit. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Responsibility:** debug-view signal domains, display mapping, output encoding, and producer requirements
 
 ## Decision
 
-Sparkle should classify every debug-view producer as either scene-referred HDR or display-linear exact, then route both domains through one explicit display-mapping and output-encoding path. The [`Visualization` and show-flag contract](ViewModesAndShowFlags.md) supplies the concrete Renderer selection and the resolved `Exposure` and `Tonemapper` flags; this document owns what those inputs mean for presentation.
+Every `RenderViewMode` has one presentation domain: scene-referred HDR or display-linear exact. Both domains use one display-mapping owner and one output-encoding owner.
 
-Every Renderer visualization must also declare the domain of the color it publishes:
+The selected mode is already the complete stock policy. Presentation does not need a second target enum, show-flag set, or Editor preset translation. The presentation owner resolves the selected mode to its signal domain and applies the corresponding mapping.
 
-- **Scene-referred HDR** is exposed and tone mapped exactly once, then output encoded.
-- **Display-linear exact** bypasses exposure and the tone curve, then is output encoded.
-
-Output encoding is mandatory for both domains. An sRGB swap chain still needs a linear-to-sRGB transfer for a display-linear diagnostic value to appear correctly; bypassing that transfer would not be a more exact visualization.
-
-The stock visualization contract owns the correct `Exposure` and `Tonemapper` defaults. A deliberate override creates a customized view. Correctness therefore never depends on a UI label or frontend mode identity reaching Renderer.
-
-This proposal does not change code. The current implementation remains authoritative until the [delivery plan](Plan.md) is implemented and the adjacent [feature acceptance contract](Acceptance.md) passes.
-
-## Authority Boundary
-
-This document owns signal-domain classification, presentation routing, display mapping, output encoding, and visualization producer requirements. [Debug View Modes And Show Flags](ViewModesAndShowFlags.md) owns view-mode intent, flag semantics, resolution, and editor controls. The [current renderer navigation overlay](../../../../../WholeRepositoryMap.md#current-renderer-navigation-overlay) records the broader implemented placement of view mode, resolved display settings, view state, and narrow pass inputs.
-
-[Editor Viewport Camera Architecture](../../../../../Decisions/EditorViewportCamera.md) continues to own per-viewport exposure overrides. [Renderer and RHI Architecture Boundary](../../../../../Decisions/RendererRhiBoundary.md) continues to own frame-graph and backend responsibility. The [Debug View Presentation Delivery Plan](Plan.md) owns implementation slices; the adjacent [feature acceptance contract](Acceptance.md) owns feature proof. Engineering requirements and evidence rules are routed by the [Engineering task map](../../../../../../Engineering/README.md#choose-by-task).
-
-## Implementation Snapshot
-
-The current presentation path, owners, and observed double-mapping problem live in the [Debug Views feature dossier](README.md). Refresh that dossier before beginning delivery; this architecture owns the target correction, not the current implementation claim.
-
-## Terms And Invariants
-
-The invariants in this section define unmodified stock visualization contracts. A deliberate presentation-flag override follows the custom behavior table in [View Modes And Show Flags](ViewModesAndShowFlags.md) and forfeits the stock HDR/exact claim until reset.
+## Domains
 
 ### Scene-Referred HDR
 
-The producer publishes linear scene color or a linear lighting contribution. Values may exceed `1.0`. Presentation applies the viewport's resolved exposure and selected tone curve once.
-
-Invariants:
-
-- no local Reinhard, ACES, or other display curve runs in the visualization producer;
-- the scene's exposure state is used, allowing lighting contributions to be compared under the same exposure;
-- manual exposure remains available through the existing viewport/display settings;
-- changing the tone mapper is expected to change these views.
+The producer publishes linear scene radiance or a lighting contribution. The common display mapper applies the current scene exposure and selected tone curve exactly once. Lit, Reference Path Tracer, emissive, and direct/indirect lighting views belong here.
 
 ### Display-Linear Exact
 
-The producer publishes the final bounded visualization in linear display space. For the current SDR path, RGB must be finite and in `[0, 1]` before output encoding. Examples include a scalar replicated to RGB, a decoded normal mapped from `[-1, 1]` to `[0, 1]`, and a stable false-color palette.
+The producer publishes a bounded diagnostic value in linear display space. Exposure and the tone curve are bypassed; output transfer encoding still runs exactly once. Scalar material values, encoded normals, material colors, and stable instance palettes belong here.
 
-"Exact" means no content-dependent exposure, eye adaptation, color grading, or filmic curve changes that authored display-linear value. It does not mean copying linear numbers directly into an sRGB-encoded target. Quantization and target-format gamut remain physical output limitations.
+“Exact” does not mean writing linear numbers into an encoded target. It means no content-dependent exposure or filmic curve changes the producer-authored display-linear value before the required output transfer.
 
-Invariants:
-
-- exposure and the tone curve are both bypassed;
-- the visualization producer owns the one intentional mapping into `[0, 1]`;
-- changing exposure or the selected tone mapper cannot change the decoded displayed result;
-- output transfer encoding still runs once;
-- values outside the displayable range must use an explicit visualization mapping or raw capture, not accidental clamping presented as exactness.
-
-### Output Encoding
-
-Output encoding converts display-linear color to the transfer function required by the target. In the current implementation that is linear or sRGB. It is independent of whether scene tone mapping ran.
-
-This separation must remain visible in the frame graph and resource names:
+## Route
 
 ```text
-selected view color -> display mapping -> DisplayLinearColor -> output encoding -> EncodedColor
+RenderView::viewMode
+        |
+        v
+selected producer-domain color
+        |
+        v
+DisplayMappingPass(mode domain, exposure, tone mapper)
+        |
+        v
+DisplayLinearColor
+        |
+        v
+OutputEncodingPass
+        |
+        v
+viewport / back buffer
 ```
 
-## Selected Architecture
+The presentation resolver is Renderer-private and exhaustive over `RenderViewMode`. It owns only signal-domain classification. Editor does not duplicate this table, and shaders do not infer it independently.
 
-The viewport owner resolves frontend preset/override policy before submission, and Renderer freezes those concrete semantics before any pass executes:
+## Mode Classification
 
-```text
-    ViewportRenderRequest.Visualization + ShowFlags
-                                      |
-                                      v
-                          RenderViewBuilder copy
-                                      |
-                       immutable RenderView.ShowFlags
-                                      |
-                                      v
-                         selected producer-domain color
-                                      |
-                                      v
-            DisplayMappingPass(Exposure, Tonemapper, signal domain)
-                                      |
-                             DisplayLinearColor
-                                      |
-                             output encoding
-                                      |
-                          viewport / back buffer
-```
+| Mode | Domain | Producer requirement |
+| --- | --- | --- |
+| Lit | Scene-referred HDR | composed linear scene color |
+| Reference Path Tracer | Scene-referred HDR | Reference display derivative from raw accumulation |
+| Wireframe | Scene-referred HDR | current Lit shading with raster wireframe fill |
+| GBufferDiffuse | Display-linear exact | saturated linear base color |
+| GBufferNormal | Display-linear exact | normalized normal mapped from `[-1, 1]` to `[0, 1]` |
+| GBufferRoughness | Display-linear exact | bounded scalar replicated to RGB |
+| GBufferMetallic | Display-linear exact | bounded scalar replicated to RGB |
+| GBufferEmissive | Scene-referred HDR | raw non-negative emissive value; no local preview curve |
+| GBufferAmbientOcclusion | Display-linear exact | bounded scalar replicated to RGB |
+| GBufferSubsurfaceColor | Display-linear exact | saturated linear material color |
+| GBufferSubsurfaceStrength | Display-linear exact | bounded scalar replicated to RGB |
+| DirectDiffuse | Scene-referred HDR | raw non-negative contribution |
+| DirectSpecular | Scene-referred HDR | raw non-negative contribution |
+| DirectSubsurface | Scene-referred HDR | raw non-negative contribution |
+| IndirectDiffuse | Scene-referred HDR | raw non-negative contribution |
+| IndirectSpecular | Scene-referred HDR | raw non-negative contribution |
+| GpuSceneInstances | Display-linear exact | stable hashed instance palette |
 
-### One Signal-Domain Classification Owner
+## Producer And Extent Rules
 
-Add one renderer-private, exhaustive visualization-contract resolver. Conceptually:
+`VisualizeBuffers` remains the single producer for current GBuffer and lighting views. It outputs raw HDR for scene-referred modes and one intentional bounded mapping for exact modes. It contains no exposure or tone-mapper policy.
 
-```cpp
-enum class VisualizationSignalDomain : std::uint8_t
-{
-	SceneReferredHdr,
-	DisplayLinearExact,
-};
+When render and output extents differ, exact views use an explicit point selection so reconstruction does not invent category IDs, material values, or false colors. The producer must not assume source and destination extents match.
 
-struct VisualizationContract final
-{
-	VisualizationSignalDomain SignalDomain;
-};
+The existing exposure owner continues to meter the ordinary Lit scene even while an exact diagnostic is visible. Exact presentation ignores the resulting exposure value, but keeping history warm prevents an unrelated adaptation reset when returning to Lit.
 
-VisualizationContract ResolveVisualizationContract(Visualization visualization) noexcept;
-```
+## Optional Independent Controls
 
-The exact names may follow implementation review, but the responsibilities may not split:
+Stock presentation is derived from `RenderViewMode`; no presentation flag is required. A future expert override for exposure or tone mapping is a separate product decision and may be added only with a real user workflow, explicit Custom state, reset behavior, capture provenance, and a dedicated consumer. It must not change the meaning or identity of the selected mode.
 
-- `Visualization` remains the stable Renderer-to-shader selection. Editor owns its broader view-mode taxonomy and maps entries explicitly.
-- The renderer-private resolver is the only visualization-to-signal-domain table.
-- The Editor-owned preset table establishes stock show-flag defaults while labels, menu categories, and the Show menu do not repeat signal-domain classification.
-- The display-mapping shader receives focused resolved booleans; it does not maintain a second mode-to-presentation-policy list.
-- An unknown or `Count` value is rejected by the narrow resolver rather than silently becoming an exact diagnostic.
+## Capture
 
-A polymorphic view-mode hierarchy, per-mode CVar, dynamic show-flag registry, and public presentation API are unnecessary for the current closed enums. The Renderer signal-domain table and Editor preset/metadata tables have separate responsibilities and are checked exhaustively for compatible stock defaults.
-
-### Display-Mapping Pass
-
-Generalize the current `ToneMappingPass` into the one pass that produces display-linear color. A clean-break rename to `DisplayMappingPass` and `DisplayMapping.hlsl` is preferred because the pass can perform either scene mapping or identity mapping. Rename `ToneMappedSceneColor` to `DisplayLinearColor` in the same change; do not retain aliases.
-
-The pass receives:
-
-- selected view color;
-- current exposure texture;
-- selected tone mapper;
-- resolved `VisualizationSignalDomain` for producer-contract validation/diagnostics;
-- focused `ApplyExposure` and `ApplyTonemapper` booleans derived once from `RenderView.ShowFlags`.
-
-Its stock behavior is closed and simple:
-
-| Signal domain | Exposure | Tone curve | Output |
-| --- | --- | --- | --- |
-| `SceneReferredHdr` | Apply current scene exposure | Apply selected tone mapper once | Display-linear color |
-| `DisplayLinearExact` | Bypass | Bypass | Producer-authored display-linear color |
-
-The four explicit custom combinations are defined by [View Modes And Show Flags](ViewModesAndShowFlags.md); there is no ambiguous `EnableToneMapping` boolean that also hides exposure behavior. `OutputEncodingPass` remains a separate unconditional consumer. Do not encode sRGB inside debug visualization shaders, and do not add a second exact-view copy path around output encoding.
-
-### Visualization Producer
-
-Keep `VisualizeBuffers` as the single visualization producer for the current GBuffer and lighting modes. It should:
-
-- output raw non-negative HDR values for modes classified as `SceneReferredHdr`;
-- output one deliberate display-linear mapping for exact modes;
-- contain no generic exposure or tone-mapper policy;
-- use explicit source-to-output coordinate mapping when render and output extents differ;
-- use point selection for exact buffer values so upscaling does not invent category IDs, material values, or false colors.
-
-The former unused `Debug/ViewModes.hlsli` duplicated preview mappings implemented by `Passes/Debug/VisualizeBuffers.hlsl` and has been removed. `Debug/Visualization.hlsli` now contains only the shared mappings consumed by current shader paths.
-
-The existing post-reconstruction placement can remain for the first slice: lit output is reconstructed normally, then an active debug visualization overwrites it at output extent. This avoids temporal reconstruction, sharpening, or scene post effects changing exact views. The visualization pass must not assume its GBuffer and lighting inputs have the same extent as `FinalSceneColor`.
-
-### Exposure State
-
-Continue computing exposure from the original lit `SceneColor`, even while an exact diagnostic is visible. Exact modes ignore that exposure at display mapping, but keeping the history warm avoids a reset or brightness jump when the user returns to an HDR mode.
-
-HDR contribution modes should use the same scene exposure rather than meter only the selected contribution. This makes direct and indirect components comparable. A user who needs fixed evidence can use the existing manual viewport exposure; a second debug-exposure system is out of scope.
-
-### Frame-Graph And Capture Integration
-
-Show-flag resolution is per frame, but not every flag is a graph-rebuild key. `Exposure`, `Tonemapper`, `DebugOverlay`, and `GizmoOverlay` should flow through focused pass parameters or pass enable conditions. A scene/lighting flag enters the graph topology key only if changing it genuinely changes resource creation or pass lifetime; otherwise the graph remains stable and the resolved flag controls scheduling or contribution. The implementation inventory must classify each flag and prove that a switch takes effect on the next submitted frame.
-
-Do not query show flags by name or branch on a broad bitset inside shader inner loops. Resolve them into the narrow booleans, zero-input bindings, or pass scheduling decisions owned by each consumer.
-
-Capture transport remains neutral. When an evidence workflow needs presentation provenance, its higher-level sidecar joins the completed product identity with:
-
-- base `RenderViewKind` and the resolved `Visualization` value;
-- the complete resolved `RenderShowFlagSet` and explicit override masks;
-- `VisualizationSignalDomain` plus resolved exposure/tone-mapper application;
-- exposure mode/value, tone-mapper selection, and output encoding;
-- whether a diagnostic CVar force changed a flag.
-
-This metadata does not enter Renderer or RHI capture requests/results. It makes stock and customized evidence distinguishable without teaching the readback mechanism about Editor modes or Renderer features. A sidecar labelled only `GBufferRoughness` is insufficient once show-control overrides exist.
-
-## Initial Mode Classification
-
-This table classifies the signals produced by current shaders. If a producer changes meaning, its entry and tests must change in the same changelist.
-
-| `Visualization` | Domain | Stock presentation flags | Producer requirement | Rationale |
-| --- | --- | --- | --- | --- |
-| `Lit` | Scene-referred HDR | Exposure + Tonemapper | Publish composed linear scene color | Normal rendering needs exposure and the selected tone mapper. |
-| `Wireframe` | Scene-referred HDR | Exposure + Tonemapper | Keep current lit wireframe shading | The current mode changes rasterization while retaining lit color. If it later becomes a fixed palette, reclassify it explicitly. |
-| `GBufferDiffuse` | Display-linear exact | Neither | Saturated linear base color | Material input should not change with exposure or filmic contrast. |
-| `GBufferNormal` | Display-linear exact | Neither | Normalize and map `[-1, 1]` to `[0, 1]` | Axis colors are the diagnostic encoding. |
-| `GBufferRoughness` | Display-linear exact | Neither | Replicate the bounded scalar | A stored `0.5` must remain the `0.5` visualization value before output transfer. |
-| `GBufferMetallic` | Display-linear exact | Neither | Replicate the bounded scalar | Same scalar contract. |
-| `GBufferEmissive` | Scene-referred HDR | Exposure + Tonemapper | Publish raw non-negative emissive color | Emissive is an unbounded scene-light quantity; remove the local `PreviewHdr` curve. |
-| `GBufferAmbientOcclusion` | Display-linear exact | Neither | Replicate the bounded scalar | Occlusion is diagnostic data, not scene luminance. |
-| `GBufferSubsurfaceColor` | Display-linear exact | Neither | Saturated linear material color | Material input should remain stable. |
-| `GBufferSubsurfaceStrength` | Display-linear exact | Neither | Replicate the bounded scalar | Same scalar contract. |
-| `DirectDiffuse` | Scene-referred HDR | Exposure + Tonemapper | Publish raw non-negative contribution | It must receive the shared scene exposure and one tone curve. |
-| `DirectSpecular` | Scene-referred HDR | Exposure + Tonemapper | Publish raw non-negative contribution | Same lighting-contribution contract. |
-| `DirectSubsurface` | Scene-referred HDR | Exposure + Tonemapper | Publish raw non-negative contribution | Same lighting-contribution contract. |
-| `IndirectDiffuse` | Scene-referred HDR | Exposure + Tonemapper | Publish raw non-negative contribution | Same lighting-contribution contract. |
-| `IndirectSpecular` | Scene-referred HDR | Exposure + Tonemapper | Publish raw non-negative contribution | Same lighting-contribution contract. |
-| `GpuSceneInstances` | Display-linear exact | Neither | Publish the stable hashed instance palette | IDs and false colors must not vary with exposure or tone mapper. |
-
-The Show menu exposes `Exposure` and `Tonemapper` separately. These overrides are intentionally explicit and visibly custom; they do not create more view-mode enum values. A genuinely different producer interpretation, such as a future `EmissiveRangeHeatmap`, still needs a clearly named mode because a show flag must not silently change what source data means.
-
-## External Precedent
-
-[Debug View Presentation Precedent](Research.md) owns the NVIDIA RTXPT/Donut and AMD Cauldron findings behind the exposure, tone, and output separation. The decision, invariants, local type shape, and rejected presentation alternatives remain here.
+Renderer/RHI capture transport remains neutral. A higher-level evidence record may join completed product identity with the selected mode, resolved signal domain, exposure/tone-mapper application, exposure value, output encoding, extent, and any explicit expert override. This metadata does not belong in the RHI readback contract.
 
 ## Rejected Alternatives
 
-### Disable Tone Mapping For Every Non-Lit Mode
+- Keep a producer-local HDR preview curve: rejected because it hides magnitude and creates double mapping.
+- Bypass all presentation for exact views: rejected because output transfer encoding is still required.
+- Add mode-shaped show flags or a visualization target: rejected because the selected mode already owns this stock policy.
+- Add a process-global “debug views bypass tone mapping” CVar: rejected because it cannot describe independent viewports and makes evidence ambiguous.
 
-Rejected because emissive and lighting contributions are scene-referred HDR. A raw copy would clip or make their interpretation depend on the output target.
+## Evidence Boundary
 
-### Keep Local `PreviewHdr` And Disable Only The Global Tone Curve
-
-Rejected because it hides the source magnitude behind a hard-coded curve and still leaves exposure as a possible second transform. HDR modes should use one owned scene-display mapping.
-
-### Add a global "debug views bypass tone mapping" checkbox
-
-Rejected because one process-global value cannot describe multiple viewports and makes captures ambiguous. The accepted alternative is two typed per-view show flags with stock mode defaults, a visible Custom state, reset behavior, and captured metadata.
-
-### Copy Exact Modes After Output Encoding
-
-Rejected because visualization shaders author linear values while encoded targets expect a transfer function. Writing linear values into an sRGB-encoded intermediate produces the wrong displayed result and couples debug code to back-buffer format.
-
-### Maintain Separate Frame Graphs For HDR And Exact Modes
-
-Rejected for the current slice because view-mode switching is per-frame state and the existing graph can carry one resolved mapping mode. A topology split would add rebuild and lifetime complexity without improving the output contract.
-
-## Non-Goals
-
-- A raw GPU-resource inspector or lossless GBuffer export. Those require a separate typed capture product that preserves format, range, and metadata.
-- HDR/PQ or wide-gamut output implementation. The debug contract must compose with the separately admitted [HDR Display Output](../PostProcessing/DisplayPipeline/HDRDisplayOutput/README.md), but current code supports linear and sRGB only.
-- Debug-only exposure history or a second tone-mapper setting.
-- Skipping normal scene rendering work while exact views are active. That optimization needs measurement and a separate graph-lifetime decision after correctness is established.
+This architecture defines the target. Numeric fixed-value checks, extent cases, dual-viewport isolation, output encoding, shader cook, D3D12/Vulkan execution, and captured pixels remain required evidence under [Acceptance](Acceptance.md).

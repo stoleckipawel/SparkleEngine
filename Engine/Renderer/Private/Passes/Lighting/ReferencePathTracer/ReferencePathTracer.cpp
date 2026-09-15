@@ -3,12 +3,10 @@
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracer.h"
 
 #include "Frame/Graph/RenderFrameGraphSettings.h"
-#include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerCVar.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerPasses.h"
 #include "Passes/PostProcessing/Exposure.h"
 #include "Passes/Presentation/Upscaling.h"
-
-ConsoleVariable<bool> CVarReferencePathTracer("r.ReferencePathTracer", false, "Use the Reference Path Tracer frame composition.");
+#include "View/RenderView.h"
 
 ReferencePathTracer::ReferencePathTracer(RenderDeviceServices& deviceServices, RendererMemoryMonitor& memoryMonitor) noexcept :
     m_resources(deviceServices, memoryMonitor),
@@ -35,13 +33,12 @@ void ReferencePathTracer::AddPasses(
 }
 
 ViewportRenderProgress ReferencePathTracer::Update(
-    bool active,
     const RenderView& view,
     const PreparedRenderScene& scene,
     const RenderFrameIdentity& frame,
     std::uint64_t sceneGeneration) noexcept
 {
-	return m_session.Update(active, view, scene, frame, sceneGeneration, m_resources);
+	return m_session.Update(view.viewMode == RenderViewMode::ReferencePathTracer, view, scene, frame, sceneGeneration, m_resources);
 }
 
 bool ReferencePathTracer::BindResources(FrameGraph& frameGraph) const noexcept

@@ -43,7 +43,7 @@ void RenderViewBuilder::Build(RenderView& output, RenderViewState& state, const 
 	output.viewportId = request.ViewportRequest.ViewportId;
 	output.selection = request.ViewportRequest.ViewSelection;
 	output.kind = request.ViewportRequest.ViewKind;
-	output.visualization = request.ViewportRequest.ActiveVisualization;
+	output.viewMode = request.ViewportRequest.ViewMode;
 	output.renderExtent = request.RenderExtent;
 	output.outputExtent = request.OutputExtent;
 	output.displaySettings = ResolvedViewportDisplaySettings::Resolve(request.ViewportRequest.Exposure);
@@ -95,7 +95,7 @@ void RenderViewBuilder::Build(RenderView& output, RenderViewState& state, const 
 	const float renderHeight = static_cast<float>((std::max) (request.RenderExtent.Height, 1u));
 	output.uniform.ViewportSize = {renderWidth, renderHeight};
 	output.uniform.ViewportSizeInv = {1.0f / renderWidth, 1.0f / renderHeight};
-	output.uniform.VisualizationIndex = static_cast<std::uint32_t>(output.visualization);
+	output.uniform.RenderViewModeIndex = static_cast<std::uint32_t>(output.viewMode);
 
 	output.temporalUniform = state.BuildTemporal(
 	    RenderViewStateBuildInput{

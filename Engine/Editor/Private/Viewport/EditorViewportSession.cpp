@@ -11,7 +11,7 @@ EditorViewportSession::EditorViewportSession(EditorViewportSettings settings) :
 {
 }
 
-void EditorViewportSession::SetViewModeChangedHandler(std::function<void(EditorViewportViewMode)> handler) noexcept
+void EditorViewportSession::SetViewModeChangedHandler(std::function<void(RenderViewMode)> handler) noexcept
 {
 	m_viewModeChangedHandler = std::move(handler);
 }
@@ -109,9 +109,9 @@ void EditorViewportSession::SetExposureOverrides(ViewportExposureOverrides overr
 	(void) m_settings.SetExposureOverrides(overrides);
 }
 
-void EditorViewportSession::SetViewMode(EditorViewportViewMode viewMode) noexcept
+void EditorViewportSession::SetViewMode(RenderViewMode viewMode) noexcept
 {
-	if (viewMode < EditorViewportViewMode::Count)
+	if (viewMode < RenderViewMode::Count)
 	{
 		m_viewMode = viewMode;
 		if (m_viewModeChangedHandler)

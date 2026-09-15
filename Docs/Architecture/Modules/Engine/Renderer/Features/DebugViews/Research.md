@@ -2,40 +2,38 @@
 
 **Status:** research; external-source comparison, not Sparkle architecture or acceptance authority
 
-**Scope:** Unreal Engine, NVIDIA RTXPT/Donut, and AMD Cauldron precedent used to separate view-mode presets, show flags, exposure, tone curves, exact diagnostic presentation, and output conversion
+**Scope:** Unreal Engine, NVIDIA RTXPT/Donut, and AMD Cauldron precedent for view-mode ownership, exposure, tone curves, exact diagnostic presentation, and output conversion
 
-**Local decision owners:** [View Modes And Show Flags](ViewModesAndShowFlags.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
+**Local decision owners:** [Render View Modes](ViewModes.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
 
 **Reference-set context:** [External Renderer Repository Comparison](../../RendererRepositoriesResearch.md)
 
-**Related current readiness:** **40/100** for the existing debug-view feature. Exact-domain presentation and per-view show-flag targets remain unimplemented/unproved; external precedent adds no score. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Related current readiness:** **40/100** for the existing debug-view feature. The single per-view mode source shape is present but uncompiled; exact-domain presentation and executable proof remain unimplemented/unproved, and external precedent adds no score. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## Unreal Engine
 
-Epic documents `FEngineShowFlags` as bits stored in the view family for artists and developers to customize/debug rendering. View modes are higher-level presets that can manipulate flags, while scalability belongs to console variables. `FSceneViewFamily` owns resolved flags; `FEditorViewportClient` owns current and previous editor-viewport flag sets. Epic's runtime `EnablePathTracing` API is explicitly equivalent to setting `ShowFlag.PathTracing` for the current Game viewport, demonstrating that a renderer-changing mode can still be expressed as per-viewport show state rather than a process-global UI enum.
+Epic's runtime Engine `EViewModeIndex` is the high-level view-mode contract and includes Lit, Wireframe, Path Tracing, buffer visualization, and other diagnostic modes. Epic documents these values as defining view modes that establish specific show-flag settings, with ordering that matters where the values are serialized. `UGameViewportClient` stores both a view-mode index and engine show flags, so view modes are not merely an Editor enum.
 
-The editor exposes View Mode and Show Flags as neighboring controls. Buffer-visualization records can also carry per-visualization auto-exposure intent rather than assuming every buffer uses the lit presentation path.
+Epic also documents `FEngineShowFlags` as lower-level bits stored with view-family state. That is a separate customization layer: higher-level modes may manipulate flags, and flags are not scalability CVars. The presence of both layers in Unreal does not imply that a smaller engine should create both before it has independent flag consumers.
 
 Transferable lessons:
 
-- one view owns an immutable resolved flag set; passes do not read mutable global editor state;
-- view modes are coherent presets over individual feature switches;
-- a path-tracing view can be activated through a per-viewport `PathTracing` show flag in both editor and runtime workflows;
+- a view mode is a runtime rendering semantic, not necessarily an Editor-only enum;
+- per-view rendering selection does not read mutable global Editor state;
+- lower-level flags are useful only where contributions are independently selectable;
+- path tracing can be an ordinary per-viewport rendering mode while sharing the frame and presentation architecture;
 - exposure and the tone curve are separate decisions;
 - show flags are not scalability or backend-capability policy.
 
-Sparkle should adopt the ownership/preset separation with a fixed local enum and only implemented consumers. It should not copy Unreal's full category surface, material-driven visualization registry, dynamic custom flags, or string mutation path.
+Sparkle adopts the high-level layer now: one `RenderViewMode` shared by Editor and runtime viewport owners. It deliberately defers lower-level show controls until a real orthogonal consumer exists. It should not copy Unreal's full ViewFamily, category surface, visualization registry, dynamic custom flags, or string mutation path.
 
 Primary sources:
 
 - Epic, [`FEngineShowFlags`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/FEngineShowFlags)
-- Epic, [`UKismetRenderingLibrary::EnablePathTracing`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/UKismetRenderingLibrary/EnablePathTracing)
-- Epic, [`FSceneViewFamily`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/FSceneViewFamily)
-- Epic, [`FEditorViewportClient`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Editor/UnrealEd/FEditorViewportClient)
+- Epic, [`EViewModeIndex`](https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/Engine/Engine/EViewModeIndex?application_version=5.5)
+- Epic, [`UGameViewportClient`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/UGameViewportClient)
 - Epic, [Viewport Toolbar: View Mode and Show Flag Options](https://dev.epicgames.com/documentation/en-us/unreal-engine/viewport-toolbar#viewporttoolbarviewmodeandshowflagoptions)
-- Epic, [Viewport Show Flags](https://dev.epicgames.com/documentation/en-us/unreal-engine/viewport-show-flags-in-unreal-engine)
-- Epic, [`FBufferVisualizationData`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/FBufferVisualizationData)
-- Epic, [`FBufferVisualizationData::Record`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/FBufferVisualizationData/Record)
+- Epic, [Viewport Modes](https://dev.epicgames.com/documentation/en-us/unreal-engine/viewport-modes-in-unreal-engine)
 
 ## NVIDIA RTXPT And Donut
 

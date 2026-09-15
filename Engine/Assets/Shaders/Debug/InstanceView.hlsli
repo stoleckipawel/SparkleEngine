@@ -3,13 +3,13 @@
 #include "/Engine/Resources/ViewUniformData.hlsli"
 
 #include "/Engine/Common/Hash.hlsli"
-#include "/Engine/Debug/VisualizationConstants.hlsli"
+#include "/Engine/Resources/RenderViewModeConstants.hlsli"
 
 namespace InstanceView
 {
 	float3 ApplyInstanceVisualization(float3 baseColor, uint gpuSceneSlot)
 	{
-		if (VisualizationIndex == Visualization::GpuSceneInstances)
+		if (RenderViewModeIndex == RenderViewMode::GpuSceneInstances)
 		{
 			return HashIdColor(gpuSceneSlot, 0u);
 		}
