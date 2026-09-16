@@ -1,18 +1,12 @@
 #pragma once
 
 #include "Concurrency/Control/RenderControlCompletion.h"
-#include "Concurrency/FrameQueue/RenderFrameQueue.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 #include <cstdint>
 #include <memory>
 #include <variant>
-
-struct RenderFrameReadyCommand final
-{
-	RenderFrameQueueTicket Ticket;
-};
 
 struct RenderResizeCommand final
 {
@@ -51,10 +45,6 @@ struct RenderCaptureCommand final
 	ViewportCaptureRequest Request;
 };
 
-struct RenderRefreshProvidersCommand final
-{
-};
-
 struct RenderSettingsChangedCommand final
 {
 	EngineRenderingSettingsState Settings;
@@ -64,19 +54,11 @@ struct RenderShutdownCommand final
 {
 };
 
-using RenderControlPayload = std::variant<
-    RenderFrameReadyCommand,
+using RendererExecutionControl = std::variant<
     RenderResizeCommand,
     RenderViewportCommand,
     RenderReloadShadersCommand,
     RenderDiagnosticsCommand,
     RenderCaptureCommand,
-    RenderRefreshProvidersCommand,
     RenderSettingsChangedCommand,
     RenderShutdownCommand>;
-
-struct RenderControlCommand final
-{
-	std::uint64_t SequenceNumber = 0;
-	RenderControlPayload Payload;
-};

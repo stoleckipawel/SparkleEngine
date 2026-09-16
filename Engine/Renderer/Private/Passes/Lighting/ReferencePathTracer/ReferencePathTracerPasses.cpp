@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerPasses.h"
+#include "Passes/Lighting/ReferencePathTracer/ReferencePathTracer.h"
 
 #include "Core/Public/Math/MathUtils.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
@@ -59,23 +59,21 @@ static void AddReferencePathTracerDisplayPass(
 	    ComputeDispatchDesc{MathUtils::DivideRoundUp(extent.Width, 8u), MathUtils::DivideRoundUp(extent.Height, 8u), 1u});
 }
 
-void AddReferencePathTracerGpuPasses(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent extent,
-    const RenderFrameGraphResources& resources,
-    const ReferencePathTracerGraphResources& graphResources,
-    const ReferencePathTracerUniformData& uniformData,
-    std::uint32_t workRowsPerDispatch,
-    RenderRayTracingScene& rayTracingScene)
+void ReferencePathTracer::AddGpuPasses(FrameGraphBuilder& builder, RenderViewportExtent extent, const RenderFrameGraphResources& resources)
 {
-	if (rayTracingScene.GetExecutionFrontend() != RayTracingExecutionFrontend::None)
+	const ReferencePathTracerGraphResources& graphResources = m_session.GetGraphResources();
+	const ReferencePathTracerUniformData& uniformData = m_session.GetUniformData();
+	if (m_rayTracingScene.GetExecutionFrontend() != RayTracingExecutionFrontend::None)
 	{
 		AddRayTracingMaterialPass<ReferencePathTracerInlineCS, ReferencePathTracerRGS>(
 		    builder,
 		    "ReferencePathTracer.SurfaceTransportReference",
-		    rayTracingScene,
-		    ComputeDispatchDesc{MathUtils::DivideRoundUp(extent.Width, 8u), MathUtils::DivideRoundUp(workRowsPerDispatch, 8u), 1u},
-		    RayTracingDispatchDimensions{.Width = extent.Width, .Height = workRowsPerDispatch, .Depth = 1u},
+		    m_rayTracingScene,
+		    ComputeDispatchDesc{
+		        MathUtils::DivideRoundUp(extent.Width, 8u),
+		        MathUtils::DivideRoundUp(ReferencePathTracerSession::WorkRowsPerDispatch, 8u),
+		        1u},
+		    RayTracingDispatchDimensions{.Width = extent.Width, .Height = ReferencePathTracerSession::WorkRowsPerDispatch, .Depth = 1u},
 		    [&]<typename TShader>() -> auto&
 		    { return BuildReferencePathTracerParameters<TShader>(builder, resources, graphResources, uniformData); });
 	}

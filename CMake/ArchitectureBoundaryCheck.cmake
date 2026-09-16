@@ -183,6 +183,139 @@ function(sparkle_boundary_scan_file absolute_path)
                 "${_line}")
         endif()
 
+        if(NOT _relative_path STREQUAL "Engine/Renderer/Private/Host/RendererHost.cpp" AND
+           _line MATCHES "(make_unique<FramePipeline>|new[ \t]+FramePipeline)")
+            sparkle_boundary_append_failure(
+                "RENDERER_FRAME_PIPELINE_CONSTRUCTION_REMAINS_HOST_OWNED"
+                "${_relative_path}"
+                "${_line_number}"
+                "RendererHost is the sole composition point for FramePipeline implementation dependencies."
+                "${_line}")
+        endif()
+
+        if(_relative_path STREQUAL "Engine/Renderer/Private/Frame/FramePipeline.h" AND
+           _line MATCHES "#include[^\n]*Providers/RendererImageProviderStack[.]h")
+            sparkle_boundary_append_failure(
+                "RENDERER_FRAME_HEADER_NO_PROVIDER_IMPLEMENTATION"
+                "${_relative_path}"
+                "${_line_number}"
+                "FramePipeline stores the focused provider graph key and an incomplete provider owner, not the provider implementation header."
+                "${_line}")
+        endif()
+
+        if(_relative_path MATCHES "^Engine/Renderer/Private/Frame/FramePipeline[.](cpp|h)$" AND
+           _line MATCHES "(make_unique<RenderViewBuilder>|unique_ptr<RenderViewBuilder>|m_renderViewBuilder)")
+            sparkle_boundary_append_failure(
+                "RENDERER_STATELESS_VIEW_BUILD_HAS_NO_FAKE_LIFETIME"
+                "${_relative_path}"
+                "${_line_number}"
+                "RenderView construction is stateless and remains a direct View operation rather than a heap-owned pipeline subsystem."
+                "${_line}")
+        endif()
+
+        if(NOT _relative_path MATCHES "^Engine/Renderer/Private/Host/Renderer(BackendOwner|Host)[.](cpp|h)$" AND
+           _line MATCHES "#include[^\n]*Host/RendererBackendOwner[.]h")
+            sparkle_boundary_append_failure(
+                "RENDERER_BACKEND_OWNER_REMAINS_HOST_PRIVATE"
+                "${_relative_path}"
+                "${_line_number}"
+                "RendererBackendOwner is a RendererHost implementation detail and may not become a parallel backend access route."
+                "${_line}")
+        endif()
+
+        if(_relative_path MATCHES "^Engine/Renderer/Private/Concurrency/Coordinator/RendererExecutionContext[.](cpp|h)$" AND
+           _line MATCHES "#include[^\n]*\"(Diagnostics|Meshes|Pipeline|Providers|Scene|Textures|View)/")
+            sparkle_boundary_append_failure(
+                "RENDERER_EXECUTION_CONTEXT_REMAINS_ORCHESTRATION_ONLY"
+                "${_relative_path}"
+                "${_line_number}"
+                "RendererExecutionContext may coordinate RendererHost and FramePipeline but must not reach into their subsystem implementations."
+                "${_line}")
+        endif()
+
+        if(_relative_path MATCHES "^Engine/Renderer/Private/Concurrency/Coordinator/RendererExecutionContext[.](cpp|h)$" AND
+           _line MATCHES "(RenderFrameReadyCommand|RenderThreadCommandPayload|RenderThreadCommand[.]h)")
+            sparkle_boundary_append_failure(
+                "RENDERER_EXECUTION_CONTEXT_NO_THREAD_MAILBOX_ENVELOPE"
+                "${_relative_path}"
+                "${_line_number}"
+                "RendererExecutionContext consumes executable renderer controls, not coordinator-only frame-ready mailbox commands."
+                "${_line}")
+        endif()
+
+        if(_relative_path MATCHES "^Engine/Renderer/Private/Host/RendererHost[.](cpp|h)$" AND
+           _line MATCHES "#include[^\n]*\"(Meshes|Providers|Scene|Textures|View)/")
+            sparkle_boundary_append_failure(
+                "RENDERER_HOST_REMAINS_BACKEND_RUNTIME_OWNER"
+                "${_relative_path}"
+                "${_line_number}"
+                "RendererHost owns backend/runtime composition; FramePipeline owns its Scene, View, cache, provider, capture, and feature systems."
+                "${_line}")
+        endif()
+
+        if(_relative_path STREQUAL "Engine/Renderer/Private/Host/RendererHost.h" AND
+           _line MATCHES "Get(DeviceServices|RenderPassRuntimeCache|MemoryMonitor|GpuMeshCache|TextureCache|RenderScenePreparation|RenderViewBuilder|RenderViewPreparation|RenderViewState|RenderScene|ImageProviders|TaskExecutor)[ \t]*[(]")
+            sparkle_boundary_append_failure(
+                "RENDERER_HOST_NO_SERVICE_BAG_API"
+                "${_relative_path}"
+                "${_line_number}"
+                "RendererHost must compose subsystems and expose semantic operations, not become a service-locator API."
+                "${_line}")
+        endif()
+
+        if(_relative_path STREQUAL "Engine/Renderer/Private/Frame/Graph/ExecuteRenderFrameGraph.h" AND
+           _line MATCHES "(PreparedRenderScene|RenderFrameIdentity|RenderFrameTime|RenderRayTracingFrameBindings|RenderView)")
+            sparkle_boundary_append_failure(
+                "RENDERER_FRAME_EXECUTION_ACCEPTS_CANONICAL_FRAME"
+                "${_relative_path}"
+                "${_line_number}"
+                "Frame execution consumes the canonical RenderFrame instead of a parallel list of its components."
+                "${_line}")
+        endif()
+
+        if(_relative_path STREQUAL "Engine/Renderer/Public/Viewport/ViewportContracts.h" AND
+           _line MATCHES "(RhiBackendApi|RayTracingExecutionFrontend|ViewportRenderProgressRoute)")
+            sparkle_boundary_append_failure(
+                "RENDERER_VIEWPORT_PROGRESS_NO_EXECUTION_DIAGNOSTICS"
+                "${_relative_path}"
+                "${_line_number}"
+                "The public viewport product reports actionable work state, not private RHI backend or ray-tracing frontend diagnostics."
+                "${_line}")
+        endif()
+
+        if(_relative_path MATCHES "^Engine/Renderer/Private/Passes/Lighting/ReferencePathTracer/" AND
+           NOT _relative_path MATCHES "ReferencePathTracer(Resources|Session)[.](cpp|h)$" AND
+           _line MATCHES "ReferencePathTracerResources[ \t]*[&*]")
+            sparkle_boundary_append_failure(
+                "REFERENCE_PATH_TRACER_SESSION_OWNS_ACCUMULATOR_RESOURCES"
+                "${_relative_path}"
+                "${_line_number}"
+                "Accumulator resources belong to the Reference session lifetime and must not be threaded through sibling feature functions."
+                "${_line}")
+        endif()
+
+        if(NOT _relative_path MATCHES "^Engine/Renderer/Private/(Frame/FramePipeline[.]cpp|Frame/Graph/BuildRenderFrameGraph[.]cpp|Passes/Lighting/ReferencePathTracer/)" AND
+           NOT _relative_path STREQUAL "Engine/Renderer/ShaderRegistrations/ReferencePathTracerShaders.cpp" AND
+           _line MATCHES "#include[^\n]*Passes/Lighting/ReferencePathTracer/")
+            sparkle_boundary_append_failure(
+                "REFERENCE_PATH_TRACER_CPP_CAPSULE"
+                "${_relative_path}"
+                "${_line_number}"
+                "Reference Path Tracer implementation headers remain inside the feature, its two frame integration sites, and shader registration."
+                "${_line}")
+        endif()
+
+        if(_relative_path MATCHES "^Engine/Renderer/Private/" AND
+           NOT _relative_path MATCHES "^Engine/Renderer/Private/(Frame/FramePipelineGraph[.]cpp|Frame/Graph/BuildRenderFrameGraph[.]cpp|Passes/Lighting/ReferencePathTracer/)" AND
+           _line MATCHES "RenderViewMode::ReferencePathTracer")
+            sparkle_boundary_append_failure(
+                "REFERENCE_PATH_TRACER_SELECTOR_HOOK_BUDGET"
+                "${_relative_path}"
+                "${_line_number}"
+                "The Reference selector is read only for provider topology, the alternate middle branch, and feature-local lifecycle state."
+                "${_line}")
+        endif()
+
         if((_relative_path MATCHES "^Engine/(Renderer|Editor)/" OR
             _relative_path MATCHES "^Engine/GameFramework/Public/") AND
            _line MATCHES "#include[^\n]*(World/ECS|GameFramework/Private/World)")

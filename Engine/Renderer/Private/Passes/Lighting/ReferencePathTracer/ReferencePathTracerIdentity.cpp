@@ -3,7 +3,7 @@
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerIdentity.h"
 
 #include "Core/Public/Hash/HashUtils.h"
-#include "Frame/RenderFrameIdentity.h"
+#include "Frame/RenderFrame.h"
 #include "Passes/Lighting/LightingSceneState.h"
 #include "Passes/Lighting/LightingStateHash.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
@@ -39,13 +39,12 @@ ReferencePathTracerIdentityComponent ReferencePathTracerIdentity::FindFirstDiffe
 }
 
 ReferencePathTracerIdentity BuildReferencePathTracerIdentity(
-    const RenderView& view,
-    const PreparedRenderScene& scene,
-    const RenderFrameIdentity& frame,
-    std::uint64_t sceneGeneration,
+    const RenderFrame& frame,
     RayTracingExecutionFrontend executionFrontend,
     ERhiBackendApi backendApi) noexcept
 {
+	const RenderView& view = frame.View;
+	const PreparedRenderScene& scene = frame.PreparedScene;
 	ReferencePathTracerIdentity identity;
 	std::uint64_t hash = Hash::kFnv64OffsetBasis;
 	hash = Hash::ContinueFnv1a64Value(hash, view.viewportId);
@@ -68,7 +67,7 @@ ReferencePathTracerIdentity BuildReferencePathTracerIdentity(
 
 	const LightingSceneStateIdentity sceneIdentity = BuildLightingSceneStateIdentity(scene);
 	hash = Hash::kFnv64OffsetBasis;
-	hash = Hash::ContinueFnv1a64Value(hash, sceneGeneration);
+	hash = Hash::ContinueFnv1a64Value(hash, frame.Identity.SceneGeneration);
 	hash = Hash::ContinueFnv1a64Value(hash, scene.structuralRevision);
 	hash = Hash::ContinueFnv1a64Value(hash, sceneIdentity.Geometry);
 	identity.Components[GeometryComponent] = Hash::FinalizeFnv1a64(hash);
@@ -78,7 +77,7 @@ ReferencePathTracerIdentity BuildReferencePathTracerIdentity(
 	identity.Components[EnvironmentComponent] = sceneIdentity.Environment;
 
 	hash = Hash::kFnv64OffsetBasis;
-	hash = Hash::ContinueFnv1a64Value(hash, frame.ShaderGeneration);
+	hash = Hash::ContinueFnv1a64Value(hash, frame.Identity.ShaderGeneration);
 	identity.Components[ShaderComponent] = Hash::FinalizeFnv1a64(hash);
 	hash = Hash::kFnv64OffsetBasis;
 	hash = Hash::ContinueFnv1a64Value(hash, executionFrontend);

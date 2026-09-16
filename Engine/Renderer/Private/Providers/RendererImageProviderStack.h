@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Providers/ImageProviderGraphKey.h"
 #include "Providers/ImageProviderPipeline.h"
 #include "Viewport/ViewportContracts.h"
 #include "RHI/Public/Commands/RhiQueue.h"
@@ -13,14 +14,6 @@ class RenderDeviceServices;
 class RenderHardwareInterface;
 class IUpscalerProvider;
 struct ImageProviderFrameInput;
-
-struct ImageProviderGraphKey final
-{
-	std::uint32_t UpscalerProvider = 0;
-	std::uint32_t RayReconstructionMode = 0;
-
-	bool operator==(const ImageProviderGraphKey&) const noexcept = default;
-};
 
 class RendererImageProviderStack final
 {

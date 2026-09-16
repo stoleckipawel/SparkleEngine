@@ -1,17 +1,21 @@
 #pragma once
 
-#include "Concurrency/Control/RenderControlCommand.h"
-#include "Concurrency/FrameQueue/RenderExecutionRequest.h"
+#include "Concurrency/Control/RendererExecutionControl.h"
 #include "Core/Public/Threading/ThreadOwnership.h"
 
+#include <cstdint>
 #include <memory>
+#include <vector>
 
 class FramePipeline;
+class RenderCoordinator;
 class RendererHost;
-class RhiImGuiRenderer;
 class Window;
 struct RendererBackendConfiguration;
 struct RendererExecutionConfig;
+struct RenderExecutionRequest;
+struct ViewportCaptureReadback;
+struct ViewportRenderProducts;
 
 class RendererExecutionContext final
 {
@@ -22,15 +26,15 @@ public:
 	    const RendererExecutionConfig& executionConfig);
 	~RendererExecutionContext() noexcept;
 
-	void ExecuteFrame(RenderExecutionRequest request) noexcept;
-	void ExecuteControl(RenderControlPayload payload) noexcept;
-
-	RendererHost& GetRendererHost() noexcept;
-	const RendererHost& GetRendererHost() const noexcept;
-	FramePipeline& GetPipeline() noexcept;
-	const FramePipeline& GetPipeline() const noexcept;
-
 private:
+	friend class RenderCoordinator;
+
+	void ExecuteFrame(RenderExecutionRequest request) noexcept;
+	void ExecuteControl(RendererExecutionControl control) noexcept;
+
+	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept;
+	std::vector<ViewportCaptureReadback> TakeCompletedViewportCaptures();
+	std::uint64_t GetShaderGeneration() const noexcept;
 	void CompleteDiagnostics(const RenderDiagnosticsCommand& command);
 	void SettleRendererBeforeDestruction() noexcept;
 

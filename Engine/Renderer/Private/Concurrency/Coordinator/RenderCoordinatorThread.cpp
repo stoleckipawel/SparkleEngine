@@ -27,7 +27,7 @@ void RenderCoordinator::InitializeSerial()
 void RenderCoordinator::InitializeThreaded()
 {
 	m_frameQueue = std::make_unique<RenderFrameQueue>(m_config.GetFrameQueueCapacity());
-	m_controlQueue = std::make_unique<RenderControlCommandQueue>(RenderControlCapacity);
+	m_threadCommandQueue = std::make_unique<RenderThreadCommandQueue>(RenderThreadCommandCapacity);
 	StartRenderThread();
 	if (!WaitForRenderThreadStart())
 	{
@@ -75,9 +75,10 @@ void RenderCoordinator::RenderThreadMain()
 		m_startedCondition.notify_one();
 		PublishReadState();
 
-		while (std::optional<RenderControlCommand> command = m_controlQueue->WaitPop())
+		while (std::optional<RenderThreadCommand> command = m_threadCommandQueue->WaitPop())
 		{
-			const bool shutdown = std::holds_alternative<RenderShutdownCommand>(command->Payload);
+			const RendererExecutionControl* control = std::get_if<RendererExecutionControl>(&command->Payload);
+			const bool shutdown = control != nullptr && std::holds_alternative<RenderShutdownCommand>(*control);
 			ProcessThreadedCommand(std::move(*command));
 			if (shutdown)
 			{
@@ -103,24 +104,24 @@ void RenderCoordinator::RenderThreadMain()
 	m_context.reset();
 }
 
-void RenderCoordinator::ProcessThreadedCommand(RenderControlCommand command)
+void RenderCoordinator::ProcessThreadedCommand(RenderThreadCommand command)
 {
-	if (command.SequenceNumber <= m_lastConsumedControlSequence)
+	if (command.SequenceNumber <= m_lastConsumedThreadCommandSequence)
 	{
 		Diagnostics::Fatal(
 		    g_renderCoordinatorLogger,
 		    __FILE__,
 		    __LINE__,
-		    "Render-control command sequence was consumed more than once or out of order.");
+		    "Render-thread command sequence was consumed more than once or out of order.");
 	}
-	m_lastConsumedControlSequence = command.SequenceNumber;
+	m_lastConsumedThreadCommandSequence = command.SequenceNumber;
 	if (const auto* frame = std::get_if<RenderFrameReadyCommand>(&command.Payload))
 	{
 		ExecuteThreadedFrame(frame->Ticket);
 	}
 	else
 	{
-		m_context->ExecuteControl(std::move(command.Payload));
+		m_context->ExecuteControl(std::move(std::get<RendererExecutionControl>(command.Payload)));
 		PublishReadState();
 	}
 }
@@ -146,14 +147,19 @@ void RenderCoordinator::ExecuteThreadedFrame(RenderFrameQueueTicket ticket)
 
 void RenderCoordinator::SettleAbandonedWork() noexcept
 {
-	m_controlQueue->Close();
-	for (RenderControlCommand& command : m_controlQueue->Drain())
+	m_threadCommandQueue->Close();
+	for (RenderThreadCommand& command : m_threadCommandQueue->Drain())
 	{
-		if (auto* reloadShaders = std::get_if<RenderReloadShadersCommand>(&command.Payload))
+		RendererExecutionControl* control = std::get_if<RendererExecutionControl>(&command.Payload);
+		if (control == nullptr)
+		{
+			continue;
+		}
+		if (auto* reloadShaders = std::get_if<RenderReloadShadersCommand>(control))
 		{
 			reloadShaders->Completion->Cancel();
 		}
-		else if (auto* diagnostics = std::get_if<RenderDiagnosticsCommand>(&command.Payload))
+		else if (auto* diagnostics = std::get_if<RenderDiagnosticsCommand>(control))
 		{
 			diagnostics->Completion->Cancel();
 		}

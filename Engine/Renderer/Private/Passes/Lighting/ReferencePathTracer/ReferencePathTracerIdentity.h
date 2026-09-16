@@ -7,9 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 
-struct PreparedRenderScene;
-struct RenderFrameIdentity;
-struct RenderView;
+struct RenderFrame;
 
 enum class ReferencePathTracerIdentityComponent : std::uint8_t
 {
@@ -37,9 +35,6 @@ struct ReferencePathTracerIdentity final
 };
 
 ReferencePathTracerIdentity BuildReferencePathTracerIdentity(
-    const RenderView& view,
-    const PreparedRenderScene& scene,
-    const RenderFrameIdentity& frame,
-    std::uint64_t sceneGeneration,
+    const RenderFrame& frame,
     RayTracingExecutionFrontend executionFrontend,
     ERhiBackendApi backendApi) noexcept;

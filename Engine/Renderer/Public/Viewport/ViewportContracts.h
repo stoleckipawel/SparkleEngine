@@ -4,7 +4,6 @@
 #include "../RendererAPI.h"
 #include "../Settings/EngineRenderingDisplayTypes.h"
 #include "RenderViewMode.h"
-#include "RHI/Public/Core/RhiBackendApi.h"
 #include "RHI/Public/Formats/PixelFormat.h"
 
 #include <cstdint>
@@ -210,19 +209,10 @@ enum class ViewportRenderProgressReason : std::uint8_t
 	SessionCapacity,
 };
 
-enum class ViewportRenderProgressRoute : std::uint8_t
-{
-	None = 0,
-	InlineRayTracing,
-	PipelineRayTracing,
-};
-
 struct SPARKLE_RENDERER_API ViewportRenderProgress final
 {
 	ViewportRenderProgressState State = ViewportRenderProgressState::None;
 	ViewportRenderProgressReason Reason = ViewportRenderProgressReason::None;
-	ViewportRenderProgressRoute ActiveRoute = ViewportRenderProgressRoute::None;
-	ERhiBackendApi BackendApi = ERhiBackendApi::Unknown;
 	std::uint64_t CompletedWork = 0;
 	std::uint64_t TargetWork = 0;
 	std::uint64_t DiscardedWork = 0;

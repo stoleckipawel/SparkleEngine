@@ -4,6 +4,7 @@
 #include <memory>
 
 class RenderDeviceServices;
+class RendererHost;
 class Window;
 
 // Owns the RenderThread-affine device services. Process-facing integration
@@ -19,9 +20,10 @@ public:
 	RendererBackendOwner(RendererBackendOwner&&) = delete;
 	RendererBackendOwner& operator=(RendererBackendOwner&&) = delete;
 
-	RenderDeviceServices& GetDeviceServices() noexcept { return *m_deviceServices; }
-	const RenderDeviceServices& GetDeviceServices() const noexcept { return *m_deviceServices; }
-
 private:
+	friend class RendererHost;
+
+	RenderDeviceServices& GetDeviceServices() noexcept { return *m_deviceServices; }
+
 	std::unique_ptr<RenderDeviceServices> m_deviceServices;
 };

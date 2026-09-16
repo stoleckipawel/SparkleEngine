@@ -10,6 +10,7 @@ class FrameGraph;
 class FrameGraphBuilder;
 class RendererMemoryMonitor;
 class RenderDeviceServices;
+class ReferencePathTracerSession;
 
 struct ReferencePathTracerGraphResources final
 {
@@ -21,7 +22,9 @@ struct ReferencePathTracerGraphResources final
 
 class ReferencePathTracerResources final
 {
-public:
+private:
+	friend class ReferencePathTracerSession;
+
 	ReferencePathTracerResources(RenderDeviceServices& deviceServices, RendererMemoryMonitor& memoryMonitor) noexcept;
 	~ReferencePathTracerResources() noexcept;
 
@@ -37,8 +40,6 @@ public:
 	bool IsAllocated() const noexcept;
 
 	const ReferencePathTracerGraphResources& GetGraphResources() const noexcept { return m_graphResources; }
-
-private:
 	struct Allocation final
 	{
 		RhiOwnedResourceHandle WorkingMean = {};

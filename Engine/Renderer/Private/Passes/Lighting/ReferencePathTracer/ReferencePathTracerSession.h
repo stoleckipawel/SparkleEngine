@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ReferencePathTracerIdentity.h"
+#include "ReferencePathTracerResources.h"
 #include "ReferencePathTracerUniformData.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "RayTracing/RayTracingExecutionFrontend.h"
@@ -9,34 +10,36 @@
 #include <chrono>
 #include <cstdint>
 
-class ReferencePathTracerResources;
+class ReferencePathTracer;
+class FrameGraph;
+class FrameGraphBuilder;
+class RendererMemoryMonitor;
 class RenderDeviceServices;
 struct PreparedRenderScene;
-struct RenderFrameIdentity;
+struct RenderFrame;
 struct RenderView;
 
 class ReferencePathTracerSession final
 {
-public:
+private:
+	friend class ReferencePathTracer;
+
 	static constexpr std::uint32_t WorkRowsPerDispatch = 32u;
 
-	explicit ReferencePathTracerSession(RenderDeviceServices& deviceServices) noexcept;
+	ReferencePathTracerSession(RenderDeviceServices& deviceServices, RendererMemoryMonitor& memoryMonitor) noexcept;
 
 	ViewportRenderProgress Update(
-	    const ViewportRenderRequest& request,
-	    const RenderView& view,
-	    const PreparedRenderScene& scene,
-	    const RenderFrameIdentity& frame,
-	    std::uint64_t sceneGeneration,
-	    RayTracingExecutionFrontend executionFrontend,
-	    ReferencePathTracerResources& resources) noexcept;
-	void RecordSubmission(RhiSubmissionToken token, ReferencePathTracerResources& resources) noexcept;
+	    const RenderFrame& frame,
+	    ViewportRenderAction action,
+	    std::uint64_t actionSequence,
+	    RayTracingExecutionFrontend executionFrontend) noexcept;
+	void ReserveGraphResources(FrameGraphBuilder& builder, RenderViewportExtent extent);
+	const ReferencePathTracerGraphResources& GetGraphResources() const noexcept { return m_resources.GetGraphResources(); }
+	bool BindResources(FrameGraph& frameGraph) const noexcept;
+	void RecordSubmission(RhiSubmissionToken token) noexcept;
 
-	bool IsSelected() const noexcept { return m_selected; }
-	bool CanBindResources() const noexcept { return m_unavailableReason == ViewportRenderProgressReason::None; }
 	const ReferencePathTracerUniformData& GetUniformData() const noexcept { return m_uniformData; }
 
-private:
 	static constexpr std::uint32_t TargetSampleCount = 4096u;
 
 	struct PendingCommit final
@@ -57,24 +60,18 @@ private:
 	    RenderViewportExtent extent,
 	    ViewportRenderProgressReason reason,
 	    std::uint32_t discardedSamples) noexcept;
-	void UpdateIdentity(
-	    const RenderView& view,
-	    const PreparedRenderScene& scene,
-	    const RenderFrameIdentity& frame,
-	    std::uint64_t sceneGeneration,
-	    RayTracingExecutionFrontend executionFrontend,
-	    ReferencePathTracerResources& resources) noexcept;
+	void UpdateIdentity(const RenderFrame& frame, RayTracingExecutionFrontend executionFrontend) noexcept;
 	void CompletePendingCommit() noexcept;
 	void PrepareWork(RenderViewportExtent extent) noexcept;
-	void ApplyAction(const ViewportRenderRequest& request, const RenderView& view, ReferencePathTracerResources& resources) noexcept;
-	void Suspend(ReferencePathTracerResources& resources) noexcept;
-	void FinalizeSuspension(ReferencePathTracerResources& resources) noexcept;
+	void ApplyAction(ViewportRenderAction action, std::uint64_t actionSequence, const RenderView& view) noexcept;
+	void Suspend() noexcept;
+	void FinalizeSuspension() noexcept;
 	ViewportRenderProgress GetProgress() const noexcept;
 
 	RenderDeviceServices& m_deviceServices;
+	ReferencePathTracerResources m_resources;
 	ReferencePathTracerUniformData m_uniformData = {};
 	ReferencePathTracerIdentity m_identity = {};
-	RayTracingExecutionFrontend m_executionFrontend = RayTracingExecutionFrontend::None;
 	PendingCommit m_pendingCommit = {};
 	std::uint64_t m_executionGeneration = 0u;
 	std::uint64_t m_ownerViewportId = 0u;

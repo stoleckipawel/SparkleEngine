@@ -52,7 +52,7 @@ Use the vocabulary defined by the multithreading architecture:
 - `TaskExecution`, `TaskExecutionContext`, `TaskExecutor`;
 - `TaskScope`, `TaskEvent`, `ParallelFor`, `TaskLane`;
 - `GameThread`, `EditorThread`, `RenderThread`;
-- `RenderCoordinator`, `RenderFrameQueue`, `RenderControlCommandQueue`;
+- `RenderCoordinator`, `RenderFrameQueue`, `RenderThreadCommandQueue`;
 - `RenderCommandContext`;
 - backend-private `D3D12CommandRecordingContext` and `VulkanCommandRecordingContext`;
 - `RhiCommandRecordingLease`, `ERhiQueueType`, `RhiSubmissionToken`;

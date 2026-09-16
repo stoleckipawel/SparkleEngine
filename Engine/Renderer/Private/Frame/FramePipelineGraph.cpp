@@ -7,7 +7,6 @@
 #include "FrameGraph/FrameGraph.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "Pipeline/RenderPassRuntimeCache.h"
-#include "Passes/Lighting/ReferencePathTracer/ReferencePathTracer.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Presentation/RhiPresentationService.h"
@@ -60,7 +59,7 @@ RenderFrameGraphSettings FramePipeline::ResolveFrameGraphSettings() const noexce
 	    ? ImageProviderPipeline::NativeResolution
 	    : ImageProviderPipeline::RayReconstruction;
 	return RenderFrameGraphSettings{
-	    .RenderExtent = m_imageProviders.ResolveRenderExtent(outputExtent, imagePipeline),
+	    .RenderExtent = m_imageProviders->ResolveRenderExtent(outputExtent, imagePipeline),
 	    .OutputExtent = outputExtent,
 	    .ImagePipeline = imagePipeline,
 	    .OutputFormat = m_deviceServices.GetRenderHardwareInterface().GetPresentationService().GetPresentColorFormat(),
@@ -81,7 +80,7 @@ void FramePipeline::InitializeFrameGraph() noexcept
 
 void FramePipeline::InitializeFrameGraph(const RenderFrameGraphSettings& settings) noexcept
 {
-	RenderRayTracingScene& rayTracingScene = m_renderScene.GetRayTracingScene();
+	RenderRayTracingScene& rayTracingScene = m_renderScene->GetRayTracingScene();
 	rayTracingScene.BeginGraphBuild();
 	auto frameGraph = std::make_unique<FrameGraph>(&m_deviceServices.GetRenderHardwareInterface(), &m_window);
 	FrameGraphBuilder builder(*frameGraph, m_renderPassRuntimeCache);
@@ -93,7 +92,7 @@ void FramePipeline::InitializeFrameGraph(const RenderFrameGraphSettings& setting
 	m_builtRayTracingGraphGeneration = rayTracingScene.GetGraphGeneration();
 	m_builtShaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration();
 	m_frameResources = resources;
-	m_imageProviderFrameGraphKey = m_imageProviders.GetFrameGraphKey();
+	m_imageProviderFrameGraphKey = m_imageProviders->GetFrameGraphKey();
 	m_frameGraph = std::move(frameGraph);
 	++m_graphTopologyGeneration;
 }
@@ -126,8 +125,8 @@ void FramePipeline::InvalidateViewHistory(RenderViewInvalidationReason reason) n
 	{
 		InvalidateFrameHistory(*m_frameGraph, m_frameResources.History);
 	}
-	m_renderViewState.Invalidate(reason);
-	m_imageProviders.ResetHistory();
+	m_renderViewState->Invalidate(reason);
+	m_imageProviders->ResetHistory();
 }
 
 void FramePipeline::ApplyPendingResize() noexcept
@@ -147,16 +146,16 @@ void FramePipeline::ApplyPendingResize() noexcept
 
 void FramePipeline::RefreshGraphForTopology() noexcept
 {
-	const ImageProviderGraphKey providerGraphKey = m_imageProviders.GetFrameGraphKey();
+	const ImageProviderGraphKey providerGraphKey = m_imageProviders->GetFrameGraphKey();
 	const bool providerChanged = providerGraphKey != m_imageProviderFrameGraphKey;
 	if (providerChanged)
 	{
-		m_imageProviders.Refresh();
+		m_imageProviders->Refresh();
 	}
 
 	const RenderFrameGraphSettings settings = ResolveFrameGraphSettings();
 	const GBufferAlgorithm gBufferAlgorithm = CVarGBufferAlgorithm.Get();
-	const std::uint64_t rayTracingGraphGeneration = m_renderScene.GetRayTracingScene().GetGraphGeneration();
+	const std::uint64_t rayTracingGraphGeneration = m_renderScene->GetRayTracingScene().GetGraphGeneration();
 	const std::uint64_t shaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration();
 	if (providerChanged || settings != m_frameGraphSettings || gBufferAlgorithm != m_builtGBufferAlgorithm
 	    || rayTracingGraphGeneration != m_builtRayTracingGraphGeneration || shaderGeneration != m_builtShaderGeneration)

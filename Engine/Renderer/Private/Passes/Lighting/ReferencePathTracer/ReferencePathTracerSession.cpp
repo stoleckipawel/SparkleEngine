@@ -2,6 +2,7 @@
 
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerSession.h"
 
+#include "Frame/RenderFrame.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerResources.h"
 #include "RHI/Public/Core/RhiCapabilities.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
@@ -12,8 +13,10 @@
 
 #include <algorithm>
 
-ReferencePathTracerSession::ReferencePathTracerSession(RenderDeviceServices& deviceServices) noexcept :
-    m_deviceServices(deviceServices)
+ReferencePathTracerSession::ReferencePathTracerSession(RenderDeviceServices& deviceServices, RendererMemoryMonitor& memoryMonitor) noexcept
+    :
+    m_deviceServices(deviceServices),
+    m_resources(deviceServices, memoryMonitor)
 {
 }
 
@@ -72,21 +75,12 @@ void ReferencePathTracerSession::BeginIdentity(
 	++m_executionGeneration;
 }
 
-void ReferencePathTracerSession::UpdateIdentity(
-    const RenderView& view,
-    const PreparedRenderScene& scene,
-    const RenderFrameIdentity& frame,
-    std::uint64_t sceneGeneration,
-    RayTracingExecutionFrontend executionFrontend,
-    ReferencePathTracerResources& resources) noexcept
+void ReferencePathTracerSession::UpdateIdentity(const RenderFrame& frame, RayTracingExecutionFrontend executionFrontend) noexcept
 {
-	const ReferencePathTracerIdentity identity = BuildReferencePathTracerIdentity(
-	    view,
-	    scene,
-	    frame,
-	    sceneGeneration,
-	    executionFrontend,
-	    m_deviceServices.GetCapabilities().BackendApi);
+	const RenderView& view = frame.View;
+	const PreparedRenderScene& scene = frame.PreparedScene;
+	const ReferencePathTracerIdentity identity =
+	    BuildReferencePathTracerIdentity(frame, executionFrontend, m_deviceServices.GetCapabilities().BackendApi);
 	if (m_hasIdentity && identity == m_identity)
 	{
 		return;
@@ -106,7 +100,7 @@ void ReferencePathTracerSession::UpdateIdentity(
 		m_pausePending = false;
 		m_retentionAvailable = false;
 		++m_executionGeneration;
-		resources.Release();
+		m_resources.Release();
 		m_identity = identity;
 		m_hasIdentity = true;
 		m_hasOwner = false;
@@ -114,7 +108,7 @@ void ReferencePathTracerSession::UpdateIdentity(
 		m_unavailableReason = availability;
 		return;
 	}
-	resources.Allocate(view.renderExtent);
+	m_resources.Allocate(view.renderExtent);
 	BeginIdentity(identity, view.renderExtent, reason, discardedSamples);
 }
 
@@ -163,22 +157,19 @@ void ReferencePathTracerSession::PrepareWork(RenderViewportExtent extent) noexce
 	m_workPrepared = true;
 }
 
-void ReferencePathTracerSession::ApplyAction(
-    const ViewportRenderRequest& request,
-    const RenderView& view,
-    ReferencePathTracerResources& resources) noexcept
+void ReferencePathTracerSession::ApplyAction(ViewportRenderAction action, std::uint64_t actionSequence, const RenderView& view) noexcept
 {
-	if (request.ViewportId == m_lastActionViewportId && request.RenderActionSequence == m_lastActionSequence)
+	if (view.viewportId == m_lastActionViewportId && actionSequence == m_lastActionSequence)
 	{
 		return;
 	}
-	m_lastActionViewportId = request.ViewportId;
-	m_lastActionSequence = request.RenderActionSequence;
+	m_lastActionViewportId = view.viewportId;
+	m_lastActionSequence = actionSequence;
 
-	switch (request.RenderAction)
+	switch (action)
 	{
 		case ViewportRenderAction::Pause:
-			if (m_unavailableReason == ViewportRenderProgressReason::None && m_hasIdentity && resources.CanRetain())
+			if (m_unavailableReason == ViewportRenderProgressReason::None && m_hasIdentity && m_resources.CanRetain())
 			{
 				m_workPrepared = false;
 				m_pausePending = static_cast<bool>(m_pendingCommit);
@@ -214,31 +205,28 @@ void ReferencePathTracerSession::ApplyAction(
 }
 
 ViewportRenderProgress ReferencePathTracerSession::Update(
-    const ViewportRenderRequest& request,
-    const RenderView& view,
-    const PreparedRenderScene& scene,
-    const RenderFrameIdentity& frame,
-    std::uint64_t sceneGeneration,
-    RayTracingExecutionFrontend executionFrontend,
-    ReferencePathTracerResources& resources) noexcept
+    const RenderFrame& frame,
+    ViewportRenderAction action,
+    std::uint64_t actionSequence,
+    RayTracingExecutionFrontend executionFrontend) noexcept
 {
-	m_executionFrontend = executionFrontend;
+	const RenderView& view = frame.View;
 	CompletePendingCommit();
-	const bool active = request.ViewMode == RenderViewMode::ReferencePathTracer;
+	const bool active = view.viewMode == RenderViewMode::ReferencePathTracer;
 	if (!active)
 	{
-		m_lastActionViewportId = request.ViewportId;
-		m_lastActionSequence = request.RenderActionSequence;
+		m_lastActionViewportId = view.viewportId;
+		m_lastActionSequence = actionSequence;
 		m_selected = false;
-		Suspend(resources);
+		Suspend();
 		return {};
 	}
 	m_selected = true;
-	ApplyAction(request, view, resources);
+	ApplyAction(action, actionSequence, view);
 	if (m_transferPending && m_transferViewportId == view.viewportId && !m_pendingCommit)
 	{
 		m_discardedSamples = m_committedSamples;
-		resources.Release();
+		m_resources.Release();
 		m_identity = {};
 		m_hasIdentity = false;
 		m_hasOwner = false;
@@ -261,7 +249,7 @@ ViewportRenderProgress ReferencePathTracerSession::Update(
 	}
 
 	const bool resumed = m_suspended && m_hasIdentity;
-	UpdateIdentity(view, scene, frame, sceneGeneration, executionFrontend, resources);
+	UpdateIdentity(frame, executionFrontend);
 	m_suspended = false;
 	m_suspensionPending = false;
 	if (m_unavailableReason != ViewportRenderProgressReason::None)
@@ -275,7 +263,7 @@ ViewportRenderProgress ReferencePathTracerSession::Update(
 		m_lastReason = ViewportRenderProgressReason::Resumed;
 		m_lastCommitTime = std::chrono::steady_clock::now();
 	}
-	m_retentionAvailable = resources.CanRetain();
+	m_retentionAvailable = m_resources.CanRetain();
 
 	m_uniformData = {};
 	if (m_clearDisplay)
@@ -289,11 +277,21 @@ ViewportRenderProgress ReferencePathTracerSession::Update(
 	return GetProgress();
 }
 
-void ReferencePathTracerSession::RecordSubmission(RhiSubmissionToken token, ReferencePathTracerResources& resources) noexcept
+void ReferencePathTracerSession::ReserveGraphResources(FrameGraphBuilder& builder, RenderViewportExtent extent)
 {
-	if (m_selected && resources.IsAllocated())
+	m_resources.ReserveGraphResources(builder, extent);
+}
+
+bool ReferencePathTracerSession::BindResources(FrameGraph& frameGraph) const noexcept
+{
+	return !m_selected || (m_unavailableReason == ViewportRenderProgressReason::None && m_resources.Bind(frameGraph));
+}
+
+void ReferencePathTracerSession::RecordSubmission(RhiSubmissionToken token) noexcept
+{
+	if (m_selected && m_resources.IsAllocated())
 	{
-		resources.RecordUse();
+		m_resources.RecordUse();
 	}
 	if (m_workPrepared)
 	{
@@ -314,27 +312,27 @@ void ReferencePathTracerSession::RecordSubmission(RhiSubmissionToken token, Refe
 	m_uniformData = {};
 }
 
-void ReferencePathTracerSession::Suspend(ReferencePathTracerResources& resources) noexcept
+void ReferencePathTracerSession::Suspend() noexcept
 {
 	if (m_suspended)
 	{
 		if (m_suspensionPending && !m_pendingCommit)
 		{
-			FinalizeSuspension(resources);
+			FinalizeSuspension();
 		}
-		else if (m_hasIdentity && resources.IsAllocated() && !resources.CanRetain())
+		else if (m_hasIdentity && m_resources.IsAllocated() && !m_resources.CanRetain())
 		{
 			m_discardedSamples = m_committedSamples;
 			m_committedSamples = 0u;
 			m_lastReason = ViewportRenderProgressReason::RetentionReleased;
-			resources.Release();
+			m_resources.Release();
 			m_hasIdentity = false;
 			m_hasOwner = false;
 			m_retentionAvailable = false;
 		}
 		return;
 	}
-	if (!m_hasIdentity && !resources.IsAllocated())
+	if (!m_hasIdentity && !m_resources.IsAllocated())
 	{
 		m_suspended = true;
 		return;
@@ -347,19 +345,19 @@ void ReferencePathTracerSession::Suspend(ReferencePathTracerResources& resources
 		m_suspensionPending = true;
 		return;
 	}
-	FinalizeSuspension(resources);
+	FinalizeSuspension();
 }
 
-void ReferencePathTracerSession::FinalizeSuspension(ReferencePathTracerResources& resources) noexcept
+void ReferencePathTracerSession::FinalizeSuspension() noexcept
 {
 	m_suspensionPending = false;
 	++m_executionGeneration;
-	if (!resources.CanRetain())
+	if (!m_resources.CanRetain())
 	{
 		m_discardedSamples = m_committedSamples;
 		m_committedSamples = 0u;
 		m_lastReason = ViewportRenderProgressReason::RetentionReleased;
-		resources.Release();
+		m_resources.Release();
 		m_hasIdentity = false;
 		m_hasOwner = false;
 		m_retentionAvailable = false;
@@ -368,19 +366,6 @@ void ReferencePathTracerSession::FinalizeSuspension(ReferencePathTracerResources
 
 ViewportRenderProgress ReferencePathTracerSession::GetProgress() const noexcept
 {
-	const auto activeRoute = [](RayTracingExecutionFrontend frontend)
-	{
-		switch (frontend)
-		{
-			case RayTracingExecutionFrontend::Inline:
-				return ViewportRenderProgressRoute::InlineRayTracing;
-			case RayTracingExecutionFrontend::Pipeline:
-				return ViewportRenderProgressRoute::PipelineRayTracing;
-			case RayTracingExecutionFrontend::None:
-			default:
-				return ViewportRenderProgressRoute::None;
-		}
-	};
 	const ViewportRenderProgressState state = m_unavailableReason != ViewportRenderProgressReason::None
 	    ? ViewportRenderProgressState::Unavailable
 	    : (m_paused ? ViewportRenderProgressState::Paused
@@ -393,10 +378,6 @@ ViewportRenderProgress ReferencePathTracerSession::GetProgress() const noexcept
 	return ViewportRenderProgress{
 	    .State = state,
 	    .Reason = m_unavailableReason != ViewportRenderProgressReason::None ? m_unavailableReason : m_lastReason,
-	    .ActiveRoute = m_unavailableReason == ViewportRenderProgressReason::None ? activeRoute(m_executionFrontend)
-	                                                                             : ViewportRenderProgressRoute::None,
-	    .BackendApi = m_unavailableReason == ViewportRenderProgressReason::None ? m_deviceServices.GetCapabilities().BackendApi
-	                                                                            : ERhiBackendApi::Unknown,
 	    .CompletedWork = m_committedSamples,
 	    .TargetWork = TargetSampleCount,
 	    .DiscardedWork = m_discardedSamples,

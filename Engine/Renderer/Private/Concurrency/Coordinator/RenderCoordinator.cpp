@@ -2,8 +2,6 @@
 #include "Concurrency/Coordinator/RenderCoordinator.h"
 
 #include "Concurrency/Coordinator/RendererExecutionContext.h"
-#include "Frame/FramePipeline.h"
-#include "Settings/EngineRenderingSettingsRuntime.h"
 #include "Time/Timer.h"
 #include "Window/Window.h"
 
@@ -41,9 +39,9 @@ RenderCoordinator::~RenderCoordinator() noexcept
 		return;
 	}
 
-	SubmitControl(RenderShutdownCommand{});
+	SubmitThreadCommand(RendererExecutionControl{RenderShutdownCommand{}});
 	m_frameQueue->Close();
-	m_controlQueue->Close();
+	m_threadCommandQueue->Close();
 	if (m_renderThread.joinable())
 	{
 		m_renderThread.join();
@@ -70,25 +68,13 @@ void RenderCoordinator::StageUiRenderPacket(UiRenderPacket packet)
 void RenderCoordinator::SubmitRenderingSettings(EngineRenderingSettingsState settings)
 {
 	m_producerOwner.AssertAccess();
-	if (m_config.IsThreaded())
-	{
-		SubmitControl(RenderSettingsChangedCommand{settings});
-		return;
-	}
-	EngineRenderingSettingsRuntime::Apply(settings);
+	DispatchControl(RenderSettingsChangedCommand{std::move(settings)});
 }
 
 void RenderCoordinator::SubmitViewportRequest(ViewportRenderRequest request)
 {
 	m_producerOwner.AssertAccess();
-	if (m_config.IsThreaded())
-	{
-		SubmitControl(RenderViewportCommand{request});
-	}
-	else
-	{
-		GetSerialContext().GetPipeline().SubmitViewportRenderRequest(request);
-	}
+	DispatchControl(RenderViewportCommand{std::move(request)});
 }
 
 void RenderCoordinator::RenderFrame()
@@ -160,7 +146,7 @@ void RenderCoordinator::SubmitThreadedFrame()
 		Diagnostics::Fatal(g_renderCoordinatorLogger, __FILE__, __LINE__, "Render frame queue rejected its producer-owned writing ticket.");
 	}
 
-	SubmitControl(RenderFrameReadyCommand{*ticket});
+	SubmitThreadCommand(RenderFrameReadyCommand{*ticket});
 
 	if (m_config.RenderPipelineDepth == 0u)
 	{
@@ -180,7 +166,7 @@ ViewportRenderProducts RenderCoordinator::GetViewportRenderProducts() const
 	m_producerOwner.AssertAccess();
 	if (!m_config.IsThreaded())
 	{
-		return GetSerialContext().GetPipeline().GetViewportRenderProducts();
+		return GetSerialContext().GetViewportRenderProducts();
 	}
 
 	std::lock_guard lock(m_readStateMutex);
@@ -190,13 +176,9 @@ ViewportRenderProducts RenderCoordinator::GetViewportRenderProducts() const
 void RenderCoordinator::SubmitResize()
 {
 	const RenderResizeCommand command{{m_window->GetWidth(), m_window->GetHeight()}, m_window->IsMinimized()};
-	if (m_config.IsThreaded())
+	if (m_context)
 	{
-		SubmitControl(command);
-	}
-	else if (m_context)
-	{
-		m_context->GetPipeline().RequestResize(command.Extent, command.Minimized);
+		DispatchControl(command);
 	}
 }
 

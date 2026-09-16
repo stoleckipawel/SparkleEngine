@@ -1,19 +1,17 @@
 #pragma once
 
-#include "ReferencePathTracerResources.h"
 #include "ReferencePathTracerSession.h"
 
 #include <cstdint>
 
 class FrameGraph;
 class FrameGraphBuilder;
+class FramePipeline;
 class RendererMemoryMonitor;
 class RenderDeviceServices;
-struct PreparedRenderScene;
+struct RenderFrame;
 struct RenderFrameGraphResources;
 struct RenderFrameGraphSettings;
-struct RenderFrameIdentity;
-struct RenderView;
 class RenderRayTracingScene;
 
 class ReferencePathTracer final
@@ -27,18 +25,14 @@ public:
 	ReferencePathTracer(const ReferencePathTracer&) = delete;
 	ReferencePathTracer& operator=(const ReferencePathTracer&) = delete;
 
+private:
+	friend class FramePipeline;
+
 	void AddPasses(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings, RenderFrameGraphResources& resources);
-	ViewportRenderProgress Update(
-	    const ViewportRenderRequest& request,
-	    const RenderView& view,
-	    const PreparedRenderScene& scene,
-	    const RenderFrameIdentity& frame,
-	    std::uint64_t sceneGeneration) noexcept;
+	void AddGpuPasses(FrameGraphBuilder& builder, RenderViewportExtent extent, const RenderFrameGraphResources& resources);
+	ViewportRenderProgress Update(const RenderFrame& frame, ViewportRenderAction action, std::uint64_t actionSequence) noexcept;
 	bool BindResources(FrameGraph& frameGraph) const noexcept;
 	void RecordSubmission(RhiSubmissionToken token) noexcept;
-
-private:
 	RenderRayTracingScene& m_rayTracingScene;
-	ReferencePathTracerResources m_resources;
 	ReferencePathTracerSession m_session;
 };

@@ -77,8 +77,11 @@ flowchart TD
     World --> Extract[RenderFrameSubmissionExtractor]
     Extract --> Submission[Immutable RenderFrameSubmission]
     Submission --> Facade[Renderer facade and RenderCoordinator]
-    Facade --> Host[RendererHost and FramePipeline]
-    Host --> Frame[RenderScene, RenderView,<br/>FrameGraph, and feature passes]
+    Facade --> Context[RendererExecutionContext]
+    Context --> Host[RendererHost backend/runtime owner]
+    Context --> Pipeline[FramePipeline frame-system owner]
+    Host -. sole composition .-> Pipeline
+    Pipeline --> Frame[RenderScene, RenderView,<br/>FrameGraph, and feature passes]
     Frame --> Services[RenderDeviceServices and public RHI]
     Services --> D3D12[D3D12 backend]
     Services --> Vulkan[Vulkan backend]
@@ -86,7 +89,7 @@ flowchart TD
 
 `GameWorld` is gameplay/level authority. It evaluates systems and publishes a sequenced structural `RenderSceneDelta`, immutable per-frame dynamic data, resource tables, and `RenderViewInput` through `RenderFrameSubmission`; the Renderer never queries ECS storage directly.
 
-`RenderCoordinator` owns serial or render-thread submission, bounded frame/control queues, publication of read state, and shutdown settlement. `RendererHost` owns the renderer backend/service graph. `FramePipeline` accepts one monotonic submission, prepares scene/view/GPU state, executes the frame graph, submits the frame, and advances frame-in-flight state.
+`RenderCoordinator` owns serial or render-thread submission, the bounded frame queue and ordered render-thread command mailbox, publication of read state, and shutdown settlement. Both modes use the same typed renderer-control execution; the threaded mailbox's frame-ready command remains coordinator-only. `RendererExecutionContext` owns the execution-thread lifetime. `RendererHost` owns backend/runtime services and is the sole `FramePipeline` factory without becoming a service locator. `FramePipeline` owns its caches, persistent RenderScene, Scene/View preparation and state, providers, capture/UI integration, and frame features; it accepts one monotonic submission, prepares one canonical `RenderFrame`, executes the frame graph, submits the frame, and advances frame-in-flight state.
 
 `SparkleTasks` is the shared task topology/execution module used by GameFramework, Renderer, Application, and the cooking path. A subsystem must not introduce a competing general scheduler.
 
@@ -116,8 +119,10 @@ The old private `SceneData`, `Camera`, `FramePipeline`, and `Frame/Core` navigat
 
 ```mermaid
 flowchart TD
-    Coordinator[RenderCoordinator] --> Host[RendererHost]
-    Host --> Pipeline[Frame/FramePipeline]
+    Coordinator[RenderCoordinator] --> Context[RendererExecutionContext]
+    Context --> Host[RendererHost]
+    Context --> Pipeline[Frame/FramePipeline]
+    Host -. constructs .-> Pipeline
     Pipeline --> Scene[Scene preparation,<br/>GPU scene, and ray tracing]
     Pipeline --> View[RenderViewBuilder and<br/>view preparation]
     Scene --> Build[BuildRenderFrameGraph]
@@ -129,7 +134,7 @@ flowchart TD
     Execute --> Submit[RenderDeviceServices::SubmitFrame]
 ```
 
-The `FrameGraph` object is rebuilt when output/topology, provider selection, lighting/GBuffer selection, shader generation, or a used shader-table-plan generation changes. During each recorded frame, imported resources and typed parameters are applied, then the existing graph runs setup, compile, pass preparation, and execution. This is implemented source shape; its CPU cost still requires measurement before a caching change is justified.
+The `FrameGraph` object is rebuilt when output/topology, provider selection, lighting/GBuffer selection, shader generation, or a used shader-table-plan generation changes. During each recorded frame, imported resources and typed parameters are applied from the canonical `RenderFrame`, then the existing graph runs setup, compile, pass preparation, and execution. Scene/View identity is not reassembled as a parallel execution parameter list. This is implemented source shape; its CPU cost still requires measurement before a caching change is justified.
 
 ## Renderer Feature Map
 

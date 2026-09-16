@@ -1,15 +1,11 @@
 #include "PCH.h"
 #include "Concurrency/Coordinator/RendererExecutionContext.h"
 
+#include "Concurrency/FrameQueue/RenderExecutionRequest.h"
 #include "Core/Public/Diagnostics/Error.h"
-#include "Diagnostics/MeshDiagnosticsCollector.h"
-#include "Diagnostics/RendererMemoryMonitor.h"
 #include "Frame/FramePipeline.h"
 #include "Host/RendererBackendConfiguration.h"
 #include "Host/RendererHost.h"
-#include "Providers/RendererImageProviderStack.h"
-#include "Pipeline/RenderPassRuntimeCache.h"
-#include "RHI/Public/Device/RenderDeviceServices.h"
 #include "Renderer/Public/Concurrency/RendererExecutionConfig.h"
 #include "Settings/EngineRenderingSettingsRuntime.h"
 
@@ -18,25 +14,10 @@ RendererExecutionContext::RendererExecutionContext(
     const RendererBackendConfiguration& backendConfiguration,
     const RendererExecutionConfig& executionConfig)
 {
-	m_rendererHost = std::make_unique<RendererHost>(
-	    window,
-	    backendConfiguration,
+	m_rendererHost = std::make_unique<RendererHost>(window, backendConfiguration);
+	m_pipeline = m_rendererHost->CreateFramePipeline(
 	    *executionConfig.AssetTaskExecutor,
-	    *executionConfig.ApplicationTaskScope);
-	m_pipeline = std::make_unique<FramePipeline>(
-	    m_rendererHost->GetWindow(),
-	    m_rendererHost->GetDeviceServices(),
-	    m_rendererHost->GetRenderPassRuntimeCache(),
-	    m_rendererHost->GetMemoryMonitor(),
-	    m_rendererHost->GetGpuMeshCache(),
-	    m_rendererHost->GetTextureCache(),
-	    m_rendererHost->GetRenderScenePreparation(),
-	    m_rendererHost->GetRenderViewBuilder(),
-	    m_rendererHost->GetRenderViewPreparation(),
-	    m_rendererHost->GetRenderViewState(),
-	    m_rendererHost->GetRenderScene(),
-	    m_rendererHost->GetImageProviders(),
-	    m_rendererHost->GetTaskExecutor(),
+	    *executionConfig.ApplicationTaskScope,
 	    executionConfig.EnableUiRenderPackets);
 }
 
@@ -54,7 +35,7 @@ void RendererExecutionContext::ExecuteFrame(RenderExecutionRequest request) noex
 	m_pipeline->OnRender(std::move(request.Submission), request.Time, request.Ui);
 }
 
-void RendererExecutionContext::ExecuteControl(RenderControlPayload payload) noexcept
+void RendererExecutionContext::ExecuteControl(RendererExecutionControl control) noexcept
 {
 	m_owner.AssertAccess();
 	std::visit(
@@ -69,7 +50,7 @@ void RendererExecutionContext::ExecuteControl(RenderControlPayload payload) noex
 		    {
 			    try
 			    {
-				    m_rendererHost->GetRenderPassRuntimeCache().ReloadShaders();
+				    m_rendererHost->ReloadShaders();
 				    command.Completion->Complete(std::monostate{});
 			    }
 			    catch (const Diagnostics::Error& error)
@@ -81,42 +62,30 @@ void RendererExecutionContext::ExecuteControl(RenderControlPayload payload) noex
 			    CompleteDiagnostics(command);
 		    else if constexpr (std::is_same_v<TCommand, RenderCaptureCommand>)
 			    (void) m_pipeline->BeginViewportCapture(command.Id, command.Request);
-		    else if constexpr (std::is_same_v<TCommand, RenderRefreshProvidersCommand>)
-			    m_rendererHost->GetImageProviders().Refresh();
 		    else if constexpr (std::is_same_v<TCommand, RenderSettingsChangedCommand>)
 			    EngineRenderingSettingsRuntime::Apply(command.Settings);
 		    else if constexpr (std::is_same_v<TCommand, RenderShutdownCommand>)
 			    SettleRendererBeforeDestruction();
-		    else
-		    {
-			    // Frame-ready commands are consumed by RenderCoordinator.
-		    }
 	    },
-	    payload);
+	    control);
 }
 
-RendererHost& RendererExecutionContext::GetRendererHost() noexcept
+const ViewportRenderProducts& RendererExecutionContext::GetViewportRenderProducts() const noexcept
 {
 	m_owner.AssertAccess();
-	return *m_rendererHost;
+	return m_pipeline->GetViewportRenderProducts();
 }
 
-const RendererHost& RendererExecutionContext::GetRendererHost() const noexcept
+std::vector<ViewportCaptureReadback> RendererExecutionContext::TakeCompletedViewportCaptures()
 {
 	m_owner.AssertAccess();
-	return *m_rendererHost;
+	return m_pipeline->TakeCompletedViewportCaptures();
 }
 
-FramePipeline& RendererExecutionContext::GetPipeline() noexcept
+std::uint64_t RendererExecutionContext::GetShaderGeneration() const noexcept
 {
 	m_owner.AssertAccess();
-	return *m_pipeline;
-}
-
-const FramePipeline& RendererExecutionContext::GetPipeline() const noexcept
-{
-	m_owner.AssertAccess();
-	return *m_pipeline;
+	return m_rendererHost->GetShaderGeneration();
 }
 
 void RendererExecutionContext::CompleteDiagnostics(const RenderDiagnosticsCommand& command)
@@ -124,17 +93,16 @@ void RendererExecutionContext::CompleteDiagnostics(const RenderDiagnosticsComman
 	switch (command.Kind)
 	{
 		case RenderDiagnosticsRequestKind::Meshes:
-			command.Completion->Complete(
-			    MeshDiagnosticsCollector::Capture(m_rendererHost->GetRenderScene(), &m_rendererHost->GetGpuMeshCache()));
+			command.Completion->Complete(m_pipeline->CaptureMeshDiagnostics());
 			break;
 		case RenderDiagnosticsRequestKind::MeshPreview:
-			command.Completion->Complete(MeshDiagnosticsCollector::CapturePreview(m_rendererHost->GetRenderScene(), command.MeshRuntimeId));
+			command.Completion->Complete(m_pipeline->CaptureMeshPreview(command.MeshRuntimeId));
 			break;
 		case RenderDiagnosticsRequestKind::Textures:
 			command.Completion->Complete(m_pipeline->CaptureTextureDiagnostics());
 			break;
 		case RenderDiagnosticsRequestKind::Memory:
-			command.Completion->Complete(m_rendererHost->GetMemoryMonitor().GetLatestSnapshot());
+			command.Completion->Complete(m_rendererHost->CaptureMemoryDiagnostics());
 			break;
 	}
 }
@@ -146,6 +114,6 @@ void RendererExecutionContext::SettleRendererBeforeDestruction() noexcept
 		return;
 	}
 
-	m_rendererHost->GetDeviceServices().SettleForShutdown();
+	m_rendererHost->SettleForShutdown();
 	m_shutdownSettled = true;
 }

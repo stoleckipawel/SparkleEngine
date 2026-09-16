@@ -3,11 +3,6 @@
 
 #include "Core/Public/Diagnostics/Error.h"
 #include "Concurrency/Coordinator/RendererExecutionContext.h"
-#include "Diagnostics/MeshDiagnosticsCollector.h"
-#include "Diagnostics/RendererMemoryMonitor.h"
-#include "Frame/FramePipeline.h"
-#include "Host/RendererHost.h"
-#include "Pipeline/RenderPassRuntimeCache.h"
 
 #include <limits>
 
@@ -29,88 +24,57 @@ template <typename TResult> TResult RenderCoordinator::ExtractControlResult(Rend
 void RenderCoordinator::ReloadShaders()
 {
 	m_producerOwner.AssertAccess();
-	if (!m_config.IsThreaded())
-	{
-		GetSerialContext().GetRendererHost().GetRenderPassRuntimeCache().ReloadShaders();
-		return;
-	}
-
 	(void) ExtractControlResult<std::monostate>(
-	    SubmitSynchronousControl(RenderReloadShadersCommand{std::make_shared<RenderControlCompletion>()}));
+	    ExecuteSynchronousControl(RenderReloadShadersCommand{std::make_shared<RenderControlCompletion>()}));
 }
 
 std::uint64_t RenderCoordinator::GetShaderGeneration() const noexcept
 {
 	m_producerOwner.AssertAccess();
-	return m_config.IsThreaded() ? m_shaderGeneration.load(std::memory_order_acquire)
-	                             : GetSerialContext().GetRendererHost().GetRenderPassRuntimeCache().GetShaderGeneration();
+	return m_config.IsThreaded() ? m_shaderGeneration.load(std::memory_order_acquire) : GetSerialContext().GetShaderGeneration();
 }
 
 MeshDiagnosticsSnapshot RenderCoordinator::CaptureMeshDiagnostics()
 {
 	m_producerOwner.AssertAccess();
-	if (!m_config.IsThreaded())
-	{
-		RendererHost& host = GetSerialContext().GetRendererHost();
-		return MeshDiagnosticsCollector::Capture(host.GetRenderScene(), &host.GetGpuMeshCache());
-	}
-
 	auto completion = std::make_shared<RenderControlCompletion>();
 	return ExtractControlResult<MeshDiagnosticsSnapshot>(
-	    SubmitSynchronousControl(RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::Meshes, 0, completion}));
+	    ExecuteSynchronousControl(RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::Meshes, 0, completion}));
 }
 
 MeshPreviewGeometry RenderCoordinator::CaptureMeshPreview(std::uintptr_t meshRuntimeId)
 {
 	m_producerOwner.AssertAccess();
-	if (!m_config.IsThreaded())
-	{
-		RendererHost& host = GetSerialContext().GetRendererHost();
-		return MeshDiagnosticsCollector::CapturePreview(host.GetRenderScene(), meshRuntimeId);
-	}
-
 	auto completion = std::make_shared<RenderControlCompletion>();
 	return ExtractControlResult<MeshPreviewGeometry>(
-	    SubmitSynchronousControl(RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::MeshPreview, meshRuntimeId, completion}));
+	    ExecuteSynchronousControl(RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::MeshPreview, meshRuntimeId, completion}));
 }
 
 TextureDiagnosticsSnapshot RenderCoordinator::CaptureTextureDiagnostics()
 {
 	m_producerOwner.AssertAccess();
-	if (!m_config.IsThreaded())
-	{
-		return GetSerialContext().GetPipeline().CaptureTextureDiagnostics();
-	}
-
 	auto completion = std::make_shared<RenderControlCompletion>();
 	return ExtractControlResult<TextureDiagnosticsSnapshot>(
-	    SubmitSynchronousControl(RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::Textures, 0, completion}));
+	    ExecuteSynchronousControl(RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::Textures, 0, completion}));
 }
 
 RendererMemoryDiagnosticsSnapshot RenderCoordinator::CaptureMemoryDiagnostics()
 {
 	m_producerOwner.AssertAccess();
-	if (!m_config.IsThreaded())
-	{
-		return GetSerialContext().GetRendererHost().GetMemoryMonitor().GetLatestSnapshot();
-	}
-
 	auto completion = std::make_shared<RenderControlCompletion>();
 	return ExtractControlResult<RendererMemoryDiagnosticsSnapshot>(
-	    SubmitSynchronousControl(RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::Memory, 0, completion}));
+	    ExecuteSynchronousControl(RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::Memory, 0, completion}));
 }
 
 ViewportCaptureId RenderCoordinator::RequestViewportCapture(ViewportCaptureRequest request)
 {
 	m_producerOwner.AssertAccess();
 	const ViewportCaptureId id{m_nextViewportCaptureId++};
-	if (m_config.IsThreaded())
+	DispatchControl(RenderCaptureCommand{id, std::move(request)});
+	if (!m_config.IsThreaded())
 	{
-		SubmitControl(RenderCaptureCommand{id, std::move(request)});
-		return id;
+		PublishReadState();
 	}
-	(void) GetSerialContext().GetPipeline().BeginViewportCapture(id, request);
-	PublishReadState();
 	return id;
 }
 
@@ -140,8 +104,8 @@ void RenderCoordinator::PublishReadState()
 
 	{
 		std::lock_guard lock(m_readStateMutex);
-		m_publishedViewportProducts = m_context->GetPipeline().GetViewportRenderProducts();
-		std::vector<ViewportCaptureReadback> captures = m_context->GetPipeline().TakeCompletedViewportCaptures();
+		m_publishedViewportProducts = m_context->GetViewportRenderProducts();
+		std::vector<ViewportCaptureReadback> captures = m_context->TakeCompletedViewportCaptures();
 		for (ViewportCaptureReadback& capture : captures)
 		{
 			if (m_publishedViewportCaptures.size() >= 3)
@@ -151,35 +115,47 @@ void RenderCoordinator::PublishReadState()
 			m_publishedViewportCaptures.push_back(std::move(capture));
 		}
 	}
-	m_shaderGeneration.store(m_context->GetRendererHost().GetRenderPassRuntimeCache().GetShaderGeneration(), std::memory_order_release);
+	m_shaderGeneration.store(m_context->GetShaderGeneration(), std::memory_order_release);
 }
 
-void RenderCoordinator::SubmitControl(RenderControlPayload payload)
+void RenderCoordinator::DispatchControl(RendererExecutionControl control)
+{
+	if (m_config.IsThreaded())
+	{
+		SubmitThreadCommand(std::move(control));
+	}
+	else
+	{
+		GetSerialContext().ExecuteControl(std::move(control));
+	}
+}
+
+void RenderCoordinator::SubmitThreadCommand(RenderThreadCommandPayload payload)
 {
 	m_producerOwner.AssertAccess();
-	const std::uint64_t sequenceNumber = IssueControlSequence();
-	m_controlQueue->WaitPush(RenderControlCommand{sequenceNumber, std::move(payload)});
+	const std::uint64_t sequenceNumber = IssueThreadCommandSequence();
+	m_threadCommandQueue->WaitPush(RenderThreadCommand{sequenceNumber, std::move(payload)});
 }
 
-template <typename TCommand> RenderControlResult RenderCoordinator::SubmitSynchronousControl(TCommand command)
+template <typename TCommand> RenderControlResult RenderCoordinator::ExecuteSynchronousControl(TCommand command)
 {
 	const std::shared_ptr<RenderControlCompletion> completion = command.Completion;
 	if (!completion)
 	{
 		Diagnostics::Fatal(g_renderCoordinatorLogger, __FILE__, __LINE__, "Synchronous render-control command has no completion owner.");
 	}
-	SubmitControl(RenderControlPayload{std::move(command)});
+	DispatchControl(RendererExecutionControl{std::move(command)});
 	return completion->Wait();
 }
 
-std::uint64_t RenderCoordinator::IssueControlSequence() noexcept
+std::uint64_t RenderCoordinator::IssueThreadCommandSequence() noexcept
 {
-	if (m_nextControlSequence == 0)
+	if (m_nextThreadCommandSequence == 0)
 	{
-		Diagnostics::Fatal(g_renderCoordinatorLogger, __FILE__, __LINE__, "Render-control command sequence identity exhausted.");
+		Diagnostics::Fatal(g_renderCoordinatorLogger, __FILE__, __LINE__, "Render-thread command sequence identity exhausted.");
 	}
 
-	const std::uint64_t sequenceNumber = m_nextControlSequence;
-	m_nextControlSequence = sequenceNumber == (std::numeric_limits<std::uint64_t>::max)() ? 0 : sequenceNumber + 1;
+	const std::uint64_t sequenceNumber = m_nextThreadCommandSequence;
+	m_nextThreadCommandSequence = sequenceNumber == (std::numeric_limits<std::uint64_t>::max)() ? 0 : sequenceNumber + 1;
 	return sequenceNumber;
 }

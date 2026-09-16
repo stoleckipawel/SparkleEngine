@@ -17,7 +17,7 @@
 
 using namespace DirectX;
 
-RhiViewport RenderViewBuilder::BuildViewport(RenderViewportExtent extent) noexcept
+static RhiViewport BuildViewport(RenderViewportExtent extent) noexcept
 {
 	return RhiViewport{
 	    .X = 0.0f,
@@ -28,7 +28,7 @@ RhiViewport RenderViewBuilder::BuildViewport(RenderViewportExtent extent) noexce
 	    .MaxDepth = 1.0f};
 }
 
-RhiRect RenderViewBuilder::BuildScissorRect(RenderViewportExtent extent) noexcept
+static RhiRect BuildScissorRect(RenderViewportExtent extent) noexcept
 {
 	return RhiRect{
 	    .Left = 0,
@@ -37,7 +37,7 @@ RhiRect RenderViewBuilder::BuildScissorRect(RenderViewportExtent extent) noexcep
 	    .Bottom = static_cast<std::int32_t>(extent.Height)};
 }
 
-void RenderViewBuilder::Build(RenderView& output, RenderViewState& state, const RenderViewBuildRequest& request) const noexcept
+void BuildRenderView(RenderView& output, RenderViewState& state, const RenderViewBuildRequest& request) noexcept
 {
 	output.ResetForReuse();
 	output.viewportId = request.ViewportRequest.ViewportId;

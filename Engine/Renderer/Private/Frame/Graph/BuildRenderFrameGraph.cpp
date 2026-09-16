@@ -17,7 +17,7 @@
 
 RenderFrameGraphResources FramePipeline::BuildRenderFrameGraph(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings)
 {
-	RenderRayTracingScene& rayTracingScene = m_renderScene.GetRayTracingScene();
+	RenderRayTracingScene& rayTracingScene = m_renderScene->GetRayTracingScene();
 	RenderFrameGraphResources resources = {};
 	CreateRenderFrameGraphResources(builder, settings, resources);
 	AddRayTracingScenePasses(builder, rayTracingScene, resources);
@@ -28,18 +28,18 @@ RenderFrameGraphResources FramePipeline::BuildRenderFrameGraph(FrameGraphBuilder
 	else
 	{
 		DeclareRestirLightingHistoryResources(builder, settings.RenderExtent, resources.History);
-		AddGBufferMeshPasses(builder, m_gpuMeshCache, rayTracingScene, settings.RenderExtent, resources);
+		AddGBufferMeshPasses(builder, *m_gpuMeshCache, rayTracingScene, settings.RenderExtent, resources);
 		AddLightingPasses(builder, rayTracingScene, settings.RenderExtent, resources);
 		AddExposurePass(builder, settings, resources);
 		AddLightingReconstructionPasses(
 		    builder,
 		    settings.RenderExtent,
 		    settings.OutputExtent,
-		    m_imageProviders.GetRayReconstructionProvider(),
+		    m_imageProviders->GetRayReconstructionProvider(),
 		    resources);
 		if (!resources.ResolvedSceneColor.IsValid())
 		{
-			AddUpscalingPasses(builder, settings.RenderExtent, settings.OutputExtent, m_imageProviders.GetUpscalerProvider(), resources);
+			AddUpscalingPasses(builder, settings.RenderExtent, settings.OutputExtent, m_imageProviders->GetUpscalerProvider(), resources);
 		}
 	}
 	AddPostProcessingPasses(builder, settings, resources);

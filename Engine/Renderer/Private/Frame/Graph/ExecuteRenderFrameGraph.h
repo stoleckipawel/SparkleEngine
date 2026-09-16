@@ -4,24 +4,13 @@ class FrameExecutionDiagnostics;
 class FrameGraph;
 class RenderDeviceServices;
 class TaskExecutor;
-struct PreparedRenderScene;
-struct RenderFrameIdentity;
+struct RenderFrame;
 struct RenderFrameGraphResources;
-struct RenderFrameTime;
-struct RenderRayTracingFrameBindings;
-struct RenderView;
 
-namespace RenderFrameGraphExecution
-{
-	void Execute(
-	    FrameGraph& frameGraph,
-	    const RenderFrameGraphResources& resources,
-	    const RenderFrameIdentity& identity,
-	    const RenderFrameTime& time,
-	    const PreparedRenderScene& scene,
-	    const RenderView& view,
-	    const RenderRayTracingFrameBindings& rayTracingBindings,
-	    RenderDeviceServices& deviceServices,
-	    FrameExecutionDiagnostics& diagnostics,
-	    TaskExecutor& taskExecutor);
-}
+void ExecuteRenderFrameGraph(
+    FrameGraph& frameGraph,
+    const RenderFrameGraphResources& resources,
+    const RenderFrame& frame,
+    RenderDeviceServices& deviceServices,
+    FrameExecutionDiagnostics& diagnostics,
+    TaskExecutor& taskExecutor);

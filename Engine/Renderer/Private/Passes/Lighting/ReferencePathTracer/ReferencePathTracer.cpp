@@ -3,7 +3,7 @@
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracer.h"
 
 #include "Frame/Graph/RenderFrameGraphSettings.h"
-#include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerPasses.h"
+#include "Frame/RenderFrame.h"
 #include "Passes/PostProcessing/Exposure.h"
 #include "Passes/Presentation/Upscaling.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
@@ -15,8 +15,7 @@ ReferencePathTracer::ReferencePathTracer(
     RendererMemoryMonitor& memoryMonitor,
     RenderRayTracingScene& rayTracingScene) noexcept :
     m_rayTracingScene(rayTracingScene),
-    m_resources(deviceServices, memoryMonitor),
-    m_session(deviceServices)
+    m_session(deviceServices, memoryMonitor)
 {
 }
 
@@ -25,36 +24,27 @@ void ReferencePathTracer::AddPasses(
     const RenderFrameGraphSettings& settings,
     RenderFrameGraphResources& resources)
 {
-	m_resources.ReserveGraphResources(builder, settings.RenderExtent);
-	AddReferencePathTracerGpuPasses(
-	    builder,
-	    settings.RenderExtent,
-	    resources,
-	    m_resources.GetGraphResources(),
-	    m_session.GetUniformData(),
-	    ReferencePathTracerSession::WorkRowsPerDispatch,
-	    m_rayTracingScene);
+	m_session.ReserveGraphResources(builder, settings.RenderExtent);
+	AddGpuPasses(builder, settings.RenderExtent, resources);
 	AddExposurePass(builder, settings, resources);
 	AddUpscalingPasses(builder, settings.RenderExtent, settings.OutputExtent, nullptr, resources);
 	resources.ViewportProducts.SceneDepth = FrameGraphTextureHandle::Invalid();
 }
 
 ViewportRenderProgress ReferencePathTracer::Update(
-    const ViewportRenderRequest& request,
-    const RenderView& view,
-    const PreparedRenderScene& scene,
-    const RenderFrameIdentity& frame,
-    std::uint64_t sceneGeneration) noexcept
+    const RenderFrame& frame,
+    ViewportRenderAction action,
+    std::uint64_t actionSequence) noexcept
 {
-	return m_session.Update(request, view, scene, frame, sceneGeneration, m_rayTracingScene.GetExecutionFrontend(), m_resources);
+	return m_session.Update(frame, action, actionSequence, m_rayTracingScene.GetExecutionFrontend());
 }
 
 bool ReferencePathTracer::BindResources(FrameGraph& frameGraph) const noexcept
 {
-	return !m_session.IsSelected() || (m_session.CanBindResources() && m_resources.Bind(frameGraph));
+	return m_session.BindResources(frameGraph);
 }
 
 void ReferencePathTracer::RecordSubmission(RhiSubmissionToken token) noexcept
 {
-	m_session.RecordSubmission(token, m_resources);
+	m_session.RecordSubmission(token);
 }

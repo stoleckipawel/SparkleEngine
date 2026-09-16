@@ -114,6 +114,10 @@ An orchestrator MUST NOT accumulate parsing, data transforms, cache insertion, t
 
 A capability implementation owns one cohesive operation, state machine, transform, policy, encoding, allocation, or lifetime and exposes only what its orchestrator needs.
 
+Do not manufacture lifecycle for a stateless operation. A builder, resolver, or transform with no retained state, replaceable policy, or independently managed resource is a direct function or static operation in its owning subsystem, not a heap-owned collaborator stored by the orchestrator. Promote it to an owned object only when a real lifetime or mutable invariant appears.
+
+When a resource object's allocation, retention, release, binding, and retirement are governed exclusively by one state machine, that state machine owns the resource object. Keep allocation mechanics in a focused collaborator when useful, but do not make it a sibling owner and pass it through every transition. Conversely, queue/mailbox envelopes used only to schedule work remain with the coordinator and must be removed before the receiving capability's semantic execution boundary.
+
 ### Mandatory Orchestrator/Implementor Boundary
 
 An orchestration owner MUST remain generic over the behaviors it composes. When a workflow contains independently changing payload types, resource kinds, policies, backends, stages, or other behavioral variants, each variant's algorithm and invariant belong to a dedicated capability implementor. The orchestrator may select, order, invoke, and publish those capabilities; it MUST NOT implement their per-variant loops, transforms, validation, encoding, allocation, task-graph construction, or failure details.

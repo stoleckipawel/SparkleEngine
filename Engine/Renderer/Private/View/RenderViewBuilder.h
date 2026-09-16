@@ -2,7 +2,6 @@
 
 #include "GameFramework/Public/Rendering/RenderViewInput.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
-#include "RHI/Public/Resources/RhiResourceDesc.h"
 
 #include <cstdint>
 
@@ -22,12 +21,4 @@ struct RenderViewBuildRequest final
 	std::uint64_t GraphTopologyGeneration = 0u;
 };
 
-class RenderViewBuilder final
-{
-public:
-	void Build(RenderView& output, RenderViewState& state, const RenderViewBuildRequest& request) const noexcept;
-
-private:
-	static RhiViewport BuildViewport(RenderViewportExtent extent) noexcept;
-	static RhiRect BuildScissorRect(RenderViewportExtent extent) noexcept;
-};
+void BuildRenderView(RenderView& output, RenderViewState& state, const RenderViewBuildRequest& request) noexcept;

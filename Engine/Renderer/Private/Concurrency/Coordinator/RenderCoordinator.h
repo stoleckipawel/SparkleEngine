@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Concurrency/Control/RenderControlCommandQueue.h"
+#include "Concurrency/Control/RenderThreadCommandQueue.h"
 #include "Concurrency/FrameQueue/RenderFrameQueue.h"
 #include "Host/RendererBackendConfiguration.h"
 #include "Renderer/Public/Concurrency/RendererExecutionConfig.h"
@@ -50,7 +50,7 @@ public:
 	RendererExecutionMode GetMode() const noexcept { return m_config.Mode; }
 
 private:
-	static constexpr std::size_t RenderControlCapacity = 64;
+	static constexpr std::size_t RenderThreadCommandCapacity = 64;
 
 	template <typename TResult> static TResult ExtractControlResult(RenderControlResult result);
 
@@ -64,13 +64,14 @@ private:
 	void ExecuteSerialFrame();
 	void SubmitThreadedFrame();
 	void RenderThreadMain();
-	void ProcessThreadedCommand(RenderControlCommand command);
+	void ProcessThreadedCommand(RenderThreadCommand command);
 	void ExecuteThreadedFrame(RenderFrameQueueTicket ticket);
 	void SettleAbandonedWork() noexcept;
 	void PublishReadState();
-	void SubmitControl(RenderControlPayload payload);
-	template <typename TCommand> RenderControlResult SubmitSynchronousControl(TCommand command);
-	std::uint64_t IssueControlSequence() noexcept;
+	void DispatchControl(RendererExecutionControl control);
+	void SubmitThreadCommand(RenderThreadCommandPayload payload);
+	template <typename TCommand> RenderControlResult ExecuteSynchronousControl(TCommand command);
+	std::uint64_t IssueThreadCommandSequence() noexcept;
 	void SubmitResize();
 	RendererExecutionContext& GetSerialContext();
 	const RendererExecutionContext& GetSerialContext() const;
@@ -81,14 +82,14 @@ private:
 	RendererBackendConfiguration m_backendConfiguration;
 	Threading::OwnerThread m_producerOwner{"RenderCoordinator producer"};
 	std::unique_ptr<RenderFrameQueue> m_frameQueue;
-	std::unique_ptr<RenderControlCommandQueue> m_controlQueue;
+	std::unique_ptr<RenderThreadCommandQueue> m_threadCommandQueue;
 	std::unique_ptr<RendererExecutionContext> m_context;
 	std::thread m_renderThread;
 	ScopedEventHandle m_resizeHandle;
 	std::optional<RenderFrameSubmission> m_pendingSubmission;
 	std::optional<UiRenderPacket> m_pendingUi;
-	std::uint64_t m_nextControlSequence = 1;
-	std::uint64_t m_lastConsumedControlSequence = 0;
+	std::uint64_t m_nextThreadCommandSequence = 1;
+	std::uint64_t m_lastConsumedThreadCommandSequence = 0;
 	mutable std::mutex m_startMutex;
 	std::condition_variable m_startedCondition;
 	bool m_started = false;
