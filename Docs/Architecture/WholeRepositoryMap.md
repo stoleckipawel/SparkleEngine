@@ -98,17 +98,19 @@ The current Renderer owner map is:
 
 | Concern | Current owner |
 | --- | --- |
-| Public submission, settings, viewport products, capture, and bounded diagnostics | `Engine/Renderer/Public` and the `Renderer` facade |
+| Stable host contracts: facade, submission/settings requests, read-only viewport products, capture, UI packets, opaque handles, and bounded diagnostics | `Engine/Renderer/Public` and the `Renderer` facade |
 | Serial/threaded coordination, control queue, frame queue, published read state | `Private/Concurrency` |
 | Backend configuration and service lifetime | `Private/Host` |
 | Persistent render-scene state, GPU scene, material tables, scene preparation, ray-tracing scene and table plan | `Private/Scene` |
 | Per-frame camera/display/temporal state and prepared view work | `Private/View` |
 | Frame lifetime, topology rebuild, graph construction/execution, and retired graph generations | `Private/Frame` |
 | Technique and product setup/recording | `Private/Passes` |
-| Generic graph resources, dependency compilation, barriers, transients, and execution | `Private/FrameGraph` |
-| Compute/graphics/ray-tracing runtime materialization and binding | `Private/Pipeline` and `Private/PipelineRuntime` |
+| Generic graph handles/resources, dependency compilation, barriers, transients, and execution | `Private/FrameGraph` |
+| Compute/graphics/ray-tracing runtime materialization, shader-parameter construction, and binding | `Private/Pipeline`, `Private/PipelineRuntime`, and `Private/ShaderParameters` |
 | BLAS/TLAS strategy, execution plans, shared RT composition, and RT diagnostics | `Private/RayTracing` |
 | Upscaling, ray reconstruction, and Streamline integration | `Private/Providers`, `Private/Upscaling`, `Private/RayReconstruction`, and `Private/Streamline` |
+
+Renderer implementation headers are not a cross-module API. Other modules may include only `Renderer/Public`; public Renderer headers may not depend on `Renderer/Private`. Feature-specific policy remains under its `Private/Passes/.../<Feature>` owner, while genuinely shared mechanisms live under a focused private subsystem and carry no feature policy.
 
 The old private `SceneData`, `Camera`, `FramePipeline`, and `Frame/Core` navigation roots no longer exist. The current high-level route is:
 

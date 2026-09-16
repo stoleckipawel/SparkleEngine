@@ -1,11 +1,9 @@
 #pragma once
 
-#include "../RendererAPI.h"
-
 #include <compare>
 #include <cstdint>
 
-struct SPARKLE_RENDERER_API GpuMeshHandle final
+struct GpuMeshHandle final
 {
 	std::uint64_t Value = 0;
 

@@ -2,7 +2,7 @@
 
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "Frame/Graph/RenderFrameGraphTargets.h"
-#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
+#include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraphBuilder;

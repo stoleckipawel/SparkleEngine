@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Public/Meshes/GpuMeshHandle.h"
+#include "Meshes/GpuMeshHandle.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"
 
 #include <cstddef>

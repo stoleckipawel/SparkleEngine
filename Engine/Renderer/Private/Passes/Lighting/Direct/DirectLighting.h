@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Public/ShaderParameters/ShaderParameterStruct.h"
+#include "ShaderParameters/ShaderParameterStruct.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "RHI/Public/Shaders/Authoring/GlobalShader.h"
 

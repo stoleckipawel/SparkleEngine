@@ -2,9 +2,9 @@
 
 #include "Frame/Graph/RenderFrameGraphTargets.h"
 #include "Resources/History/FrameHistory.h"
-#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
-#include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
-#include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
+#include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
+#include "FrameGraph/FrameGraphBufferHandle.h"
+#include "FrameGraph/FrameGraphTextureHandle.h"
 
 struct RenderFrameGraphTransientResources final
 {

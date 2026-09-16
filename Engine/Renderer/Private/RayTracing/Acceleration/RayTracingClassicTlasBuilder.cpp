@@ -5,7 +5,7 @@
 #include "Commands/RenderCommandContext.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "Meshes/GpuMesh.h"
-#include "Renderer/Public/Debug/RendererCVars.h"
+#include "Debug/RendererCVars.h"
 #include "RayTracing/Diagnostics/RayTracingPerformanceDiagnostics.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/RayTracing/RhiRayTracingTransformPacking.h"

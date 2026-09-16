@@ -4,7 +4,7 @@
 #include "Core/Public/Math/MathUtils.h"
 
 #include "Meshes/GpuMeshCache.h"
-#include "Renderer/Public/Debug/RendererCVars.h"
+#include "Debug/RendererCVars.h"
 #include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/Mesh.h"
 #include "Scene/Meshes/MeshData.h"

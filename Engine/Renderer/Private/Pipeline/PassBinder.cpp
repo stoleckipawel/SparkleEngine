@@ -3,7 +3,7 @@
 
 #include "Commands/RenderCommandContext.h"
 #include "FrameGraph/Execution/FrameGraphResourceCommands.h"
-#include "Renderer/Public/ShaderParameters/PassParameterSet.h"
+#include "ShaderParameters/PassParameterSet.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <string>

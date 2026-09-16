@@ -13,6 +13,10 @@
 #include <string>
 #include <vector>
 
+class FramePipeline;
+class UiFrameRenderer;
+class ViewportRenderProductPublication;
+
 enum class RenderViewKind : std::uint8_t
 {
 	Game = 0,
@@ -243,6 +247,11 @@ struct SPARKLE_RENDERER_API ViewportRenderProducts
 	const RenderProduct& GetOverlayMask() const noexcept { return m_overlayMask; }
 	const ViewportRenderProgress& GetProgress() const noexcept { return m_progress; }
 
+private:
+	friend class FramePipeline;
+	friend class UiFrameRenderer;
+	friend class ViewportRenderProductPublication;
+
 	void Clear() noexcept;
 
 	void SetGeneration(std::uint64_t generation) noexcept { m_generation = generation; }
@@ -251,7 +260,6 @@ struct SPARKLE_RENDERER_API ViewportRenderProducts
 	void SetProduct(RenderOutputFlags output, RenderProduct product) noexcept;
 	void SetProgress(ViewportRenderProgress progress) noexcept { m_progress = progress; }
 
-private:
 	RenderProduct* SelectProduct(RenderOutputFlags output) noexcept;
 	const RenderProduct* SelectProduct(RenderOutputFlags output) const noexcept;
 	void RemoveAvailableOutput(RenderOutputFlags output) noexcept;

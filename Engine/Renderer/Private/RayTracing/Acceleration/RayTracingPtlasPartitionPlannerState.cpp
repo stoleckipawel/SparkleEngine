@@ -2,7 +2,7 @@
 
 #include "RayTracing/Acceleration/RayTracingPtlasPartitionPlanner.h"
 
-#include "Renderer/Public/SceneData/MeshDraw.h"
+#include "Scene/Geometry/MeshDraw.h"
 
 #include <algorithm>
 #include <cmath>

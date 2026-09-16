@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Public/FrameGraph/FrameGraphTextureHistory.h"
+#include "FrameGraph/FrameGraphTextureHistory.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraph;

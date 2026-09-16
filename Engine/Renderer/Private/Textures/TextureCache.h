@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Public/Resources/Textures/DefaultTextures.h"
+#include "Textures/DefaultTextures.h"
 #include "Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "Rendering/RenderResourceTables.h"
 #include "Resources/Residency/AssetResidency.h"

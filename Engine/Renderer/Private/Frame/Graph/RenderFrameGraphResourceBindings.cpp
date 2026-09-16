@@ -8,7 +8,7 @@
 #include "Resources/History/FrameHistory.h"
 #include "FrameGraph/FrameGraphTextureDesc.h"
 #include "RayTracing/RayTracingHitData.h"
-#include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
+#include "FrameGraph/FrameGraphBufferDesc.h"
 #include "RHI/Public/Interop/ResourceState.h"
 #include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "ShaderData/LightGpuData.h"

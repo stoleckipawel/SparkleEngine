@@ -3,9 +3,13 @@
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
-void PublishViewportRenderProducts(
-    ViewportRenderProducts& products,
-    const ViewportRenderRequest& request,
-    const ViewportFrameProducts& frameProducts,
-    RenderViewportExtent renderExtent,
-    RenderViewportExtent outputExtent) noexcept;
+class ViewportRenderProductPublication final
+{
+public:
+	static void Publish(
+	    ViewportRenderProducts& products,
+	    const ViewportRenderRequest& request,
+	    const ViewportFrameProducts& frameProducts,
+	    RenderViewportExtent renderExtent,
+	    RenderViewportExtent outputExtent) noexcept;
+};

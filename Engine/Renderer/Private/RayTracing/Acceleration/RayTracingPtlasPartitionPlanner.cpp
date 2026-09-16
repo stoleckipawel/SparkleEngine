@@ -3,7 +3,7 @@
 #include "RayTracing/Acceleration/RayTracingPtlasPartitionPlanner.h"
 
 #include "Meshes/GpuMesh.h"
-#include "Renderer/Public/SceneData/MeshDraw.h"
+#include "Scene/Geometry/MeshDraw.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 
 #include <algorithm>

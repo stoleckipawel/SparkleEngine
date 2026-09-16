@@ -3,7 +3,7 @@
 #include "Diagnostics/FrameExecutionDiagnostics.h"
 
 #include "Commands/RenderCommandContext.h"
-#include "Renderer/Public/Debug/RendererCVars.h"
+#include "Debug/RendererCVars.h"
 
 #include <algorithm>
 #include <utility>

@@ -6,23 +6,6 @@
 
 #include <utility>
 
-const char* RendererMemoryPressureLevelToString(RendererMemoryPressureLevel pressure) noexcept
-{
-	switch (pressure)
-	{
-		case RendererMemoryPressureLevel::Normal:
-			return "Normal";
-		case RendererMemoryPressureLevel::Watch:
-			return "Watch";
-		case RendererMemoryPressureLevel::Pressure:
-			return "Pressure";
-		case RendererMemoryPressureLevel::Critical:
-			return "Critical";
-		default:
-			return "Unknown";
-	}
-}
-
 RendererMemoryMonitor::RendererMemoryMonitor(RenderDiagnostics& diagnostics, std::uint32_t pollIntervalFrames) noexcept :
     m_diagnostics(&diagnostics)
 {

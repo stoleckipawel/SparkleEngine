@@ -192,7 +192,7 @@ void FramePipeline::PrepareFrame(const RenderViewInput& viewInput, const RenderF
 	const RenderFrameGraphSettings viewportSettings =
 	    m_frameGraphSettings.OutputExtent.IsValid() && m_frameGraphSettings.RenderExtent.IsValid() ? m_frameGraphSettings
 	                                                                                               : ResolveFrameGraphSettings();
-	PublishViewportRenderProducts(
+	ViewportRenderProductPublication::Publish(
 	    m_viewportRenderProducts,
 	    m_viewportRenderRequest,
 	    m_frameResources.ViewportProducts,

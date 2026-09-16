@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Public/SceneData/RenderMeshClassification.h"
+#include "Scene/Geometry/RenderMeshClassification.h"
 #include "Scene/Meshes/MeshInstanceGroup.h"
 #include "Scene/Meshes/SceneMeshKind.h"
 

@@ -18,6 +18,8 @@ set(SPARKLE_BOUNDARY_RENDERER_PROVIDER_DETAIL_REGEX
     "Streamline/|Upscaling/Nvidia|RayReconstruction/Nvidia|NvidiaDlss")
 set(SPARKLE_BOUNDARY_RENDERER_VENDOR_INTEROP_REGEX
     "^Engine/Renderer/Private/(Streamline|Upscaling/NvidiaDlss|RayReconstruction/NvidiaDlssRayReconstruction)/")
+set(SPARKLE_BOUNDARY_RENDERER_PRIVATE_ONLY_PUBLIC_PATH_REGEX
+    "^Engine/Renderer/Public/(Debug|FrameGraph|SceneData|ShaderParameters)/|^Engine/Renderer/Public/Meshes/GpuMeshHandle\\.h$|^Engine/Renderer/Public/Resources/Textures/DefaultTextures\\.h$")
 set(SPARKLE_BOUNDARY_NATIVE_DPI_POLICY_REGEX
     "Set(Process|Thread)DpiAwareness|GetDpiFor(Window|Monitor|System)|DPI_AWARENESS_CONTEXT_|VS_DPI_AWARE|<dpiAware(ness)?|ImGui_ImplWin32_(EnableDpiAwareness|GetDpiScaleFor)|DisplaySize[ \t]*=[ \t]*ImVec2")
 
@@ -57,6 +59,15 @@ endfunction()
 
 function(sparkle_boundary_scan_file absolute_path)
     sparkle_boundary_relative_path(_relative_path "${absolute_path}")
+
+    if(_relative_path MATCHES "${SPARKLE_BOUNDARY_RENDERER_PRIVATE_ONLY_PUBLIC_PATH_REGEX}")
+        sparkle_boundary_append_failure(
+            "RENDERER_IMPLEMENTATION_CONTRACT_REMAINS_PRIVATE"
+            "${_relative_path}"
+            "1"
+            "Frame-graph, shader-binding, CVar, prepared-scene, GPU-mesh, and default-resource implementation contracts must remain under Renderer/Private."
+            "${_relative_path}")
+    endif()
 
     file(READ "${absolute_path}" _content)
     if(_content MATCHES "namespace[ \t\r\n]*\\{")
@@ -149,6 +160,26 @@ function(sparkle_boundary_scan_file absolute_path)
                 "${_relative_path}"
                 "${_line_number}"
                 "Renderer may consume only public RHI contracts, never backend or common RHI implementation headers."
+                "${_line}")
+        endif()
+
+        if(NOT _relative_path MATCHES "^Engine/Renderer/" AND
+           _line MATCHES "#include[^\n]*Renderer/Private/")
+            sparkle_boundary_append_failure(
+                "RENDERER_PRIVATE_NO_EXTERNAL_CONSUMERS"
+                "${_relative_path}"
+                "${_line_number}"
+                "Other modules must consume Renderer/Public contracts and may not reach into Renderer implementation headers."
+                "${_line}")
+        endif()
+
+        if(_relative_path MATCHES "^Engine/Renderer/Public/" AND
+           _line MATCHES "#include[^\n]*(Renderer/Private/|\.\./Private/)")
+            sparkle_boundary_append_failure(
+                "RENDERER_PUBLIC_NO_PRIVATE_DEPENDENCY"
+                "${_relative_path}"
+                "${_line_number}"
+                "Renderer public contracts must not expose or depend on Renderer implementation headers."
                 "${_line}")
         endif()
 

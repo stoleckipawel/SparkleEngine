@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Renderer/Public/SceneData/DirectionalLight.h"
-#include "Renderer/Public/SceneData/PointLight.h"
-#include "Renderer/Public/SceneData/RectLight.h"
-#include "Renderer/Public/SceneData/SpotLight.h"
+#include "Scene/Lighting/DirectionalLight.h"
+#include "Scene/Lighting/PointLight.h"
+#include "Scene/Lighting/RectLight.h"
+#include "Scene/Lighting/SpotLight.h"
 #include "Rendering/RenderSceneDynamicData.h"
 
 #include <cstdint>

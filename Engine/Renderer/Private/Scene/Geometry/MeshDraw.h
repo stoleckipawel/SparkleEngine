@@ -1,41 +1,40 @@
 #pragma once
 
-#include "../RendererAPI.h"
-#include "Renderer/Public/Meshes/GpuMeshHandle.h"
-#include "Renderer/Public/SceneData/RenderMeshClassification.h"
+#include "Meshes/GpuMeshHandle.h"
+#include "Scene/Geometry/RenderMeshClassification.h"
 
 #include <DirectXMath.h>
 #include <cstdint>
 #include <limits>
 
-struct SPARKLE_RENDERER_API MeshDrawTransform final
+struct MeshDrawTransform final
 {
 	DirectX::XMFLOAT4X4 WorldMatrix = {};
 	DirectX::XMFLOAT4X4 PreviousWorldMatrix = {};
 	DirectX::XMFLOAT3X4 WorldInvTranspose = {};
 };
 
-struct SPARKLE_RENDERER_API MeshDrawSkinning final
+struct MeshDrawSkinning final
 {
 	std::uint64_t SkeletonAssetId = 0;
 	std::uint32_t JointMatrixOffset = (std::numeric_limits<std::uint32_t>::max)();
 };
 
-struct SPARKLE_RENDERER_API MeshDrawMorph final
+struct MeshDrawMorph final
 {
 	std::uint32_t WeightOffset = (std::numeric_limits<std::uint32_t>::max)();
 	std::uint32_t TargetCount = 0u;
 	std::uint32_t VertexCount = 0u;
 };
 
-struct SPARKLE_RENDERER_API MeshDrawSourceIdentity final
+struct MeshDrawSourceIdentity final
 {
 	std::uint32_t GpuSceneSlot = 0;
 	std::uint64_t MeshAssetId = 0;
 	std::uint32_t MeshGeneration = 0;
 };
 
-struct SPARKLE_RENDERER_API MeshDrawGeometry final
+struct MeshDrawGeometry final
 {
 	RenderMeshKind MeshKind = RenderMeshKind::Static;
 	GpuMeshHandle Mesh;
@@ -44,7 +43,7 @@ struct SPARKLE_RENDERER_API MeshDrawGeometry final
 	bool HasLocalBounds = false;
 };
 
-struct SPARKLE_RENDERER_API MeshDraw
+struct MeshDraw
 {
 	MeshDrawTransform Transform;
 	std::uint32_t MaterialSlot = 0;

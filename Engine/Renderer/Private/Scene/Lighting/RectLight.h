@@ -1,10 +1,8 @@
 #pragma once
 
-#include "../RendererAPI.h"
-
 #include <DirectXMath.h>
 
-struct SPARKLE_RENDERER_API RectLight
+struct RectLight
 {
 	DirectX::XMFLOAT3 position = {0.0f, 0.0f, 0.0f};
 	float width = 1.0f;

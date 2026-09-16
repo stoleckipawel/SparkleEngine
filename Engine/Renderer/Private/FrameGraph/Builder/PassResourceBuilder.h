@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
-#include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
-#include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
-#include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
+#include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
+#include "FrameGraph/FrameGraphBufferHandle.h"
+#include "FrameGraph/FrameGraphResourceHandle.h"
+#include "FrameGraph/FrameGraphTextureHandle.h"
 #include "FrameGraph/PassResourceDeclaration.h"
 #include "FrameGraph/ResourceUsage.h"
-#include "Renderer/Public/ShaderParameters/PassParameterSet.h"
+#include "ShaderParameters/PassParameterSet.h"
 
 #include <cstdint>
 #include <string_view>

@@ -2,7 +2,7 @@
 
 #include "FrameGraph/FrameGraphPassKind.h"
 #include "FrameGraph/PassResourceDeclaration.h"
-#include "Renderer/Public/ShaderParameters/PassParameterSet.h"
+#include "ShaderParameters/PassParameterSet.h"
 
 #include <string_view>
 #include <vector>

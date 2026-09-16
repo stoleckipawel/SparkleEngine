@@ -2,7 +2,7 @@
 
 #include "Meshes/GpuMorphTargetBuffer.h"
 #include "Meshes/GpuSkinInfluenceBuffer.h"
-#include "Renderer/Public/Meshes/GpuMeshHandle.h"
+#include "Meshes/GpuMeshHandle.h"
 #include "RayTracing/RayTracingHitData.h"
 #include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "RHI/Public/RayTracing/RhiRayTracingDesc.h"

@@ -4,7 +4,7 @@
 #include "FrameGraph/Builder/PassResourceBuilder.h"
 #include "FrameGraph/Execution/FrameGraphResourceCommands.h"
 #include "Commands/RenderCommandContext.h"
-#include "Renderer/Public/ShaderParameters/PassParameterSet.h"
+#include "ShaderParameters/PassParameterSet.h"
 
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
-#include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
+#include "FrameGraph/FrameGraphBufferHandle.h"
+#include "FrameGraph/FrameGraphTextureHandle.h"
 
 #include <string_view>
 

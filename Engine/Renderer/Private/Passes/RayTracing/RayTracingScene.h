@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Frame/Graph/RenderFrameGraphResources.h"
-#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
+#include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
 
 class FrameGraphBuilder;
 class RenderRayTracingScene;

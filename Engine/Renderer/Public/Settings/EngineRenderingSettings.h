@@ -54,7 +54,6 @@ public:
 	const EngineRenderingSettingsState& GetState() const noexcept { return m_state; }
 	void SetCommitHandler(CommitHandler handler);
 	void RefreshFromRuntimeState() noexcept;
-	void ApplyPersistedValuesToRuntimeState() noexcept;
 	bool HasPendingRestart() const noexcept;
 	std::string BuildPendingRestartMessage() const;
 
@@ -106,4 +105,3 @@ private:
 };
 
 SPARKLE_RENDERER_API void ApplyPersistedEngineRenderingSettingsToCVars() noexcept;
-SPARKLE_RENDERER_API void ApplyEngineRenderingSettingsStateToCVars(const EngineRenderingSettingsState& state) noexcept;

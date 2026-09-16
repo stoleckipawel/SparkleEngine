@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
-#include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
+#include "FrameGraph/FrameGraphBufferDesc.h"
+#include "FrameGraph/FrameGraphResourceHandle.h"
 #include "FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Interop/ResourceState.h"
 

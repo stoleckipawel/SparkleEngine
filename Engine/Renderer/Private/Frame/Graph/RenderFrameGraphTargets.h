@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
+#include "FrameGraph/FrameGraphTextureHandle.h"
 
 struct SceneRenderTargets
 {

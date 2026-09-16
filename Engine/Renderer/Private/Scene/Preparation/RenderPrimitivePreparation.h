@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Public/SceneData/MeshDraw.h"
+#include "Scene/Geometry/MeshDraw.h"
 #include "Rendering/RenderObjectId.h"
 #include "Scene/Materials/MaterialData.h"
 #include "Scene/Preparation/RenderMeshWorldBounds.h"

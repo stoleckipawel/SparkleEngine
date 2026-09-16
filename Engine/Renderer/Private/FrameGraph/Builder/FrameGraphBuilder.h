@@ -17,11 +17,11 @@
 #include <string_view>
 #include <utility>
 
-#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
-#include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
-#include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
-#include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
-#include "Renderer/Public/FrameGraph/FrameGraphTextureHistory.h"
+#include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
+#include "FrameGraph/FrameGraphBufferDesc.h"
+#include "FrameGraph/FrameGraphBufferHandle.h"
+#include "FrameGraph/FrameGraphTextureHandle.h"
+#include "FrameGraph/FrameGraphTextureHistory.h"
 #include "FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Shaders/ShaderParameterLayoutBuilder.h"
 

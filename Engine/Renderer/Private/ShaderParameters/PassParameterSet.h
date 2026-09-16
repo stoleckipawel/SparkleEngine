@@ -8,7 +8,7 @@
 #include "../FrameGraph/FrameGraphAttachment.h"
 #include "../FrameGraph/FrameGraphBufferHandle.h"
 #include "../FrameGraph/FrameGraphTextureHandle.h"
-#include "../RendererAPI.h"
+#include "Renderer/Public/RendererAPI.h"
 
 #include <cstddef>
 #include <cstdint>

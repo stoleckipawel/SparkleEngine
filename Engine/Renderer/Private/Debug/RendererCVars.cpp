@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "Renderer/Public/Debug/RendererCVars.h"
+#include "Debug/RendererCVars.h"
 
 ConsoleVariable<GBufferAlgorithm> CVarGBufferAlgorithm(
     "r.GBuffer.Algorithm",

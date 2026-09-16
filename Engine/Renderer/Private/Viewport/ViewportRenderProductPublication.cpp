@@ -4,7 +4,7 @@
 
 #include "Frame/Graph/RenderProductGraphHandle.h"
 
-void PublishViewportRenderProducts(
+void ViewportRenderProductPublication::Publish(
     ViewportRenderProducts& products,
     const ViewportRenderRequest& request,
     const ViewportFrameProducts& frameProducts,

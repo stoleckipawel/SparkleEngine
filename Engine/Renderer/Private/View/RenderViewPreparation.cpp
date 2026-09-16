@@ -2,7 +2,7 @@
 
 #include "View/RenderViewPreparation.h"
 
-#include "Renderer/Public/Debug/RendererCVars.h"
+#include "Debug/RendererCVars.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 #include "Tasks/Public/ParallelFor.h"
 #include "Tasks/Public/TaskExecution.h"

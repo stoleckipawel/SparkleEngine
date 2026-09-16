@@ -2,8 +2,8 @@
 
 #include "Passes/GBuffer/GBufferShaders.h"
 #include "RHI/Public/Resources/RhiResourceDesc.h"
-#include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
-#include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
+#include "ShaderParameters/ShaderParameterStructBuilder.h"
+#include "ShaderParameters/TypedPassParameterInstance.h"
 
 #include <functional>
 #include <memory>

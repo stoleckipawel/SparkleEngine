@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Public/ShaderParameters/ShaderParameterStruct.h"
+#include "ShaderParameters/ShaderParameterStruct.h"
 #include "RHI/Public/Shaders/Authoring/GlobalShader.h"
 #include "Renderer/Private/RayTracing/RayTracingShaderFeatureFlags.h"
 

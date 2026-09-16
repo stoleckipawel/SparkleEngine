@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Diagnostics/FrameExecutionDiagnostics.h"
-#include "Renderer/Public/Debug/RendererCVars.h"
+#include "Debug/RendererCVars.h"
 
 #include <string_view>
 

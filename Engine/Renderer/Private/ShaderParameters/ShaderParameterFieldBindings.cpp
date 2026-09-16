@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
+#include "ShaderParameters/ShaderParameterFields.h"
 
 ShaderTexture2DSRV::ShaderTexture2DSRV() = default;
 ShaderAccelerationStructure::ShaderAccelerationStructure() = default;

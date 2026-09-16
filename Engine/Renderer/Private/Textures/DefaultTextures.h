@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../../RendererAPI.h"
-
 #include <cstdint>
 #include <filesystem>
 
@@ -27,7 +25,7 @@ struct DefaultTextureDesc
 
 namespace DefaultTextures
 {
-	SPARKLE_RENDERER_API const DefaultTextureDesc& GetDesc(DefaultTexture type);
-	SPARKLE_RENDERER_API const char* GetName(DefaultTexture type);
-	SPARKLE_RENDERER_API std::filesystem::path GetPath(DefaultTexture type);
+	const DefaultTextureDesc& GetDesc(DefaultTexture type);
+	const char* GetName(DefaultTexture type);
+	std::filesystem::path GetPath(DefaultTexture type);
 }

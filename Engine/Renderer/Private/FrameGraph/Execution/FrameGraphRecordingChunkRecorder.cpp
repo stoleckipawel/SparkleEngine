@@ -8,7 +8,7 @@
 #include "FrameGraph/Diagnostics/FrameGraphExecutionDiagnostics.h"
 #include "FrameGraph/Execution/FrameGraphResourceCommands.h"
 #include "FrameGraph/FrameGraph.h"
-#include "Renderer/Public/Debug/RendererCVars.h"
+#include "Debug/RendererCVars.h"
 
 #include <format>
 

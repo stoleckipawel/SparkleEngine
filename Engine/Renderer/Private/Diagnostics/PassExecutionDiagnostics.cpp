@@ -2,7 +2,7 @@
 
 #include "Diagnostics/PassExecutionDiagnostics.h"
 
-#include "Renderer/Public/Debug/RendererCVars.h"
+#include "Debug/RendererCVars.h"
 
 PassExecutionDiagnostics::PassExecutionDiagnostics(
     FrameExecutionDiagnostics& frameDiagnostics,

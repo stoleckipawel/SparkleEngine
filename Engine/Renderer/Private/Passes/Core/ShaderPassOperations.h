@@ -5,7 +5,7 @@
 #include "Pipeline/PassBindingOverrides.h"
 #include "Passes/Core/ShaderPass.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
-#include "Renderer/Public/ShaderParameters/PassParameterSet.h"
+#include "ShaderParameters/PassParameterSet.h"
 
 #include <cstdint>
 #include <vector>

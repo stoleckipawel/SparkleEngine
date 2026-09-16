@@ -7,7 +7,7 @@
 #include "Passes/Presentation/OutputEncodingCVars.h"
 #include "View/ViewportDisplayCVars.h"
 #include "RayReconstruction/RayReconstructionSettings.h"
-#include "Renderer/Public/Debug/RendererCVars.h"
+#include "Debug/RendererCVars.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 #include "RHI/Public/CVars/RHICVars.h"
 #include "Settings/EngineRenderingSettingsPersistence.h"

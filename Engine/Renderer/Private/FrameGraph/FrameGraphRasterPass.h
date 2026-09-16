@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Pipeline/GraphicsPipelineMaterialization.h"
-#include "Renderer/Public/FrameGraph/FrameGraphAttachment.h"
+#include "FrameGraph/FrameGraphAttachment.h"
 
 #include <array>
 #include <cstdint>

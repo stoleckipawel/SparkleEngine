@@ -2,7 +2,7 @@
 
 #include "Scene/Materials/MaterialCache.h"
 
-#include "Renderer/Public/Resources/Textures/DefaultTextures.h"
+#include "Textures/DefaultTextures.h"
 #include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Scene/Materials/MaterialData.h"

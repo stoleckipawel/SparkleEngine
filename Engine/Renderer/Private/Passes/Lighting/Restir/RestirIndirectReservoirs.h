@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Resources/History/FrameHistory.h"
-#include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
+#include "FrameGraph/FrameGraphTextureHandle.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraphBuilder;

@@ -11,6 +11,7 @@
 #include "Pipeline/RenderPassRuntimeCache.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "Renderer/Public/Concurrency/RendererExecutionConfig.h"
+#include "Settings/EngineRenderingSettingsRuntime.h"
 
 RendererExecutionContext::RendererExecutionContext(
     Window& window,
@@ -83,7 +84,7 @@ void RendererExecutionContext::ExecuteControl(RenderControlPayload payload) noex
 		    else if constexpr (std::is_same_v<TCommand, RenderRefreshProvidersCommand>)
 			    m_rendererHost->GetImageProviders().Refresh();
 		    else if constexpr (std::is_same_v<TCommand, RenderSettingsChangedCommand>)
-			    ApplyEngineRenderingSettingsStateToCVars(command.Settings);
+			    EngineRenderingSettingsRuntime::Apply(command.Settings);
 		    else if constexpr (std::is_same_v<TCommand, RenderShutdownCommand>)
 			    SettleRendererBeforeDestruction();
 		    else

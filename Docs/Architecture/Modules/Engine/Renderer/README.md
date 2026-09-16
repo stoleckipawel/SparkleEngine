@@ -4,7 +4,7 @@
 
 **Scope:** explain how Sparkle renders a frame, identify the Renderer features that contribute to it, and route exact capability, design, source, and evidence questions to one owner
 
-**Current-state basis:** source and build configuration rechecked 2026-09-06 through committed `master` revision `c28b33bd`; executable Renderer source is unchanged from the earlier `8414b5dc` audit
+**Current-state basis:** source and build configuration rechecked 2026-09-16 at repository revision `54de16d7`; executable build, GPU, and release evidence remains separate
 
 **Current readiness:** **36/100** portfolio average (`I/R` present; `V/D = 0/0`); all 26 tracked Renderer families remain Blocked. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#renderer).
 
@@ -29,6 +29,16 @@ The Renderer turns an immutable world submission into a lit, post-processed, pre
 | ReSTIR direct/indirect lighting and an accumulating Reference Path Tracer mode | Non-ray lighting/shadow fallback, credible accepted reference oracle, volumetric lighting |
 | Exposure, Linear/DLSS reconstruction, tone mapping, debug views, UI and SDR presentation | First-release targets still missing: deferred decals, color grading, chromatic aberration, HDR10 output; excluded: frame generation |
 | Requested settings, diagnostics, capture products, shader-generation replacement | Complete requested-versus-active, failure, stress, quality, and performance evidence |
+
+## Module Surface And Encapsulation
+
+`Engine/Renderer/Public` is the stable host boundary, not a convenient include root for Renderer implementation. It contains only the facade, submission/settings/viewport/UI contracts, opaque handles, and bounded diagnostic read models required by Application, Editor, GameFramework, or Tools. Public result types expose observation; Renderer-only mutation remains private to their publication owners.
+
+`Engine/Renderer/Private` owns frame-graph handles and compilation, shader-parameter construction, CVars, prepared scene/light/mesh representations, GPU resource handles and defaults, pipeline materialization, and every rendering feature implementation. Private classes still use `public` for deliberate collaborator APIs inside the module and `private` for their own mechanics; placement under `Private` does not make every method an unrestricted subsystem API.
+
+Feature behavior stays in its feature capsule. High-level owners may construct the feature, choose it once at the accepted composition seam, pass canonical shared state, and publish a generic result. Sampling, validation, allocation, shaders, lifecycle, and feature policy do not move into `FramePipeline`, generic Scene/View, frame-graph, settings, or RHI code. Reusable mechanisms with multiple genuine consumers belong to the narrow shared owner (`RayTracing`, `ShaderData`, `Pipeline`, or another established subsystem), without feature policy or feature names.
+
+The executable architecture check rejects external includes of `Renderer/Private`, Public-to-Private dependency leaks, and reintroduction of known implementation-only header families under `Renderer/Public`.
 
 ## How A Frame Moves Through The Renderer
 
@@ -132,4 +142,4 @@ Silent substitution is not support. A requested ray/provider/debug path that can
 | Smallest missing checks | [Renderer Evidence Plan](../../CapabilityEvidencePlan.md#renderer-capability-to-evidence-map) |
 | Candidate/release status | `FCR-REN-*` families in [Feature Completion Reports](../../../../Acceptance/FeatureCompletionReports.md) and [First Release](../../../../Acceptance/FirstRelease.md) |
 
-Primary implementation routes are `Engine/Renderer/Public`, `Engine/Renderer/Private`, `Engine/Renderer/ShaderRegistrations`, and `Engine/Renderer/CMakeLists.txt`. Verify those paths before changing a current-state claim.
+Primary implementation routes are `Engine/Renderer/Public`, `Engine/Renderer/Private`, `Engine/Renderer/ShaderRegistrations`, and `Engine/Renderer/CMakeLists.txt`. Verify those paths before changing a current-state claim. Treat `Public` as a budgeted host contract and start implementation headers in the narrowest owning `Private` subsystem or feature capsule.

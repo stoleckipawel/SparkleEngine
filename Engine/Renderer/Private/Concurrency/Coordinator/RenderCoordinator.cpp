@@ -3,6 +3,7 @@
 
 #include "Concurrency/Coordinator/RendererExecutionContext.h"
 #include "Frame/FramePipeline.h"
+#include "Settings/EngineRenderingSettingsRuntime.h"
 #include "Time/Timer.h"
 #include "Window/Window.h"
 
@@ -74,7 +75,7 @@ void RenderCoordinator::SubmitRenderingSettings(EngineRenderingSettingsState set
 		SubmitControl(RenderSettingsChangedCommand{settings});
 		return;
 	}
-	ApplyEngineRenderingSettingsStateToCVars(settings);
+	EngineRenderingSettingsRuntime::Apply(settings);
 }
 
 void RenderCoordinator::SubmitViewportRequest(ViewportRenderRequest request)

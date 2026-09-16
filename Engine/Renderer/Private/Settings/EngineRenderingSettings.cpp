@@ -21,12 +21,6 @@ void EngineRenderingSettingsSection::RefreshFromRuntimeState() noexcept
 	m_sessionPreferHighPerformanceAdapter = m_state.PreferHighPerformanceAdapter;
 }
 
-void EngineRenderingSettingsSection::ApplyPersistedValuesToRuntimeState() noexcept
-{
-	EngineRenderingSettingsRuntime::ApplyPersistedValues();
-	RefreshFromRuntimeState();
-}
-
 bool EngineRenderingSettingsSection::HasPendingRestart() const noexcept
 {
 	return ComputePendingRestart();
@@ -50,7 +44,7 @@ void EngineRenderingSettingsSection::CommitState()
 		m_commitHandler(m_state);
 		return;
 	}
-	ApplyEngineRenderingSettingsStateToCVars(m_state);
+	EngineRenderingSettingsRuntime::Apply(m_state);
 }
 
 void EngineRenderingSettingsSection::SetVSync(bool enabled)
@@ -212,11 +206,6 @@ std::string EngineRenderingSettingsSection::DescribePendingRestart() const
 	}
 	stream << ".";
 	return stream.str();
-}
-
-void ApplyEngineRenderingSettingsStateToCVars(const EngineRenderingSettingsState& state) noexcept
-{
-	EngineRenderingSettingsRuntime::Apply(state);
 }
 
 void ApplyPersistedEngineRenderingSettingsToCVars() noexcept

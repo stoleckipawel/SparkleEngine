@@ -61,5 +61,3 @@ struct SPARKLE_RENDERER_API RendererMemoryDiagnosticsSnapshot final
 	TextureStreamingMemoryPolicySnapshot TextureStreamingPolicy;
 	SceneMemoryReport SceneReport;
 };
-
-SPARKLE_RENDERER_API const char* RendererMemoryPressureLevelToString(RendererMemoryPressureLevel pressure) noexcept;

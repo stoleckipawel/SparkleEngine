@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Renderer/Public/Meshes/GpuMeshHandle.h"
-#include "Renderer/Public/SceneData/RenderMeshClassification.h"
+#include "Meshes/GpuMeshHandle.h"
+#include "Scene/Geometry/RenderMeshClassification.h"
 
 #include <cstdint>
 

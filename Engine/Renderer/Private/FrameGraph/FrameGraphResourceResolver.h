@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
+#include "FrameGraph/FrameGraphResourceHandle.h"
 #include "RHI/Public/Resources/RhiResourceHandles.h"
 #include "RHI/Public/Resources/RhiResourceView.h"
 

@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "Renderer/Public/Resources/Textures/DefaultTextures.h"
+#include "Textures/DefaultTextures.h"
 
 class DefaultTexturesConstants final
 {

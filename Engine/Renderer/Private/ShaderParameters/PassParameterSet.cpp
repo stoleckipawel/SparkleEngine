@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "Renderer/Public/ShaderParameters/PassParameterSet.h"
+#include "ShaderParameters/PassParameterSet.h"
 
 #include <cassert>
 #include <utility>
