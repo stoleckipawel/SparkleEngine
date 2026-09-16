@@ -3,19 +3,6 @@
 
 RaytracingAccelerationStructure SceneTlas;
 
-#include "/Engine/RayTracing/RayTracingMaterialTraceQuery.hlsli"
-
-namespace RayTracingSceneTlas
-{
-	RayTracingTraceResult TraceRayQueryWithAlphaTest(float3 originWorld,
-	                                                 float3 directionWorld,
-	                                                 float tMin,
-	                                                 float tMax,
-	                                                 uint rayFlags,
-	                                                 uint instanceMask)
-	{
-		return ::TraceRayQueryWithAlphaTest(SceneTlas, originWorld, directionWorld, tMin, tMax, rayFlags, instanceMask);
-	}
-}
+#include "/Engine/RayTracing/RayTracingSceneTraceInline.hlsli"
 
 #endif

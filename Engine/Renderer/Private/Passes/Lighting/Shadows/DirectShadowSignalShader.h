@@ -5,12 +5,15 @@
 #include "Renderer/Private/RayTracing/Effects/Shadows/RayTracedShadowUniformData.h"
 #include "Renderer/Private/RayTracing/RayTracingHitData.h"
 #include "Renderer/Private/RayTracing/RayTracingShaderFeatureFlags.h"
+#include "Renderer/Private/ShaderData/RayTracingMaterialPayload.h"
 #include "Renderer/Private/Scene/Materials/MaterialTextureTableCapability.h"
 #include "ShaderData/ViewUniformData.h"
 #include "ShaderData/ViewCameraUniformData.h"
 #include "ShaderData/ViewTemporalUniformData.h"
 #include "ShaderData/LightGpuData.h"
 #include "ShaderData/SceneLightingUniformData.h"
+
+#include <cstdint>
 
 class DirectShadowSignalCS final : public GlobalShader<DirectShadowSignalCS>
 {
@@ -46,26 +49,5 @@ class DirectShadowSignalRGS final : public GlobalShader<DirectShadowSignalRGS>
 public:
 	using Parameters = DirectShadowSignalCS::Parameters;
 	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
-	static constexpr RayTracingShaderMetadata kRayTracingMetadata{
-	    .PayloadSizeInBytes = 8u,
-	    .AttributeSizeInBytes = sizeof(float) * 2u,
-	    .MinimumRecursionDepth = 1u};
-};
-
-class DirectShadowSignalMiss final : public GlobalShader<DirectShadowSignalMiss>
-{
-public:
-	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
-};
-
-class DirectShadowSignalClosestHit final : public GlobalShader<DirectShadowSignalClosestHit>
-{
-public:
-	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
-};
-
-class DirectShadowSignalAnyHit final : public GlobalShader<DirectShadowSignalAnyHit>
-{
-public:
-	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
+	static constexpr RayTracingShaderMetadata kRayTracingMetadata = kRayTracingMaterialShaderMetadata;
 };

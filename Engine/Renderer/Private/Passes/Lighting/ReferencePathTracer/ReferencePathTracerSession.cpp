@@ -23,7 +23,8 @@ static_assert(
 
 ViewportRenderProgressReason ReferencePathTracerSession::ResolveAvailability(
     const RenderView& view,
-    const PreparedRenderScene& scene) const noexcept
+    const PreparedRenderScene& scene,
+    RayTracingExecutionFrontend executionFrontend) const noexcept
 {
 	const RhiCapabilities& capabilities = m_deviceServices.GetCapabilities();
 	const RhiFormatSupport* format = capabilities.FindFormatSupport(PixelFormat::R32G32B32A32_Float);
@@ -34,8 +35,7 @@ ViewportRenderProgressReason ReferencePathTracerSession::ResolveAvailability(
 		return ViewportRenderProgressReason::UnsupportedView;
 	}
 	const bool supportsAccumulation = format != nullptr && format->SupportsShaderResource && format->SupportsUnorderedAccess;
-	const bool supportsTracing = capabilities.RayTracing.SupportsAccelerationStructure && capabilities.RayTracing.SupportsInlineRayQuery;
-	if (!supportsAccumulation || !supportsTracing || !materialTextures.Supported)
+	if (!supportsAccumulation || executionFrontend == RayTracingExecutionFrontend::None || !materialTextures.Supported)
 	{
 		return ViewportRenderProgressReason::UnsupportedCapability;
 	}
@@ -77,10 +77,11 @@ void ReferencePathTracerSession::UpdateIdentity(
     const PreparedRenderScene& scene,
     const RenderFrameIdentity& frame,
     std::uint64_t sceneGeneration,
+    RayTracingExecutionFrontend executionFrontend,
     ReferencePathTracerResources& resources) noexcept
 {
 	const ReferencePathTracerIdentity identity =
-	    BuildReferencePathTracerIdentity(view, scene, frame, sceneGeneration, m_deviceServices.GetCapabilities().BackendApi);
+	    BuildReferencePathTracerIdentity(view, scene, frame, sceneGeneration, executionFrontend, m_deviceServices.GetCapabilities().BackendApi);
 	if (m_hasIdentity && identity == m_identity)
 	{
 		return;
@@ -88,7 +89,7 @@ void ReferencePathTracerSession::UpdateIdentity(
 	const ViewportRenderProgressReason reason =
 	    m_hasIdentity ? static_cast<ViewportRenderProgressReason>(m_identity.FindFirstDifference(identity)) : m_lastReason;
 	const std::uint32_t discardedSamples = m_hasIdentity ? m_committedSamples : m_discardedSamples;
-	const ViewportRenderProgressReason availability = ResolveAvailability(view, scene);
+	const ViewportRenderProgressReason availability = ResolveAvailability(view, scene, executionFrontend);
 	if (availability != ViewportRenderProgressReason::None)
 	{
 		m_committedSamples = 0u;
@@ -213,8 +214,10 @@ ViewportRenderProgress ReferencePathTracerSession::Update(
     const PreparedRenderScene& scene,
     const RenderFrameIdentity& frame,
     std::uint64_t sceneGeneration,
+    RayTracingExecutionFrontend executionFrontend,
     ReferencePathTracerResources& resources) noexcept
 {
+	m_executionFrontend = executionFrontend;
 	CompletePendingCommit();
 	const bool active = request.ViewMode == RenderViewMode::ReferencePathTracer;
 	if (!active)
@@ -253,7 +256,7 @@ ViewportRenderProgress ReferencePathTracerSession::Update(
 	}
 
 	const bool resumed = m_suspended && m_hasIdentity;
-	UpdateIdentity(view, scene, frame, sceneGeneration, resources);
+	UpdateIdentity(view, scene, frame, sceneGeneration, executionFrontend, resources);
 	m_suspended = false;
 	m_suspensionPending = false;
 	if (m_unavailableReason != ViewportRenderProgressReason::None)
@@ -360,6 +363,19 @@ void ReferencePathTracerSession::FinalizeSuspension(ReferencePathTracerResources
 
 ViewportRenderProgress ReferencePathTracerSession::GetProgress() const noexcept
 {
+	const auto activeRoute = [](RayTracingExecutionFrontend frontend)
+	{
+		switch (frontend)
+		{
+			case RayTracingExecutionFrontend::Inline:
+				return ViewportRenderProgressRoute::InlineRayTracing;
+			case RayTracingExecutionFrontend::Pipeline:
+				return ViewportRenderProgressRoute::PipelineRayTracing;
+			case RayTracingExecutionFrontend::None:
+			default:
+				return ViewportRenderProgressRoute::None;
+		}
+	};
 	const ViewportRenderProgressState state = m_unavailableReason != ViewportRenderProgressReason::None
 	    ? ViewportRenderProgressState::Unavailable
 	    : (m_paused ? ViewportRenderProgressState::Paused
@@ -372,10 +388,10 @@ ViewportRenderProgress ReferencePathTracerSession::GetProgress() const noexcept
 	return ViewportRenderProgress{
 	    .State = state,
 	    .Reason = m_unavailableReason != ViewportRenderProgressReason::None ? m_unavailableReason : m_lastReason,
-	    .RequestedRoute = ViewportRenderProgressRoute::Automatic,
-	    .ActiveRoute = m_unavailableReason == ViewportRenderProgressReason::None ? ViewportRenderProgressRoute::InlineRayTracing
+	    .ActiveRoute = m_unavailableReason == ViewportRenderProgressReason::None ? activeRoute(m_executionFrontend)
 	                                                                             : ViewportRenderProgressRoute::None,
-	    .BackendApi = m_deviceServices.GetCapabilities().BackendApi,
+	    .BackendApi = m_unavailableReason == ViewportRenderProgressReason::None ? m_deviceServices.GetCapabilities().BackendApi
+	                                                                            : ERhiBackendApi::Unknown,
 	    .CompletedWork = m_committedSamples,
 	    .TargetWork = TargetSampleCount,
 	    .DiscardedWork = m_discardedSamples,

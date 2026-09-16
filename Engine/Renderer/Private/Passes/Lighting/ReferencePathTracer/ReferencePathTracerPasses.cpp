@@ -8,21 +8,24 @@
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerResources.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerShader.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerUniformData.h"
+#include "RayTracing/Effects/RayTracingExecutionFrontend.h"
+#include "RayTracing/RayTracingMaterialPipelineShaders.h"
+#include "RayTracing/RayTracingPipelineComposition.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
 #include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 #include "ShaderData/SkyUniformData.h"
 #include "View/RenderView.h"
 
-static void AddReferencePathTracerTransportPass(
+#include <vector>
+
+template <typename TShader> static auto& BuildReferencePathTracerParameters(
     FrameGraphBuilder& builder,
-    RenderViewportExtent extent,
     const RenderFrameGraphResources& resources,
     const ReferencePathTracerGraphResources& graphResources,
-    const ReferencePathTracerUniformData& uniformData,
-    std::uint32_t workRowsPerDispatch)
+    const ReferencePathTracerUniformData& uniformData)
 {
-	auto& parameters = builder.AllocParameters<ReferencePathTracerCS>();
+	auto& parameters = builder.AllocParameters<TShader>();
 	parameters->WorkingMean = builder.CreateUAV(graphResources.WorkingMean);
 	parameters->WorkingM2 = builder.CreateUAV(graphResources.WorkingM2);
 	parameters->CommittedMean = builder.CreateSRV(graphResources.CommittedMean);
@@ -62,10 +65,46 @@ static void AddReferencePathTracerTransportPass(
 		        .RayTracingHitMaterialCount = scene.gpuBindings->RayTracing.MaterialCount};
 		    fields.MaterialTextureTable = scene.materialTextureTable.Binding;
 	    });
-	builder.Dispatch<ReferencePathTracerCS>(
+	return parameters;
+}
+
+static void AddReferencePathTracerInlinePass(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent extent,
+    const RenderFrameGraphResources& resources,
+    const ReferencePathTracerGraphResources& graphResources,
+    const ReferencePathTracerUniformData& uniformData,
+    std::uint32_t workRowsPerDispatch)
+{
+	auto& parameters = BuildReferencePathTracerParameters<ReferencePathTracerInlineCS>(builder, resources, graphResources, uniformData);
+	builder.Dispatch<ReferencePathTracerInlineCS>(
 	    "ReferencePathTracer.SurfaceTransportReference",
 	    parameters,
 	    ComputeDispatchDesc{MathUtils::DivideRoundUp(extent.Width, 8u), MathUtils::DivideRoundUp(workRowsPerDispatch, 8u), 1u});
+}
+
+static void AddReferencePathTracerPipelinePass(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent extent,
+    const RenderFrameGraphResources& resources,
+    const ReferencePathTracerGraphResources& graphResources,
+    const ReferencePathTracerUniformData& uniformData,
+    std::uint32_t workRowsPerDispatch,
+    RayTracingShaderTablePlan& shaderTablePlan)
+{
+	auto& parameters = BuildReferencePathTracerParameters<ReferencePathTracerRGS>(builder, resources, graphResources, uniformData);
+	const RayTracingPipelineComposition composition = RayTracingPipelineComposition::Create<ReferencePathTracerRGS>(
+	    std::vector{RayTracingPipelineComposition::Shader<RayTracingMaterialMiss>()},
+	    std::vector{
+	        RayTracingHitGroupComposition::Triangles<RayTracingMaterialClosestHit>("RayTracingMaterialOpaqueHitGroup"),
+	        RayTracingHitGroupComposition::Triangles<RayTracingMaterialClosestHit, RayTracingMaterialAnyHit>(
+	            "RayTracingMaterialAlphaTestedHitGroup")});
+	builder.TraceRays<ReferencePathTracerRGS>(
+	    "ReferencePathTracer.SurfaceTransportReference",
+	    composition,
+	    shaderTablePlan,
+	    parameters,
+	    RayTracingDispatchDimensions{.Width = extent.Width, .Height = workRowsPerDispatch, .Depth = 1u});
 }
 
 static void AddReferencePathTracerDisplayPass(
@@ -96,8 +135,17 @@ void AddReferencePathTracerGpuPasses(
     const RenderFrameGraphResources& resources,
     const ReferencePathTracerGraphResources& graphResources,
     const ReferencePathTracerUniformData& uniformData,
-    std::uint32_t workRowsPerDispatch)
+    std::uint32_t workRowsPerDispatch,
+    RayTracingExecutionFrontend executionFrontend,
+    RayTracingShaderTablePlan& shaderTablePlan)
 {
-	AddReferencePathTracerTransportPass(builder, extent, resources, graphResources, uniformData, workRowsPerDispatch);
+	if (executionFrontend == RayTracingExecutionFrontend::Inline)
+	{
+		AddReferencePathTracerInlinePass(builder, extent, resources, graphResources, uniformData, workRowsPerDispatch);
+	}
+	else if (executionFrontend == RayTracingExecutionFrontend::Pipeline)
+	{
+		AddReferencePathTracerPipelinePass(builder, extent, resources, graphResources, uniformData, workRowsPerDispatch, shaderTablePlan);
+	}
 	AddReferencePathTracerDisplayPass(builder, extent, resources, graphResources, uniformData);
 }

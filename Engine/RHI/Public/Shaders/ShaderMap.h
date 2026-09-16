@@ -42,6 +42,22 @@ struct RayTracingShaderMetadata final
 	constexpr bool operator==(const RayTracingShaderMetadata&) const noexcept = default;
 };
 
+struct RayTracingTriangleAttributeLayout final
+{
+	float Barycentrics[2] = {};
+};
+
+template <typename TPayload, typename TAttributes>
+consteval RayTracingShaderMetadata BuildRayTracingShaderMetadata(std::uint32_t minimumRecursionDepth) noexcept
+{
+	static_assert(std::is_standard_layout_v<TPayload> && std::is_trivially_copyable_v<TPayload>);
+	static_assert(std::is_standard_layout_v<TAttributes> && std::is_trivially_copyable_v<TAttributes>);
+	return RayTracingShaderMetadata{
+	    .PayloadSizeInBytes = static_cast<std::uint32_t>(sizeof(TPayload)),
+	    .AttributeSizeInBytes = static_cast<std::uint32_t>(sizeof(TAttributes)),
+	    .MinimumRecursionDepth = minimumRecursionDepth};
+}
+
 SPARKLE_RHI_API ShaderFeatureFlags operator|(ShaderFeatureFlags lhs, ShaderFeatureFlags rhs) noexcept;
 SPARKLE_RHI_API ShaderFeatureFlags& operator|=(ShaderFeatureFlags& lhs, ShaderFeatureFlags rhs) noexcept;
 SPARKLE_RHI_API bool HasShaderFeature(ShaderFeatureFlags value, ShaderFeatureFlags flag) noexcept;

@@ -61,10 +61,6 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 	static constexpr ComboOption<GBufferAlgorithm> gBufferAlgorithmOptions[] = {
 	    {"Rasterized", GBufferAlgorithm::Rasterized},
 	    {"Ray tracing", GBufferAlgorithm::RayTracing}};
-	static constexpr ComboOption<RayTracingExecutionMode> rayTracingExecutionOptions[] = {
-	    {"Automatic", RayTracingExecutionMode::Automatic},
-	    {"Inline ray query", RayTracingExecutionMode::Inline},
-	    {"Ray-tracing pipeline", RayTracingExecutionMode::Pipeline}};
 	DrawDisplaySettingsSection(*m_settings, settings, filterText);
 
 	if (MatchesFilter(filterText, "Geometry", "geometry mesh auto batching") && BeginSettingsCategory("Geometry"))
@@ -77,12 +73,6 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 			    settings.SelectedGBufferAlgorithm,
 			    gBufferAlgorithmOptions,
 			    [this](GBufferAlgorithm value) { m_settings->SetGBufferAlgorithm(value); });
-			DrawComboOptionRow(
-			    "##GBufferRayTracingExecution",
-			    "Ray-tracing execution",
-			    settings.GBufferRayTracingExecutionMode,
-			    rayTracingExecutionOptions,
-			    [this](RayTracingExecutionMode value) { m_settings->SetGBufferRayTracingExecutionMode(value); });
 			DrawBooleanRow(
 			    "##MeshAutoBatching",
 			    "Mesh auto batching",

@@ -1,5 +1,5 @@
 #include "/Engine/Passes/RayTracing/RayTracingGBufferCommon.hlsli"
-#include "/Engine/RayTracing/RayTracingMaterialTraceQuery.hlsli"
+#include "/Engine/RayTracing/RayTracingSceneTraceInline.hlsli"
 
 [numthreads(8, 8, 1)]
 void RayTracingGBufferInline(uint3 dispatchThreadId : SV_DispatchThreadID)
@@ -14,12 +14,12 @@ void RayTracingGBufferInline(uint3 dispatchThreadId : SV_DispatchThreadID)
 
 	const uint2 pixelCoord = dispatchThreadId.xy;
 	const RayTracingGBuffer::PrimaryRay ray = RayTracingGBuffer::BuildPrimaryRay(pixelCoord);
-	const RayTracingTraceResult trace = TraceRayQueryWithAlphaTest(SceneTlas,
-	                                                               ray.OriginWorld,
-	                                                               ray.DirectionWorld,
-	                                                               ray.Description.TMin,
-	                                                               ray.Description.TMax,
-	                                                               RayTracingGBuffer::CullFlags | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER,
-	                                                               RayTracingGBuffer::InstanceMask);
+	const RayTracingTraceResult trace = TraceSceneRay(SceneTlas,
+	                                                              ray.OriginWorld,
+	                                                              ray.DirectionWorld,
+	                                                              ray.Description.TMin,
+	                                                              ray.Description.TMax,
+	                                                              RayTracingGBuffer::CullFlags,
+	                                                              RayTracingGBuffer::InstanceMask);
 	RayTracingGBuffer::StoreTraceResult(pixelCoord, trace, ray);
 }

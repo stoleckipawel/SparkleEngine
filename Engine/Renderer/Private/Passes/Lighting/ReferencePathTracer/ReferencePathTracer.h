@@ -14,6 +14,7 @@ struct RenderFrameGraphResources;
 struct RenderFrameGraphSettings;
 struct RenderFrameIdentity;
 struct RenderView;
+class RenderRayTracingScene;
 
 class ReferencePathTracer final
 {
@@ -23,7 +24,11 @@ public:
 	ReferencePathTracer(const ReferencePathTracer&) = delete;
 	ReferencePathTracer& operator=(const ReferencePathTracer&) = delete;
 
-	void AddPasses(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings, RenderFrameGraphResources& resources);
+	void AddPasses(
+	    FrameGraphBuilder& builder,
+	    const RenderFrameGraphSettings& settings,
+	    RenderFrameGraphResources& resources,
+	    RenderRayTracingScene& rayTracingScene);
 	ViewportRenderProgress Update(
 	    const ViewportRenderRequest& request,
 	    const RenderView& view,
@@ -34,6 +39,7 @@ public:
 	void RecordSubmission(RhiSubmissionToken token) noexcept;
 
 private:
+	RenderDeviceServices& m_deviceServices;
 	ReferencePathTracerResources m_resources;
 	ReferencePathTracerSession m_session;
 };

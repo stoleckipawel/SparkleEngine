@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RHI/Public/Core/RhiBackendApi.h"
+#include "RayTracing/Effects/RayTracingExecutionFrontend.h"
 
 #include <array>
 #include <cstddef>
@@ -21,12 +22,13 @@ enum class ReferencePathTracerIdentityComponent : std::uint8_t
 	Light,
 	Environment,
 	Shader,
+	Execution,
 	Backend,
 };
 
 struct ReferencePathTracerIdentity final
 {
-	static constexpr std::size_t ComponentCount = 9u;
+	static constexpr std::size_t ComponentCount = 10u;
 
 	std::array<std::uint64_t, ComponentCount> Components = {};
 
@@ -39,4 +41,5 @@ ReferencePathTracerIdentity BuildReferencePathTracerIdentity(
     const PreparedRenderScene& scene,
     const RenderFrameIdentity& frame,
     std::uint64_t sceneGeneration,
+    RayTracingExecutionFrontend executionFrontend,
     ERhiBackendApi backendApi) noexcept;

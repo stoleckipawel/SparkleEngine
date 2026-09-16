@@ -3,6 +3,7 @@
 #include "ReferencePathTracerIdentity.h"
 #include "ReferencePathTracerUniformData.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
+#include "RayTracing/Effects/RayTracingExecutionFrontend.h"
 #include "RHI/Public/Commands/RhiQueue.h"
 
 #include <chrono>
@@ -27,6 +28,7 @@ public:
 	    const PreparedRenderScene& scene,
 	    const RenderFrameIdentity& frame,
 	    std::uint64_t sceneGeneration,
+	    RayTracingExecutionFrontend executionFrontend,
 	    ReferencePathTracerResources& resources) noexcept;
 	void RecordSubmission(RhiSubmissionToken token, ReferencePathTracerResources& resources) noexcept;
 
@@ -46,7 +48,10 @@ private:
 		explicit operator bool() const noexcept { return Submission.IsValid(); }
 	};
 
-	ViewportRenderProgressReason ResolveAvailability(const RenderView& view, const PreparedRenderScene& scene) const noexcept;
+	ViewportRenderProgressReason ResolveAvailability(
+	    const RenderView& view,
+	    const PreparedRenderScene& scene,
+	    RayTracingExecutionFrontend executionFrontend) const noexcept;
 	void BeginIdentity(
 	    const ReferencePathTracerIdentity& identity,
 	    RenderViewportExtent extent,
@@ -57,6 +62,7 @@ private:
 	    const PreparedRenderScene& scene,
 	    const RenderFrameIdentity& frame,
 	    std::uint64_t sceneGeneration,
+	    RayTracingExecutionFrontend executionFrontend,
 	    ReferencePathTracerResources& resources) noexcept;
 	void CompletePendingCommit() noexcept;
 	void PrepareWork(RenderViewportExtent extent) noexcept;
@@ -68,6 +74,7 @@ private:
 	RenderDeviceServices& m_deviceServices;
 	ReferencePathTracerUniformData m_uniformData = {};
 	ReferencePathTracerIdentity m_identity = {};
+	RayTracingExecutionFrontend m_executionFrontend = RayTracingExecutionFrontend::None;
 	PendingCommit m_pendingCommit = {};
 	std::uint64_t m_executionGeneration = 0u;
 	std::uint64_t m_ownerViewportId = 0u;

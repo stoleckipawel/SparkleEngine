@@ -23,7 +23,7 @@ RenderFrameGraphResources FramePipeline::BuildRenderFrameGraph(FrameGraphBuilder
 	AddRayTracingScenePasses(builder, rayTracingScene, resources);
 	if (m_viewportRenderRequest.ViewMode == RenderViewMode::ReferencePathTracer)
 	{
-		m_referencePathTracer->AddPasses(builder, settings, resources);
+		m_referencePathTracer->AddPasses(builder, settings, resources, rayTracingScene);
 	}
 	else
 	{

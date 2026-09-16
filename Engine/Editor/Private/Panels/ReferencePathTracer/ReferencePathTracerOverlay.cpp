@@ -21,6 +21,7 @@ static constexpr std::array ProgressReasonLabels = {
     "Lighting changed",
     "Environment changed",
     "Shader changed",
+    "Execution route changed",
     "Backend changed",
     "Manual restart",
     "Resumed retained prefix",
@@ -29,7 +30,7 @@ static constexpr std::array ProgressReasonLabels = {
     "The scene contains unsupported material transport",
     "Required GPU ray tracing or accumulation support is unavailable",
     "Another viewport owns the reference accumulator"};
-static constexpr std::array ProgressRouteLabels = {"Unavailable", "Automatic", "Inline ray tracing"};
+static constexpr std::array ProgressRouteLabels = {"Unavailable", "Inline ray tracing", "Ray-tracing pipeline"};
 static constexpr std::array BackendLabels = {"Unknown", "D3D12", "Vulkan"};
 
 static void RequestAction(ViewportRenderRequest& request, ViewportRenderAction action) noexcept
@@ -148,10 +149,7 @@ void DrawReferencePathTracerOverlay(const ViewportRenderProgress& progress, View
 		    static_cast<unsigned long long>(progress.TargetWork));
 		ImGui::Text("Last event: %s", reasonLabel);
 		ImGui::Text("Discarded prefix: %llu SPP", static_cast<unsigned long long>(progress.DiscardedWork));
-		ImGui::Text(
-		    "Route: %s -> %s",
-		    ProgressRouteLabels[static_cast<std::size_t>(progress.RequestedRoute)],
-		    ProgressRouteLabels[static_cast<std::size_t>(progress.ActiveRoute)]);
+		ImGui::Text("Route: %s", ProgressRouteLabels[static_cast<std::size_t>(progress.ActiveRoute)]);
 		ImGui::Text("Backend: %s", BackendLabels[static_cast<std::size_t>(progress.BackendApi)]);
 		ImGui::Separator();
 		ImGui::TextUnformatted("Raw: scene-linear HDR accumulation");

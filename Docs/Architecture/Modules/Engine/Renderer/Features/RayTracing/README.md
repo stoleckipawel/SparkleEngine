@@ -59,7 +59,7 @@ The frame graph reserves a persistent `SceneTlas`, declares `RayTracingSceneBuil
 | --- | --- | --- | --- |
 | Ray GBuffer | present | raygen, miss, closest-hit, any-hit present | `r.GBuffer.RayTracingExecution`; Automatic prefers Pipeline then Inline |
 | Direct shadow visibility | present | raygen, miss, closest-hit, any-hit present | `r.RayTracing.Shadows.Execution`; independently resolved |
-| Reference direct/indirect lighting | present | not found | Inline only |
+| Reference path tracing | present | raygen plus shared material miss/closest-hit/alpha-any-hit present | `r.PathTracing.Execution`; Automatic prefers Inline then Pipeline |
 | ReSTIR indirect temporal/spatial/resolve | present | not found | Inline only |
 
 “Native ray tracing supported” therefore does not mean every ray effect has a native-pipeline frontend. Likewise, an inline-capable device does not establish shader-table/pipeline support.

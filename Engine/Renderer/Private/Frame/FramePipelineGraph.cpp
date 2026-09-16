@@ -7,7 +7,8 @@
 #include "FrameGraph/FrameGraph.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "Pipeline/RenderPassRuntimeCache.h"
-#include "RayTracing/Effects/GBuffer/RayTracingGBufferExecutionPlan.h"
+#include "Passes/Lighting/ReferencePathTracer/ReferencePathTracer.h"
+#include "RayTracing/Effects/RayTracingExecutionFrontend.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Presentation/RhiPresentationService.h"
@@ -89,8 +90,8 @@ void FramePipeline::InitializeFrameGraph(const RenderFrameGraphSettings& setting
 
 	m_frameGraphSettings = settings;
 	m_builtGBufferAlgorithm = CVarGBufferAlgorithm.Get();
-	m_builtGBufferExecutionPlan = ResolveRayTracingGBufferExecutionPlan(m_renderScene.GetRayTracingScene().GetCapabilityReport());
-	m_builtShadowExecutionPlan = ResolveRayTracingShadowExecutionPlan(m_renderScene.GetRayTracingScene().GetCapabilityReport());
+	m_builtRayTracingExecutionFrontend =
+	    ResolveRayTracingExecutionFrontend(m_renderScene.GetRayTracingScene().GetCapabilityReport());
 	m_builtShaderTablePlanGeneration = m_renderScene.GetRayTracingScene().GetShaderTablePlan().GetGeneration();
 	m_builtShaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration();
 	m_frameResources = resources;
@@ -157,19 +158,14 @@ void FramePipeline::RefreshGraphForTopology() noexcept
 
 	const RenderFrameGraphSettings settings = ResolveFrameGraphSettings();
 	const GBufferAlgorithm gBufferAlgorithm = CVarGBufferAlgorithm.Get();
-	const RayTracingGBufferExecutionPlan gBufferExecutionPlan =
-	    ResolveRayTracingGBufferExecutionPlan(m_renderScene.GetRayTracingScene().GetCapabilityReport());
-	const RayTracingShadowExecutionPlan shadowExecutionPlan =
-	    ResolveRayTracingShadowExecutionPlan(m_renderScene.GetRayTracingScene().GetCapabilityReport());
+	const RayTracingExecutionFrontend rayTracingExecutionFrontend =
+	    ResolveRayTracingExecutionFrontend(m_renderScene.GetRayTracingScene().GetCapabilityReport());
 	const std::uint64_t shaderTablePlanGeneration = m_renderScene.GetRayTracingScene().GetShaderTablePlan().GetGeneration();
 	const std::uint64_t shaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration();
-	const bool usesSceneShaderTable = gBufferExecutionPlan.Active == RayTracingExecutionFrontend::Pipeline
-	    || shadowExecutionPlan.Active == RayTracingExecutionFrontend::Pipeline
-	    || m_builtGBufferExecutionPlan.Active == RayTracingExecutionFrontend::Pipeline
-	    || m_builtShadowExecutionPlan.Active == RayTracingExecutionFrontend::Pipeline;
+	const bool usesSceneShaderTable = rayTracingExecutionFrontend == RayTracingExecutionFrontend::Pipeline
+	    || m_builtRayTracingExecutionFrontend == RayTracingExecutionFrontend::Pipeline;
 	if (providerChanged || settings != m_frameGraphSettings || gBufferAlgorithm != m_builtGBufferAlgorithm
-	    || gBufferExecutionPlan != m_builtGBufferExecutionPlan || shadowExecutionPlan != m_builtShadowExecutionPlan
-	    || shaderGeneration != m_builtShaderGeneration
+	    || rayTracingExecutionFrontend != m_builtRayTracingExecutionFrontend || shaderGeneration != m_builtShaderGeneration
 	    || (usesSceneShaderTable && shaderTablePlanGeneration != m_builtShaderTablePlanGeneration))
 	{
 		InvalidateViewHistory(RenderViewInvalidationReason::GraphTopology);

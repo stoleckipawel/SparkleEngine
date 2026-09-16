@@ -56,7 +56,6 @@ EngineRenderingSettingsState EngineRenderingSettingsRuntime::Capture() noexcept
 	state.UpscalerQualityMode = CVarUpscalerQualityMode.Get();
 	state.RayReconstructionMode = CVarRayReconstructionMode.Get();
 	state.SelectedGBufferAlgorithm = CVarGBufferAlgorithm.Get();
-	state.GBufferRayTracingExecutionMode = CVarGBufferRayTracingExecutionMode.Get();
 	state.MeshAutoBatching = CVarRendererMeshAutoBatching.Get();
 	state.RefitTlas = CVarRayTracingClassicTlasRefit.Get();
 	state.PtlasActive = CVarRayTracingPreferPartitionedTlas.Get();
@@ -94,7 +93,6 @@ void EngineRenderingSettingsRuntime::Apply(const EngineRenderingSettingsState& s
 	setCVarIfChanged(CVarUpscalerQualityMode, state.UpscalerQualityMode);
 	setCVarIfChanged(CVarRayReconstructionMode, state.RayReconstructionMode);
 	setCVarIfChanged(CVarGBufferAlgorithm, state.SelectedGBufferAlgorithm);
-	setCVarIfChanged(CVarGBufferRayTracingExecutionMode, state.GBufferRayTracingExecutionMode);
 	setCVarIfChanged(CVarRendererMeshAutoBatching, state.MeshAutoBatching);
 	setCVarIfChanged(CVarRayTracingClassicTlasRefit, state.RefitTlas);
 	setCVarIfChanged(CVarRayTracingPreferPartitionedTlas, state.PtlasActive);

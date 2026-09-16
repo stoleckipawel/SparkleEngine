@@ -5,7 +5,7 @@
 #include "/Engine/RayTracing/PathTracer.hlsli"
 #include "/Engine/RayTracing/RayEndpoints.hlsli"
 #include "/Engine/RayTracing/RayTracingMaterialHit.hlsli"
-#include "/Engine/RayTracing/RayTracingMaterialTraceQuery.hlsli"
+#include "/Engine/RayTracing/RayTracingSceneTrace.hlsli"
 #include "/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerDirectLighting.hlsli"
 #include "/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerSampler.hlsli"
 #include "/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerUniformData.hlsli"
@@ -66,16 +66,16 @@ namespace ReferencePathTracer
 		previousEvent.Delta = true;
 		float3 contribution = 0.0f.xxx;
 
-		[loop] for (;;)
+		[loop]
+		for (;;)
 		{
-			const RayTracingTraceResult trace =
-			    TraceRayQueryWithAlphaTest(sceneTlas,
-			                               path.OriginWorld,
-			                               path.DirectionWorld,
-			                               traversal.TMin,
-			                               traversal.TMax,
-			                               RAY_FLAG_SKIP_CLOSEST_HIT_SHADER | RAY_FLAG_CULL_BACK_FACING_TRIANGLES,
-			                               0xFFu);
+			const RayTracingTraceResult trace = TraceSceneRay(sceneTlas,
+			                                                              path.OriginWorld,
+			                                                              path.DirectionWorld,
+			                                                              traversal.TMin,
+			                                                              traversal.TMax,
+			                                                              RAY_FLAG_CULL_BACK_FACING_TRIANGLES,
+			                                                              0xFFu);
 			if (!trace.Hit)
 			{
 				PathTracer::AddRadiance(

@@ -9,14 +9,14 @@
 #include "Passes/Lighting/Shadows/ShadowVisibility.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowPassData.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowPassInput.h"
-#include "RayTracing/Effects/Shadows/RayTracingShadowExecutionPlan.h"
+#include "RayTracing/Effects/RayTracingExecutionFrontend.h"
+#include "RayTracing/RayTracingMaterialPipelineShaders.h"
 #include "RayTracing/RayTracingPipelineComposition.h"
 #include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 #include "Scene/RayTracing/RenderRayTracingScene.h"
 #include "View/RenderView.h"
 
-#include <string>
 #include <vector>
 
 namespace DirectShadowSignalPasses
@@ -73,13 +73,12 @@ namespace DirectShadowSignalPasses
 	    const GBufferRenderTargets& gbuffer,
 	    FrameGraphAccelerationStructureHandle sceneTlas,
 	    const DirectShadowSignalResources& shadowSignals,
-	    const RenderFrameGraphImportedSceneResources& externalResources,
-	    const char* reason)
+	    const RenderFrameGraphImportedSceneResources& externalResources)
 	{
 		auto& parameters =
 		    BuildParameters<DirectShadowSignalCS>(builder, sceneTargets, gbuffer, sceneTlas, shadowSignals, externalResources);
 		builder.Dispatch<DirectShadowSignalCS>(
-		    std::string("DirectShadowSignal.Inline.") + reason,
+		    "DirectShadowSignal.Inline",
 		    parameters,
 		    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 	}
@@ -92,19 +91,18 @@ namespace DirectShadowSignalPasses
 	    FrameGraphAccelerationStructureHandle sceneTlas,
 	    const DirectShadowSignalResources& shadowSignals,
 	    const RenderFrameGraphImportedSceneResources& externalResources,
-	    RayTracingShaderTablePlan& shaderTablePlan,
-	    const char* reason)
+	    RayTracingShaderTablePlan& shaderTablePlan)
 	{
 		auto& parameters =
 		    BuildParameters<DirectShadowSignalRGS>(builder, sceneTargets, gbuffer, sceneTlas, shadowSignals, externalResources);
 		const RayTracingPipelineComposition composition = RayTracingPipelineComposition::Create<DirectShadowSignalRGS>(
-		    std::vector{RayTracingPipelineComposition::Shader<DirectShadowSignalMiss>()},
+		    std::vector{RayTracingPipelineComposition::Shader<RayTracingMaterialMiss>()},
 		    std::vector{
-		        RayTracingHitGroupComposition::Triangles<DirectShadowSignalClosestHit>("DirectShadowSignalOpaqueHitGroup"),
-		        RayTracingHitGroupComposition::Triangles<DirectShadowSignalClosestHit, DirectShadowSignalAnyHit>(
-		            "DirectShadowSignalAlphaTestedHitGroup")});
+		        RayTracingHitGroupComposition::Triangles<RayTracingMaterialClosestHit>("RayTracingMaterialOpaqueHitGroup"),
+		        RayTracingHitGroupComposition::Triangles<RayTracingMaterialClosestHit, RayTracingMaterialAnyHit>(
+		            "RayTracingMaterialAlphaTestedHitGroup")});
 		builder.TraceRays<DirectShadowSignalRGS>(
-		    std::string("DirectShadowSignal.Pipeline.") + reason,
+		    "DirectShadowSignal.Pipeline",
 		    composition,
 		    shaderTablePlan,
 		    parameters,
@@ -122,20 +120,10 @@ void AddDirectShadowSignalPass(
     const RenderFrameGraphImportedSceneResources& externalResources,
     RenderRayTracingScene& rayTracingScene)
 {
-	const RayTracingShadowExecutionPlan executionPlan = ResolveRayTracingShadowExecutionPlan(rayTracingScene.GetCapabilityReport());
-	const char* reason = GetRayTracingShadowExecutionReasonLabel(executionPlan.Reason);
-	switch (executionPlan.Active)
+	switch (ResolveRayTracingExecutionFrontend(rayTracingScene.GetCapabilityReport()))
 	{
 		case RayTracingExecutionFrontend::Inline:
-			DirectShadowSignalPasses::AddInline(
-			    builder,
-			    sceneExtent,
-			    sceneTargets,
-			    gbuffer,
-			    sceneTlas,
-			    shadowSignals,
-			    externalResources,
-			    reason);
+			DirectShadowSignalPasses::AddInline(builder, sceneExtent, sceneTargets, gbuffer, sceneTlas, shadowSignals, externalResources);
 			return;
 		case RayTracingExecutionFrontend::Pipeline:
 			DirectShadowSignalPasses::AddPipeline(
@@ -146,8 +134,7 @@ void AddDirectShadowSignalPass(
 			    sceneTlas,
 			    shadowSignals,
 			    externalResources,
-			    rayTracingScene.GetShaderTablePlan(),
-			    reason);
+			    rayTracingScene.GetShaderTablePlan());
 			return;
 		case RayTracingExecutionFrontend::None:
 		default:

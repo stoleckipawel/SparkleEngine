@@ -10,8 +10,7 @@ struct RenderPrimitive;
 enum class RayTracingSceneRayType : std::uint32_t
 {
 	Surface = 0u,
-	ShadowVisibility = 1u,
-	Count = 2u,
+	Count = 1u,
 };
 
 enum class RayTracingShaderTableHitGroup : std::uint8_t

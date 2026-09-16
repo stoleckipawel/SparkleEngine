@@ -195,6 +195,7 @@ enum class ViewportRenderProgressReason : std::uint8_t
 	LightingChanged,
 	EnvironmentChanged,
 	ShaderChanged,
+	ExecutionChanged,
 	BackendChanged,
 	ManualRestart,
 	Resumed,
@@ -208,15 +209,14 @@ enum class ViewportRenderProgressReason : std::uint8_t
 enum class ViewportRenderProgressRoute : std::uint8_t
 {
 	None = 0,
-	Automatic,
 	InlineRayTracing,
+	PipelineRayTracing,
 };
 
 struct SPARKLE_RENDERER_API ViewportRenderProgress final
 {
 	ViewportRenderProgressState State = ViewportRenderProgressState::None;
 	ViewportRenderProgressReason Reason = ViewportRenderProgressReason::None;
-	ViewportRenderProgressRoute RequestedRoute = ViewportRenderProgressRoute::None;
 	ViewportRenderProgressRoute ActiveRoute = ViewportRenderProgressRoute::None;
 	ERhiBackendApi BackendApi = ERhiBackendApi::Unknown;
 	std::uint64_t CompletedWork = 0;

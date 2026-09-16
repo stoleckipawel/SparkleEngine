@@ -321,7 +321,7 @@ builder.Draw<GBufferVS, GBufferPS>(parameters, renderState, meshDraws);
 
 This is deliberately not a second aggregate with the old fields under a new name. `RasterPassRenderState` contains only pass-selected semantic overrides and has granular setters. It cannot name vertex layouts, topology, render-target formats/count, depth format, sample count, shader stages, or backend objects. Attachment bindings are authoritative for their own compatibility and load/store behavior. The complete immutable pipeline description still exists where D3D12 and Vulkan require it, but only inside the runtime/RHI materialization boundary.
 
-Ray-tracing stages use the same concrete `GlobalShader` registration and `ShaderRef` lookup as raster and compute, but they do not pretend to have identical binding roles. The selected ray-generation shader owns the dispatch-global nested `Parameters` and the dispatch-wide payload, attribute, and recursion compile contract, following Unreal's shader-type ownership. Miss, closest-hit, any-hit, intersection, and callable classes declare only stage identity, genuinely local-record metadata, and optional compile hooks; they do not repeat the ray-generation contract or introduce empty placeholder structs. A focused `RayTracingPipelineComposition` names typed stage membership and hit groups and derives the shared ABI from its selected ray-generation type. It is not a universal `TShaderProgram`, package, second registration framework, or copied metadata record. The target semantics remain in the [ray-tracing target architecture](../../Modules/Engine/Renderer/Features/RayTracing/ExecutionArchitecture.md), while the [delivery plan](Plan.md) owns implementation order.
+Ray-tracing stages use the same concrete `GlobalShader` registration and `ShaderRef` lookup as raster and compute, but they do not pretend to have identical binding roles. The selected ray-generation shader owns the dispatch-global nested `Parameters` and the dispatch-wide payload, attribute, and recursion compile contract, following Unreal's shader-type ownership. Payload and attribute byte counts derive from standard-layout ABI types through `BuildRayTracingShaderMetadata`; authoring code does not repeat numeric layout sizes. Recursion depth remains explicit because it is control-flow policy rather than data layout. Miss, closest-hit, any-hit, intersection, and callable classes declare only stage identity, genuinely local-record metadata, and optional compile hooks; they do not repeat the ray-generation contract or introduce empty placeholder structs. A focused `RayTracingPipelineComposition` names typed stage membership and hit groups and derives the shared ABI from its selected ray-generation type. It is not a universal `TShaderProgram`, package, second registration framework, or copied metadata record. The target semantics remain in the [ray-tracing target architecture](../../Modules/Engine/Renderer/Features/RayTracing/ExecutionArchitecture.md), while the [delivery plan](Plan.md) owns implementation order.
 
 The intended authoring surface mirrors Unreal's useful production split without copying its prefixes or legacy binding adapters. This abridged example shows the declaration shape; the product implementation supplies the complete GBuffer output schema required by the owning feature contract.
 
@@ -336,9 +336,9 @@ public:
 	END_SHADER_PARAMETER_STRUCT()
 };
 
-class RayTracingGBufferMiss final : public GlobalShader<RayTracingGBufferMiss> {};
+class RayTracingMaterialMiss final : public GlobalShader<RayTracingMaterialMiss> {};
 
-class RayTracingGBufferClosestHit final : public GlobalShader<RayTracingGBufferClosestHit> {};
+class RayTracingMaterialClosestHit final : public GlobalShader<RayTracingMaterialClosestHit> {};
 
 IMPLEMENT_GLOBAL_SHADER(
 	RayTracingGBufferRGS,
@@ -347,19 +347,19 @@ IMPLEMENT_GLOBAL_SHADER(
 	RayGeneration);
 
 IMPLEMENT_GLOBAL_SHADER(
-	RayTracingGBufferMiss,
-	"/Engine/Passes/RayTracing/RayTracingGBufferPipeline.hlsl",
-	"RayTracingGBufferMiss",
+	RayTracingMaterialMiss,
+	"/Engine/RayTracing/RayTracingMaterialPipeline.hlsl",
+	"RayTracingMaterialMiss",
 	Miss);
 
 IMPLEMENT_GLOBAL_SHADER(
-	RayTracingGBufferClosestHit,
-	"/Engine/Passes/RayTracing/RayTracingGBufferPipeline.hlsl",
-	"RayTracingGBufferClosestHit",
+	RayTracingMaterialClosestHit,
+	"/Engine/RayTracing/RayTracingMaterialPipeline.hlsl",
+	"RayTracingMaterialClosestHit",
 	ClosestHit);
 ```
 
-The effect owner declares one `RayTracingPipelineComposition` relating those typed stages and its hit group. The selected ray-generation class is the single author-facing owner of `GBufferRayPayload`, `BuiltInTriangleAttributes`, and recursion; the composition derives that contract and never copies its names, stage, or ABI metadata. A hit group owns only genuinely consumed local-record data. Graph construction then remains as lean as compute dispatch:
+The effect owner declares one `RayTracingPipelineComposition` relating the typed ray-generation adapter to reusable material stages and hit groups. The selected ray-generation class references metadata derived from its payload and attribute layout types and states only the required recursion depth; the shared traversal shader owns the payload vocabulary used by current full-hit consumers. The composition derives the ABI and never copies its names, stage, or metadata. A hit group owns only genuinely consumed local-record data. Graph construction then remains as lean as compute dispatch:
 
 ```cpp
 auto& parameters = builder.AllocParameters<RayTracingGBufferRGS>();

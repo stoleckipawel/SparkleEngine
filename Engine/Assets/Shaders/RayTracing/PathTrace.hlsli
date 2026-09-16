@@ -15,12 +15,12 @@ namespace RayTracingPathTrace
 		const RayEndpoints::Ray ray = RayEndpoints::Continuation(
 		    surface.PositionWorld, surface.GeometricNormalWorld, surface.PositionError, directionWorld);
 		rayOriginWorld = ray.Origin;
-		return RayTracingSceneTlas::TraceRayQueryWithAlphaTest(
+		return TraceSceneRay(SceneTlas,
 		    ray.Origin,
 		    ray.Direction,
 		    ray.TMin,
 		    ray.TMax,
-		    RAY_FLAG_SKIP_CLOSEST_HIT_SHADER | RAY_FLAG_CULL_BACK_FACING_TRIANGLES,
+		    RAY_FLAG_CULL_BACK_FACING_TRIANGLES,
 		    0xFFu);
 	}
 }

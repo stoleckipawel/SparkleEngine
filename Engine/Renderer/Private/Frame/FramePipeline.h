@@ -3,8 +3,7 @@
 #include "Frame/Graph/RenderFrameGraphSettings.h"
 #include "Frame/Retirement/FrameExecutionRetirementQueue.h"
 #include "Providers/RendererImageProviderStack.h"
-#include "RayTracing/Effects/GBuffer/RayTracingGBufferExecutionPlan.h"
-#include "RayTracing/Effects/Shadows/RayTracingShadowExecutionPlan.h"
+#include "RayTracing/Effects/RayTracingExecutionFrontend.h"
 #include "Resources/History/FrameHistory.h"
 #include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
 #include "Rendering/RenderFrameSubmission.h"
@@ -122,8 +121,7 @@ private:
 	FrameExecutionRetirementQueue m_frameExecutionRetirementQueue;
 	RenderFrameGraphSettings m_frameGraphSettings = {};
 	GBufferAlgorithm m_builtGBufferAlgorithm = GBufferAlgorithm::Rasterized;
-	RayTracingGBufferExecutionPlan m_builtGBufferExecutionPlan = {};
-	RayTracingShadowExecutionPlan m_builtShadowExecutionPlan = {};
+	RayTracingExecutionFrontend m_builtRayTracingExecutionFrontend = RayTracingExecutionFrontend::None;
 	std::uint64_t m_builtShaderTablePlanGeneration = 0u;
 	std::uint64_t m_builtShaderGeneration = 0u;
 	RenderViewportExtent m_windowExtent = {};

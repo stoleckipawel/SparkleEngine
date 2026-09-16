@@ -10,11 +10,12 @@
 #include "ShaderData/MeshInstanceShaderData.h"
 #include "ShaderData/MorphTargetShaderData.h"
 #include "ShaderData/RayTracingHitUniformData.h"
+#include "ShaderData/RayTracingMaterialPayload.h"
 #include "ShaderData/SceneLightingUniformData.h"
 #include "ShaderData/SkyUniformData.h"
 #include "ShaderData/ViewCameraUniformData.h"
 
-class ReferencePathTracerCS final : public GlobalShader<ReferencePathTracerCS>
+class ReferencePathTracerInlineCS final : public GlobalShader<ReferencePathTracerInlineCS>
 {
 public:
 	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::InlineRayQuery;
@@ -47,6 +48,14 @@ public:
 	SHADER_PARAMETER_BUFFER_SRV(float, MorphWeights)
 	SHADER_PARAMETER_TEXTURE_SRV_ARRAY(Texture2D, MaterialTextureTable, MaterialTextureTableFixedCapacity)
 	END_SHADER_PARAMETER_STRUCT()
+};
+
+class ReferencePathTracerRGS final : public GlobalShader<ReferencePathTracerRGS>
+{
+public:
+	using Parameters = ReferencePathTracerInlineCS::Parameters;
+	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
+	static constexpr RayTracingShaderMetadata kRayTracingMetadata = kRayTracingMaterialShaderMetadata;
 };
 
 class ReferencePathTracerDisplayCS final : public GlobalShader<ReferencePathTracerDisplayCS>

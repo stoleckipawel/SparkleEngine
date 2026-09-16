@@ -12,14 +12,3 @@ IMPLEMENT_GLOBAL_SHADER(
     "/Engine/Passes/RayTracing/RayTracingGBufferPipeline.hlsl",
     "RayTracingGBufferRayGeneration",
     RayGeneration);
-IMPLEMENT_GLOBAL_SHADER(RayTracingGBufferMiss, "/Engine/Passes/RayTracing/RayTracingGBufferPipeline.hlsl", "RayTracingGBufferMiss", Miss);
-IMPLEMENT_GLOBAL_SHADER(
-    RayTracingGBufferClosestHit,
-    "/Engine/Passes/RayTracing/RayTracingGBufferPipeline.hlsl",
-    "RayTracingGBufferClosestHit",
-    ClosestHit);
-IMPLEMENT_GLOBAL_SHADER(
-    RayTracingGBufferAnyHit,
-    "/Engine/Passes/RayTracing/RayTracingGBufferPipeline.hlsl",
-    "RayTracingGBufferAnyHit",
-    AnyHit);

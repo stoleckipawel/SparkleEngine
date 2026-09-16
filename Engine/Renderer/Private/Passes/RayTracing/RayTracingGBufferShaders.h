@@ -8,6 +8,7 @@
 #include "ShaderData/MeshInstanceShaderData.h"
 #include "ShaderData/MorphTargetShaderData.h"
 #include "ShaderData/RayTracingHitUniformData.h"
+#include "ShaderData/RayTracingMaterialPayload.h"
 #include "ShaderData/ViewCameraUniformData.h"
 #include "ShaderData/ViewTemporalUniformData.h"
 #include "ShaderData/ViewUniformData.h"
@@ -43,10 +44,7 @@ public:
 	END_SHADER_PARAMETER_STRUCT()
 
 	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
-	static constexpr RayTracingShaderMetadata kRayTracingMetadata{
-	    .PayloadSizeInBytes = 28u,
-	    .AttributeSizeInBytes = sizeof(float) * 2u,
-	    .MinimumRecursionDepth = 1u};
+	static constexpr RayTracingShaderMetadata kRayTracingMetadata = kRayTracingMaterialShaderMetadata;
 };
 
 class RayTracingGBufferInlineCS final : public GlobalShader<RayTracingGBufferInlineCS>
@@ -54,22 +52,4 @@ class RayTracingGBufferInlineCS final : public GlobalShader<RayTracingGBufferInl
 public:
 	using Parameters = RayTracingGBufferRGS::Parameters;
 	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::InlineRayQuery;
-};
-
-class RayTracingGBufferMiss final : public GlobalShader<RayTracingGBufferMiss>
-{
-public:
-	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
-};
-
-class RayTracingGBufferClosestHit final : public GlobalShader<RayTracingGBufferClosestHit>
-{
-public:
-	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
-};
-
-class RayTracingGBufferAnyHit final : public GlobalShader<RayTracingGBufferAnyHit>
-{
-public:
-	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
 };

@@ -143,11 +143,6 @@ void EngineRenderingSettingsSection::SetGBufferAlgorithm(GBufferAlgorithm algori
 	SetValue(m_state.SelectedGBufferAlgorithm, algorithm);
 }
 
-void EngineRenderingSettingsSection::SetGBufferRayTracingExecutionMode(RayTracingExecutionMode mode)
-{
-	SetValue(m_state.GBufferRayTracingExecutionMode, mode);
-}
-
 void EngineRenderingSettingsSection::SetMeshAutoBatching(bool enabled)
 {
 	SetValue(m_state.MeshAutoBatching, enabled);

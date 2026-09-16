@@ -4,8 +4,8 @@
 namespace RayTracingShaderTableLayout
 {
 	static const uint SurfaceRayContribution = 0u;
-	static const uint ShadowVisibilityRayContribution = 1u;
-	static const uint GeometryMultiplier = 2u;
+	static const uint GeometryMultiplier = 1u;
+	static const uint SurfaceMissIndex = 0u;
 }
 
 #endif

@@ -14,8 +14,6 @@ enum class RendererDiagnosticMarkerVerbosity : std::uint8_t
 };
 
 extern SPARKLE_RENDERER_API ConsoleVariable<GBufferAlgorithm> CVarGBufferAlgorithm;
-extern SPARKLE_RENDERER_API ConsoleVariable<RayTracingExecutionMode> CVarGBufferRayTracingExecutionMode;
-extern SPARKLE_RENDERER_API ConsoleVariable<RayTracingExecutionMode> CVarShadowRayTracingExecutionMode;
 extern SPARKLE_RENDERER_API ConsoleVariable<bool> CVarRendererMeshAutoBatching;
 extern SPARKLE_RENDERER_API ConsoleVariable<RendererDiagnosticMarkerVerbosity> CVarRendererDiagnosticMarkerVerbosity;
 extern SPARKLE_RENDERER_API ConsoleVariable<bool> CVarRendererDiagnosticGpuTiming;

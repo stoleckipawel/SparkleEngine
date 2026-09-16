@@ -6,14 +6,6 @@ ConsoleVariable<GBufferAlgorithm> CVarGBufferAlgorithm(
     "r.GBuffer.Algorithm",
     GBufferAlgorithm::Rasterized,
     "GBuffer algorithm: 0=rasterized, 1=ray tracing.");
-ConsoleVariable<RayTracingExecutionMode> CVarGBufferRayTracingExecutionMode(
-    "r.GBuffer.RayTracingExecution",
-    RayTracingExecutionMode::Automatic,
-    "Ray-traced GBuffer execution: 0=automatic, 1=inline ray query, 2=ray-tracing pipeline.");
-ConsoleVariable<RayTracingExecutionMode> CVarShadowRayTracingExecutionMode(
-    "r.RayTracing.Shadows.Execution",
-    RayTracingExecutionMode::Automatic,
-    "Ray-traced shadow execution: 0=automatic, 1=inline ray query, 2=ray-tracing pipeline.");
 ConsoleVariable<bool> CVarRendererMeshAutoBatching(
     "r.MeshAutoBatching",
     true,

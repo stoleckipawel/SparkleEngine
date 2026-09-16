@@ -7,22 +7,17 @@
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/RayTracing/RayTracingGBufferShaders.h"
-#include "RayTracing/Effects/GBuffer/RayTracingGBufferExecutionPlan.h"
+#include "RayTracing/Effects/RayTracingExecutionFrontend.h"
+#include "RayTracing/RayTracingMaterialPipelineShaders.h"
 #include "RayTracing/RayTracingPipelineComposition.h"
 #include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 #include "View/RenderView.h"
 
-#include <string>
 #include <vector>
 
 namespace RayTracingGBufferPasses
 {
-	std::string BuildDiagnosticLabel(const char* frontend, const char* reason)
-	{
-		return std::string("RayTracingGBuffer.") + frontend + "." + reason;
-	}
-
 	template <typename TShader> auto& BuildParameters(
 	    FrameGraphBuilder& builder,
 	    const GBufferRenderTargets& targets,
@@ -75,12 +70,11 @@ namespace RayTracingGBufferPasses
 	    RenderViewportExtent sceneExtent,
 	    const GBufferRenderTargets& targets,
 	    FrameGraphAccelerationStructureHandle sceneTlas,
-	    const RenderFrameGraphImportedSceneResources& externalResources,
-	    const char* reason)
+	    const RenderFrameGraphImportedSceneResources& externalResources)
 	{
 		auto& parameters = BuildParameters<RayTracingGBufferInlineCS>(builder, targets, sceneTlas, externalResources);
 		builder.Dispatch<RayTracingGBufferInlineCS>(
-		    BuildDiagnosticLabel("Inline", reason),
+		    "RayTracingGBuffer.Inline",
 		    parameters,
 		    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 	}
@@ -91,18 +85,17 @@ namespace RayTracingGBufferPasses
 	    const GBufferRenderTargets& targets,
 	    FrameGraphAccelerationStructureHandle sceneTlas,
 	    const RenderFrameGraphImportedSceneResources& externalResources,
-	    RayTracingShaderTablePlan& shaderTablePlan,
-	    const char* reason)
+	    RayTracingShaderTablePlan& shaderTablePlan)
 	{
 		auto& parameters = BuildParameters<RayTracingGBufferRGS>(builder, targets, sceneTlas, externalResources);
 		const RayTracingPipelineComposition composition = RayTracingPipelineComposition::Create<RayTracingGBufferRGS>(
-		    std::vector{RayTracingPipelineComposition::Shader<RayTracingGBufferMiss>()},
+		    std::vector{RayTracingPipelineComposition::Shader<RayTracingMaterialMiss>()},
 		    std::vector{
-		        RayTracingHitGroupComposition::Triangles<RayTracingGBufferClosestHit>("RayTracingGBufferOpaqueHitGroup"),
-		        RayTracingHitGroupComposition::Triangles<RayTracingGBufferClosestHit, RayTracingGBufferAnyHit>(
-		            "RayTracingGBufferAlphaTestedHitGroup")});
+		        RayTracingHitGroupComposition::Triangles<RayTracingMaterialClosestHit>("RayTracingMaterialOpaqueHitGroup"),
+		        RayTracingHitGroupComposition::Triangles<RayTracingMaterialClosestHit, RayTracingMaterialAnyHit>(
+		            "RayTracingMaterialAlphaTestedHitGroup")});
 		builder.TraceRays<RayTracingGBufferRGS>(
-		    BuildDiagnosticLabel("Pipeline", reason),
+		    "RayTracingGBuffer.Pipeline",
 		    composition,
 		    shaderTablePlan,
 		    parameters,
@@ -119,15 +112,13 @@ void AddRayTracingGBufferMeshPass(
     RayTracingShaderTablePlan& shaderTablePlan,
     const RayTracingCapabilityReport& capabilities)
 {
-	const RayTracingGBufferExecutionPlan executionPlan = ResolveRayTracingGBufferExecutionPlan(capabilities);
-	const char* reason = GetRayTracingExecutionReasonLabel(executionPlan.Reason);
-	switch (executionPlan.Active)
+	switch (ResolveRayTracingExecutionFrontend(capabilities))
 	{
 		case RayTracingExecutionFrontend::Inline:
-			RayTracingGBufferPasses::AddInline(builder, sceneExtent, targets, sceneTlas, externalResources, reason);
+			RayTracingGBufferPasses::AddInline(builder, sceneExtent, targets, sceneTlas, externalResources);
 			return;
 		case RayTracingExecutionFrontend::Pipeline:
-			RayTracingGBufferPasses::AddPipeline(builder, sceneExtent, targets, sceneTlas, externalResources, shaderTablePlan, reason);
+			RayTracingGBufferPasses::AddPipeline(builder, sceneExtent, targets, sceneTlas, externalResources, shaderTablePlan);
 			return;
 		case RayTracingExecutionFrontend::None:
 		default:

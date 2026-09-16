@@ -19,6 +19,7 @@ enum IdentityComponentIndex : std::size_t
 	LightComponent,
 	EnvironmentComponent,
 	ShaderComponent,
+	ExecutionComponent,
 	BackendComponent,
 };
 
@@ -42,6 +43,7 @@ ReferencePathTracerIdentity BuildReferencePathTracerIdentity(
     const PreparedRenderScene& scene,
     const RenderFrameIdentity& frame,
     std::uint64_t sceneGeneration,
+    RayTracingExecutionFrontend executionFrontend,
     ERhiBackendApi backendApi) noexcept
 {
 	ReferencePathTracerIdentity identity;
@@ -78,6 +80,9 @@ ReferencePathTracerIdentity BuildReferencePathTracerIdentity(
 	hash = Hash::kFnv64OffsetBasis;
 	hash = Hash::ContinueFnv1a64Value(hash, frame.ShaderGeneration);
 	identity.Components[ShaderComponent] = Hash::FinalizeFnv1a64(hash);
+	hash = Hash::kFnv64OffsetBasis;
+	hash = Hash::ContinueFnv1a64Value(hash, executionFrontend);
+	identity.Components[ExecutionComponent] = Hash::FinalizeFnv1a64(hash);
 	identity.Components[BackendComponent] = Hash::FinalizeFnv1a64(Hash::ContinueFnv1a64Value(Hash::kFnv64OffsetBasis, backendApi));
 	return identity;
 }

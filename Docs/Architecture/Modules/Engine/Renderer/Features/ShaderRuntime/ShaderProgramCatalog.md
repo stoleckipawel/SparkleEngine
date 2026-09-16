@@ -19,7 +19,7 @@
 
 ## Count And Meaning
 
-There are exactly 35 registrations: 25 Compute, one Vertex, one Pixel, two RayGeneration, two Miss, two ClosestHit, and two AnyHit. A row means the program is registered in current source and build membership. It does not mean its two runtime variants cooked successfully or that a driver created and executed its pipeline.
+There are exactly 35 registrations: 24 Compute, one Vertex, one Pixel, three RayGeneration, two Miss, two ClosestHit, and two AnyHit. A row means the program is registered in current source and build membership. It does not mean its two runtime variants cooked successfully or that a driver created and executed its pipeline.
 
 ## Utility, GBuffer, And Debug
 
@@ -30,9 +30,9 @@ There are exactly 35 registrations: 25 Compute, one Vertex, one Pixel, two RayGe
 | `GBufferPS` | `/Engine/Passes/GBuffer/GBufferPS.hlsl` | `main` | Pixel | Raster GBuffer material evaluation; bindful eight-role material textures; opaque/alpha-mask coverage. |
 | `RayTracingGBufferInlineCS` | `/Engine/Passes/RayTracing/RayTracingGBufferInline.hlsl` | `RayTracingGBufferInline` | Compute | Strict/automatic inline GBuffer adapter; requires inline ray query, TLAS, hit buffers, and fixed material texture array. |
 | `RayTracingGBufferRGS` | `/Engine/Passes/RayTracing/RayTracingGBufferPipeline.hlsl` | `RayTracingGBufferRayGeneration` | RayGeneration | Native-pipeline GBuffer adapter; owns global typed parameters and trace dispatch. |
-| `RayTracingGBufferMiss` | `/Engine/Passes/RayTracing/RayTracingGBufferPipeline.hlsl` | `RayTracingGBufferMiss` | Miss | Native GBuffer miss behavior; pipeline composition only, no independent pass. |
-| `RayTracingGBufferClosestHit` | `/Engine/Passes/RayTracing/RayTracingGBufferPipeline.hlsl` | `RayTracingGBufferClosestHit` | ClosestHit | Records hit distance, instance ID, primitive index, and barycentrics; ray generation then runs the shared surface-store/evaluation path. |
-| `RayTracingGBufferAnyHit` | `/Engine/Passes/RayTracing/RayTracingGBufferPipeline.hlsl` | `RayTracingGBufferAnyHit` | AnyHit | Alpha-mask rejection for native GBuffer traversal. |
+| `RayTracingMaterialMiss` | `/Engine/RayTracing/RayTracingMaterialPipeline.hlsl` | `RayTracingMaterialMiss` | Miss | Shared full-hit miss behavior for native GBuffer and Reference traversal. |
+| `RayTracingMaterialClosestHit` | `/Engine/RayTracing/RayTracingMaterialPipeline.hlsl` | `RayTracingMaterialClosestHit` | ClosestHit | Shared hit distance, instance ID, primitive index, barycentrics, and facing payload for native GBuffer and Reference traversal. |
+| `RayTracingMaterialAnyHit` | `/Engine/RayTracing/RayTracingMaterialPipeline.hlsl` | `RayTracingMaterialAnyHit` | AnyHit | Shared alpha-mask rejection over the same material policy as inline traversal. |
 | `SceneDepthCS` | `/Engine/Passes/GBuffer/SceneDepth.hlsl` | `main` | Compute | Converts frontend-specific device depth into common linear R32F scene depth. |
 | `SkyMotionVectorCS` | `/Engine/Passes/GBuffer/SkyMotionVector.hlsl` | `main` | Compute | Completes background motion vectors from current/previous view transforms. |
 | `VisualizeBuffersCS` | `/Engine/Passes/Debug/VisualizeBuffers.hlsl` | `main` | Compute | Reads the GBuffer and five lighting lobes for non-Lit view modes; output still enters presentation. |
@@ -62,7 +62,13 @@ See [Indirect Lighting](../Lighting/IndirectLighting/README.md) for the current 
 
 ## Reference Path Tracer Programs
 
-No Reference Path Tracer shader program is registered after the Stage 1 clean break. The per-view mode currently reaches a Private feature owner that reports unavailable; later stages add the frozen semantic integrator and its traversal adapters here. The current native-pipeline claim remains limited to GBuffer and direct-shadow visibility. See the [Reference Path Tracer](../Lighting/ReferencePathTracer/README.md).
+| Program | Virtual source | Entry | Stage | Runtime consumer and boundary |
+| --- | --- | --- | --- | --- |
+| `ReferencePathTracerInlineCS` | `/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerInline.hlsl` | `ReferencePathTracerInline` | Compute | Inline RayQuery adapter that invokes the shared Reference transport kernel. |
+| `ReferencePathTracerRGS` | `/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerPipeline.hlsl` | `ReferencePathTracerRayGeneration` | RayGeneration | Native-pipeline adapter that invokes the same Reference transport kernel and composes shared material hit shaders. |
+| `ReferencePathTracerDisplayCS` | `/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerDisplay.hlsl` | `ReferencePathTracerDisplay` | Compute | Publishes the committed accumulation derivative to the ordinary viewport product. |
+
+These rows are current source and registration membership only. Shader cooking, pipeline creation, four-route GPU parity, and accepted-reference behavior remain unproved. See the [Reference Path Tracer](../Lighting/ReferencePathTracer/README.md).
 
 ## Lighting Composite And Sky
 

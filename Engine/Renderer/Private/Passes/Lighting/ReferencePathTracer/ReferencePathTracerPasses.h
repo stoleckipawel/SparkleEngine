@@ -5,6 +5,8 @@
 #include <cstdint>
 
 class FrameGraphBuilder;
+class RayTracingShaderTablePlan;
+enum class RayTracingExecutionFrontend : std::uint8_t;
 struct ReferencePathTracerGraphResources;
 struct ReferencePathTracerUniformData;
 struct RenderFrameGraphResources;
@@ -15,4 +17,6 @@ void AddReferencePathTracerGpuPasses(
     const RenderFrameGraphResources& resources,
     const ReferencePathTracerGraphResources& graphResources,
     const ReferencePathTracerUniformData& uniformData,
-    std::uint32_t workRowsPerDispatch);
+    std::uint32_t workRowsPerDispatch,
+    RayTracingExecutionFrontend executionFrontend,
+    RayTracingShaderTablePlan& shaderTablePlan);
