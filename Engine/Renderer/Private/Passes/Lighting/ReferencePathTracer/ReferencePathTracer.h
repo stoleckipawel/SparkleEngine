@@ -19,16 +19,15 @@ class RenderRayTracingScene;
 class ReferencePathTracer final
 {
 public:
-	ReferencePathTracer(RenderDeviceServices& deviceServices, RendererMemoryMonitor& memoryMonitor) noexcept;
+	ReferencePathTracer(
+	    RenderDeviceServices& deviceServices,
+	    RendererMemoryMonitor& memoryMonitor,
+	    RenderRayTracingScene& rayTracingScene) noexcept;
 
 	ReferencePathTracer(const ReferencePathTracer&) = delete;
 	ReferencePathTracer& operator=(const ReferencePathTracer&) = delete;
 
-	void AddPasses(
-	    FrameGraphBuilder& builder,
-	    const RenderFrameGraphSettings& settings,
-	    RenderFrameGraphResources& resources,
-	    RenderRayTracingScene& rayTracingScene);
+	void AddPasses(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings, RenderFrameGraphResources& resources);
 	ViewportRenderProgress Update(
 	    const ViewportRenderRequest& request,
 	    const RenderView& view,
@@ -39,7 +38,7 @@ public:
 	void RecordSubmission(RhiSubmissionToken token) noexcept;
 
 private:
-	RenderDeviceServices& m_deviceServices;
+	RenderRayTracingScene& m_rayTracingScene;
 	ReferencePathTracerResources m_resources;
 	ReferencePathTracerSession m_session;
 };

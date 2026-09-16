@@ -81,13 +81,13 @@ Raster material descriptors remain per material. Transparent alpha is represente
 
 ## Ray Frontend
 
-When `r.GBuffer.Algorithm=RayTracing`, the Renderer resolves `r.GBuffer.RayTracingExecution` before graph construction:
+When `r.GBuffer.Algorithm=RayTracing`, the Renderer uses the engine-wide automatic frontend resolver before graph construction:
 
-| Requested mode | Current active rule |
+| Capability state | Current active rule |
 | --- | --- |
-| Automatic | prefer native pipeline when complete; otherwise use inline when complete |
-| Inline | require acceleration structure, ray-query, hit/material buffers, and fixed texture table; dispatch compute shader |
-| Pipeline | require native RT pipeline plus valid scene SBT plan/table; dispatch ray-generation program with miss/closest-hit/any-hit groups |
+| shared requirements plus Pipeline | dispatch ray-generation program with shared miss/closest-hit/any-hit groups |
+| shared requirements plus Inline only | dispatch the compute RayQuery frontend |
+| neither complete route | reject ray-GBuffer graph construction |
 
 The two frontends share scene identity, hit reconstruction, material lookup, alpha decision, and output meanings. Native pipeline currently authors opaque and alpha-tested triangle hit groups for the Surface ray type. See [Ray-Tracing Execution Architecture](../RayTracing/ExecutionArchitecture.md) for the SBT index and failure contracts.
 
@@ -103,7 +103,7 @@ No current pass applies deferred decals between GBuffer production and downstrea
 ## Failure, Diagnostics, And Evidence
 
 - Invalid GBuffer enum values fail graph construction.
-- Strict unavailable ray frontends must fail/reject rather than silently become raster or another ray frontend; Automatic may select its documented alternate.
+- Automatic resolution must reject when neither ray frontend is complete rather than silently become raster or publish a dummy GBuffer.
 - Missing scene TLAS/hit/material bindings are fatal execution-contract failures.
 - Over-capacity material textures/lights, missing resources, alpha edges, double-sided normals, skin+morph motion, Device Z equivalence, and every GBuffer channel need controlled raw-buffer evidence.
 - Primary checks are `REN-E03`, `REN-E04`, `REN-E05`, `REN-E11`, `REN-E23`, `RHI-E06`, and `RHI-E07`.
@@ -126,7 +126,7 @@ Run the matrix across exact render extents, resize, scene reload, missing/pendin
 - `AC-GMG-01` — every supported material component and default texture decodes to the documented GBuffer channel meaning and format for opaque raster, ray-inline, and ray-pipeline surfaces.
 - `AC-GMG-02` — raster, inline, and pipeline frontends agree within predeclared channel/depth tolerances for supported static, instanced, alpha-tested, double-sided, skinned, morphed, and combined deformation fixtures.
 - `AC-GMG-03` — current/previous transforms and deformation produce correct rigid, skinned, morphed, combined, and sky motion vectors across continuity and reset cases.
-- `AC-GMG-04` — Automatic selects and reports a complete ray frontend; strict Inline/Pipeline rejects when incomplete and never silently becomes raster or the other ray frontend.
+- `AC-GMG-04` — the shared automatic resolver selects Pipeline when complete, otherwise Inline when complete, and rejects when neither route exists; no per-effect execution selector remains.
 - `AC-GMG-05` — the fixed ray material texture table accepts its documented capacity, rejects overflow before dispatch, and preserves material/descriptor identity under add/remove/reload.
 - `AC-GMG-06` — alpha cutoff edges, missing/default textures, invalid tangents/normals, invalid bounds, repeated geometry/material IDs, and double-sided orientation have deterministic documented results without stale data.
 - `AC-GMG-07` — transparent/transmissive, procedural, mesh/task/tessellation, and ray-wireframe requests remain explicitly unavailable; dormant BRDF/material-binding vocabulary is not presented as an active path.
@@ -136,7 +136,7 @@ Run the matrix across exact render extents, resize, scene reload, missing/pendin
 
 | Failure ID | Injection and safe state | Detecting check |
 | --- | --- | --- |
-| `FM-GMG-01` | request strict ray frontend with one required capability/program/SBT binding removed; graph creation rejects and names the missing requirement | `CHK-GMG-02` |
+| `FM-GMG-01` | remove one capability/program/SBT binding required by the automatically selected ray frontend; graph creation rejects before dispatch | `CHK-GMG-02` |
 | `FM-GMG-02` | exceed material table capacity or provide mismatched hit/material/descriptor indices; reject before GPU execution | `CHK-GMG-03` |
 | `FM-GMG-03` | fail/pending texture, invalid tangent/bounds, or alpha value around cutoff; use the documented default/conservative/refusal result, never stale prior data | `CHK-GMG-01`, `CHK-GMG-03` |
 | `FM-GMG-04` | change/remove/reload deformed geometry while prior work is in flight; new frames use new identity and old resources retire by completion | `CHK-GMG-04` |
@@ -145,7 +145,7 @@ Run the matrix across exact render extents, resize, scene reload, missing/pendin
 | Check | Exercise and oracle | Covers |
 | --- | --- | --- |
 | `CHK-GMG-01` | canonical material/channel ramp and alpha/double-sided fixtures; capture/decode every attachment and compare to analytic values/defaults | `AC-GMG-01`, `AC-GMG-06`, `AC-GMG-08`; `FM-GMG-03` |
-| `CHK-GMG-02` | frontend matrix across Automatic/Inline/Pipeline, capability removal, unsupported geometry/transparency/wireframe, D3D12/Vulkan | `AC-GMG-02`, `AC-GMG-04`, `AC-GMG-07`, `AC-GMG-08`; `FM-GMG-01`, `FM-GMG-05` |
+| `CHK-GMG-02` | automatic frontend capability matrix, capability removal, unsupported geometry/transparency/wireframe, D3D12/Vulkan, and focused evidence for both adapters where available | `AC-GMG-02`, `AC-GMG-04`, `AC-GMG-07`, `AC-GMG-08`; `FM-GMG-01`, `FM-GMG-05` |
 | `CHK-GMG-03` | exact descriptor capacity and capacity-plus-one; missing/default/reloaded textures and deliberately corrupted index fixtures | `AC-GMG-05`, `AC-GMG-06`; `FM-GMG-02`, `FM-GMG-03` |
 | `CHK-GMG-04` | multi-frame rigid/skin/morph/combined motion plus cut/reset/remove/reload while in flight; compare raster/ray positions, depth, normals, motion, and retirement | `AC-GMG-02`, `AC-GMG-03`, `AC-GMG-05`; `FM-GMG-04` |
 

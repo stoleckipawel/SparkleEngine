@@ -12,11 +12,26 @@
 
 static const auto g_renderRayTracingSceneLogger = Logging::GetOrCreateLogger("Renderer.RenderRayTracingScene");
 
+static RayTracingExecutionFrontend SelectExecutionFrontend(const RayTracingCapabilityReport& capabilities) noexcept
+{
+	const bool sharedRequirements = capabilities.SupportsAccelerationStructure && capabilities.SupportsDescriptorIndexing;
+	if (sharedRequirements && capabilities.SupportsRayTracingPipeline)
+	{
+		return RayTracingExecutionFrontend::Pipeline;
+	}
+	if (sharedRequirements && capabilities.SupportsInlineRayQuery)
+	{
+		return RayTracingExecutionFrontend::Inline;
+	}
+	return RayTracingExecutionFrontend::None;
+}
+
 RenderRayTracingScene::RenderRayTracingScene(
     RenderHardwareInterface& renderHardwareInterface,
     const GpuMeshCache& meshes,
     const RayTracingCapabilityReport& capabilityReport) noexcept :
-    m_capabilityReport(capabilityReport)
+    m_capabilityReport(capabilityReport),
+    m_executionFrontend(SelectExecutionFrontend(capabilityReport))
 {
 	m_performanceMetrics.Providers.TopLevelProvider = m_capabilityReport.TopLevelProvider.SelectedProvider;
 	m_performanceMetrics.Providers.TopLevelProviderReason = m_capabilityReport.TopLevelProvider.SelectionReason;

@@ -68,17 +68,17 @@ The current runtime/backend pairing is D3D12 with `DxilSm66` and Vulkan with `Sp
 
 ## Registered Runtime Program Inventory
 
-The current Renderer contract target contains 35 typed global shader registrations.
+The current Renderer contract target contains 32 typed global shader registrations.
 
 | Capability ID | Stage | Registered count | Current program family coverage |
 | --- | --- | ---: | --- |
-| `SHD-CAT-01` | Compute | 25 | Clears, depth, sky/motion, lighting reservoirs/composite, reference/path/ReSTIR work, exposure, visualization, upscale, tone mapping, and output encoding. |
+| `SHD-CAT-01` | Compute | 24 | Clears, depth, sky/motion, lighting reservoirs/composite, reference/path/ReSTIR work, exposure, visualization, upscale, tone mapping, and output encoding. |
 | `SHD-CAT-02` | Vertex | 1 | Raster GBuffer vertex program. |
 | `SHD-CAT-03` | Pixel | 1 | Raster GBuffer pixel program. |
-| `SHD-CAT-04` | Ray generation | 2 | Ray GBuffer and direct-shadow pipeline entry points. |
-| `SHD-CAT-05` | Miss | 2 | Ray GBuffer and direct-shadow miss programs. |
-| `SHD-CAT-06` | Closest hit | 2 | Ray GBuffer and direct-shadow triangle-hit programs. |
-| `SHD-CAT-07` | Any hit | 2 | Alpha-tested ray GBuffer and direct-shadow rejection programs. |
+| `SHD-CAT-04` | Ray generation | 3 | Ray GBuffer, direct-shadow, and Reference Path Tracer pipeline entry points. |
+| `SHD-CAT-05` | Miss | 1 | Shared material miss program for the three pipeline compositions. |
+| `SHD-CAT-06` | Closest hit | 1 | Shared material triangle-hit program for the three pipeline compositions. |
+| `SHD-CAT-07` | Any hit | 1 | Shared material alpha-mask rejection program for the three pipeline compositions. |
 | `SHD-CAT-08` | Geometry | 0 | Stage vocabulary only. |
 | `SHD-CAT-09` | Hull | 0 | Stage vocabulary only. |
 | `SHD-CAT-10` | Domain | 0 | Stage vocabulary only. |
@@ -170,7 +170,7 @@ This describes what the validation target is designed to exercise. It was **not 
 - No compiler target was built, no DXC/Slang process was launched, and no cooked publication was created or reloaded for this snapshot.
 - Eleven code-generation targets do not mean eleven supported runtime configurations. Current runtime selection is `DxilSm66` for D3D12 and `SpirV16` for Vulkan.
 - DXC reports ray-library/inline-query capability; Slang does not currently expose equivalent ray-stage capability and maps only vertex/pixel/compute stages.
-- Stage vocabulary beyond the 35 registrations is not a current Renderer feature.
+- Stage vocabulary beyond the 32 registrations is not a current Renderer feature.
 - Contract/reflection validation is strong source machinery, but only the exact staged toolchain and both runtime backends can close ABI/pipeline evidence.
 - In-operation deduplication and content-addressed storage are not a persistent cross-invocation compile cache.
 - Editor recook/hot reload must not leak into the Shipping runtime product.

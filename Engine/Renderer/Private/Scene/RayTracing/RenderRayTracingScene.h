@@ -1,10 +1,12 @@
 #pragma once
 
 #include "RayTracing/Diagnostics/RayTracingPerformanceMetrics.h"
+#include "RayTracing/RayTracingExecutionFrontend.h"
 #include "Scene/RayTracing/RenderRayTracingFrameBindings.h"
 #include "RayTracing/RayTracingCapabilityReport.h"
 #include "Scene/RayTracing/RayTracingShaderTablePlan.h"
 
+#include <cstdint>
 #include <memory>
 #include <span>
 
@@ -44,14 +46,25 @@ public:
 
 	bool IsAvailable() const noexcept { return m_capabilityReport.SupportsAccelerationStructure; }
 	bool HasValidTlas() const noexcept;
-	const RayTracingCapabilityReport& GetCapabilityReport() const noexcept { return m_capabilityReport; }
+	RayTracingExecutionFrontend GetExecutionFrontend() const noexcept { return m_executionFrontend; }
+	void BeginGraphBuild() noexcept
+	{
+		if (m_executionFrontend == RayTracingExecutionFrontend::Pipeline)
+		{
+			m_shaderTablePlan.BeginMaterializationSet();
+		}
+	}
+	std::uint64_t GetGraphGeneration() const noexcept
+	{
+		return m_executionFrontend == RayTracingExecutionFrontend::Pipeline ? m_shaderTablePlan.GetGeneration() : 0u;
+	}
 	const RayTracingPerformanceMetrics& GetPerformanceMetrics() const noexcept { return m_performanceMetrics; }
 	const RayTracingShaderTableMetrics& GetShaderTableMetrics() const noexcept { return m_shaderTablePlan.GetMetrics(); }
 	RayTracingShaderTablePlan& GetShaderTablePlan() noexcept { return m_shaderTablePlan; }
-	const RayTracingShaderTablePlan& GetShaderTablePlan() const noexcept { return m_shaderTablePlan; }
 
 private:
 	RayTracingCapabilityReport m_capabilityReport = {};
+	RayTracingExecutionFrontend m_executionFrontend = RayTracingExecutionFrontend::None;
 	RayTracingPerformanceMetrics m_performanceMetrics = {};
 	RayTracingShaderTablePlan m_shaderTablePlan;
 	std::unique_ptr<RayTracingBlasCache> m_blasCache;

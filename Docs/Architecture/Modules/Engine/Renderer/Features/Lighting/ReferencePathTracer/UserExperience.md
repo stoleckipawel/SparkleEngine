@@ -34,7 +34,7 @@ These are Stage-0 design inputs, not claims about the current implementation. A 
 | --- | --- |
 | Default product | `SurfaceTransportReference`; `FinitePathDiagnostic(D)` is Expert/evidence-only and always displays `D`. |
 | View | Current physical Renderer extent, no dynamic resolution, full crop, pinhole perspective, uniform box reconstruction, target `4096` SPP, seed `0`, replicate `0`; maximum target `1,048,576` SPP. |
-| Route | The process-selected RHI backend is fixed. `Automatic` chooses the first accepted/capable frontend in the fixed order `Inline`, then `Pipeline`, and reports the resolution before sample zero; choosing the second accepted route is policy resolution, not a failure fallback. An explicit frontend request is strict and never substitutes. |
+| Route | The process-selected RHI backend is fixed. The engine-wide automatic policy selects Pipeline when complete, otherwise Inline when complete, and reports the active route before sample zero. Reference Path Tracer exposes no independent frontend preference. |
 | Session capacity | Exactly one session allocation process-wide, whether active, paused, timed out, or suspended in Lit; a retained prefix consumes that slot. A second request reports the owner and offers `Transfer (cancel and release current)`. Transfer cancels any checkpoint/export staging bound to the old session, rejects late callbacks, waits at most the normal `2 s` settlement bound, and exposes the slot only after the old allocation is released; prior verified artifacts remain. A settlement failure reports the device/operation failure and does not grant the slot. |
 | Selection/preflight | State acknowledgement in the next UI update and within `100 ms`; preflight completes or reports its current blocking category within `2 s`. Longer validation becomes an explicit cancellable operation. |
 | Camera response | Input/UI processing p95 `<= 50 ms`, hard `<= 100 ms`; a superseded identity cannot commit. The stale composition is marked within `100 ms`; the newest identity is submitted in the next render opportunity. |
@@ -86,7 +86,7 @@ The Reference Path Tracer is selected by the typed per-view `RenderViewMode::Ref
 - `SurfaceTransportReference` product;
 - independent camera-ray primary visibility;
 - fixed current render extent and accepted reconstruction filter;
-- accepted automatic traversal/backend route, with requested and active values visible in details;
+- accepted automatic traversal route and process backend, with the active values visible in details;
 - stateless seed/sample/dimension stream and exact target SPP;
 - raw scene-linear HDR accumulation with no ReSTIR, temporal reconstruction, denoiser, contribution clamp, exposure, tone map, gamut transform, encoder, or screenshot value in transport;
 - separately applied viewport display transform for human inspection.
@@ -183,7 +183,7 @@ The session compares canonical semantic identity before committing every complet
 | --- | --- | --- |
 | Position, orientation, camera selection, pilot/eject, camera cut/teleport, projection type, FOV, aspect, near/far plane, orthographic height, admitted lens/aperture/focus/shutter/time field, crop, filter, or render extent changes | Atomically invalidate the old prefix before any new-view sample commits; start ordinal zero for the new digest. | `Camera moved`, `Projection changed`, `Viewport resized` |
 | Geometry/instance transform/visibility/deformation, material/texture/alpha, light/emissive/environment, units, AS, shader/compiler, or any other contributing scene generation changes | Invalidate before mixing. If the producer cannot publish a trustworthy generation, block the affected domain rather than accumulating through it. | `Material changed: Brass`, `Scene geometry changed` |
-| Product/domain, seed/replicate, sampler/dimension layout, transport-affecting setting, strict backend/frontend, or precision policy changes | Validate the new request, then reset to ordinal zero. | `Sampling configuration changed` |
+| Product/domain, seed/replicate, sampler/dimension layout, transport-affecting setting, process backend, resolved frontend, or precision policy changes | Validate the new identity, then reset to ordinal zero. | `Sampling configuration changed` |
 | Target SPP increases | Continue the same exact stream from the committed prefix. | `Target raised to 4096 SPP` |
 | Target SPP decreases to or below the committed prefix | Stop at the already committed prefix and report that exact count; never discard or pretend fewer samples were accumulated. | `Target met at 1024 committed SPP` |
 | Exposure, tone mapper, gamut/output transform, false-color display derived from raw data, overlay layout, UI scale, or progress polling changes | Re-present the same raw prefix; no transport reset. | No reset; display lineage updates |
@@ -228,7 +228,7 @@ Reference details are available from the progress overlay and rendering details 
 | Intent | Product/domain and exact authority label. | Accepted full-reference intent is first; finite diagnostic can never be mistaken for it. |
 | Sampling | Exact target SPP, seed, replicate, sampler identity. | Target controls the requested prefix, not convergence. Seed/sampler changes reset; target changes follow the reset table. |
 | View | View identity, camera, render extent/crop/filter, frozen time where admitted. | Read from the current canonical view; no second camera picker is required for the main path. |
-| Execution | `Automatic (accepted routes only)`; strict backend/frontend under Expert. | Requested and active values are separate. Automatic never selects an unaccepted fallback. |
+| Execution | Process backend and automatically resolved active frontend. | Read-only product truth; no Reference-specific execution override or per-effect fallback policy. |
 | Resources | GPU memory, wall-time, cancellation bounds, overlay/preview cadence; checkpoint policy under Evidence. | Predicted and active usage are visible; values are bounded. Camera response outranks secondary readback/export work. |
 | Evidence/Output *(secondary, collapsed by default)* | Raw readback status, optional checkpoint, `Save When Complete`, destination, raw beauty/manifest selection, optional display preview. | Ordinary viewport comparison requires none of these fields; prior completed output is preserved. |
 
@@ -278,7 +278,6 @@ The exact development-only invocation is `ShowcaseEditor.exe --reference-path-tr
 | `width`, `height` | Required integers in `[1,16384]`; crop is optional four-integer half-open `[x0,y0,x1,y1]` inside the extent and defaults to the full extent. Filter is optional exact enum `Box` and defaults to `Box`. |
 | `targetSpp` | Required integer in `[1,1048576]`. `seed` and `replicate` are optional uint32 and default to `0`. |
 | `backend` | Required exact enum `D3D12` or `Vulkan` and must equal the process backend. |
-| `frontend` | Optional exact enum `Automatic`, `Inline`, or `Pipeline`; default `Automatic` uses the frozen priority order. |
 | `timeoutSeconds` | Optional integer `[1,28800]`, default `28800`. `maxOutputGiB` is optional integer `[1,64]`, default `64`, and can only narrow the global cap. |
 | `checkpointPolicy` | Optional exact enum `None` or `OnTimeout`; default `None`. `OnTimeout` requires the checkpoint feature and writable destination at preflight. |
 | `outputDirectory` | Required path. Raw beauty, the accepted statistical summary, hashes, and manifest are written according to the fixed artifact schema. |

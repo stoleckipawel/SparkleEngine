@@ -19,7 +19,7 @@
 
 ## Count And Meaning
 
-There are exactly 35 registrations: 24 Compute, one Vertex, one Pixel, three RayGeneration, two Miss, two ClosestHit, and two AnyHit. A row means the program is registered in current source and build membership. It does not mean its two runtime variants cooked successfully or that a driver created and executed its pipeline.
+There are exactly 32 registrations: 24 Compute, one Vertex, one Pixel, three RayGeneration, one Miss, one ClosestHit, and one AnyHit. A row means the program is registered in current source and build membership. It does not mean its two runtime variants cooked successfully or that a driver created and executed its pipeline.
 
 ## Utility, GBuffer, And Debug
 
@@ -28,10 +28,10 @@ There are exactly 35 registrations: 24 Compute, one Vertex, one Pixel, three Ray
 | `ComputeClearCS` | `/Engine/Passes/Compute/ComputeClear.hlsl` | `main` | Compute | Generic frame-graph texture clear used for lighting/reservoir initialization. |
 | `GBufferVS` | `/Engine/Passes/GBuffer/GBufferVS.hlsl` | `main` | Vertex | Raster GBuffer mesh pass; consumes mesh/instance/deformation data through the graphics layout. |
 | `GBufferPS` | `/Engine/Passes/GBuffer/GBufferPS.hlsl` | `main` | Pixel | Raster GBuffer material evaluation; bindful eight-role material textures; opaque/alpha-mask coverage. |
-| `RayTracingGBufferInlineCS` | `/Engine/Passes/RayTracing/RayTracingGBufferInline.hlsl` | `RayTracingGBufferInline` | Compute | Strict/automatic inline GBuffer adapter; requires inline ray query, TLAS, hit buffers, and fixed material texture array. |
+| `RayTracingGBufferInlineCS` | `/Engine/Passes/RayTracing/RayTracingGBufferInline.hlsl` | `RayTracingGBufferInline` | Compute | Automatically selected inline GBuffer adapter; requires inline ray query, TLAS, hit buffers, and fixed material texture array. |
 | `RayTracingGBufferRGS` | `/Engine/Passes/RayTracing/RayTracingGBufferPipeline.hlsl` | `RayTracingGBufferRayGeneration` | RayGeneration | Native-pipeline GBuffer adapter; owns global typed parameters and trace dispatch. |
-| `RayTracingMaterialMiss` | `/Engine/RayTracing/RayTracingMaterialPipeline.hlsl` | `RayTracingMaterialMiss` | Miss | Shared full-hit miss behavior for native GBuffer and Reference traversal. |
-| `RayTracingMaterialClosestHit` | `/Engine/RayTracing/RayTracingMaterialPipeline.hlsl` | `RayTracingMaterialClosestHit` | ClosestHit | Shared hit distance, instance ID, primitive index, barycentrics, and facing payload for native GBuffer and Reference traversal. |
+| `RayTracingMaterialMiss` | `/Engine/RayTracing/RayTracingMaterialPipeline.hlsl` | `RayTracingMaterialMiss` | Miss | Shared full-hit miss behavior for native GBuffer, direct-shadow, and Reference traversal. |
+| `RayTracingMaterialClosestHit` | `/Engine/RayTracing/RayTracingMaterialPipeline.hlsl` | `RayTracingMaterialClosestHit` | ClosestHit | Shared hit distance, instance ID, primitive index, barycentrics, and facing payload for native GBuffer, direct-shadow, and Reference traversal. |
 | `RayTracingMaterialAnyHit` | `/Engine/RayTracing/RayTracingMaterialPipeline.hlsl` | `RayTracingMaterialAnyHit` | AnyHit | Shared alpha-mask rejection over the same material policy as inline traversal. |
 | `SceneDepthCS` | `/Engine/Passes/GBuffer/SceneDepth.hlsl` | `main` | Compute | Converts frontend-specific device depth into common linear R32F scene depth. |
 | `SkyMotionVectorCS` | `/Engine/Passes/GBuffer/SkyMotionVector.hlsl` | `main` | Compute | Completes background motion vectors from current/previous view transforms. |
@@ -45,9 +45,6 @@ There are exactly 35 registrations: 24 Compute, one Vertex, one Pixel, three Ray
 | `DirectLightReservoirSpatialCS` | `/Engine/Passes/Lighting/Direct/DirectLightReservoirSpatial.hlsl` | `main` | Compute | Direct-light spatial reuse stage. |
 | `DirectShadowSignalCS` | `/Engine/Passes/Lighting/Shadows/DirectShadowSignal.hlsl` | `main` | Compute | Inline-query visibility adapter; TLAS/hit material/fixed texture table. |
 | `DirectShadowSignalRGS` | `/Engine/Passes/Lighting/Shadows/DirectShadowSignalPipeline.hlsl` | `DirectShadowSignalRayGeneration` | RayGeneration | Native-pipeline visibility adapter and typed global parameters. |
-| `DirectShadowSignalMiss` | `/Engine/Passes/Lighting/Shadows/DirectShadowSignalPipeline.hlsl` | `DirectShadowSignalMiss` | Miss | Native unoccluded result. |
-| `DirectShadowSignalClosestHit` | `/Engine/Passes/Lighting/Shadows/DirectShadowSignalPipeline.hlsl` | `DirectShadowSignalClosestHit` | ClosestHit | Native opaque occluder result. |
-| `DirectShadowSignalAnyHit` | `/Engine/Passes/Lighting/Shadows/DirectShadowSignalPipeline.hlsl` | `DirectShadowSignalAnyHit` | AnyHit | Native alpha-mask occluder rejection. |
 | `DirectLightingCS` | `/Engine/Passes/Lighting/Direct/DirectLighting.hlsl` | `main` | Compute | Resolves reservoir plus visibility against directional, point, spot, and rect light buffers into direct lobes. |
 
 ## ReSTIR Indirect Lighting
@@ -123,13 +120,13 @@ See [Tone Mapping](../PostProcessing/DisplayPipeline/ToneMapping.md) for the thr
 
 | Stage | Registered programs | Current honest status |
 | --- | ---: | --- |
-| Compute | 25 | Broad engine workhorse; includes raster-adjacent, ray-query, lighting, history, debug, and presentation programs. |
+| Compute | 24 | Broad engine workhorse; includes raster-adjacent, ray-query, lighting, history, debug, and presentation programs. |
 | Vertex | 1 | Raster GBuffer only. |
 | Pixel | 1 | Raster GBuffer only. |
-| RayGeneration | 2 | Ray GBuffer and direct shadow only. |
-| Miss | 2 | Same two pipeline compositions. |
-| ClosestHit | 2 | Same two triangle-hit compositions. |
-| AnyHit | 2 | Same two alpha-mask compositions. |
+| RayGeneration | 3 | Ray GBuffer, direct shadow, and Reference Path Tracer entry points. |
+| Miss | 1 | Shared material miss program consumed by all three pipeline compositions. |
+| ClosestHit | 1 | Shared material triangle-hit program consumed by all three pipeline compositions. |
+| AnyHit | 1 | Shared material alpha-mask program consumed by all three pipeline compositions. |
 | Geometry, Hull, Domain | 0 | Compiler/RHI stage vocabulary without current Renderer registrations or pipeline consumers. |
 | Intersection | 0 | Procedural-hit vocabulary exists; no current registered procedural geometry program. |
 | Callable | 0 | Ray composition vocabulary exists; no current callable program. |
@@ -137,7 +134,7 @@ See [Tone Mapping](../PostProcessing/DisplayPipeline/ToneMapping.md) for the thr
 
 ## Runtime Variant Closure
 
-Each one of the 35 logical registrations must have both `DxilSm66` and `SpirV16` cooked entries before the current paired-backend runtime publication is complete. That is 70 logical registration-target entries, subject to content-blob deduplication in `CookedShaderLibrary.slib`. Other tool targets are explicit compiler vocabulary, not required runtime variants.
+Each one of the 32 logical registrations must have both `DxilSm66` and `SpirV16` cooked entries before the current paired-backend runtime publication is complete. That is 64 logical registration-target entries, subject to content-blob deduplication in `CookedShaderLibrary.slib`. Other tool targets are explicit compiler vocabulary, not required runtime variants.
 
 For native ray compositions, registration count is not sufficient. Runtime materialization additionally checks compatible ray metadata, the global parameter owner, hit-group composition, recursion/payload/attribute limits, and shader-table records. Miss/hit programs do not own an independent pass or root parameter structure.
 

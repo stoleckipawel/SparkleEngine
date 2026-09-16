@@ -75,7 +75,7 @@ Exit: raster image tests pass for every channel group, overlap, near-plane/camer
 
 ### Phase 3 - Ray-traced primary GBuffer parity
 
-- exercise the same post-producer pass with `GBufferAlgorithm::RayTracing` under both strict Inline and strict Pipeline execution;
+- exercise the same post-producer pass with `GBufferAlgorithm::RayTracing` under every automatically selected frontend, using a temporary focused capability harness where required to cover the non-selected adapter;
 - reconcile any depth reconstruction or receiver-bit production difference at the producer adapters, not in a ray-specific decal shader;
 - compare the raster and ray-traced primary results from the same camera, scene, material table, ordering, and output formats on both backends;
 - keep `RayTracingGBuffer` base-hit reconstruction decal-free so primary decals are not applied twice.

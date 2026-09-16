@@ -1,8 +1,7 @@
-#include "/Engine/Passes/RayTracing/RayTracingGBufferCommon.hlsli"
 #include "/Engine/RayTracing/RayTracingSceneTraceInline.hlsli"
+#include "/Engine/Passes/RayTracing/RayTracingGBufferCommon.hlsli"
 
-[numthreads(8, 8, 1)]
-void RayTracingGBufferInline(uint3 dispatchThreadId : SV_DispatchThreadID)
+[numthreads(8, 8, 1)] void RayTracingGBufferInline(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
 	uint width = 0;
 	uint height = 0;
@@ -12,14 +11,5 @@ void RayTracingGBufferInline(uint3 dispatchThreadId : SV_DispatchThreadID)
 		return;
 	}
 
-	const uint2 pixelCoord = dispatchThreadId.xy;
-	const RayTracingGBuffer::PrimaryRay ray = RayTracingGBuffer::BuildPrimaryRay(pixelCoord);
-	const RayTracingTraceResult trace = TraceSceneRay(SceneTlas,
-	                                                              ray.OriginWorld,
-	                                                              ray.DirectionWorld,
-	                                                              ray.Description.TMin,
-	                                                              ray.Description.TMax,
-	                                                              RayTracingGBuffer::CullFlags,
-	                                                              RayTracingGBuffer::InstanceMask);
-	RayTracingGBuffer::StoreTraceResult(pixelCoord, trace, ray);
+	RayTracingGBuffer::TraceAndStore(dispatchThreadId.xy);
 }

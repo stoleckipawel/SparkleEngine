@@ -70,7 +70,7 @@ The composite owns the join point. Direct and indirect producers do not independ
 
 - Invalid GBuffer or traversal selectors fail graph construction rather than selecting an arbitrary route. Invalid Reference Path Tracer requests reject before allocation through their per-view session contract.
 - Absence of required ray capability prevents ordinary surface lighting and also rejects Reference Path Tracer activation; Stage 1 additionally reports transport unavailable even when hardware capabilities exist.
-- Direct-shadow strict traversal cannot silently substitute; Automatic may choose only a documented supported frontend and must report the resolved choice.
+- Direct-shadow traversal uses the engine-wide automatic frontend resolver and cannot silently substitute a different lighting product when neither route is complete.
 - Debug views expose the five lobe products, but current presentation can modify them through exposure, tone mapping, and encoding.
 - Exact selectors and persistence live in [Feature Selector Catalog](../RuntimeConfiguration/FeatureSelectorCatalog.md). Row-level states live in the [Capability Inventory](../../CapabilityInventory.md). Release proof remains in `REN-E06` through `REN-E10`, `REN-E18`, and the dedicated volumetric absence check `REN-E24`.
 

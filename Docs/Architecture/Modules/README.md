@@ -140,7 +140,7 @@ The initial detailed inventories carry `S` only. No `B`, `R`, `N`, `P`, or `A` e
 | Feature execution | Deep vertical | [Graphics Feature Execution Traces](../CrossModule/FeatureExecutionTraces.md) | Frame, raster, ray GBuffer, ReSTIR, reference, provider, shader-delivery, and capture paths traced producer-to-consumer; source-only. |
 | Product/developer workflow coverage | Deep horizontal | [Product And Developer Workflow Coverage](../CrossModule/ProductWorkflowCoverage.md) | Discovery, build, content, cook, launch, editor, runtime, diagnostics, cancellation, package, release, and support journeys compared actor-by-actor; source-only. |
 | Product/developer execution | Deep vertical | [Product And Developer Execution Traces](../CrossModule/ProductExecutionTraces.md) | Quick Start, asset-to-frame, editor transaction, settings, shader reload, capture, and settlement paths traced across owners; source-only. |
-| Registered Renderer programs | Exact catalog | [Renderer Shader Program Catalog](Engine/Renderer/Features/ShaderRuntime/ShaderProgramCatalog.md) | All 35 registrations mapped to source, entry, stage, consumer, and binding/traversal boundary; source-only. |
+| Registered Renderer programs | Exact catalog | [Renderer Shader Program Catalog](Engine/Renderer/Features/ShaderRuntime/ShaderProgramCatalog.md) | All 32 registrations mapped to source, entry, stage, consumer, and binding/traversal boundary; source-only. |
 | Evidence closure | Plan | [Capability Evidence Plan](CapabilityEvidencePlan.md) | Missing source audits and the smallest proof needed to promote individual claims. It does not replace release gates or roadmap order. |
 
 ## Current Coverage Boundary

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RHI/Public/Core/RhiBackendApi.h"
-#include "RayTracing/Effects/RayTracingExecutionFrontend.h"
+#include "RayTracing/RayTracingExecutionFrontend.h"
 
 #include <array>
 #include <cstddef>

@@ -6,14 +6,15 @@
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerPasses.h"
 #include "Passes/PostProcessing/Exposure.h"
 #include "Passes/Presentation/Upscaling.h"
-#include "RayTracing/Effects/RayTracingExecutionFrontend.h"
-#include "RayTracing/RayTracingCapabilityReport.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "Scene/RayTracing/RenderRayTracingScene.h"
 #include "View/RenderView.h"
 
-ReferencePathTracer::ReferencePathTracer(RenderDeviceServices& deviceServices, RendererMemoryMonitor& memoryMonitor) noexcept :
-    m_deviceServices(deviceServices),
+ReferencePathTracer::ReferencePathTracer(
+    RenderDeviceServices& deviceServices,
+    RendererMemoryMonitor& memoryMonitor,
+    RenderRayTracingScene& rayTracingScene) noexcept :
+    m_rayTracingScene(rayTracingScene),
     m_resources(deviceServices, memoryMonitor),
     m_session(deviceServices)
 {
@@ -22,12 +23,9 @@ ReferencePathTracer::ReferencePathTracer(RenderDeviceServices& deviceServices, R
 void ReferencePathTracer::AddPasses(
     FrameGraphBuilder& builder,
     const RenderFrameGraphSettings& settings,
-    RenderFrameGraphResources& resources,
-    RenderRayTracingScene& rayTracingScene)
+    RenderFrameGraphResources& resources)
 {
 	m_resources.ReserveGraphResources(builder, settings.RenderExtent);
-	const RayTracingExecutionFrontend executionFrontend =
-	    ResolveRayTracingExecutionFrontend(rayTracingScene.GetCapabilityReport());
 	AddReferencePathTracerGpuPasses(
 	    builder,
 	    settings.RenderExtent,
@@ -35,8 +33,7 @@ void ReferencePathTracer::AddPasses(
 	    m_resources.GetGraphResources(),
 	    m_session.GetUniformData(),
 	    ReferencePathTracerSession::WorkRowsPerDispatch,
-	    executionFrontend,
-	    rayTracingScene.GetShaderTablePlan());
+	    m_rayTracingScene);
 	AddExposurePass(builder, settings, resources);
 	AddUpscalingPasses(builder, settings.RenderExtent, settings.OutputExtent, nullptr, resources);
 	resources.ViewportProducts.SceneDepth = FrameGraphTextureHandle::Invalid();
@@ -49,14 +46,7 @@ ViewportRenderProgress ReferencePathTracer::Update(
     const RenderFrameIdentity& frame,
     std::uint64_t sceneGeneration) noexcept
 {
-	return m_session.Update(
-	    request,
-	    view,
-	    scene,
-	    frame,
-	    sceneGeneration,
-	    ResolveRayTracingExecutionFrontend(BuildRayTracingCapabilityReport(m_deviceServices.GetCapabilities())),
-	    m_resources);
+	return m_session.Update(request, view, scene, frame, sceneGeneration, m_rayTracingScene.GetExecutionFrontend(), m_resources);
 }
 
 bool ReferencePathTracer::BindResources(FrameGraph& frameGraph) const noexcept

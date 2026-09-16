@@ -151,7 +151,7 @@ The `FrameGraph` object is rebuilt when output/topology, provider selection, lig
 | Persistent GPU scene | `Scene/GpuScene`; geometry, material, lighting, and ray-tracing bindings derived from `RenderScene` |
 | Ray-tracing scene | `Scene/RayTracing` plus `RayTracing/Acceleration`; classic and capability-gated partitioned TLAS share scene identity |
 | Dual RT execution | GBuffer and direct-shadow effects have typed inline-query and native-pipeline source frontends selected before graph construction. [Feature dossier](Modules/Engine/Renderer/Features/RayTracing/README.md). |
-| Shader-table mapping | `RayTracingShaderTablePlan` owns Surface/ShadowVisibility order, checked record indexing, instance contributions, invalidation, and bounded metrics |
+| Shader-table mapping | `RayTracingShaderTablePlan` owns the shared Surface record order, checked instance/geometry indexing, invalidation, and bounded metrics |
 | Image providers | Renderer-owned provider stack with NVIDIA Streamline/DLSS adapters and non-provider presentation paths |
 | Debug views | 16 final/material/GBuffer/lighting/scene modes; current common presentation can alter diagnostic values. [Feature dossier](Modules/Engine/Renderer/Features/DebugViews/README.md). |
 | Diagnostics, products, and capture | bounded Renderer/RHI snapshots plus viewport-product publication and capture; generated evidence is not implementation authority. [Feature dossier](Modules/Engine/Renderer/Features/ViewportAndDiagnostics/DiagnosticsProductsAndCapture.md). |
@@ -188,7 +188,7 @@ typed compute / graphics / ray-tracing materialization
 FrameGraph Draw / Dispatch / TraceRays
 ```
 
-`Engine/Renderer/ShaderRegistrations` contains 35 typed shader registrations at the verified revision. Product source registrations use vertex, pixel, compute, ray-generation, miss, closest-hit, and any-hit stages. Geometry, hull, domain, intersection, and callable remain schema/compiler vocabulary without a current Renderer product registration.
+`Engine/Renderer/ShaderRegistrations` contains 32 typed shader registrations in the current source tree. Product source registrations use vertex, pixel, compute, ray-generation, miss, closest-hit, and any-hit stages. Geometry, hull, domain, intersection, and callable remain schema/compiler vocabulary without a current Renderer product registration.
 
 The ShaderCompiler default selection cooks the catalog; `--shader-id` selects one registered shader and repeatable `--changed` paths select affected types through the persisted dependency manifest. Default targets are DXIL SM 6.6 and SPIR-V 1.6. Every selected job compiles, while identical jobs within one operation share a producer/result; no persistent compiler-result cache is retained.
 

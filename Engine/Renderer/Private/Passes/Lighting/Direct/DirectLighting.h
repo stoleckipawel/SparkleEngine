@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Frame/Graph/RenderFrameGraphTargets.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStruct.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "RHI/Public/Shaders/Authoring/GlobalShader.h"
@@ -39,13 +38,10 @@ public:
 
 class FrameGraphBuilder;
 struct DirectShadowSignalResources;
-struct RenderFrameGraphImportedSceneResources;
+struct RenderFrameGraphResources;
 
 void AddDirectLightingPass(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
-    const LightingRenderTargets& lighting,
-    const SceneRenderTargets& sceneTargets,
-    const GBufferRenderTargets& gbuffer,
-    const DirectShadowSignalResources& shadowSignals,
-    const RenderFrameGraphImportedSceneResources& externalResources);
+    const RenderFrameGraphResources& resources,
+    const DirectShadowSignalResources& shadowSignals);

@@ -80,8 +80,13 @@ void ReferencePathTracerSession::UpdateIdentity(
     RayTracingExecutionFrontend executionFrontend,
     ReferencePathTracerResources& resources) noexcept
 {
-	const ReferencePathTracerIdentity identity =
-	    BuildReferencePathTracerIdentity(view, scene, frame, sceneGeneration, executionFrontend, m_deviceServices.GetCapabilities().BackendApi);
+	const ReferencePathTracerIdentity identity = BuildReferencePathTracerIdentity(
+	    view,
+	    scene,
+	    frame,
+	    sceneGeneration,
+	    executionFrontend,
+	    m_deviceServices.GetCapabilities().BackendApi);
 	if (m_hasIdentity && identity == m_identity)
 	{
 		return;

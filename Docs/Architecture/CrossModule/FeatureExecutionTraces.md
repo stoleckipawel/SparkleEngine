@@ -26,7 +26,7 @@ Every render mode enters the same frame owner. This is the shortest trace for lo
 | 4. Scene preparation | `RenderScenePreparation::Execute` creates frame-local `PreparedRenderScene` from the persistent scene | Prepared scene references/counts/derived lighting data | Prepared data is frame-owned; it does not become a second persistent scene authority |
 | 5. View preparation | `RenderViewBuilder` and `RenderViewPreparation` derive camera, temporal, display, ray-plan, and viewport data in `RenderView`/`RenderViewState` | View-owned uniforms and history validity | Camera/topology/scene invalidation resets temporal validity rather than mutating scene ownership |
 | 6. GPU-scene publication | Persistent scene updates lighting, geometry, deformation, and ray-hit buffers for the selected in-flight frame | `RenderSceneGpuBindings` contains resource/size/stride bindings | Frame graph requires all declared buffers, including empty-safe publications |
-| 7. Ray preparation | `RenderRayTracingScene::PrepareRayTracingFrame` consumes prepared scene plus resolved effect plans | BLAS/TLAS build data and ray frame bindings | Capability-incompatible strict frontend resolves to `None`; no silent raster shadow/lighting substitute |
+| 7. Ray preparation | `RenderRayTracingScene::PrepareRayTracingFrame` consumes the prepared scene; the shared automatic resolver determines active traversal where needed | BLAS/TLAS build data and ray frame bindings | No complete frontend resolves to `None`; no silent raster shadow/lighting substitute |
 | 8. Graph execution | Compiled `FrameGraph` binds persistent buffers/history and executes typed raster, compute, ray-tracing, transfer, and external-provider passes | Queue submissions and viewport products | Topology key changes rebuild execution and invalidate history |
 | 9. Submission/presentation | `RenderDeviceServices::SubmitFrame` submits queues; UI overlay and present complete the frame | Per-queue `RhiSubmissionToken` and presented/backed viewport product | Resources/providers/pipelines retain last-use state until queue completion |
 | 10. Retirement | Frame execution, provider generations, shader/pipeline generations, capture readbacks, texture residency, and mesh uploads are polled | Completed generations become destructible | Responsiveness alone does not prove correct retirement or absence of growth |
@@ -53,7 +53,7 @@ Vertical completeness risk: importer/cooker fidelity for every material role rem
 
 | Step | Shared semantic contract | Inline adapter | Native-pipeline adapter |
 | --- | --- | --- | --- |
-| Selection | `GBufferAlgorithm::RayTracing` and capability report resolve an immutable execution plan | Strict Inline or Automatic fallback when pipeline is unavailable | Strict Pipeline or Automatic preference when ready |
+| Selection | `GBufferAlgorithm::RayTracing` plus the shared capability report resolve one automatic frontend | Selected when Pipeline is unavailable and Inline is complete | Preferred when complete |
 | Required capabilities | AS and descriptor indexing are common | Inline ray query | RT pipeline plus shader-table readiness |
 | Scene geometry | `RenderRayTracingScene` owns BLAS/TLAS preparation from scene meshes/instances | Same scene TLAS/hit buffers | Same scene TLAS/hit buffers and scene shader-table plan |
 | Material binding | `RayTracingHitMaterial` indices address the fixed 4096-entry material texture table | Bound to compute parameter layout | Bound as ray-generation global parameters; hit stages use scene record identity |

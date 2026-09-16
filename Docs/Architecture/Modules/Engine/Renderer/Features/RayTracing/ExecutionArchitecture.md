@@ -30,7 +30,7 @@ A selected ray-traced effect can run through an inline ray-query frontend or a n
                          Renderer effect request
                  scene + view + material + outputs + policy
                                       |
-                         immutable execution plan
+                        automatic frontend policy
                          /                    \
               Inline frontend            Pipeline frontend
               compute dispatch            ray-generation trace
@@ -60,12 +60,12 @@ Portability belongs to the effect contract, not to arbitrary shader entry points
 
 The enduring invariants are:
 
-1. One effect owns one public input/output/temporal contract and any supported alternate or mandatory-failure policy regardless of execution mode.
+1. One effect owns one public input/output/temporal contract and any supported alternate or mandatory-failure policy regardless of resolved traversal frontend.
 2. Inline and pipeline frontends share semantic kernels and data schemas, never stage intrinsics.
 3. One `RenderScene`, prepared scene, TLAS generation, material/geometry identity, and view serve both modes.
 4. Renderer policy selects the mode before graph construction; RHI reports capability and performs mechanism.
-5. Explicit `Inline` and `Pipeline` requests are strict. Unsupported requests fail with one actionable readiness result before any partial graph is scheduled.
-6. `Automatic` may select per effect, but every active mode and reason is stable for the frame and visible in diagnostics/captures.
+5. One automatic Renderer policy prefers a complete native Pipeline route and otherwise selects complete Inline traversal; effects do not own independent execution-mode settings.
+6. The resolved frontend is stable for graph topology and an unavailable result fails before any partial ray-tracing graph is scheduled.
 7. A pipeline is usable only when compiler target, map/library records, runtime API feature chain, stage composition, binding ABI, native pipeline, table, graph path, and selected effect are all ready.
 8. A shader-table record can execute only with the exact live pipeline generation from which its identifier/group handle came.
 9. TLAS instance contribution, geometry index, ray type, table order, and shader trace parameters follow one documented checked formula.
@@ -81,7 +81,7 @@ The enduring invariants are:
 - Do not expose TLAS descriptor/device-address representation as a shader class, authored define, effect uniform, graph mode, code variant, or fallback program.
 - Do not create a second scene, acceleration-structure, material, history, map, runtime-generation, or effect-settings system.
 - Do not advertise pipeline support because compilation or metadata alone succeeds.
-- Do not silently fall back from an explicitly requested mode or partially schedule a strict frame.
+- Do not add effect-local execution preferences, fallback orders, or selector CVars.
 - Do not rebuild every shader table every frame when its logical content and exact pipeline generation are unchanged.
 - Do not put descriptors, owning pointers, transient addresses, variable-size objects, or duplicated material data in local records.
 - Do not require any-hit, intersection, callable, recursion, collections, pipeline libraries, GPU-generated tables, permutations, or precaching where a real effect or the explicitly required all-stage evidence does not need them.
@@ -113,7 +113,7 @@ concrete shader classes -> compile jobs -> GlobalShaderMap + CookedShaderLibrary
                                       -> shader-table generation
                                       -> typed graph TraceRays
 
-effect request -> immutable execution plan -> exactly one frontend
+effect request -> automatic capability resolver -> exactly one frontend
                                       -> shared scene/TLAS/material/output/history
 ```
 
@@ -127,10 +127,10 @@ The target replaces the compiler-only RT package scaffolding rather than adaptin
 | `GlobalShaderMap` / `CookedShaderLibrary` | typed target lookup and validated code/ABI records for raster, compute, and RT stages | effect selection, native identifiers, table record meaning |
 | RHI public contract | independent AS/inline/pipeline capabilities; one semantic AS resource binding; immutable RT pipeline descriptor; opaque pipeline/table products; logical table materialization request; trace descriptor; states and validation errors | effect/material names, frame scheduling, native handles/bytes, shader access-mode policy |
 | D3D12/Vulkan private RHI | selected-provider AS descriptor lowering; native pipeline/state object, layout association, identifier/group-handle retrieval, record packing/alignment, GPU table resources, command encoding, native validation | which material, geometry, ray type, or effect a logical slot means |
-| Renderer shader/effect owner | concrete RT shader classes, focused typed composition, shared effect ABI/semantics, requested/active mode, exactly one frontend, output/history/supported-alternate/failure policy | raw identifier bytes, backend table layout, compiler process policy |
+| Renderer shader/effect owner | concrete RT shader classes, focused typed composition, shared effect ABI/semantics, exactly one resolved frontend, output/history/supported-alternate/failure policy | raw identifier bytes, backend table layout, compiler process policy, per-effect execution settings |
 | `RenderScene` and RT scene capabilities | one AS generation, instance/geometry/material identity, logical table contribution plan, dirty generation, classic/partitioned TLAS parity | backend strides/addresses, effect selection, graph handles |
 | frame graph / `RenderPassRuntimeCache` | typed trace resource declarations, queue/state/dependency rules, pre-execute pipeline/table materialization, exact generation capture, atomic reload, submission-token retirement | shader authoring, mutable scene semantics, editor policy |
-| Application/Editor | one `Apply Changed` intent, bounded immutable status/provenance presentation, requested renderer setting | compiler scheduling, map mutation, RHI objects, native construction, table bytes |
+| Application/Editor | one `Apply Changed` intent and bounded immutable status/provenance presentation | ray-frontend policy, compiler scheduling, map mutation, RHI objects, native construction, table bytes |
 
 ## Effect-Level Dual-Execution Contract
 
@@ -149,31 +149,16 @@ Correctness/quality comparison policy
 
 ### Selection Semantics
 
-The closed request vocabulary is:
+`RenderRayTracingScene` resolves and owns the closed automatic policy once from its immutable capability report; every dual-frontend effect consumes that scene-owned result:
 
-```cpp
-enum class RayTracingExecutionMode : std::uint8_t
-{
-    Automatic,
-    Inline,
-    Pipeline,
-};
-```
-
-Exact placement may follow current Renderer settings style, but the meaning is fixed:
-
-| Requested mode | Inline ready | Pipeline ready | Result |
+| Shared requirements | Pipeline capability | Inline capability | Result |
 | --- | ---: | ---: | --- |
-| `Inline` | yes | any | inline |
-| `Inline` | no | any | readiness failure; no graph scheduled |
-| `Pipeline` | any | yes | pipeline |
-| `Pipeline` | any | no | readiness failure; no graph scheduled |
-| `Automatic` | yes | yes | one inspectable Renderer policy chooses and records reason |
-| `Automatic` | yes | no | inline with pipeline-unavailable reason |
-| `Automatic` | no | yes | pipeline with inline-unavailable reason |
-| `Automatic` | no | no | explicit supported alternate or effect failure before graph construction |
+| unavailable | any | any | `None`; no ray-tracing graph is scheduled |
+| available | yes | any | `Pipeline` |
+| available | no | yes | `Inline` |
+| available | no | no | `None`; the mandatory effect fails before graph construction |
 
-A strict whole-frame request preflights every selected effect, lists every incompatibility, and schedules nothing if any selected effect cannot honor the request. `Automatic` may mix modes, but never hides the result. Algorithm choices such as raster/ray GBuffer, Reference/ReSTIR lighting, or denoising remain independent axes from the execution API.
+Algorithm choices such as raster/ray GBuffer, Reference/ReSTIR lighting, or denoising remain independent axes from the traversal mechanism. The resolved value may be retained only where graph reconstruction, accumulation identity, or user-visible progress needs the actual active mechanism.
 
 ### Shared HLSL Boundary
 
@@ -195,6 +180,8 @@ Keep frontend-specific:
 - stage-specific ray flags, recursion/stack behavior, and local-record access.
 
 Thin frontends are siblings beside their semantic effect owner. They do not duplicate hit reconstruction, material evaluation, output stores, or temporal policy.
+
+`TraceSceneRay` is the one feature-facing traversal call. Material-alpha traversal is the default; callers request exceptional opaque treatment through the standard `RAY_FLAG_FORCE_OPAQUE` bit rather than another function name. The Inline adapter owns non-opaque candidate commitment and the Pipeline adapter owns payload/stage dispatch. This follows the [Microsoft DXR `RayQuery` and ray-flag contract](https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html) and NVIDIA's separation of [inline ray queries from native ray-tracing pipelines in NVRHI](https://github.com/NVIDIA-RTX/NVRHI/blob/main/doc/Tutorial.md) while keeping that mechanism choice out of effect semantics.
 
 Acceleration-structure binding representation is not frontend-specific. Inline compute and RT ray generation declare the same semantic scene-AS parameter shape used by their effect. Whether the active scene uses classic TLAS or partitioned TLAS, and whether the native API carries that opaque resource through a descriptor containing a handle or device address, is resolved below shader/effect code. The shader never reconstructs an acceleration structure from address words.
 
@@ -277,7 +264,7 @@ recordIndex =
 
 Vulkan maps the same logical result to `sbtRecordOffset`, `sbtRecordStride`, and TLAS `instanceShaderBindingTableRecordOffset`. Renderer owns logical terms, ordering, and bounds. Backends own addresses, byte offsets, handle sizes, strides, alignment, and region packing.
 
-The earlier opaque one-ray-type checkpoint intentionally used zero contributions. The current production slice uses nontrivial instance/geometry/two-ray-type indexing through one `RenderRayTracingScene` plan shared by classic and partitioned TLAS. Material/geometry data remains in shared buffers; current product records contain no local data. The delivery plan retains the checkpoint history.
+The current production slice uses one Surface ray type and instance/geometry indexing through one `RenderRayTracingScene` plan shared by classic and partitioned TLAS. All material-hit consumers use the same record semantics; shadow visibility no longer duplicates a payload or ray-type contribution. Material/geometry data remains in shared buffers and current product records contain no local data.
 
 ## Capability And Readiness Contract
 
@@ -293,7 +280,7 @@ AS provider readiness is similarly complete-chain truth. A classic or partitione
 
 Provider selection is fixed before binding-layout and pipeline materialization. The backend creates the exact selected-provider descriptor layout; it does not enable or preserve mutable-descriptor machinery solely to switch classic and partitioned AS representations after layout creation.
 
-Shadow visibility is mandatory for direct lighting. Until the pipeline/RGS frontend is complete, inline ray query is the sole real producer and its absence fails before graph construction. Once both frontends exist, the immutable execution plan selects exactly one. A clear, copy, no-op, default texture, stale history, or no-query shader cannot publish the product merely to satisfy graph production.
+Shadow visibility is mandatory for direct lighting. Both frontends call the shared `TraceSceneRay` semantic boundary and the automatic resolver selects exactly one before graph construction. A clear, copy, no-op, default texture, stale history, or no-query shader cannot publish the product merely to satisfy graph production.
 
 This boundary follows the [Microsoft DXR resource contract](https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html), [NVIDIA NVRHI semantic acceleration-structure binding](https://github.com/NVIDIA-RTX/NVRHI/blob/8e8c36e37558acec333204619b95d9d2fcdc4a79/doc/ProgrammingGuide.md), and the Khronos [`VK_NV_partitioned_acceleration_structure` descriptor contract](https://docs.vulkan.org/refpages/latest/refpages/source/VK_NV_partitioned_acceleration_structure.html).
 
@@ -333,16 +320,16 @@ The first product effect is the ray-traced GBuffer:
 
 - shared prepared scene/view/TLAS/material/geometry and existing GBuffer outputs;
 - inline compute frontend and raygen/miss/opaque-triangle-closest-hit frontend;
-- one ray type, recursion depth one, global parameters, no local data, zero contribution mapping;
+- one Surface ray type, recursion depth one, global parameters, and no local data;
 - exact identity/sentinel comparisons and field-specific floating-point tolerances in the same frame;
 - rasterized GBuffer remains an explicit supported algorithm, not a fabricated ray-traced result.
 
-Current source establishes `GBufferAlgorithm::{Rasterized,RayTracing}`, independent `RayTracingExecutionMode::{Automatic,Inline,Pipeline}`, and one shared strict requested/active `RayTracingExecutionPlan` resolver consumed by focused effect plans. `RayTracingGBufferPipeline.hlsl` and the Reference Path Tracer pipeline adapter consume the same generic full-hit payload plus miss/closest-hit/alpha-any-hit shaders; inline traversal implements the same material-trace signature over `RayQuery`. Their registered payload and built-in triangle-attribute sizes derive from standard-layout ABI types rather than copied byte literals. `DirectShadowSignal` derives its smaller visibility-only payload contract the same way while sharing execution resolution and alpha policy. `RayTracingShaderTablePlan` fixes Surface then ShadowVisibility ordering, checked formula/bounds, material/geometry invalidation, bounded metrics, and the contribution read by both TLAS builders. Graph-owned immutable tables capture the exact pipeline and scene-plan generation and retire with their graph. This is implemented source shape, not native or parity evidence.
+Current source establishes `GBufferAlgorithm::{Rasterized,RayTracing}` and one automatic frontend selected and retained by `RenderRayTracingScene` for GBuffer, direct-shadow, and Reference Path Tracer consumers. `TraceSceneRay` is their one material-alpha-aware semantic trace API; thin Inline and Pipeline headers contain the respective `RayQuery` and `TraceRay` mechanics. The GBuffer and shadow entry shaders call one shared semantic body per effect. Dual-frontend consumers use one `AddRayTracingMaterialPass` scheduling primitive over the same full-hit payload and material miss/closest-hit/alpha-any-hit shaders, while `BindSceneShaderParameters` supplies their declared canonical Scene/View resources. Registered payload and built-in triangle-attribute sizes derive from standard-layout ABI types rather than copied byte literals. `RayTracingShaderTablePlan` owns one Surface ray type, checked instance/geometry formula and bounds, material/geometry invalidation, and the contribution read by both TLAS builders. Graph-owned immutable tables capture the exact pipeline and scene-plan generation and retire with their graph. This is implemented source shape, not native or parity evidence.
 
 The production hit slice adds:
 
 - alpha-tested any-hit as a thin adapter over shared alpha/material policy;
-- shadow visibility as a second dual-execution ray type;
+- shadow visibility as a dual-execution consumer of the shared Surface hit contract;
 - nontrivial instance/geometry/ray-type mapping shared across classic and partitioned TLAS;
 - dirty table generation without unnecessary BLAS/TLAS rebuild.
 
@@ -357,7 +344,7 @@ The target is realized only when implementation evidence proves all of the follo
 - ray-traced GBuffer and shadow visibility pass same-frame dual-mode parity including alpha, supported-alternate, and mandatory-failure behavior;
 - classic/partitioned TLAS share one logical contribution plan and no scene/material/history authority is duplicated;
 - classic/partitioned TLAS use one semantic AS shader/graph binding and private native descriptor lowering; no address/access-mode shader duplicate or fallback shader remains;
-- one immutable whole-frame plan implements strict/automatic selection and schedules exactly one frontend per effect;
+- one automatic capability policy schedules exactly one frontend per dual-execution effect and no per-effect execution selector exists;
 - map/library/pipeline/table reload and device recreation preserve the previous accepted generation on failure and retire old state by submission token;
 - capture/provenance follows shader/effect identity through source, compile job, map/code, composition, native pipeline/table, graph event, and symbols;
 - paired correctness, failure, capture, and performance evidence uses fixed hardware/driver/build/scene/camera/settings/sample provenance;

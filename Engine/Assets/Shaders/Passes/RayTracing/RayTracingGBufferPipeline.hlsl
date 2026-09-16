@@ -1,17 +1,7 @@
-#include "/Engine/Passes/RayTracing/RayTracingGBufferCommon.hlsli"
 #include "/Engine/RayTracing/RayTracingSceneTracePipeline.hlsli"
+#include "/Engine/Passes/RayTracing/RayTracingGBufferCommon.hlsli"
 
-[shader("raygeneration")]
-void RayTracingGBufferRayGeneration()
+[shader("raygeneration")] void RayTracingGBufferRayGeneration()
 {
-	const uint2 pixelCoord = DispatchRaysIndex().xy;
-	const RayTracingGBuffer::PrimaryRay ray = RayTracingGBuffer::BuildPrimaryRay(pixelCoord);
-	const RayTracingTraceResult trace = TraceSceneRay(SceneTlas,
-	                                                              ray.OriginWorld,
-	                                                              ray.DirectionWorld,
-	                                                              ray.Description.TMin,
-	                                                              ray.Description.TMax,
-	                                                              RayTracingGBuffer::CullFlags,
-	                                                              RayTracingGBuffer::InstanceMask);
-	RayTracingGBuffer::StoreTraceResult(pixelCoord, trace, ray);
+	RayTracingGBuffer::TraceAndStore(DispatchRaysIndex().xy);
 }

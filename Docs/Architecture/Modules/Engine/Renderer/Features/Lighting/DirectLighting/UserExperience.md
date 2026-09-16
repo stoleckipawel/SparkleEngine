@@ -68,7 +68,7 @@ No `Success` state exists independently of a completed active frame. A quiet log
 | --- | --- | --- |
 | algorithm mode | `Automatic` plus only independently accepted explicit modes | resolved estimator revision and bias mode |
 | quality profile | named profiles whose budgets are frozen in `DIR-D0-11` | initial candidates, temporal/spatial candidates, shadow rays, history cap, memory estimate |
-| visibility | `Automatic` or strict supported frontend selections | Inline/Pipeline active state, alpha mode, failure reason |
+| visibility | engine-wide automatic frontend resolution | read-only Inline/Pipeline active state, alpha mode, failure reason |
 | reconstruction | portable baseline by default once accepted; optional DLSS RR where supported | active provider, input extent, guide generations, reset/bypass reason |
 | diagnostics | `Off` by default; one product at a time | raw direct lobes, selected light ID/type, target/weight/`M`, visibility, compatibility, confidence, rejection reason |
 

@@ -13,7 +13,7 @@
 
 #include "/Engine/RayTracing/RayTracingHitUniformData.hlsli"
 #include "/Engine/RayTracing/RayTracingMaterialHit.hlsli"
-#include "/Engine/RayTracing/RayTracingShaderTableLayout.hlsli"
+#include "/Engine/RayTracing/RayTracingSceneTrace.hlsli"
 
 RWTexture2D<float4> GBufferBaseColor;
 RWTexture2D<float4> GBufferNormal;
@@ -101,6 +101,19 @@ namespace RayTracingGBuffer
 			return;
 		}
 		StoreHit(pixelCoord, surface);
+	}
+
+	void TraceAndStore(uint2 pixelCoord)
+	{
+		const PrimaryRay ray = BuildPrimaryRay(pixelCoord);
+		const RayTracingTraceResult trace = TraceSceneRay(SceneTlas,
+		                                                  ray.OriginWorld,
+		                                                  ray.DirectionWorld,
+		                                                  ray.Description.TMin,
+		                                                  ray.Description.TMax,
+		                                                  CullFlags,
+		                                                  InstanceMask);
+		StoreTraceResult(pixelCoord, trace, ray);
 	}
 }
 

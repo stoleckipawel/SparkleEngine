@@ -14,4 +14,5 @@ struct RayTracingMaterialPayload final
 	std::uint32_t FrontFace = 0u;
 };
 
-inline constexpr RayTracingShaderMetadata kRayTracingMaterialShaderMetadata = BuildRayTracingShaderMetadata<RayTracingMaterialPayload, RayTracingTriangleAttributeLayout>(1u);
+inline constexpr RayTracingShaderMetadata kRayTracingMaterialShaderMetadata =
+    BuildRayTracingShaderMetadata<RayTracingMaterialPayload, RayTracingTriangleAttributeLayout>(1u);

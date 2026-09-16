@@ -1,20 +1,15 @@
 #pragma once
 
-#include "Frame/Graph/RenderFrameGraphTargets.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
-#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 
 class FrameGraphBuilder;
 class RenderRayTracingScene;
 struct DirectShadowSignalResources;
-struct RenderFrameGraphImportedSceneResources;
+struct RenderFrameGraphResources;
 
 void AddDirectShadowSignalPass(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
-    const SceneRenderTargets& sceneTargets,
-    const GBufferRenderTargets& gbuffer,
-    FrameGraphAccelerationStructureHandle sceneTlas,
+    const RenderFrameGraphResources& resources,
     const DirectShadowSignalResources& shadowSignals,
-    const RenderFrameGraphImportedSceneResources& externalResources,
     RenderRayTracingScene& rayTracingScene);

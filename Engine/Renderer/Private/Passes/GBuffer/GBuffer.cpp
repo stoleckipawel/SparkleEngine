@@ -92,14 +92,7 @@ void AddGBufferMeshPasses(
 			break;
 		case GBufferAlgorithm::RayTracing:
 		{
-			AddRayTracingGBufferMeshPass(
-			    builder,
-			    sceneExtent,
-			    resources.Transient.GBuffer,
-			    resources.SceneTlas,
-			    resources.ImportedScene,
-			    rayTracingScene.GetShaderTablePlan(),
-			    rayTracingScene.GetCapabilityReport());
+			AddRayTracingGBufferMeshPass(builder, sceneExtent, resources, rayTracingScene);
 			break;
 		}
 		default:

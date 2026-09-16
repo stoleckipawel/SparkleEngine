@@ -3,7 +3,7 @@
 #include "ReferencePathTracerIdentity.h"
 #include "ReferencePathTracerUniformData.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
-#include "RayTracing/Effects/RayTracingExecutionFrontend.h"
+#include "RayTracing/RayTracingExecutionFrontend.h"
 #include "RHI/Public/Commands/RhiQueue.h"
 
 #include <chrono>

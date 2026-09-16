@@ -23,7 +23,7 @@
 flowchart LR
     Scene[Prepared geometry, instances, and materials] --> Plan[Renderer scene and SBT plan]
     Plan --> AS[BLAS plus selected TLAS strategy]
-    AS --> Select{Effect resolves frontend}
+    AS --> Select{Automatic frontend resolver}
     Select --> Inline[Inline ray-query adapter]
     Select --> Pipeline[Native pipeline and SBT adapter]
     Inline --> Product[One semantic effect product]
@@ -31,13 +31,13 @@ flowchart LR
     Product --> Complete[Queue completion retires all generations]
 ```
 
-Traversal is an implementation choice beneath the effect contract. Strict unavailable modes reject; Automatic may select only a complete alternate and must expose what became active.
+Traversal is an implementation choice beneath the effect contract. One Renderer policy selects Pipeline when its shared requirements are available, otherwise Inline, and rejects the ray-traced operation when neither route is complete.
 
 Target semantic invariants and their rationale are owned by [Ray-Tracing Execution Architecture](ExecutionArchitecture.md). This dossier states the current feature shape.
 
 ## Feature Promise
 
-Sparkle builds a Renderer-owned ray-tracing scene from the same prepared geometry/material/instance identity used by raster rendering. Effects request a semantic operation; the Renderer resolves an inline ray-query or native ray-pipeline frontend from the selected mode and `RhiCapabilities`, then binds the same TLAS/hit/material data and effect output contract.
+Sparkle builds a Renderer-owned ray-tracing scene from the same prepared geometry/material/instance identity used by raster rendering. Effects request a semantic operation; one automatic Renderer resolver chooses an inline ray-query or native ray-pipeline frontend from `RhiCapabilities`, then binds the same TLAS/hit/material data and effect output contract. Individual effects do not own execution-mode settings.
 
 Ray tracing is capability-gated. Source contains D3D12 and Vulkan acceleration structure, inline query, native pipeline, shader table, and `TraceRays` mechanisms, but this snapshot provides no executable proof that every path runs or matches.
 
@@ -57,9 +57,9 @@ The frame graph reserves a persistent `SceneTlas`, declares `RayTracingSceneBuil
 
 | Effect | Inline ray query | Native pipeline | Active selection |
 | --- | --- | --- | --- |
-| Ray GBuffer | present | raygen, miss, closest-hit, any-hit present | `r.GBuffer.RayTracingExecution`; Automatic prefers Pipeline then Inline |
-| Direct shadow visibility | present | raygen, miss, closest-hit, any-hit present | `r.RayTracing.Shadows.Execution`; independently resolved |
-| Reference path tracing | present | raygen plus shared material miss/closest-hit/alpha-any-hit present | `r.PathTracing.Execution`; Automatic prefers Inline then Pipeline |
+| Ray GBuffer | present | raygen plus shared material miss/closest-hit/alpha-any-hit present | shared automatic resolver; Pipeline then Inline |
+| Direct shadow visibility | present | raygen plus shared material miss/closest-hit/alpha-any-hit present | shared automatic resolver; Pipeline then Inline |
+| Reference path tracing | present | raygen plus shared material miss/closest-hit/alpha-any-hit present | shared automatic resolver; Pipeline then Inline |
 | ReSTIR indirect temporal/spatial/resolve | present | not found | Inline only |
 
 “Native ray tracing supported” therefore does not mean every ray effect has a native-pipeline frontend. Likewise, an inline-capable device does not establish shader-table/pipeline support.
@@ -68,18 +68,20 @@ The frame graph reserves a persistent `SceneTlas`, declares `RayTracingSceneBuil
 
 The scene shader-table plan currently has:
 
-- two ray types in fixed contribution order: Surface and ShadowVisibility;
+- one Surface ray type shared by material-hit consumers;
 - opaque and alpha-tested triangle hit-group semantics;
 - ray-generation, miss, and hit records authored by current effects;
-- checked record index `rayContribution + (2 * geometryIndex) + instanceContribution`;
+- checked record index `geometryIndex + instanceContribution`;
 - local record bytes/signatures where required by the RHI contract;
 - no current procedural/intersection or callable Renderer programs.
 
 Geometry layout, ray-type layout, hit-group classification, or other SBT semantics change the plan generation. Ordinary material value edits do not redefine logical record indexing. A graph using the scene table rebuilds when that generation changes; old graph/table/pipeline state retires after all last-use queue tokens complete.
 
-## Requested Versus Active Behavior
+## Automatic Frontend Resolution
 
-`Automatic`, `Inline`, and `Pipeline` are requests, not interchangeable labels. Resolution considers acceleration-structure readiness, inline query support, native pipeline support, descriptor indexing/material-table support, registered shader/pipeline completeness, and SBT readiness. A strict unavailable mode must reject graph creation or report an unavailable plan. Automatic may choose the documented alternate but must expose the actual active frontend and reason.
+`RenderRayTracingScene` resolves the single execution policy once from its immutable capability report. Acceleration-structure and descriptor-indexing support are shared prerequisites; a complete native Pipeline route is preferred and Inline is the capability fallback. `None` prevents trace-pass construction: required ray features reject, while the optional Reference session remains unavailable and cannot execute. Effects do not rebuild plans or interpret capability fields. Only the pipeline-relevant shader-table generation enters frame-graph topology identity; there is no user-facing or per-effect execution-mode request.
+
+Shared Renderer-private utilities remove mechanism boilerplate without hiding feature intent: `BindSceneShaderParameters` supplies only the Scene/View/TLAS/material/light fields declared by a pass parameter type, while `AddRayTracingMaterialPass` consumes the scene-owned frontend and owns the one reusable miss/opaque-hit/alpha-hit pipeline composition. Feature pass bodies continue to declare their own outputs, histories, dispatch shape, and semantic work.
 
 PTLAS selection likewise depends on the provider and advertised operation support. The current narrow PTLAS policy must not be generalized to arbitrary update/move operation support.
 
@@ -94,7 +96,7 @@ PTLAS selection likewise depends on the provider and advertised operation suppor
 ## Failure, Diagnostics, And Evidence
 
 - Missing TLAS or mismatched hit/material counts fail loudly at the frame-graph binding boundary.
-- Unsupported strict execution modes must not silently fall back; Automatic fallback must be observable.
+- Automatic frontend resolution must not substitute raster or another product when no complete ray route exists; the active route remains observable where a product consumer needs it.
 - SBT out-of-range/incorrect contribution, alpha-tested any-hit, repeated geometry/material identities, move/delete/reload, deformed geometry, and retirement need controlled captures and native validation.
 - Primary checks: `RHI-E08` through `RHI-E11`, `RHI-E15`, `REN-E04`, `REN-E08`, `REN-E11`, `REN-E12`, and `REN-E19`.
 
@@ -104,8 +106,8 @@ PTLAS selection likewise depends on the provider and advertised operation suppor
 - `AC-RT-02` — static BLAS reuse occurs only while geometry identity is unchanged; deforming geometry rebuild is reported as rebuild and produces current positions without being mislabeled refit/update.
 - `AC-RT-03` — classic TLAS initial build and enabled refit/update preserve transforms, instance IDs, masks, and shader-table contribution; unsupported update conditions rebuild or reject explicitly.
 - `AC-RT-04` — PTLAS activates only when the provider supports the exact requested operations; the current one-operation/no-instance-update/no-translation limit is enforced and visible.
-- `AC-RT-05` — SBT indices for both ray types and every opaque/alpha-tested geometry fall within the planned record count, point to the intended hit group/local data, and invalidate only on layout-semantic changes.
-- `AC-RT-06` — each effect resolves and reports requested versus active execution independently; strict unavailable frontends reject and Automatic selects only a fully ready documented alternate.
+- `AC-RT-05` — SBT indices for the shared Surface ray type and every opaque/alpha-tested geometry fall within the planned record count, point to the intended hit group/local data, and invalidate only on layout-semantic changes.
+- `AC-RT-06` — every dual-frontend effect uses the one automatic resolver; Pipeline is selected when complete, Inline is selected otherwise when complete, and neither route schedules when shared requirements are unavailable.
 - `AC-RT-07` — Inline and Pipeline GBuffer/direct-shadow adapters agree on semantic outputs for miss, opaque, alpha, repeated geometry/material, and deformation fixtures; effects without a Pipeline adapter remain explicitly Inline-only.
 - `AC-RT-08` — missing TLAS, hit/material records, descriptor capacity, program, pipeline, SBT, or backend capability fails before trace dispatch and names the incomplete contract.
 - `AC-RT-09` — graph/SBT/pipeline/BLAS/TLAS generations remain alive through last-use queue tokens and are reclaimed after completion without stale binding during churn or shutdown.
@@ -115,7 +117,7 @@ PTLAS selection likewise depends on the provider and advertised operation suppor
 
 | ID | Injection or cause | Required safe behavior | Affected criteria |
 | --- | --- | --- | --- |
-| `FM-RT-01` | strict frontend missing one capability/program/SBT dependency | plan/graph resolution rejects and reports the missing dependency | `AC-RT-06`, `AC-RT-08` |
+| `FM-RT-01` | selected automatic frontend is missing one required program/SBT dependency | graph construction rejects before trace dispatch; it does not add an effect-local fallback or setting | `AC-RT-06`, `AC-RT-08` |
 | `FM-RT-02` | SBT contribution/index/count mismatch or stale plan generation | validation rejects before table publication/dispatch; prior valid generation remains isolated | `AC-RT-05`, `AC-RT-08`, `AC-RT-09` |
 | `FM-RT-03` | traceable instance lacks matching hit/material/texture record | GPU-scene/graph binding fails; no plausible hit shading is published | `AC-RT-01`, `AC-RT-08` |
 | `FM-RT-04` | request unsupported PTLAS update/translation or overflow operation plan | PTLAS remains inactive/rejected with exact operation reason; no silent classic/PTLAS claim swap | `AC-RT-04`, `AC-RT-06` |
@@ -128,7 +130,7 @@ PTLAS selection likewise depends on the provider and advertised operation suppor
 | --- | --- | --- |
 | `CHK-RT-01` | deterministic scene-identity/BLAS/TLAS matrix over static/deforming/add/move/remove/reload, classic refit on/off, and PTLAS capability/operation limits | `AC-RT-01`–`AC-RT-04`; `FM-RT-03`, `FM-RT-04` |
 | `CHK-RT-02` | enumerate planned SBT records and recompute every logical index; corrupt contribution/count/generation and require pre-dispatch rejection | `AC-RT-05`, `AC-RT-08`; `FM-RT-02` |
-| `CHK-RT-03` | effect/frontend/capability matrix for GBuffer and shadows plus explicit Inline-only reference/ReSTIR-indirect cells; compare raw outputs and active-state diagnostics | `AC-RT-06`–`AC-RT-08`; `FM-RT-01`, `FM-RT-06` |
+| `CHK-RT-03` | capability matrix for the shared automatic resolver plus dual-frontend GBuffer, shadow, and Reference consumers and explicit Inline-only ReSTIR-indirect cells; compare raw outputs | `AC-RT-06`–`AC-RT-08`; `FM-RT-01`, `FM-RT-06` |
 | `CHK-RT-04` | churn geometry, shader/SBT, graph, resize, reload, and shutdown while frames are in flight; inspect bindings, queue tokens, retained generations, and reclamation | `AC-RT-09`; `FM-RT-05` |
 | `CHK-RT-05` | focused D3D12/Vulkan execution with native validation, raw GBuffer/visibility comparison, and per-cell capability report | `AC-RT-07`, `AC-RT-10`; `FM-RT-06` |
 

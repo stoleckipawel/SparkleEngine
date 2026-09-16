@@ -8,6 +8,10 @@
 #include "/Engine/RayTracing/Shadows/RayTracedShadowSignalPacking.hlsli"
 #include "/Engine/RayTracing/Shadows/RayTracedShadowSemantics.hlsli"
 
+RaytracingAccelerationStructure SceneTlas;
+
+#include "/Engine/RayTracing/Shadows/RayTracedShadowTrace.hlsli"
+
 RWTexture2D<float4> ShadowVisibilitySignal;
 Texture2D<float4> CurrentReservoirSample;
 Texture2D<float4> CurrentReservoirWeight;
@@ -58,6 +62,21 @@ bool PrepareDirectShadowSignal(uint2 pixelCoord,
 void StoreDirectShadowSignal(uint2 pixelCoord, ShadowVisibilitySample signal)
 {
 	ShadowVisibilitySignal[pixelCoord] = RayTracedShadowSignalPacking::PackShadowSignal(signal);
+}
+
+void TraceAndStoreDirectShadowSignal(uint2 pixelCoord)
+{
+	RayTracedShadowRequest request = (RayTracedShadowRequest)0;
+	ShadowVisibilitySample signal = RayTracedShadowSignals::BuildUnshadowedSignal(0.0f);
+	bool validPixel = false;
+	if (PrepareDirectShadowSignal(pixelCoord, validPixel, request, signal))
+	{
+		signal = RayTracedShadows::TraceShadowRay(request);
+	}
+	if (validPixel)
+	{
+		StoreDirectShadowSignal(pixelCoord, signal);
+	}
 }
 
 #endif

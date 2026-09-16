@@ -13,28 +13,7 @@ void AddRestirDirectLightingPasses(
     RenderFrameGraphResources& resources)
 {
 	const DirectShadowSignalResources shadowSignals = CreateDirectShadowSignalResources(builder, sceneExtent, resources);
-	AddDirectLightReservoirPasses(
-	    builder,
-	    sceneExtent,
-	    resources.Transient.Scene,
-	    resources.Transient.GBuffer,
-	    shadowSignals,
-	    resources.ImportedScene);
-	AddDirectShadowSignalPass(
-	    builder,
-	    sceneExtent,
-	    resources.Transient.Scene,
-	    resources.Transient.GBuffer,
-	    resources.SceneTlas,
-	    shadowSignals,
-	    resources.ImportedScene,
-	    rayTracingScene);
-	AddDirectLightingPass(
-	    builder,
-	    sceneExtent,
-	    resources.Transient.Lighting,
-	    resources.Transient.Scene,
-	    resources.Transient.GBuffer,
-	    shadowSignals,
-	    resources.ImportedScene);
+	AddDirectLightReservoirPasses(builder, sceneExtent, resources, shadowSignals);
+	AddDirectShadowSignalPass(builder, sceneExtent, resources, shadowSignals, rayTracingScene);
+	AddDirectLightingPass(builder, sceneExtent, resources, shadowSignals);
 }

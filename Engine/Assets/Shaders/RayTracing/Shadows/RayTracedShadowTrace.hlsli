@@ -2,19 +2,19 @@
 #define SPARKLE_RAY_TRACED_SHADOW_TRACE_HLSLI
 
 #include "/Engine/RayTracing/Shadows/RayTracedShadowSemantics.hlsli"
-#include "/Engine/RayTracing/RayTracingSceneTlasTrace.hlsli"
+#include "/Engine/RayTracing/RayTracingSceneTrace.hlsli"
 
 namespace RayTracedShadows
 {
 	ShadowVisibilitySample TraceShadowRay(RayTracedShadowRequest request)
 	{
 		const RayTracingTraceResult trace = TraceSceneRay(SceneTlas,
-		                                                   request.OriginWorld,
-		                                                   request.DirectionWorld,
-		                                                   MinimumShadowTMin,
-		                                                   request.MaxDistance,
-		                                                   ShadowRayFlags,
-		                                                   ShadowInstanceMask);
+		                                                  request.OriginWorld,
+		                                                  request.DirectionWorld,
+		                                                  MinimumShadowTMin,
+		                                                  request.MaxDistance,
+		                                                  ShadowRayFlags,
+		                                                  ShadowInstanceMask);
 		return ResolveTrace(trace.Hit, trace.RayT, request.MaxDistance);
 	}
 }

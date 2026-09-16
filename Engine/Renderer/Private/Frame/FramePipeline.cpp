@@ -13,7 +13,6 @@
 #include "Providers/RendererImageProviderStack.h"
 #include "Providers/ImageProviderFrameInput.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracer.h"
-#include "Scene/RayTracing/RenderRayTracingFrameBindings.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Scene/Preparation/RenderScenePreparation.h"
@@ -56,7 +55,7 @@ FramePipeline::FramePipeline(
     m_taskExecutor(taskExecutor),
     m_uiFrameRenderer(std::make_unique<UiFrameRenderer>(deviceServices, enableUiRenderPackets)),
     m_viewportCaptureService(std::make_unique<ViewportCaptureService>(deviceServices)),
-    m_referencePathTracer(std::make_unique<ReferencePathTracer>(deviceServices, memoryMonitor))
+    m_referencePathTracer(std::make_unique<ReferencePathTracer>(deviceServices, memoryMonitor, renderScene.GetRayTracingScene()))
 {
 	m_windowExtent = {static_cast<std::uint32_t>(m_window.GetWidth()), static_cast<std::uint32_t>(m_window.GetHeight())};
 
@@ -126,8 +125,8 @@ void FramePipeline::OnRender(RenderFrameSubmission submission, const RenderFrame
 	{
 		return;
 	}
-	const RenderRayTracingFrameBindings rayTracingBindings = PrepareFrame(submission.View, time);
-	ExecuteFrame(rayTracingBindings);
+	PrepareFrame(submission.View, time);
+	ExecuteFrame();
 	SubmitAndPresent(ui);
 }
 
@@ -188,7 +187,7 @@ void FramePipeline::BeginBackendFrame() noexcept
 	frameDiagnostics.ResolveTimings();
 }
 
-RenderRayTracingFrameBindings FramePipeline::PrepareFrame(const RenderViewInput& viewInput, const RenderFrameTime& time)
+void FramePipeline::PrepareFrame(const RenderViewInput& viewInput, const RenderFrameTime& time)
 {
 	const RenderFrameGraphSettings viewportSettings =
 	    m_frameGraphSettings.OutputExtent.IsValid() && m_frameGraphSettings.RenderExtent.IsValid() ? m_frameGraphSettings
@@ -204,13 +203,13 @@ RenderRayTracingFrameBindings FramePipeline::PrepareFrame(const RenderViewInput&
 	m_gpuMeshCache.UploadReadyMeshes(graphicsCommandList);
 	m_textureCache.UpdateSceneTextures(m_renderScene.GetTextures(), m_deviceServices);
 
-	const RenderFrame& frame = PrepareRenderFrame(viewInput, time);
+	RenderFrame& frame = PrepareRenderFrame(viewInput, time);
 	UpdateFrameHistory(*m_frameGraph, m_frameResources.History, frame.PreparedScene, frame.View, m_renderViewState, m_imageProviders);
 	SetupImageProviderFrame(frame);
-	return m_renderScene.PrepareRayTracingFrame(frame.PreparedScene, frame.View.rayTracingPlan);
+	frame.RayTracingBindings = m_renderScene.PrepareRayTracingFrame(frame.PreparedScene, frame.View.rayTracingPlan);
 }
 
-void FramePipeline::ExecuteFrame(const RenderRayTracingFrameBindings& rayTracingBindings)
+void FramePipeline::ExecuteFrame()
 {
 	if (!m_frameGraphExecutable)
 	{
@@ -225,7 +224,7 @@ void FramePipeline::ExecuteFrame(const RenderRayTracingFrameBindings& rayTracing
 	    frame.Time,
 	    frame.PreparedScene,
 	    frame.View,
-	    rayTracingBindings,
+	    frame.RayTracingBindings,
 	    m_deviceServices,
 	    GetCurrentFrameDiagnostics(),
 	    m_taskExecutor);

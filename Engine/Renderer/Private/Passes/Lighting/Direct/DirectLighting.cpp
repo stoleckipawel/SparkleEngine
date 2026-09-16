@@ -5,19 +5,16 @@
 #include "Passes/Lighting/Shadows/ShadowVisibility.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Scene/GpuScene/RenderSceneGpuBindings.h"
-#include "Scene/Preparation/PreparedRenderScene.h"
-#include "View/RenderView.h"
+#include "ShaderData/SceneShaderParameters.h"
 
 void AddDirectLightingPass(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
-    const LightingRenderTargets& lighting,
-    const SceneRenderTargets& sceneTargets,
-    const GBufferRenderTargets& gbuffer,
-    const DirectShadowSignalResources& shadowSignals,
-    const RenderFrameGraphImportedSceneResources& externalResources)
+    const RenderFrameGraphResources& resources,
+    const DirectShadowSignalResources& shadowSignals)
 {
+	const LightingRenderTargets& lighting = resources.Transient.Lighting;
+	const GBufferRenderTargets& gbuffer = resources.Transient.GBuffer;
 	auto& parameters = builder.AllocParameters<DirectLightingCS>();
 	parameters->DirectDiffuse = builder.CreateUAV(lighting.DirectDiffuse);
 	parameters->DirectSpecular = builder.CreateUAV(lighting.DirectSpecular);
@@ -29,22 +26,8 @@ void AddDirectLightingPass(
 	parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
 	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
 	parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
-	parameters->SceneDepth = builder.CreateSRV(sceneTargets.SceneDepth);
-	parameters->DirectionalLights = builder.CreateSRV(externalResources.Scene.Lighting.DirectionalLights);
-	parameters->PointLights = builder.CreateSRV(externalResources.Scene.Lighting.PointLights);
-	parameters->SpotLights = builder.CreateSRV(externalResources.Scene.Lighting.SpotLights);
-	parameters->RectLights = builder.CreateSRV(externalResources.Scene.Lighting.RectLights);
-	builder.AddParameterSetup<RenderView>(
-	    parameters,
-	    [](auto& fields, const RenderView& view)
-	    {
-		    fields.View = view.uniform;
-		    fields.ViewCamera = view.cameraUniform;
-		    fields.ViewTemporal = view.temporalUniform;
-	    });
-	builder.AddParameterSetup<PreparedRenderScene>(
-	    parameters,
-	    [](auto& fields, const PreparedRenderScene& scene) { fields.SceneLighting = scene.gpuBindings->Lighting.Uniform; });
+	parameters->SceneDepth = builder.CreateSRV(resources.Transient.Scene.SceneDepth);
+	BindSceneShaderParameters(builder, parameters, resources);
 	builder.Dispatch<DirectLightingCS>(
 	    parameters,
 	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
