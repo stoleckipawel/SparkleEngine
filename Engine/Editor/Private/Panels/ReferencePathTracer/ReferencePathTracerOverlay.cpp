@@ -2,6 +2,7 @@
 
 #include "Panels/ReferencePathTracer/ReferencePathTracerOverlay.h"
 
+#include "Panels/ReferencePathTracer/ReferencePathTracerOutput.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 #include <algorithm>
@@ -38,7 +39,10 @@ static void RequestAction(ViewportRenderRequest& request, ViewportRenderAction a
 	++request.Generation;
 }
 
-void DrawReferencePathTracerOverlay(const ViewportRenderProgress& progress, ViewportRenderRequest& request) noexcept
+void DrawReferencePathTracerOverlay(
+    const ViewportRenderProgress& progress,
+    ViewportRenderRequest& request,
+    ReferencePathTracerOutputAction& outputAction) noexcept
 {
 	const bool unavailable = progress.State == ViewportRenderProgressState::Unavailable;
 	const bool paused = progress.State == ViewportRenderProgressState::Paused;
@@ -150,7 +154,35 @@ void DrawReferencePathTracerOverlay(const ViewportRenderProgress& progress, View
 		ImGui::Separator();
 		ImGui::TextUnformatted("Raw: scene-linear HDR accumulation");
 		ImGui::TextUnformatted("Display: viewport presentation derived from raw accumulation");
-		ImGui::TextDisabled("Evidence/Output: unavailable in this milestone");
+		ImGui::SeparatorText("Evidence / Output");
+		const bool hasPrefix = !unavailable && progress.CompletedWork > 0;
+		ImGui::BeginDisabled(!hasPrefix || complete);
+		if (ImGui::Button("Save partial prefix"))
+		{
+			RequestAction(request, ViewportRenderAction::Pause);
+			outputAction = ReferencePathTracerOutputAction::SavePartial;
+		}
+		ImGui::EndDisabled();
+		ImGui::SameLine();
+		ImGui::BeginDisabled(!complete);
+		if (ImGui::Button("Save complete"))
+		{
+			outputAction = ReferencePathTracerOutputAction::SaveComplete;
+		}
+		ImGui::EndDisabled();
+		if (!unavailable && !complete && ImGui::Button("Save when complete"))
+		{
+			outputAction = ReferencePathTracerOutputAction::SaveWhenComplete;
+		}
+		ImGui::SameLine();
+		ImGui::BeginDisabled(!hasPrefix);
+		if (ImGui::Button("Save checkpoint"))
+		{
+			RequestAction(request, ViewportRenderAction::Pause);
+			outputAction = ReferencePathTracerOutputAction::SaveCheckpoint;
+		}
+		ImGui::EndDisabled();
+		ImGui::TextDisabled("Raw scene-linear HDR at the session extent; viewport presentation is not exported.");
 		ImGui::EndPopup();
 	}
 

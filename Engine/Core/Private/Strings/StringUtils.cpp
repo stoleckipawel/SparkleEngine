@@ -32,6 +32,95 @@ namespace Strings
 		return std::ranges::any_of(buffer, [](const char character) { return character == '\0'; });
 	}
 
+	bool IsValidUtf8(std::string_view text) noexcept
+	{
+		for (std::size_t index = 0; index < text.size();)
+		{
+			const std::uint8_t lead = static_cast<std::uint8_t>(text[index++]);
+			if (lead <= 0x7fu)
+			{
+				continue;
+			}
+
+			std::uint32_t codePoint = 0u;
+			std::size_t continuationCount = 0u;
+			std::uint32_t minimumCodePoint = 0u;
+			if ((lead & 0xe0u) == 0xc0u)
+			{
+				codePoint = lead & 0x1fu;
+				continuationCount = 1u;
+				minimumCodePoint = 0x80u;
+			}
+			else if ((lead & 0xf0u) == 0xe0u)
+			{
+				codePoint = lead & 0x0fu;
+				continuationCount = 2u;
+				minimumCodePoint = 0x800u;
+			}
+			else if ((lead & 0xf8u) == 0xf0u)
+			{
+				codePoint = lead & 0x07u;
+				continuationCount = 3u;
+				minimumCodePoint = 0x10000u;
+			}
+			else
+			{
+				return false;
+			}
+
+			if (index + continuationCount > text.size())
+			{
+				return false;
+			}
+			for (std::size_t continuation = 0; continuation < continuationCount; ++continuation)
+			{
+				const std::uint8_t value = static_cast<std::uint8_t>(text[index++]);
+				if ((value & 0xc0u) != 0x80u)
+				{
+					return false;
+				}
+				codePoint = (codePoint << 6u) | (value & 0x3fu);
+			}
+
+			if (codePoint < minimumCodePoint || codePoint > 0x10ffffu || (codePoint >= 0xd800u && codePoint <= 0xdfffu))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	bool AppendUtf8CodePoint(std::uint32_t codePoint, std::string& output)
+	{
+		if (codePoint <= 0x7fu)
+		{
+			output.push_back(static_cast<char>(codePoint));
+		}
+		else if (codePoint <= 0x7ffu)
+		{
+			output.push_back(static_cast<char>(0xc0u | (codePoint >> 6u)));
+			output.push_back(static_cast<char>(0x80u | (codePoint & 0x3fu)));
+		}
+		else if (codePoint <= 0xffffu && (codePoint < 0xd800u || codePoint > 0xdfffu))
+		{
+			output.push_back(static_cast<char>(0xe0u | (codePoint >> 12u)));
+			output.push_back(static_cast<char>(0x80u | ((codePoint >> 6u) & 0x3fu)));
+			output.push_back(static_cast<char>(0x80u | (codePoint & 0x3fu)));
+		}
+		else if (codePoint >= 0x10000u && codePoint <= 0x10ffffu)
+		{
+			output.push_back(static_cast<char>(0xf0u | (codePoint >> 18u)));
+			output.push_back(static_cast<char>(0x80u | ((codePoint >> 12u) & 0x3fu)));
+			output.push_back(static_cast<char>(0x80u | ((codePoint >> 6u) & 0x3fu)));
+			output.push_back(static_cast<char>(0x80u | (codePoint & 0x3fu)));
+		}
+		else
+		{
+			return false;
+		}
+		return true;
+	}
+
 	std::string_view TrimAsciiWhitespace(std::string_view str) noexcept
 	{
 		constexpr std::string_view whitespace = " \t\r\n";

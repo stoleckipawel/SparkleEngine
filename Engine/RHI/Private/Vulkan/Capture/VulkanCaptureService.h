@@ -22,11 +22,10 @@ public:
 
 private:
 	struct PendingReadback;
-	PendingReadback* FindPending(RhiCaptureTicket ticket) noexcept;
 	void DrainCancelledReadbacks() noexcept;
 	void ReleasePending(std::size_t index) noexcept;
 
-	VulkanRhi* m_rhi = nullptr;
+	VulkanRhi& m_rhi;
 	std::vector<std::unique_ptr<PendingReadback>> m_pendingReadbacks;
 	std::uint64_t m_nextTicket = 1;
 };

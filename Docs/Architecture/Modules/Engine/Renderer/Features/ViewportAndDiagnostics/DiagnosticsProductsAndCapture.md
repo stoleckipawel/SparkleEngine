@@ -2,7 +2,7 @@
 
 **Status:** current feature dossier; source-backed, not proof that diagnostics are correct, complete, low-overhead, or release-safe
 
-**Verified:** 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
+**Verified:** source route reverified 2026-09-18 against input revision `df2f0c0658cbf1cbdc0355c050a496cb513709e5` plus the current capture-ownership working tree; executable evidence remains unrun
 
 **Scope:** `REN-DIAG-01` through `REN-DIAG-07`; defines Renderer observability, viewport products, asynchronous capture, and previews from the frame owner's perspective
 
@@ -35,7 +35,7 @@ Renderer exposes bounded observations of the frame it actually prepared/submitte
 | Texture diagnostics | texture cache -> snapshot/editor texture registration | cache/residency rows and UI-usable texture handles |
 | Memory diagnostics | Renderer memory monitor + cache/RHI budgets -> snapshot | combined renderer/resource budget view ticked at frame begin |
 | Viewport products | frame graph -> `ViewportRenderProductPublication` | final color, scene depth, normals, extents and generation identity |
-| Async capture | public request -> coordinator -> `ViewportCaptureService` -> RHI readback -> completion queue | requested viewport/intermediate product read back without blocking submission |
+| Async capture | public request -> coordinator -> `ViewportCaptureService` -> RHI readback -> ticket-addressed completion | requested viewport/intermediate product read back without blocking submission or host-level feature dispatch |
 | Mesh preview | Renderer preview product/handle route -> editor | editor-consumable mesh preview; fidelity/usability unproved |
 
 ## Capture Lifecycle
@@ -46,10 +46,10 @@ BeginViewportCapture(request, id)
   -> begin RHI asynchronous texture readback
   -> PollFrameServices on later frames
   -> move completed readback to coordinator read state
-  -> caller TryTakeViewportCapture moves result out
+  -> owning caller TryTakeViewportCapture(id) moves that result out
 ```
 
-The capture service permits at most three pending requests and retains at most three completed captures, dropping the oldest completed result beyond that bound. “No result yet” means pending or absent, not success. The current result records frame, scene, and provider generations plus artifact/failure and readback dimensions/format; it does not carry shader or graph-topology generation. Requested-versus-resolved product and color/encoding provenance therefore remain documentation/evidence gaps rather than implied metadata.
+The coordinator admits at most three outstanding capture tickets. Each accepted ticket remains owned by its requester until that requester takes the matching completion; the Renderer does not expose an anonymous FIFO and does not drop an admitted completion to make room for another. A fourth request is rejected before readback allocation. "No result yet" means that exact ticket is pending, not success. The current result records frame, scene, provider and immutable product provenance plus failure and readback dimensions/format; it does not carry shader or graph-topology generation. Requested-versus-resolved product and color/encoding metadata therefore remain documentation/evidence gaps rather than implied state.
 
 ## Where Observation Occurs In A Frame
 
@@ -73,7 +73,7 @@ This sequence makes diagnostics causally attachable to a frame, but correlation 
 ## Intent And Tradeoffs
 
 - Observability lives beside the owner that can attach correct identities, while native validation/crash data stays in RHI. This avoids Renderer guessing backend state.
-- Capture is asynchronous to preserve frame progress. The tradeoff is explicit pending/completion/drop and lifetime management.
+- Capture is asynchronous to preserve frame progress. The tradeoff is explicit ticket ownership, bounded admission, polling, and lifetime management.
 - Diagnostics observe active shader/provider/graph generations where available, but [Pipeline Materialization and Typed Binding](../ShaderRuntime/PipelineMaterializationAndTypedBinding.md) owns shader-generation validation, activation, and retirement.
 - Bounded snapshots protect runtime memory but require visible truncation/drop semantics and support-oriented prioritization.
 
@@ -84,8 +84,8 @@ Primary evidence: `REN-E21`, `RHI-E13`, `RHI-E14`, `ED-E03`, and the external-ca
 - `AC-DAC-01` — frame/pass/marker/timing observations identify the actual frame, pass, queue, backend, and diagnostic configuration; disabled features emit no misleading partial values.
 - `AC-DAC-02` — mesh, texture, and memory snapshots are bounded, internally consistent, generation/timestamp identified, and explicitly report truncation, unavailable categories, and pressure thresholds.
 - `AC-DAC-03` — viewport products identify viewport/request generation, frame, scene, provider, extent, format, and semantic product; missing shader/topology/color provenance remains visibly Unknown rather than inferred.
-- `AC-DAC-04` — capture accepts only an available matching product, remains asynchronous, reports Pending/Completed/Failed distinctly, and moves one result to the caller without stale duplication.
-- `AC-DAC-05` — the exact pending/completed bounds are enforced; overflow/drop policy identifies which request/result was rejected or dropped and never manufactures success.
+- `AC-DAC-04` — capture accepts only an available matching product, remains asynchronous, and moves exactly one terminal result to the owner of the matching ticket without stale duplication or cross-consumer routing.
+- `AC-DAC-05` — the exact outstanding-ticket bound is enforced; overflow rejects the new request before allocation and no admitted completion is silently dropped.
 - `AC-DAC-06` — captured row pitch, format, extent, channel/color interpretation, and pixels match the source product within a predeclared oracle on D3D12 and Vulkan.
 - `AC-DAC-08` — marker/timing/capture observer cost is measured or classified for performance evidence, and Shipping/package audits contain only deliberately supported diagnostics/artifacts.
 
@@ -94,7 +94,7 @@ Primary evidence: `REN-E21`, `RHI-E13`, `RHI-E14`, `ED-E03`, and the external-ca
 | Failure ID | Injection or cause | Required safe behavior | Detecting check |
 | --- | --- | --- | --- |
 | `FM-DAC-01` | request absent/stale product, mismatched frame, or unsupported readback format | capture completes Failed with identity/reason; empty or prior pixels are not success | `CHK-DAC-02` |
-| `FM-DAC-02` | exceed pending/completed queue bound | documented request/drop result is observable and retained state remains within bounds | `CHK-DAC-02` |
+| `FM-DAC-02` | exceed the outstanding-ticket bound or poll one ticket from another workflow | the new request is rejected, admitted results remain retained for their owners, and no cross-consumer payload is returned | `CHK-DAC-02` |
 | `FM-DAC-03` | GPU timing unsupported, invalid, or unresolved | observation reports unavailable/pending; zero/stale duration is not presented as measurement | `CHK-DAC-01` |
 | `FM-DAC-05` | diagnostic buffer truncates or Shipping contains private artifacts/paths | truncation/package audit fails explicitly | `CHK-DAC-01`, `CHK-DAC-04` |
 

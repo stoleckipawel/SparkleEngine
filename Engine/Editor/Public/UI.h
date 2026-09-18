@@ -10,6 +10,7 @@
 #include "../../Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
 #include "Scene/SceneObjectSelection.h"
+#include "Panels/ReferencePathTracer/ReferencePathTracerOutput.h"
 #include "../../GameFramework/Public/Rendering/RenderViewCameraData.h"
 #include "../../GameFramework/Public/Scene/Camera/CameraInputIntent.h"
 #include "../../GameFramework/Public/World/WorldChange.h"
@@ -84,6 +85,7 @@ public:
 	bool ConsumeShaderReloadRequest() noexcept;
 	bool ConsumeShaderRecookRequest() noexcept;
 	bool ConsumeViewportCaptureRequest() noexcept;
+	ReferencePathTracerOutputAction ConsumeReferencePathTracerOutputAction() noexcept;
 	UiRenderPacket ConsumeRenderPacket();
 
 	void Update();

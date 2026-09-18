@@ -20,10 +20,9 @@ public:
 
 private:
 	struct PendingReadback;
-	PendingReadback* FindPending(RhiCaptureTicket ticket) noexcept;
 	void DrainCancelledReadbacks() noexcept;
 
-	D3D12Rhi* m_rhi = nullptr;
+	D3D12Rhi& m_rhi;
 	std::vector<std::unique_ptr<PendingReadback>> m_pendingReadbacks;
 	std::uint64_t m_nextTicket = 1;
 };

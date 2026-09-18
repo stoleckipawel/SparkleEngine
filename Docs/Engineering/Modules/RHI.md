@@ -16,14 +16,15 @@ This standard owns RHI and backend change guardrails. The canonical [Renderer an
 | how is output presented? | output product and display intent | swapchain acquisition, resize, encoding-compatible native path, and present result |
 | why did native work fail? | preserves requesting feature/pass/resource identity | engine invariant rejection, API validation, device/driver diagnostics, and native error context |
 
-UI mode names, menu indices, labels, progress-widget state, editor selection, and Renderer feature identities never belong in RHI requests or results. Capture contracts identify resources, formats, extents, frame/generation identity, destination, and native failure only; a higher layer may join UI provenance after readback without teaching RHI about the feature that requested it.
+UI mode names, menu indices, labels, progress-widget state, editor selection, and Renderer feature identities never belong in RHI requests or results. Capture contracts identify resources, formats, extents, frame/generation identity, bytes, and native failure only. They are destination-free: output paths, codecs selected by a product workflow, staging, manifests, and publication policy remain with the Application/tool owner. A higher layer may join semantic provenance after readback without teaching RHI about the feature that requested it.
 
 If an implementation needs a vendor name, native handle, swapchain image, or API enum above this boundary, first prove that the public neutral contract cannot express the real semantic difference. If backend code chooses lighting, quality, graph topology, or fallback, the policy is already too low.
 
 ## Neutral Contract Ownership
 
 - Public RHI contracts express backend-neutral resources, descriptors, commands, queues, synchronization, presentation, diagnostics, and capabilities without exposing native object types.
-- Neutral pixel-format traits, capture-format/layout mapping, and graphics/compute descriptor validity are defined once by the public RHI contract.
+- Neutral pixel-format traits and graphics/compute descriptor validity are defined once by the public RHI contract; capture-layout mapping shared by D3D12 and Vulkan remains common RHI mechanism.
+- Readback returns owned bytes plus exact layout/identity. It never carries a filesystem destination, codec, encoded image, or written-file result. Encoding and publication belong to the Application/tool workflow that requested durable output.
 - D3D12 and Vulkan invoke those authorities before native work; backend-local code retains only native enum/structure translation, resource/copy construction, device/API capability checks, and native failure handling.
 - Do not duplicate the same neutral case list, byte layout, descriptor predicate, feature default, or validation policy in each backend.
 - An unsupported neutral request fails through the RHI contract before incomplete native work is recorded. A backend must not fabricate a successful no-op or substitute a semantically different result.
@@ -56,6 +57,7 @@ If an implementation needs a vendor name, native handle, swapchain image, or API
 ## RHI Review Questions
 
 - Is the request a neutral GPU contract rather than Renderer feature policy or a leaked native backend object?
+- Are capture/readback requests and results free of output paths, staging, manifests, and publication policy?
 - Does each neutral format, layout, descriptor, state, and capability invariant have exactly one public RHI owner?
 - Are D3D12 and Vulkan limited to native translation and real capability differences instead of copied policy?
 - Are resources, descriptors, pipelines, command objects, submissions, and retirement tokens valid for every consumer lifetime?

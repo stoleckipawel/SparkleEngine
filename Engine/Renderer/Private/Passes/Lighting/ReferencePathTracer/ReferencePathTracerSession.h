@@ -67,11 +67,13 @@ private:
 	void Suspend() noexcept;
 	void FinalizeSuspension() noexcept;
 	ViewportRenderProgress GetProgress() const noexcept;
+	RenderProduct::Provenance GetRawProvenance() const noexcept;
 
 	RenderDeviceServices& m_deviceServices;
 	ReferencePathTracerResources m_resources;
 	ReferencePathTracerUniformData m_uniformData = {};
 	ReferencePathTracerIdentity m_identity = {};
+	Hash::Sha256Digest m_identitySha256 = {};
 	PendingCommit m_pendingCommit = {};
 	std::uint64_t m_executionGeneration = 0u;
 	std::uint64_t m_ownerViewportId = 0u;

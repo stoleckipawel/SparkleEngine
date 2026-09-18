@@ -14,13 +14,13 @@
 #   - spdlog         (v1.14.1)  - Repo-wide logging backend (header-only)
 #   - Font Awesome Free Solid (v6.7.1) - Editor/launcher icon font asset only
 #   - NVIDIA Streamline SDK (v2.11.1) - DLSS headers, import library, and runtime DLLs
+#   - tinyexr        (v1.0.7)  - DevelopmentEditor OpenEXR writer and content loader
+#   - zlib           (v1.3.1)  - TinyEXR compression backend
 #
 #   Optional content pipeline (SPARKLE_ENABLE_CONTENT_PIPELINE):
 #   - cgltf          (v1.15)    - Single-header glTF 2.0 parser
 #   - MikkTSpace     (pinned)   - Canonical glTF tangent-space generation
 #   - stb            (master)   - stb_image + stb_image_resize2 (header-only)
-#   - tinyexr        (v1.0.7)   - OpenEXR image loader (header-only)
-#   - zlib           (v1.3.1)   - Compression backend for Assimp
 #   - Assimp         (v5.4.3)   - FBX and general 3D asset import
 #   - Compressonator (master)   - AMD BC1-BC7 block compression (CMP_Core only)
 #
@@ -551,10 +551,10 @@ endif()
 
 sparkle_source_dependency_selected("stb" _sparkle_fetch_stb)
 sparkle_source_dependency_selected("tinyexr" _sparkle_fetch_tinyexr)
-if((_sparkle_fetch_stb OR _sparkle_fetch_tinyexr)
-   AND (SPARKLE_ENABLE_CONTENT_PIPELINE OR NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL ""))
+if(_sparkle_fetch_tinyexr
+   OR (_sparkle_fetch_stb AND (SPARKLE_ENABLE_CONTENT_PIPELINE OR NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")))
 
-if(_sparkle_fetch_stb)
+if(_sparkle_fetch_stb AND (SPARKLE_ENABLE_CONTENT_PIPELINE OR NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL ""))
     # ============================================================================
     # stb - Header-only image loading and resizing
     # https://github.com/nothings/stb
@@ -587,7 +587,7 @@ endif()
 
 if(_sparkle_fetch_tinyexr)
     # ============================================================================
-    # tinyexr - Header-only OpenEXR image loader
+    # tinyexr - Header-only OpenEXR image loader/writer
     # https://github.com/syoyo/tinyexr
     #
     # Target:  tinyexr (INTERFACE)
@@ -596,11 +596,11 @@ if(_sparkle_fetch_tinyexr)
     # ============================================================================
     FetchContent_Declare(tinyexr
         GIT_REPOSITORY https://github.com/syoyo/tinyexr.git
-        GIT_TAG        v1.0.7
-        GIT_SHALLOW    TRUE
+        # v1.0.7 release commit; pinned by identity rather than a mutable tag.
+        GIT_TAG        6e8cac308cdf4d717078f3f37c4aa39bf3b356b4
         GIT_PROGRESS   ${_sparkle_git_progress}
     )
-    sparkle_log_dependency_step(5 12 "tinyexr" "v1.0.7" "~1 MB" "Header-only OpenEXR image loading support" "https://github.com/syoyo/tinyexr.git")
+    sparkle_log_dependency_step(5 12 "tinyexr" "v1.0.7" "~1 MB" "Header-only OpenEXR image loading/writing support" "https://github.com/syoyo/tinyexr.git")
     FetchContent_Populate(tinyexr)
 
     if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
@@ -677,12 +677,12 @@ endif()
 
 sparkle_source_dependency_selected("zlib" _sparkle_fetch_zlib)
 sparkle_source_dependency_selected("assimp" _sparkle_fetch_assimp)
-if((_sparkle_fetch_zlib OR _sparkle_fetch_assimp)
-   AND (SPARKLE_ENABLE_CONTENT_PIPELINE OR NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL ""))
+if(_sparkle_fetch_zlib
+   OR (_sparkle_fetch_assimp AND (SPARKLE_ENABLE_CONTENT_PIPELINE OR NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")))
 
 if(_sparkle_fetch_zlib)
     # ============================================================================
-    # zlib - Compression backend for Assimp
+    # zlib - Compression backend for TinyEXR and Assimp
     # https://github.com/madler/zlib
     #
     # Assimp's bundled zlib is 1.2.13 and still uses K&R-style function
@@ -699,7 +699,7 @@ if(_sparkle_fetch_zlib)
         GIT_SHALLOW    TRUE
         GIT_PROGRESS   ${_sparkle_git_progress}
     )
-    sparkle_log_dependency_step(7 12 "zlib" "v1.3.1" "~1 MB" "Compression backend used by Assimp" "https://github.com/madler/zlib.git")
+    sparkle_log_dependency_step(7 12 "zlib" "v1.3.1" "~1 MB" "Compression backend used by TinyEXR and Assimp" "https://github.com/madler/zlib.git")
     FetchContent_Populate(zlib)
 
     if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
@@ -730,7 +730,7 @@ if(_sparkle_fetch_zlib)
     sparkle_log_dependency_ready("zlib" "${zlib_SOURCE_DIR}" "~1 MB")
 endif()
 
-if(_sparkle_fetch_assimp)
+if(_sparkle_fetch_assimp AND (SPARKLE_ENABLE_CONTENT_PIPELINE OR NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL ""))
     # ============================================================================
     # Assimp - Open Asset Import Library
     # https://github.com/assimp/assimp

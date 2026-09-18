@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "RHI/Public/Capture/RhiCaptureService.h"
+#include "Viewport/ViewportCaptureCompletion.h"
 
 #include <cstddef>
 #include <cstdint>
-#include <memory>
+#include <string>
 #include <vector>
 
 class FrameGraph;
@@ -20,27 +20,30 @@ public:
 	    ViewportCaptureId id,
 	    const ViewportCaptureRequest& request,
 	    const ViewportRenderProducts& products,
-	    FrameGraph* frameGraph,
+	    FrameGraph& frameGraph,
 	    std::uint64_t frameId,
 	    std::uint64_t sceneGeneration,
 	    std::uint64_t providerGeneration) noexcept;
 	void Poll() noexcept;
-	std::vector<ViewportCaptureReadback> TakeCompletedCaptures();
+	std::vector<ViewportCaptureCompletion> TakeCompletedCaptures();
 
 private:
-	static constexpr std::size_t CaptureCapacity = 3;
+	struct CaptureSource;
+	static bool ResolveSource(
+	    const ViewportRenderProducts& products,
+	    FrameGraph& frameGraph,
+	    RenderOutputFlags output,
+	    CaptureSource& source,
+	    std::string& failureReason);
 
 	struct PendingCapture final
 	{
 		ViewportCaptureId Id;
 		RhiCaptureTicket Ticket;
-		std::uint64_t SceneGeneration = 0;
-		std::uint64_t ProviderGeneration = 0;
+		ViewportCaptureResult Result;
 	};
 
-	void PublishCompleted(ViewportCaptureReadback readback);
-
 	RenderDeviceServices& m_deviceServices;
-	std::vector<std::unique_ptr<PendingCapture>> m_pendingCaptures;
-	std::vector<ViewportCaptureReadback> m_completedCaptures;
+	std::vector<PendingCapture> m_pendingCaptures;
+	std::vector<ViewportCaptureCompletion> m_completedCaptures;
 };

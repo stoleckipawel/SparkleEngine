@@ -73,7 +73,18 @@ void ViewportRenderProducts::Clear() noexcept
 	m_objectId = {};
 	m_normals = {};
 	m_overlayMask = {};
+	m_rawSceneColor = {};
+	m_rawSceneColorMoment2 = {};
 	m_progress = {};
+}
+
+void ViewportRenderProducts::SetProductProvenance(RenderOutputFlags output, RenderProduct::Provenance provenance) noexcept
+{
+	RenderProduct* product = SelectProduct(output);
+	if (product != nullptr)
+	{
+		product->Source = provenance;
+	}
 }
 
 void ViewportRenderProducts::ClearProduct(RenderOutputFlags output) noexcept
@@ -125,6 +136,10 @@ const RenderProduct* ViewportRenderProducts::SelectProduct(RenderOutputFlags out
 			return &m_normals;
 		case RenderOutputFlags::OverlayMask:
 			return &m_overlayMask;
+		case RenderOutputFlags::RawSceneColor:
+			return &m_rawSceneColor;
+		case RenderOutputFlags::RawSceneColorMoment2:
+			return &m_rawSceneColorMoment2;
 		case RenderOutputFlags::None:
 		default:
 			return nullptr;

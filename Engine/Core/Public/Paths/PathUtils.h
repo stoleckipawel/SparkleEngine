@@ -14,6 +14,7 @@ namespace Paths
 	bool IsUnderRoot(const std::filesystem::path& path, const std::filesystem::path& root);
 	std::optional<std::filesystem::path> TryMakeRelativeUnderRoot(const std::filesystem::path& path, const std::filesystem::path& root);
 	std::string MakeSafePathComponent(std::string_view value);
+	std::string ToUtf8String(const std::filesystem::path& path);
 	std::wstring MakePathKey(const std::filesystem::path& path);
 	std::wstring GetLowercaseExtension(const std::filesystem::path& path);
 }

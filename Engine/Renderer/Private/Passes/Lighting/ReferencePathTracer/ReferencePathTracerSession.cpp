@@ -3,6 +3,7 @@
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerSession.h"
 
 #include "Frame/RenderFrame.h"
+#include "Core/Public/Hash/HashUtils.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerResources.h"
 #include "RHI/Public/Core/RhiCapabilities.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
@@ -56,6 +57,16 @@ void ReferencePathTracerSession::BeginIdentity(
     std::uint32_t discardedSamples) noexcept
 {
 	m_identity = identity;
+	Hash::Sha256Digest identityHash{};
+	std::string hashError;
+	if (Hash::TrySha256(identity.Components.data(), sizeof(identity.Components), identityHash, hashError))
+	{
+		m_identitySha256 = identityHash;
+	}
+	else
+	{
+		m_identitySha256 = {};
+	}
 	m_hasIdentity = true;
 	m_committedSamples = 0u;
 	m_discardedSamples = discardedSamples;
@@ -385,4 +396,12 @@ ViewportRenderProgress ReferencePathTracerSession::GetProgress() const noexcept
 	    .SamplesPerSecond = m_samplesPerSecond,
 	    .EstimatedSecondsRemaining = estimatedSeconds,
 	    .RetentionAvailable = m_retentionAvailable};
+}
+
+RenderProduct::Provenance ReferencePathTracerSession::GetRawProvenance() const noexcept
+{
+	return RenderProduct::Provenance{
+	    .IdentitySha256 = m_identitySha256,
+	    .CommittedWork = m_committedSamples,
+	    .TargetWork = TargetSampleCount};
 }

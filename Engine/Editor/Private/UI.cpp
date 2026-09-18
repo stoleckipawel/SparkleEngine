@@ -132,6 +132,11 @@ bool UI::ConsumeViewportCaptureRequest() noexcept
 	return requested;
 }
 
+ReferencePathTracerOutputAction UI::ConsumeReferencePathTracerOutputAction() noexcept
+{
+	return m_viewportPanel ? m_viewportPanel->ConsumeReferencePathTracerOutputAction() : ReferencePathTracerOutputAction::None;
+}
+
 UiRenderPacket UI::ConsumeRenderPacket()
 {
 	return std::move(m_renderPacket);
@@ -163,8 +168,7 @@ UI::UI(EditorHostServices hostServices) :
 	InitializeDefaultPanels();
 	if (m_viewportSession && m_viewportPanel)
 	{
-		m_viewportSession->SetViewModeChangedHandler(
-		    [this](RenderViewMode viewMode) { m_viewportPanel->SetViewMode(viewMode); });
+		m_viewportSession->SetViewModeChangedHandler([this](RenderViewMode viewMode) { m_viewportPanel->SetViewMode(viewMode); });
 	}
 	if (m_renderingSettings)
 	{

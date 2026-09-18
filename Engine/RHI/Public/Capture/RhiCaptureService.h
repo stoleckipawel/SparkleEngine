@@ -6,9 +6,8 @@
 #include "../Resources/RhiResourceHandles.h"
 #include "../RHIAPI.h"
 
-#include <cstdint>
 #include <cstddef>
-#include <filesystem>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -33,9 +32,7 @@ struct RhiTextureCaptureRequest final
 	std::uint32_t Height = 0;
 	PixelFormat SourceFormat = PixelFormat::Unknown;
 	ResourceState SourceState = ResourceState::Common;
-	std::filesystem::path OutputPath;
 	std::uint64_t FrameId = 0;
-	std::string DebugName;
 };
 
 struct RhiCaptureResult final
@@ -43,7 +40,6 @@ struct RhiCaptureResult final
 	ERhiCaptureStatus Status = ERhiCaptureStatus::Failed;
 	ERhiBackendApi BackendApi = ERhiBackendApi::Unknown;
 	std::uint64_t FrameId = 0;
-	std::filesystem::path ArtifactPath;
 	std::string FailureReason;
 };
 
@@ -73,5 +69,3 @@ public:
 protected:
 	RhiCaptureService() noexcept = default;
 };
-
-SPARKLE_RHI_API bool WriteRhiCaptureBmp(const RhiCaptureReadback& readback, const std::filesystem::path& outputPath) noexcept;

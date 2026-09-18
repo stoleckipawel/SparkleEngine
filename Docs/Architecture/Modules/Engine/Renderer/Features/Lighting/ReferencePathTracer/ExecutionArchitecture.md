@@ -95,8 +95,9 @@ flowchart LR
     Session --> Overlay[Progress and reset snapshot]
     Session --> Readback[Typed raw readback]
     Overlay --> UI[Editor or approved runtime presentation]
-    Readback --> Writer[ApplicationEditor artifact writer]
-    Writer --> Publish[Atomic EXR and manifest publication]
+    Readback --> Encode[Shared Application image encoding]
+    Encode --> Schema[Reference checkpoint and manifest schema]
+    Schema --> Publish[Shared atomic bundle publication]
     Publish --> Evidence[Acceptance and map consumers]
 ```
 
@@ -108,8 +109,9 @@ flowchart LR
 | Shared path-tracing shader family | Established `PathSurface` and `RayTracingPathSample` contracts plus API-neutral binary32 `PathTracer` state, radiance contribution, exact sample/evaluate/PDF primitives, direction-sample throughput algebra, and scene-light counting/index resolution genuinely consumed by Reference and available to optimized path-tracing consumers. The hit-surface data contract remains usable without importing material reconstruction resources. | Reference/unbiased target and labels, sampler identity, estimator selection PMF/order, admissibility, finite-depth policy, MIS/roulette choices, cache/ReSTIR/denoiser policy, API-specific SBT/root-signature/descriptor vocabulary, diagnostics, or UI. |
 | Reference integrator policy | Canonical View/sample use, admitted material/light domain, exact NEE/MIS and roulette choices, robust-spawn policy, finite/full product meaning, and fail-closed invalid handling composed over the shared core. | A copy of shared path algebra, a second camera representation, optimized/cache/denoiser policy, API-specific traversal mechanism, diagnostic event streams, or UI policy. |
 | Traversal adapters | Translate semantic trace/visibility operations into Inline RayQuery or the native ray-tracing pipeline. | Different transport equations, materials, lights, RNG, or output meanings. |
-| RHI | Capability reporting, AS/pipeline/descriptors/queues, barriers, readback mechanics, completion, device/validation errors, and resource retirement. | Reference labels, estimator choices, checkpoints, file schema, or silent fallback policy. |
-| ApplicationEditor operation | Create an offscreen view request for automation, observe/cancel it, schedule nonblocking readback/export, enforce filesystem budgets, and return stable command results. | A second estimator, duplicate render state, or the primary interactive selection authority. |
+| RHI | Capability reporting, AS/pipeline/descriptors/queues, barriers, destination-free readback mechanics, completion, device/validation errors, and resource retirement. | Output paths, Reference labels, estimator choices, checkpoints, file schema, or silent fallback policy. |
+| ApplicationEditor operation | Create an offscreen view request for automation, observe/cancel it, and schedule typed nonblocking readback/export over one private shared task mechanism. | A second estimator, duplicate render state, public callback job framework, or the primary interactive selection authority. |
+| ApplicationEditor capture/artifact mechanism | Decode generic image-buffer views, encode supported image formats, and publish verified bounded file bundles atomically. | Reference prefix settlement, estimator meaning, checkpoint/manifest schema, or UI intent. |
 | Editor viewport UI | Place Reference Path Tracer immediately after Lit; present automatic validation, live newest-view progress, reset/completion state, pause/restart/details, and comparison behavior from Renderer snapshots. Secondary evidence stages may add save actions. | Renderer truth, a second job state machine, hidden global-setting mutations, or Shipping-runtime exposure. |
 | Evidence/release owner | Fixture manifests, thresholds, repetitions, comparisons, approval, and completion reports. | Mutating candidate output or treating source presence as a pass. |
 
@@ -163,7 +165,7 @@ No plugin framework, generic renderer-feature registry, new renderer module, glo
 
 The steady-state implementation home is `Engine/Renderer/Private/Passes/Lighting/ReferencePathTracer/`, with shaders in one matching feature directory under `Engine/Assets/Shaders/Passes/Lighting/ReferencePathTracer/`. The feature home owns its entry point, session/accumulation lifetime, input digest, Reference estimator policy, resources, shader parameter records, traversal-to-estimator adapters, progress production, required error accounting, and cleanup. Its entry type is a narrow capsule boundary: identity construction/reset classification, the per-view lifecycle and work scheduler, persistent GPU accumulation-resource lifetime, and frame-graph pass declaration are separate private responsibilities with one authority each. The shader entry maps a dispatched pixel to the canonical camera sample and shared accumulator only; separate feature-local owners hold the frozen sample/dimension identity, admitted light-set ordering/PMF, direct-light/emission/environment MIS composition, path-loop/termination policy, and committed display derivative. Shared `Path*`, `RayTracing*`, `Lighting`, and `Common` owners retain the reusable BSDF, light primitive, visibility, endpoint, hit reconstruction, RNG permutation, and accumulation math. None may be folded into a single C++ or shader god class/file/function or fragmented into forwarding-only collaborators. The feature does not own copies or feature-prefixed variants of generic ray-query results, opaque traversal, material-hit loading, canonical camera rays, reusable path state/BSDF/radiance/throughput algebra, or RHI capability publication; those remain in the narrow existing Renderer/RayTracing, shader resource, and RHI owners and must have a current non-speculative consumer or remove a real duplicate. Reference shaders use ordinary HLSL binary32 directly and do not introduce a custom numeric layer. Private files split only on these real responsibility/lifetime/change boundaries and remain under this capsule. Feature-specific diagnostic passes, GPU readbacks, dashboards, debug panels, and parallel inspection APIs are excluded; implementation evidence uses real product outputs, existing generic capture/validation routes, or temporary probes removed before handoff.
 
-Shader registration remains in the repository's generated/registration route because the build system owns discovery. Registration files contain registration only; the shader implementation and feature policy remain in the capsule. Later artifact encoding stays with its ApplicationEditor/filesystem owner, but it consumes a narrow immutable raw-readback result and never becomes part of the interactive rendering state machine.
+Shader registration remains in the repository's generated/registration route because the build system owns discovery. Registration files contain registration only; the shader implementation and feature policy remain in the capsule. Later artifact work stays with ApplicationEditor and consumes a narrow immutable destination-free raw-readback result without entering the interactive rendering state machine. Shared private Application owners provide generic image-buffer encoding, task launch/settlement, and verified atomic bundle publication; the Reference capsule supplies only output semantics and schema. Renderer and RHI requests/results carry resource identity, bytes, format, and immutable source provenance only; the requesting Application workflow retains the output destination.
 
 ### Integration-Hook Ledger
 
@@ -205,7 +207,7 @@ The implementation extends existing modules and keeps public vocabulary narrow. 
 | `Engine/Renderer/ShaderRegistrations/` | Only registrations for actual passes/programs; generated metadata remains authoritative. |
 | existing `Engine/Assets/Shaders/Common`, `Resources`, and `RayTracing` owners plus matching Renderer shader-data/pass consumers | Only feature-independent numeric, canonical-camera, trace-query/result, material-hit, binding, and `PathTracer` state/surface/BSDF/radiance/throughput contracts with current production use or a removed duplicate. No Reference target/estimator/product policy and no optimized ReSTIR/cache/denoiser policy. |
 | existing RHI capability owners and Renderer pipeline materialization | Generic shader-float64 discovery/enablement, shader feature metadata, and strict pre-pipeline rejection remain available for future shaders. The Reference Path Tracer declares no float64 requirement, selector, or fallback. |
-| existing `ApplicationEditor` operation owner, only in the later artifact stage | Bounded asynchronous artifact writing and optional offscreen execution over a narrow immutable readback result; no interactive session state. |
+| existing `ApplicationEditor` operation owner plus private capture/artifact mechanism, only in the later artifact stage | Typed bounded asynchronous work over shared task slots, generic image-buffer encoding and atomic bundle publication, and optional offscreen execution over a narrow immutable readback result; no interactive session state or feature policy in shared mechanism. |
 | existing Editor viewport menu/overlay owners | One ordinary view-mode row and one generic progress presentation; no feature state, transport settings, or Renderer implementation contract. |
 
 Do not create a top-level `PathTracer` engine, a new executable, a parallel `ReferenceRenderer` module, public per-pass classes, a generic feature framework, or a second path-tracer folder. If a proposed source file cannot be placed in the feature home or one frozen hook row, the architecture must be reviewed before that file is created.
@@ -226,7 +228,7 @@ Editor or Game/runtime viewport selects RenderViewMode::ReferencePathTracer
     -> resume only a retained exact-identity prefix
 Optional save/offscreen operation
     -> typed readback of raw radiance and exact prefix identity from that session
-    -> ApplicationEditor writes staging directory
+    -> Reference schema describes files to shared Application bundle publisher
     -> hash every artifact and write completion manifest last
     -> atomic publish to final invocation directory
     -> expose completed artifact set to UI/command/evidence consumers
@@ -430,7 +432,7 @@ The completed directory contains at minimum:
 | `manifest.json` | Canonical identity, scope, settings, hashes, backend/frontend, counts, accepted statistical summary, budgets, timing, lineage, and completed status; written last. |
 | `preview.*` | Optional derivative for humans, with exposure/tone/encoding settings and the raw artifact hash. It is never a comparison source. |
 
-OpenEXR is the required high-dynamic-range interchange container unless `PTD-00` records a stronger alternative. Existing readback mechanics should be extended rather than duplicated. The ApplicationEditor writer may use the repository's existing TinyEXR dependency only after ownership, write support, security, rights, build, and package review; TextureCooker ownership does not automatically authorize a Renderer dependency.
+OpenEXR is the required high-dynamic-range interchange container unless `PTD-00` records a stronger alternative. Existing readback, image-buffer encoding, operation, and bundle-publication mechanics are extended once rather than copied per feature. The private ApplicationEditor encoder may use the repository's existing TinyEXR dependency only after ownership, write support, security, rights, build, and package review; TextureCooker ownership does not automatically authorize a Renderer dependency.
 
 Raw publication defaults to the exact current session render extent and numeric precision. It never reads a UI-scaled backbuffer, screenshot surface, downsampled progress preview, or thumbnail. An explicitly requested different crop or extent creates a separate identity and result; it is not a convenient lower-resolution copy mislabeled as the viewport session.
 
@@ -515,7 +517,7 @@ Exact source deletions are frozen by the plan stage that inspects the live tree.
 | Megakernel first, wavefront only from evidence | Minimizes coordination before correctness is known. | Importing a split-kernel framework because AMD/NVIDIA examples use one. |
 | Fixed sample prefix for production evidence | Makes accumulation, restart, and comparison exact and reviewable. | Adaptive stopping before its bias/statistics contract exists. |
 | Raw EXR plus manifest, preview derivative | Prevents presentation from contaminating the oracle. | BMP/screenshot/tone-mapped golden images as truth. |
-| ApplicationEditor writer | Keeps codec/filesystem/UI dependencies out of core Renderer and Shipping runtime. | Linking a development export stack into every runtime Renderer. |
+| Shared private Application encoder/publisher with a thin Reference schema composer | Keeps codec/filesystem/UI dependencies out of core Renderer and Shipping runtime while making later capture consumers incremental. | Turning the shared mechanism into a feature-policy registry or linking a development export stack into every runtime Renderer. |
 
 ## Support And Evidence Matrix
 

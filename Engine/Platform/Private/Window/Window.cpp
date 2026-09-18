@@ -13,12 +13,19 @@
 
 static const auto g_platformLogger = Logging::GetOrCreateLogger("Platform");
 
-Window::Window(std::string_view windowTitle)
+Window::Window(std::string_view windowTitle, WindowOptions options) :
+    m_options(options)
 {
 	m_hInstance = GetModuleHandleW(nullptr);
 
 	RegisterWindowClass();
 	CreateWindowHandle(windowTitle);
+	RECT clientRect{};
+	if (GetClientRect(m_hWnd, &clientRect))
+	{
+		m_clientWidth.store(static_cast<std::uint32_t>(clientRect.right - clientRect.left), std::memory_order_release);
+		m_clientHeight.store(static_cast<std::uint32_t>(clientRect.bottom - clientRect.top), std::memory_order_release);
+	}
 	ApplyInitialWindowState();
 }
 
@@ -76,8 +83,8 @@ void Window::CreateWindowHandle(std::string_view title)
 	    kWindowedStyle,
 	    CW_USEDEFAULT,
 	    CW_USEDEFAULT,
-	    CW_USEDEFAULT,
-	    CW_USEDEFAULT,
+	    static_cast<int>(m_options.Width),
+	    static_cast<int>(m_options.Height),
 	    nullptr,
 	    nullptr,
 	    m_hInstance,
@@ -95,6 +102,10 @@ void Window::CreateWindowHandle(std::string_view title)
 void Window::ApplyInitialWindowState()
 {
 	GetWindowRect(m_hWnd, &m_windowedRect);
+	if (!m_options.Visible)
+	{
+		return;
+	}
 
 	if (ShouldStartFullscreen())
 	{

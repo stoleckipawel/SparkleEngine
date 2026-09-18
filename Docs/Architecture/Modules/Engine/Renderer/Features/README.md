@@ -122,7 +122,7 @@ This table closes the public-method audit independently from the source-folder a
 | `CaptureMeshPreview` | resolves a CPU/editor preview for one runtime mesh identity | [Diagnostics, Products, and Capture](ViewportAndDiagnostics/DiagnosticsProductsAndCapture.md) |
 | `CaptureTextureDiagnostics` | snapshots texture cache/residency and preview handles | [Mesh and Texture Residency](GeometryAndResources/MeshAndTextureResidency.md) and [Diagnostics, Products, and Capture](ViewportAndDiagnostics/DiagnosticsProductsAndCapture.md) |
 | `CaptureMemoryDiagnostics` | combines Renderer/RHI memory observations | [Mesh and Texture Residency](GeometryAndResources/MeshAndTextureResidency.md) and [Diagnostics, Products, and Capture](ViewportAndDiagnostics/DiagnosticsProductsAndCapture.md) |
-| `RequestViewportCapture`, `TryTakeViewportCapture` | begins and later moves out an asynchronous product readback | [Diagnostics, Products, and Capture](ViewportAndDiagnostics/DiagnosticsProductsAndCapture.md) |
+| `RequestViewportCapture`, `TryTakeViewportCapture(id, ...)` | begins a bounded asynchronous product readback and lets only the owner of that ticket move out its terminal result | [Diagnostics, Products, and Capture](ViewportAndDiagnostics/DiagnosticsProductsAndCapture.md) |
 | `OnRender` | executes the coordinator's next serial/threaded frame action | [Rendering a Sparkle Frame](../RenderingASparkleFrame.md) |
 
 Adding or removing a public method requires this table, `REN-OWN-01`, its owning dossier, the implementation/consumer route, build membership, and evidence mapping to change together.

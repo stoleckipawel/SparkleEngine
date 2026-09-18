@@ -100,7 +100,7 @@ The complete graphics-side trace is [Shader Authoring To Runtime Generation](Fea
 | Launcher operation | Launcher background operation/task plus Core child-process runner | Does cancellation stop the owning process tree, report the final state once, preserve unrelated files, and invalidate only affected readiness? |
 | Import/cook | Asset/texture/shader tool plus Core publication helper | Does any item failure prevent mixed publication, release memory leases, and preserve the previous readable generation? |
 | Level load/switch | LevelSession task graph and GameWorld generation owner | Can an old/cancelled request ever commit after a newer selection, and are mapped/decoded resources released? |
-| Editor operation | EditorOperationService and operation-specific owner | Is only one result consumed, does closure settle outstanding work, and does UI distinguish cancelled/failed/succeeded? |
+| Editor operation | Feature coordinator plus private EditorOperationRuntime document scope | Is only one feature-owned result consumed, does shared lifetime closure settle outstanding work, and does UI distinguish cancelled/failed/succeeded without a central feature registry? |
 | Renderer control/frame | RenderCoordinator, FramePipeline, RHI queue tokens | Are submitted frames/control requests settled and GPU-owned resources retired only after completion? |
 | Process shutdown | Application | Are console, Renderer, level/world, Tasks, input/window, and timer destroyed in dependency order without new work starting? |
 

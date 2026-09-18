@@ -4,7 +4,8 @@
 #include "Editor/EditorUiFrameRenderer.h"
 #include "Editor/Public/UI.h"
 #include "Editor/Capture/EditorViewportCaptureCoordinator.h"
-#include "EditorOperations/EditorOperationService.h"
+#include "Editor/ReferencePathTracer/ReferencePathTracerArtifactCoordinator.h"
+#include "EditorOperations/EditorOperationRuntime.h"
 #include "Input/InputSystem.h"
 #include "Renderer.h"
 #include "RuntimeApplication.h"
@@ -14,6 +15,16 @@
 #include "World/GameWorld.h"
 
 #include <utility>
+
+struct EditorApplication::State final
+{
+	std::unique_ptr<RuntimeApplication> Runtime;
+	std::unique_ptr<UI> Ui;
+	std::unique_ptr<EditorOperationRuntime> OperationRuntime;
+	std::unique_ptr<ShaderRecookCoordinator> ShaderRecook;
+	std::unique_ptr<EditorViewportCaptureCoordinator> ViewportCapture;
+	std::unique_ptr<ReferencePathTracerArtifactCoordinator> ReferenceArtifacts;
+};
 
 EditorApplication::EditorApplication() = default;
 
@@ -30,6 +41,10 @@ void EditorApplication::Initialize()
 	{
 		return;
 	}
+	if (!m_state)
+	{
+		m_state = std::make_unique<State>();
+	}
 
 	InitializeRuntimeApplication();
 	InitializeEditorOperations();
@@ -39,59 +54,54 @@ void EditorApplication::Initialize()
 
 void EditorApplication::InitializeRuntimeApplication()
 {
-	if (!m_runtimeApplication)
+	if (!m_state->Runtime)
 	{
 		RuntimeApplicationOptions runtimeOptions = m_runtimeOptions;
 		runtimeOptions.EnableRuntimeConsole = false;
 		runtimeOptions.EnableUiRenderPackets = true;
-		m_runtimeApplication = std::make_unique<RuntimeApplication>(runtimeOptions);
+		m_state->Runtime = std::make_unique<RuntimeApplication>(runtimeOptions);
 	}
 
-	m_runtimeApplication->Initialize();
+	m_state->Runtime->Initialize();
 }
 
 void EditorApplication::InitializeEditorOperations()
 {
-	if (!m_operationService)
+	if (!m_state->OperationRuntime)
 	{
-		m_operationService = std::make_unique<EditorOperationService>(
-		    m_runtimeApplication->GetTaskExecutor(),
-		    m_runtimeApplication->GetApplicationTaskScope());
+		m_state->OperationRuntime =
+		    std::make_unique<EditorOperationRuntime>(m_state->Runtime->GetTaskExecutor(), m_state->Runtime->GetApplicationTaskScope());
 	}
 
-	if (!m_shaderRecookCoordinator)
+	if (!m_state->ShaderRecook)
 	{
-		m_shaderRecookCoordinator = std::make_unique<ShaderRecookCoordinator>(*m_operationService);
+		m_state->ShaderRecook = std::make_unique<ShaderRecookCoordinator>(*m_state->OperationRuntime);
 	}
 
-	if (!m_viewportCaptureCoordinator)
+	if (!m_state->ViewportCapture)
 	{
-		m_viewportCaptureCoordinator = std::make_unique<EditorViewportCaptureCoordinator>(*m_operationService);
+		m_state->ViewportCapture = std::make_unique<EditorViewportCaptureCoordinator>(*m_state->OperationRuntime);
+	}
+	if (!m_state->ReferenceArtifacts)
+	{
+		m_state->ReferenceArtifacts = std::make_unique<ReferencePathTracerArtifactCoordinator>(*m_state->OperationRuntime);
 	}
 }
 
 void EditorApplication::InitializeUi()
 {
-	m_runtimeApplication->GetInputSystem().ClearInputCaptureQuery();
-	m_runtimeApplication->GetInputSystem().BeginInputRoutingFrame(false, false);
-	if (m_ui)
+	m_state->Runtime->GetInputSystem().ClearInputCaptureQuery();
+	m_state->Runtime->GetInputSystem().BeginInputRoutingFrame(false, false);
+	if (m_state->Ui)
 	{
 		return;
 	}
 
-	Renderer& renderer = m_runtimeApplication->GetRenderer();
-	GameWorld& world = m_runtimeApplication->GetWorldForEditor();
-	m_ui = std::make_unique<UI>(BuildUiHostServices(renderer, world));
-
-	ConfigureUiDiagnostics(renderer);
-	ShaderConsoleCommands::ConnectEditor(*m_ui, *m_shaderRecookCoordinator);
-}
-
-EditorHostServices EditorApplication::BuildUiHostServices(Renderer& renderer, GameWorld& world)
-{
-	return EditorHostServices{
-	    .RuntimeTimer = m_runtimeApplication->GetTimer(),
-	    .Levels = m_runtimeApplication->GetLevelSession(),
+	Renderer& renderer = m_state->Runtime->GetRenderer();
+	GameWorld& world = m_state->Runtime->GetWorldForEditor();
+	m_state->Ui = std::make_unique<UI>(EditorHostServices{
+	    .RuntimeTimer = m_state->Runtime->GetTimer(),
+	    .Levels = m_state->Runtime->GetLevelSession(),
 	    .AcquireWorldReadView = [&world]() { return world.AcquireReadView(); },
 	    .ReadWorldChanges = [&world](const WorldChangeCursor& cursor) { return world.ReadChanges(cursor); },
 	    .AcknowledgeWorldChanges = [&world](WorldChangeCursor& cursor, WorldSequence sequence)
@@ -101,13 +111,16 @@ EditorHostServices EditorApplication::BuildUiHostServices(Renderer& renderer, Ga
 	    .SubmitWorldEdit = [&world](WorldEditCommand command, std::uint64_t generation)
 	    { return world.SubmitEdit(std::move(command), generation); },
 	    .SubmitRenderingSettings = [&renderer](EngineRenderingSettingsState settings) { renderer.SubmitRenderingSettings(settings); },
-	    .HostWindow = m_runtimeApplication->GetWindow(),
-	    .Input = m_runtimeApplication->GetInputSystem()};
+	    .HostWindow = m_state->Runtime->GetWindow(),
+	    .Input = m_state->Runtime->GetInputSystem()});
+
+	ConfigureUiDiagnostics(renderer);
+	ShaderConsoleCommands::ConnectEditor(*m_state->Ui, *m_state->ShaderRecook);
 }
 
 void EditorApplication::ConfigureUiDiagnostics(Renderer& renderer)
 {
-	m_ui->SetDiagnosticsProviders(
+	m_state->Ui->SetDiagnosticsProviders(
 	    EditorDiagnosticsProviders{
 	        .ShaderGeneration = [&renderer]() noexcept { return renderer.GetShaderGeneration(); },
 	        .MeshDiagnostics = [&renderer]() { return renderer.CaptureMeshDiagnostics(); },
@@ -118,12 +131,12 @@ void EditorApplication::ConfigureUiDiagnostics(Renderer& renderer)
 
 bool EditorApplication::Tick()
 {
-	if (!m_isEditorSessionActive || !m_runtimeApplication || !m_ui)
+	if (!m_isEditorSessionActive || !m_state->Runtime || !m_state->Ui)
 	{
 		return false;
 	}
 
-	switch (m_runtimeApplication->BeginFrame())
+	switch (m_state->Runtime->BeginFrame())
 	{
 		case RuntimeApplicationFrameResult::Exit:
 			return false;
@@ -134,49 +147,46 @@ bool EditorApplication::Tick()
 			break;
 	}
 
-	Renderer& renderer = m_runtimeApplication->GetRenderer();
+	Renderer& renderer = m_state->Runtime->GetRenderer();
 	UpdateEditorOperations(renderer);
-	const ViewportRenderRequest& viewportRequest = m_ui->GetViewportRenderRequest();
+	const ViewportRenderRequest& viewportRequest = m_state->Ui->GetViewportRenderRequest();
 	const float aspectRatio = viewportRequest.Extent.IsValid()
 	    ? static_cast<float>(viewportRequest.Extent.Width) / static_cast<float>(viewportRequest.Extent.Height)
 	    : 1.0f;
-	const CameraInputIntent cameraIntent = m_runtimeApplication->CollectCameraInputIntent(aspectRatio);
-	const float deltaSeconds = static_cast<float>(m_runtimeApplication->GetTimer().GetDelta(TimeDomain::Scaled, TimeUnit::Seconds));
-	const RenderViewCameraData renderCamera = m_ui->UpdateViewportCamera(cameraIntent, deltaSeconds);
-	m_runtimeApplication->UpdateEditorRuntime(renderCamera);
+	const CameraInputIntent cameraIntent = m_state->Runtime->CollectCameraInputIntent(aspectRatio);
+	const float deltaSeconds = static_cast<float>(m_state->Runtime->GetTimer().GetDelta(TimeDomain::Scaled, TimeUnit::Seconds));
+	const RenderViewCameraData renderCamera = m_state->Ui->UpdateViewportCamera(cameraIntent, deltaSeconds);
+	m_state->Runtime->UpdateEditorRuntime(renderCamera);
 	RenderEditorFrame(renderer);
 	return true;
 }
 
 void EditorApplication::UpdateEditorOperations(Renderer& renderer)
 {
-	if (m_viewportCaptureCoordinator)
+	m_state->ViewportCapture->Update(renderer);
+	m_state->ReferenceArtifacts->Update(renderer, renderer.GetViewportRenderProducts());
+
+	if (m_state->Ui->ConsumeShaderRecookRequest())
 	{
-		m_viewportCaptureCoordinator->Update(renderer);
+		m_state->ShaderRecook->RequestRecook();
 	}
 
-	if (!m_shaderRecookCoordinator)
-	{
-		return;
-	}
-
-	if (m_ui->ConsumeShaderRecookRequest())
-	{
-		m_shaderRecookCoordinator->RequestRecook();
-	}
-
-	m_shaderRecookCoordinator->Update(renderer, m_ui->ConsumeShaderReloadRequest());
+	m_state->ShaderRecook->Update(renderer, m_state->Ui->ConsumeShaderReloadRequest());
 }
 
 void EditorApplication::RenderEditorFrame(Renderer& renderer)
 {
-	EditorUiFrameRenderer::Render(*m_runtimeApplication, renderer, *m_ui);
-	if (m_viewportCaptureCoordinator && m_ui->ConsumeViewportCaptureRequest())
+	EditorUiFrameRenderer::Render(*m_state->Runtime, renderer, *m_state->Ui);
+	if (m_state->Ui->ConsumeViewportCaptureRequest())
 	{
-		m_viewportCaptureCoordinator->Request(renderer, m_runtimeApplication->GetTimer().GetFrameCount());
+		m_state->ViewportCapture->Request(renderer, m_state->Runtime->GetTimer().GetFrameCount());
 	}
+	m_state->ReferenceArtifacts->Request(
+	    m_state->Ui->ConsumeReferencePathTracerOutputAction(),
+	    renderer,
+	    renderer.GetViewportRenderProducts());
 
-	m_runtimeApplication->SubmitViewportRenderRequest(m_ui->GetViewportRenderRequest());
+	m_state->Runtime->SubmitViewportRenderRequest(m_state->Ui->GetViewportRenderRequest());
 }
 
 void EditorApplication::Shutdown()
@@ -186,10 +196,11 @@ void EditorApplication::Shutdown()
 		return;
 	}
 
-	m_ui.reset();
-	m_viewportCaptureCoordinator.reset();
-	m_shaderRecookCoordinator.reset();
-	m_operationService.reset();
-	m_runtimeApplication->Shutdown();
+	m_state->Ui.reset();
+	m_state->ReferenceArtifacts.reset();
+	m_state->ViewportCapture.reset();
+	m_state->ShaderRecook.reset();
+	m_state->OperationRuntime.reset();
+	m_state->Runtime->Shutdown();
 	m_isEditorSessionActive = false;
 }

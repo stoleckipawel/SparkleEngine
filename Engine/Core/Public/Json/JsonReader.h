@@ -12,6 +12,8 @@
 
 namespace Json
 {
+	SPARKLE_CORE_API void SkipWhitespace(std::string_view document, std::size_t& cursor) noexcept;
+	SPARKLE_CORE_API bool TryReadString(std::string_view document, std::size_t& cursor, std::string& outValue);
 	SPARKLE_CORE_API std::size_t FindPropertyValue(std::string_view objectText, std::string_view key) noexcept;
 	SPARKLE_CORE_API bool TryReadStringProperty(std::string_view objectText, std::string_view key, std::string& outValue);
 

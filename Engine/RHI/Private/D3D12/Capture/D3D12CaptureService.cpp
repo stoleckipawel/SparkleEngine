@@ -51,20 +51,17 @@ struct D3D12CaptureService::PendingReadback final
 };
 
 D3D12CaptureService::D3D12CaptureService(D3D12Rhi& rhi) noexcept :
-    m_rhi(&rhi)
+    m_rhi(rhi)
 {
 }
 
 D3D12CaptureService::~D3D12CaptureService() noexcept
 {
-	if (m_rhi != nullptr)
+	for (const std::unique_ptr<PendingReadback>& pending : m_pendingReadbacks)
 	{
-		for (const std::unique_ptr<PendingReadback>& pending : m_pendingReadbacks)
+		if (pending && pending->Submission.IsValid())
 		{
-			if (pending && pending->Submission.IsValid())
-			{
-				m_rhi->WaitForSubmission(pending->Submission);
-			}
+			m_rhi.WaitForSubmission(pending->Submission);
 		}
 	}
 	m_pendingReadbacks.clear();
@@ -73,7 +70,7 @@ D3D12CaptureService::~D3D12CaptureService() noexcept
 RhiCaptureTicket D3D12CaptureService::BeginTextureReadback(const RhiTextureCaptureRequest& request) noexcept
 {
 	DrainCancelledReadbacks();
-	ID3D12Device* const device = m_rhi != nullptr ? m_rhi->GetDevice().Get() : nullptr;
+	ID3D12Device* const device = m_rhi.GetDevice().Get();
 	ID3D12Resource* const sourceResource = static_cast<ID3D12Resource*>(request.Resource.Value);
 	if (device == nullptr || sourceResource == nullptr)
 	{
@@ -81,9 +78,8 @@ RhiCaptureTicket D3D12CaptureService::BeginTextureReadback(const RhiTextureCaptu
 	}
 
 	const D3D12_RESOURCE_DESC sourceDesc = sourceResource->GetDesc();
-	RhiCaptureFormat captureFormat;
 	if (sourceDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE2D || sourceDesc.Width == 0 || sourceDesc.Height == 0
-	    || !TryResolveRhiCaptureFormat(request.SourceFormat, captureFormat)
+	    || !IsRhiCaptureFormatSupported(request.SourceFormat)
 	    || sourceDesc.Format != D3D12TypeConversions::ToDxgiFormat(request.SourceFormat))
 	{
 		return {};
@@ -147,7 +143,7 @@ RhiCaptureTicket D3D12CaptureService::BeginTextureReadback(const RhiTextureCaptu
 	}
 
 	ID3D12CommandList* const commandLists[] = {pending->CommandList.Get()};
-	pending->Submission = m_rhi->SubmitCommandLists(ERhiQueueType::Graphics, commandLists);
+	pending->Submission = m_rhi.SubmitCommandLists(ERhiQueueType::Graphics, commandLists);
 	if (!pending->Submission.IsValid())
 	{
 		return {};
@@ -161,43 +157,42 @@ RhiCaptureTicket D3D12CaptureService::BeginTextureReadback(const RhiTextureCaptu
 bool D3D12CaptureService::TryTakeTextureReadback(RhiCaptureTicket ticket, RhiCaptureReadback& readback) noexcept
 {
 	DrainCancelledReadbacks();
-	PendingReadback* pending = FindPending(ticket);
-	if (pending == nullptr || m_rhi == nullptr || !m_rhi->IsSubmissionComplete(pending->Submission))
-	{
-		return false;
-	}
-
-	void* mappedData = nullptr;
-	const D3D12_RANGE readRange{0, static_cast<SIZE_T>(pending->TotalBytes)};
-	if (FAILED(pending->Buffer->Map(0, &readRange, &mappedData)) || mappedData == nullptr)
-	{
-		return false;
-	}
-
-	readback.Result = RhiCaptureResult{
-	    .Status = ERhiCaptureStatus::Succeeded,
-	    .BackendApi = ERhiBackendApi::D3D12,
-	    .FrameId = pending->Request.FrameId,
-	    .ArtifactPath = pending->Request.OutputPath};
-	readback.Width = pending->Footprint.Footprint.Width;
-	readback.Height = pending->Footprint.Footprint.Height;
-	readback.RowPitch = pending->Footprint.Footprint.RowPitch;
-	readback.Format = pending->Format;
-	const std::size_t byteCount = static_cast<std::size_t>(readback.RowPitch) * readback.Height;
-	readback.Pixels.resize(byteCount);
-	const std::byte* source = static_cast<const std::byte*>(mappedData) + pending->Footprint.Offset;
-	std::memcpy(readback.Pixels.data(), source, byteCount);
-	const D3D12_RANGE writeRange{0, 0};
-	pending->Buffer->Unmap(0, &writeRange);
-
-	const auto iterator = std::find_if(
+	const auto pendingIterator = std::find_if(
 	    m_pendingReadbacks.begin(),
 	    m_pendingReadbacks.end(),
 	    [ticket](const std::unique_ptr<PendingReadback>& candidate) { return candidate && candidate->Ticket.Value == ticket.Value; });
-	if (iterator != m_pendingReadbacks.end())
+	if (pendingIterator == m_pendingReadbacks.end() || !m_rhi.IsSubmissionComplete((*pendingIterator)->Submission))
 	{
-		m_pendingReadbacks.erase(iterator);
+		return false;
 	}
+	PendingReadback& pending = **pendingIterator;
+
+	void* mappedData = nullptr;
+	const D3D12_RANGE readRange{0, static_cast<SIZE_T>(pending.TotalBytes)};
+	if (FAILED(pending.Buffer->Map(0, &readRange, &mappedData)) || mappedData == nullptr)
+	{
+		readback.Result = RhiCaptureResult{
+		    .Status = ERhiCaptureStatus::Failed,
+		    .BackendApi = ERhiBackendApi::D3D12,
+		    .FrameId = pending.Request.FrameId,
+		    .FailureReason = "D3D12 texture readback could not be mapped"};
+		m_pendingReadbacks.erase(pendingIterator);
+		return true;
+	}
+
+	readback.Result =
+	    RhiCaptureResult{.Status = ERhiCaptureStatus::Succeeded, .BackendApi = ERhiBackendApi::D3D12, .FrameId = pending.Request.FrameId};
+	readback.Width = pending.Footprint.Footprint.Width;
+	readback.Height = pending.Footprint.Footprint.Height;
+	readback.RowPitch = pending.Footprint.Footprint.RowPitch;
+	readback.Format = pending.Format;
+	const std::size_t byteCount = static_cast<std::size_t>(readback.RowPitch) * readback.Height;
+	readback.Pixels.resize(byteCount);
+	const std::byte* source = static_cast<const std::byte*>(mappedData) + pending.Footprint.Offset;
+	std::memcpy(readback.Pixels.data(), source, byteCount);
+	const D3D12_RANGE writeRange{0, 0};
+	pending.Buffer->Unmap(0, &writeRange);
+	m_pendingReadbacks.erase(pendingIterator);
 	return true;
 }
 
@@ -215,28 +210,12 @@ void D3D12CaptureService::CancelTextureReadback(RhiCaptureTicket ticket) noexcep
 	DrainCancelledReadbacks();
 }
 
-D3D12CaptureService::PendingReadback* D3D12CaptureService::FindPending(RhiCaptureTicket ticket) noexcept
-{
-	for (const std::unique_ptr<PendingReadback>& pending : m_pendingReadbacks)
-	{
-		if (pending && pending->Ticket.Value == ticket.Value)
-		{
-			return pending.get();
-		}
-	}
-	return nullptr;
-}
-
 void D3D12CaptureService::DrainCancelledReadbacks() noexcept
 {
-	if (m_rhi == nullptr)
-	{
-		return;
-	}
 	for (std::size_t index = 0; index < m_pendingReadbacks.size();)
 	{
 		const std::unique_ptr<PendingReadback>& pending = m_pendingReadbacks[index];
-		if (!pending || !pending->Cancelled || !m_rhi->IsSubmissionComplete(pending->Submission))
+		if (!pending || !pending->Cancelled || !m_rhi.IsSubmissionComplete(pending->Submission))
 		{
 			++index;
 			continue;

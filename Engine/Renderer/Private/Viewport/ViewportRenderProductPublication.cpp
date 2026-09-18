@@ -39,4 +39,23 @@ void ViewportRenderProductPublication::Publish(
 		        .Extent = renderExtent,
 		        .Format = RenderProductFormat::ColorHdr});
 	}
+
+	if (frameProducts.RawSceneColor.IsValid())
+	{
+		products.SetProduct(
+		    RenderOutputFlags::RawSceneColor,
+		    RenderProduct{
+		        .Handle = ToRenderProductHandle(frameProducts.RawSceneColor),
+		        .Extent = renderExtent,
+		        .Format = RenderProductFormat::ColorHdr});
+	}
+	if (frameProducts.RawSceneColorMoment2.IsValid())
+	{
+		products.SetProduct(
+		    RenderOutputFlags::RawSceneColorMoment2,
+		    RenderProduct{
+		        .Handle = ToRenderProductHandle(frameProducts.RawSceneColorMoment2),
+		        .Extent = renderExtent,
+		        .Format = RenderProductFormat::ColorHdr});
+	}
 }

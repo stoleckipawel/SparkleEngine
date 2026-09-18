@@ -47,13 +47,11 @@ ReferencePathTracerIdentity BuildReferencePathTracerIdentity(
 	const PreparedRenderScene& scene = frame.PreparedScene;
 	ReferencePathTracerIdentity identity;
 	std::uint64_t hash = Hash::kFnv64OffsetBasis;
-	hash = Hash::ContinueFnv1a64Value(hash, view.viewportId);
-	hash = Hash::ContinueFnv1a64Value(hash, view.selection.Value);
+	hash = Hash::ContinueFnv1a64Value(hash, view.renderExtent.Width);
+	hash = Hash::ContinueFnv1a64Value(hash, view.renderExtent.Height);
 	identity.Components[ViewComponent] = Hash::FinalizeFnv1a64(hash);
 
 	hash = Hash::kFnv64OffsetBasis;
-	hash = Hash::ContinueFnv1a64Value(hash, view.renderExtent.Width);
-	hash = Hash::ContinueFnv1a64Value(hash, view.renderExtent.Height);
 	hash = Hash::ContinueFnv1a64Value(hash, view.camera.ProjectionKind);
 	hash = LightingStateHash::AppendFloat3(hash, view.camera.Position);
 	hash = LightingStateHash::AppendFloat3(hash, view.camera.Direction);

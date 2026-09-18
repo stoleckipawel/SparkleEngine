@@ -22,6 +22,8 @@ struct ViewportFrameProducts final
 	FrameGraphTextureHandle FinalSceneColor = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle SceneDepth = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle Normals = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle RawSceneColor = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle RawSceneColorMoment2 = FrameGraphTextureHandle::Invalid();
 };
 
 struct RenderSceneGpuLightingResources final

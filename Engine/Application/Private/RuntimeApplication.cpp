@@ -99,7 +99,9 @@ void RuntimeApplication::Initialize()
 void RuntimeApplication::InitializeHost()
 {
 	m_timer = std::make_unique<Timer>();
-	m_window = std::make_unique<Window>("Sparkle Engine");
+	m_window = std::make_unique<Window>(
+	    "Sparkle Engine",
+	    WindowOptions{.Width = m_options.WindowWidth, .Height = m_options.WindowHeight, .Visible = m_options.WindowVisible});
 }
 
 void RuntimeApplication::InitializeInput()

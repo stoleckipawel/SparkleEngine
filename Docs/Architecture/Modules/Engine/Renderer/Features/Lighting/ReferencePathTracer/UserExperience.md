@@ -6,7 +6,7 @@
 
 **Authority boundary:** the [feature dossier](README.md) owns binary acceptance and failure verdicts, [Transport And Estimator](TransportAndEstimator.md) owns mathematical meaning, [Execution Architecture](ExecutionArchitecture.md) owns per-view session/state/data ownership, [Discovery](Discovery.md) owns ratification, and the [staged plan](Plan.md) owns implementation order and prompts
 
-**Prepared:** re-audited 2026-09-10 against committed `master` revision `669637cf23b9748f8b94635409e74159d31d0bc2`; Stage-7 source reconciled 2026-09-15 from base `7fa195192e81101990d7a3f31057680c07717b9d`; Stage-9 source reconciled 2026-09-17 from base `e783f2cfe2e6be205eeedd24ca7caf2206bc9047`; no current-candidate build, interactive, artifact, accessibility, package, or clean-machine workflow was exercised
+**Prepared:** re-audited 2026-09-10 against committed `master` revision `669637cf23b9748f8b94635409e74159d31d0bc2`; Stage-7 source reconciled 2026-09-15 from base `7fa195192e81101990d7a3f31057680c07717b9d`; Stage-9 source refinement reconciled 2026-09-18 from base `df2f0c0658cbf1cbdc0355c050a496cb513709e5`; no current-candidate build, interactive, artifact, accessibility, package, or clean-machine workflow was exercised
 
 **Naming reconciliation:** the 2026-09-09 working-tree clean break makes `ReferencePathTracer` the sole feature name; no UX capability or acceptance result is thereby implied.
 

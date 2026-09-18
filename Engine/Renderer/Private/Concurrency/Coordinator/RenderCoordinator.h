@@ -5,6 +5,7 @@
 #include "Host/RendererBackendConfiguration.h"
 #include "Renderer/Public/Concurrency/RendererExecutionConfig.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
+#include "Viewport/ViewportCaptureCompletion.h"
 #include "Core/Public/Events/ScopedEventHandle.h"
 #include "Core/Public/Threading/ThreadOwnership.h"
 
@@ -45,12 +46,13 @@ public:
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics();
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics();
 	ViewportCaptureId RequestViewportCapture(ViewportCaptureRequest request);
-	bool TryTakeViewportCapture(ViewportCaptureReadback& readback);
+	bool TryTakeViewportCapture(ViewportCaptureId id, ViewportCaptureReadback& readback);
 
 	RendererExecutionMode GetMode() const noexcept { return m_config.Mode; }
 
 private:
 	static constexpr std::size_t RenderThreadCommandCapacity = 64;
+	static constexpr std::size_t MaximumOutstandingViewportCaptures = 3;
 
 	template <typename TResult> static TResult ExtractControlResult(RenderControlResult result);
 
@@ -97,6 +99,7 @@ private:
 	mutable std::mutex m_readStateMutex;
 	ViewportRenderProducts m_publishedViewportProducts;
 	std::atomic<std::uint64_t> m_shaderGeneration{0};
-	std::vector<ViewportCaptureReadback> m_publishedViewportCaptures;
+	std::size_t m_outstandingViewportCaptureCount = 0;
+	std::vector<ViewportCaptureCompletion> m_publishedViewportCaptures;
 	std::uint64_t m_nextViewportCaptureId = 1;
 };

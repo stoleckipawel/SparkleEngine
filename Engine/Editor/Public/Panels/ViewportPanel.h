@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../EditorAPI.h"
+#include "ReferencePathTracer/ReferencePathTracerOutput.h"
 #include "../../../Renderer/Public/Viewport/ViewportContracts.h"
 #include "Input/Dispatch/InputLayer.h"
 
@@ -26,6 +27,7 @@ public:
 	void SetRenderProducts(const ViewportRenderProducts& renderProducts) noexcept;
 	void SetSceneColorTexture(EditorTextureHandle texture) noexcept;
 	const ViewportRenderRequest& GetRenderRequest() const noexcept;
+	ReferencePathTracerOutputAction ConsumeReferencePathTracerOutputAction() noexcept;
 	InputLayer GetTargetInputLayer() const noexcept { return InputLayer::Gameplay; }
 	bool GetInputBounds(float& left, float& top, float& right, float& bottom) const noexcept;
 	void BuildUI(bool disableInteraction = false);
@@ -47,4 +49,5 @@ private:
 	float m_inputRight = 0.0f;
 	float m_inputBottom = 0.0f;
 	bool m_hasInputBounds = false;
+	ReferencePathTracerOutputAction m_referencePathTracerOutputAction = ReferencePathTracerOutputAction::None;
 };

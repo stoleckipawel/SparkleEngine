@@ -2,24 +2,22 @@
 
 #include <cstdint>
 #include <functional>
-#include <memory>
 #include <string>
 
+#include "EditorOperations/EditorOperationSlot.h"
+#include "ShaderRecook/ShaderCompilerProcess.h"
 #include "ShaderRecook/ShaderRecookPublication.h"
 #include "ShaderRecook/ShaderRecookRequest.h"
 #include "ShaderRecook/ShaderSourceChangeTracker.h"
 
 class Renderer;
-struct ShaderRecookExecutionResult;
-class EditorOperationService;
-class TaskExecutor;
-class TaskScope;
+class EditorOperationRuntime;
 
 class ShaderRecookCoordinator final
 {
 public:
 	using StatusHandler = std::function<void(std::string)>;
-	explicit ShaderRecookCoordinator(EditorOperationService& operations);
+	explicit ShaderRecookCoordinator(EditorOperationRuntime& operations);
 	~ShaderRecookCoordinator();
 
 	void SetStatusHandler(StatusHandler handler);
@@ -30,8 +28,16 @@ public:
 	static std::string DescribeRequest(const ShaderRecookRequest& request);
 
 private:
+	struct ExecutionResult final
+	{
+		std::uint64_t RequestId = 0;
+		std::uint64_t BaselinePublicationId = 0;
+		ShaderRecookRequest Request;
+		ShaderCompilerProcessResult Process;
+	};
+
 	void StartRecook(ShaderRecookRequest request) noexcept;
-	void CompleteRecook(Renderer& renderer, ShaderRecookExecutionResult result) noexcept;
+	void CompleteRecook(Renderer& renderer, ExecutionResult result) noexcept;
 	void ReloadShaders(Renderer& renderer);
 	void HandleManualReload(Renderer& renderer) noexcept;
 	void HandleExternalRecookPublication(Renderer& renderer) noexcept;
@@ -45,7 +51,7 @@ private:
 	    std::string& outDiagnostic) noexcept;
 
 	StatusHandler m_statusHandler;
-	EditorOperationService* m_operations = nullptr;
+	EditorOperationSlot<ExecutionResult> m_operation;
 	std::uint64_t m_nextRequestId = 1;
 	std::uint64_t m_latestRequestId = 0;
 	std::uint64_t m_lastAcceptedPublicationId = 0;

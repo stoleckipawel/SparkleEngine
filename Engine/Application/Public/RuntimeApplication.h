@@ -33,6 +33,9 @@ struct RuntimeApplicationOptions final
 	bool EnableRuntimeConsole = true;
 	bool AllowThreadedRenderer = true;
 	bool EnableUiRenderPackets = false;
+	bool WindowVisible = true;
+	std::uint32_t WindowWidth = 1280u;
+	std::uint32_t WindowHeight = 720u;
 };
 
 class SPARKLE_APPLICATION_API RuntimeApplication final : public Application

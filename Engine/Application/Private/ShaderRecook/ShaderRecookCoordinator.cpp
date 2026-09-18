@@ -3,7 +3,6 @@
 
 #include "ShaderRecook/ShaderRecookCoordinator.h"
 #include "Core/Public/Diagnostics/Error.h"
-#include "EditorOperations/EditorOperationService.h"
 
 #include "Renderer.h"
 #include "ShaderRecook/ShaderRecookPublicationReader.h"
@@ -12,8 +11,8 @@
 #include <format>
 #include <utility>
 
-ShaderRecookCoordinator::ShaderRecookCoordinator(EditorOperationService& operations) :
-    m_operations(&operations)
+ShaderRecookCoordinator::ShaderRecookCoordinator(EditorOperationRuntime& operations) :
+    m_operation(operations)
 {
 }
 
@@ -97,8 +96,8 @@ void ShaderRecookCoordinator::Update(Renderer& renderer, bool reloadRequested) n
 		return;
 	}
 
-	ShaderRecookExecutionResult result;
-	if (!m_operations->TryConsumeShaderRecook(result))
+	ExecutionResult result;
+	if (!m_operation.TryConsume(result))
 	{
 		return;
 	}
@@ -126,7 +125,23 @@ void ShaderRecookCoordinator::StartRecook(ShaderRecookRequest request) noexcept
 	const std::uint64_t baselinePublicationId = ReadCurrentPublicationId();
 	const std::string requestDescription = DescribeRequest(request);
 	std::string errorMessage;
-	if (!m_operations->StartShaderRecook(requestId, baselinePublicationId, std::move(request), errorMessage))
+	if (!m_operation.Start(
+	        TaskName("Run shader compiler"),
+	        "A shader recook is already active.",
+	        [requestId, baselinePublicationId, request = std::move(request)](ExecutionResult& result, TaskExecutionContext& context) mutable
+	        {
+		        result.RequestId = requestId;
+		        result.BaselinePublicationId = baselinePublicationId;
+		        result.Request = std::move(request);
+		        result.Process = ShaderCompilerProcess::RunCook(result.Request, context.GetCancellationToken());
+		        if (result.Process.SettledSuccessfully())
+		        {
+			        return TaskResult::Success();
+		        }
+		        return context.IsCancellationRequested() ? TaskResult::Cancelled("Editor shader recook was cancelled.")
+		                                                 : TaskResult::Failure("Shader compiler process failed.");
+	        },
+	        errorMessage))
 	{
 		PublishStatus("Shader recook failed before launch: " + errorMessage);
 		return;
@@ -141,7 +156,7 @@ void ShaderRecookCoordinator::StartRecook(ShaderRecookRequest request) noexcept
 	        baselinePublicationId));
 }
 
-void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ShaderRecookExecutionResult result) noexcept
+void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ExecutionResult result) noexcept
 {
 	if (result.RequestId != m_latestRequestId)
 	{

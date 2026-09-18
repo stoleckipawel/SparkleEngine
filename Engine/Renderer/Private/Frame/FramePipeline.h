@@ -6,6 +6,7 @@
 #include "Providers/ImageProviderGraphKey.h"
 #include "Renderer/Public/Settings/EngineRenderingRayTracingTypes.h"
 #include "Renderer/Public/Resources/Textures/TextureDiagnostics.h"
+#include "Viewport/ViewportCaptureCompletion.h"
 #include "Viewport/ViewportContracts.h"
 
 #include <cstdint>
@@ -72,7 +73,7 @@ private:
 	void OnRender(RenderFrameSubmission submission, const RenderFrameTime& time, const UiRenderPacket& ui) noexcept;
 
 	bool BeginViewportCapture(ViewportCaptureId id, const ViewportCaptureRequest& request) noexcept;
-	std::vector<ViewportCaptureReadback> TakeCompletedViewportCaptures();
+	std::vector<ViewportCaptureCompletion> TakeCompletedViewportCaptures();
 	MeshDiagnosticsSnapshot CaptureMeshDiagnostics() const;
 	MeshPreviewGeometry CaptureMeshPreview(std::uintptr_t meshRuntimeId) const;
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics();

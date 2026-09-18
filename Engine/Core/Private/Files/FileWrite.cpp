@@ -35,7 +35,7 @@ namespace Files
 		return true;
 	}
 
-	bool TryWriteAllBytes(const std::filesystem::path& path, const std::vector<std::uint8_t>& bytes, std::string& outErrorMessage)
+	bool TryWriteAllBytes(const std::filesystem::path& path, std::span<const std::byte> bytes, std::string& outErrorMessage)
 	{
 		std::ofstream output;
 		if (!TryOpenBinaryOutput(path, output, outErrorMessage))
@@ -55,6 +55,23 @@ namespace Files
 			return false;
 		}
 		outErrorMessage.clear();
+		return true;
+	}
+
+	bool TryWriteAllBytes(const std::filesystem::path& path, const std::vector<std::uint8_t>& bytes, std::string& outErrorMessage)
+	{
+		return TryWriteAllBytes(path, std::as_bytes(std::span(bytes)), outErrorMessage);
+	}
+
+	bool TryWriteAllBytesAtomic(const std::filesystem::path& path, std::span<const std::byte> bytes, std::string& outErrorMessage)
+	{
+		const std::filesystem::path temporaryPath = BuildTemporaryPath(path);
+		CleanupTemporaryFile(temporaryPath);
+		if (!TryWriteAllBytes(temporaryPath, bytes, outErrorMessage) || !TryFinalizeTemporaryFile(temporaryPath, path, outErrorMessage))
+		{
+			CleanupTemporaryFile(temporaryPath);
+			return false;
+		}
 		return true;
 	}
 

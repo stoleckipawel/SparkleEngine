@@ -26,9 +26,17 @@ void ReferencePathTracer::AddPasses(
 {
 	m_session.ReserveGraphResources(builder, settings.RenderExtent);
 	AddGpuPasses(builder, settings.RenderExtent, resources);
+	const ReferencePathTracerGraphResources& graphResources = m_session.GetGraphResources();
+	resources.ViewportProducts.RawSceneColor = graphResources.CommittedMean;
+	resources.ViewportProducts.RawSceneColorMoment2 = graphResources.CommittedM2;
 	AddExposurePass(builder, settings, resources);
 	AddUpscalingPasses(builder, settings.RenderExtent, settings.OutputExtent, nullptr, resources);
 	resources.ViewportProducts.SceneDepth = FrameGraphTextureHandle::Invalid();
+}
+
+RenderProduct::Provenance ReferencePathTracer::GetRawProvenance() const noexcept
+{
+	return m_session.GetRawProvenance();
 }
 
 ViewportRenderProgress ReferencePathTracer::Update(

@@ -5,6 +5,7 @@
 #include "Util/UiUtil.h"
 
 #include <algorithm>
+#include <utility>
 
 #include <imgui.h>
 
@@ -101,6 +102,11 @@ const ViewportRenderRequest& ViewportPanel::GetRenderRequest() const noexcept
 	return m_renderRequest;
 }
 
+ReferencePathTracerOutputAction ViewportPanel::ConsumeReferencePathTracerOutputAction() noexcept
+{
+	return std::exchange(m_referencePathTracerOutputAction, ReferencePathTracerOutputAction::None);
+}
+
 bool ViewportPanel::GetInputBounds(float& left, float& top, float& right, float& bottom) const noexcept
 {
 	if (!m_hasInputBounds)
@@ -140,7 +146,7 @@ void ViewportPanel::BuildProgressOverlay() noexcept
 
 	const ImVec2 viewportMin = ImGui::GetWindowPos();
 	ImGui::SetCursorScreenPos(ImVec2(viewportMin.x + 12.0f, viewportMin.y + 12.0f));
-	DrawReferencePathTracerOverlay(progress, m_renderRequest);
+	DrawReferencePathTracerOverlay(progress, m_renderRequest, m_referencePathTracerOutputAction);
 }
 
 void ViewportPanel::BuildUI(bool disableInteraction)

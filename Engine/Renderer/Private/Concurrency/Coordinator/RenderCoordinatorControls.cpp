@@ -4,6 +4,7 @@
 #include "Core/Public/Diagnostics/Error.h"
 #include "Concurrency/Coordinator/RendererExecutionContext.h"
 
+#include <algorithm>
 #include <limits>
 
 static const auto g_renderCoordinatorLogger = Logging::GetOrCreateLogger("Renderer.Coordinator");
@@ -69,7 +70,12 @@ RendererMemoryDiagnosticsSnapshot RenderCoordinator::CaptureMemoryDiagnostics()
 ViewportCaptureId RenderCoordinator::RequestViewportCapture(ViewportCaptureRequest request)
 {
 	m_producerOwner.AssertAccess();
+	if (m_outstandingViewportCaptureCount >= MaximumOutstandingViewportCaptures)
+	{
+		return {};
+	}
 	const ViewportCaptureId id{m_nextViewportCaptureId++};
+	++m_outstandingViewportCaptureCount;
 	DispatchControl(RenderCaptureCommand{id, std::move(request)});
 	if (!m_config.IsThreaded())
 	{
@@ -78,20 +84,29 @@ ViewportCaptureId RenderCoordinator::RequestViewportCapture(ViewportCaptureReque
 	return id;
 }
 
-bool RenderCoordinator::TryTakeViewportCapture(ViewportCaptureReadback& readback)
+bool RenderCoordinator::TryTakeViewportCapture(ViewportCaptureId id, ViewportCaptureReadback& readback)
 {
 	m_producerOwner.AssertAccess();
+	if (!id)
+	{
+		return false;
+	}
 	if (!m_config.IsThreaded())
 	{
 		PublishReadState();
 	}
 	std::lock_guard lock(m_readStateMutex);
-	if (m_publishedViewportCaptures.empty())
+	const auto completion = std::find_if(
+	    m_publishedViewportCaptures.begin(),
+	    m_publishedViewportCaptures.end(),
+	    [id](const ViewportCaptureCompletion& candidate) { return candidate.Id.Value == id.Value; });
+	if (completion == m_publishedViewportCaptures.end())
 	{
 		return false;
 	}
-	readback = std::move(m_publishedViewportCaptures.front());
-	m_publishedViewportCaptures.erase(m_publishedViewportCaptures.begin());
+	readback = std::move(completion->Readback);
+	m_publishedViewportCaptures.erase(completion);
+	--m_outstandingViewportCaptureCount;
 	return true;
 }
 
@@ -105,13 +120,9 @@ void RenderCoordinator::PublishReadState()
 	{
 		std::lock_guard lock(m_readStateMutex);
 		m_publishedViewportProducts = m_context->GetViewportRenderProducts();
-		std::vector<ViewportCaptureReadback> captures = m_context->TakeCompletedViewportCaptures();
-		for (ViewportCaptureReadback& capture : captures)
+		std::vector<ViewportCaptureCompletion> captures = m_context->TakeCompletedViewportCaptures();
+		for (ViewportCaptureCompletion& capture : captures)
 		{
-			if (m_publishedViewportCaptures.size() >= 3)
-			{
-				m_publishedViewportCaptures.erase(m_publishedViewportCaptures.begin());
-			}
 			m_publishedViewportCaptures.push_back(std::move(capture));
 		}
 	}

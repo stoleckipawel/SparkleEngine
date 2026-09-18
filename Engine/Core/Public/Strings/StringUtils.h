@@ -6,6 +6,7 @@
 #include <DirectXMath.h>
 
 #include <charconv>
+#include <cstdint>
 #include <filesystem>
 #include <memory>
 #include <span>
@@ -20,6 +21,8 @@ namespace Strings
 	SPARKLE_CORE_API bool IsAsciiWhitespace(char character) noexcept;
 	SPARKLE_CORE_API bool ContainsAsciiWhitespace(std::string_view str) noexcept;
 	SPARKLE_CORE_API bool IsNullTerminated(std::span<const char> buffer) noexcept;
+	SPARKLE_CORE_API bool IsValidUtf8(std::string_view text) noexcept;
+	SPARKLE_CORE_API bool AppendUtf8CodePoint(std::uint32_t codePoint, std::string& output);
 	SPARKLE_CORE_API std::string_view TrimAsciiWhitespace(std::string_view str) noexcept;
 	SPARKLE_CORE_API std::string_view Unquote(std::string_view str) noexcept;
 	SPARKLE_CORE_API std::string TrimCopy(std::string_view str);

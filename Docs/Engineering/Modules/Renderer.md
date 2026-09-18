@@ -67,6 +67,14 @@ Always distinguish CPU task concurrency, render-thread pipelining, command recor
 
 Parallel CPU recording does not prove GPU overlap. Add GPU queue concurrency only when correlated timelines show useful overlap after synchronization and bandwidth cost.
 
+## Capture And Publication
+
+- Renderer selects one semantic render product, snapshots its immutable frame/generation/provenance, and asks RHI for destination-free bytes. It does not carry output paths, codecs, staging state, manifests, or filesystem results through viewport or RHI contracts.
+- The requester owns the returned capture ticket and polls that exact ticket until it takes the terminal readback. Renderer admits a bounded number of outstanding tickets and retains every admitted completion for its owner; high-level hosts never drain an anonymous completion queue, route results by feature, or silently lose an admitted result to make room for another.
+- The Application/tool workflow that accepted the user's save intent retains the destination, chooses the product encoding, schedules background work, and publishes through existing Core file primitives. Reusable image-buffer decoding/encoding and verified atomic bundle publication have one private workflow owner; a feature supplies only its semantic channels, filenames, manifest/checkpoint schema, and intent policy.
+- A new capture consumer extends the existing product/readback boundary. It does not add a feature-specific RHI service, duplicate copy/polling state, or create a second renderer/export path.
+- Generalization follows actual semantics: extract shared readback, image encoding, task execution, hashing, and publication mechanics once they have concrete consumers, but keep estimator, prefix-settlement, checkpoint, and manifest meaning in the feature that owns them. A generic name over feature policy is still duplication, not reuse.
+
 ## Path Tracing And Neural Kernels
 
 - State coordinate spaces, units, radiometric meaning, PDFs/weights, precision, accumulation/history, and numerical limits at the owning math/shader contract.
@@ -84,6 +92,8 @@ Parallel CPU recording does not prove GPU overlap. Add GPU queue concurrency onl
 - Does every required render product have one real producer, with missing capability rejected before scheduling rather than hidden by fabricated output?
 - Does the frame composition contain one readable branch on the immutable per-view `RenderViewMode`, with feature mechanism enclosed and no recipe hierarchy, dependency bag, parallel target/flag taxonomy, global CVar mirror, or RHI leakage?
 - Can Editor be removed while the same Renderer feature remains selectable by its own control, and can Renderer be removed without leaving UI taxonomy in RHI or Application contracts?
+- Do capture requests/results stop at typed bytes and immutable provenance, with destination and publication policy retained by the Application/tool owner?
+- Does each capture consumer retain and poll its exact ticket without teaching an Application orchestrator how to dispatch other consumers' results?
 - Does every shader parameter have one exact C++/metadata/HLSL binding name with no alias or reflection fallback?
 - Does graphics setup state only non-derivable raster intent while attachments, geometry, shaders, and the pipeline owner supply their own facts exactly once?
 - Is every materialized graphics pipeline keyed by the complete state and created only when an actual draw requests it?

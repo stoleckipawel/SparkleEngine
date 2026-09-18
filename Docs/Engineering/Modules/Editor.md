@@ -31,12 +31,16 @@ Continuous edits coalesce into bounded main-thread transactions with determinist
 - Never send `ImDrawData*` or a live editor pointer to the render coordinator.
 - Viewport requests/products use stable IDs or tokens plus explicit release or bounded retirement.
 - Settings, preview, and capture use sequenced render commands.
-- Capture is bounded and nonblocking: request, render copy/readback, GPU token, background encode/write, narrow result.
+- Capture is bounded and nonblocking: the Application workflow retains the requested destination and exact Renderer ticket, polls only that ticket, and performs background encoding/publication after destination-free typed bytes and provenance arrive. `EditorApplication` sequences coordinators but never drains a global result queue or dispatches payloads by feature. Generic image-buffer encoding, ordinary viewport writing, and verified atomic bundle publication are private Application implementors; feature folders retain only semantic output policy and schema.
 - Close/cancel rejects late products before destroying their owner or model.
+- Public Application/Editor host headers do not enumerate private panels, feature coordinators, codecs, or operation implementations. Keep those collaborators in private host state so the public host surface expresses lifecycle and user-facing capabilities only.
+- Executable `main` functions only forward process arguments into the generic Application launch boundary. Feature switches, manifests, and tool entry points are recognized by private feature-owned adapters composed behind that boundary; a project entry point must not include or branch on a renderer/editor feature.
 
 ## Background Operations
 
-Use one private `EditorOperationService` over `SparkleTasks` scopes for owned workflows.
+Use one private `EditorOperationRuntime` over a `SparkleTasks` document scope for shared cancellation and settlement lifetime only. Each feature coordinator owns its typed operation slot, concrete task body, result, and policy; the runtime must not include feature requests, writers, results, or a feature registry.
+
+Reuse the private slot mechanism for task launch, settlement, and result storage. Do not expose a callback-based generic job API, duplicate one task/execution scaffold per feature, or make an unrelated workflow edit a central operation switch.
 
 - Inputs are immutable owned request values.
 - Progress is bounded and coalesced.
@@ -70,3 +74,4 @@ Expert access means better inspection and an explicit override, not ownership of
 - Does the normal workflow ask for user intent while deriving safe backend detail, with advanced deviations explicit and resettable?
 - Are cross-thread UI/render products owned and late-result safe?
 - Is background work scoped, bounded, cancellable, and settled before destruction?
+- Does each capture workflow own its ticket, destination, encoding/publication policy, and late-result handling without adding a branch to the application host for every new consumer?

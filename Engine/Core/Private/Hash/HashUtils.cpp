@@ -2,9 +2,11 @@
 
 #include "Core/Public/Hash/HashUtils.h"
 
+#include <algorithm>
 #include <array>
 #include <fstream>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 
 #if defined(_WIN32)
@@ -19,6 +21,70 @@
 namespace Hash
 {
 	static constexpr std::size_t kHashBufferSize = 64 * 1024;
+
+#if defined(_WIN32)
+	class Sha256Context final
+	{
+	public:
+		~Sha256Context()
+		{
+			if (m_hash != nullptr)
+			{
+				BCryptDestroyHash(m_hash);
+			}
+			if (m_algorithm != nullptr)
+			{
+				BCryptCloseAlgorithmProvider(m_algorithm, 0);
+			}
+		}
+
+		bool Initialize(std::string& errorMessage) noexcept
+		{
+			if (BCryptOpenAlgorithmProvider(&m_algorithm, BCRYPT_SHA256_ALGORITHM, nullptr, 0) != 0)
+			{
+				errorMessage = "Failed to open SHA-256 provider.";
+				return false;
+			}
+			if (BCryptCreateHash(m_algorithm, &m_hash, nullptr, 0, nullptr, 0, 0) != 0)
+			{
+				errorMessage = "Failed to create SHA-256 hash.";
+				return false;
+			}
+			return true;
+		}
+
+		bool Update(const void* data, std::size_t size, std::string& errorMessage) noexcept
+		{
+			const auto* bytes = static_cast<const unsigned char*>(data);
+			while (size > 0)
+			{
+				const std::size_t chunk = (std::min) (size, static_cast<std::size_t>((std::numeric_limits<unsigned long>::max)()));
+				if (BCryptHashData(m_hash, const_cast<unsigned char*>(bytes), static_cast<unsigned long>(chunk), 0) != 0)
+				{
+					errorMessage = "Failed to update SHA-256 hash.";
+					return false;
+				}
+				bytes += chunk;
+				size -= chunk;
+			}
+			return true;
+		}
+
+		bool Finish(Sha256Digest& hash, std::string& errorMessage) noexcept
+		{
+			if (BCryptFinishHash(m_hash, reinterpret_cast<unsigned char*>(hash.data()), static_cast<unsigned long>(hash.size()), 0) != 0)
+			{
+				errorMessage = "Failed to finish SHA-256 hash.";
+				return false;
+			}
+			return true;
+		}
+
+	private:
+		BCRYPT_ALG_HANDLE m_algorithm = nullptr;
+		BCRYPT_HASH_HANDLE m_hash = nullptr;
+	};
+#endif
 
 	uint64_t FinalizeFnv1a64(uint64_t hash) noexcept
 	{
@@ -83,57 +149,89 @@ namespace Hash
 		return true;
 	}
 
-	bool TrySha256Hex(std::string_view text, std::string& outHashHex, std::string& outErrorMessage)
+	bool TrySha256(const void* data, size_t size, Sha256Digest& outHash, std::string& outErrorMessage)
 	{
-		outHashHex.clear();
+		outHash = {};
 		outErrorMessage.clear();
 
 #if defined(_WIN32)
-		BCRYPT_ALG_HANDLE algorithmHandle = nullptr;
-		if (BCryptOpenAlgorithmProvider(&algorithmHandle, BCRYPT_SHA256_ALGORITHM, nullptr, 0) != 0)
-		{
-			outErrorMessage = "Failed to open SHA-256 provider.";
-			return false;
-		}
-
-		BCRYPT_HASH_HANDLE hashHandle = nullptr;
-		std::array<unsigned char, 32> hash = {};
-		if (BCryptCreateHash(algorithmHandle, &hashHandle, nullptr, 0, nullptr, 0, 0) != 0)
-		{
-			BCryptCloseAlgorithmProvider(algorithmHandle, 0);
-			outErrorMessage = "Failed to create SHA-256 hash.";
-			return false;
-		}
-
-		const bool hashed = BCryptHashData(
-		                        hashHandle,
-		                        reinterpret_cast<unsigned char*>(const_cast<char*>(text.data())),
-		                        static_cast<unsigned long>(text.size()),
-		                        0)
-		        == 0
-		    && BCryptFinishHash(hashHandle, hash.data(), static_cast<unsigned long>(hash.size()), 0) == 0;
-		BCryptDestroyHash(hashHandle);
-		BCryptCloseAlgorithmProvider(algorithmHandle, 0);
-		if (!hashed)
-		{
-			outErrorMessage = "Failed to compute SHA-256 hash.";
-			return false;
-		}
-
-		std::ostringstream stream;
-		stream << std::hex << std::setfill('0');
-		for (const unsigned char byte : hash)
-		{
-			stream << std::setw(2) << static_cast<int>(byte);
-		}
-
-		outHashHex = stream.str();
-		return true;
+		Sha256Context context;
+		return context.Initialize(outErrorMessage) && context.Update(data, size, outErrorMessage)
+		    && context.Finish(outHash, outErrorMessage);
 #else
-		(void) text;
+		(void) data;
+		(void) size;
 		outErrorMessage = "SHA-256 hashing is not implemented for this platform.";
 		return false;
 #endif
+	}
+
+	bool TrySha256File(const std::filesystem::path& path, Sha256Digest& outHash, std::string& outErrorMessage)
+	{
+		outHash = {};
+		outErrorMessage.clear();
+#if defined(_WIN32)
+		std::ifstream input(path, std::ios::binary);
+		if (!input.is_open())
+		{
+			outErrorMessage = "Failed to open file for hashing: '" + path.string() + "'";
+			return false;
+		}
+
+		Sha256Context context;
+		if (!context.Initialize(outErrorMessage))
+		{
+			return false;
+		}
+		std::array<char, kHashBufferSize> buffer{};
+		while (input.good())
+		{
+			input.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
+			const std::streamsize bytesRead = input.gcount();
+			if (bytesRead > 0 && !context.Update(buffer.data(), static_cast<std::size_t>(bytesRead), outErrorMessage))
+			{
+				return false;
+			}
+		}
+		if (!input.eof())
+		{
+			outErrorMessage = "Failed to read file for hashing: '" + path.string() + "'";
+			return false;
+		}
+		return context.Finish(outHash, outErrorMessage);
+#else
+		(void) path;
+		outErrorMessage = "SHA-256 hashing is not implemented for this platform.";
+		return false;
+#endif
+	}
+
+	std::string Sha256ToHex(const Sha256Digest& hash)
+	{
+		std::ostringstream stream;
+		stream << std::hex << std::setfill('0');
+		for (const auto byte : hash)
+		{
+			stream << std::setw(2) << static_cast<unsigned int>(byte);
+		}
+		return stream.str();
+	}
+
+	bool TrySha256Hex(std::span<const std::byte> bytes, std::string& outHashHex, std::string& outErrorMessage)
+	{
+		Sha256Digest hash{};
+		if (!TrySha256(bytes.data(), bytes.size(), hash, outErrorMessage))
+		{
+			outHashHex.clear();
+			return false;
+		}
+		outHashHex = Sha256ToHex(hash);
+		return true;
+	}
+
+	bool TrySha256Hex(std::string_view text, std::string& outHashHex, std::string& outErrorMessage)
+	{
+		return TrySha256Hex(std::as_bytes(std::span<const char>(text.data(), text.size())), outHashHex, outErrorMessage);
 	}
 
 	uint32_t Fnv1a32(std::string_view str) noexcept

@@ -45,7 +45,7 @@ public:
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics() const;
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
 	ViewportCaptureId RequestViewportCapture(ViewportCaptureRequest request) noexcept;
-	bool TryTakeViewportCapture(ViewportCaptureReadback& readback) noexcept;
+	bool TryTakeViewportCapture(ViewportCaptureId id, ViewportCaptureReadback& readback) noexcept;
 
 	void OnRender() noexcept;
 

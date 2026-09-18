@@ -837,7 +837,7 @@ Suggested title: `Renderer: deliver whole-frame ray execution planning`.
 - Replace implementation-oriented editor rows and artifact scans with shader type, stage, virtual source, active status, graph consumers, and for RT only the typed composition/effect/active-mode/readiness relation from immutable owner read models.
 - Present one concise result. Failure leads with source root cause, next action, and confirmation that the previous generation remains active.
 - Add one trace from shader type, effect, graph/capture label, code hash, or pipeline key through declaration, dependencies, compile job/input hash/result, map entry, code record, typed graphics/RT composition, runtime map/pipeline/table generation/materialization, execution plan, consumers, SBT logical record when applicable, and symbols/capture.
-- Delete duplicated coordinator/console/panel lifecycle logs/status formatting; keep one bounded operation result through `EditorOperationService`.
+- Delete duplicated coordinator/console/panel lifecycle logs/status formatting; keep one bounded result in the shader-owned coordinator while reusing only the feature-neutral private Application task lifetime/slot mechanism.
 
 #### Positive guardrails
 

@@ -326,7 +326,7 @@ Each selectable mode needs a representative screenshot/capture, expected-value d
 | `REN-DIAG-03` | Texture diagnostics | Implemented path | Texture-cache/residency snapshots are exposed through the public facade. | `S` | Pending |
 | `REN-DIAG-04` | Memory diagnostics | Implemented path | Renderer memory monitor combines relevant resource/cache/RHI budget information for callers. | `S` | Pending |
 | `REN-DIAG-05` | Viewport products | Implemented path | Viewports can target the swapchain or offscreen products used by editor/UI consumers. Product lifetime follows frame retirement. | `S` | Pending |
-| `REN-DIAG-06` | Async captures | Partial | Requested viewport/final or intermediate products flow through RHI readback and later completion polling. Results record frame, scene, and provider generations, dimensions, row pitch, pixel format, artifact, and failure; shader/graph-topology generation plus requested-versus-resolved product and color/encoding provenance are not carried. Format/color correctness needs runtime proof. | `S` | Pending |
+| `REN-DIAG-06` | Async captures | Partial | Requested viewport/final or intermediate products flow through RHI readback and exact-ticket completion polling. Results record frame, scene, provider and immutable source provenance, dimensions, row pitch, pixel format, and failure; shader/graph-topology generation plus requested-versus-resolved product and color/encoding metadata are not carried. Format/color correctness needs runtime proof. | `S` | Pending |
 | `REN-DIAG-07` | Mesh preview | Implemented path | Renderer exposes a mesh-preview product/handle route for editor consumers. | `S` | Pending |
 
 ## Settings State And Persistence

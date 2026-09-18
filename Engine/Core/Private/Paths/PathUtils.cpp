@@ -23,8 +23,7 @@ namespace Paths
 			return false;
 		}
 
-		const std::string relativePathString = relativePath.generic_string();
-		return !relativePathString.empty() && !relativePathString.starts_with("..");
+		return !relativePath.empty() && !relativePath.is_absolute() && *relativePath.begin() != "..";
 	}
 
 	std::optional<std::filesystem::path> TryMakeRelativeUnderRoot(const std::filesystem::path& path, const std::filesystem::path& root)
@@ -130,6 +129,12 @@ namespace Paths
 			result.push_back(allowed ? character : '_');
 		}
 		return result;
+	}
+
+	std::string ToUtf8String(const std::filesystem::path& path)
+	{
+		const std::u8string utf8 = path.generic_u8string();
+		return std::string(reinterpret_cast<const char*>(utf8.data()), utf8.size());
 	}
 
 	std::wstring MakePathKey(const std::filesystem::path& path)

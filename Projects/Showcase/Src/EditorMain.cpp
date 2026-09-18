@@ -1,6 +1,6 @@
 #include "EditorApplicationLaunch.h"
 
-int main()
+int wmain(int argumentCount, wchar_t* arguments[])
 {
-	return RunEditorApplication();
+	return RunEditorApplication(argumentCount, arguments);
 }

@@ -31,6 +31,7 @@ private:
 	void AddPasses(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings, RenderFrameGraphResources& resources);
 	void AddGpuPasses(FrameGraphBuilder& builder, RenderViewportExtent extent, const RenderFrameGraphResources& resources);
 	ViewportRenderProgress Update(const RenderFrame& frame, ViewportRenderAction action, std::uint64_t actionSequence) noexcept;
+	RenderProduct::Provenance GetRawProvenance() const noexcept;
 	bool BindResources(FrameGraph& frameGraph) const noexcept;
 	void RecordSubmission(RhiSubmissionToken token) noexcept;
 	RenderRayTracingScene& m_rayTracingScene;

@@ -76,7 +76,7 @@ const ViewportRenderProducts& RendererExecutionContext::GetViewportRenderProduct
 	return m_pipeline->GetViewportRenderProducts();
 }
 
-std::vector<ViewportCaptureReadback> RendererExecutionContext::TakeCompletedViewportCaptures()
+std::vector<ViewportCaptureCompletion> RendererExecutionContext::TakeCompletedViewportCaptures()
 {
 	m_owner.AssertAccess();
 	return m_pipeline->TakeCompletedViewportCaptures();

@@ -104,13 +104,13 @@ bool FramePipeline::BeginViewportCapture(ViewportCaptureId id, const ViewportCap
 	    id,
 	    request,
 	    m_viewportRenderProducts,
-	    m_frameGraph.get(),
+	    *m_frameGraph,
 	    m_frameId,
 	    m_renderScene->GetSceneGeneration(),
 	    m_imageProviders->GetGeneration());
 }
 
-std::vector<ViewportCaptureReadback> FramePipeline::TakeCompletedViewportCaptures()
+std::vector<ViewportCaptureCompletion> FramePipeline::TakeCompletedViewportCaptures()
 {
 	return m_viewportCaptureService->TakeCompletedCaptures();
 }
@@ -271,6 +271,9 @@ RenderFrame& FramePipeline::PrepareRenderFrame(const RenderViewInput& viewInput,
 	frame.PreparedScene.gpuBindings = &scene.UpdateGpuScene(frame.PreparedScene, frame.View, frame.FrameInFlightIndex);
 	m_viewportRenderProducts.SetProgress(
 	    m_referencePathTracer->Update(frame, m_viewportRenderRequest.RenderAction, m_viewportRenderRequest.RenderActionSequence));
+	const RenderProduct::Provenance rawProvenance = m_referencePathTracer->GetRawProvenance();
+	m_viewportRenderProducts.SetProductProvenance(RenderOutputFlags::RawSceneColor, rawProvenance);
+	m_viewportRenderProducts.SetProductProvenance(RenderOutputFlags::RawSceneColorMoment2, rawProvenance);
 	m_frameGraphExecutable = m_referencePathTracer->BindResources(*m_frameGraph);
 	return *frameSlot;
 }

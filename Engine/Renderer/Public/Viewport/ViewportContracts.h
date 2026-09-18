@@ -3,12 +3,12 @@
 #include "../Editor/EditorTextureHandle.h"
 #include "../RendererAPI.h"
 #include "../Settings/EngineRenderingDisplayTypes.h"
+#include "Core/Public/Hash/HashUtils.h"
 #include "RenderViewMode.h"
 #include "RHI/Public/Formats/PixelFormat.h"
 
-#include <cstdint>
 #include <cstddef>
-#include <filesystem>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -33,6 +33,8 @@ enum class RenderOutputFlags : std::uint16_t
 	ObjectId = 1 << 2,
 	Normals = 1 << 3,
 	OverlayMask = 1 << 4,
+	RawSceneColor = 1 << 5,
+	RawSceneColorMoment2 = 1 << 6,
 };
 
 SPARKLE_RENDERER_API RenderOutputFlags operator|(RenderOutputFlags lhs, RenderOutputFlags rhs) noexcept;
@@ -99,20 +101,28 @@ enum class RenderProductFormat : std::uint8_t
 
 struct RenderProduct
 {
+	struct Provenance final
+	{
+		Hash::Sha256Digest IdentitySha256 = {};
+		std::uint64_t CommittedWork = 0;
+		std::uint64_t TargetWork = 0;
+
+		bool operator==(const Provenance&) const noexcept = default;
+	};
+
 	RenderProductHandle Handle = {};
 	RenderViewportExtent Extent = {};
 	RenderProductFormat Format = RenderProductFormat::Unknown;
 	EditorTextureHandle EditorTexture = {};
+	Provenance Source = {};
 };
 
 struct SPARKLE_RENDERER_API ViewportCaptureRequest
 {
 	RenderOutputFlags Output = RenderOutputFlags::SceneColor;
-	std::filesystem::path OutputPath;
 	// Zero accepts the currently published frame. A non-zero value rejects a
 	// capture if the requested render product has already advanced.
 	std::uint64_t ExpectedFrameId = 0;
-	std::string DebugName;
 };
 
 enum class ViewportCaptureStatus : std::uint8_t
@@ -128,7 +138,7 @@ struct SPARKLE_RENDERER_API ViewportCaptureResult
 	std::uint64_t FrameId = 0;
 	std::uint64_t SceneGeneration = 0;
 	std::uint64_t ProviderGeneration = 0;
-	std::filesystem::path ArtifactPath;
+	RenderProduct::Provenance Source = {};
 	std::string FailureReason;
 
 	explicit operator bool() const noexcept;
@@ -143,7 +153,6 @@ struct SPARKLE_RENDERER_API ViewportCaptureId
 
 struct SPARKLE_RENDERER_API ViewportCaptureReadback
 {
-	ViewportCaptureId Id;
 	ViewportCaptureResult Result;
 	std::vector<std::byte> Pixels;
 	std::uint32_t Width = 0;
@@ -151,8 +160,6 @@ struct SPARKLE_RENDERER_API ViewportCaptureReadback
 	std::uint32_t RowPitch = 0;
 	PixelFormat Format = PixelFormat::Unknown;
 };
-
-SPARKLE_RENDERER_API bool WriteViewportCaptureBmp(const ViewportCaptureReadback& readback) noexcept;
 
 enum class ViewportRenderAction : std::uint8_t
 {
@@ -248,6 +255,7 @@ private:
 
 	void ClearProduct(RenderOutputFlags output) noexcept;
 	void SetProduct(RenderOutputFlags output, RenderProduct product) noexcept;
+	void SetProductProvenance(RenderOutputFlags output, RenderProduct::Provenance provenance) noexcept;
 	void SetProgress(ViewportRenderProgress progress) noexcept { m_progress = progress; }
 
 	RenderProduct* SelectProduct(RenderOutputFlags output) noexcept;
@@ -261,5 +269,7 @@ private:
 	RenderProduct m_objectId = {};
 	RenderProduct m_normals = {};
 	RenderProduct m_overlayMask = {};
+	RenderProduct m_rawSceneColor = {};
+	RenderProduct m_rawSceneColorMoment2 = {};
 	ViewportRenderProgress m_progress = {};
 };

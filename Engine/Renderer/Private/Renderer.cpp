@@ -94,9 +94,9 @@ ViewportCaptureId Renderer::RequestViewportCapture(ViewportCaptureRequest reques
 	return m_state->Coordinator.RequestViewportCapture(std::move(request));
 }
 
-bool Renderer::TryTakeViewportCapture(ViewportCaptureReadback& readback) noexcept
+bool Renderer::TryTakeViewportCapture(ViewportCaptureId id, ViewportCaptureReadback& readback) noexcept
 {
-	return m_state->Coordinator.TryTakeViewportCapture(readback);
+	return m_state->Coordinator.TryTakeViewportCapture(id, readback);
 }
 
 void Renderer::OnRender() noexcept

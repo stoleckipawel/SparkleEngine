@@ -2,6 +2,7 @@
 
 #include "Concurrency/Control/RendererExecutionControl.h"
 #include "Core/Public/Threading/ThreadOwnership.h"
+#include "Viewport/ViewportCaptureCompletion.h"
 
 #include <cstdint>
 #include <memory>
@@ -14,7 +15,6 @@ class Window;
 struct RendererBackendConfiguration;
 struct RendererExecutionConfig;
 struct RenderExecutionRequest;
-struct ViewportCaptureReadback;
 struct ViewportRenderProducts;
 
 class RendererExecutionContext final
@@ -33,7 +33,7 @@ private:
 	void ExecuteControl(RendererExecutionControl control) noexcept;
 
 	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept;
-	std::vector<ViewportCaptureReadback> TakeCompletedViewportCaptures();
+	std::vector<ViewportCaptureCompletion> TakeCompletedViewportCaptures();
 	std::uint64_t GetShaderGeneration() const noexcept;
 	void CompleteDiagnostics(const RenderDiagnosticsCommand& command);
 	void SettleRendererBeforeDestruction() noexcept;

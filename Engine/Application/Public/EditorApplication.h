@@ -5,14 +5,7 @@
 
 #include <memory>
 
-class RuntimeApplication;
-class ShaderRecookCoordinator;
-class EditorViewportCaptureCoordinator;
-class EditorOperationService;
-class GameWorld;
 class Renderer;
-class UI;
-struct EditorHostServices;
 
 class SPARKLE_APPLICATION_API EditorApplication final : public Application
 {
@@ -34,16 +27,12 @@ private:
 	void InitializeRuntimeApplication();
 	void InitializeEditorOperations();
 	void InitializeUi();
-	EditorHostServices BuildUiHostServices(Renderer& renderer, GameWorld& world);
 	void ConfigureUiDiagnostics(Renderer& renderer);
 	void UpdateEditorOperations(Renderer& renderer);
 	void RenderEditorFrame(Renderer& renderer);
 
-	std::unique_ptr<RuntimeApplication> m_runtimeApplication;
-	std::unique_ptr<UI> m_ui;
-	std::unique_ptr<ShaderRecookCoordinator> m_shaderRecookCoordinator;
-	std::unique_ptr<EditorViewportCaptureCoordinator> m_viewportCaptureCoordinator;
-	std::unique_ptr<EditorOperationService> m_operationService;
+	struct State;
+	std::unique_ptr<State> m_state;
 	RuntimeApplicationOptions m_runtimeOptions;
 	bool m_isEditorSessionActive = false;
 };
