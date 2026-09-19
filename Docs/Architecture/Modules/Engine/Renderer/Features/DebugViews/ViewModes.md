@@ -50,9 +50,7 @@ RenderView::viewMode ----> focused View uniform index for debug shaders
 
 The path has one semantic value, not several translated representations. Multiple consumers are permitted because composition, raster state, and debug resolve are distinct places where the selected mode has observable effect. None becomes a second authority.
 
-`SceneVisualizationPasses` invokes the GBuffer, lighting, and GPU-scene family entry points in frame order. Each family privately uses an explicit enumerator switch or equality test and returns before declaring resources when inactive;
-enum ordering is not an activation contract.Only the selected family binds resources
-    and schedules its focused shader.
+`SceneVisualizationPasses` invokes the GBuffer, lighting, and GPU-scene family entry points in frame order. Each family privately uses an explicit enumerator switch or equality test and returns before declaring resources when inactive; enum ordering is not an activation contract. Only the selected family binds resources and schedules its focused shader.
 
 ## Module Boundaries
 
@@ -125,4 +123,3 @@ Source-shape checks must prove enum/shader numeric parity, contiguous values, on
 - Epic, [`FEngineShowFlags`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/FEngineShowFlags)
 - Epic, [`UGameViewportClient`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/UGameViewportClient)
 - Epic, [Viewport Modes](https://dev.epicgames.com/documentation/en-us/unreal-engine/viewport-modes-in-unreal-engine)
-

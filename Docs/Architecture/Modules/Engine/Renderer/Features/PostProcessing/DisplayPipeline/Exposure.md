@@ -82,9 +82,7 @@ This contract is **defined but unproved**. `REN-E13` owns candidate execution; t
 
 ## Primary Source Routes
 
-- [`ExposureAdaptation.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/PostProcessing/ Exposure
-        /ExposureAdaptation.cpp) and [`ExposureSettings.cpp`](../../../../../../../../Engine/Renderer/Private/ Passes / PostProcessing / Exposure / ExposureSettings.cpp)
-- [`ViewportDisplayCVars.cpp`](../../../../../../../../Engine/Renderer/Private/View/ ViewportDisplayCVars.cpp)
-    - [`RenderViewBuilder.cpp`](../../../../../../../../ Engine / Renderer / Private / View / RenderViewBuilder.cpp)
-
+- [`ExposureAdaptation.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/PostProcessing/Exposure/ExposureAdaptation.cpp) and [`ExposureSettings.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/PostProcessing/Exposure/ExposureSettings.cpp)
+- [`ViewportDisplayCVars.cpp`](../../../../../../../../Engine/Renderer/Private/View/ViewportDisplayCVars.cpp)
+- [`RenderViewBuilder.cpp`](../../../../../../../../Engine/Renderer/Private/View/RenderViewBuilder.cpp)
 

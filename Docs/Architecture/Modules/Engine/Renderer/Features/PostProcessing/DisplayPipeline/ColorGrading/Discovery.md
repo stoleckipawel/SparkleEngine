@@ -61,8 +61,7 @@ Every `CGRD-*` row must retain: `Proposed`, `Accepted`, `Rejected`, or `Blocked`
 
 ## Current Source Truth
 
-At `ca55e7d8`, the then-current post-processing composition resolved/upscaled scene color, applied debug replacement, and called presentation. The current [`SceneRenderingPasses.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Scene/SceneRenderingPasses.cpp) and [`PresentationPasses.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp) preserve the live stage boundary while [`ToneMapping.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/ Display
-                /ToneMapping.cpp) and [`OutputEncoding.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation / Display/OutputEncoding.cpp) define the individual GPU passes. [`EngineRenderingDisplayTypes.h`](../../../../../../../../../Engine/Renderer/Public/Settings/EngineRenderingDisplayTypes.h) defines tone, exposure, and output-encoding enums only. The TextureCooker accepts raster/HDR/EXR texture sources but contains no `.cube` parser or grading-specific cooked contract.
+At `ca55e7d8`, the then-current post-processing composition resolved/upscaled scene color, applied debug replacement, and called presentation. The current [`SceneRenderingPasses.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Scene/SceneRenderingPasses.cpp) and [`PresentationPasses.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp) preserve the live stage boundary while [`ToneMapping.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/ToneMapping.cpp) and [`OutputEncoding.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/OutputEncoding.cpp) define the individual GPU passes. [`EngineRenderingDisplayTypes.h`](../../../../../../../../../Engine/Renderer/Public/Settings/EngineRenderingDisplayTypes.h) defines tone, exposure, and output-encoding enums only. The TextureCooker accepts raster/HDR/EXR texture sources but contains no `.cube` parser or grading-specific cooked contract.
 
 This proves a source-backed absence and identifies possible extension points. It does not prove that the current color labels are colorimetrically complete, that a LUT may safely reuse the generic texture route, or that any proposed shader will build or run.
 
@@ -173,5 +172,4 @@ The gate report is complete only when it retains:
 ## Gate Decision
 
 `CGRD-00` is **Blocked**. A reviewer may record `PASS` only when all discovery acceptance criteria pass conjunctively, the exact accepted revisions of the dossier, semantics, architecture, experience, and plan are named, and `DSP-5` plus release prerequisites permit work. A pass authorizes Stage 1 of [Plan](Plan.md), not the whole feature and not `FCR-REN-24`.
-
 

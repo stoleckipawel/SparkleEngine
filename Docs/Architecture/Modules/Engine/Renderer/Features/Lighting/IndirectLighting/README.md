@@ -139,9 +139,8 @@ Indirect Lighting is done only when `IND-D0` is accepted, the seed-replay path i
 ## Primary Source Routes
 
 - [`RestirIndirectReservoir.hlsli`](../../../../../../../../Engine/Assets/Shaders/Lighting/RestirIndirectReservoir.hlsli)
-- [`RestirIndirectTemporal.hlsl`](../../../../../../../../Engine/Assets/Shaders/Passes/ Lighting / Restir / Indirect/RestirIndirectTemporal.hlsl), [`RestirIndirectSpatial.hlsl`](../../../../../../../../Engine/Assets/Shaders/Passes/ Lighting / Restir / Indirect/RestirIndirectSpatial.hlsl), and [`RestirIndirectResolve.hlsl`](../../../../../../../../Engine/Assets/Shaders/Passes/ Lighting / Restir / Indirect/RestirIndirectResolve.hlsl)
+- [`RestirIndirectTemporal.hlsl`](../../../../../../../../Engine/Assets/Shaders/Passes/Lighting/Restir/Indirect/RestirIndirectTemporal.hlsl), [`RestirIndirectSpatial.hlsl`](../../../../../../../../Engine/Assets/Shaders/Passes/Lighting/Restir/Indirect/RestirIndirectSpatial.hlsl), and [`RestirIndirectResolve.hlsl`](../../../../../../../../Engine/Assets/Shaders/Passes/Lighting/Restir/Indirect/RestirIndirectResolve.hlsl)
 - [`PathLighting.hlsli`](../../../../../../../../Engine/Assets/Shaders/RayTracing/PathLighting.hlsli) and [`PathSampling.hlsli`](../../../../../../../../Engine/Assets/Shaders/RayTracing/PathSampling.hlsli)
-- [`RestirIndirectLightingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/Restir/ Indirect /RestirIndirectLightingPasses.cpp)
+- [`RestirIndirectLightingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/Restir/Indirect/RestirIndirectLightingPasses.cpp)
 - [`Sky.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/Sky/Sky.cpp) and [`LightingComposite.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/LightingComposite.cpp)
-
 

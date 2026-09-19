@@ -24,13 +24,8 @@ Candidate results belong in `FCR-REN-11`. Source inspection does not prove build
 - `AC-DVP-12` - unavailable products are not presented as a valid mode result;
 - `AC-DVP-13` - any future independent per-view control has an orthogonal meaning, current consumer, deterministic disabled behavior, and no overlap with `RenderViewMode`;
 - `AC-DVP-14` - advertised D3D12/Vulkan and output-encoding rows meet their declared tolerances;
-- `AC-DVP-15` - exact commands, configurations, observations, and artifacts are retained, and unrun checks are reported as unrun.- `AC - DVP - 16` - GBuffer, lighting,
-    and GPU - scene visualization each privately own one explicit activation predicate and early - out, focused pass parameter surface,
-    and focused shader;
-scene - level orchestration contains no family activation branch, every debug mode belongs to exactly one family,
-    and no ordinal comparison
-    or catch
-            - all visualization shader determines ownership.
+- `AC-DVP-15` - exact commands, configurations, observations, and artifacts are retained, and unrun checks are reported as unrun.
+- `AC-DVP-16` - GBuffer, lighting, and GPU-scene visualization each privately own one explicit activation predicate and early return, focused pass parameter surface, and focused shader; scene-level orchestration contains no family activation branch, every debug mode belongs to exactly one family, and no ordinal comparison or catch-all visualization shader determines ownership.
 
 ## Failure Modes
 
@@ -41,9 +36,7 @@ scene - level orchestration contains no family activation branch, every debug mo
 | `FM-DVP-03` | Vary exposure/tone mapping across HDR and exact modes. | HDR responds once; exact decoded values remain invariant apart from output encoding. | `CHK-DVP-04` |
 | `FM-DVP-04` | Remove a required debug product or select an unavailable mode. | The route is explicitly unavailable; it never reuses unrelated/stale output as success. | `CHK-DVP-05` |
 | `FM-DVP-05` | Exercise advertised backends, extents, and encodings. | Results remain within predeclared tolerance and native diagnostics have no uncategorized issue. | `CHK-DVP-06` |
-        | `FM - DVP - 06` | Insert
-    or reorder a view - mode enumerator and inspect each visualization family.| No family activates until it explicitly names the mode,
-    and no family binds resources owned only by another family.| `CHK - DVP - 07` |
+| `FM-DVP-06` | Insert or reorder a view-mode enumerator and inspect each visualization family. | No family activates until it explicitly names the mode, and no family binds resources owned only by another family. | `CHK-DVP-07` |
 
 ## Checks
 
@@ -54,9 +47,7 @@ scene - level orchestration contains no family activation branch, every debug mo
 | `CHK-DVP-03` | Trace and execute Lit/Reference/Lit across Scene and Game View kinds; inspect mutually exclusive pass/resource sets. | `AC-DVP-05`; `FM-DVP-02` |
 | `CHK-DVP-04` | Compare fixed numeric inputs for every HDR/exact mode across exposure, tone mapper, and output encoding combinations. | `AC-DVP-08`-`11`; `FM-DVP-03` |
 | `CHK-DVP-05` | Inject unavailable products/capabilities and inspect the published result. | `AC-DVP-12`; `FM-DVP-04` |
-| `CHK-DVP-06` | Run selected shader cook and focused D3D12/Vulkan viewport workloads, retaining native validation and decoded pixel comparisons. | `AC-DVP-14`, `15`; `FM-DVP-05` | | `CHK - DVP - 07` | Parse the family predicates, pass parameters, shader registrations, and shader inputs;
-prove every debug enumerator has exactly one family owner and no ordinal activation or retired catch - all shader remains.| `AC - DVP - 06`, `16`;
-`FM - DVP - 06` |
+| `CHK-DVP-06` | Run selected shader cook and focused D3D12/Vulkan viewport workloads, retaining native validation and decoded pixel comparisons. | `AC-DVP-14`, `15`; `FM-DVP-05` |
+| `CHK-DVP-07` | Parse the family predicates, pass parameters, shader registrations, and shader inputs; prove every debug enumerator has exactly one family owner and no ordinal activation or retired catch-all shader remains. | `AC-DVP-06`, `16`; `FM-DVP-06` |
 
 Manual, build, shader-cook, runtime, GPU, and paired-backend checks may be deferred, but they are never recorded as passed merely because the source shape is coherent.
-

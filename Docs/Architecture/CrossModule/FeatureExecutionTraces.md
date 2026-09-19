@@ -110,8 +110,7 @@ The [Direct Lighting package](../Modules/Engine/Renderer/Features/Lighting/Direc
 | Step | Owner and operation | Input -> output | Boundary |
 | --- | --- | --- | --- |
 | Exposure | manual or automatic metering/adaptation | pre-visualization scene-linear `SceneColor` + per-view settings/history -> 1x1 exposure | Runs before debug replacement; two metering methods and optional async compute are source-present but unproved |
-| Debug handoff | selected visualization family may replace render-extent scene color | requested GBuffer/lighting/scene product -> render-extent visualization color | Scene - referred HDR diagnostics use configured reconstruction plus display mapping;
-exact diagnostics use point reconstruction, bypass exposure / tone mapping, and retain output encoding; debug modes do not enable RR |
+| Debug handoff | selected visualization family may replace render-extent scene color | requested GBuffer/lighting/scene product -> render-extent visualization color | Scene-referred HDR diagnostics use configured reconstruction plus display mapping; exact diagnostics use point reconstruction, bypass exposure/tone mapping, and retain output encoding; debug modes do not enable RR |
 | Lighting denoising | optional NVIDIA DLSS RR for eligible ReSTIR lighting | raw render-extent scene color plus guides -> render-extent `DenoisedSceneColor` | Independent of presentation resolution and upscaler choice; NVIDIA failure resolves RR Off |
 | Upscaling | selected Linear or NVIDIA DLSS SR | selected raw/denoised render-extent scene color plus depth/motion/exposure -> output-extent `ResolvedSceneColor` | Exactly one presentation-resolution owner; NVIDIA SR failure resets to Linear |
 | Tone mapping | exposure plus Reinhard, ACES approximation, or ACES fitted filmic | resolved scene-referred HDR -> display-linear `ToneMappedSceneColor` | No public None/bypass; fixed operators are not a color-grading system |
@@ -243,5 +242,4 @@ The exact names/domains remain in the [Feature Selector Catalog](../Modules/Engi
 ## Trace Closure Rule
 
 A vertical path is release-complete only when every stage has an owned producer, an owned consumer, a defined failure/fallback, and candidate-bound executable evidence. Source closure in this document earns only `S`; the corresponding `B`, `R`, `N`, `P`, and `A` work remains in the [Capability Evidence Plan](../Modules/CapabilityEvidencePlan.md).
-
 

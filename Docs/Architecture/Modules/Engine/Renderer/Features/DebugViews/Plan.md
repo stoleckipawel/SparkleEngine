@@ -30,8 +30,8 @@ The accepted value order is Lit `0`, Reference Path Tracer `1`, Wireframe `2`, c
 3. Let raster GBuffer consume Wireframe and let the independently activated GBuffer, lighting, and GPU-scene visualization families consume their own modes and products.
 4. Make Editor session and panel use the same type directly; keep labels/icons/menu grouping local to Editor.
 5. Delete global visualization selection, command translation, Editor mirror enum/preset resolver, duplicate shader resolver, and orphan includes/APIs in one clean break.
-6. Keep RHI and Renderer settings unaware.7. Partition debug resolve by GBuffer, lighting,
-    and GPU - scene product families.Give each family an explicit mode predicate, pass parameter surface, and shader; never use enum ordering or a catch-all visualization shader as family membership.
+6. Keep RHI and Renderer settings unaware.
+7. Partition debug resolve by GBuffer, lighting, and GPU-scene product families. Give each family an explicit mode predicate, pass parameter surface, and shader; never use enum ordering or a catch-all visualization shader as family membership.
 
 This source shape is present in the current changelist. Compilation and runtime checks remain deferred.
 
@@ -66,4 +66,3 @@ Exercise enum/HLSL parity, every consumer, two-viewport isolation, Lit/Reference
 ```text
 Reconcile the live Debug Views and Reference Path Tracer source to Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/ViewModes.md. Keep RenderViewMode as the sole host-independent per-view rendering choice on ViewportRenderRequest and immutable RenderView. Keep Editor labels/icons/menu layout local while using the same enum directly. Consume the value only at the owning frame-composition, raster, debug-resolve, and feature-lifecycle decisions. Delete parallel Editor enums, preset translators, visualization targets, mode-shaped show flags, selection CVars, command bridges, graph/feature settings copies, compatibility aliases, and RHI fields. Preserve ReferencePathTracer = 1 and contiguous values. Keep the Reference implementation private and the shared frame shell unchanged. Add no diagnostics, registry, generic settings bag, recipe hierarchy, or speculative controls. Run focused source checks, architecture_boundary_check, documentation link/anchor checks, and git diff --check; report builds and runtime checks as deferred unless actually run.
 ```
-

@@ -24,9 +24,7 @@ Editor uses the same enum directly while retaining presentation ownership in `Vi
 
 The former process-global visualization selection, Editor mirror enum/preset resolver, proposed visualization-target/show-flag split, and Reference selector CVar are clean-break deletions. They are not compatibility routes.
 
-The debug resolve is partitioned into GBuffer, lighting, and GPU-scene families. Each family privately owns its activation predicate, early-out, pass parameters, and shader;
-the scene - level composition simply invokes the family entry points in order.Adding
-    or reordering an enum value cannot activate a family by ordinal accident.
+The debug resolve is partitioned into GBuffer, lighting, and GPU-scene families. Each family privately owns its activation predicate, early return, pass parameters, and shader; scene-level composition simply invokes the family entry points in order. Adding or reordering an enum value cannot activate a family by ordinal accident.
 
 ## Current Modes
 
@@ -40,15 +38,9 @@ the scene - level composition simply invokes the family entry points in order.Ad
 
 ## Presentation Route
 
-Sparkle now classifies each mode once in the private presentation owner.Scene
-        - referred HDR views retain exposure,
-    the selected tone curve, and the configured super - resolution provider.Display - linear exact views bypass exposure / tone mapping,
-    use point reconstruction when render and output extents differ,
-    and still receive output transfer encoding.Visualization shaders no longer contain a local HDR preview curve.Reference Path Tracer
-            bypasses the independent Lit Ray Reconstruction denoiser without overriding the selected presentation upscaler
-    or quality.
+Sparkle now classifies each mode once in the private presentation owner. Scene-referred HDR views retain exposure, the selected tone curve, and the configured super-resolution provider. Display-linear exact views bypass exposure/tone mapping, use point reconstruction when render and output extents differ, and still receive output transfer encoding. Visualization shaders no longer contain a local HDR preview curve. Reference Path Tracer bypasses the independent Lit Ray Reconstruction denoiser without overriding the selected presentation upscaler or quality.
 
-       This is source presence, not pixel proof. The acceptance route must still exercise isolation, mode selection, both display domains, extent changes, backends, and Reference topology.
+This is source presence, not pixel proof. The acceptance route must still exercise isolation, mode selection, both display domains, extent changes, backends, and Reference topology.
 
 ## Ownership
 
@@ -59,4 +51,3 @@ Sparkle now classifies each mode once in the private presentation owner.Scene
 - RHI owns no mode or feature identity.
 
 Any new mode must have a real production consumer. Any future independently selectable show control must be orthogonal to the selected mode and land with that consumer; it cannot recreate the removed parallel taxonomy.
-

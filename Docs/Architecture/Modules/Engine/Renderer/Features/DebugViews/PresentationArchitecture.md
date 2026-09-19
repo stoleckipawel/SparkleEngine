@@ -1,7 +1,6 @@
 # Debug View Presentation Architecture
 
-**Status:**source - present architecture;
-executable validation deferred
+**Status:** source-present architecture; executable validation deferred
 
 **Responsibility:** debug-view signal domains, display mapping, output encoding, and producer requirements
 
@@ -70,10 +69,7 @@ The presentation resolver is Renderer-private and exhaustive over `RenderViewMod
 
 ## Producer And Extent Rules
 
-        The GBuffer, lighting,
-    and GPU
-    - scene visualization families independently produce their selected diagnostic color.Each family privately resolves its mode and binds
-          only its own inputs; the scene-level composition has no activation logic and does not infer family membership from enum ordering. The family shaders output raw HDR for scene-referred modes and one intentional bounded mapping for exact modes. They contain no exposure or tone-mapper policy.
+The GBuffer, lighting, and GPU-scene visualization families independently produce their selected diagnostic color. Each family privately resolves its mode and binds only its own inputs; the scene-level composition has no activation logic and does not infer family membership from enum ordering. The family shaders output raw HDR for scene-referred modes and one intentional bounded mapping for exact modes. They contain no exposure or tone-mapper policy.
 
 When render and output extents differ, exact views use an explicit point selection so reconstruction does not invent category IDs, material values, or false colors. The producer must not assume source and destination extents match.
 
@@ -97,5 +93,4 @@ Renderer/RHI capture transport remains neutral. A higher-level evidence record m
 ## Evidence Boundary
 
 The source route implements this architecture. Numeric fixed-value checks, extent cases, dual-viewport isolation, output encoding, shader cook, D3D12/Vulkan execution, and captured pixels remain required evidence under [Acceptance](Acceptance.md).
-
 
