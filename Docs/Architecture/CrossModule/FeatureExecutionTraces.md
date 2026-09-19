@@ -1,15 +1,8 @@
-#Graphics Feature Execution Traces
+# Graphics Feature Execution Traces
 
-**Status : **capability snapshot;
-vertical producer - to - consumer traces;
-not runtime proof
-    or release approval
+**Status:** capability snapshot; vertical producer-to-consumer traces; not runtime proof or release approval
 
-            ** Snapshot : **2026
-                          - 09
-                          - 06 at committed `master` revision `c28b33bd`;
-current source and build membership inspected;
-executable Renderer source is unchanged from the earlier `8414b5dc` audit; evidence `S` only
+**Snapshot:** 2026-09-06 at committed `master` revision `c28b33bd`; current source and build membership inspected; executable Renderer source is unchanged from the earlier `8414b5dc` audit; evidence `S` only
 
 **Scope:** ownership, selection, data production, frame-graph scheduling, shader/RHI consumption, output, history, retirement, and failure behavior for the principal RHI/Renderer/shader-delivery paths
 
@@ -27,28 +20,15 @@ Every render mode enters the same frame owner. This is the shortest trace for lo
 
 | Stage | Current owner and operation | Published boundary | Failure/lifetime behavior |
 | --- | --- | --- | --- |
-| 1. Submission | Gameplay/Application supplies `RenderFrameSubmission`, `RenderViewInput`, timing, and optional UI packet to Renderer | Immutable/movable submission crosses into `RenderCoordinator` | Serial and threaded execution are separate coordinator modes;
-parity is unexecuted | | 2. Frame admission | `FramePipeline::BeginFrame` polls services, accepts the monotonic submission and scene delta,
-    applies pending resize / topology changes,
-    then begins the backend frame | Current frame ID and in - flight slot
-    | A scene reset unloads scene textures and invalidates view / history | | 3. Persistent scene update
-    | `RenderScene` applies submission deltas;
-`GpuMeshCache` uploads ready meshes;
-`TextureCache` reconciles scene textures | Scene - owned persistent CPU / GPU identity
-    | Missing persistent GPU publication is fatal at frame - graph binding | | 4. Scene preparation
-    | `RenderScenePreparation::Execute` creates frame - local `PreparedRenderScene` from the persistent scene
-    | Prepared scene references / counts / derived lighting data | Prepared data is frame - owned; it does not become a second persistent scene authority |
+| 1. Submission | Gameplay/Application supplies `RenderFrameSubmission`, `RenderViewInput`, timing, and optional UI packet to Renderer | Immutable/movable submission crosses into `RenderCoordinator` | Serial and threaded execution are separate coordinator modes; parity is unexecuted |
+| 2. Frame admission | `FramePipeline::BeginFrame` polls services, accepts the monotonic submission and scene delta, applies pending resize/topology changes, then begins the backend frame | Current frame ID and in-flight slot | A scene reset unloads scene textures and invalidates view/history |
+| 3. Persistent scene update | `RenderScene` applies submission deltas; `GpuMeshCache` uploads ready meshes; `TextureCache` reconciles scene textures | Scene-owned persistent CPU/GPU identity | Missing persistent GPU publication is fatal at frame-graph binding |
+| 4. Scene preparation | `RenderScenePreparation::Execute` creates frame-local `PreparedRenderScene` from the persistent scene | Prepared scene references/counts/derived lighting data | Prepared data is frame-owned; it does not become a second persistent scene authority |
 | 5. View preparation | `RenderViewBuilder` and `RenderViewPreparation` derive camera, temporal, display, ray-plan, and viewport data in `RenderView`/`RenderViewState` | View-owned uniforms and history validity | Camera/topology/scene invalidation resets temporal validity rather than mutating scene ownership |
 | 6. GPU-scene publication | Persistent scene updates lighting, geometry, deformation, and ray-hit buffers for the selected in-flight frame | `RenderSceneGpuBindings` contains resource/size/stride bindings | Frame graph requires all declared buffers, including empty-safe publications |
-| 7. Ray preparation | `RenderRayTracingScene::PrepareRayTracingFrame` consumes the prepared scene;
-the shared automatic resolver determines active traversal where needed | BLAS / TLAS build data and ray frame bindings
-    | No complete frontend resolves to `None`;
-no silent raster shadow / lighting substitute | | 8. Graph execution
-    | Compiled `FrameGraph` binds persistent buffers / history and executes typed raster,
-    compute, ray - tracing, transfer,
-    and external - provider passes | Queue submissions and viewport products | Topology key changes rebuild execution and invalidate history
-    | | 9. Submission / presentation | `RenderDeviceServices::SubmitFrame` submits queues;
-UI overlay and present complete the frame | Per-queue `RhiSubmissionToken` and presented/backed viewport product | Resources/providers/pipelines retain last-use state until queue completion |
+| 7. Ray preparation | `RenderRayTracingScene::PrepareRayTracingFrame` consumes the prepared scene; the shared automatic resolver determines active traversal where needed | BLAS/TLAS build data and ray frame bindings | No complete frontend resolves to `None`; no silent raster shadow/lighting substitute |
+| 8. Graph execution | Compiled `FrameGraph` binds persistent buffers/history and executes typed raster, compute, ray-tracing, transfer, and external-provider passes | Queue submissions and viewport products | Topology key changes rebuild execution and invalidate history |
+| 9. Submission/presentation | `RenderDeviceServices::SubmitFrame` submits queues; UI overlay and present complete the frame | Per-queue `RhiSubmissionToken` and presented/backed viewport product | Resources/providers/pipelines retain last-use state until queue completion |
 | 10. Retirement | Frame execution, provider generations, shader/pipeline generations, capture readbacks, texture residency, and mesh uploads are polled | Completed generations become destructible | Responsiveness alone does not prove correct retirement or absence of growth |
 
 The source ownership rule is concrete: `RenderScene` owns persistent scene data, `PreparedRenderScene` is a frame-local derived view of it, `RenderView` owns camera/temporal/view data, and `FramePipeline` sequences publication and execution.
@@ -58,29 +38,14 @@ The source ownership rule is concrete: `RenderScene` owns persistent scene data,
 | Step | Producer -> consumer | Exact data/operation | Gate or boundary |
 | --- | --- | --- | --- |
 | Material ingestion | Cooked/runtime material -> `RenderScene` material records | Factors plus eight texture-role identities, alpha mode/cutoff, sidedness, and shading data | General transparent blend/transmission has no complete render path |
-| Texture residency | `TextureCache` -> material descriptor table | Resident SRVs are written into the material’s bindful table | Eight roles;
-this path is not the 4096 - entry ray material table | | Mesh preparation | Scene mesh instances-> `GpuMeshCache`/ batch builder
-    | Vertex / index streams,
-    transforms, prior transforms, skin / morph data,
-    and compatible auto batches | Public vertex contract is position / UV / normal / tangent and triangle list | | Graph declaration
-    | GBuffer target factory->frame graph | Six color - like attachments plus depth : base,
-    normal, material, emissive, subsurface,
-    motion, `D32_Float` depth | Required format attachment support is adapter - queried but unexecuted | | Pipeline materialization
-    | `GBufferMeshPass` ->runtime pass cache->RHI | Typed `GBufferVS / GBufferPS`,
-    binding layout,
-    graphics PSO and material descriptors | Shader generation and material / pipeline keys control reuse | | Draw
-    | Batch drawer->graphics command list | Indexed triangle draws write the GBuffer | Alpha mask can discard;
-no blend pass follows | | Derived buffers | `SkyMotionVectorCS` and `SceneDepthCS`
-        | Completes background motion and writes linear `R32_Float` scene depth | Runs after either raster
-    or ray GBuffer frontend | | Lighting | ReSTIR lighting producers->composite->sky,
-    or the feature - local Reference middle | Lit reads common GBuffer semantics and produces HDR `SceneColor`;
-the per - view Reference flag instead selects independent camera transport and accumulation
-    | Raster GBuffer does not imply non - ray lighting,
-    and the source - present Reference middle remains unbuilt / GPU - unproved and unavailable through the Editor menu until Stage 7 |
-        | Post Processing
-        | exposure->optional render - resolution visualization->optional lighting denoising->presentation upscale->tone map->encode->copy
-        | Output extent / color format becomes back buffer
-    or viewport product | Current debug views still pass through presentation semantics; color grading, chromatic aberration, and frame generation are absent |
+| Texture residency | `TextureCache` -> material descriptor table | Resident SRVs are written into the material�s bindful table | Eight roles; this path is not the 4096-entry ray material table |
+| Mesh preparation | Scene mesh instances -> `GpuMeshCache`/batch builder | Vertex/index streams, transforms, prior transforms, skin/morph data, and compatible auto batches | Public vertex contract is position/UV/normal/tangent and triangle list |
+| Graph declaration | GBuffer target factory -> frame graph | Six color-like attachments plus depth: base, normal, material, emissive, subsurface, motion, `D32_Float` depth | Required format attachment support is adapter-queried but unexecuted |
+| Pipeline materialization | `GBufferMeshPass` -> runtime pass cache -> RHI | Typed `GBufferVS/GBufferPS`, binding layout, graphics PSO and material descriptors | Shader generation and material/pipeline keys control reuse |
+| Draw | Batch drawer -> graphics command list | Indexed triangle draws write the GBuffer | Alpha mask can discard; no blend pass follows |
+| Derived buffers | `SkyMotionVectorCS` and `SceneDepthCS` | Completes background motion and writes linear `R32_Float` scene depth | Runs after either raster or ray GBuffer frontend |
+| Lighting | ReSTIR lighting producers -> composite -> sky, or the feature-local Reference middle | Lit reads common GBuffer semantics and produces HDR `SceneColor`; the per-view Reference flag instead selects independent camera transport and accumulation | Raster GBuffer does not imply non-ray lighting, and the source-present Reference middle remains unbuilt/GPU-unproved and unavailable through the Editor menu until Stage 7 |
+| Post Processing | exposure -> optional render-resolution visualization -> optional lighting denoising -> presentation upscale -> tone map -> encode -> copy | Output extent/color format becomes back buffer or viewport product | Current debug views still pass through presentation semantics; color grading, chromatic aberration, and frame generation are absent |
 
 Vertical completeness risk: importer/cooker fidelity for every material role remains a separate asset-pipeline audit. This trace proves the Renderer-side consumer path exists, not that every source format populates it correctly.
 
@@ -94,251 +59,118 @@ Vertical completeness risk: importer/cooker fidelity for every material role rem
 | Material binding | `RayTracingHitMaterial` indices address the fixed 4096-entry material texture table | Bound to compute parameter layout | Bound as ray-generation global parameters; hit stages use scene record identity |
 | Programs | Shared hit/material shader includes define semantics | `RayTracingGBufferInlineCS` | RGS, Miss, ClosestHit, AnyHit |
 | Alpha mask | Hit evaluation rejects masked texels | Inline candidate handling | Any-hit program |
-| Deformation | Current/previous joint matrices and morph weights are available for shading/motion;
-ray geometry preparation owns deformed positions | Same | Same | | Output | Both adapters write identical seven GBuffer semantics,
-    with `R32_Float` DeviceZ | Compute dispatch | Trace - rays dispatch | | Failure | Plan carries exact unavailable / invalid reason;
-graph cannot advertise a working frontend when `Active=None` | No automatic substitution to raster | Pipeline/shader-table creation throws on incomplete readiness or invalid limits |
+| Deformation | Current/previous joint matrices and morph weights are available for shading/motion; ray geometry preparation owns deformed positions | Same | Same |
+| Output | Both adapters write identical seven GBuffer semantics, with `R32_Float` DeviceZ | Compute dispatch | Trace-rays dispatch |
+| Failure | Plan carries exact unavailable/invalid reason; graph cannot advertise a working frontend when `Active=None` | No automatic substitution to raster | Pipeline/shader-table creation throws on incomplete readiness or invalid limits |
 
-The native shader-table plan has exactly two current ray types, `Surface` and `ShadowVisibility`, and two hit-group semantics, opaque and alpha-tested. Its checked record index is `rayContribution + (2 * geometryIndex) + instanceContribution`;
-changes to ray - type layout, geometry layout, or alpha - test hit - group semantics invalidate the plan,
-    while ordinary material
-        - value changes do not redefine logical SBT indexing.This relationship needs executable index
-            / capture evidence before release.
+The native shader-table plan has exactly two current ray types, `Surface` and `ShadowVisibility`, and two hit-group semantics, opaque and alpha-tested. Its checked record index is `rayContribution + (2 * geometryIndex) + instanceContribution`; changes to ray-type layout, geometry layout, or alpha-test hit-group semantics invalidate the plan, while ordinary material-value changes do not redefine logical SBT indexing. This relationship needs executable index/capture evidence before release.
 
-              ##Trace 3 : ReSTIR Real
-        - Time Path
+## Trace 3: ReSTIR Real-Time Path
 
-    | Step | Operation | Inputs->outputs | Temporal / fallback boundary | | -- -| -- -| -- -| -- -| | Direct temporal
-    | Reprojects / selects direct - light reservoir candidates | GBuffer,
-    motion, light buffers,
-    previous direct sample / weight / surface->current temporal sample / weight
-    | History hash and view validity decide whether previous data is valid | | Direct spatial | Reuses neighboring candidates
-    | Temporal sample / weight plus current surface->spatial result / history surface | Spatial quality / bias unmeasured | | Visibility
-    | Traces selected - light visibility | TLAS,
-    hit geometry / material buffers,
-    4096 texture table->RGBA32F shadow visibility | Inline or native pipeline via independent shadow execution plan;
-no shadow - map fallback | | Direct resolve | Evaluates visible direct sample
-    | Reservoir / visibility + four light - type buffers + material GBuffer->direct diffuse / specular / subsurface | Directional,
-    point, spot,
-    rect capacities and overflow policy need runtime evidence | | Indirect temporal | Reprojects and traces indirect candidate data
-    | Prior indirect reservoir,
-    GBuffer, TLAS,
-    hit / material / light / sky data->temporal reservoir | Inline ray query only | | Indirect spatial
-    | Reuses neighboring indirect candidates | Temporal reservoir and current surface->spatial reservoir | Inline ray query only |
-    | Indirect resolve | Evaluates selected indirect sample | Reservoir + TLAS / material / sky->indirect diffuse / specular and RR guides
-    | Inline ray query only;
-guides are full extent only when RR is enabled | | Composite | Combines five lighting lobes;
-sky fills background | Lighting targets + GBuffer emissive / subsurface / depth->RGBA16F scene color
-    | RR is optional post - lighting reconstruction,
-    not the lighting producer |
+| Step | Operation | Inputs -> outputs | Temporal/fallback boundary |
+| --- | --- | --- | --- |
+| Direct temporal | Reprojects/selects direct-light reservoir candidates | GBuffer, motion, light buffers, previous direct sample/weight/surface -> current temporal sample/weight | History hash and view validity decide whether previous data is valid |
+| Direct spatial | Reuses neighboring candidates | Temporal sample/weight plus current surface -> spatial result/history surface | Spatial quality/bias unmeasured |
+| Visibility | Traces selected-light visibility | TLAS, hit geometry/material buffers, 4096 texture table -> RGBA32F shadow visibility | Inline or native pipeline via independent shadow execution plan; no shadow-map fallback |
+| Direct resolve | Evaluates visible direct sample | Reservoir/visibility + four light-type buffers + material GBuffer -> direct diffuse/specular/subsurface | Directional, point, spot, rect capacities and overflow policy need runtime evidence |
+| Indirect temporal | Reprojects and traces indirect candidate data | Prior indirect reservoir, GBuffer, TLAS, hit/material/light/sky data -> temporal reservoir | Inline ray query only |
+| Indirect spatial | Reuses neighboring indirect candidates | Temporal reservoir and current surface -> spatial reservoir | Inline ray query only |
+| Indirect resolve | Evaluates selected indirect sample | Reservoir + TLAS/material/sky -> indirect diffuse/specular and RR guides | Inline ray query only; guides are full extent only when RR is enabled |
+| Composite | Combines five lighting lobes; sky fills background | Lighting targets + GBuffer emissive/subsurface/depth -> RGBA16F scene color | RR is optional post-lighting reconstruction, not the lighting producer |
 
-    ReSTIR history invalidates when the prepared - scene invalidation hash changes,
-    when temporal view validity is zero, or when the graph topology changes.The same invalidation also resets image
-        - provider history.
+ReSTIR history invalidates when the prepared-scene invalidation hash changes, when temporal view validity is zero, or when the graph topology changes. The same invalidation also resets image-provider history.
 
-            The[Direct Lighting package](../ Modules / Engine / Renderer / Features / Lighting / DirectLighting / README.md)
-                owns the direct reservoir
-            / visibility
-            / BRDF result and its replacement plan.The[Indirect Lighting package](
-                    ../ Modules / Engine / Renderer / Features / Lighting / IndirectLighting / README.md) owns the current seed
-        - replay prototype and target path - resampling transport.No Volumetric Lighting stage participates in this trace;
-its[target and negative capability package](../ Modules / Engine / Renderer / Features / Lighting / VolumetricLighting / README.md)
-                records the missing media
-            / atmosphere ownership and post
-        - release delivery gates.
+The [Direct Lighting package](../Modules/Engine/Renderer/Features/Lighting/DirectLighting/README.md) owns the direct reservoir/visibility/BRDF result and its replacement plan. The [Indirect Lighting package](../Modules/Engine/Renderer/Features/Lighting/IndirectLighting/README.md) owns the current seed-replay prototype and target path-resampling transport. No Volumetric Lighting stage participates in this trace; its [target and negative capability package](../Modules/Engine/Renderer/Features/Lighting/VolumetricLighting/README.md) records the missing media/atmosphere ownership and post-release delivery gates.
 
-          ##Trace 4 : Reference Path Tracer Contract Boundary
+## Trace 4: Reference Path Tracer Contract Boundary
 
-    | Step | Operation | Exact contract | Boundary | | -- -| -- -| -- -| -- -| | UI selection | `RenderViewMode::ReferencePathTracer`
-    | Renderer owns the execution semantic and ordered value `1`;
-Editor owns only its label, icon, menu placement, and interaction | No Editor mirror enum, preset translation, label, or icon enters View,
-    frame graph, shader, or RHI contracts | | Renderer selection | `FramePipeline::BuildRenderFrameGraph` reads the accepted request flag
-        | One direct branch selects Lit scheduling
-    or the feature - local Reference owner | The original frame shell,
-    prepared Scene / View, frame graph, RHI submission, viewport product,
-    and presentation remain shared | | Existing View boundary | `RenderViewBuilder` -> `RenderView` -> `FramePipeline`
-    | Canonical View carries camera and view - owned rendering data;
-the builder freezes the one mode from the ordinary request | No UI presentation state, path - tracer camera copy, Scene / View deep copy,
-    or mutable cross - thread reference | | Feature - local owner | `Passes / Lighting / ReferencePathTracer / ReferencePathTracer`
-        | Session,
-    resources, identity, passes, and transport stay in the feature capsule | Lit and Reference middle products are mutually exclusive;
-neither route consumes the other's estimator products | | Observation | `ViewportRenderProducts.GetProgress()` -> `ViewportPanel`
-    | Generic progress crosses the Renderer boundary;
-Editor decides whether its Reference UX displays it | Renderer does not carry UI labels, progress - widget visibility,
-    or view - mode ordering | | Clean break | Renderer mode, frame composition,
-    and capture contracts | Renderer owns one per - view `RenderViewMode`;
-RHI capture owns texture readback data only | No selector CVar, target / flag split, Editor mirror enum, recipe / factory hierarchy,
-    GBuffer - seeded reference authority, or UI metadata remains in Renderer / RHI |
+| Step | Operation | Exact contract | Boundary |
+| --- | --- | --- | --- |
+| UI selection | `RenderViewMode::ReferencePathTracer` | Renderer owns the execution semantic and ordered value `1`; Editor owns only its label, icon, menu placement, and interaction | No Editor mirror enum, preset translation, label, or icon enters View, frame graph, shader, or RHI contracts |
+| Renderer selection | `FramePipeline::BuildRenderFrameGraph` reads the accepted request flag | One direct branch selects Lit scheduling or the feature-local Reference owner | The original frame shell, prepared Scene/View, frame graph, RHI submission, viewport product, and presentation remain shared |
+| Existing View boundary | `RenderViewBuilder` -> `RenderView` -> `FramePipeline` | Canonical View carries camera and view-owned rendering data; the builder freezes the one mode from the ordinary request | No UI presentation state, path-tracer camera copy, Scene/View deep copy, or mutable cross-thread reference |
+| Feature-local owner | `Passes/Lighting/ReferencePathTracer/ReferencePathTracer` | Session, resources, identity, passes, and transport stay in the feature capsule | Lit and Reference middle products are mutually exclusive; neither route consumes the other's estimator products |
+| Observation | `ViewportRenderProducts.GetProgress()` -> `ViewportPanel` | Generic progress crosses the Renderer boundary; Editor decides whether its Reference UX displays it | Renderer does not carry UI labels, progress-widget visibility, or view-mode ordering |
+| Clean break | Renderer mode, frame composition, and capture contracts | Renderer owns one per-view `RenderViewMode`; RHI capture owns texture readback data only | No selector CVar, target/flag split, Editor mirror enum, recipe/factory hierarchy, GBuffer-seeded reference authority, or UI metadata remains in Renderer/RHI |
 
-        ##Trace 5 : External Image Provider Lifecycle
+## Trace 5: External Image Provider Lifecycle
 
-                    | Step
-                    | Owner and operation
-                    | Contract / failure behavior
-                    |
-                    | -- -
-                    | -- -
-                    | -- -
-                    |
-                    | Selection
-                    | CVars / settings choose Linear
-    or NVIDIA DLSS,
-    and Off
-    or NVIDIA RR | Provider choice participates in the frame - graph topology key | | Construction
-        | Factories return engine linear / no - op choices
-    or NVIDIA Streamline - backed providers | NVIDIA source is isolated in `SparkleRendererNvidiaStreamlineProviders`;
-compile definition records SDK availability | | Capability handoff
-    | `RendererImageProviderStack` passes `RhiCapabilities` and explicit device / queue interop
-    | D3D12 may evaluate when native device / queue / command list exist;
-Vulkan explicitly refuses external evaluation | | Initialization failure | Stack shuts down the failed provider
-    | Upscaler selection is reset to Linear;
-RR is reset Off; warning is logged |
+| Step | Owner and operation | Contract/failure behavior |
+| --- | --- | --- |
+| Selection | CVars/settings choose Linear or NVIDIA DLSS, and Off or NVIDIA RR | Provider choice participates in the frame-graph topology key |
+| Construction | Factories return engine linear/no-op choices or NVIDIA Streamline-backed providers | NVIDIA source is isolated in `SparkleRendererNvidiaStreamlineProviders`; compile definition records SDK availability |
+| Capability handoff | `RendererImageProviderStack` passes `RhiCapabilities` and explicit device/queue interop | D3D12 may evaluate when native device/queue/command list exist; Vulkan explicitly refuses external evaluation |
+| Initialization failure | Stack shuts down the failed provider | Upscaler selection is reset to Linear; RR is reset Off; warning is logged |
 | Per-frame setup | Camera, jitter/temporal identity, extents, reset-history flag, and provider generation are supplied | Provider generation prevents stale graph/provider pairing |
-| Graph evaluation | External pass receives tagged color/depth/motion/exposure and, for RR, lighting/reconstruction-guide inputs | RR writes a render-resolution denoised intermediate;
-the selected presentation upscaler writes the output - resolution resolved product | | Reconfiguration
-    | Old providers move to a retired generation with last - use tokens;
-new stack initializes and generation increments | Destruction waits until every relevant queue token completes |
+| Graph evaluation | External pass receives tagged color/depth/motion/exposure and, for RR, lighting/reconstruction-guide inputs | RR writes a render-resolution denoised intermediate; the selected presentation upscaler writes the output-resolution resolved product |
+| Reconfiguration | Old providers move to a retired generation with last-use tokens; new stack initializes and generation increments | Destruction waits until every relevant queue token completes |
 
-        ##Trace 6 : Post Processing To Published Output
+## Trace 6: Post Processing To Published Output
 
-                    | Step
-                    | Owner and operation
-                    | Input->output
-                    | Boundary
-                    |
-                    | -- -
-                    | -- -
-                    | -- -
-                    | -- -
-                    |
-                    | Exposure
-                    | manual
-    or automatic metering / adaptation | pre - visualization scene - linear `SceneColor` + per - view settings / history->1x1 exposure
-        | Runs before debug replacement;
-two metering methods and optional async compute are source - present but unproved | | Debug handoff
-    | selected visualization family may replace render - extent scene color
-    | requested GBuffer / lighting / scene product->render - extent visualization color
-    | Scene - referred HDR diagnostics use configured reconstruction plus display mapping;
+| Step | Owner and operation | Input -> output | Boundary |
+| --- | --- | --- | --- |
+| Exposure | manual or automatic metering/adaptation | pre-visualization scene-linear `SceneColor` + per-view settings/history -> 1x1 exposure | Runs before debug replacement; two metering methods and optional async compute are source-present but unproved |
+| Debug handoff | selected visualization family may replace render-extent scene color | requested GBuffer/lighting/scene product -> render-extent visualization color | Scene - referred HDR diagnostics use configured reconstruction plus display mapping;
 exact diagnostics use point reconstruction, bypass exposure / tone mapping, and retain output encoding; debug modes do not enable RR |
-| Lighting denoising | optional NVIDIA DLSS RR for eligible ReSTIR lighting | raw render-extent scene color plus guides -> render-extent `DenoisedSceneColor` | Independent of presentation resolution and upscaler choice;
-NVIDIA failure resolves RR Off | | Upscaling | selected Linear
-    or NVIDIA DLSS SR
-        | selected raw / denoised render - extent scene color plus depth / motion / exposure->output - extent `ResolvedSceneColor`
-        | Exactly one presentation - resolution owner;
-NVIDIA SR failure resets to Linear | | Tone mapping | exposure plus Reinhard, ACES approximation,
-    or ACES fitted filmic | resolved scene - referred HDR->display - linear `ToneMappedSceneColor` | No public None / bypass;
-fixed operators are not a color - grading system | | Output | Automatic / Linear / sRGB encoding,
-    then copy or product publication | display - linear color->encoded back buffer or `FinalColorLdr`
-        | No PQ / scRGB / HDR10 / display - nit contract | | Explicit absent stages | no graph owner | no color - grading / LUT transform,
-    chromatic - aberration lens effect,
-    or generated - frame synthesis occurs | Reflex / PCL latency coordination and temporal reconstruction are not frame generation |
+| Lighting denoising | optional NVIDIA DLSS RR for eligible ReSTIR lighting | raw render-extent scene color plus guides -> render-extent `DenoisedSceneColor` | Independent of presentation resolution and upscaler choice; NVIDIA failure resolves RR Off |
+| Upscaling | selected Linear or NVIDIA DLSS SR | selected raw/denoised render-extent scene color plus depth/motion/exposure -> output-extent `ResolvedSceneColor` | Exactly one presentation-resolution owner; NVIDIA SR failure resets to Linear |
+| Tone mapping | exposure plus Reinhard, ACES approximation, or ACES fitted filmic | resolved scene-referred HDR -> display-linear `ToneMappedSceneColor` | No public None/bypass; fixed operators are not a color-grading system |
+| Output | Automatic/Linear/sRGB encoding, then copy or product publication | display-linear color -> encoded back buffer or `FinalColorLdr` | No PQ/scRGB/HDR10/display-nit contract |
+| Explicit absent stages | no graph owner | no color-grading/LUT transform, chromatic-aberration lens effect, or generated-frame synthesis occurs | Reflex/PCL latency coordination and temporal reconstruction are not frame generation |
 
-        The[Post Processing family dossier](../ Modules / Engine / Renderer / Features / PostProcessing / README.md)
-            owns this order.Its child dossiers keep each supported
-    or absent capability independently reviewable.
+The [Post Processing family dossier](../Modules/Engine/Renderer/Features/PostProcessing/README.md) owns this order. Its child dossiers keep each supported or absent capability independently reviewable.
 
-        ##Trace 7 : Shader Authoring To Runtime Generation
+## Trace 7: Shader Authoring To Runtime Generation
 
-        | Step | Owner | Exact transition | Failure boundary | | -- -| -- -| -- -| -- -| | Registration | Renderer contract target
-        | Typed class->virtual source,
-    entry, stage, feature flags, ray metadata,
-    parameter metadata | Duplicate / empty / inconsistent registration is rejected | | Source resolution | ShaderCompiler
-    | `/ Engine` and `/ Project` virtual roots->canonical file / include closure | Mount escape,
-    missing include, or invalid virtual path fails the job | | Planning | ShaderCompiler cook planner | All, one shader ID,
-    or reverse - dependency closure from changed paths->immutable jobs | Removed registrations are not preserved;
-unaffected valid entries are preserved in incremental cook | | Compilation | DXC
-    or Slang backend | Source + target + policy + binding remaps->binary,
-    reflection, diagnostics, hashes | Current runtime targets are DXIL SM6.6 and SPIR - V 1.6;
-Slang stage mapping is vertex / pixel / compute only | | ABI validation | Shared validators
-    | Reflected resources / constants / stage / ray contract compared with typed C++ metadata | Mismatch prevents publication | | Staging
-    | Publisher | Map,
-    library, dependency data,
-    and recook signal are written as a candidate file set | Staged map / library must open together and share publication identity |
-    | Commit | Atomic publication | Candidate file set replaces current products
-    | Cancellation / failure cleanup preserves prior valid generation by design; executable fault tests remain open |
+| Step | Owner | Exact transition | Failure boundary |
+| --- | --- | --- | --- |
+| Registration | Renderer contract target | Typed class -> virtual source, entry, stage, feature flags, ray metadata, parameter metadata | Duplicate/empty/inconsistent registration is rejected |
+| Source resolution | ShaderCompiler | `/Engine` and `/Project` virtual roots -> canonical file/include closure | Mount escape, missing include, or invalid virtual path fails the job |
+| Planning | ShaderCompiler cook planner | All, one shader ID, or reverse-dependency closure from changed paths -> immutable jobs | Removed registrations are not preserved; unaffected valid entries are preserved in incremental cook |
+| Compilation | DXC or Slang backend | Source + target + policy + binding remaps -> binary, reflection, diagnostics, hashes | Current runtime targets are DXIL SM6.6 and SPIR-V 1.6; Slang stage mapping is vertex/pixel/compute only |
+| ABI validation | Shared validators | Reflected resources/constants/stage/ray contract compared with typed C++ metadata | Mismatch prevents publication |
+| Staging | Publisher | Map, library, dependency data, and recook signal are written as a candidate file set | Staged map/library must open together and share publication identity |
+| Commit | Atomic publication | Candidate file set replaces current products | Cancellation/failure cleanup preserves prior valid generation by design; executable fault tests remain open |
 | Reload admission | Application recook coordinator | Fresh publication ID, active-authority paths, and file hashes are checked before Renderer reload | Missing, partial, outside-authority, stale, or hash-mismatched publication is rejected before active shaders change |
 | Materialization | Renderer runtime pass cache | Complete registration set for the selected backend target -> RHI programs, layouts, graphics/compute/ray pipelines and shader tables | Missing target/registration/signature/composition prevents generation publication |
-| Swap/retire | Renderer | Whole validated generation becomes active;
-previous generation records queue last - use | Old pipelines / programs retire only after GPU completion |
+| Swap/retire | Renderer | Whole validated generation becomes active; previous generation records queue last-use | Old pipelines/programs retire only after GPU completion |
 
-    The exact 35
-        - program registration set is listed
-              in[Shader Program Catalog](../ Modules / Engine / Renderer / Features / ShaderRuntime / ShaderProgramCatalog.md)
-                  .
+The exact 35-program registration set is listed in [Shader Program Catalog](../Modules/Engine/Renderer/Features/ShaderRuntime/ShaderProgramCatalog.md).
 
-          ##Trace 8 : Viewport Product Capture
+## Trace 8: Viewport Product Capture
 
-    | Step | Producer->consumer | Exact behavior | | -- -| -- -| -- -| | Request | Public Renderer facade-> `RenderCoordinator`
-    | Allocates capture ID;
-serial path begins immediately,
-    threaded path sends a control command | | Product resolution | `ViewportCaptureService` ->published viewport products / frame graph
-    | Resolves requested final color,
-    depth, or normal product together with frame, scene, shader,
-    and provider generation identity | | RHI request | Capture service->backend `RhiCaptureService`
-    | Starts asynchronous texture readback when resource / format / request is acceptable | | Poll | `FramePipeline::PollFrameServices`
-    | Polls capture completion alongside retirement and residency services | | Publication | Pipeline->coordinator read state
-    | Completed captures are moved to producer - facing queue;
-coordinator retains at most three completed captures and drops the oldest beyond that | | Take | Caller-> `TryTakeViewportCapture`
-    | Moves one completed result out;
-no response means pending or absent,
-    not success |
+| Step | Producer -> consumer | Exact behavior |
+| --- | --- | --- |
+| Request | Public Renderer facade -> `RenderCoordinator` | Allocates capture ID; serial path begins immediately, threaded path sends a control command |
+| Product resolution | `ViewportCaptureService` -> published viewport products/frame graph | Resolves requested final color, depth, or normal product together with frame, scene, shader, and provider generation identity |
+| RHI request | Capture service -> backend `RhiCaptureService` | Starts asynchronous texture readback when resource/format/request is acceptable |
+| Poll | `FramePipeline::PollFrameServices` | Polls capture completion alongside retirement and residency services |
+| Publication | Pipeline -> coordinator read state | Completed captures are moved to producer-facing queue; coordinator retains at most three completed captures and drops the oldest beyond that |
+| Take | Caller -> `TryTakeViewportCapture` | Moves one completed result out; no response means pending or absent, not success |
 
-            ##Trace 9 : Temporal Sample And History Identity
+## Trace 9: Temporal Sample And History Identity
 
-                        | Step
-                        | Producer->consumer
-                        | Exact transition
-                        | Failure / invalidation boundary
-                        |
-                        | -- -
-                        | -- -
-                        | -- -
-                        | -- -
-                        |
-                        | Identity
-                        | submitted `RenderViewInput` + frame / scene / shader / provider / topology generations-> `RenderViewState`
-                        | viewport / selection / kind plus camera
-        and render extent select the persistent view state | first frame
-    or any identity / generation mismatch invalidates common history | | Sample | `RenderViewState` -> `TemporalJitterPatterns`
-        | frame ID modulo 16 selects the active base - 2 / base - 3 Halton sample;
-centered offset becomes NDC with inverted Y | invalid extent returns zero;
-other source patterns have no active selector | | Previous view | `RenderViewState` -> `ViewTemporalUniformData`
-    | current / previous jitter,
-    prior matrices, and `HistoryValid` publish together | explicit cut / teleport / reset, inferred discontinuity,
-    or projection change suppresses previous matrices as valid history | | Raster / motion
-        | temporal uniform->GBuffer vertex and motion shader | raster clip position is jittered while output motion excludes current jitter
-        | invalid history produces zero motion;
-rigid / skin / morph / sky agreement is unproved | | Reprojection / history
-    | motion + temporal uniform->ReSTIR / reference / exposure / frame histories
-    | geometric motion and jitter - grid delta map current pixels to prior history;
-feature hashes may invalidate further | common invalidity resets all affected histories before temporal reuse | | Provider
-    | temporal uniform->Streamline view constants | NDC jitter becomes pixels;
-transforms / reset and unjittered - motion declaration are published | D3D12 provider - only cell;
-wrong sign / unit
-    or stale provider generation invalidates reconstruction evidence |
+| Step | Producer -> consumer | Exact transition | Failure/invalidation boundary |
+| --- | --- | --- | --- |
+| Identity | submitted `RenderViewInput` + frame/scene/shader/provider/topology generations -> `RenderViewState` | viewport/selection/kind plus camera and render extent select the persistent view state | first frame or any identity/generation mismatch invalidates common history |
+| Sample | `RenderViewState` -> `TemporalJitterPatterns` | frame ID modulo 16 selects the active base-2/base-3 Halton sample; centered offset becomes NDC with inverted Y | invalid extent returns zero; other source patterns have no active selector |
+| Previous view | `RenderViewState` -> `ViewTemporalUniformData` | current/previous jitter, prior matrices, and `HistoryValid` publish together | explicit cut/teleport/reset, inferred discontinuity, or projection change suppresses previous matrices as valid history |
+| Raster/motion | temporal uniform -> GBuffer vertex and motion shader | raster clip position is jittered while output motion excludes current jitter | invalid history produces zero motion; rigid/skin/morph/sky agreement is unproved |
+| Reprojection/history | motion + temporal uniform -> ReSTIR/reference/exposure/frame histories | geometric motion and jitter-grid delta map current pixels to prior history; feature hashes may invalidate further | common invalidity resets all affected histories before temporal reuse |
+| Provider | temporal uniform -> Streamline view constants | NDC jitter becomes pixels; transforms/reset and unjittered-motion declaration are published | D3D12 provider-only cell; wrong sign/unit or stale provider generation invalidates reconstruction evidence |
 
-        The[Temporal Sampling and History dossier](
-                ../ Modules / Engine / Renderer / Features / FrameExecution / TemporalSamplingAndHistory.md) owns exact thresholds,
-    acceptance criteria,
-    and controlled failures.
+The [Temporal Sampling and History dossier](../Modules/Engine/Renderer/Features/FrameExecution/TemporalSamplingAndHistory.md) owns exact thresholds, acceptance criteria, and controlled failures.
 
-        ##Trace 10 : Mesh Or Texture Generation To Residency
+## Trace 10: Mesh Or Texture Generation To Residency
 
-    | Step | Producer->consumer | Mesh route | Texture route | | -- -| -- -| -- -| -- -| | publication
-    | GameFramework immutable resource table-> `RenderScene` cache request | asset ID + generation requests a stable GPU mesh handle
-    | normalized cooked path + scene texture generation requests a texture | | admission | cache->cache - owned `AssetResidency`
-    | backlog exhaustion can return no mesh handle;
-invalid handle / state failures are explicit | invalid path / generation
-    or failed residency admission is fatal in the inspected route | | CPU work | Tasks / background owner->ready payload
-        | immutable mesh preparation builds upload data and decoded / resident sizes
-        | cooked file read and strict header / mip / layout decode build upload data | | GPU work | cache->RHI upload / graphics commands
-        | buffers / geometry / BLAS - related work records,
-    then receives submission token | resource / texture upload records,
-    then receives submission token | | activation | RHI completion->cache maps / binding revision
-        | handle resolves only after uploading becomes Resident
-        | path generation becomes active and binding revision advances only after completion | | replacement / eviction
-        | scene wanted set + last - use state->RHI completion | retain - set removal
-    or newer generation cannot free / rebind stale in - flight data | stale completion is released; replaced texture waits for binding/queue use before release |
+| Step | Producer -> consumer | Mesh route | Texture route |
+| --- | --- | --- | --- |
+| publication | GameFramework immutable resource table -> `RenderScene` cache request | asset ID + generation requests a stable GPU mesh handle | normalized cooked path + scene texture generation requests a texture |
+| admission | cache -> cache-owned `AssetResidency` | backlog exhaustion can return no mesh handle; invalid handle/state failures are explicit | invalid path/generation or failed residency admission is fatal in the inspected route |
+| CPU work | Tasks/background owner -> ready payload | immutable mesh preparation builds upload data and decoded/resident sizes | cooked file read and strict header/mip/layout decode build upload data |
+| GPU work | cache -> RHI upload/graphics commands | buffers/geometry/BLAS-related work records, then receives submission token | resource/texture upload records, then receives submission token |
+| activation | RHI completion -> cache maps/binding revision | handle resolves only after uploading becomes Resident | path generation becomes active and binding revision advances only after completion |
+| replacement/eviction | scene wanted set + last-use state -> RHI completion | retain-set removal or newer generation cannot free/rebind stale in-flight data | stale completion is released; replaced texture waits for binding/queue use before release |
 | diagnostics | cache/residency/RHI -> Renderer facade | mesh state/count/bytes/preview observations | texture state/count/bytes/preview plus combined memory observations |
 
 The per-cache defaults and absence of global priority/LRU/pressure arbitration are recorded in [Mesh and Texture Residency](../Modules/Engine/Renderer/Features/GeometryAndResources/MeshAndTextureResidency.md).
@@ -347,133 +179,68 @@ The per-cache defaults and absence of global priority/LRU/pressure arbitration a
 
 | Step | Producer -> consumer | Current transition | Gap or failure boundary |
 | --- | --- | --- | --- |
-| startup restore | `Application` -> settings persistence -> CVar registry | allowlisted values from the owned INI section apply before command-line overrides | missing file is ignored;
-malformed parse diagnostics are discarded | | editor rendering - settings edit
-    | Editor panel->Editor - private `EngineRenderingSettingsSection` ->Application persistence / submit->Renderer settings control
-    | one setter mutates the 26 - field snapshot;
-Application persists it and submits the Renderer - owned value | only its 26 owned names persist;
-per - viewport view mode is a separate `EditorViewportSession` concern | | save | section->workspace `Config / DefaultEngine.ini`
-    | first matching owned section is replaced;
-other loaded lines / sections are retained
-    | truncate - and-rewrite returns no open / write / flush status and is not concurrency - safe / atomic | | handoff
-    | commit callback->host-> `Renderer::SubmitRenderingSettings` | whole value snapshot crosses the public facade
-    | no callback applies CVars directly;
-editor binds the host callback | | execution | coordinator->CVar owners | serial applies directly;
-threaded mode queues `RenderSettingsChangedCommand` to render context | queue ordering / backpressure / shutdown equivalence is unproved |
-    | resolution | CVar owners->view / topology / provider / device | live values affect the next permitted frame;
-topology / history owners rebuild / reset;
-adapter / format report pending restart | requested / CVar / resolved / session - active states and reasons are not one unified result |
+| startup restore | `Application` -> settings persistence -> CVar registry | allowlisted values from the owned INI section apply before command-line overrides | missing file is ignored; malformed parse diagnostics are discarded |
+| editor rendering-settings edit | Editor panel -> Editor-private `EngineRenderingSettingsSection` -> Application persistence/submit -> Renderer settings control | one setter mutates the 26-field snapshot; Application persists it and submits the Renderer-owned value | only its 26 owned names persist; per-viewport view mode is a separate `EditorViewportSession` concern |
+| save | section -> workspace `Config/DefaultEngine.ini` | first matching owned section is replaced; other loaded lines/sections are retained | truncate-and-rewrite returns no open/write/flush status and is not concurrency-safe/atomic |
+| handoff | commit callback -> host -> `Renderer::SubmitRenderingSettings` | whole value snapshot crosses the public facade | no callback applies CVars directly; editor binds the host callback |
+| execution | coordinator -> CVar owners | serial applies directly; threaded mode queues `RenderSettingsChangedCommand` to render context | queue ordering/backpressure/shutdown equivalence is unproved |
+| resolution | CVar owners -> view/topology/provider/device | live values affect the next permitted frame; topology/history owners rebuild/reset; adapter/format report pending restart | requested/CVar/resolved/session-active states and reasons are not one unified result |
 
-    The exact names
-        / domains remain in
-            the[Feature Selector Catalog](../ Modules / Engine / Renderer / Features / RuntimeConfiguration / FeatureSelectorCatalog.md);
-aggregate transport and durability criteria are in[Settings State and Persistence](
-        ../ Modules / Engine / Renderer / Features / RuntimeConfiguration / SettingsStateAndPersistence.md)
-        .
+The exact names/domains remain in the [Feature Selector Catalog](../Modules/Engine/Renderer/Features/RuntimeConfiguration/FeatureSelectorCatalog.md); aggregate transport and durability criteria are in [Settings State and Persistence](../Modules/Engine/Renderer/Features/RuntimeConfiguration/SettingsStateAndPersistence.md).
 
-    ##Trace 12 : Host Simulation To Latency Provider Marker
+## Trace 12: Host Simulation To Latency Provider Marker
 
-    | Step | Producer->consumer | Current transition | Capability / failure boundary | | -- -| -- -| -- -| -- -| | simulation start
-    | host->Renderer facade-> `RendererExternalRuntime` | owner - thread call forwards SimulationStart with 64 - bit logical ID
-    | active supported Reflex sleeps first;
-host ordering / identity is not validated by Renderer | | simulation end | host->Renderer facade->external runtime
-    | owner - thread call forwards SimulationEnd | omitted / duplicate / mismatched host calls can only be judged by an evidence trace today
-    | | render start | D3D12 `BeginFrame` ->RHI interposer hook | after presentation - slot wait,
-    RenderSubmitStart reaches the same optional provider runtime | no inspected Vulkan producer / equivalent provider route |
-    | submit / present | D3D12 `SubmitFrame` ->interposer hook->swapchain | final graphics submit emits RenderSubmitEnd;
-PresentStart / End bracket `Present` | absent / unready / unsupported PCL route does no provider work | | provider token
-    | Streamline runtime->PCL / Reflex | marker maps to PCL using a frame token;
-active calls hold shutdown leases | 64 - bit ID narrows to 32 - bit;
-token / sleep / marker failure is fatal | | shutdown | external runtime / RHI interposer->Streamline | new leases stop, active calls drain,
-    runtime state resets | race boundedness and repeated - shutdown behavior need fault evidence |
+| Step | Producer -> consumer | Current transition | Capability/failure boundary |
+| --- | --- | --- | --- |
+| simulation start | host -> Renderer facade -> `RendererExternalRuntime` | owner-thread call forwards SimulationStart with 64-bit logical ID | active supported Reflex sleeps first; host ordering/identity is not validated by Renderer |
+| simulation end | host -> Renderer facade -> external runtime | owner-thread call forwards SimulationEnd | omitted/duplicate/mismatched host calls can only be judged by an evidence trace today |
+| render start | D3D12 `BeginFrame` -> RHI interposer hook | after presentation-slot wait, RenderSubmitStart reaches the same optional provider runtime | no inspected Vulkan producer/equivalent provider route |
+| submit/present | D3D12 `SubmitFrame` -> interposer hook -> swapchain | final graphics submit emits RenderSubmitEnd; PresentStart/End bracket `Present` | absent/unready/unsupported PCL route does no provider work |
+| provider token | Streamline runtime -> PCL/Reflex | marker maps to PCL using a frame token; active calls hold shutdown leases | 64-bit ID narrows to 32-bit; token/sleep/marker failure is fatal |
+| shutdown | external runtime/RHI interposer -> Streamline | new leases stop, active calls drain, runtime state resets | race boundedness and repeated-shutdown behavior need fault evidence |
 
-    [Latency Coordination](../ Modules / Engine / Renderer / Features / FrameExecution / LatencyCoordination.md) owns the six
-        - marker contract.PCL
-            / Reflex is not frame generation and marker presence is not a measured latency benefit.
+[Latency Coordination](../Modules/Engine/Renderer/Features/FrameExecution/LatencyCoordination.md) owns the six-marker contract. PCL/Reflex is not frame generation and marker presence is not a measured latency benefit.
 
-              ##Trace 13 : RHI Device Aggregate Lifecycle
+## Trace 13: RHI Device Aggregate Lifecycle
 
-    | Step | Producer->consumer | Current transition | Capability / failure boundary | | -- -| -- -| -- -| -- -| | request
-    | build / runtime backend choice-> `RenderDeviceServices::Create` | validates compiled backend,
-    config,
-    window and optional interposer hooks | unavailable / invalid request does not silently activate another backend | | composition
-    | concrete backend service->RHI facade | native device precedes dependent presentation,
-    command, resource, descriptor, pipeline, diagnostic, interop and UI services | public use must see a complete composition,
-    never partial construction | | publication / use | `RenderDeviceServicesState` ->Renderer owner thread
-        | stable non - copyable aggregate supplies frame and service operations | wrong - thread
-    or post - settlement use is outside the legal lifecycle | | swapchain recovery
-        | resize / out - of - date->queues / presentation->Renderer graph / view | drain relevant work,
-    recreate dependent images / views, invalidate old consumers, resume or remain minimized | same device remains active;
-this is not device - loss recovery | | settle / destroy | Renderer shutdown->RHI queues / services / device | stop frame work,
-    wait real completion / idle, clear recording lifetime state,
-    destroy dependents before device | wait / device failure cannot fabricate completion
-    or safe retirement | | device loss | native D3D12 / Vulkan result->diagnostics / fatal boundary | DRED / removal reason
-    or Vulkan result can attribute the fault | no inspected device - generation / recreation path resumes the process |
+| Step | Producer -> consumer | Current transition | Capability/failure boundary |
+| --- | --- | --- | --- |
+| request | build/runtime backend choice -> `RenderDeviceServices::Create` | validates compiled backend, config, window and optional interposer hooks | unavailable/invalid request does not silently activate another backend |
+| composition | concrete backend service -> RHI facade | native device precedes dependent presentation, command, resource, descriptor, pipeline, diagnostic, interop and UI services | public use must see a complete composition, never partial construction |
+| publication/use | `RenderDeviceServicesState` -> Renderer owner thread | stable non-copyable aggregate supplies frame and service operations | wrong-thread or post-settlement use is outside the legal lifecycle |
+| swapchain recovery | resize/out-of-date -> queues/presentation -> Renderer graph/view | drain relevant work, recreate dependent images/views, invalidate old consumers, resume or remain minimized | same device remains active; this is not device-loss recovery |
+| settle/destroy | Renderer shutdown -> RHI queues/services/device | stop frame work, wait real completion/idle, clear recording lifetime state, destroy dependents before device | wait/device failure cannot fabricate completion or safe retirement |
+| device loss | native D3D12/Vulkan result -> diagnostics/fatal boundary | DRED/removal reason or Vulkan result can attribute the fault | no inspected device-generation/recreation path resumes the process |
 
-        [Device Lifecycle and Failure Recovery](
-                ../ Modules / Engine / RHI / Features / DeviceAndResources / DeviceLifecycleAndFailureRecovery.md) owns `AC
-            - RHI - LIFE - *`,
-    the distinction between recoverable presentation change and terminal device loss,
-    and `RHI
-        - E16`.
+[Device Lifecycle and Failure Recovery](../Modules/Engine/RHI/Features/DeviceAndResources/DeviceLifecycleAndFailureRecovery.md) owns `AC-RHI-LIFE-*`, the distinction between recoverable presentation change and terminal device loss, and `RHI-E16`.
 
-          ##Trace 14 : Prepared Primitive To Raster Batch
+## Trace 14: Prepared Primitive To Raster Batch
 
-    | Step | Producer->consumer | Current transition | Capability / failure boundary | | -- -| -- -| -- -| -- -| | input
-    | prepared scene + current view->visibility tasks | one item per prepared primitive carries bounds,
-    alpha class,
-    draw / material / group identity and camera distance | input belongs to one scene / view generation |
-    | spatial / material classification | bounded parallel task->item table | valid AABB intersects the frustum;
-invalid bounds stay conservative;
-alpha becomes opaque / alpha - tested / transparent / rejected | no occlusion / LOD / GPU - driven decision participates |
-    | candidate validation | item table->batch builder | reject out - of - range draw / group,
-    missing GPU mesh / material, or rejected class | invalid identity cannot publish a partial valid - looking batch | | preserved groups
-        | authored / shared group->batch result | compatible visible non - transparent groups with at least two items remain grouped
-        | incompatible groups fall back;
-transparent never enters a group batch | | ordinary sorting / batching | remaining items->ordered index / batch arrays
-    | opaque / alpha - tested stable - sort by complete key / object and may auto - batch;
-transparent stable - sort far - to - near / object and remains single | selector changes compatible grouping,
-    not the visible surface identity | | publication | view preparation->GBuffer batch drawer / diagnostics | publish raster indices,
-    batch descriptors and workload together | task failure clears all three;
-source counters do not prove production observability |
+| Step | Producer -> consumer | Current transition | Capability/failure boundary |
+| --- | --- | --- | --- |
+| input | prepared scene + current view -> visibility tasks | one item per prepared primitive carries bounds, alpha class, draw/material/group identity and camera distance | input belongs to one scene/view generation |
+| spatial/material classification | bounded parallel task -> item table | valid AABB intersects the frustum; invalid bounds stay conservative; alpha becomes opaque/alpha-tested/transparent/rejected | no occlusion/LOD/GPU-driven decision participates |
+| candidate validation | item table -> batch builder | reject out-of-range draw/group, missing GPU mesh/material, or rejected class | invalid identity cannot publish a partial valid-looking batch |
+| preserved groups | authored/shared group -> batch result | compatible visible non-transparent groups with at least two items remain grouped | incompatible groups fall back; transparent never enters a group batch |
+| ordinary sorting/batching | remaining items -> ordered index/batch arrays | opaque/alpha-tested stable-sort by complete key/object and may auto-batch; transparent stable-sort far-to-near/object and remains single | selector changes compatible grouping, not the visible surface identity |
+| publication | view preparation -> GBuffer batch drawer/diagnostics | publish raster indices, batch descriptors and workload together | task failure clears all three; source counters do not prove production observability |
 
-    [Visibility and Draw Preparation](../ Modules / Engine / Renderer / Features / GeometryAndResources / VisibilityAndDrawPreparation.md)
-        owns the exact compatibility key,
-    deterministic ledger, task limits, negative capability boundary,
-    and `REN
-        - E32`.
+[Visibility and Draw Preparation](../Modules/Engine/Renderer/Features/GeometryAndResources/VisibilityAndDrawPreparation.md) owns the exact compatibility key, deterministic ledger, task limits, negative capability boundary, and `REN-E32`.
 
-          ##Trace 15 : Viewport Extent To Sampled Output
+## Trace 15: Viewport Extent To Sampled Output
 
-    | Step | Producer->consumer | Current transition | Capability / failure boundary | | -- -| -- -| -- -| -- -| | output extent
-    | viewport request / window-> `FramePipeline` | valid viewport extent wins;
-otherwise window extent becomes the output grid | invalid / minimized states cannot create a fabricated output | | render extent
-    | output extent + lighting / provider / quality->image - provider stack | Linear / no provider returns output extent;
-eligible DLSS SR / RR resolves provider optimal internal extent
-    | requested quality must not masquerade as active provider / ratio after fallback | | topology / view
-    | resolved extents->graph resources,
-    viewport / scissor and `RenderViewState` | render / output extent enters graph identity;
-active Halton jitter normalizes by render extent | provider / extent / topology change resets incompatible history | | sample contract
-        | graph attachment descriptions->materialized graphics pipelines
-        | current Renderer route is single - sample and attachment / pipeline counts must match
-        | RHI 2 / 4 / 8 vocabulary and source - only MSAA jitter are not Renderer MSAA | | resolution output | lighting->RR
-    or upscaling-> `ResolvedSceneColor` | exactly one producer writes output - extent color,
-    then common presentation continues | no standalone TAA / FXAA / SMAA
-    or dynamic - resolution controller was found | | retirement / publication | queue completion->old graph / provider resources;
-output->product / swapchain | old generations retire after last use and current product carries matching extent / identity | mixed extents,
-    stale history
-    or implicit resolve blocks the route |
+| Step | Producer -> consumer | Current transition | Capability/failure boundary |
+| --- | --- | --- | --- |
+| output extent | viewport request/window -> `FramePipeline` | valid viewport extent wins; otherwise window extent becomes the output grid | invalid/minimized states cannot create a fabricated output |
+| render extent | output extent + lighting/provider/quality -> image-provider stack | Linear/no provider returns output extent; eligible DLSS SR/RR resolves provider optimal internal extent | requested quality must not masquerade as active provider/ratio after fallback |
+| topology/view | resolved extents -> graph resources, viewport/scissor and `RenderViewState` | render/output extent enters graph identity; active Halton jitter normalizes by render extent | provider/extent/topology change resets incompatible history |
+| sample contract | graph attachment descriptions -> materialized graphics pipelines | current Renderer route is single-sample and attachment/pipeline counts must match | RHI 2/4/8 vocabulary and source-only MSAA jitter are not Renderer MSAA |
+| resolution output | lighting -> RR or upscaling -> `ResolvedSceneColor` | exactly one producer writes output-extent color, then common presentation continues | no standalone TAA/FXAA/SMAA or dynamic-resolution controller was found |
+| retirement/publication | queue completion -> old graph/provider resources; output -> product/swapchain | old generations retire after last use and current product carries matching extent/identity | mixed extents, stale history or implicit resolve blocks the route |
 
-        [Resolution, Sampling, and Anti - Aliasing](
-                ../ Modules / Engine / Renderer / Features / PostProcessing / ReconstructionAndGeneration
-            / ResolutionSamplingAndAntiAliasing.md) owns `REN
-            - RESO - *` and `REN - E33`;
-the temporal and provider dossiers retain their narrower algorithms.
+[Resolution, Sampling, and Anti-Aliasing](../Modules/Engine/Renderer/Features/PostProcessing/ReconstructionAndGeneration/ResolutionSamplingAndAntiAliasing.md) owns `REN-RESO-*` and `REN-E33`; the temporal and provider dossiers retain their narrower algorithms.
 
-    ##Trace Closure Rule
+## Trace Closure Rule
 
-        A vertical path is release
-    - complete only when every stage has an owned producer,
-    an owned consumer, a defined failure / fallback,
-    and candidate - bound executable evidence.Source closure in this document earns only `S`;
-the corresponding `B`, `R`, `N`, `P`, and `A` work remains in the[Capability Evidence Plan](../ Modules / CapabilityEvidencePlan.md).
+A vertical path is release-complete only when every stage has an owned producer, an owned consumer, a defined failure/fallback, and candidate-bound executable evidence. Source closure in this document earns only `S`; the corresponding `B`, `R`, `N`, `P`, and `A` work remains in the [Capability Evidence Plan](../Modules/CapabilityEvidencePlan.md).
+

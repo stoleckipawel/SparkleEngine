@@ -1,28 +1,20 @@
-#Renderer Geometry, Materials, and GBuffer
+# Renderer Geometry, Materials, and GBuffer
 
-**Status : **current feature dossier;
-source - backed, not visual fidelity, raster / ray parity, performance, or release evidence
+**Status:** current feature dossier; source-backed, not visual fidelity, raster/ray parity, performance, or release evidence
 
-                                                                               **Verified
-    : **2026
-      - 09
-      - 06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
+**Verified:** 2026-09-06 against committed `master` revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
 **Scope:** `REN-SCENE-03` through `REN-SCENE-10`, `REN-MAT-01` through `REN-MAT-10`, `REN-GBUF-01` through `REN-GBUF-08`, and `REN-FRONT-01` through `REN-FRONT-07`
 
-**Current readiness:** **50/100** for the current raster/GBuffer scope — integrated source paths exist;
-PBR / content / motion / backend / visual and draw
-        - cost evidence does not.See[Current Feature Readiness](../../../../../../ Acceptance / CurrentReadiness.md #renderer)
-              .
+**Current readiness:** **50/100** for the current raster/GBuffer scope � integrated source paths exist; PBR/content/motion/backend/visual and draw-cost evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
-          ##At A Glance
+## At A Glance
 
-    | Axis | Current coverage | Explicit limit | | -- -| -- -| -- -| | geometry | static,
-    instanced, skinned, morphed, and combined skin / morph triangle meshes | no procedural / intersection, tessellation, mesh / task,
-    or general non - triangle path | | material | opaque and alpha - tested base color, normal, roughness / metallic / F0, emissive, AO,
-    subsurface,
-    textures | transparent / transmissive and broader lobes are incomplete or absent | | frontend | raster GBuffer
-    or capability - gated ray primary visibility | wireframe is raster - only; raster/ray parity remains unproved |
+| Axis | Current coverage | Explicit limit |
+| --- | --- | --- |
+| geometry | static, instanced, skinned, morphed, and combined skin/morph triangle meshes | no procedural/intersection, tessellation, mesh/task, or general non-triangle path |
+| material | opaque and alpha-tested base color, normal, roughness/metallic/F0, emissive, AO, subsurface, textures | transparent/transmissive and broader lobes are incomplete or absent |
+| frontend | raster GBuffer or capability-gated ray primary visibility | wireframe is raster-only; raster/ray parity remains unproved |
 | products | shared BaseColor, Normal, Material, Emissive, Subsurface, DeviceZ, MotionVector meanings | successful attachment writes do not establish PBR or motion correctness |
 | downstream join | lighting, temporal reconstruction, debug views, and capture consume the same semantics | every consumer depends on consistent identity, extent, format, and generation |
 
@@ -41,27 +33,26 @@ This promise currently covers opaque and alpha-tested static, instanced, skinned
 | Feature | Current path | Boundary |
 | --- | --- | --- |
 | Static meshes | GPU mesh cache plus prepared primitives and raster batches; static BLAS cache for ray use | Residency, batching benefit, and raster/ray parity unproved |
-| Flat instancing | Explicit instance groups plus renderer-side compatible auto batching controlled by `r.MeshAutoBatching` | Current batching is for compatible flat instances;
-ordering / cost evidence open | | Skeletal meshes
-    | Up to eight imported / cooked influences flow as current / previous joint matrices to raster and ray hit / deformation data
-    | Visual and motion - vector parity unproved;
-ray geometry rebuild cost open | | Morph targets
-    | Sparse morph deltas and current / previous weights feed raster / ray deformation and motion
-    | Combined skin + morph edge cases and bounds need evidence | | Frustum visibility
-    | Per - view bounds test produces raster - visible indices | Invalid bounds conservatively remain visible;
-occlusion culling is not claimed | | Ray geometry | Triangle BLASes, shared hit vertices / indices / material / instance records,
-    classic or partitioned TLAS | Deforming BLAS refit is not exposed;
-procedural intersection is absent |
+| Flat instancing | Explicit instance groups plus renderer-side compatible auto batching controlled by `r.MeshAutoBatching` | Current batching is for compatible flat instances; ordering/cost evidence open |
+| Skeletal meshes | Up to eight imported/cooked influences flow as current/previous joint matrices to raster and ray hit/deformation data | Visual and motion-vector parity unproved; ray geometry rebuild cost open |
+| Morph targets | Sparse morph deltas and current/previous weights feed raster/ray deformation and motion | Combined skin+morph edge cases and bounds need evidence |
+| Frustum visibility | Per-view bounds test produces raster-visible indices | Invalid bounds conservatively remain visible; occlusion culling is not claimed |
+| Ray geometry | Triangle BLASes, shared hit vertices/indices/material/instance records, classic or partitioned TLAS | Deforming BLAS refit is not exposed; procedural intersection is absent |
 
-    ##Material Contract
+## Material Contract
 
-    | Component | Current authored / GPU meaning | Raster and ray coverage | | -- -| -- -| -- -| | Base color | factor plus texture | shared
-    | | Normal | tangent - space normal texture | shared | | Roughness | factor plus texture | shared | | Metallic | factor plus texture
-    | shared | | Ambient occlusion | factor plus texture | shared | | Dielectric F0 | material value packed in material GBuffer | shared |
-    | Emissive | factor plus texture | shared | | Subsurface | color and strength,
-    each with material / texture contribution | shared | | Alpha mask | mode / cutoff;
-raster discard and ray any - hit / candidate rejection | opaque and alpha - tested only | | Double - sided
-    | culling and normal - orientation semantics | shared intent; parity evidence open |
+| Component | Current authored/GPU meaning | Raster and ray coverage |
+| --- | --- | --- |
+| Base color | factor plus texture | shared |
+| Normal | tangent-space normal texture | shared |
+| Roughness | factor plus texture | shared |
+| Metallic | factor plus texture | shared |
+| Ambient occlusion | factor plus texture | shared |
+| Dielectric F0 | material value packed in material GBuffer | shared |
+| Emissive | factor plus texture | shared |
+| Subsurface | color and strength, each with material/texture contribution | shared |
+| Alpha mask | mode/cutoff; raster discard and ray any-hit/candidate rejection | opaque and alpha-tested only |
+| Double-sided | culling and normal-orientation semantics | shared intent; parity evidence open |
 
 Raster GBuffer uses a bindful per-material layout for eight texture roles: base color, normal, roughness, metallic, ambient occlusion, emissive, subsurface color, and subsurface strength. Ray consumers use a fixed-capacity material texture descriptor array only when non-uniform indexing and partially-bound array capabilities are available and the capacity reaches 4096. This is bounded descriptor-array indexing, not engine-wide runtime-sized bindless.
 
@@ -76,8 +67,8 @@ Raster GBuffer uses a bindful per-material layout for eight texture roles: base 
 | Material | `R8G8B8A8_UNorm` | metallic 0, roughness 1, AO 1, F0 0.04 | PBR parameters and debug |
 | Emissive | `R16G16B16A16_Float` | zero | lighting composite |
 | Subsurface | `R8G8B8A8_UNorm` | zero | direct subsurface term |
-| Motion vector | `R16G16_Float` | zero | temporal reuse, accumulation, providers;
-sky motion is written separately | | Device Z | raster `D32_Float`; ray `R32_Float` | far/background by frontend convention | visibility depth and provider input |
+| Motion vector | `R16G16_Float` | zero | temporal reuse, accumulation, providers; sky motion is written separately |
+| Device Z | raster `D32_Float`; ray `R32_Float` | far/background by frontend convention | visibility depth and provider input |
 | Scene depth | `R32_Float` | derived from Device Z | lighting, sky, debug/capture product |
 
 The different Device Z storage types are an implementation distinction, not permission for different depth semantics. `AddLinearizeDeviceZPass` is the common downstream boundary.
@@ -132,14 +123,14 @@ Run the matrix across exact render extents, resize, scene reload, missing/pendin
 
 ## Acceptance Criteria
 
-- `AC-GMG-01` — every supported material component and default texture decodes to the documented GBuffer channel meaning and format for opaque raster, ray-inline, and ray-pipeline surfaces.
-- `AC-GMG-02` — raster, inline, and pipeline frontends agree within predeclared channel/depth tolerances for supported static, instanced, alpha-tested, double-sided, skinned, morphed, and combined deformation fixtures.
-- `AC-GMG-03` — current/previous transforms and deformation produce correct rigid, skinned, morphed, combined, and sky motion vectors across continuity and reset cases.
-- `AC-GMG-04` — the shared automatic resolver selects Pipeline when complete, otherwise Inline when complete, and rejects when neither route exists; no per-effect execution selector remains.
-- `AC-GMG-05` — the fixed ray material texture table accepts its documented capacity, rejects overflow before dispatch, and preserves material/descriptor identity under add/remove/reload.
-- `AC-GMG-06` — alpha cutoff edges, missing/default textures, invalid tangents/normals, invalid bounds, repeated geometry/material IDs, and double-sided orientation have deterministic documented results without stale data.
-- `AC-GMG-07` — transparent/transmissive, procedural, mesh/task/tessellation, and ray-wireframe requests remain explicitly unavailable; dormant BRDF/material-binding vocabulary is not presented as an active path.
-- `AC-GMG-08` — both backends create, transition, write, export/capture, and decode all eight GBuffer products without native validation errors or semantic drift.
+- `AC-GMG-01` � every supported material component and default texture decodes to the documented GBuffer channel meaning and format for opaque raster, ray-inline, and ray-pipeline surfaces.
+- `AC-GMG-02` � raster, inline, and pipeline frontends agree within predeclared channel/depth tolerances for supported static, instanced, alpha-tested, double-sided, skinned, morphed, and combined deformation fixtures.
+- `AC-GMG-03` � current/previous transforms and deformation produce correct rigid, skinned, morphed, combined, and sky motion vectors across continuity and reset cases.
+- `AC-GMG-04` � the shared automatic resolver selects Pipeline when complete, otherwise Inline when complete, and rejects when neither route exists; no per-effect execution selector remains.
+- `AC-GMG-05` � the fixed ray material texture table accepts its documented capacity, rejects overflow before dispatch, and preserves material/descriptor identity under add/remove/reload.
+- `AC-GMG-06` � alpha cutoff edges, missing/default textures, invalid tangents/normals, invalid bounds, repeated geometry/material IDs, and double-sided orientation have deterministic documented results without stale data.
+- `AC-GMG-07` � transparent/transmissive, procedural, mesh/task/tessellation, and ray-wireframe requests remain explicitly unavailable; dormant BRDF/material-binding vocabulary is not presented as an active path.
+- `AC-GMG-08` � both backends create, transition, write, export/capture, and decode all eight GBuffer products without native validation errors or semantic drift.
 
 ## Controlled Failure Modes And Checks
 
@@ -169,3 +160,4 @@ This contract is **defined but unproved**. Completion requires raw-product evide
 - [`RenderViewPreparation.cpp`](../../../../../../../Engine/Renderer/Private/View/RenderViewPreparation.cpp)
 - [`RenderGpuScene.cpp`](../../../../../../../Engine/Renderer/Private/Scene/GpuScene/RenderGpuScene.cpp)
 - [`MaterialTextureTableCapability.h`](../../../../../../../Engine/Renderer/Private/Scene/Materials/MaterialTextureTableCapability.h)
+

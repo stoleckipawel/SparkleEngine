@@ -1,69 +1,47 @@
-#Shader System Delivery Plan
+# Shader System Delivery Plan
 
-**Status : **implementation plan;
-includes the migration ledger but is not architecture authority
-    or proof of completion
+**Status:** implementation plan; includes the migration ledger but is not architecture authority or proof of completion
 
-            * *Responsibility : **own the ordered cross
-        - module shader,
-    graphics - pipeline,
-    and ray - tracing migration and its clean
-    - break validation sequence
+**Responsibility:** own the ordered cross-module shader, graphics-pipeline, and ray-tracing migration and its clean-break validation sequence
 
-            ** Architecture authority : **[Shader System Architecture](README.md)
+**Architecture authority:** [Shader System Architecture](README.md)
 
-                                        * *Feature acceptance : **[Shader System — Acceptance](Acceptance.md)
+**Feature acceptance:** [Shader System � Acceptance](Acceptance.md)
 
-                                        * *Migration provenance : **[Shader System Migration Baseline](MigrationBaseline.md)
+**Migration provenance:** [Shader System Migration Baseline](MigrationBaseline.md)
 
-                                        * *Related current readiness
-    : ****50 / 100. * *The compile / cook
-                                        / map
-                                        / library
-                                        / runtime route is integrated in source;
-compiler / backend / ABI, failure, reload, package,
-    and adoption evidence remains open.This plan adds no credit
-            .See[Current Feature Readiness](../../../ Acceptance / CurrentReadiness.md #foundation - world - content - shaders - and-tools)
-            .
+**Related current readiness:** **50/100.** The compile/cook/map/library/runtime route is integrated in source; compiler/backend/ABI, failure, reload, package, and adoption evidence remains open. This plan adds no credit. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
 
-        ##Delivery At A Glance
+## Delivery At A Glance
 
-```mermaid flowchart LR A[0 - 2 < br / > freeze identity and typed frontend]--
-        > B[3 - 4 < br / > compile jobs, map, and library] B-- > C[5 < br / > graphics pipeline materialization] C--
-        > D[6 - 9 < br / > ray runtime, effects, and whole - frame plan] D-- > E[10 < br / > Apply Changed and provenance] E--
-        > F[11 < br / > remove legacy authorities] F-- > G[12 < br / > regenerate and validate candidate]
+```mermaid
+flowchart LR
+    A[0-2<br/>freeze identity and typed frontend] --> B[3-4<br/>compile jobs, map, and library]
+    B --> C[5<br/>graphics pipeline materialization]
+    C --> D[6-9<br/>ray runtime, effects, and whole-frame plan]
+    D --> E[10<br/>Apply Changed and provenance]
+    E --> F[11<br/>remove legacy authorities]
+    F --> G[12<br/>regenerate and validate candidate]
 ```
 
-    | Invariant | Meaning | | -- -| -- -| | ordered clean break | no phase leaves two authoring,
-    lookup, cook, runtime, pipeline, graph,
-    or effect - selection authorities | | phases 0 - 11 are source / static checkpoints | they do not claim build, cook, runtime, backend,
-    capture, or performance success | | phase 12 is the executable closure
-        | regeneration and focused - to - broad validation happen only after the legacy floor is clean |
-        | architecture and acceptance remain external owners | this long file owns sequence and migration bookkeeping,
-    not system meaning
-    or a pass verdict |
+| Invariant | Meaning |
+| --- | --- |
+| ordered clean break | no phase leaves two authoring, lookup, cook, runtime, pipeline, graph, or effect-selection authorities |
+| phases 0-11 are source/static checkpoints | they do not claim build, cook, runtime, backend, capture, or performance success |
+| phase 12 is the executable closure | regeneration and focused-to-broad validation happen only after the legacy floor is clean |
+| architecture and acceptance remain external owners | this long file owns sequence and migration bookkeeping, not system meaning or a pass verdict |
 
-        ##Purpose And Authority
+## Purpose And Authority
 
-        This document owns the ordered shader,
-    graphics - pipeline, and ray - tracing migration phases, their clean - break boundaries, review gates,
-    and final validation sequence.It does not redefine the enduring architecture
-    or turn a source
-            - consistency checkpoint into executable evidence.
+This document owns the ordered shader, graphics-pipeline, and ray-tracing migration phases, their clean-break boundaries, review gates, and final validation sequence. It does not redefine the enduring architecture or turn a source-consistency checkpoint into executable evidence.
 
-              ##Implementation Contract
+## Implementation Contract
 
-              The unified shader
-        and ray - tracing migration is an ordered clean break,
-    not a menu.Each phase is one manually reviewed changelist - sized checkpoint on `master`;
-none may leave two authoring, parameter, lookup, cook, runtime, capability, pipeline, table, graph,
-    or effect - selection authorities active together.A difficult consumer blocks its owning phase rather than justifying an alias, adapter,
-    wrapper, disabled placeholder, or cleanup ticket.
+The unified shader and ray-tracing migration is an ordered clean break, not a menu. Each phase is one manually reviewed changelist-sized checkpoint on `master`; none may leave two authoring, parameter, lookup, cook, runtime, capability, pipeline, table, graph, or effect-selection authorities active together. A difficult consumer blocks its owning phase rather than justifying an alias, adapter, wrapper, disabled placeholder, or cleanup ticket.
 
-                                      ## #Common phase delivery contract
+### Common phase delivery contract
 
-                                          Every implementation prompt and every phase
-        - exit - criteria list below inherits this contract.Phase - specific references are additive; they never replace the repository process or review authorities.
+Every implementation prompt and every phase-exit-criteria list below inherits this contract. Phase-specific references are additive; they never replace the repository process or review authorities.
 
 Mandatory references for every phase:
 
@@ -82,40 +60,20 @@ Mandatory references for every phase:
 - [Ray-tracing target architecture](../../Modules/Engine/Renderer/Features/RayTracing/ExecutionArchitecture.md)
 - [External Renderer Repository Comparison](../../Modules/Engine/Renderer/RendererRepositoriesResearch.md)
 
-Before editing, the implementer must record the phase outcome, current authority being replaced or extended, mutable and lifetime owners, producer-to-product-to-consumer route, build/generated-artifact membership, copy and complexity budget, performance classification, selected standards/workload gates, exact rejected-name search set, semantic-equivalent search set, and unrelated dirty-path exclusions. The inventory must walk definitions to all uses and representative uses back to their owner;
-a name
-    - only list is insufficient.
+Before editing, the implementer must record the phase outcome, current authority being replaced or extended, mutable and lifetime owners, producer-to-product-to-consumer route, build/generated-artifact membership, copy and complexity budget, performance classification, selected standards/workload gates, exact rejected-name search set, semantic-equivalent search set, and unrelated dirty-path exclusions. The inventory must walk definitions to all uses and representative uses back to their owner; a name-only list is insufficient.
 
-      During implementation,
-    complete the real production route before calling the target present.Update every owned producer, consumer, constructor,
-    reset / reload / retirement path, include, filename, build entry, generated schema / artifact, diagnostic, tool / frontend model,
-    and current document in the phase that replaces the contract.Inspect the scoped diff after each coherent batch.Any old - to
-    - new converter,
-    legacy overload, alias, fallback reader, dual writer, feature flag, parallel registry / cache / generation, copied schema,
-    forwarding facade, or renamed equivalent is a failed clean break,
-    not a temporary convenience.
+During implementation, complete the real production route before calling the target present. Update every owned producer, consumer, constructor, reset/reload/retirement path, include, filename, build entry, generated schema/artifact, diagnostic, tool/frontend model, and current document in the phase that replaces the contract. Inspect the scoped diff after each coherent batch. Any old-to-new converter, legacy overload, alias, fallback reader, dual writer, feature flag, parallel registry/cache/generation, copied schema, forwarding facade, or renamed equivalent is a failed clean break, not a temporary convenience.
 
-        Every phase closes with one evidence table mapping each AC to its cheapest claim
-    - falsifying check,
-    exact command or inspection route, result,
-    and any unavailable evidence.Acceptance requires all
-        of the following :
+Every phase closes with one evidence table mapping each AC to its cheapest claim-falsifying check, exact command or inspection route, result, and any unavailable evidence. Acceptance requires all of the following:
 
-    -prove the target is reachable through the intended production owner and is consumed by the real downstream path;
-a new definition, isolated fixture, dead registration, or test - only route does not count;
+- prove the target is reachable through the intended production owner and is consumed by the real downstream path; a new definition, isolated fixture, dead registration, or test-only route does not count;
 - prove the replaced path cannot still produce, load, publish, select, execute, or present a result, using exact rejected-name searches plus semantic searches for equivalent fields, adapters, aliases, fallbacks, duplicated layouts, alternate generated formats, parallel directories, and stale build/tool/document consumers;
 - classify every touched site as authority, composition, producer, consumer, or duplicate, and leave one mutable authority, one lifetime/generation authority, and one production path for each responsibility;
-- account for every permanent type, wrapper, field, log, diagnostic, setting, and file added;
-delete temporary instrumentation, fault injection, local harnesses, reports, and unauthorized test scaffolding before handoff;
+- account for every permanent type, wrapper, field, log, diagnostic, setting, and file added; delete temporary instrumentation, fault injection, local harnesses, reports, and unauthorized test scaffolding before handoff;
 - run pinned no-write formatting where applicable, `git diff --check`, local-link and file/include/CMake inventory checks, and `architecture_boundary_check` whenever the Renderer/RHI boundary changes;
-- apply the [Code Review](../../../Engineering/Workflow/CodeReview.md) procedure to the final scoped diff. A phase is `PASS` only when it has no P0-P2 finding and all evidence authorized for that phase is present;
-otherwise report `BLOCKED` and do not describe the phase as complete.
+- apply the [Code Review](../../../Engineering/Workflow/CodeReview.md) procedure to the final scoped diff. A phase is `PASS` only when it has no P0-P2 finding and all evidence authorized for that phase is present; otherwise report `BLOCKED` and do not describe the phase as complete.
 
-    Phases 0
-    - 11 must not claim compile,
-    runtime, backend, capture,
-    or performance success.Phase 12 must include negative and corruption cases that would fail if the new authority, validation, lifetime,
-    or selection route were bypassed; a happy-path launch alone is not proof.
+Phases 0-11 must not claim compile, runtime, backend, capture, or performance success. Phase 12 must include negative and corruption cases that would fail if the new authority, validation, lifetime, or selection route were bypassed; a happy-path launch alone is not proof.
 
 ### Common rules for every phase
 
@@ -126,14 +84,9 @@ otherwise report `BLOCKED` and do not describe the phase as complete.
 - Preserve `PassCommandContext` as command/declared-resource/diagnostic infrastructure only. Pass recording performs no file I/O, compilation, shader-map/library lookup, layout creation, pipeline creation, or hidden resource discovery.
 - Do not add permutations, `ShouldPrecachePermutation`, pipeline precaching/prewarming, preload/readiness/streaming controls, native driver caches, or a universal authored shader-program layer. Full RT execution is delivered only through the focused composition, RHI, backend, graph, scene, and effect owners frozen here.
 - Do not encode classic/partitioned or descriptor/device-address selection in shader class names, HLSL root filenames, authored defines, effect uniforms, or graph call-site mode parameters. One semantic AS parameter is lowered by private RHI.
-- Treat every consumed render product as mandatory unless the owning architecture names a real alternate algorithm. Never add a clear/copy/no-op/dummy pass merely to satisfy graph production or make missing work look successful. Shadow visibility selects exactly one real inline-query or pipeline producer before graph construction and fails when neither is available;
-frame orchestration does not duplicate shader / runtime / RHI mechanism checks.- Do not add one - field carriers,
-    broad context / service / resource bags, a second catalog / map / runtime - generation owner, permanent migration diagnostics,
-    per - job logging, a compiler - result browser, report generators, feature flags, compatibility formats,
-    or submitted test scaffolding.- Update definitions, consumers, filenames, includes, CMake / source groups, CLI / help / autocomplete,
-    editor models, diagnostics,
-    and current documentation in the phase that owns their replacement.Record obsolete disposable generated / cooked outputs immediately;
-Phase 12 is the sole phase that deletes and regenerates them after the source floor is clean.
+- Treat every consumed render product as mandatory unless the owning architecture names a real alternate algorithm. Never add a clear/copy/no-op/dummy pass merely to satisfy graph production or make missing work look successful. Shadow visibility selects exactly one real inline-query or pipeline producer before graph construction and fails when neither is available; frame orchestration does not duplicate shader/runtime/RHI mechanism checks.
+- Do not add one-field carriers, broad context/service/resource bags, a second catalog/map/runtime-generation owner, permanent migration diagnostics, per-job logging, a compiler-result browser, report generators, feature flags, compatibility formats, or submitted test scaffolding.
+- Update definitions, consumers, filenames, includes, CMake/source groups, CLI/help/autocomplete, editor models, diagnostics, and current documentation in the phase that owns their replacement. Record obsolete disposable generated/cooked outputs immediately; Phase 12 is the sole phase that deletes and regenerates them after the source floor is clean.
 - Preserve unrelated dirty work. Phase 0 records the path-level exclusion list and every later phase rechecks it.
 
 ### Frozen base vocabulary and navigation
@@ -141,31 +94,20 @@ Phase 12 is the sole phase that deletes and regenerates them after the source fl
 | Responsibility | Target vocabulary | Canonical owner |
 | --- | --- | --- |
 | virtual source identity | `ShaderSourceMountTable` and canonical `/Engine`, `/Project`, `/Plugin/<Name>` paths | ShaderCompiler source/dependency capability |
-| shader authoring type | `GlobalShader<Shader>` with nested `Parameters` | generic primitive in RHI public;
-concrete class in semantic Renderer pass / feature ownership | | implementation registration | `IMPLEMENT_GLOBAL_SHADER(Class, VirtualSource, Entry, Stage)` | concrete shader implementation | | immutable metadata | `ShaderTypeDesc`, `ShaderTypeId`, `GlobalShaderCatalog` | catalog built from concrete Renderer declarations and frozen before query | | compile work | `ShaderCompileRequest`, `ShaderCompileJob`, `ShaderCompileInputHash`, `ShaderCompileResult`
-    | ShaderCompiler compilation capability | | cooked logical lookup | `GlobalShaderMap` | generated by ShaderCompiler;
-opened read - only by Renderer runtime generation | | cooked code | `ShaderCodeRecord`, `ShaderCodeHash`, `CookedShaderLibrary`
-    | generated cook output;
-neutral validation records in RHI public | | typed runtime lookup | `ShaderRef<Shader>` | Renderer resolves through the active `GlobalShaderMap` | | graph use | `AllocParameters<Shader>`, `Dispatch<
-    Shader>`,
-    typed graphics draw helpers, `TraceRays`, `RenderPassLabel` override
-    | `FrameGraphBuilder` focused helpers over existing graph / runtime owners | | pass - wide raster intent
-    | `RasterPassRenderState` with granular blend / depth - stencil and dynamic stencil - reference operations
-    | semantic mesh - pass / feature setup;
-never a complete pipeline
-    or attachment description | | graphics attachment compatibility | derived immutable attachment signature
-        | frame graph derives it from attachment bindings and resource descriptions | | prepared graphics work | vertex - input identity,
-    topology, material fill / cull, streams,
-    and draw arguments | focused mesh / material draw collaborator | | materialized graphics pipeline identity
-    | `GraphicsPipelineKey` ->complete internal `GraphicsPipelineDesc` | existing Renderer runtime generation assembles / retains;
-RHI lowers to paired backend objects | | shader - visible scene AS
-    | one acceleration - structure field such as `SceneTlas` and one `FrameGraphAccelerationStructureHandle` value
-    | concrete dispatch shader declares semantics;
-frame graph declares access;
-private
-RHI selects classic / partitioned native descriptor representation | | RT stage composition
-    | `RayTracingPipelineComposition` with typed shader refs,
-    hit groups, ray - generation - derived shared ABI, and optional bounded local data | Renderer semantic effect / shader owner; never used for one-shader compute or ordinary graphics |
+| shader authoring type | `GlobalShader<Shader>` with nested `Parameters` | generic primitive in RHI public; concrete class in semantic Renderer pass/feature ownership |
+| implementation registration | `IMPLEMENT_GLOBAL_SHADER(Class, VirtualSource, Entry, Stage)` | concrete shader implementation |
+| immutable metadata | `ShaderTypeDesc`, `ShaderTypeId`, `GlobalShaderCatalog` | catalog built from concrete Renderer declarations and frozen before query |
+| compile work | `ShaderCompileRequest`, `ShaderCompileJob`, `ShaderCompileInputHash`, `ShaderCompileResult` | ShaderCompiler compilation capability |
+| cooked logical lookup | `GlobalShaderMap` | generated by ShaderCompiler; opened read-only by Renderer runtime generation |
+| cooked code | `ShaderCodeRecord`, `ShaderCodeHash`, `CookedShaderLibrary` | generated cook output; neutral validation records in RHI public |
+| typed runtime lookup | `ShaderRef<Shader>` | Renderer resolves through the active `GlobalShaderMap` |
+| graph use | `AllocParameters<Shader>`, `Dispatch<Shader>`, typed graphics draw helpers, `TraceRays`, `RenderPassLabel` override | `FrameGraphBuilder` focused helpers over existing graph/runtime owners |
+| pass-wide raster intent | `RasterPassRenderState` with granular blend/depth-stencil and dynamic stencil-reference operations | semantic mesh-pass/feature setup; never a complete pipeline or attachment description |
+| graphics attachment compatibility | derived immutable attachment signature | frame graph derives it from attachment bindings and resource descriptions |
+| prepared graphics work | vertex-input identity, topology, material fill/cull, streams, and draw arguments | focused mesh/material draw collaborator |
+| materialized graphics pipeline identity | `GraphicsPipelineKey` -> complete internal `GraphicsPipelineDesc` | existing Renderer runtime generation assembles/retains; RHI lowers to paired backend objects |
+| shader-visible scene AS | one acceleration-structure field such as `SceneTlas` and one `FrameGraphAccelerationStructureHandle` value | concrete dispatch shader declares semantics; frame graph declares access; private RHI selects classic/partitioned native descriptor representation |
+| RT stage composition | `RayTracingPipelineComposition` with typed shader refs, hit groups, ray-generation-derived shared ABI, and optional bounded local data | Renderer semantic effect/shader owner; never used for one-shader compute or ordinary graphics |
 | RT logical table mapping | `RayTracingShaderTablePlan` and the documented instance/geometry/ray-type formula | Renderer scene/effect owner |
 | neutral/native RT mechanism | opaque `RayTracingPipeline`, `RayTracingShaderTable`, and `TraceRaysDesc` | RHI public contract and D3D12/Vulkan private implementations |
 | materialized layout/pipeline/table and generation | existing `RenderPassRuntimeCache` | Renderer `Private/Pipeline`; one active/replacement/retired generation for maps, pipelines, and tables |
@@ -181,19 +123,13 @@ No former RT task is deferred back to the target-state document:
 | --- | --- | --- |
 | freeze RT contract/current baseline | Phase 0 | one inventory and provenance authority covers shader, inline query, compiler-only metadata, RHI/backend absence, effects, and final blocked claims |
 | graphics-state ownership and materialization | Phase 5 | final map-backed shader references, graph attachments, mesh/material facts, and pass state replace the caller aggregate before RT adds another pipeline kind |
-| complete RT-library compiler toolchain | Phase 6 | implementing it against the Phase 4-deleted package schema would be throwaway work;
-final map / library records land with their first runtime consumer | | backend - neutral RT contract | Phase 6
-    | a public contract with no paired backend / graph consumer would be a disabled placeholder |
-    | D3D12 / Vulkan native pipelines and tables | Phase 6 | both backends,
-    neutral arithmetic,
-    and all - stage sentinels form one honest capability gate | | frame graph / runtime cache / lifetime | Phase 6
-    | native execution cannot bypass graph / resource / generation ownership even temporarily | | opaque GBuffer parity | Phase 7
-    | first product effect builds directly on the complete foundation while preserving the explicit raster algorithm |
-    | alpha hit semantics,
-    shadow ray type,
-    scene indexing | Phase 8 | adds one meaningful production slice and one nontrivial shared scene - to - SBT mapping |
-        | intersection and callable proof | Phase 6 | focused existing validation
-    or a removed - before - handoff local harness proves legal stage support with the native foundation; product effects do not receive fake empty stages and no test-only fixture is submitted |
+| complete RT-library compiler toolchain | Phase 6 | implementing it against the Phase 4-deleted package schema would be throwaway work; final map/library records land with their first runtime consumer |
+| backend-neutral RT contract | Phase 6 | a public contract with no paired backend/graph consumer would be a disabled placeholder |
+| D3D12/Vulkan native pipelines and tables | Phase 6 | both backends, neutral arithmetic, and all-stage sentinels form one honest capability gate |
+| frame graph/runtime cache/lifetime | Phase 6 | native execution cannot bypass graph/resource/generation ownership even temporarily |
+| opaque GBuffer parity | Phase 7 | first product effect builds directly on the complete foundation while preserving the explicit raster algorithm |
+| alpha hit semantics, shadow ray type, scene indexing | Phase 8 | adds one meaningful production slice and one nontrivial shared scene-to-SBT mapping |
+| intersection and callable proof | Phase 6 | focused existing validation or a removed-before-handoff local harness proves legal stage support with the native foundation; product effects do not receive fake empty stages and no test-only fixture is submitted |
 | eligible effects and whole-frame switch | Phase 9 | selection expands only after two accepted dual-mode effects and production indexing exist |
 | Shader Tools/provenance | Phase 10 | the frontend describes the final map/pipeline/table/effect owners rather than an intermediate package/runtime model |
 | legacy/compatibility eradication | Phase 11 | the final semantic floor runs after all source owners exist and before artifacts/evidence are regenerated |
@@ -1050,7 +986,7 @@ A fault-sensitive check temporarily perturbs one shared hit-store result and pro
 - Required generated artifacts match final source; no obsolete output, report, debug artifact, capture, log, or temporary proof file is unintentionally included.
 - Diagnostics are bounded, orchestration reads as named stages, and no owner/folder/function mixes unrelated responsibilities.
 - D3D12/Vulkan evidence proves attachment-derived graphics compatibility, granular pass state, exact-only pipeline variants, all six RT stages, GBuffer and shadow dual-mode parity, strict/automatic selection, explicit supported alternate algorithms, mandatory-product failure, table indexing/bounds, reload/device recreation, and submission-token retirement; every unsupported effect or unavailable claim is named precisely.
-- Repository-wide exact and semantic searches plus bidirectional owner traces prove every rejected responsibility is absent from runtime, tools, build membership, generated/cooked artifacts, frontend models, and current documentation—not merely renamed—and that shader authoring, metadata, map/library lookup, generation, graphics-state contribution/materialization, RT composition, native pipeline/table, scene mapping, graph execution, effect planning, and frontend intent each have one non-overlapping authority.
+- Repository-wide exact and semantic searches plus bidirectional owner traces prove every rejected responsibility is absent from runtime, tools, build membership, generated/cooked artifacts, frontend models, and current documentation�not merely renamed�and that shader authoring, metadata, map/library lookup, generation, graphics-state contribution/materialization, RT composition, native pipeline/table, scene mapping, graph execution, effect planning, and frontend intent each have one non-overlapping authority.
 - The final Code Review report classifies every touched site, records the complexity and performance result, contains no P0-P2 finding, and resolves every earlier `BLOCKED` claim with exact evidence or leaves the whole migration `BLOCKED`; partial acceptance is not allowed.
 - Branch is `master`, staged diff is empty, scoped checks pass where available, and the user receives the unstaged changelist for manual review.
 
@@ -1165,8 +1101,9 @@ Primary ray-tracing implementation references:
 
 ## Feature Acceptance Handoff
 
-Final acceptance is owned by the [Shader System — Acceptance](Acceptance.md) contract. This plan is complete only when every phase exit is closed and the candidate report links the exact evidence required there.
+Final acceptance is owned by the [Shader System � Acceptance](Acceptance.md) contract. This plan is complete only when every phase exit is closed and the candidate report links the exact evidence required there.
 
 ## Delivery Outcome
 
 A successful execution leaves the [Shader System Architecture](README.md) as the sole enduring design authority, the adjacent feature acceptance contract as the sole definition of done, and current code/build configuration as implementation truth. Deferred permutations, precaching, preload/streaming, and native driver-cache work require a new measured plan rather than extending this migration diary.
+

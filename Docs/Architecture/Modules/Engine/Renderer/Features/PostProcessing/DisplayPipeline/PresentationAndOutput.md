@@ -1,20 +1,12 @@
-#Renderer Presentation And Output
+# Renderer Presentation And Output
 
-**Status : **current feature dossier;
-source - backed, not colorimetric, numerical, display, capture, backend, or release evidence
+**Status:** current feature dossier; source-backed, not colorimetric, numerical, display, capture, backend, or release evidence
 
-                                                                                ** Verified
-    : **2026
-      - 09
-      - 19 against source input revision `a884b6946802e933fafc9fe4c6cdfb93c4cde7e4` plus the current frame
+**Verified:** 2026-09- 19 against source input revision `a884b6946802e933fafc9fe4c6cdfb93c4cde7e4` plus the current frame
       - composition worktree;
 evidence `S` only
 
-        ** Scope : ** `REN
-                   - POST
-                   - 08` and `REN
-                   - POST
-                   - 10`; debug-to-presentation handoff, current SDR output encoding, back-buffer copy, and viewport-product publication. `REN-POST-09` HDR output has its own dossier.
+**Scope:** `REN-POST-08` and `REN-POST-10`; debug-to-presentation handoff, current SDR output encoding, back-buffer copy, and viewport-product publication. `REN-POST-09` HDR output has its own dossier.
 
 **Current readiness:** **45/100** for current SDR output. [HDR Display Output](HDRDisplayOutput/README.md) is a separately tracked first-release target at **0/100**. Encoding/format, resize/DPI, capture interpretation, backend present, and artifact proof remains open. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
@@ -30,119 +22,87 @@ evidence `S` only
 
 This stage is the semantic handoff from Renderer image processing to an external consumer. A visible image is not enough: the destination, encoding, extent, alpha, frame, viewport, and generation must all identify the product that was actually published.
 
-**Parent family:** [Post Processing](../README.md);
-[Tone Mapping](ToneMapping.md) owns the scene - referred HDR - to - display
-    - linear transform
+**Parent family:** [Post Processing](../README.md); [Tone Mapping](ToneMapping.md) owns the scene - referred HDR-to-display-linear transform
 
-    ##Feature Promise
+## Feature Promise
 
-    Sparkle accepts one output
-    - extent display - linear result from the presentation - domain owner,
-    applies one output encoding,
-    then copies it to the imported back buffer or publishes an offscreen viewport product.Scene - referred HDR passes through tone mapping;
+Sparkle accepts one output-extent display-linear result from the presentation - domain owner, applies one output encoding, then copies it to the imported back buffer or publishes an offscreen viewport product.Scene - referred HDR passes through tone mapping;
 display
         - linear exact diagnostics bypass
               it.
 
-```text ResolvedSceneColor->Display
-              Mapping(tone map HDR / preserve exact display - linear) -> Output Encoding->back
-        - buffer copy
-    or FinalColorLdr viewport product
+```text
+ResolvedSceneColor
+  ->Display Mapping(tone map HDR / preserve exact display - linear)
+  -> Output Encoding
+  -> back-buffer copy or FinalColorLdr viewport product
 ```
 
-        | Stage | Choices | Current boundary | | -- -| -- -| -- -| | Debug handoff | Lit
-    or one of 15 diagnostic modes | [Debug Views](../../ DebugViews / README.md) owns the producer and presentation - domain classification;
-exact views use point reconstruction and HDR views retain configured reconstruction | | Output encoding | Automatic from output format,
-    Linear,
-    sRGB shader encoding | writes the linear counterpart of the presentation format before copy / publication | | HDR display
-    | no current route | mandatory HDR target and SDR fallback are defined in[HDR Display Output](HDRDisplayOutput / README.md),
-    with the exact platform route discovery - blocked |
+| Stage | Choices | Current boundary |
+| --- | --- | --- |
+| Debug handoff | Lit or one of 15 diagnostic modes | [Debug Views](../../DebugViews/README.md) owns the producer and presentation - domain classification;
+exact views use point reconstruction and HDR views retain configured reconstruction |
+| Output encoding | Automatic from output format, Linear, sRGB shader encoding | writes the linear counterpart of the presentation format before copy/publication |
+| HDR display | no current route | mandatory HDR target and SDR fallback are defined in [HDR Display Output](HDRDisplayOutput/README.md), with the exact platform route discovery-blocked |
 
-    The current source
-        implements the[Debug View Presentation Architecture](../../ DebugViews / PresentationArchitecture.md) split between scene
-        - referred HDR and display - linear exact products.Runtime pixels,
+The current source
+        implements the [Debug View Presentation Architecture](../../DebugViews/PresentationArchitecture.md) split between scene-referred HDR and display - linear exact products.Runtime pixels,
     numerical behavior, backend agreement, and capture interpretation remain unproved,
     so `REN - POST
     - 10` remains Partial.
 
-      ##Output Ownership
+## Output Ownership
 
-    - Viewport ID 0 imports the presentable back buffer and copies encoded color into it.- Nonzero viewport requests retain `FinalColorLdr`; `SceneDepth` and `Normals` may also be exported as viewport products.
+- Viewport ID 0 imports the presentable back buffer and copies encoded color into it.
+- Nonzero viewport requests retain `FinalColorLdr`; `SceneDepth` and `Normals` may also be exported as viewport products.
 - Product identity carries viewport-request generation, extent, and format. Capture provenance remains incomplete for shader/graph generation and requested-versus-resolved product/color interpretation.
 - UI composition happens after graph execution and is owned by [UI and Viewport Composition](../../ViewportAndDiagnostics/UiAndViewportComposition.md), not by the color-conversion passes.
-- Frame generation is absent;
-one executed render frame leads to the normal submission / present route without a generated
-    - frame owner.
+- Frame generation is absent; one executed render frame leads to the normal submission/present route without a generated-frame owner.
 
-      ##Failure,
-    Tradeoffs,
-    And Evidence
+## Failure, Tradeoffs, And Evidence
 
-    - Invalid encoding selection,
-    unsupported HDR request, wrong format pairing, double encoding, clipping, NaN / Inf,
-    and stale output identity must be visible failures.
-    - One presentation owner prevents each lighting
-        / provider path from inventing a color pipeline and owns the exact diagnostic bypass explicitly.
-    - `REN - E17` owns numerical mapper / encoding combinations;
-`REN - E18` owns debug presentation;
-`RHI - E04` and `RHI - E12` own format and present behavior.The feature
-    - local contract is defined below.
+- Invalid encoding selection, unsupported HDR request, wrong format pairing, double encoding, clipping, NaN/Inf, and stale output identity must be visible failures.
+- One presentation owner prevents each lighting/provider path from inventing a color pipeline and owns the exact diagnostic bypass explicitly.
+- `REN-E17` owns numerical mapper/encoding combinations; `REN-E18` owns debug presentation; `RHI-E04` and `RHI-E12` own format and present behavior. The feature-local contract is defined below.
 
-      ##Acceptance Criteria
+## Acceptance Criteria
 
-    - `AC - OUT - 01` — Automatic,
-    Linear,
-    and sRGB choices resolve deterministically from the selected output format and encode a pinned display
-    - linear ramp exactly once within declared tolerance.- `AC - OUT - 02` — the output - encoding target uses the required linear
-    - format counterpart and the final copy / publication preserves channel order,
-    alpha policy, dimensions, and viewport rectangle.- `AC - OUT - 03` — viewport 0 reaches the imported presentable back buffer;
-nonzero viewports publish generation - bound final color and requested depth / normal products without cross - viewport
-    or stale - generation reuse.- `AC - OUT - 04` — resize,
-    minimize / restore, output - format change, viewport destruction / recreation,
-    and scene reload rebuild / invalidate the right products and never present a stale prior image as current.- `AC - OUT
-    - 05` — SDR / Linear encoding is never advertised as HDR display support;
-HDR requested / active / fallback behavior delegates to `AC - HDR - *` and cannot bypass the HDR dossier.- `AC - OUT - 06` — scene
+- `AC-OUT-01` � Automatic, Linear, and sRGB choices resolve deterministically from the selected output format and encode a pinned display-linear ramp exactly once within declared tolerance.
+- `AC-OUT-02` � the output-encoding target uses the required linear-format counterpart and the final copy/publication preserves channel order, alpha policy, dimensions, and viewport rectangle.
+- `AC-OUT-03` � viewport 0 reaches the imported presentable back buffer; nonzero viewports publish generation-bound final color and requested depth/normal products without cross-viewport or stale-generation reuse.
+- `AC-OUT-04` � resize, minimize/restore, output-format change, viewport destruction/recreation, and scene reload rebuild/invalidate the right products and never present a stale prior image as current.
+- `AC-OUT-05` � SDR/Linear encoding is never advertised as HDR display support; HDR requested/active/fallback behavior delegates to `AC-HDR-*` and cannot bypass the HDR dossier.
+- `AC-OUT-06` � scene
     - referred HDR debug modes receive exposure / tone mapping exactly once;
 display - linear exact modes bypass both;
-every mode receives output encoding exactly once.- `AC - OUT - 07` — D3D12 and Vulkan decoded back
-            - buffer / offscreen products agree with the numerical oracle and produce no uncategorized native presentation
-                / format validation issue.
+every mode receivesoutput encoding exactly once.
+- `AC-OUT-07` � D3D12 and Vulkan decoded back-buffer/offscreen products agree with the numerical oracle and produce no uncategorized native presentation/format validation issue.
 
-                  ##Controlled Failure Modes And Checks
+## Controlled Failure Modes And Checks
 
-        | Failure ID | Injection
-    or cause | Required safe behavior | Detecting check | | -- -| -- -| -- -| -- -| | `FM - OUT - 01` | invalid encoding
-    or incompatible format pair | graph / settings resolution rejects before copy / present and names both values | `CHK - OUT - 01` |
-        | `FM - OUT - 02` | stale viewport / product generation after resize / recreate | product / draw / capture is refused
-    or retired;
-stale image is not current output | `CHK - OUT - 02` | | `FM - OUT - 03` | minimize / zero extent
-    or unavailable back buffer | no out - of - bounds dispatch / copy occurs;
-recovery rebuilds on valid extent | `CHK-OUT-02` |
+| Failure ID | Injection or cause | Required safe behavior | Detecting check |
+| --- | --- | --- | --- |
+| `FM-OUT-01` | invalid encoding or incompatible format pair | graph/settings resolution rejects before copy/present and names both values | `CHK-OUT-01` |
+| `FM-OUT-02` | stale viewport/product generation after resize/recreate | product/draw/capture is refused or retired; stale image is not current output | `CHK-OUT-02` |
+| `FM-OUT-03` | minimize/zero extent or unavailable back buffer | no out-of-bounds dispatch/copy occurs; recovery rebuilds on valid extent | `CHK-OUT-02` |
 | `FM-OUT-04` | NaN/Inf/extreme display-linear input or double encoding | numerical check exposes the declared policy or fails the candidate | `CHK-OUT-01` |
 | `FM-OUT-05` | SDR/Linear route or partial HDR plumbing is advertised as complete HDR | cross-dossier selector/source/package audit rejects the support claim | `CHK-OUT-03` |
 
 | Check | Exercise and oracle | Covers |
 | --- | --- | --- |
-| `CHK-OUT-01` | shader/copy readback of known ramps over encoding × output-format × alpha/extreme-value cells | `AC-OUT-01`, `AC-OUT-02`, `AC-OUT-07`;
-`FM - OUT - 01`, `FM - OUT - 04` | | `CHK - OUT - 02` | swapchain and two offscreen viewports through resize, zero extent,
-    minimize / restore, format change, destruction / recreation, reload, and capture | `AC - OUT - 03`, `AC - OUT - 04`; `FM-OUT-02`, `FM-OUT-03` |
-| `CHK-OUT-03` | inspect selectors, package/runtime UI, debug captures, and documentation for exact-debug and SDR claims;
-route all HDR state / evidence to `CHK - HDR - *` | `AC - OUT - 05`, `AC - OUT - 06`;
-`FM - OUT - 05` | | `CHK - OUT - 04` | paired D3D12 / Vulkan presentation / offscreen run with decoded artifacts and native validation | `AC - OUT - 02`, `AC - OUT - 03`, `AC
-        - OUT - 07`
-    |
+| `CHK-OUT-01` | shader/copy readback of known ramps over encoding � output-format � alpha/extreme-value cells | `AC-OUT-01`, `AC-OUT-02`, `AC-OUT-07`; `FM-OUT-01`, `FM-OUT-04` |
+| `CHK-OUT-02` | swapchain and two offscreen viewports through resize, zero extent, minimize/restore, format change, destruction/recreation, reload, and capture | `AC-OUT-03`, `AC-OUT-04`; `FM-OUT-02`, `FM-OUT-03` |
+| `CHK-OUT-03` | inspect selectors, package/runtime UI, debug captures, and documentation for exact-debug and SDR claims; route all HDR state/evidence to `CHK-HDR-*` | `AC-OUT-05`, `AC-OUT-06`; `FM-OUT-05` |
+| `CHK-OUT-04` | paired D3D12/Vulkan presentation/offscreen run with decoded artifacts and native validation | `AC-OUT-02`, `AC-OUT-03`, `AC-OUT-07` |
 
-    This contract is **source - present but unproved **.Passing source checks does not close `REN - POST - 10`,
-    separate `REN - POST - 09`/`FCR - REN - 26` HDR output, or runtime
+This contract is **source - present but unproved**. Passing source checks does not close `REN - POST - 10`, separate `REN-POST-09`/`FCR-REN-26` HDR output, or runtime
             / backend acceptance.
 
-              ##Primary Source Routes
+## Primary Source Routes
 
-        - [`PresentationPasses.cpp`](../../../../../../../../ Engine / Renderer / Private / Passes / Presentation / PresentationPasses.cpp),
-    [`DisplayMapping.cpp`](../../../../../../../../ Engine / Renderer / Private / Passes / Presentation / Display / DisplayMapping.cpp),
-    [`ToneMapping.cpp`](../../../../../../../../ Engine / Renderer / Private / Passes / Presentation / Display / ToneMapping.cpp),
-    and[`OutputEncoding.cpp`](../../../../../../../../ Engine / Renderer / Private / Passes / Presentation / Display / OutputEncoding.cpp)
-    - [`OutputEncodingSettings.cpp`](
-            ../../../../../../../../ Engine / Renderer / Private / Passes / Presentation / Display / OutputEncodingSettings.cpp)
-    - [`SceneRenderingPasses.cpp`](../../../../../../../../ Engine / Renderer / Private / Passes / Scene / SceneRenderingPasses.cpp)
+- [`PresentationPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp), [`DisplayMapping.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/ Display / DisplayMapping.cpp), [`ToneMapping.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/ Display / ToneMapping.cpp),
+    and [`OutputEncoding.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/ Display / OutputEncoding.cpp)
+- [`OutputEncodingSettings.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/ Presentation / Display / OutputEncodingSettings.cpp)
+    - [`SceneRenderingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/ Scene / SceneRenderingPasses.cpp)
         and[`PresentationPasses.cpp`](../../../../../../../../ Engine / Renderer / Private / Passes / Presentation / PresentationPasses.cpp)
+

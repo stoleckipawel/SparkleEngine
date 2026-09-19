@@ -1,13 +1,8 @@
-#D.Whole Repository Architecture Map
+# D. Whole Repository Architecture Map
 
-**Status : **current map;
-source - backed and descriptive,
-    not a normative architecture
-    or strategy contract
+**Status:** current map; source-backed and descriptive, not a normative architecture or strategy contract
 
-            * *Last verified : **repository
-        - wide map 2026 - 08 - 28 at committed `master` revision `20814381`;
-Launcher ownership and repository code - style routes reverified 2026 - 08 - 31 at committed `master` revision `61fe39d9`; build-module dependency visibility reverified 2026-09-03 against the current working tree
+**Last verified:** repository-wide map 2026-08-28 at committed `master` revision `20814381`; Launcher ownership and repository code-style routes reverified 2026-08-31 at committed `master` revision `61fe39d9`; build-module dependency visibility reverified 2026-09-03 against the current working tree
 
 **Scope:** implemented repository structure, target boundaries, runtime and tool flows, project catalog, and current source-evidence limits
 
@@ -18,42 +13,32 @@ This is the shortest current route through the repository. It names implemented 
 Target capability belongs to [Principal Graphics Requirements](../Strategy/Requirements.md), binding implementation rules are routed by the [Engineering task map](../Engineering/README.md#choose-by-task), and focused decisions belong to their architecture documents. In particular:
 
 - [Renderer and RHI Architecture Boundary](Decisions/RendererRhiBoundary.md) owns Renderer/RHI dependency and mechanism rules.
-- [Module Architecture And Capability Inventory](Modules/README.md) owns module navigation plus the dated, feature-level source inventory and explicit coverage/limitations;
-it does not own target architecture, release classification, or executable evidence.
-        - [Product Workflow Coverage](CrossModule / ProductWorkflowCoverage.md) and[Product Execution Traces](
-            CrossModule / ProductExecutionTraces.md) own the horizontal actor
-        - journey comparison and vertical non - graphics handoff map;
-they do not prove usability
-    or release readiness.- [World Coordinate, Units, and Transform Contract](Decisions / WorldCoordinateAndUnits.md) owns spatial semantics.
-            - [Editor Viewport Camera Architecture](Decisions / EditorViewportCamera.md) owns the editor - view
-        and scene - camera split.- [Shader System Architecture](CrossModule / ShaderSystem / README.md) owns the enduring authoring,
-    compilation, cooked - artifact, runtime - materialization,
-    and graph - use design.The[capability inventory](Modules / Tools / ShaderCompiler / README.md) owns the dated current - source view,
-    and the[delivery plan](CrossModule / ShaderSystem / Plan.md) owns phase order.
-        - [Bistro and San Miguel Acceptance Workloads](../ Acceptance / GraphicsWorkloads.md) owns workload gates and evidence meaning
-              .
+- [Module Architecture And Capability Inventory](Modules/README.md) owns module navigation plus the dated, feature-level source inventory and explicit coverage/limitations; it does not own target architecture, release classification, or executable evidence.
+- [Product Workflow Coverage](CrossModule/ProductWorkflowCoverage.md) and [Product Execution Traces](CrossModule/ProductExecutionTraces.md) own the horizontal actor-journey comparison and vertical non-graphics handoff map; they do not prove usability or release readiness.
+- [World Coordinate, Units, and Transform Contract](Decisions/WorldCoordinateAndUnits.md) owns spatial semantics.
+- [Editor Viewport Camera Architecture](Decisions/EditorViewportCamera.md) owns the editor-view and scene-camera split.
+- [Shader System Architecture](CrossModule/ShaderSystem/README.md) owns the enduring authoring, compilation, cooked-artifact, runtime-materialization, and graph-use design. The [capability inventory](Modules/Tools/ShaderCompiler/README.md) owns the dated current-source view, and the [delivery plan](CrossModule/ShaderSystem/Plan.md) owns phase order.
+- [Bistro and San Miguel Acceptance Workloads](../Acceptance/GraphicsWorkloads.md) owns workload gates and evidence meaning.
 
-          Dated assessments retain the source state they observed.They are not silently rewritten into current architecture claims.
+Dated assessments retain the source state they observed. They are not silently rewritten into current architecture claims.
 
-          ##Repository At A Glance
+## Repository At A Glance
 
-```text SparkleEngine
-    | --CMake / build profiles,
-    artifact / project helpers,
-    dependencies, boundary check | --Config / engine defaults | --Engine / runtime modules and engine shaders / assets | --Tools / launcher,
-    shader compiler, importers,
-    and cookers | --Projects / Showcase / editor / runtime products, level catalog, small source content | --Docs / strategy, architecture,
-    engineering, acceptance, plan, and research knowledge | --artifacts / generated validation / development output;
-not source authority | --build / generated build trees and dependency cache | --logs /,
-    Saved / generated runtime and user
-    - local state
-`--.sparkle repository marker used by tooling
+```text
+SparkleEngine
+|-- CMake/                 build profiles, artifact/project helpers, dependencies, boundary check
+|-- Config/                engine defaults
+|-- Engine/                runtime modules and engine shaders/assets
+|-- Tools/                 launcher, shader compiler, importers, and cookers
+|-- Projects/Showcase/     editor/runtime products, level catalog, small source content
+|-- Docs/                  strategy, architecture, engineering, acceptance, plan, and research knowledge
+|-- artifacts/             generated validation/development output; not source authority
+|-- build/                 generated build trees and dependency cache
+|-- logs/, Saved/          generated runtime and user-local state
+`-- .sparkle               repository marker used by tooling
 ```
 
-      The top
-    - level CMake project requires C
-    ++ 20, loads the Sparkle build profiles and artifact / project contracts, adds `Engine` and `Tools`,
-    then discovers runnable projects through `Projects/*/.sparkle-project`. Optional content-pipeline, shader-compiler, KTX, NVIDIA Streamline, sanitizer, and strict-warning features are explicit CMake options.
+The top-level CMake project requires C++20, loads the Sparkle build profiles and artifact/project contracts, adds `Engine` and `Tools`, then discovers runnable projects through `Projects/*/.sparkle-project`. Optional content-pipeline, shader-compiler, KTX, NVIDIA Streamline, sanitizer, and strict-warning features are explicit CMake options.
 
 ## Build And Module Boundaries
 
@@ -289,3 +274,4 @@ The repository-wide documentation reconciliation remains a static source/build-c
 - `Tools/Shaders/ShaderCompiler/Private/Cooking`
 - `Tools/Launcher/SparkleLauncher/Private`
 - `Projects/Showcase/Levels.catalog`
+
