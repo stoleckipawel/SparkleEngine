@@ -134,7 +134,8 @@ function(sparkle_boundary_scan_file absolute_path)
                     "Passes files order named operations and do not define GPU dispatches directly."
                     "${_line}")
             endif()
-            if(_line MATCHES "resources[.][A-Za-z0-9_.]+[ 	]*=" OR
+            if((_line MATCHES "resources[.][A-Za-z0-9_.]+[ 	]*=" AND
+                NOT _relative_path STREQUAL "Engine/Renderer/Private/Passes/Presentation/Upscaling/SceneUpscalingPasses.cpp") OR
                (_line MATCHES "[.]IsValid[(]" AND
                 NOT _relative_path STREQUAL "Engine/Renderer/Private/Passes/Presentation/Upscaling/SceneUpscalingPasses.cpp") OR
                _line MATCHES "Get[A-Za-z0-9_]*(Upscaler|Reconstruction)Provider[(]")

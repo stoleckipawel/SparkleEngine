@@ -7,21 +7,13 @@
 
 namespace RayTracingPathTrace
 {
-	RayTracingTraceResult TraceSurfaceRay(
-	    RayTracingPathSurface surface,
-	    float3 directionWorld,
-	    out float3 rayOriginWorld)
+	RayTracingTraceResult TraceSurfaceRay(RayTracingPathSurface surface, float3 directionWorld, out float3 rayOriginWorld)
 	{
-		const RayEndpoints::Ray ray = RayEndpoints::Continuation(
-		    surface.PositionWorld, surface.GeometricNormalWorld, surface.PositionError, directionWorld);
+		const RayEndpoints::Ray ray =
+		    RayEndpoints::Continuation(surface.PositionWorld, surface.GeometricNormalWorld, surface.PositionError, directionWorld);
+
 		rayOriginWorld = ray.Origin;
-		return TraceSceneRay(SceneTlas,
-		    ray.Origin,
-		    ray.Direction,
-		    ray.TMin,
-		    ray.TMax,
-		    RAY_FLAG_CULL_BACK_FACING_TRIANGLES,
-		    0xFFu);
+		return TraceSceneRay(SceneTlas, ray.Origin, ray.Direction, ray.TMin, ray.TMax, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFFu);
 	}
 }
 

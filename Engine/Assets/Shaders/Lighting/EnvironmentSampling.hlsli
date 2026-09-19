@@ -4,9 +4,7 @@
 #include "/Engine/Lighting/LightSampling.hlsli"
 #include "/Engine/Lighting/Sky.hlsli"
 
-LightSampling::DirectLightSample SampleUniformEnvironmentRadiance(Texture2D skyTexture,
-	                                                                SamplerState skySampler,
-	                                                                float2 sample)
+LightSampling::DirectLightSample SampleUniformEnvironmentRadiance(Texture2D skyTexture, SamplerState skySampler, float2 sample)
 {
 	const float cosineTheta = 1.0f - 2.0f * sample.y;
 	const float sineTheta = sqrt(max(0.0f, 1.0f - cosineTheta * cosineTheta));

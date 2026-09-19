@@ -7,7 +7,8 @@ RWTexture2D<float4> CommittedMean;
 RWTexture2D<float4> CommittedM2;
 RWTexture2D<float4> SceneColor;
 
-[numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
+[numthreads(8, 8, 1)]
+void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
 	uint width;
 	uint height;

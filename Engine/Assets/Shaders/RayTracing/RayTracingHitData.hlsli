@@ -70,8 +70,7 @@ RayTracingHitTriangle LoadRayTracingHitTriangle(uint instanceId, uint primitiveI
 	triangle.Material = RayTracingHitMaterials[triangle.Instance.MaterialSlot];
 	triangle.BarycentricWeights = float3(1.0f - barycentrics.x - barycentrics.y, barycentrics.x, barycentrics.y);
 	const uint primitiveFirstLocalIndex = primitiveIndex * 3u;
-	triangle.VertexIndices =
-	    triangle.Instance.FirstVertex
+	triangle.VertexIndices = triangle.Instance.FirstVertex
 	    + uint3(RayTracingHitIndices[triangle.Instance.FirstIndex + primitiveFirstLocalIndex + 0u],
 	            RayTracingHitIndices[triangle.Instance.FirstIndex + primitiveFirstLocalIndex + 1u],
 	            RayTracingHitIndices[triangle.Instance.FirstIndex + primitiveFirstLocalIndex + 2u]);
@@ -84,13 +83,13 @@ RayTracingHitTriangle LoadRayTracingHitTriangle(uint instanceId, uint primitiveI
 float2 InterpolateRayTracingHitTexCoord0(RayTracingHitTriangle triangle)
 {
 	return triangle.V0.TexCoord0 * triangle.BarycentricWeights.x + triangle.V1.TexCoord0 * triangle.BarycentricWeights.y
-	     + triangle.V2.TexCoord0 * triangle.BarycentricWeights.z;
+	    + triangle.V2.TexCoord0 * triangle.BarycentricWeights.z;
 }
 
 float4 InterpolateRayTracingHitColor(RayTracingHitTriangle triangle)
 {
 	return triangle.V0.Color * triangle.BarycentricWeights.x + triangle.V1.Color * triangle.BarycentricWeights.y
-	     + triangle.V2.Color * triangle.BarycentricWeights.z;
+	    + triangle.V2.Color * triangle.BarycentricWeights.z;
 }
 
 #endif

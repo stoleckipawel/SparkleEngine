@@ -136,9 +136,10 @@ namespace PathBsdf
 		                                dot(surface.ViewDirWorld, surface.NormalWorld));
 		const float3 stretchedView = normalize(float3(alpha * localView.xy, localView.z));
 		const float length2 = dot(stretchedView.xy, stretchedView.xy);
-		const float3 basis1 =
-		    length2 > 0.0f ? float3(-stretchedView.y, stretchedView.x, 0.0f) * rsqrt(length2) : float3(1.0f, 0.0f, 0.0f);
+		const float3 orthogonalView = float3(-stretchedView.y, stretchedView.x, 0.0f);
+		const float3 basis1 = length2 > 0.0f ? orthogonalView * rsqrt(length2) : float3(1.0f, 0.0f, 0.0f);
 		const float3 basis2 = cross(stretchedView, basis1);
+
 		const float radius = sqrt(sample.x);
 		const float phi = TWO_PI * sample.y;
 		const float diskX = radius * cos(phi);
@@ -148,21 +149,20 @@ namespace PathBsdf
 		const float projectedZ = sqrt(max(0.0f, 1.0f - diskX * diskX - diskY * diskY));
 		const float3 visibleNormal = diskX * basis1 + diskY * basis2 + projectedZ * stretchedView;
 		const float3 localHalfVector = normalize(float3(alpha * visibleNormal.xy, max(visibleNormal.z, 0.0f)));
-		return normalize(tangentWorld * localHalfVector.x + bitangentWorld * localHalfVector.y
-		                 + surface.NormalWorld * localHalfVector.z);
+		const float3 halfVectorWorld =
+		    tangentWorld * localHalfVector.x + bitangentWorld * localHalfVector.y + surface.NormalWorld * localHalfVector.z;
+
+		return normalize(halfVectorWorld);
 	}
 
-	RayTracingPathSample::DirectionSample Sample(RayTracingPathSurface surface,
-	                                             LobeMasses masses,
-	                                             uint selectedLobe,
-	                                             float2 sample)
+	RayTracingPathSample::DirectionSample Sample(RayTracingPathSurface surface, LobeMasses masses, uint selectedLobe, float2 sample)
 	{
 		RayTracingPathSample::DirectionSample result = (RayTracingPathSample::DirectionSample)0;
 		result.Lobe = selectedLobe;
+
 		if (selectedLobe == RayTracingPathSample::LobeDiffuse)
 		{
-			const CommonSampling::CosineHemisphereSample direction =
-			    CommonSampling::SampleCosineHemisphere(surface.NormalWorld, sample);
+			const CommonSampling::CosineHemisphereSample direction = CommonSampling::SampleCosineHemisphere(surface.NormalWorld, sample);
 			result.DirectionWorld = direction.DirectionWorld;
 		}
 		else
@@ -170,9 +170,11 @@ namespace PathBsdf
 			if (masses.SpecularDelta)
 			{
 				result.DirectionWorld = normalize(reflect(-surface.ViewDirWorld, surface.NormalWorld));
+
 				const float3 f0 = lerp(surface.DielectricF0.xxx, surface.BaseColor, surface.Metallic);
 				const float cosine = abs(dot(surface.ViewDirWorld, surface.NormalWorld));
 				const float correction = ShadingNormalCorrection(surface, result.DirectionWorld);
+
 				result.Throughput = FresnelSchlick(cosine, f0) * correction / masses.Specular;
 				result.Lobe = RayTracingPathSample::LobeSpecular;
 				result.Delta = true;
@@ -182,6 +184,7 @@ namespace PathBsdf
 			const float3 halfVector = SampleVisibleGGXHalfVector(surface, sample);
 			result.DirectionWorld = normalize(reflect(-surface.ViewDirWorld, halfVector));
 		}
+
 		const Evaluation evaluation = EvaluateContinuous(surface, result.DirectionWorld, masses);
 		result.PdfW = evaluation.PdfW;
 		result.Throughput = evaluation.HasSupport ? evaluation.F * evaluation.Cosine / evaluation.PdfW : 0.0f.xxx;

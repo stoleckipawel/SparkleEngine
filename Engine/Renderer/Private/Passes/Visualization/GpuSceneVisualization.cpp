@@ -6,18 +6,13 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Visualization/GpuSceneVisualizationShader.h"
 
-static bool IsGpuSceneVisualizationActive(RenderViewMode viewMode) noexcept
-{
-	return viewMode == RenderViewMode::GpuSceneInstances;
-}
-
 void AddGpuSceneVisualizationPass(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
     RenderViewMode viewMode,
     const RenderFrameGraphResources& resources)
 {
-	if (!IsGpuSceneVisualizationActive(viewMode))
+	if (viewMode != RenderViewMode::GpuSceneInstances)
 	{
 		return;
 	}

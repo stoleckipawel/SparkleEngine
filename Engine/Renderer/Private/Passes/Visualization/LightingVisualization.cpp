@@ -7,7 +7,11 @@
 #include "Passes/Visualization/LightingVisualizationShader.h"
 #include "View/RenderView.h"
 
-static bool IsLightingVisualizationActive(RenderViewMode viewMode) noexcept
+void AddLightingVisualizationPass(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
+    RenderViewMode viewMode,
+    const RenderFrameGraphResources& resources)
 {
 	switch (viewMode)
 	{
@@ -16,21 +20,9 @@ static bool IsLightingVisualizationActive(RenderViewMode viewMode) noexcept
 		case RenderViewMode::DirectSubsurface:
 		case RenderViewMode::IndirectDiffuse:
 		case RenderViewMode::IndirectSpecular:
-			return true;
+			break;
 		default:
-			return false;
-	}
-}
-
-void AddLightingVisualizationPass(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    RenderViewMode viewMode,
-    const RenderFrameGraphResources& resources)
-{
-	if (!IsLightingVisualizationActive(viewMode))
-	{
-		return;
+			return;
 	}
 
 	const LightingRenderTargets& lighting = resources.Transient.Lighting;

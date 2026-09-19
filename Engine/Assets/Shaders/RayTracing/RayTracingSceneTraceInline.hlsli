@@ -24,9 +24,9 @@ RayTracingTraceResult TraceSceneRay(RaytracingAccelerationStructure sceneTlas,
 	{
 		if (query.CandidateType() == CANDIDATE_NON_OPAQUE_TRIANGLE
 		    && ResolveRayTracingCandidateAlpha(query.CandidateInstanceID(),
-	                                        query.CandidatePrimitiveIndex(),
-	                                        query.CandidateTriangleBarycentrics(),
-	                                        query.CandidateTriangleFrontFace()))
+		                                       query.CandidatePrimitiveIndex(),
+		                                       query.CandidateTriangleBarycentrics(),
+		                                       query.CandidateTriangleFrontFace()))
 		{
 			query.CommitNonOpaqueTriangleHit();
 		}

@@ -49,7 +49,8 @@ namespace CommonRandom
 
 	uint4 Philox4x32(uint4 counter, uint2 key)
 	{
-		[unroll] for (uint roundIndex = 0u; roundIndex < 10u; ++roundIndex)
+		[unroll]
+		for (uint roundIndex = 0u; roundIndex < 10u; ++roundIndex)
 		{
 			counter = Philox4x32Round(counter, key);
 			key += uint2(0x9E3779B9u, 0xBB67AE85u);
@@ -73,7 +74,8 @@ namespace CommonRandom
 		uint quotient = 0u;
 		uint remainder = index;
 		const uint halfCeiling = (count >> 1u) + (count & 1u);
-		[unroll] for (uint bit = 0u; bit < 32u; ++bit)
+		[unroll]
+		for (uint bit = 0u; bit < 32u; ++bit)
 		{
 			quotient <<= 1u;
 			if (remainder >= halfCeiling)

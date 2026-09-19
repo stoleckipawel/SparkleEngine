@@ -29,7 +29,7 @@ void AddSceneRenderingPasses(
 	}
 
 	AddExposurePasses(builder, settings, resources);
-	AddSceneVisualizationPasses(builder, settings, viewMode, resources);
+	AddSceneVisualizationPasses(builder, settings.RenderExtent, viewMode, resources);
 	AddSceneDenoisingPasses(builder, settings, imageProviders, resources);
 	AddSceneUpscalingPasses(builder, settings, viewMode, imageProviders, resources);
 }

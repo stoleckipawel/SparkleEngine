@@ -2,9 +2,7 @@
 
 **Status:** current feature dossier; source-backed, not numerical, colorimetric, display, backend, or release evidence
 
-**Verified:** 2026-09- 19 against source input revision `a884b6946802e933fafc9fe4c6cdfb93c4cde7e4` plus the current frame
-      - composition worktree;
-evidence `S` only
+**Verified:** 2026-09-19 against source input revision `a884b6946802e933fafc9fe4c6cdfb93c4cde7e4` plus the current frame-composition worktree; evidence `S` only
 
 **Scope:** `REN-POST-07`; exposure-weighted HDR scene-referred color to display-linear color through one selected tone-mapping operator
 
@@ -20,10 +18,7 @@ evidence `S` only
 | ACES approximation | default ACES-inspired display mapping | name does not establish standards conformance |
 | ACES fitted filmic | alternate fitted filmic curve | output/colorimetric agreement and artistic suitability unproved |
 
-        For a scene - referred HDR mode,
-    exactly one operator consumes exposure-weighted HDR scene color and produces display-linear `ToneMappedSceneColor`
-        .Display - linear exact debug modes bypass
-    this pass through the presentation owner. The admitted color-grading stage will supply graded scene-referred input before this operator; output-device encoding and publication happen later. Grading remains absent from current source and is never folded into these curves.
+For a scene-referred HDR mode, exactly one operator consumes exposure-weighted HDR scene color and produces display-linear `ToneMappedSceneColor`. Display-linear exact debug modes bypass this pass through the presentation owner. The admitted color-grading stage will supply graded scene-referred input before this operator; output-device encoding and publication happen later. Grading remains absent from current source and is never folded into these curves.
 
 ## Feature Promise
 
@@ -31,9 +26,7 @@ Sparkle multiplies output-extent `ResolvedSceneColor` by the current 1x1 exposur
 
 | Selector | Default | Reachable choices | Current boundary |
 | --- | --- | --- | --- |
-| `r.ToneMapper` / resolved per-view `EngineToneMapper` | ACES approximation | Reinhard, ACES approximation, ACES fitted filmic | no public None or custom operator;
-exact - view bypass is presentation policy,
-    not a tone operator |
+| `r.ToneMapper` / resolved per-view `EngineToneMapper` | ACES approximation | Reinhard, ACES approximation, ACES fitted filmic | no public None or custom operator; exact-view bypass is presentation policy, not a tone operator |
 
 The shader clamps alpha with `saturate` while mapping RGB. Current source does not establish reference-ACES conformance, working/display gamut transforms, scene-white/nit semantics, artistic grading, or exact curve accuracy.
 
@@ -48,8 +41,7 @@ The shader clamps alpha with `saturate` while mapping RGB. Current source does n
 ## Failure, Tradeoffs, And Evidence
 
 - Unknown enum values are fatal settings defects rather than silent substitutions.
-- One operator boundary keeps lighting and provider routes from inventing their own display transforms; exact raw debug presentation is an exhaustive presentation
-    - domain decision rather than a fourth tone operator.
+- One operator boundary keeps lighting and provider routes from inventing their own display transforms; exact raw debug presentation is an exhaustive presentation-domain decision rather than a fourth tone operator.
 - `REN-E17` owns known HDR ramps, finite/extreme input behavior, all three operators, alpha behavior, and interaction with exposure/output encoding.
 - Stable numerical and color-domain obligations are defined below; execution remains pending.
 
@@ -85,5 +77,4 @@ This contract is **defined but unproved**. It does not claim reference ACES colo
 - [`ToneMapping.hlsli`](../../../../../../../../Engine/Assets/Shaders/Display/ToneMapping.hlsli)
 - [`ToneMappingSettings.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/ToneMappingSettings.cpp)
 - [`ToneMapping.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/ToneMapping.cpp) and [`PresentationPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp)
-
 

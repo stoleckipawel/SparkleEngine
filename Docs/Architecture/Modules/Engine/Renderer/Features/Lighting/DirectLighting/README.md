@@ -117,11 +117,10 @@ Direct Lighting is done only when `DIR-D0` is accepted, every included `DIR-FS-*
 
 ## Primary Source Routes
 
-- [`RestirDirectLightingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/ Direct/RestirDirectLightingPasses.cpp)
+- [`RestirDirectLightingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/Direct/RestirDirectLightingPasses.cpp)
 - [`DirectLightReservoir.hlsli`](../../../../../../../../Engine/Assets/Shaders/Lighting/DirectLightReservoir.hlsli)
 - [`DirectLightSampling.hlsli`](../../../../../../../../Engine/Assets/Shaders/Lighting/DirectLightSampling.hlsli)
 - [`DirectShadowSignal.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/Shadows/DirectShadowSignal.cpp)
 - [`SurfaceLighting.hlsli`](../../../../../../../../Engine/Assets/Shaders/Lighting/SurfaceLighting.hlsli) and [`BRDF.hlsli`](../../../../../../../../Engine/Assets/Shaders/BRDF/BRDF.hlsli)
 - [`RenderGpuLightingPayloadBuilder.cpp`](../../../../../../../../Engine/Renderer/Private/Scene/GpuScene/RenderGpuLightingPayloadBuilder.cpp)
-
 

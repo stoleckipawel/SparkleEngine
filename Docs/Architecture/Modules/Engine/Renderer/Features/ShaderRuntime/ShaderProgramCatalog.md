@@ -84,7 +84,7 @@ These rows are current source and registration membership only. Shader cooking, 
 | `ExposureReduceTextureCS` | `/Engine/Passes/PostProcessing/Exposure/ExposureReduceTexture.hlsl` | `main` | Compute | Subsequent parallel reduction over a moments texture. |
 | `ExposureDownsampleSceneCS` | `/Engine/Passes/PostProcessing/Exposure/ExposureDownsampleScene.hlsl` | `main` | Compute | First mip-chain metering downsample from scene color. |
 | `ExposureDownsampleTextureCS` | `/Engine/Passes/PostProcessing/Exposure/ExposureDownsampleTexture.hlsl` | `main` | Compute | Subsequent mip-chain downsample over intermediate moments. |
-| `ExposureCS` | `/Engine/Passes/PostProcessing/Exposure.hlsl` | `main` | Compute | Resolves manual/automatic settings, luminance moments, prior history, clamps, compensation, and adaptation into current 1x1 exposure/history. |
+| `ExposureCS` | `/Engine/Passes/PostProcessing/Exposure/Exposure.hlsl` | `main` | Compute | Resolves manual/automatic settings, luminance moments, prior history, clamps, compensation, and adaptation into current 1x1 exposure/history. |
 
 See [Exposure](../PostProcessing/DisplayPipeline/Exposure.md) for metering, history, scheduling, and evidence ownership.
 
@@ -185,4 +185,3 @@ When adding, removing, or changing a program:
 3. update this exact catalog and the stage counts in [Shader Compilation](../../../../Tools/ShaderCompiler/README.md);
 4. run registration validation, both runtime-target cooks, reflection/ABI checks, and the smallest consuming runtime path;
 5. record candidate-bound results through [Capability Evidence](../../../../CapabilityEvidencePlan.md) and [Feature Completion Reports](../../../../../../Acceptance/FeatureCompletionReports.md).
-

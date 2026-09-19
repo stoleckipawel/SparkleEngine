@@ -1,13 +1,13 @@
 #pragma once
 
 #include "Renderer/Public/Viewport/RenderViewMode.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
-struct RenderFrameGraphSettings;
 
 void AddSceneVisualizationPasses(
     FrameGraphBuilder& builder,
-    const RenderFrameGraphSettings& settings,
+    RenderViewportExtent sceneExtent,
     RenderViewMode viewMode,
     RenderFrameGraphResources& resources);

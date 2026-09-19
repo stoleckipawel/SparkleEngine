@@ -1,6 +1,5 @@
 #include "/Engine/Resources/ViewUniformData.hlsli"
 
-#include "/Engine/Passes/Visualization/VisualizationPreview.hlsli"
 #include "/Engine/Resources/RenderViewModeConstants.hlsli"
 
 RWTexture2D<float4> SceneColor;
@@ -9,6 +8,16 @@ Texture2D GBufferNormal;
 Texture2D GBufferMaterial;
 Texture2D GBufferEmissive;
 Texture2D GBufferSubsurface;
+
+float3 VisualizeScalar(float value)
+{
+	return saturate(value).xxx;
+}
+
+float3 VisualizeNormal(float3 normalWorld)
+{
+	return normalize(normalWorld) * 0.5f + 0.5f;
+}
 
 [numthreads(8, 8, 1)]
 void main(uint3 dispatchThreadId : SV_DispatchThreadID)

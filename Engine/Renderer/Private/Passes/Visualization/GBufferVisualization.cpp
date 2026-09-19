@@ -7,7 +7,11 @@
 #include "Passes/Visualization/GBufferVisualizationShader.h"
 #include "View/RenderView.h"
 
-static bool IsGBufferVisualizationActive(RenderViewMode viewMode) noexcept
+void AddGBufferVisualizationPass(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
+    RenderViewMode viewMode,
+    const RenderFrameGraphResources& resources)
 {
 	switch (viewMode)
 	{
@@ -19,21 +23,9 @@ static bool IsGBufferVisualizationActive(RenderViewMode viewMode) noexcept
 		case RenderViewMode::GBufferAmbientOcclusion:
 		case RenderViewMode::GBufferSubsurfaceColor:
 		case RenderViewMode::GBufferSubsurfaceStrength:
-			return true;
+			break;
 		default:
-			return false;
-	}
-}
-
-void AddGBufferVisualizationPass(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    RenderViewMode viewMode,
-    const RenderFrameGraphResources& resources)
-{
-	if (!IsGBufferVisualizationActive(viewMode))
-	{
-		return;
+			return;
 	}
 
 	const GBufferRenderTargets& gbuffer = resources.Transient.GBuffer;

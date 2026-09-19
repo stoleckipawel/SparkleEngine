@@ -10,13 +10,17 @@ cbuffer ExposureConstants
 {
 	uint ExposureMode;
 	uint ExposureHistoryValid;
+
 	float ManualExposure;
 	float ExposureCompensation;
+
 	float ExposureTargetLuminance;
 	float ExposureMin;
 	float ExposureMax;
+
 	float ExposureAdaptationSpeedUp;
 	float ExposureAdaptationSpeedDown;
+
 	uint ExposurePadding0;
 	uint ExposurePadding1;
 	uint ExposurePadding2;

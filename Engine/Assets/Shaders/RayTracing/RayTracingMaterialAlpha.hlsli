@@ -29,16 +29,14 @@ bool PassesRayTracingMaterialAlpha(RayTracingHitMaterial material, float2 texCoo
 	return alpha * vertexColor.a >= material.AlphaCutoff;
 }
 
-bool ResolveRayTracingCandidateAlpha(uint instanceId,
-                                     uint primitiveIndex,
-                                     float2 barycentrics,
-                                     bool frontFace)
+bool ResolveRayTracingCandidateAlpha(uint instanceId, uint primitiveIndex, float2 barycentrics, bool frontFace)
 {
 	const RayTracingHitTriangle triangle = LoadRayTracingHitTriangle(instanceId, primitiveIndex, barycentrics);
 	if (!frontFace && (triangle.Instance.Flags & RayTracingHitSurface::InstanceFlagTwoSided) == 0u)
 	{
 		return false;
 	}
-	return PassesRayTracingMaterialAlpha(
-	    triangle.Material, InterpolateRayTracingHitTexCoord0(triangle), InterpolateRayTracingHitColor(triangle));
+	return PassesRayTracingMaterialAlpha(triangle.Material,
+	                                     InterpolateRayTracingHitTexCoord0(triangle),
+	                                     InterpolateRayTracingHitColor(triangle));
 }

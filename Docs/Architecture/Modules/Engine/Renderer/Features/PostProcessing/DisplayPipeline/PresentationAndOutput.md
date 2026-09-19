@@ -2,9 +2,7 @@
 
 **Status:** current feature dossier; source-backed, not colorimetric, numerical, display, capture, backend, or release evidence
 
-**Verified:** 2026-09- 19 against source input revision `a884b6946802e933fafc9fe4c6cdfb93c4cde7e4` plus the current frame
-      - composition worktree;
-evidence `S` only
+**Verified:** 2026-09-19 against source input revision `a884b6946802e933fafc9fe4c6cdfb93c4cde7e4` plus the current frame-composition worktree; evidence `S` only
 
 **Scope:** `REN-POST-08` and `REN-POST-10`; debug-to-presentation handoff, current SDR output encoding, back-buffer copy, and viewport-product publication. `REN-POST-09` HDR output has its own dossier.
 
@@ -22,34 +20,26 @@ evidence `S` only
 
 This stage is the semantic handoff from Renderer image processing to an external consumer. A visible image is not enough: the destination, encoding, extent, alpha, frame, viewport, and generation must all identify the product that was actually published.
 
-**Parent family:** [Post Processing](../README.md); [Tone Mapping](ToneMapping.md) owns the scene - referred HDR-to-display-linear transform
+**Parent family:** [Post Processing](../README.md); [Tone Mapping](ToneMapping.md) owns the scene-referred HDR-to-display-linear transform
 
 ## Feature Promise
 
-Sparkle accepts one output-extent display-linear result from the presentation - domain owner, applies one output encoding, then copies it to the imported back buffer or publishes an offscreen viewport product.Scene - referred HDR passes through tone mapping;
-display
-        - linear exact diagnostics bypass
-              it.
+Sparkle accepts one output-extent display-linear result from the presentation-domain owner, applies one output encoding, then copies it to the imported back buffer or publishes an offscreen viewport product. Scene-referred HDR passes through tone mapping; display-linear exact diagnostics bypass it.
 
 ```text
 ResolvedSceneColor
-  ->Display Mapping(tone map HDR / preserve exact display - linear)
+  -> Display Mapping (tone map HDR / preserve exact display-linear)
   -> Output Encoding
   -> back-buffer copy or FinalColorLdr viewport product
 ```
 
 | Stage | Choices | Current boundary |
 | --- | --- | --- |
-| Debug handoff | Lit or one of 15 diagnostic modes | [Debug Views](../../DebugViews/README.md) owns the producer and presentation - domain classification;
-exact views use point reconstruction and HDR views retain configured reconstruction |
+| Debug handoff | Lit or one of 15 diagnostic modes | [Debug Views](../../DebugViews/README.md) owns the producer and presentation-domain classification; exact views use point reconstruction and HDR views retain configured reconstruction |
 | Output encoding | Automatic from output format, Linear, sRGB shader encoding | writes the linear counterpart of the presentation format before copy/publication |
 | HDR display | no current route | mandatory HDR target and SDR fallback are defined in [HDR Display Output](HDRDisplayOutput/README.md), with the exact platform route discovery-blocked |
 
-The current source
-        implements the [Debug View Presentation Architecture](../../DebugViews/PresentationArchitecture.md) split between scene-referred HDR and display - linear exact products.Runtime pixels,
-    numerical behavior, backend agreement, and capture interpretation remain unproved,
-    so `REN - POST
-    - 10` remains Partial.
+The current source implements the [Debug View Presentation Architecture](../../DebugViews/PresentationArchitecture.md) split between scene-referred HDR and display-linear exact products. Runtime pixels, numerical behavior, backend agreement, and capture interpretation remain unproved, so `REN-POST-10` remains Partial.
 
 ## Output Ownership
 
@@ -92,8 +82,7 @@ The current source
 | `CHK-OUT-03` | inspect selectors, package/runtime UI, debug captures, and documentation for exact-debug and SDR claims; route all HDR state/evidence to `CHK-HDR-*` | `AC-OUT-05`, `AC-OUT-06`; `FM-OUT-05` |
 | `CHK-OUT-04` | paired D3D12/Vulkan presentation/offscreen run with decoded artifacts and native validation | `AC-OUT-02`, `AC-OUT-03`, `AC-OUT-07` |
 
-This contract is **source - present but unproved**. Passing source checks does not close `REN - POST - 10`, separate `REN-POST-09`/`FCR-REN-26` HDR output, or runtime
-            / backend acceptance.
+This contract is **source-present but unproved**. Passing source checks does not close `REN-POST-10`, separate `REN-POST-09`/`FCR-REN-26` HDR output, or runtime/backend acceptance.
 
 ## Primary Source Routes
 

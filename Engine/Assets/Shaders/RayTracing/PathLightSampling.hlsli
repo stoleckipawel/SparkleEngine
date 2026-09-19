@@ -40,7 +40,8 @@ namespace PathLightSampling
 	uint CountEmissiveTriangles()
 	{
 		uint count = 0u;
-		[loop] for (uint instanceId = 0u; instanceId < RayTracingHitInstanceCount; ++instanceId)
+		[loop]
+		for (uint instanceId = 0u; instanceId < RayTracingHitInstanceCount; ++instanceId)
 		{
 			count += CountEmissiveTriangles(instanceId);
 		}
@@ -78,7 +79,8 @@ namespace PathLightSampling
 	{
 		instanceId = 0u;
 		primitiveIndex = 0u;
-		[loop] for (uint candidateInstance = 0u; candidateInstance < RayTracingHitInstanceCount; ++candidateInstance)
+		[loop]
+		for (uint candidateInstance = 0u; candidateInstance < RayTracingHitInstanceCount; ++candidateInstance)
 		{
 			const uint primitiveCount = CountEmissiveTriangles(candidateInstance);
 			if (ordinal < primitiveCount)

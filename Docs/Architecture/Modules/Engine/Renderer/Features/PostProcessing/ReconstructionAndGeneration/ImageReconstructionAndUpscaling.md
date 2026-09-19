@@ -96,8 +96,6 @@ This contract is **defined but unproved**. Linear, DLSS SR, and DLSS RR receive 
 
 ## Primary Source Routes
 
-- [`SceneUpscalingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/ Upscaling /SceneUpscalingPasses.cpp), [`PresentationPolicy.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/ PresentationPolicy.cpp), and [`NvidiaDlssUpscale.cpp`](../../../../../../../../Engine/Renderer/Private/Upscaling/NvidiaDlss/NvidiaDlssUpscale.cpp)
+- [`SceneUpscalingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Upscaling/SceneUpscalingPasses.cpp), [`PresentationPolicy.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPolicy.cpp), and [`NvidiaDlssUpscale.cpp`](../../../../../../../../Engine/Renderer/Private/Upscaling/NvidiaDlss/NvidiaDlssUpscale.cpp)
 - [`RendererImageProviderStack.cpp`](../../../../../../../../Engine/Renderer/Private/Providers/RendererImageProviderStack.cpp)
-- [`SceneDenoisingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Scene/SceneDenoisingPasses.cpp) and [`RestirRayReconstruction.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/Restir/ Reconstruction
-            /RestirRayReconstruction.cpp)
-
+- [`SceneDenoisingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Scene/SceneDenoisingPasses.cpp) and [`RestirRayReconstruction.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/Restir/Reconstruction/RestirRayReconstruction.cpp)

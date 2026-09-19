@@ -19,11 +19,13 @@ namespace ReferencePathTracer
 	{
 		const CommonRandom::CategoricalSample lobeChoice =
 		    CommonRandom::SampleCategorical(RandomWord(sampleIdentity, SurfaceDimension(surfaceDepth, LobeChoiceOffset)), lobeMasses.Count);
+
 		uint selectedLobe = RayTracingPathSample::LobeSpecular;
 		if (lobeMasses.Diffuse > 0.0f && lobeChoice.Index == 0u)
 		{
 			selectedLobe = RayTracingPathSample::LobeDiffuse;
 		}
+
 		const float2 bsdfSample =
 		    float2(CommonRandom::OpenUnitInterval(RandomWord(sampleIdentity, SurfaceDimension(surfaceDepth, BsdfDirectionXOffset))),
 		           CommonRandom::OpenUnitInterval(RandomWord(sampleIdentity, SurfaceDimension(surfaceDepth, BsdfDirectionYOffset))));
@@ -40,10 +42,12 @@ namespace ReferencePathTracer
 		    lowerThreshold + (thresholdFraction > 0.5f || (thresholdFraction == 0.5f && (lowerThreshold & 1u) != 0u) ? 1u : 0u);
 		const uint threshold = min(max(roundedThreshold, 1u), 16777215u);
 		const uint rouletteValue = RandomWord(sampleIdentity, SurfaceDimension(surfaceVertexCount - 1u, RouletteOffset)) >> 8u;
+
 		if (rouletteValue >= threshold)
 		{
 			return false;
 		}
+
 		PathTracer::ApplySurvivalCompensation(throughput, (float)threshold * 0x1.0p-24f);
 		return true;
 	}
@@ -60,22 +64,25 @@ namespace ReferencePathTracer
 		path.DirectionWorld = traversal.Direction;
 		path.Throughput = 1.0f.xxx;
 		path.SurfaceDepth = 0u;
+
 		PreviousPathEvent previousEvent;
 		previousEvent.PositionWorld = 0.0f.xxx;
 		previousEvent.BsdfPdfW = 0.0f;
 		previousEvent.Delta = true;
+
 		float3 contribution = 0.0f.xxx;
 
 		[loop]
 		for (;;)
 		{
 			const RayTracingTraceResult trace = TraceSceneRay(sceneTlas,
-			                                                              path.OriginWorld,
-			                                                              path.DirectionWorld,
-			                                                              traversal.TMin,
-			                                                              traversal.TMax,
-			                                                              RAY_FLAG_CULL_BACK_FACING_TRIANGLES,
-			                                                              0xFFu);
+			                                                  path.OriginWorld,
+			                                                  path.DirectionWorld,
+			                                                  traversal.TMin,
+			                                                  traversal.TMax,
+			                                                  RAY_FLAG_CULL_BACK_FACING_TRIANGLES,
+			                                                  0xFFu);
+
 			if (!trace.Hit)
 			{
 				PathTracer::AddRadiance(
@@ -90,6 +97,7 @@ namespace ReferencePathTracer
 			{
 				return PathTracer::InvalidRadiance().rgb;
 			}
+
 			const RayTracingPathSurface surface = BuildHitRayTracingPathSurface(hitSurface, path.DirectionWorld);
 			const uint surfaceVertexCount = path.SurfaceDepth + 1u;
 			if (FinitePathDiagnosticSurfaceVertices == 0u && surfaceVertexCount > 4096u)
@@ -98,7 +106,9 @@ namespace ReferencePathTracer
 			}
 
 			PathTracer::AddRadiance(contribution, path.Throughput, EvaluateSurfaceEmission(lightCounts, previousEvent, surface));
+
 			const PathBsdf::LobeMasses lobeMasses = PathBsdf::BuildEqualLobeMasses(surface);
+
 			PathTracer::AddRadiance(contribution,
 			                        path.Throughput,
 			                        SampleDirectLighting(sceneTlas,
@@ -115,6 +125,7 @@ namespace ReferencePathTracer
 			{
 				break;
 			}
+
 			const RayTracingPathSample::DirectionSample bsdf = SamplePathDirection(surface, lobeMasses, sampleIdentity, path.SurfaceDepth);
 			if (!bsdf.HasSupport)
 			{
@@ -124,7 +135,9 @@ namespace ReferencePathTracer
 			previousEvent.PositionWorld = surface.PositionWorld;
 			previousEvent.BsdfPdfW = bsdf.PdfW;
 			previousEvent.Delta = bsdf.Delta;
+
 			PathTracer::ApplyDirectionSample(path, bsdf);
+
 			if (path.SurfaceDepth >= 3u && !SurvivesRussianRoulette(path.Throughput, sampleIdentity, surfaceVertexCount))
 			{
 				break;
@@ -132,9 +145,11 @@ namespace ReferencePathTracer
 
 			traversal =
 			    RayEndpoints::Continuation(surface.PositionWorld, surface.GeometricNormalWorld, surface.PositionError, path.DirectionWorld);
+
 			path.OriginWorld = traversal.Origin;
 			path.DirectionWorld = traversal.Direction;
 		}
+
 		return contribution;
 	}
 }
