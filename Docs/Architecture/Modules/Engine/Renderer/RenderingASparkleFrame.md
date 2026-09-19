@@ -54,7 +54,7 @@ The arrows describe semantic dependency and completion-driven lifetime. Declarat
 | `FRAME-08` Publish GPU scene | Update lighting, geometry, current/previous deformation, hit geometry/material, mesh-instance, descriptor-table, and ray-tracing bindings for the selected frame slot. Configure provider camera/jitter/reset input and prepare ray-tracing frame bindings. | Prepared scene + view -> persistent/frame-indexed GPU bindings | All raster and ray consumers derive from the same scene identity; stable buffers and per-frame slices avoid independent feature copies. | [Geometry and GBuffer](Features/GeometryAndResources/GeometryMaterialsAndGBuffer.md), [Ray Tracing](Features/RayTracing/README.md) |
 | `FRAME-09` Bind graph | Bind current TLAS, sky, and GPU-scene buffers; apply defaults plus frame, scene, view, exposure, tone-map, and shadow parameters. Run pass setup/resource-production setup, validate typed layouts, materialize/cache the active graphics/compute/ray pipeline, and resolve current resources through the appropriate binding domain. | Current frame objects + active shader generation -> checked typed parameters, binding layout, pipeline, and imported resources | The graph shape can persist while per-frame values/native resources change, but ABI/state mismatches fail before command emission. | [Pipeline Materialization and Typed Binding](Features/ShaderRuntime/PipelineMaterializationAndTypedBinding.md) and [Frame Graph](Features/FrameExecution/FrameGraphAndScheduling.md) |
 | `FRAME-10` Compile and execute | Compile resource versions/dependencies, queue assignment, transient lifetimes/aliasing, barriers, submission batches, and recording plan; materialize transients; bind checked pipelines/parameters; record/submit batches; commit texture histories. | Declared graph -> RHI command batches and new histories | Features declare semantic uses; one compiler owns synchronization/lifetime and one pipeline layer owns checked lowering into native work. | [Frame Graph](Features/FrameExecution/FrameGraphAndScheduling.md) and [Pipeline Materialization](Features/ShaderRuntime/PipelineMaterializationAndTypedBinding.md) |
-| `FRAME-11` Produce image | The active graph builds/updates the scene TLAS and executes one CVar-selected middle-frame setup. Lit writes a raster or ray GBuffer, computes Direct and Indirect surface lighting through ReSTIR, composites/sky-fills scene color, meters exposure, and may reconstruct/upscale. The source-present Reference setup instead traces independent camera paths, transactionally accumulates a raw mean/M2 prefix, and derives a display product before the shared debug/tone-map/encode/output tail. That candidate remains uncompiled and GPU-unproved. There is no Volumetric Lighting, Color Grading, Chromatic Aberration, or Frame Generation stage. | Selected scene-linear middle product -> encoded final color | Every implemented feature branch rejoins one presentation boundary, while absent or unproved domains remain visible rather than implied. | [Lighting](Features/Lighting/README.md) and [Post Processing](Features/PostProcessing/README.md) |
+| `FRAME-11` Produce image | The active graph builds/updates the scene TLAS and executes one CVar-selected middle-frame setup. Lit writes a raster or ray GBuffer, computes Direct and Indirect surface lighting through ReSTIR, composites/sky-fills scene color, meters exposure, optionally selects a render-resolution visualization or denoises Lit lighting, and then runs the selected presentation upscaler. The source-present Reference setup instead traces independent camera paths, transactionally accumulates a raw mean/M2 prefix, and derives a display product before the shared exposure/upscaling/tone-map/encode/output tail. That candidate remains uncompiled and GPU-unproved. There is no Volumetric Lighting, Color Grading, Chromatic Aberration, or Frame Generation stage. | Selected scene-linear middle product -> encoded final color | Every implemented feature branch rejoins one presentation boundary, while absent or unproved domains remain visible rather than implied. | [Lighting](Features/Lighting/README.md) and [Post Processing](Features/PostProcessing/README.md) |
 | `FRAME-12` Submit and retire | Render the UI packet, call `SubmitFrame`, record the graphics token for uploads, advance the frame-in-flight index, and later retire graphs/providers/shaders/resources only when all recorded queue tokens complete. Active D3D12 interposer hooks emit RenderSubmitEnd and bracket Present. | Recorded GPU work + UI -> presented/product frame, optional latency markers, and completion state | CPU ownership changes cannot free objects still referenced by any GPU queue, and optional marker attribution follows the actual submit/present boundary. | [Latency Coordination](Features/FrameExecution/LatencyCoordination.md) and [Diagnostics, Products, and Capture](Features/ViewportAndDiagnostics/DiagnosticsProductsAndCapture.md) |
 
 ## What The Graph Declares
@@ -67,9 +67,9 @@ Create frame resources
   -> Add GBuffer frontend + sky motion + linear depth
   -> Add lighting producer + composite + sky
   -> Add exposure
-  -> Add optional ray reconstruction
-  -> Add upscaling when no reconstructed output exists
-  -> Add debug visualization
+  -> Add optional render-resolution debug visualization
+  -> Add optional render-resolution ray-reconstruction denoising
+  -> Add selected Linear or DLSS Super Resolution upscaling
   -> Add tone mapping + output encoding
   -> Copy to back buffer or retain viewport product
 ```
@@ -96,8 +96,8 @@ The Reference Path Tracer is explicitly **one frame with an alternate middle rec
 | Deferred decals | none | No decal data or post-GBuffer composition stage exists. The feature-local target architecture is mandatory first-release work, not current frame behavior. |
 | GBuffer/shadow traversal | Automatic | One engine-wide policy prefers a complete Pipeline route, otherwise selects complete Inline traversal, and rejects when neither is ready. |
 | TLAS | Classic; capability/provider-gated partitioned | Both are built from shared prepared-scene identity. Current PTLAS policy remains a narrow subset documented in the ray-tracing dossier. |
-| Ray reconstruction | Off; NVIDIA DLSS Ray Reconstruction | Only participates in the ReSTIR lighting route. A successful reconstruction supplies resolved output; otherwise normal upscaling owns resolution conversion. |
-| Upscaling | Linear; NVIDIA DLSS Super Resolution | Linear is the baseline. External provider initialization failure resets to Linear rather than claiming DLSS output. |
+| Ray reconstruction | Off; NVIDIA DLSS Ray Reconstruction | Only participates in the ReSTIR lighting route and produces render-resolution denoised scene color. It neither selects presentation resolution nor replaces upscaling. |
+| Upscaling | Linear; NVIDIA DLSS Super Resolution | Always converts the selected raw or denoised render-resolution scene color into `ResolvedSceneColor` at output resolution. Linear is the baseline; external provider initialization failure resets to Linear rather than claiming DLSS output. |
 | Resolution/sample policy | viewport/window output extent; provider-resolved render extent; active single-sample raster attachments and Halton jitter | No Renderer MSAA, standalone TAA/FXAA/SMAA, or dynamic-resolution controller was found; RHI/sample vocabulary is not an active mode. |
 | Color grading | none | No grading parameters, transform/LUT asset path, pass, shader, selector, or editor workflow enters the frame. Tone-mapper selection is not grading. |
 | Chromatic aberration | none | No lens/channel distortion model, pass, selector, or viewport setting enters the frame. |
@@ -109,7 +109,7 @@ The Reference Path Tracer is explicitly **one frame with an alternate middle rec
 
 | Product | Current format/shape | Produced by | Consumed by or exported as |
 | --- | --- | --- | --- |
-| Scene color | `R16G16B16A16_Float`, render extent | ReSTIR composite/sky or the selected Reference committed-display derivative | upscaling, debug, tone mapping |
+| Scene color | `R16G16B16A16_Float`, render extent | ReSTIR composite/sky or the selected Reference committed-display derivative | exposure, debug, optional denoising, and the presentation-upscaling input when denoising is inactive |
 | Radiance | producer-declared scene-linear HDR, render extent | Lit publishes scene color; Reference publishes its committed first moment; future path tracers use the same semantic contract | generic viewport capture; progressive producers attach exact sample-prefix identity |
 | Radiance second moment | optional producer-declared Welford M2 accumulator (sum of squared radiance deviations), render extent | Reference accumulation when available; ordinary Lit currently leaves it absent | variance/evidence capture; never fabricated by a producer that does not compute it |
 | Scene depth | `R32_Float`, render extent | device-depth linearization | lighting, sky/background, viewport depth, provider inputs |
@@ -121,7 +121,8 @@ The Reference Path Tracer is explicitly **one frame with an alternate middle rec
 | Motion vector | `R16G16_Float` | GBuffer plus sky-motion handling | temporal reuse, accumulation, reconstruction/upscaling |
 | Lighting lobes | ReSTIR uses `R16G16B16A16_Float`; reference uses `R32G32B32A32_Float` | selected lighting producer | composite, debug, reference sample, reconstruction |
 | Exposure | 1x1 `R32G32B32A32_Float` | manual/automatic exposure pass | reconstruction/upscaling and tone mapping |
-| Resolved scene color | `R16G16B16A16_Float`, output extent | ray reconstruction or upscaling | debug and tone mapping |
+| Denoised scene color | `R16G16B16A16_Float`, render extent | optional DLSS Ray Reconstruction over eligible ReSTIR lighting | selected presentation upscaler |
+| Resolved scene color | `R16G16B16A16_Float`, output extent | selected Linear or DLSS Super Resolution upscaler | tone mapping |
 | Final LDR color | linear counterpart of output format, output extent | output-encoding compute pass | back-buffer copy and `FinalColorLdr` viewport product |
 
 The table states the current internal contract, not precision adequacy or backend format support. Those require `REN-E03`, `REN-E04`, `REN-E17`, and `RHI-E04` evidence.

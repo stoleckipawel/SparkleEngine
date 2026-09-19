@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Providers/ImageProviderGraphKey.h"
-#include "Providers/ImageProviderPipeline.h"
 #include "Viewport/ViewportContracts.h"
 #include "RHI/Public/Commands/RhiQueue.h"
 
@@ -29,8 +28,8 @@ public:
 	void ResetHistory() noexcept;
 	void Refresh() noexcept;
 	void PollRetiredGenerations() noexcept;
-	void SetupFrame(const ImageProviderFrameInput& frameInput, ImageProviderPipeline pipeline);
-	RenderViewportExtent ResolveRenderExtent(RenderViewportExtent outputExtent, ImageProviderPipeline pipeline) noexcept;
+	void SetupFrame(const ImageProviderFrameInput& frameInput, bool useRayReconstruction);
+	RenderViewportExtent ResolveRenderExtent(RenderViewportExtent outputExtent) noexcept;
 
 	ImageProviderGraphKey GetFrameGraphKey() const noexcept;
 	std::uint64_t GetGeneration() const noexcept { return m_generation; }

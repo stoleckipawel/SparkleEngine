@@ -1,7 +1,6 @@
 #include "../../PCH.h"
 #include "Passes/Presentation/SceneUpscalingResources.h"
 
-#include "Frame/Graph/RenderFrameGraphResourceBindings.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
 
 UpscalerPassResources CreateSceneUpscalingResources(
@@ -9,11 +8,11 @@ UpscalerPassResources CreateSceneUpscalingResources(
     RenderViewportExtent outputExtent,
     RenderFrameGraphResources& resources)
 {
-	resources.ResolvedSceneColor = CreateResolvedSceneColor(builder, outputExtent);
+	resources.Presentation.ResolvedSceneColor = CreateResolvedSceneColorTarget(builder, outputExtent);
 
 	return UpscalerPassResources{
-	    .InputColor = resources.Transient.Scene.SceneColor,
-	    .OutputColor = resources.ResolvedSceneColor,
+	    .InputColor = resources.Presentation.SceneColorInput,
+	    .OutputColor = resources.Presentation.ResolvedSceneColor,
 	    .Depth = resources.Transient.GBuffer.DeviceZ,
 	    .MotionVectors = resources.Transient.GBuffer.MotionVector,
 	    .Exposure = resources.Transient.Exposure};

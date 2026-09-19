@@ -27,7 +27,7 @@ The Renderer turns an immutable world submission into a lit, post-processed, pre
 | CPU visibility, resource residency, frame graph, typed shader/pipeline runtime | Occlusion culling, LOD selection, GPU-driven indirect drawing, stereo, or multiview |
 | Raster, inline-ray, and native-ray-pipeline GBuffer frontends | Proved parity across frontends/backends and transparent blended materials |
 | ReSTIR direct/indirect lighting and an accumulating Reference Path Tracer mode | Non-ray lighting/shadow fallback, credible accepted reference oracle, volumetric lighting |
-| Exposure, Linear/DLSS reconstruction, tone mapping, debug views, UI and SDR presentation | First-release targets still missing: deferred decals, color grading, chromatic aberration, HDR10 output; excluded: frame generation |
+| Exposure, optional DLSS RR lighting denoising, Linear/DLSS SR presentation upscaling, tone mapping, debug views, UI and SDR presentation | First-release targets still missing: deferred decals, color grading, chromatic aberration, HDR10 output; excluded: frame generation |
 | Requested settings, diagnostics, capture products, shader-generation replacement | Complete requested-versus-active, failure, stress, quality, and performance evidence |
 
 ## Module Surface And Encapsulation

@@ -63,16 +63,14 @@ FramePipeline::FramePipeline(
 	    renderHardwareInterface,
 	    BuildRayTracingCapabilityReport(renderHardwareInterface.GetCapabilities()));
 	m_imageProviders = std::make_unique<RendererImageProviderStack>(renderHardwareInterface, m_deviceServices);
-	m_referencePathTracerSession = std::make_unique<ReferencePathTracerSession>(
-	    m_deviceServices,
-	    m_memoryMonitor,
-	    m_renderScene->GetRayTracingScene());
+	m_referencePathTracerSession =
+	    std::make_unique<ReferencePathTracerSession>(m_deviceServices, m_memoryMonitor, m_renderScene->GetRayTracingScene());
 	m_uiFrameRenderer = std::make_unique<UiFrameRenderer>(m_deviceServices, enableUiRenderPackets);
 	m_viewportCaptureService = std::make_unique<ViewportCaptureService>(m_deviceServices);
 	m_windowExtent = {static_cast<std::uint32_t>(m_window.GetWidth()), static_cast<std::uint32_t>(m_window.GetHeight())};
 
 	InitializeFrameStorage();
-	InitializeFrameGraph();
+	InitializeFrameGraph(ResolveFrameGraphSettings());
 }
 
 void FramePipeline::InitializeFrameStorage()
@@ -216,9 +214,6 @@ void FramePipeline::BeginBackendFrame() noexcept
 
 void FramePipeline::PrepareFrame(const RenderViewInput& viewInput, const RenderFrameTime& time)
 {
-	const RenderFrameGraphSettings viewportSettings =
-	    m_frameGraphSettings.OutputExtent.IsValid() && m_frameGraphSettings.RenderExtent.IsValid() ? m_frameGraphSettings
-	                                                                                               : ResolveFrameGraphSettings();
 	RenderCommandList& graphicsCommandList = m_deviceServices.GetCurrentGraphicsCommandList();
 	m_gpuMeshCache->UploadReadyMeshes(graphicsCommandList);
 	m_textureCache->UpdateSceneTextures(m_renderScene->GetTextures(), m_deviceServices);
@@ -228,8 +223,8 @@ void FramePipeline::PrepareFrame(const RenderViewInput& viewInput, const RenderF
 	    m_viewportRenderProducts,
 	    m_viewportRenderRequest,
 	    m_frameResources.ViewportProducts,
-	    viewportSettings.RenderExtent,
-	    viewportSettings.OutputExtent);
+	    m_frameGraphSettings.RenderExtent,
+	    m_frameGraphSettings.OutputExtent);
 	UpdateFrameHistory(*m_frameGraph, m_frameResources.History, frame.PreparedScene, frame.View, *m_renderViewState, *m_imageProviders);
 	SetupImageProviderFrame(frame);
 	frame.RayTracingBindings = m_renderScene->PrepareRayTracingFrame(frame.PreparedScene, frame.View.rayTracingPlan);
@@ -296,7 +291,7 @@ void FramePipeline::SetupImageProviderFrame(const RenderFrame& frame)
 	        .Camera = frame.View.cameraUniform,
 	        .Temporal = frame.View.temporalUniform,
 	        .ResetHistory = frame.View.temporalUniform.HistoryValid == 0u},
-	    m_frameGraphSettings.ImagePipeline);
+	    m_frameGraphSettings.UseRayReconstruction);
 }
 
 void FramePipeline::SubmitAndPresent(const UiRenderPacket& packet) noexcept

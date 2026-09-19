@@ -5,7 +5,6 @@
 #include "Frame/RenderFrame.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
-#include "Providers/ImageProviderPipeline.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "Pipeline/RenderPassRuntimeCache.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
@@ -32,7 +31,7 @@ static void ExportFrameProductRoots(
     const RenderFrameGraphSettings& settings,
     const RenderFrameGraphResources& resources) noexcept
 {
-	ExportTextureIfValid(builder, resources.ViewportProducts.FinalColorLdr, "Viewport.FinalColorLdr");
+	builder.ExportTexture(resources.ViewportProducts.FinalColorLdr, "Viewport.FinalColorLdr");
 	if (HasAnyRenderOutputFlags(settings.RequestedOutputs, RenderOutputFlags::SceneDepth))
 	{
 		ExportTextureIfValid(builder, resources.ViewportProducts.SceneDepth, "Viewport.SceneDepth");
@@ -57,11 +56,10 @@ RenderFrameGraphSettings FramePipeline::ResolveFrameGraphSettings() const noexce
 {
 	const RenderViewportExtent outputExtent = ResolveOutputExtent();
 	const ResolvedViewportDisplaySettings displaySettings = ResolvedViewportDisplaySettings::Resolve(m_viewportRenderRequest.Exposure);
-	const ImageProviderPipeline imagePipeline = ResolveFrameImagePipeline(m_viewportRenderRequest.ViewMode);
 	return RenderFrameGraphSettings{
-	    .RenderExtent = m_imageProviders->ResolveRenderExtent(outputExtent, imagePipeline),
+	    .RenderExtent = m_imageProviders->ResolveRenderExtent(outputExtent),
 	    .OutputExtent = outputExtent,
-	    .ImagePipeline = imagePipeline,
+	    .UseRayReconstruction = ShouldUseRayReconstruction(m_viewportRenderRequest.ViewMode),
 	    .OutputFormat = m_deviceServices.GetRenderHardwareInterface().GetPresentationService().GetPresentColorFormat(),
 	    .ExposureMeteringMethod = displaySettings.ExposureMeteringMethod,
 	    .PresentationTarget = ShouldOutputToBackBuffer() ? FramePresentationTarget::BackBuffer : FramePresentationTarget::ViewportProduct,
@@ -71,11 +69,6 @@ RenderFrameGraphSettings FramePipeline::ResolveFrameGraphSettings() const noexce
 bool FramePipeline::ShouldOutputToBackBuffer() const noexcept
 {
 	return m_viewportRenderRequest.ViewportId == 0;
-}
-
-void FramePipeline::InitializeFrameGraph() noexcept
-{
-	InitializeFrameGraph(ResolveFrameGraphSettings());
 }
 
 void FramePipeline::InitializeFrameGraph(const RenderFrameGraphSettings& settings) noexcept

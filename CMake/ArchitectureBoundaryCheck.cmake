@@ -160,7 +160,7 @@ function(sparkle_boundary_scan_file absolute_path)
         if(_relative_path STREQUAL "Engine/Renderer/Private/Passes/Scene/SceneRenderingPasses.cpp" AND
            _line MATCHES "#include[^\n]*Passes/(GBuffer|Lighting/RealTimeLighting|Lighting/Restir|Lighting/ReferencePathTracer/(ReferencePathTracerDisplay|ReferencePathTracerResources|ReferencePathTracerSession|ReferencePathTracerTransport))")
             sparkle_boundary_append_failure(
-                "RENDERER_LIGHTING_COMPOSITION_READS_AS_INTENT"
+                "RENDERER_SCENE_RENDERING_COMPOSITION_READS_AS_INTENT"
                 "${_relative_path}"
                 "${_line_number}"
                 "Scene-rendering composition selects the real-time or Reference renderer and leaves each renderer's GBuffer, ReSTIR, provider, resource, and pass mechanics behind its AddPasses entry."
@@ -393,19 +393,19 @@ function(sparkle_boundary_scan_file absolute_path)
                 "${_line}")
         endif()
 
-        if(NOT _relative_path MATCHES "^Engine/Renderer/Private/(Frame/FramePipeline[.]cpp|Passes/Lighting/LightingPasses[.]cpp|Passes/Lighting/ReferencePathTracer/)" AND
+        if(NOT _relative_path MATCHES "^Engine/Renderer/Private/(Frame/FramePipeline[.]cpp|Passes/Scene/SceneRenderingPasses[.]cpp|Passes/Lighting/ReferencePathTracer/)" AND
            NOT _relative_path STREQUAL "Engine/Renderer/ShaderRegistrations/ReferencePathTracerShaders.cpp" AND
            _line MATCHES "#include[^\n]*Passes/Lighting/ReferencePathTracer/")
             sparkle_boundary_append_failure(
                 "REFERENCE_PATH_TRACER_CPP_CAPSULE"
                 "${_relative_path}"
                 "${_line_number}"
-                "Reference Path Tracer implementation headers remain inside the feature, the lighting composition and frame-lifecycle owners, and shader registration."
+                "Reference Path Tracer implementation headers remain inside the feature, the scene-rendering composition and frame-lifecycle owners, and shader registration."
                 "${_line}")
         endif()
 
         if(_relative_path MATCHES "^Engine/Renderer/Private/" AND
-           NOT _relative_path MATCHES "^Engine/Renderer/Private/(Frame/Graph/RenderFrameGraphSettings[.]cpp|Passes/Lighting/LightingPasses[.]cpp|Passes/Lighting/ReferencePathTracer/)" AND
+           NOT _relative_path MATCHES "^Engine/Renderer/Private/(Frame/Graph/RenderFrameGraphSettings[.]cpp|Passes/Scene/SceneRenderingPasses[.]cpp|Passes/Lighting/ReferencePathTracer/)" AND
            _line MATCHES "RenderViewMode::ReferencePathTracer")
             sparkle_boundary_append_failure(
                 "REFERENCE_PATH_TRACER_SELECTOR_HOOK_BUDGET"

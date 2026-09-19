@@ -146,29 +146,27 @@ void RendererImageProviderStack::ResetHistory() noexcept
 	m_resetHistoryPending = true;
 }
 
-void RendererImageProviderStack::SetupFrame(const ImageProviderFrameInput& frameInput, ImageProviderPipeline pipeline)
+void RendererImageProviderStack::SetupFrame(const ImageProviderFrameInput& frameInput, bool useRayReconstruction)
 {
 	ImageProviderFrameInput providerInput = frameInput;
 	providerInput.ResetHistory |= m_resetHistoryPending;
 	m_resetHistoryPending = false;
+
 	if (m_upscaler != nullptr)
 	{
 		m_upscaler->SetupFrame(providerInput);
 	}
-	if (pipeline == ImageProviderPipeline::RayReconstruction && m_rayReconstruction != nullptr)
+
+	if (useRayReconstruction)
 	{
+		providerInput.OutputExtent = providerInput.RenderExtent;
+		m_rayReconstruction->SetDenoisingExtent(providerInput.RenderExtent);
 		m_rayReconstruction->SetupFrame(providerInput);
 	}
 }
 
-RenderViewportExtent RendererImageProviderStack::ResolveRenderExtent(
-    RenderViewportExtent outputExtent,
-    ImageProviderPipeline pipeline) noexcept
+RenderViewportExtent RendererImageProviderStack::ResolveRenderExtent(RenderViewportExtent outputExtent) noexcept
 {
-	if (pipeline == ImageProviderPipeline::RayReconstruction && m_rayReconstruction != nullptr)
-	{
-		return m_rayReconstruction->ResolveRenderExtent(outputExtent);
-	}
 	if (m_upscaler != nullptr)
 	{
 		return m_upscaler->ResolveRenderExtent(outputExtent);

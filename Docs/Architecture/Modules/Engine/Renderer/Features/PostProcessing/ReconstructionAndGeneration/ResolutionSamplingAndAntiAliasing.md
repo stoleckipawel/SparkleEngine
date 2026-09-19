@@ -61,7 +61,7 @@ Invalid output or provider extents must not produce divided-by-zero jitter or a 
 | Linear | output extent | single-sample raster plus active Halton camera jitter; Linear resolves/copies the current scene result | internal baseline; no separate resolution-scale selector found |
 | NVIDIA DLSS SR `NativeAA` | provider-selected extent, expected native/output-sized when provider accepts it | vendor reconstruction quality mode using shared temporal inputs | D3D12/SDK/adapter/interposer gated; initialization failure resolves to Linear |
 | NVIDIA DLSS SR Quality/Balanced/Performance/UltraPerformance | provider optimal internal extent | vendor temporal upscaling/reconstruction | requested mode is not active evidence; actual extent/provider must be reported |
-| NVIDIA DLSS RR | provider optimal internal extent for eligible ReSTIR route | vendor ray reconstruction owns resolved output | unavailable/unsupported resolves Off and ordinary upscaling owns output |
+| NVIDIA DLSS RR | equal render-extent input/output using the provider's NativeAA mode | vendor lighting denoising produces a render-resolution intermediate | unavailable/unsupported resolves Off; selected Linear/DLSS SR quality independently owns render-to-output resolution conversion |
 | RHI sample counts 2/4/8 | vocabulary supported by neutral texture/pipeline validation | potential multisample resource/pipeline contract only | no current Renderer pass/selector/end-to-end resolve route found |
 | MSAA jitter helper | source-only 8-sample offset table | temporal sample vocabulary only | active `RenderViewState` hard-codes Halton; helper is not selected |
 
@@ -74,7 +74,8 @@ Invalid output or provider extents must not produce divided-by-zero jitter or a 
 | graph resources | frame-graph settings/topology generation | render/output extent, format, provider/lighting route |
 | viewport/scissor | `RenderViewBuilder`/RHI raster state | current render target extent and view |
 | jitter | `RenderViewState` | view identity, render extent, temporal sample index and history validity |
-| reconstructed result | RR when active, otherwise upscaler/Linear | one `ResolvedSceneColor` at output extent |
+| denoised lighting result | optional DLSS RR | one `DenoisedSceneColor` at render extent |
+| presentation-resolution result | selected DLSS SR or Linear | one `ResolvedSceneColor` at output extent |
 | presentation/product | output/presentation owners | output extent, target/product generation, format and encoding |
 
 A resize or any change that modifies the resolved extents/provider/topology invalidates common temporal and provider history before incompatible consumers. Old graph/provider resources retire after their last real queue use. Per-view state cannot silently borrow another viewport's extent or history.

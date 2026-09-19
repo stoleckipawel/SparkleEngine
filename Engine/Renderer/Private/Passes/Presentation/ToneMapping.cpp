@@ -21,7 +21,7 @@ FrameGraphTextureHandle AddToneMappingPass(
 	        RenderFrameGraphFormats::SceneColor));
 
 	auto& parameters = builder.AllocParameters<ToneMappingCS>();
-	parameters->SceneColor = builder.CreateSRV(resources.ResolvedSceneColor);
+	parameters->SceneColor = builder.CreateSRV(resources.Presentation.ResolvedSceneColor);
 	parameters->ExposureTexture = builder.CreateSRV(resources.Transient.Exposure);
 	parameters->ToneMappedColor = builder.CreateUAV(toneMappedColor);
 	builder.AddParameterSetup<ToneMappingUniformData>(
@@ -30,10 +30,7 @@ FrameGraphTextureHandle AddToneMappingPass(
 
 	builder.Dispatch<ToneMappingCS>(
 	    parameters,
-	    ComputeDispatchDesc{
-	        MathUtils::DivideRoundUp(outputExtent.Width, 8u),
-	        MathUtils::DivideRoundUp(outputExtent.Height, 8u),
-	        1u});
+	    ComputeDispatchDesc{MathUtils::DivideRoundUp(outputExtent.Width, 8u), MathUtils::DivideRoundUp(outputExtent.Height, 8u), 1u});
 
 	return toneMappedColor;
 }

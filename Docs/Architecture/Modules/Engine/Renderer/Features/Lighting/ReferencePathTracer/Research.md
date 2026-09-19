@@ -184,7 +184,7 @@ The audit verdict is **ON COURSE, NOT FEATURE-COMPLETE**. Stages 1-5 have the in
 - make raw linear radiance, sample count, and variance/error available to the evidence workflow; use removable fault probes rather than permanent diagnostic counters or readbacks for internal events;
 - make accumulation precision, reset, maximum count, checkpoint/resume, and overflow behavior explicit;
 - make the reference renderer a first-class viewport view mode immediately after Lit, automatically accumulate the stable current view, expose the reset cause and exact target-prefix progress, and preserve only fully revalidated Lit-comparison sessions;
-- keep the implementation as one private feature capsule behind one frame/lighting composition hook, with the ordinary viewport request/View carrying one host-independent `RenderViewMode` and RHI exposing only mechanism;
+- keep the implementation as one private feature capsule behind one scene-rendering composition hook, with the ordinary viewport request/View carrying one host-independent `RenderViewMode` and RHI exposing only mechanism;
 - route Editor and Game cameras through one canonical View identity and treat continuous dynamic content as reset/unsupported unless every contributing generation is observable;
 - test materials, light leaks, alpha, scene reload, determinism, and failure behavior independently;
 - separate unbiased raw evidence from denoised, filtered, tone-mapped, or otherwise presentation-oriented output.

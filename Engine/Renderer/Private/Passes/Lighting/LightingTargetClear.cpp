@@ -44,22 +44,19 @@ void AddLightingTargetClearPass(FrameGraphBuilder& builder, const RenderFrameGra
 		    resourceBuilder.Write(lighting.IndirectDiffuse, ResourceUsage::RenderTarget, "IndirectDiffuse");
 		    resourceBuilder.Write(lighting.IndirectSpecular, ResourceUsage::RenderTarget, "IndirectSpecular");
 
-		    if (lighting.ReconstructionGuides.IsValid())
-		    {
-			    resourceBuilder.Write(
-			        lighting.ReconstructionGuides.DiffuseAlbedo,
-			        ResourceUsage::RenderTarget,
-			        "RayReconstructionDiffuseAlbedo");
-			    resourceBuilder.Write(
-			        lighting.ReconstructionGuides.SpecularAlbedo,
-			        ResourceUsage::RenderTarget,
-			        "RayReconstructionSpecularAlbedo");
-			    resourceBuilder.Write(lighting.ReconstructionGuides.Roughness, ResourceUsage::RenderTarget, "RayReconstructionRoughness");
-			    resourceBuilder.Write(
-			        lighting.ReconstructionGuides.SpecularHitDistance,
-			        ResourceUsage::RenderTarget,
-			        "RayReconstructionSpecularHitDistance");
-		    }
+		    resourceBuilder.Write(
+		        lighting.ReconstructionGuides.DiffuseAlbedo,
+		        ResourceUsage::RenderTarget,
+		        "RayReconstructionDiffuseAlbedo");
+		    resourceBuilder.Write(
+		        lighting.ReconstructionGuides.SpecularAlbedo,
+		        ResourceUsage::RenderTarget,
+		        "RayReconstructionSpecularAlbedo");
+		    resourceBuilder.Write(lighting.ReconstructionGuides.Roughness, ResourceUsage::RenderTarget, "RayReconstructionRoughness");
+		    resourceBuilder.Write(
+		        lighting.ReconstructionGuides.SpecularHitDistance,
+		        ResourceUsage::RenderTarget,
+		        "RayReconstructionSpecularHitDistance");
 	    },
 	    [lighting](PassCommandContext& context)
 	    {
@@ -68,12 +65,9 @@ void AddLightingTargetClearPass(FrameGraphBuilder& builder, const RenderFrameGra
 			    context.Resources.ClearRenderTarget(context.Commands, target);
 		    }
 
-		    if (lighting.ReconstructionGuides.IsValid())
+		    for (FrameGraphTextureHandle target : GetRayReconstructionGuideTargets(lighting))
 		    {
-			    for (FrameGraphTextureHandle target : GetRayReconstructionGuideTargets(lighting))
-			    {
-				    context.Resources.ClearRenderTarget(context.Commands, target);
-			    }
+			    context.Resources.ClearRenderTarget(context.Commands, target);
 		    }
 	    });
 }

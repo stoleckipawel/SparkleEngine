@@ -37,7 +37,7 @@ This source shape is present in the current changelist. Compilation and runtime 
 ## DVP-2 - Integrate Reference Path Tracer
 
 1. Add `RenderViewMode::ReferencePathTracer` at value `1`.
-2. Use the accepted request value for native-resolution topology and one direct Lit-versus-Reference branch in `FramePipeline::BuildRenderFrameGraph`.
+2. Use the accepted request value to select presentation upscaling instead of ray reconstruction without overriding the chosen upscaler or quality, and for one direct Lit-versus-Reference branch in `AddSceneRenderingPasses` below `FramePipeline::BuildRenderFrameGraph`.
 3. Let the private Reference feature read the immutable View value for lifecycle activation.
 4. Delete `CVarReferencePathTracer`, its built cache, and all selector aliases.
 5. Keep the original frame shell and private feature ownership; do not add a recipe hierarchy, settings bag, diagnostics surface, or RHI state.

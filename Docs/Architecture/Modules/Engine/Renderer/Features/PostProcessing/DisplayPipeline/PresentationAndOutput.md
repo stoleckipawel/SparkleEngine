@@ -28,7 +28,6 @@ Sparkle accepts one output-extent display-linear result from tone mapping, appli
 
 ```text
 ResolvedSceneColor
-  -> optional Debug Views replacement
   -> Tone Mapping
   -> Output Encoding
   -> back-buffer copy or FinalColorLdr viewport product
@@ -36,7 +35,7 @@ ResolvedSceneColor
 
 | Stage | Choices | Current boundary |
 | --- | --- | --- |
-| Debug handoff | Lit or one of 15 diagnostic modes | [Debug Views](../../DebugViews/README.md) owns modes/products; current diagnostics still enter the common exposure/tone/output chain |
+| Debug handoff | Lit or one of 15 diagnostic modes | [Debug Views](../../DebugViews/README.md) owns the earlier render-resolution replacement; current diagnostics still enter the common upscale/tone/output chain |
 | Output encoding | Automatic from output format, Linear, sRGB shader encoding | writes the linear counterpart of the presentation format before copy/publication |
 | HDR display | no current route | mandatory HDR target and SDR fallback are defined in [HDR Display Output](HDRDisplayOutput/README.md), with the exact platform route discovery-blocked |
 
@@ -89,4 +88,4 @@ This contract is **defined but unproved**. Passing SDR encoding/publication does
 
 - [`PresentationPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp), [`ToneMapping.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/ToneMapping.cpp), and [`OutputEncoding.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/OutputEncoding.cpp)
 - [`OutputEncodingSettings.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/OutputEncodingSettings.cpp)
-- [`PostProcessingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/PostProcessing/PostProcessingPasses.cpp)
+- [`SceneRenderingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Scene/SceneRenderingPasses.cpp) and [`PresentationPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp)

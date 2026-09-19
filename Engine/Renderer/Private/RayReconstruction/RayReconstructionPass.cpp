@@ -16,18 +16,6 @@ void AddRayReconstructionPass(
     RenderViewportExtent outputExtent,
     const RayReconstructionPassResources& providerInputs)
 {
-	if (!providerInputs.NoisyInputColor.IsValid() || !providerInputs.OutputColor.IsValid() || !providerInputs.Depth.IsValid()
-	    || !providerInputs.MotionVectors.IsValid() || !providerInputs.Exposure.IsValid() || !providerInputs.Normals.IsValid()
-	    || !providerInputs.Roughness.IsValid() || !providerInputs.DiffuseAlbedo.IsValid() || !providerInputs.SpecularAlbedo.IsValid()
-	    || !providerInputs.SpecularHitDistance.IsValid())
-	{
-		Diagnostics::Fatal(
-		    g_rayReconstructionPassLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Ray-reconstruction pass received an incomplete resource set.");
-	}
-
 	builder.AddPass(
 	    passName,
 	    EFrameGraphPassKind::ExternalProvider,

@@ -1,14 +1,13 @@
 #pragma once
 
+#include "Renderer/Public/Viewport/RenderViewMode.h"
+
 class FrameGraphBuilder;
-class GpuMeshCache;
-class RenderRayTracingScene;
 struct RenderFrameGraphResources;
 struct RenderFrameGraphSettings;
 
-void AddRealTimePathTracerPasses(
+void AddSceneVisualizationPasses(
     FrameGraphBuilder& builder,
     const RenderFrameGraphSettings& settings,
-    RenderRayTracingScene& rayTracingScene,
-    GpuMeshCache& gpuMeshCache,
+    RenderViewMode viewMode,
     RenderFrameGraphResources& resources);

@@ -14,9 +14,9 @@
 | --- | --- | --- | --- |
 | Linear | built-in fallback/current route | one current-frame `ResolvedSceneColor` at output extent | filter/edge/alpha quality and scale range unproved |
 | DLSS Super Resolution | D3D12 plus built/runtime/device/interposer/provider readiness | one reconstructed current-frame output from color, depth, motion, exposure, camera, and extent tags | vendor/hardware/package constraints and no Vulkan route |
-| DLSS Ray Reconstruction | D3D12 provider readiness plus ReSTIR-specific guides | replaces the ordinary reconstruction producer for the supported lighting route | mode/guide restrictions and quality/history proof open |
+| DLSS Ray Reconstruction | D3D12 provider readiness plus ReSTIR-specific guides | optional render-resolution `DenoisedSceneColor` consumed by the selected presentation upscaler | mode/guide restrictions and quality/history proof open |
 
-Only one producer may own `ResolvedSceneColor` for a frame. Requested vendor mode can resolve to an explicit built-in fallback, but the active result and reason must remain visible; fallback success does not prove the requested provider.
+Only the selected presentation upscaler may own `ResolvedSceneColor` for a frame. Ray Reconstruction owns a separate render-resolution `DenoisedSceneColor`; it composes before Linear or DLSS Super Resolution instead of replacing either. Requested vendor mode can resolve to an explicit built-in fallback, but the active result and reason must remain visible; fallback success does not prove the requested provider.
 
 **Parent family:** [Post Processing](../README.md)
 
@@ -24,13 +24,13 @@ Cross-feature resolution/sample contract: [Resolution, Sampling, and Anti-Aliasi
 
 ## Feature Promise
 
-Sparkle converts the scene-linear render result at render extent into one `ResolvedSceneColor` at output extent. Ray Reconstruction may own that result for the ReSTIR route; otherwise upscaling owns it. The frame never intentionally applies both reconstruction and a second upscale to the same resolved product.
+Sparkle may first denoise eligible ReSTIR lighting into `DenoisedSceneColor` at render extent, then always converts the selected raw or denoised scene color into one `ResolvedSceneColor` at output extent. Ray Reconstruction and DLSS Super Resolution are independent stages and may run sequentially: the former owns lighting denoising, while the latter owns presentation-resolution reconstruction.
 
 | Feature | Requested choices | Active/failure rule | Inputs |
 | --- | --- | --- | --- |
 | Linear upscale | baseline provider | always-available internal path | scene color |
 | NVIDIA DLSS Super Resolution | NativeAA, Quality, Balanced, Performance, UltraPerformance | Streamline/capability/native-interop gated; initialization failure resolves to Linear | color, device depth, motion, exposure, camera/temporal/extents |
-| NVIDIA DLSS Ray Reconstruction | Off or NVIDIA RR | ReSTIR-only; initialization failure resolves Off | color, depth, motion, diffuse/specular albedo, normal, roughness, specular hit distance, exposure |
+| NVIDIA DLSS Ray Reconstruction | Off or NVIDIA RR | ReSTIR-only render-resolution denoising; initialization failure resolves Off without changing the selected upscaler | color, depth, motion, diffuse/specular albedo, normal, roughness, specular hit distance, exposure |
 
 Vulkan currently refuses the external Streamline evaluation route instead of claiming parity with D3D12 native interop. Provider source presence does not prove supported hardware, driver behavior, input tagging, binary staging, quality, performance, or redistribution.
 
@@ -38,9 +38,11 @@ Vulkan currently refuses the external Streamline evaluation route instead of cla
 
 - Renderer settings/CVars express requested provider and quality; the provider stack owns readiness and resolved active state.
 - `AddSceneUpscalingPasses` visibly selects exactly one implemented presentation upscaler: Linear or NVIDIA DLSS. The selected provider and quality own the render extent, so DLSS NativeAA remains available at native resolution; generic provider evaluation remains below the concrete selector.
+- `AddSceneDenoisingPasses` independently inserts Ray Reconstruction when eligible. It consumes ReSTIR guides, writes a distinct render-resolution product, and changes only the input passed to the selected presentation upscaler.
+- Ray Reconstruction evaluates with equal input/output render extents and its provider's NativeAA mode. The selected presentation-upscaler quality controls only the later DLSS SR extent conversion; it does not turn Ray Reconstruction into the resolution owner.
 - Provider key/generation contributes to graph topology and prevents a graph from binding stale provider state.
 - Old provider generations retire after their last queue submissions complete.
-- Reconstruction consumes ReSTIR guide products only when that topology is active. Linear/DLSS SR consume the normal scene/depth/motion/exposure inputs.
+- Ray Reconstruction consumes ReSTIR guide products only when that topology is active. Linear/DLSS SR consume the selected raw or denoised scene color plus their normal depth/motion/exposure inputs.
 - Tone mapping consumes the one resolved output; reconstruction/upscaling does not own tone mapping, color grading, chromatic aberration, output encoding, or frame generation.
 
 ## Failure, Tradeoffs, And Evidence
@@ -67,7 +69,7 @@ NativeAA and render-to-output scaling ratios need separate quality/cost cells. U
 - `AC-IRU-01` — one and only one producer writes `ResolvedSceneColor` at the requested output extent and documented scene-linear format for every supported combination.
 - `AC-IRU-02` — Linear produces finite in-bounds output for unity, down/upscale, odd dimensions, one-pixel edges, resize, and alpha fixtures with a predeclared filtering oracle.
 - `AC-IRU-03` — DLSS SR activates only with matching adapter/driver/SDK/interposer/backend readiness and complete color/depth/motion/exposure/camera/extent tags; requested quality and actual active provider are inspectable.
-- `AC-IRU-04` — DLSS RR activates only for ReSTIR with every required guide; its active state and output ownership prevent a second upscale.
+- `AC-IRU-04` — DLSS RR activates only for ReSTIR with every required guide, writes only render-resolution `DenoisedSceneColor`, and leaves the independently selected Linear or DLSS SR stage responsible for output-resolution `ResolvedSceneColor`.
 - `AC-IRU-05` — initialization/evaluation failure resolves SR to Linear and RR to Off exactly as documented, reports the reason, rebuilds affected topology, and never reports the vendor path as active.
 - `AC-IRU-06` — camera cut, resize, scene/view/provider/shader/topology change resets temporal provider state and prevents mixed-generation inputs or outputs.
 - `AC-IRU-07` — old provider generations remain alive through last-use queue tokens and are reclaimed within a declared bound during repeated switches/failures/shutdown.
@@ -81,7 +83,7 @@ NativeAA and render-to-output scaling ratios need separate quality/cost cells. U
 | `FM-IRU-02` | missing/wrong-format/wrong-extent/stale guide or motion/depth/exposure input | provider evaluation rejects before publication; no stale product is presented | `CHK-IRU-02`, `CHK-IRU-03` |
 | `FM-IRU-03` | resize/cut/provider or lighting-mode switch while work is in flight | temporal state resets, graph generation changes, and old provider retires by completion | `CHK-IRU-03` |
 | `FM-IRU-04` | external provider requested on Vulkan | active result explicitly refuses/falls back according to the documented provider rule, never claims parity | `CHK-IRU-02` |
-| `FM-IRU-05` | provider claims output while upscale also runs | graph/resource contract detects duplicate `ResolvedSceneColor` producer | `CHK-IRU-01` |
+| `FM-IRU-05` | Ray Reconstruction claims `ResolvedSceneColor`, changes presentation extent/provider policy, or suppresses the selected upscaler | graph/resource contract detects the ownership or stage-composition violation | `CHK-IRU-01` |
 
 | Check | Exercise and oracle | Covers |
 | --- | --- | --- |
@@ -96,4 +98,4 @@ This contract is **defined but unproved**. Linear, DLSS SR, and DLSS RR receive 
 
 - [`SceneUpscalingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/SceneUpscalingPasses.cpp), [`SceneUpscalingResources.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/SceneUpscalingResources.cpp), and [`NvidiaDlssUpscale.cpp`](../../../../../../../../Engine/Renderer/Private/Upscaling/NvidiaDlss/NvidiaDlssUpscale.cpp)
 - [`RendererImageProviderStack.cpp`](../../../../../../../../Engine/Renderer/Private/Providers/RendererImageProviderStack.cpp)
-- [`RestirRayReconstruction.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/Restir/RestirRayReconstruction.cpp)
+- [`SceneDenoisingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Scene/SceneDenoisingPasses.cpp) and [`RestirRayReconstruction.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/Restir/RestirRayReconstruction.cpp)

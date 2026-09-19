@@ -13,11 +13,7 @@ void AddPresentationOutputPass(
 {
 	if (settings.PresentationTarget == FramePresentationTarget::BackBuffer)
 	{
-		FrameGraphCopyPasses::AddTextureCopy(
-		    builder,
-		    "CopyEncodedColorToBackBuffer",
-		    resources.Transient.Scene.BackBuffer,
-		    encodedColor);
+		FrameGraphCopyPasses::AddTextureCopy(builder, "CopyEncodedColorToBackBuffer", resources.Presentation.BackBuffer, encodedColor);
 	}
 	resources.ViewportProducts.FinalColorLdr = encodedColor;
 }

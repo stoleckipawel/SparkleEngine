@@ -15,12 +15,6 @@ void AddUpscalerPass(
     RenderViewportExtent outputExtent,
     const UpscalerPassResources& inputs)
 {
-	if (!inputs.InputColor.IsValid() || !inputs.OutputColor.IsValid() || !inputs.Depth.IsValid() || !inputs.MotionVectors.IsValid()
-	    || !inputs.Exposure.IsValid())
-	{
-		Diagnostics::Fatal(g_upscalerPassLogger, __FILE__, __LINE__, "Upscaler pass received an incomplete resource set.");
-	}
-
 	builder.AddPass(
 	    "Upscaler",
 	    EFrameGraphPassKind::ExternalProvider,

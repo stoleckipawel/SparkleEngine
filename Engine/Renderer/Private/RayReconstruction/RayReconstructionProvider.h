@@ -36,7 +36,7 @@ public:
 	IRayReconstructionProvider& operator=(IRayReconstructionProvider&&) = delete;
 
 	virtual bool Initialize(const RhiCapabilities& capabilities, RhiNativeDeviceQueueInterop nativeInterop) = 0;
-	virtual RenderViewportExtent ResolveRenderExtent(RenderViewportExtent outputExtent) noexcept = 0;
+	virtual void SetDenoisingExtent(RenderViewportExtent extent) noexcept = 0;
 	virtual void SetupFrame(const ImageProviderFrameInput& frameInput) = 0;
 	virtual bool Evaluate(const RayReconstructionEvaluationDesc& evaluation) = 0;
 	virtual void Shutdown() noexcept = 0;

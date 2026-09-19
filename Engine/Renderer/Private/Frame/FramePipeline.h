@@ -82,7 +82,6 @@ private:
 	void InitializeFrameStorage();
 	void InitializeRenderFrames();
 	RenderFrameGraphResources BuildRenderFrameGraph(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings);
-	void InitializeFrameGraph() noexcept;
 	void InitializeFrameGraph(const RenderFrameGraphSettings& settings) noexcept;
 	void RefreshFrameExecution(const RenderFrameGraphSettings& settings) noexcept;
 	void RebuildFrameExecutionAfterSwapChainDrain(const RenderFrameGraphSettings& settings) noexcept;

@@ -2,15 +2,11 @@
 
 #include "Providers/ImageProviderFrameInput.h"
 #include "RayReconstruction/RayReconstructionProvider.h"
-#include "RayReconstruction/RayReconstructionSettings.h"
 #include "Upscaling/UpscalerSettings.h"
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
   #include <sl.h>
 
-RenderViewportExtent QueryStreamlineRayReconstructionOptimalRenderExtent(
-    RenderViewportExtent outputExtent,
-    EUpscalerQualityMode qualityMode) noexcept;
 bool EvaluateStreamlineRayReconstructionFrame(
     const ImageProviderFrameInput& frameInput,
     EUpscalerQualityMode qualityMode,

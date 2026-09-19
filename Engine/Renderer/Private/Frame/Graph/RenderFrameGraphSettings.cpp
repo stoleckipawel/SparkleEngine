@@ -1,8 +1,9 @@
 #include "../../PCH.h"
 #include "Frame/Graph/RenderFrameGraphSettings.h"
 
-ImageProviderPipeline ResolveFrameImagePipeline(RenderViewMode viewMode) noexcept
+#include "RayReconstruction/RayReconstructionSettings.h"
+
+bool ShouldUseRayReconstruction(RenderViewMode viewMode) noexcept
 {
-	return viewMode == RenderViewMode::ReferencePathTracer ? ImageProviderPipeline::PresentationUpscaling
-	                                                       : ImageProviderPipeline::RayReconstruction;
+	return viewMode == RenderViewMode::Lit && IsRayReconstructionEnabled();
 }

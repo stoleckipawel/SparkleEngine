@@ -9,7 +9,7 @@ class NvidiaDlssRayReconstructionProvider final : public IRayReconstructionProvi
 {
 public:
 	bool Initialize(const RhiCapabilities& capabilities, RhiNativeDeviceQueueInterop nativeInterop) override;
-	RenderViewportExtent ResolveRenderExtent(RenderViewportExtent outputExtent) noexcept override;
+	void SetDenoisingExtent(RenderViewportExtent extent) noexcept override;
 	void SetupFrame(const ImageProviderFrameInput& frameInput) override;
 	bool Evaluate(const RayReconstructionEvaluationDesc& evaluation) override;
 	void Shutdown() noexcept override;

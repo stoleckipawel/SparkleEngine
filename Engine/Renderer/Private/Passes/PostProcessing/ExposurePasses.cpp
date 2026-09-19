@@ -1,6 +1,7 @@
 #include "../../PCH.h"
 #include "Passes/PostProcessing/ExposurePasses.h"
 
+#include "Core/Public/Diagnostics/Error.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "Passes/PostProcessing/ExposureAdaptation.h"
 #include "Passes/PostProcessing/ExposureMeteringPasses.h"
@@ -17,10 +18,7 @@ void AddExposurePasses(FrameGraphBuilder& builder, const RenderFrameGraphSetting
 			moments = AddExposureDownsamplePasses(builder, settings.RenderExtent, resources);
 			break;
 		default:
-		{
-			static const auto logger = Logging::GetOrCreateLogger("Renderer.Exposure");
-			Diagnostics::Fatal(logger, __FILE__, __LINE__, "Exposure settings contain an unknown metering method.");
-		}
+			throw Diagnostics::Error("Exposure graph construction received an invalid metering method.");
 	}
 
 	AddExposureAdaptationPass(builder, moments, resources);

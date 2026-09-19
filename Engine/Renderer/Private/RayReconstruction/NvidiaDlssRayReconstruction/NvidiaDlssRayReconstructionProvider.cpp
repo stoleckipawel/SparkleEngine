@@ -31,16 +31,9 @@ bool NvidiaDlssRayReconstructionProvider::Initialize(const RhiCapabilities& capa
 #endif
 }
 
-RenderViewportExtent NvidiaDlssRayReconstructionProvider::ResolveRenderExtent(RenderViewportExtent outputExtent) noexcept
+void NvidiaDlssRayReconstructionProvider::SetDenoisingExtent(RenderViewportExtent extent) noexcept
 {
-	RenderViewportExtent providerRenderExtent = {};
-#if SPARKLE_WITH_NVIDIA_STREAMLINE
-	if (m_initialized)
-	{
-		providerRenderExtent = QueryStreamlineRayReconstructionOptimalRenderExtent(outputExtent, m_frameState.GetRequestedQualityMode());
-	}
-#endif
-	return m_frameState.StoreResolution(outputExtent, providerRenderExtent);
+	m_frameState.StoreResolution(extent, extent);
 }
 
 void NvidiaDlssRayReconstructionProvider::SetupFrame(const ImageProviderFrameInput& frameInput)
@@ -58,7 +51,7 @@ bool NvidiaDlssRayReconstructionProvider::Evaluate(const RayReconstructionEvalua
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 	return EvaluateStreamlineRayReconstructionFrame(
 	    m_frameState.GetFrameInput(),
-	    m_frameState.GetQualityMode(),
+	    EUpscalerQualityMode::NativeAA,
 	    sl::ViewportHandle{NvidiaDlssRayReconstructionProviderConstants::kRayReconstructionViewportId},
 	    evaluation);
 #else

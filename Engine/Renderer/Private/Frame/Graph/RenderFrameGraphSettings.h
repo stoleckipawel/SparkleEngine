@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Providers/ImageProviderPipeline.h"
 #include "Renderer/Public/Settings/EngineRenderingDisplayTypes.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "RHI/Public/Formats/PixelFormat.h"
@@ -17,13 +16,13 @@ struct RenderFrameGraphSettings final
 {
 	RenderViewportExtent RenderExtent;
 	RenderViewportExtent OutputExtent;
-	ImageProviderPipeline ImagePipeline = ImageProviderPipeline::RayReconstruction;
+	bool UseRayReconstruction = false;
 	PixelFormat OutputFormat = PixelFormat::Unknown;
 	EngineExposureMeteringMethod ExposureMeteringMethod = EngineExposureMeteringMethod::ParallelReduction;
-	FramePresentationTarget PresentationTarget = FramePresentationTarget::BackBuffer;
+	FramePresentationTarget PresentationTarget = FramePresentationTarget::ViewportProduct;
 	RenderOutputFlags RequestedOutputs = RenderOutputFlags::None;
 
 	bool operator==(const RenderFrameGraphSettings&) const noexcept = default;
 };
 
-ImageProviderPipeline ResolveFrameImagePipeline(RenderViewMode viewMode) noexcept;
+bool ShouldUseRayReconstruction(RenderViewMode viewMode) noexcept;

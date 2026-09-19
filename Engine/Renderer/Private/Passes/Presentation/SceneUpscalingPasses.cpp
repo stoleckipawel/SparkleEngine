@@ -14,11 +14,6 @@ void AddSceneUpscalingPasses(
     RendererImageProviderStack& imageProviders,
     RenderFrameGraphResources& resources)
 {
-	if (resources.ResolvedSceneColor.IsValid())
-	{
-		return;
-	}
-
 	const UpscalerPassResources inputs = CreateSceneUpscalingResources(builder, settings.OutputExtent, resources);
 	const EUpscalerProviderKind provider = CVarUpscalerProvider.Get();
 

@@ -8,4 +8,5 @@ struct RenderFrameGraphResources;
 void CreateRealTimeLightingRenderTargets(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
+    bool createRayReconstructionGuides,
     RenderFrameGraphResources& resources);

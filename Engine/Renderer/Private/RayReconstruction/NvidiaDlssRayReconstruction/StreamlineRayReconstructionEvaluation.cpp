@@ -12,8 +12,6 @@
   #include <sl_dlss.h>
   #include <sl_dlss_d.h>
 
-static const auto g_streamlineRayReconstructionEvaluationLogger = Logging::GetOrCreateLogger("Renderer.Streamline.RayReconstruction");
-
 static sl::DLSSDOptions BuildStreamlineRayReconstructionOptions(
     EUpscalerQualityMode qualityMode,
     RenderViewportExtent outputExtent) noexcept
@@ -32,23 +30,6 @@ static sl::DLSSDOptions BuildStreamlineRayReconstructionOptions(
 	options.ultraPerformancePreset = sl::DLSSDPreset::ePresetD;
 	options.ultraQualityPreset = sl::DLSSDPreset::ePresetD;
 	return options;
-}
-
-RenderViewportExtent QueryStreamlineRayReconstructionOptimalRenderExtent(
-    RenderViewportExtent outputExtent,
-    EUpscalerQualityMode qualityMode) noexcept
-{
-	sl::DLSSDOptimalSettings settings{};
-	const sl::DLSSDOptions options = BuildStreamlineRayReconstructionOptions(qualityMode, outputExtent);
-	if (slDLSSDGetOptimalSettings(options, settings) != sl::Result::eOk)
-	{
-		Diagnostics::Fatal(
-		    g_streamlineRayReconstructionEvaluationLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Streamline DLSS Ray Reconstruction could not resolve its render extent.");
-	}
-	return RenderViewportExtent{settings.optimalRenderWidth, settings.optimalRenderHeight};
 }
 
 bool EvaluateStreamlineRayReconstructionFrame(

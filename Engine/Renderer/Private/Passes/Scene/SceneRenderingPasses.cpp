@@ -6,6 +6,8 @@
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerPasses.h"
 #include "Passes/PostProcessing/ExposurePasses.h"
 #include "Passes/Presentation/SceneUpscalingPasses.h"
+#include "Passes/Scene/SceneDenoisingPasses.h"
+#include "Passes/Scene/SceneVisualizationPasses.h"
 
 void AddSceneRenderingPasses(
     FrameGraphBuilder& builder,
@@ -23,9 +25,11 @@ void AddSceneRenderingPasses(
 	}
 	else
 	{
-		AddRealTimePathTracerPasses(builder, settings, rayTracingScene, gpuMeshCache, imageProviders, resources);
+		AddRealTimePathTracerPasses(builder, settings, rayTracingScene, gpuMeshCache, resources);
 	}
 
 	AddExposurePasses(builder, settings, resources);
+	AddSceneVisualizationPasses(builder, settings, viewMode, resources);
+	AddSceneDenoisingPasses(builder, settings, imageProviders, resources);
 	AddSceneUpscalingPasses(builder, settings, imageProviders, resources);
 }

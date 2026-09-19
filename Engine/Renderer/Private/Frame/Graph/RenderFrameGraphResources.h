@@ -2,9 +2,12 @@
 
 #include "Frame/Graph/RenderFrameGraphTargets.h"
 #include "Resources/History/FrameHistory.h"
+#include "Scene/GpuScene/RenderSceneFrameGraphResources.h"
 #include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
-#include "FrameGraph/FrameGraphBufferHandle.h"
 #include "FrameGraph/FrameGraphTextureHandle.h"
+
+class FrameGraphBuilder;
+struct RenderFrameGraphSettings;
 
 struct RenderFrameGraphTransientResources final
 {
@@ -28,53 +31,28 @@ struct ViewportFrameProducts final
 	ViewportRenderProgress Progress = {};
 };
 
-struct RenderSceneGpuLightingResources final
-{
-	FrameGraphBufferHandle DirectionalLights = FrameGraphBufferHandle::Invalid();
-	FrameGraphBufferHandle PointLights = FrameGraphBufferHandle::Invalid();
-	FrameGraphBufferHandle SpotLights = FrameGraphBufferHandle::Invalid();
-	FrameGraphBufferHandle RectLights = FrameGraphBufferHandle::Invalid();
-};
-
-struct RenderSceneGpuGeometryResources final
-{
-	FrameGraphBufferHandle MeshInstances = FrameGraphBufferHandle::Invalid();
-	FrameGraphBufferHandle MeshInstanceSlots = FrameGraphBufferHandle::Invalid();
-	FrameGraphBufferHandle JointMatrices = FrameGraphBufferHandle::Invalid();
-	FrameGraphBufferHandle PreviousJointMatrices = FrameGraphBufferHandle::Invalid();
-	FrameGraphBufferHandle MorphWeights = FrameGraphBufferHandle::Invalid();
-	FrameGraphBufferHandle PreviousMorphWeights = FrameGraphBufferHandle::Invalid();
-};
-
-struct RenderSceneGpuRayTracingResources final
-{
-	FrameGraphBufferHandle Vertices = FrameGraphBufferHandle::Invalid();
-	FrameGraphBufferHandle SkinInfluences = FrameGraphBufferHandle::Invalid();
-	FrameGraphBufferHandle MorphTargetDeltas = FrameGraphBufferHandle::Invalid();
-	FrameGraphBufferHandle Indices = FrameGraphBufferHandle::Invalid();
-	FrameGraphBufferHandle Instances = FrameGraphBufferHandle::Invalid();
-	FrameGraphBufferHandle Materials = FrameGraphBufferHandle::Invalid();
-};
-
-struct RenderSceneGpuResources final
-{
-	RenderSceneGpuLightingResources Lighting = {};
-	RenderSceneGpuGeometryResources Geometry = {};
-	RenderSceneGpuRayTracingResources RayTracing = {};
-};
-
 struct RenderFrameGraphImportedSceneResources final
 {
 	FrameGraphTextureHandle Sky = FrameGraphTextureHandle::Invalid();
 	RenderSceneGpuResources Scene = {};
 };
 
+struct RenderFrameGraphPresentationResources final
+{
+	FrameGraphTextureHandle SceneColorInput = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle ResolvedSceneColor = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle BackBuffer = FrameGraphTextureHandle::Invalid();
+};
+
 struct RenderFrameGraphResources final
 {
 	RenderFrameGraphTransientResources Transient = {};
 	RenderFrameGraphImportedSceneResources ImportedScene = {};
+	RenderFrameGraphPresentationResources Presentation = {};
 	FrameGraphAccelerationStructureHandle SceneTlas = FrameGraphAccelerationStructureHandle::Invalid();
 	FrameHistoryResourceLayout History = {};
 	ViewportFrameProducts ViewportProducts = {};
-	FrameGraphTextureHandle ResolvedSceneColor = FrameGraphTextureHandle::Invalid();
 };
+
+RenderFrameGraphResources CreateRenderFrameGraphResources(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings);
+FrameGraphTextureHandle CreateResolvedSceneColorTarget(FrameGraphBuilder& builder, RenderViewportExtent outputExtent);

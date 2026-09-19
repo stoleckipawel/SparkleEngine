@@ -1,14 +1,12 @@
 #pragma once
 
 class FrameGraphBuilder;
-class GpuMeshCache;
-class RenderRayTracingScene;
+class RendererImageProviderStack;
 struct RenderFrameGraphResources;
 struct RenderFrameGraphSettings;
 
-void AddRealTimePathTracerPasses(
+void AddSceneDenoisingPasses(
     FrameGraphBuilder& builder,
     const RenderFrameGraphSettings& settings,
-    RenderRayTracingScene& rayTracingScene,
-    GpuMeshCache& gpuMeshCache,
+    RendererImageProviderStack& imageProviders,
     RenderFrameGraphResources& resources);
