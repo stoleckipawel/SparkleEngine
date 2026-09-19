@@ -77,12 +77,15 @@ void BindRenderSceneGpuResources(
 	BindRenderSceneGpuBuffer(graph, resources.Geometry.MeshInstances, sceneGpuBindings.Geometry.MeshInstances, "MeshInstances");
 	BindRenderSceneGpuBuffer(graph, resources.Geometry.MeshInstanceSlots, sceneGpuBindings.Geometry.MeshInstanceSlots, "MeshInstanceSlots");
 	BindRenderSceneGpuBuffer(graph, resources.Geometry.JointMatrices, sceneGpuBindings.Geometry.JointMatrices, "JointMatrices");
+
 	BindRenderSceneGpuBuffer(
 	    graph,
 	    resources.Geometry.PreviousJointMatrices,
 	    sceneGpuBindings.Geometry.PreviousJointMatrices,
 	    "PreviousJointMatrices");
+
 	BindRenderSceneGpuBuffer(graph, resources.Geometry.MorphWeights, sceneGpuBindings.Geometry.MorphWeights, "MorphWeights");
+
 	BindRenderSceneGpuBuffer(
 	    graph,
 	    resources.Geometry.PreviousMorphWeights,
@@ -90,16 +93,19 @@ void BindRenderSceneGpuResources(
 	    "PreviousMorphWeights");
 
 	BindRenderSceneGpuBuffer(graph, resources.RayTracing.Vertices, sceneGpuBindings.RayTracing.Vertices, "RayTracingHitVertices");
+
 	BindRenderSceneGpuBuffer(
 	    graph,
 	    resources.RayTracing.SkinInfluences,
 	    sceneGpuBindings.RayTracing.SkinInfluences,
 	    "RayTracingHitSkinInfluences");
+
 	BindRenderSceneGpuBuffer(
 	    graph,
 	    resources.RayTracing.MorphTargetDeltas,
 	    sceneGpuBindings.RayTracing.MorphTargetDeltas,
 	    "RayTracingHitMorphTargetDeltas");
+
 	BindRenderSceneGpuBuffer(graph, resources.RayTracing.Indices, sceneGpuBindings.RayTracing.Indices, "RayTracingHitIndices");
 	BindRenderSceneGpuBuffer(graph, resources.RayTracing.Instances, sceneGpuBindings.RayTracing.Instances, "RayTracingHitInstances");
 	BindRenderSceneGpuBuffer(graph, resources.RayTracing.Materials, sceneGpuBindings.RayTracing.Materials, "RayTracingHitMaterials");

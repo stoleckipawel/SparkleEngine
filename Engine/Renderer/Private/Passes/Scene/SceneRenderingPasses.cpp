@@ -4,8 +4,8 @@
 #include "Frame/Graph/RenderFrameGraphSettings.h"
 #include "Passes/Lighting/RealTimePathTracerPasses.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerPasses.h"
-#include "Passes/PostProcessing/ExposurePasses.h"
-#include "Passes/Presentation/SceneUpscalingPasses.h"
+#include "Passes/PostProcessing/Exposure/ExposurePasses.h"
+#include "Passes/Presentation/Upscaling/SceneUpscalingPasses.h"
 #include "Passes/Scene/SceneDenoisingPasses.h"
 #include "Passes/Scene/SceneVisualizationPasses.h"
 
@@ -31,5 +31,5 @@ void AddSceneRenderingPasses(
 	AddExposurePasses(builder, settings, resources);
 	AddSceneVisualizationPasses(builder, settings, viewMode, resources);
 	AddSceneDenoisingPasses(builder, settings, imageProviders, resources);
-	AddSceneUpscalingPasses(builder, settings, imageProviders, resources);
+	AddSceneUpscalingPasses(builder, settings, viewMode, imageProviders, resources);
 }

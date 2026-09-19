@@ -1,72 +1,117 @@
-# HDR Display Output Research
+#HDR Display Output Research
 
-**Status:** research; current primary-source platform/standard/implementation study, not SparkleEngine architecture, implementation, or HDR evidence
+**Status : **research; current primary-source platform/standard/implementation study, not SparkleEngine architecture, implementation, or HDR evidence
 
 **Responsibility:** compare normative HDR signal semantics, current Windows guidance, D3D12 source precedent, and Vulkan presentation contracts for `HDRD-00`
 
-**Authority boundary:** [Discovery](Discovery.md) owns local decisions; [Semantics](Semantics.md) owns accepted math; [Execution Architecture](ExecutionArchitecture.md) owns Renderer/RHI shape; [README](README.md) owns feature acceptance
+**Authority boundary:** [Discovery](Discovery.md) owns local decisions;
+[Semantics](Semantics.md) owns accepted math;
+[Execution Architecture](ExecutionArchitecture.md) owns Renderer / RHI shape;
+[README](README.md) owns feature acceptance
 
-**Researched:** 2026-09-10
+        ** Researched
+    : **2026
+      - 09
+      - 10
 
-**Current readiness:** Not applicable — research adds no readiness credit.
+          * *Current readiness : **Not applicable — research adds no readiness credit.
 
-## Research Decision
+                                 ##Research Decision
 
-The primary sources establish enough normative and platform vocabulary to design discovery probes, but they expose a genuine product fork: the admitted HDR10/UINT10/PQ signal is narrower than the Windows general-purpose FP16/scRGB Advanced Color recommendation, especially where alpha/composition/UI are involved. Therefore the research result is **proceed to `HDRD-00`, do not proceed to implementation**.
+                                 The primary sources establish enough normative and platform vocabulary to design discovery probes,
+    but they expose a genuine product fork : the admitted HDR10 / UINT10 / PQ signal is narrower than the Windows general
+    - purpose FP16 / scRGB Advanced Color recommendation,
+    especially where alpha / composition / UI are involved.Therefore the research result is** proceed to `HDRD - 00`,
+    do not proceed to implementation
+    * *.
 
-## Research Questions
+       ##Research Questions
 
-1. Which signal/color/luminance rules are normative, and which remain Sparkle creative/product policy?
-2. Which Windows swapchain route is eligible for each editor/runtime/window/UI profile?
-3. Which facts must D3D12 and Vulkan expose without moving color policy into RHI?
-4. Which events invalidate output association, tuple, SDR white, metadata, and Renderer transform?
-5. Which artifacts prove pixel construction, native activation, OS/display behavior, and fallback independently?
+       1. Which signal
+    / color / luminance rules are normative,
+    and which remain Sparkle creative / product policy
+    ? 2. Which Windows swapchain route is eligible for each editor / runtime / window / UI profile
+    ? 3. Which facts must D3D12 and Vulkan expose without moving color policy into RHI
+    ? 4. Which events invalidate output association,
+    tuple, SDR white, metadata,
+    and Renderer transform     ? 5. Which artifacts prove pixel construction, native activation, OS / display behavior,
+    and fallback independently ?
 
-## Research Method
+                               ##Research Method
 
-The study separates standards, current platform guidance, revision-pinned implementation samples, API/extension contracts, and current Sparkle source. Standards define signal terms; Microsoft/Khronos define platform/API obligations and limitations; samples demonstrate lifecycle precedent; only current Sparkle source proves local presence/absence. No one class substitutes for another, and external screenshots or display results never become Sparkle goldens.
+    The study separates standards,
+    current platform guidance, revision - pinned implementation samples, API / extension contracts,
+    and current Sparkle source.Standards define signal terms;
+Microsoft / Khronos define platform / API obligations and limitations;
+samples demonstrate lifecycle precedent; only current Sparkle source proves local presence/absence. No one class substitutes for another, and external screenshots or display results never become Sparkle goldens.
 
 ## Source Ledger
 
 | ID | Primary source | Question answered | Transfer limit |
 | --- | --- | --- | --- |
-| `HDR-REF-ITU-PQ` | ITU-R BT.2100-3 | what PQ/HLG HDR-TV signal parameters and transfer definitions are normative? | signal semantics only; no Sparkle scene/tone/target policy |
-| `HDR-REF-ITU-2020` | ITU-R BT.2100-3 plus BT.2408-6 | which wide-gamut/D65/reference-white terms constrain the candidate? | no display capability or UI implementation proof |
-| `HDR-REF-MS-AC-01` | Microsoft Advanced Color guidance | when are FP16/scRGB versus UINT10/HDR10 routes recommended and how should dynamic output state be handled? | mutable current Windows guidance; profile eligibility must be probed locally |
-| `HDR-REF-MS-AC-02` | Microsoft `DISPLAYCONFIG_SDR_WHITE_LEVEL` guidance | how is current SDR white reported relative to nominal 80 nits? | query semantics; no universal white or Sparkle fallback value |
-| `HDR-REF-DX-01` | DirectX Graphics Samples `D3D12HDR.cpp`, commit `213dd4fd4918ea009dd8f35adee1aff1f2ecaba4` | what concrete format/color-space/resize/output lifecycle has a Microsoft sample used? | lifecycle precedent, not current product policy or local proof |
-| `HDR-REF-DX-02` | Microsoft `IDXGISwapChain4::SetHDRMetaData` guidance | can static metadata be relied on as display or activation truth? | metadata limitation; does not decide omit/best-effort/required policy |
-| `HDR-REF-VK-01` | `VK_EXT_swapchain_colorspace`, Vulkan Docs commit `f84d432d5b8912362f96f581f29bbc4f3c8c7843` | how is HDR10 color space enumerated and paired with a surface format? | API contract; extension presence is not local usable support |
-| `HDR-REF-VK-02` | Vulkan WSI surface/swapchain contracts at the same docs revision | when must surface capabilities/formats and swapchain state be re-evaluated? | mechanism/lifecycle; Windows display facts still require a platform owner |
-| `HDR-REF-VK-03` | `VK_EXT_hdr_metadata`, same docs revision and current manual | what does metadata set and what does it explicitly not control? | metadata semantics only; no guarantee of presentation-engine/display effect |
+| `HDR-REF-ITU-PQ` | ITU-R BT.2100-3 | what PQ/HLG HDR-TV signal parameters and transfer definitions are normative? | signal semantics only;
+no Sparkle scene / tone / target policy | | `HDR - REF - ITU - 2020` | ITU - R BT.2100 - 3 plus BT.2408 - 6
+    | which wide - gamut / D65 / reference - white terms constrain the candidate
+    ? | no display capability
+    or UI implementation proof | | `HDR - REF - MS - AC - 01` | Microsoft Advanced Color guidance
+        | when are FP16 / scRGB versus UINT10 / HDR10 routes recommended and how should dynamic output state be handled
+    ? | mutable current Windows guidance;
+profile eligibility must be probed locally | | `HDR - REF - MS - AC - 02` | Microsoft `DISPLAYCONFIG_SDR_WHITE_LEVEL` guidance
+    | how is current SDR white reported relative to nominal 80 nits
+    ? | query semantics;
+no universal white or Sparkle fallback value | | `HDR - REF - DX - 01` | DirectX Graphics Samples `D3D12HDR.cpp`,
+    commit `213dd4fd4918ea009dd8f35adee1aff1f2ecaba4`
+    | what concrete format / color - space / resize / output lifecycle has a Microsoft sample used
+    ? | lifecycle precedent,
+    not current product policy
+    or local proof | | `HDR - REF - DX - 02` | Microsoft `IDXGISwapChain4::SetHDRMetaData` guidance
+        | can static metadata be relied on as display
+    or activation truth
+    ? | metadata limitation;
+does not decide omit / best - effort / required policy | | `HDR - REF - VK - 01` | `VK_EXT_swapchain_colorspace`,
+    Vulkan Docs commit `f84d432d5b8912362f96f581f29bbc4f3c8c7843` | how is HDR10 color space enumerated and paired with a surface format
+    ? | API contract;
+extension presence is not local usable support | | `HDR - REF - VK - 02`
+        | Vulkan WSI surface / swapchain contracts at the same docs revision | when must surface capabilities / formats
+    and swapchain state be re - evaluated
+    ? | mechanism / lifecycle;
+Windows display facts still require a platform owner | | `HDR - REF - VK - 03` | `VK_EXT_hdr_metadata`,
+    same docs revision and current manual | what does metadata set and what does it explicitly not control ? | metadata semantics only;
+no guarantee of presentation - engine / display effect |
 
-## Completion Vocabulary
+    ##Completion Vocabulary
 
-| Term | Meaning in this package |
-| --- | --- |
-| `HDR10 signal` | Rec.2020/D65 RGB encoded with ST 2084/PQ in the accepted bounded range and presented through an eligible HDR10 native tuple |
-| `scRGB signal` | linear FP16 Advanced Color route with its own primaries/scale/composition contract; not another name for HDR10/PQ |
-| `requested` | product/user wants HDR; establishes no capability or active pixels |
-| `supported` | required static OS/backend/API feature exists; not yet current-window eligible |
-| `eligible` | current output/window/composition/profile admits one complete native route |
-| `active` | current output/swapchain generation has the accepted tuple and Renderer uses its matching transform generation |
-| `fallback SDR` | HDR remains requested but known-good SDR presentation/transform is current, with a reason |
-| `metadata disposition` | omitted/requested/submitted/call-failed/unknown-effect or other frozen state; never signal interpretation |
-| `display evidence` | externally observed/measured emitted behavior tied to display/OS/settings/candidate; not inferred from raw buffers or screenshots |
+    | Term | Meaning in this package | | -- -| -- -| | `HDR10 signal`
+    | Rec.2020 / D65 RGB encoded with ST 2084 / PQ in the accepted bounded range and presented through an eligible HDR10 native tuple |
+    | `scRGB signal` | linear FP16 Advanced Color route with its own primaries / scale / composition contract; not another name for HDR10/PQ |
+| `requested` | product/user wants HDR;
+establishes no capability or active pixels | | `supported` | required static OS / backend / API feature exists;
+not yet current - window eligible | | `eligible` | current output / window / composition / profile admits one complete native route |
+    | `active` | current output / swapchain generation has the accepted tuple and Renderer uses its matching transform generation |
+    | `fallback SDR` | HDR remains requested but known - good SDR presentation / transform is current,
+    with a reason | | `metadata disposition` | omitted / requested / submitted / call - failed / unknown - effect or other frozen state;
+never signal interpretation | | `display evidence`
+    | externally observed / measured emitted behavior tied to display / OS / settings / candidate;
+not inferred from raw buffers
+    or screenshots |
 
-## Local Baseline
+        ##Local Baseline
 
-Sparkle currently exposes 8-bit SDR presentation only. Renderer has tone-map and linear/sRGB encode passes; RHI has format-selected D3D12/Vulkan swapchains but no color-space/luminance/metadata state. D3D12 and Vulkan therefore need a new neutral presentation capability/result contract, while Renderer needs an explicit HDR output transform. Neither module can infer the other's active state.
+                Sparkle currently exposes 8
+            - bit SDR presentation only.Renderer has tone - map and linear / sRGB encode passes;
+RHI has format - selected D3D12 / Vulkan swapchains but no color
+    - space / luminance / metadata state.D3D12 and Vulkan therefore need a new neutral presentation capability / result contract,
+    while Renderer needs an explicit HDR output transform.Neither module can infer the other's active state.
 
-## Current Sparkle Source Trace
+    ##Current Sparkle Source Trace
 
-| Surface | Current truth at `ca55e7d8` | Discovery implication |
-| --- | --- | --- |
-| pixel formats/defaults | [`PixelFormat.h`](../../../../../../../../../Engine/RHI/Public/Formats/PixelFormat.h) has floating formats but no packed R10G10B10A2; [`RhiPresentationDefaults.h`](../../../../../../../../../Engine/RHI/Public/Presentation/RhiPresentationDefaults.h) admits four 8-bit SDR defaults | exact admitted format/profile changes must be explicit and paired with color space |
+    | Surface | Current truth at `ca55e7d8` | Discovery implication | | -- -| -- -| -- -| | pixel formats / defaults |
+    [`PixelFormat.h`](../../../../../../../../../ Engine / RHI / Public / Formats / PixelFormat.h) has floating formats but no packed
+    R10G10B10A2; [`RhiPresentationDefaults.h`](../../../../../../../../../Engine/RHI/Public/Presentation/RhiPresentationDefaults.h) admits four 8-bit SDR defaults | exact admitted format/profile changes must be explicit and paired with color space |
 | presentation service | [`RhiPresentationService.h`](../../../../../../../../../Engine/RHI/Public/Presentation/RhiPresentationService.h) reports current format but no output/capability/color-space/luminance/metadata/request-result generation | introduce one neutral backend-independent facts/request/result boundary before activation |
 | D3D12 swapchain | [`D3D12SwapChain.cpp`](../../../../../../../../../Engine/RHI/Private/D3D12/SwapChain/D3D12SwapChain.cpp) creates/resizes/presents without Advanced Color policy | output association, capability, tuple, interface/interposer, recreation, and fallback are absent |
 | Vulkan swapchain | [`VulkanSwapChain.cpp`](../../../../../../../../../Engine/RHI/Private/Vulkan/SwapChain/VulkanSwapChain.cpp) selects requested format only with `VK_COLOR_SPACE_SRGB_NONLINEAR_KHR` | HDR surface tuple/extensions/metadata and truthful failure are absent |
-| Renderer presentation | [`ToneMapping.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/ToneMapping.cpp), [`OutputEncoding.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/OutputEncoding.cpp), and [`PresentationPasses.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp) expose separate tone-mapped/encoded products but no HDR target/PQ route | preserve one Renderer color owner and generation-join it to RHI active state |
+| Renderer presentation | [`ToneMapping.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/ToneMapping.cpp), [`OutputEncoding.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/OutputEncoding.cpp), and [`PresentationPasses.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp) expose separate tone-mapped/encoded products but no HDR target/PQ route | preserve one Renderer color owner and generation-join it to RHI active state |
 | UI | [`UiFrameRenderer.cpp`](../../../../../../../../../Engine/Renderer/Private/UI/UiFrameRenderer.cpp) uses the presentation service/overlay route | editor composition/interposer/alpha eligibility is a first-class discovery question |
 | settings/package/capture | no HDR request/result, native tuple, semantic capture identity, or product evidence route was found | source absence earns no runtime or release claim |
 
@@ -96,23 +141,40 @@ This is valuable native lifecycle precedent. It is a sample, not current platfor
 
 ## Vulkan Contracts
 
-`VK_EXT_swapchain_colorspace` adds surface color spaces including `VK_COLOR_SPACE_HDR10_ST2084_EXT`; the selected `VkSurfaceFormatKHR` pairs format and color space.[^7] `VK_EXT_hdr_metadata` supplies mastering/content metadata to presentation engines, but explicitly does not override color space/encoding, does not define how the presentation engine uses it, and defines absence as valid.[^8]
+`VK_EXT_swapchain_colorspace` adds surface color spaces including `VK_COLOR_SPACE_HDR10_ST2084_EXT`;
+the selected `VkSurfaceFormatKHR` pairs format and color space.[^7] `VK_EXT_hdr_metadata` supplies mastering
+    / content metadata to presentation engines,
+    but explicitly does not override color space / encoding, does not define how the presentation engine uses it,
+    and defines absence as valid.[^8]
 
-**Discovery consequence:** Vulkan activation requires a compatible enumerated surface tuple and extension/call policy; metadata is independent optional state, not proof that HDR pixels are interpreted correctly or displayed faithfully.
+    * *Discovery consequence : **Vulkan activation requires a
+                               compatible enumerated surface tuple and extension
+                               / call policy;
+metadata is independent optional state,
+    not proof that HDR pixels are interpreted correctly
+    or displayed faithfully.
 
-The current Vulkan extension manual reiterates that HDR metadata does not override swapchain color space/encoding, that presentation-engine behavior lies outside the API's control, and that not supplying metadata is valid.[^9] The correct local abstraction therefore records metadata disposition separately from selected surface tuple and active result.
+        The current Vulkan extension manual reiterates that HDR metadata does not override swapchain color space
+        / encoding,
+    that presentation
+        - engine behavior lies outside the API's control, and that not supplying metadata is valid.[^9] The correct local abstraction therefore records metadata disposition separately from selected surface tuple and active result.
 
-## Cross-Source Comparison
+        ##Cross
+        - Source Comparison
 
-| Question | Current primary-source answer | Sparkle decision |
-| --- | --- | --- |
-| What defines PQ/BT.2100 signal math? | ITU-R BT.2100-3 | adopt exact constants/domain in Semantics after scene-domain decision |
-| Is fixed 200-nit SDR UI universally correct? | no; Windows exposes current user/system SDR white, nominal base 80 nits | `HDRD-05` |
-| Is 10-bit PQ always the recommended Windows route? | no; it is narrower than FP16/scRGB | `HDRD-03` per product/profile |
-| Does 10-bit format alone activate HDR? | no; compatible color space and current output state are required | tuple-based RHI active result |
-| Does metadata select or prove HDR? | no; Microsoft discourages reliance, Vulkan leaves use outside the API contract | `HDRD-09`, never an oracle |
-| Must state be reapplied after swapchain/display changes? | yes; native sample and WSI lifecycle require reconstruction/re-evaluation | explicit transition state machine |
-| Can a screenshot prove physical HDR appearance? | no; OS/display processing and capture path may differ | raw/native/measurement artifact separation |
+    | Question | Current primary - source answer | Sparkle decision | | -- -| -- -| -- -| | What defines PQ / BT.2100 signal math
+    ? | ITU - R BT.2100 - 3 | adopt exact constants / domain in Semantics after scene - domain decision |
+    | Is fixed 200 - nit SDR UI universally correct
+    ? | no;
+Windows exposes current user / system SDR white,
+    nominal base 80 nits | `HDRD - 05` | | Is 10 - bit PQ always the recommended Windows route                                       ? | no;
+it is narrower than FP16 / scRGB | `HDRD - 03` per product / profile | | Does 10 - bit format alone activate HDR                     ? | no;
+compatible color space and current output state are required | tuple - based RHI active result | | Does metadata select or prove HDR ? | no;
+Microsoft discourages reliance, Vulkan leaves use outside the API contract | `HDRD - 09`,
+    never an oracle | | Must state be reapplied after swapchain / display changes ? | yes;
+native sample and WSI lifecycle require reconstruction / re - evaluation | explicit transition state machine |
+    | Can a screenshot prove physical HDR appearance
+    ? | no; OS/display processing and capture path may differ | raw/native/measurement artifact separation |
 
 ## Recommended Discovery Direction
 
@@ -147,14 +209,19 @@ No unknown may be hidden in a backend adapter or chosen after candidate output. 
 
 1. high-precision scalar/vector hand calculations for matrices, tone policy, PQ, UI-white scaling, packing, and edge values;
 2. independent CPU image products for ramps, patches, gamut wedges, alpha/UI sentinels, black/diffuse/peak values, and defect mutations;
-3. Renderer raw scene/target/PQ product comparison before native presentation;
-4. native D3D12/Vulkan tuple/output-generation/capability/color-space/metadata inspection;
-5. injected query/create/resize/set/metadata/present/display/device faults and atomic SDR recovery;
-6. OS/display state and current SDR-white/output queries tied to window/output generation;
-7. external capture/measurement/photograph only with calibrated interpretation, display/settings/environment identity, and limitations;
-8. paired backend, SDR/HDR display, transition, packaged/clean-machine, UI, cost, and exclusion matrix.
+3. Renderer raw scene / target / PQ product comparison before native presentation;
+4. native D3D12 / Vulkan tuple / output - generation / capability / color - space / metadata inspection;
+5. injected query / create / resize / set / metadata / present / display / device faults and atomic SDR recovery;
+6. OS / display state and current SDR - white / output queries tied to window / output generation;
+7. external capture / measurement / photograph only with calibrated interpretation, display / settings / environment identity,
+    and limitations;
+8. paired backend, SDR / HDR display, transition, packaged / clean - machine, UI, cost,
+    and exclusion matrix
+            .
 
-Each rung proves a different claim. Correct raw PQ does not prove an active tuple; an active tuple does not prove emitted luminance; a monitor badge or photograph does not prove the Renderer math; metadata success proves only the accepted call disposition.
+        Each rung proves a different claim.Correct raw PQ does not prove an active tuple;
+an active tuple does not prove emitted luminance;
+a monitor badge or photograph does not prove the Renderer math; metadata success proves only the accepted call disposition.
 
 ## Discovery Work Sequence
 

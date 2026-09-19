@@ -10,25 +10,30 @@
 RenderFrameGraphResources CreateRenderFrameGraphResources(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings)
 {
 	RenderFrameGraphResources resources;
+
 	resources.Transient.Scene.SceneColor = builder.CreateTexture(
 	    FrameGraphTextureDesc::CreateColor(
 	        "SceneColor",
 	        settings.RenderExtent.Width,
 	        settings.RenderExtent.Height,
 	        RenderFrameGraphFormats::SceneColor));
+
 	resources.Presentation.SceneColorInput = resources.Transient.Scene.SceneColor;
+
 	resources.Transient.Scene.SceneDepth = builder.CreateTexture(
 	    FrameGraphTextureDesc::CreateColor(
 	        "SceneDepth",
 	        settings.RenderExtent.Width,
 	        settings.RenderExtent.Height,
 	        RenderFrameGraphFormats::SceneDepth));
+
 	resources.Transient.Exposure =
 	    builder.CreateTexture(FrameGraphTextureDesc::CreateColor("Exposure", 1, 1, PixelFormat::R32G32B32A32_Float));
 
 	resources.ImportedScene.Sky = builder.ReservePersistentTexture(
 	    FrameGraphTextureDesc::CreateColor("Sky", 1, 1, PixelFormat::R8G8B8A8_UNorm),
 	    ResourceState::ShaderResource);
+
 	resources.ImportedScene.Scene = DeclareRenderSceneGpuResources(builder);
 	resources.History = DeclareFrameHistoryResources(builder);
 

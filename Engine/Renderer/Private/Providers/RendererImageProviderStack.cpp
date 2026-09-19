@@ -49,6 +49,7 @@ void RendererImageProviderStack::Initialize()
 		m_upscaler->Shutdown();
 		m_upscaler.reset();
 		CVarUpscalerProvider.Set(EUpscalerProviderKind::Linear);
+
 		g_rendererImageProviderStackLogger->warn(
 		    "The configured renderer upscaler could not initialize on the selected RHI backend and adapter; falling back to linear "
 		    "upscaling.");
@@ -66,6 +67,7 @@ void RendererImageProviderStack::Initialize()
 		m_rayReconstruction->Shutdown();
 		m_rayReconstruction.reset();
 		CVarRayReconstructionMode.Set(EngineRayReconstructionMode::Off);
+
 		g_rendererImageProviderStackLogger->warn(
 		    "The configured ray-reconstruction provider could not initialize on the selected RHI backend and adapter; disabling ray "
 		    "reconstruction.");
@@ -112,8 +114,10 @@ void RendererImageProviderStack::Refresh() noexcept
 	{
 		lastUse.MarkUsed(m_deviceServices.GetLastSubmittedToken(static_cast<ERhiQueueType>(queueIndex)));
 	}
+
 	m_retiredGenerations.push_back(
 	    RetiredGeneration{.LastUse = lastUse, .Upscaler = std::move(m_upscaler), .RayReconstruction = std::move(m_rayReconstruction)});
+
 	Initialize();
 	++m_generation;
 }

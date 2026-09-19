@@ -15,5 +15,6 @@ void AddPresentationOutputPass(
 	{
 		FrameGraphCopyPasses::AddTextureCopy(builder, "CopyEncodedColorToBackBuffer", resources.Presentation.BackBuffer, encodedColor);
 	}
+
 	resources.ViewportProducts.FinalColorLdr = encodedColor;
 }

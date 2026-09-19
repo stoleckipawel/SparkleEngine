@@ -46,6 +46,7 @@ FramePipeline::FramePipeline(
 {
 	RenderHardwareInterface& renderHardwareInterface = m_deviceServices.GetRenderHardwareInterface();
 	m_gpuMeshCache = std::make_unique<GpuMeshCache>(renderHardwareInterface, m_deviceServices, m_taskExecutor, assetTaskParentScope);
+
 	m_textureCache = std::make_unique<TextureCache>(
 	    renderHardwareInterface.GetResourceService(),
 	    renderHardwareInterface.GetDescriptorService(),
@@ -53,18 +54,23 @@ FramePipeline::FramePipeline(
 	    m_deviceServices,
 	    m_taskExecutor,
 	    assetTaskParentScope);
+
 	m_renderScenePreparation = std::make_unique<RenderScenePreparation>(m_taskExecutor, *m_gpuMeshCache, *m_textureCache);
 	m_renderViewPreparation = std::make_unique<RenderViewPreparation>(m_taskExecutor);
 	m_renderViewState = std::make_unique<RenderViewState>();
+
 	m_renderScene = std::make_unique<RenderScene>(
 	    &m_deviceServices,
 	    *m_gpuMeshCache,
 	    *m_textureCache,
 	    renderHardwareInterface,
 	    BuildRayTracingCapabilityReport(renderHardwareInterface.GetCapabilities()));
+
 	m_imageProviders = std::make_unique<RendererImageProviderStack>(renderHardwareInterface, m_deviceServices);
+
 	m_referencePathTracerSession =
 	    std::make_unique<ReferencePathTracerSession>(m_deviceServices, m_memoryMonitor, m_renderScene->GetRayTracingScene());
+
 	m_uiFrameRenderer = std::make_unique<UiFrameRenderer>(m_deviceServices, enableUiRenderPackets);
 	m_viewportCaptureService = std::make_unique<ViewportCaptureService>(m_deviceServices);
 	m_windowExtent = {static_cast<std::uint32_t>(m_window.GetWidth()), static_cast<std::uint32_t>(m_window.GetHeight())};
@@ -77,6 +83,7 @@ void FramePipeline::InitializeFrameStorage()
 {
 	const std::uint32_t maximumFramesInFlight =
 	    m_deviceServices.GetRenderHardwareInterface().GetCapabilities().Presentation.MaximumFramesInFlight;
+
 	m_frameExecutionDiagnostics.resize(maximumFramesInFlight);
 	InitializeRenderFrames();
 
@@ -225,6 +232,7 @@ void FramePipeline::PrepareFrame(const RenderViewInput& viewInput, const RenderF
 	    m_frameResources.ViewportProducts,
 	    m_frameGraphSettings.RenderExtent,
 	    m_frameGraphSettings.OutputExtent);
+
 	UpdateFrameHistory(*m_frameGraph, m_frameResources.History, frame.PreparedScene, frame.View, *m_renderViewState, *m_imageProviders);
 	SetupImageProviderFrame(frame);
 	frame.RayTracingBindings = m_renderScene->PrepareRayTracingFrame(frame.PreparedScene, frame.View.rayTracingPlan);
@@ -247,15 +255,18 @@ RenderFrame& FramePipeline::PrepareRenderFrame(const RenderViewInput& viewInput,
 	std::unique_ptr<RenderFrame>& frameSlot = m_renderFrames[frameIndex];
 	RenderFrame& frame = *frameSlot;
 	RenderScene& scene = *m_renderScene;
+
 	frame.Identity = RenderFrameIdentity{
 	    .FrameId = m_frameId,
 	    .SceneGeneration = scene.GetSceneGeneration(),
 	    .ShaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration(),
 	    .ImageProviderGeneration = m_imageProviders->GetGeneration()};
+
 	frame.Time = time;
 	frame.FrameInFlightIndex = frameIndex;
 
 	m_renderScenePreparation->Execute(scene, frame.PreparedScene);
+
 	BuildRenderView(
 	    frame.View,
 	    *m_renderViewState,
@@ -269,14 +280,17 @@ RenderFrame& FramePipeline::PrepareRenderFrame(const RenderViewInput& viewInput,
 	        .ShaderGeneration = frame.Identity.ShaderGeneration,
 	        .ImageProviderGeneration = frame.Identity.ImageProviderGeneration,
 	        .GraphTopologyGeneration = m_graphTopologyGeneration});
+
 	m_renderViewPreparation->Prepare(frame.PreparedScene, frame.View, *m_renderViewState);
 	frame.PreparedScene.gpuBindings = &scene.UpdateGpuScene(frame.PreparedScene, frame.View, frame.FrameInFlightIndex);
+
 	m_frameGraphExecutable = m_referencePathTracerSession->PrepareFrame(
 	    frame,
 	    m_viewportRenderRequest.RenderAction,
 	    m_viewportRenderRequest.RenderActionSequence,
 	    m_frameResources.ViewportProducts,
 	    *m_frameGraph);
+
 	return *frameSlot;
 }
 

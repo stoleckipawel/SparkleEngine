@@ -1,59 +1,123 @@
-# Rendering a Sparkle Frame
+#Rendering a Sparkle Frame
 
-**Status:** feature dossier; current Renderer frame map and local completion contract, not build, runtime, visual, native-validation, performance, or release evidence
+**Status : **feature dossier;
+current Renderer frame map and local completion contract, not build, runtime, visual, native - validation, performance, or release evidence
 
-**Verified:** 2026-09-06 against committed `master` revision `8414b5dc` and the live `Engine/Renderer` and RHI service boundaries named below
+                                                                                                                               **Verified
+    : **2026
+      - 09
+      - 06 against committed `master` revision `8414b5dc` and the live `Engine
+          / Renderer` and RHI service boundaries named below
 
-**Reference-recipe amendment:** refreshed 2026-09-13 against source input `9689e6ba870a01ef703da723648d3837e6b20863` plus the current scoped working tree; this records source shape only and does not add build, shader, GPU, visual, performance, or acceptance evidence
+              **Reference
+      - recipe amendment : **refreshed 2026
+                           - 09
+                           - 13 against source input `9689e6ba870a01ef703da723648d3837e6b20863` plus the current scoped working tree;
+this records source shape only and does not add build, shader, GPU, visual, performance, or acceptance evidence
 
-**Responsibility:** explain the intent, ownership, data flow, stage order, branches, lifetime, failure boundaries, and tradeoffs of one Sparkle render frame; feature-specific algorithms and limits belong to the linked dossiers
+                                                                                             **Responsibility : **explain the intent,
+    ownership, data flow, stage order, branches, lifetime, failure boundaries, and tradeoffs of one Sparkle render frame;
+feature
+    - specific algorithms and limits belong to the linked dossiers
 
-**Current readiness:** **36/100** across the tracked Renderer portfolio — the described source path is broad, four admitted first-release features are absent, and every candidate verification and delivery gate remains open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#renderer).
+            ** Current readiness : ****36
+                                   / 100
+                                   * *across the tracked Renderer portfolio — the described source path is broad,
+    four admitted first - release features are absent,
+    and every candidate verification and delivery gate remains open
+            .See[Current Feature Readiness](../../../../ Acceptance / CurrentReadiness.md #renderer)
+            .
 
-## The Frame In One Sentence
+        ##The Frame In One Sentence
 
-Sparkle can bracket host simulation with the frame's logical identity, accepts one monotonic immutable world submission, updates a persistent render scene, derives one scene-independent view and one frame-local prepared scene, binds them through checked pipeline/parameter contracts into a dependency-compiled frame graph, produces deferred surface data and ray-traced lighting, converts the scene-linear result into an output product, submits/presents the required GPU work, and retains every replaced object until its last submission completes.
+        Sparkle can bracket host simulation with the frame's logical identity, accepts one monotonic immutable world submission, updates a persistent render scene, derives one scene-independent view and one frame-local prepared scene, binds them through checked pipeline/parameter contracts into a dependency-compiled frame graph, produces deferred surface data and ray-traced lighting, converts the scene-linear result into an output product, submits/presents the required GPU work, and retains every replaced object until its last submission completes.
 
-## Frame At A Glance
+        ##Frame At A Glance
 
-```mermaid
-flowchart TD
-    Host[Host simulation<br/>optional logical frame markers] --> Submit[Immutable RenderFrameSubmission]
-    Submit --> Settle[Settle prior captures, residency,<br/>and retired generations]
-    Settle --> Admit[Accept identity and<br/>apply RenderScene delta]
-    Admit --> Topology[Resolve resize, settings,<br/>providers, and graph topology]
-    Topology --> Begin[RHI BeginFrame and<br/>upload ready resources]
-    Begin --> Scene[Prepare frame-local scene]
-    Begin --> View[Build view and temporal identity]
-    Scene --> GPU[Publish GPU scene and<br/>prepare BLAS, TLAS, and SBT bindings]
-    View --> GPU
-    GPU --> Bind[Bind current resources and<br/>typed parameters into FrameGraph]
-    Bind --> Compile[Compile dependencies, barriers,<br/>transients, queues, and batches]
-    Compile --> Image[TLAS and GBuffer -> lighting -> exposure<br/>and reconstruction -> tone map and encode]
-    Image --> SubmitGPU[Record and submit GPU work]
-    SubmitGPU --> Present[Compose UI, present or publish product,<br/>and advance frame-in-flight]
-    Present -. completion observed next frame .-> Settle
+```mermaid flowchart TD Host[Host simulation<br /> optional logical frame markers]--
+    > Submit[Immutable RenderFrameSubmission] Submit-- > Settle[Settle prior captures, residency, <br />and retired generations] Settle--
+    > Admit[Accept identity and <br /> apply RenderScene delta] Admit--
+    > Topology[Resolve resize, settings, <br /> providers, and graph topology] Topology--
+    > Begin[RHI BeginFrame and <br /> upload ready resources] Begin-- > Scene[Prepare frame - local scene] Begin--
+    > View[Build view and temporal identity] Scene-- > GPU[Publish GPU scene and <br /> prepare BLAS, TLAS, and SBT bindings] View--
+    > GPU GPU-- > Bind[Bind current resources and <br /> typed parameters into FrameGraph] Bind--
+    > Compile[Compile dependencies, barriers, <br /> transients, queues, and batches] Compile--
+    > Image[TLAS and GBuffer->lighting->exposure<br /> and reconstruction->tone map and encode] Image--
+    > SubmitGPU[Record and submit GPU work] SubmitGPU--
+    > Present[Compose UI, present or publish product, <br />and advance frame - in - flight] Present
+        -.completion observed next frame.->Settle
 ```
 
-The arrows describe semantic dependency and completion-driven lifetime. Declaration order helps readers, but the frame-graph compiler owns executable ordering, queue assignment, barriers, aliasing, recording chunks, and submission batches from resource-use declarations. Color grading and chromatic aberration do not enter this path today but are first-release targets; frame generation and volumetric lighting remain absent and excluded.
+         The arrows describe semantic dependency and completion
+        - driven lifetime.Declaration order helps readers,
+    but the frame - graph compiler owns executable ordering, queue assignment, barriers, aliasing, recording chunks,
+    and submission batches from resource
+    - use declarations.Color grading and chromatic aberration do not enter this path today but are first - release targets; frame generation and volumetric lighting remain absent and excluded.
 
 ## Stage-by-Stage Frame
 
-`FRAME-*` labels are local reading landmarks for this execution narrative. They are not capability, evidence, pass, or release identifiers; the linked `REN-*` dossiers and `*-E*` plan rows own those identities.
+`FRAME-*` labels are local reading landmarks for this execution narrative. They are not capability, evidence, pass, or release identifiers;
+the linked `REN - *` dossiers and `* -E *` plan rows own those identities.
 
-| Stage | Intent and current operation | Input -> owned output | Why it exists | Detail |
-| --- | --- | --- | --- | --- |
-| `FRAME-00` Submit | The host may bracket simulation with `BeginSimulationFrame`/`EndSimulationFrame` using the same logical ID. GameFramework then publishes `RenderFrameSubmission` containing structural scene delta, moved dynamic scene data, view input, and increasing frame ID. `RenderCoordinator` queues or executes it according to serial/threaded configuration. | World-owned data -> immutable renderer request; optional simulation marker pair | Renderer never reaches into mutable ECS storage; producer/consumer lifetime and optional end-to-end frame identity are explicit. | [Scene and View family](Features/SceneAndViewPreparation/README.md) and [Latency Coordination](Features/FrameExecution/LatencyCoordination.md) |
-| `FRAME-01` Settle | `PollFrameServices` completes capture polling, retired graphs, provider/shader generations, mesh/texture residency, and mesh promotion before touching the next frame. | Prior submission tokens -> reclaimed or newly resident state | GPU completion, not CPU scope exit, decides when resources can be reused or destroyed. | [Residency](Features/GeometryAndResources/MeshAndTextureResidency.md) and [Diagnostics, Products, and Capture](Features/ViewportAndDiagnostics/DiagnosticsProductsAndCapture.md) |
-| `FRAME-02` Admit | Reject non-monotonic frame IDs. Apply structural and dynamic scene changes to persistent `RenderScene`; a scene reset unloads scene textures and invalidates view/provider/history state. | Submission scene payload -> new render-scene generation | Persistent resources survive ordinary frames, while explicit reset prevents old scene/history identity leaking into a replacement level. | [Scene Preparation](Features/SceneAndViewPreparation/ScenePreparation.md) |
-| `FRAME-03` Topology | Apply admitted settings state, then resolve output/render extents, output format/target, GBuffer and lighting modes, provider key, shader generation, and the scene-owned ray-tracing graph generation. The ray-tracing scene selects its immutable automatic frontend once; only pipeline-relevant shader-table changes enter the frame comparison. Resize or a changed topology retires/rebuilds the graph and invalidates history. | Requested settings + capability-owned graph identity -> immutable graph configuration | Expensive structural choice is made before recording. Requested settings, automatically resolved topology, restart-active state, and capability fallback cannot be conflated. | [Settings State and Persistence](Features/RuntimeConfiguration/SettingsStateAndPersistence.md) and [Frame Graph](Features/FrameExecution/FrameGraphAndScheduling.md) |
+    | Stage | Intent and current operation | Input->owned output | Why it exists | Detail | | -- -| -- -| -- -| -- -| -- -|
+    | `FRAME - 00` Submit
+    | The host may bracket simulation with `BeginSimulationFrame`/`EndSimulationFrame` using the same logical ID.GameFramework then
+                                                                      publishes `RenderFrameSubmission` containing structural scene delta,
+    moved dynamic scene data, view input,
+    and increasing frame ID. `RenderCoordinator` queues
+    or executes it according to serial / threaded configuration.| World - owned data->immutable renderer request;
+optional simulation marker pair | Renderer never reaches into mutable ECS storage;
+producer / consumer lifetime and optional end - to - end frame identity are explicit.
+    | [Scene and View family](Features / SceneAndViewPreparation / README.md) and[Latency Coordination](
+        Features / FrameExecution / LatencyCoordination.md)
+    | | `FRAME - 01` Settle | `PollFrameServices` completes capture polling,
+    retired graphs, provider / shader generations, mesh / texture residency,
+    and mesh promotion before touching the next frame.| Prior submission tokens->reclaimed or newly resident state | GPU completion,
+    not CPU scope exit,
+    decides when resources can be reused
+    or destroyed.| [Residency](Features / GeometryAndResources / MeshAndTextureResidency.md) and
+        [Diagnostics, Products, and Capture](Features / ViewportAndDiagnostics / DiagnosticsProductsAndCapture.md) | | `FRAME - 02` Admit
+            | Reject non - monotonic frame IDs.Apply structural and dynamic scene changes to persistent `RenderScene`;
+a scene reset unloads scene textures and invalidates view / provider / history state.
+    | Submission scene payload->new render - scene generation | Persistent resources survive ordinary frames,
+    while explicit reset prevents old scene / history identity leaking into a replacement level.|
+    [Scene Preparation](Features / SceneAndViewPreparation / ScenePreparation.md) | | `FRAME - 03` Topology | Apply admitted settings state,
+    then resolve output / render extents, output format / target, GBuffer and lighting modes, provider key, shader generation,
+    and the scene - owned ray - tracing graph generation.The ray - tracing scene selects its immutable automatic frontend once; only pipeline-relevant shader-table changes enter the frame comparison. Resize or a changed topology retires/rebuilds the graph and invalidates history. | Requested settings + capability-owned graph identity -> immutable graph configuration | Expensive structural choice is made before recording. Requested settings, automatically resolved topology, restart-active state, and capability fallback cannot be conflated. | [Settings State and Persistence](Features/RuntimeConfiguration/SettingsStateAndPersistence.md) and [Frame Graph](Features/FrameExecution/FrameGraphAndScheduling.md) |
 | `FRAME-04` Begin backend | Apply a non-minimized pending swapchain resize, call `RenderDeviceServices::BeginFrame`, begin UI frame state, tick memory diagnostics, and resolve prior timings. The active D3D12 interposer emits RenderSubmitStart after its presentation-slot wait. | Frame ID + output state -> active frame-in-flight slot and command services | Backend acquisition, frame-slot ownership, and provider marker boundary stay below Renderer feature policy. | [Frame Graph](Features/FrameExecution/FrameGraphAndScheduling.md) and [Latency Coordination](Features/FrameExecution/LatencyCoordination.md) |
-| `FRAME-05` Upload | Upload ready meshes on the graphics command list and update scene textures through the texture cache. Activation waits for the recorded upload token; stale generations cannot become current. | Ready CPU/cooked asset generation -> persistent GPU resource generation | Upload readiness is decoupled from world submission and GPU completion is distinct from CPU decode/upload recording. | [Mesh and Texture Residency](Features/GeometryAndResources/MeshAndTextureResidency.md) |
-| `FRAME-06` Prepare scene | Reuse/compile a Tasks graph, resolve primitives and deformation, transform bounds, copy current/previous joint matrices and morph weights, prepare four light kinds, merge results, build RT plan inputs, and commit continuity only on success. | `RenderScene` -> frame-slot `PreparedRenderScene` | Scene-derived work can run in bounded parallel partitions without making the persistent scene a per-view object. | [Scene Preparation](Features/SceneAndViewPreparation/ScenePreparation.md) |
-| `FRAME-07` Build view | Build camera matrices, frustum, viewport/scissor, display settings, temporal uniform, and the selected `RenderViewMode`. Parallel visibility classifies/culls primitives, then builds raster batches, workload metrics, and a per-view ray-tracing partition plan. UI labels/icons/menu state are not retained in the View. | `RenderViewInput` + prepared scene -> frame-slot `RenderView` | Camera, visibility, output, history, and the rendering mode are view-owned; frontend presentation state remains with its owner. | [View Preparation](Features/SceneAndViewPreparation/ViewPreparation.md) and [Temporal Sampling](Features/FrameExecution/TemporalSamplingAndHistory.md) |
-| `FRAME-08` Publish GPU scene | Update lighting, geometry, current/previous deformation, hit geometry/material, mesh-instance, descriptor-table, and ray-tracing bindings for the selected frame slot. Configure provider camera/jitter/reset input and prepare ray-tracing frame bindings. | Prepared scene + view -> persistent/frame-indexed GPU bindings | All raster and ray consumers derive from the same scene identity; stable buffers and per-frame slices avoid independent feature copies. | [Geometry and GBuffer](Features/GeometryAndResources/GeometryMaterialsAndGBuffer.md), [Ray Tracing](Features/RayTracing/README.md) |
-| `FRAME-09` Bind graph | Bind current TLAS, sky, and GPU-scene buffers; apply defaults plus frame, scene, view, exposure, tone-map, and shadow parameters. Run pass setup/resource-production setup, validate typed layouts, materialize/cache the active graphics/compute/ray pipeline, and resolve current resources through the appropriate binding domain. | Current frame objects + active shader generation -> checked typed parameters, binding layout, pipeline, and imported resources | The graph shape can persist while per-frame values/native resources change, but ABI/state mismatches fail before command emission. | [Pipeline Materialization and Typed Binding](Features/ShaderRuntime/PipelineMaterializationAndTypedBinding.md) and [Frame Graph](Features/FrameExecution/FrameGraphAndScheduling.md) |
-| `FRAME-10` Compile and execute | Compile resource versions/dependencies, queue assignment, transient lifetimes/aliasing, barriers, submission batches, and recording plan; materialize transients; bind checked pipelines/parameters; record/submit batches; commit texture histories. | Declared graph -> RHI command batches and new histories | Features declare semantic uses; one compiler owns synchronization/lifetime and one pipeline layer owns checked lowering into native work. | [Frame Graph](Features/FrameExecution/FrameGraphAndScheduling.md) and [Pipeline Materialization](Features/ShaderRuntime/PipelineMaterializationAndTypedBinding.md) |
+| `FRAME-05` Upload | Upload ready meshes on the graphics command list and update scene textures through the texture cache. Activation waits for the recorded upload token;
+stale generations cannot become current.| Ready CPU / cooked asset generation->persistent GPU resource generation
+    | Upload readiness is decoupled from world submission and GPU completion is distinct from CPU decode / upload recording.
+    | [Mesh and Texture Residency](Features / GeometryAndResources / MeshAndTextureResidency.md) | | `FRAME - 06` Prepare scene
+    | Reuse / compile a Tasks graph,
+    resolve primitives and deformation, transform bounds, copy current / previous joint matrices and morph weights,
+    prepare four light kinds, merge results, build RT plan inputs,
+    and commit continuity only on success.| `RenderScene` ->frame - slot `PreparedRenderScene`
+    | Scene - derived work can run in bounded parallel partitions without making the persistent scene a per - view object.
+    | [Scene Preparation](Features / SceneAndViewPreparation / ScenePreparation.md) | | `FRAME - 07` Build view | Build camera matrices,
+    frustum, viewport / scissor, display settings, temporal uniform,
+    and the selected `RenderViewMode`.Parallel visibility classifies / culls primitives, then builds raster batches, workload metrics,
+    and a per - view ray - tracing partition plan.UI labels / icons / menu state are not retained in the View.
+    | `RenderViewInput` + prepared scene->frame - slot `RenderView` | Camera,
+    visibility, output, history, and the rendering mode are view - owned; frontend presentation state remains with its owner. | [View Preparation](Features/SceneAndViewPreparation/ViewPreparation.md) and [Temporal Sampling](Features/FrameExecution/TemporalSamplingAndHistory.md) |
+| `FRAME-08` Publish GPU scene | Update lighting, geometry, current/previous deformation, hit geometry/material, mesh-instance, descriptor-table, and ray-tracing bindings for the selected frame slot. Configure provider camera/jitter/reset input and prepare ray-tracing frame bindings. | Prepared scene + view -> persistent/frame-indexed GPU bindings | All raster and ray consumers derive from the same scene identity;
+stable buffers and per - frame slices avoid independent feature copies.
+    | [Geometry and GBuffer](Features / GeometryAndResources / GeometryMaterialsAndGBuffer.md),
+    [Ray Tracing](Features / RayTracing / README.md) | | `FRAME - 09` Bind graph | Bind current TLAS, sky, and GPU - scene buffers;
+apply defaults plus frame, scene, view, exposure, tone - map, and shadow parameters.Run pass setup / resource - production setup,
+    validate typed layouts, materialize / cache the active graphics / compute / ray pipeline,
+    and resolve current resources through the appropriate binding domain.
+    | Current frame objects + active shader generation->checked typed parameters,
+    binding layout, pipeline, and imported resources | The graph shape can persist while per - frame values / native resources change,
+    but ABI / state mismatches fail before command emission.
+    | [Pipeline Materialization and Typed Binding](Features / ShaderRuntime / PipelineMaterializationAndTypedBinding.md) and[Frame Graph](
+        Features / FrameExecution / FrameGraphAndScheduling.md)
+    | | `FRAME - 10` Compile and execute | Compile resource versions / dependencies,
+    queue assignment, transient lifetimes / aliasing, barriers, submission batches, and recording plan;
+materialize transients;
+bind checked pipelines / parameters;
+record / submit batches;
+commit texture histories.| Declared graph->RHI command batches and new histories | Features declare semantic uses; one compiler owns synchronization/lifetime and one pipeline layer owns checked lowering into native work. | [Frame Graph](Features/FrameExecution/FrameGraphAndScheduling.md) and [Pipeline Materialization](Features/ShaderRuntime/PipelineMaterializationAndTypedBinding.md) |
 | `FRAME-11` Produce image | The active graph builds/updates the scene TLAS and executes one CVar-selected middle-frame setup. Lit writes a raster or ray GBuffer, computes Direct and Indirect surface lighting through ReSTIR, composites/sky-fills scene color, meters exposure, optionally selects a render-resolution visualization or denoises Lit lighting, and then runs the selected presentation upscaler. The source-present Reference setup instead traces independent camera paths, transactionally accumulates a raw mean/M2 prefix, and derives a display product before the shared exposure/upscaling/tone-map/encode/output tail. That candidate remains uncompiled and GPU-unproved. There is no Volumetric Lighting, Color Grading, Chromatic Aberration, or Frame Generation stage. | Selected scene-linear middle product -> encoded final color | Every implemented feature branch rejoins one presentation boundary, while absent or unproved domains remain visible rather than implied. | [Lighting](Features/Lighting/README.md) and [Post Processing](Features/PostProcessing/README.md) |
 | `FRAME-12` Submit and retire | Render the UI packet, call `SubmitFrame`, record the graphics token for uploads, advance the frame-in-flight index, and later retire graphs/providers/shaders/resources only when all recorded queue tokens complete. Active D3D12 interposer hooks emit RenderSubmitEnd and bracket Present. | Recorded GPU work + UI -> presented/product frame, optional latency markers, and completion state | CPU ownership changes cannot free objects still referenced by any GPU queue, and optional marker attribution follows the actual submit/present boundary. | [Latency Coordination](Features/FrameExecution/LatencyCoordination.md) and [Diagnostics, Products, and Capture](Features/ViewportAndDiagnostics/DiagnosticsProductsAndCapture.md) |
 
@@ -80,49 +144,105 @@ This is not one fixed list of GPU commands. The topology is specialized before c
 
 The frame is a composition owner, not the implementation home for every feature. A render feature follows the binding [feature-enclosure and integration-hook budget](../../../../Engineering/Foundations/ModuleOwnership.md#feature-enclosure-and-integration-hook-budget): its algorithms, mutable state, validation, resources, shader bindings, diagnostics, and feature failures stay in one feature folder. `FramePipeline`, `BuildRenderFrameGraph`, or a stage aggregator may select and invoke one named entry point and publish its semantic result; they do not implement the feature's internal state machine or repeat its selector across preparation, execution, and presentation.
 
-`RendererHost` owns backend/runtime services and is the sole factory for `FramePipeline`; those services are not exposed as a getter bag. `FramePipeline` owns the caches, persistent RenderScene, Scene/View preparation and state, image providers, capture/UI integration, and feature instances that share its lifetime. `RendererExecutionContext` owns the resulting execution unit and routes both serial and threaded operation through the same typed renderer controls; the render-thread mailbox's frame-ready envelope remains coordinator-only. After preparation, graph execution and feature integration consume the canonical `RenderFrame` rather than receiving separately threaded identity, time, Scene, View, and ray-tracing-binding arguments. A feature receives only any focused one-shot control edge it consumes, never the complete mutable viewport request beside the accepted View.
+`RendererHost` owns backend/runtime services and is the sole factory for `FramePipeline`;
+those services are not exposed as a getter bag. `FramePipeline` owns the caches, persistent RenderScene, Scene / View preparation and state,
+    image providers, capture / UI integration,
+    and feature instances that share its lifetime. `RendererExecutionContext` owns the resulting execution unit and routes
+            both serial and threaded operation through the same typed renderer controls;
+the render-thread mailbox's frame-ready envelope remains coordinator-only. After preparation, graph execution and feature integration consume the canonical `RenderFrame` rather than receiving separately threaded identity, time, Scene, View, and ray-tracing-binding arguments. A feature receives only any focused one-shot control edge it consumes, never the complete mutable viewport request beside the accepted View.
 
 `GBuffer`, `RestirLighting`, and `Exposure` demonstrate the intended local shape: the graph or stage aggregator calls one responsibility-bearing function while private collaborators remain beside that feature. Shared parameter binding and pipeline-composition utilities may automate canonical Scene/View/RHI mechanism used by multiple current passes, but may not absorb feature outputs, histories, estimator choices, or dispatch policy. This is precedent, not automatic proof that every existing file is ideal. Every new or materially changed feature retains a per-stage integration-hook ledger and fails architecture review when feature-specific state leaks into generic Scene, View, history, settings, RHI, UI, or frame-resource owners without a separately proved shared contract.
 
-The Reference Path Tracer is explicitly **one frame with an alternate middle recipe**. `FramePipeline::BuildRenderFrameGraph` selects on `RenderViewMode::ReferencePathTracer`: Lit builds GBuffer, ReSTIR lighting, and reconstruction; Reference Path Tracer builds independent camera transport, raw accumulation, and a display resolve. No recipe hierarchy or graph factory carries feature objects. Both branches retain the existing prepared Scene/View, ray-tracing-scene publication, frame-graph compiler/executor, RHI submission, viewport products, UI packets, and presentation tail. The feature is neither a second renderer nor a debug/post-process layer over Lit.
+The Reference Path Tracer is explicitly **one frame with an alternate middle recipe**. `FramePipeline::BuildRenderFrameGraph` selects on `RenderViewMode::ReferencePathTracer`: Lit builds GBuffer, ReSTIR lighting, and reconstruction;
+Reference Path Tracer builds independent camera transport, raw accumulation,
+    and a display resolve.No recipe hierarchy
+    or graph factory carries feature objects.Both branches retain the existing prepared Scene / View,
+    ray - tracing - scene publication, frame - graph compiler / executor, RHI submission, viewport products, UI packets,
+    and presentation tail.The feature is neither a second renderer nor a debug / post - process layer over Lit.
 
-| Decision axis | Available current branch | Important consequence |
-| --- | --- | --- |
-| GBuffer | Rasterized; RayTracing | Raster uses vertex/pixel draws and depth attachment. Ray tracing resolves Inline or Pipeline and writes the same semantic outputs with color `R32_Float` device depth. |
-| Surface lighting | Lit uses the existing ReSTIR producer; per-view `RenderViewMode::ReferencePathTracer` selects a source-present independent GPU transport/accumulation middle in the same frame architecture | Ordinary lighting produces Direct and Indirect surface-lighting lobes and requires ray traversal. The Reference middle does not consume or lend authority to Lit output, and remains uncompiled/GPU-unproved rather than an accepted oracle. There is no non-ray deferred-lighting branch. |
-| Direct lighting | four analytic light kinds; Inline/Pipeline shadow visibility | Produces direct diffuse/specular/subsurface lobes. Shadow traversal resolves independently from GBuffer traversal. |
-| Indirect lighting | ReSTIR indirect; reference indirect | Produces indirect diffuse/specular lobes through inline secondary rays. Sky is an environment/background boundary, not broad IBL or atmosphere support. |
-| Volumetric lighting | none | No media/fog representation, scattering/transmittance integration, atmosphere/aerial-perspective pass, product, selector, or history enters the frame. |
-| Deferred decals | none | No decal data or post-GBuffer composition stage exists. The feature-local target architecture is mandatory first-release work, not current frame behavior. |
-| GBuffer/shadow traversal | Automatic | One engine-wide policy prefers a complete Pipeline route, otherwise selects complete Inline traversal, and rejects when neither is ready. |
-| TLAS | Classic; capability/provider-gated partitioned | Both are built from shared prepared-scene identity. Current PTLAS policy remains a narrow subset documented in the ray-tracing dossier. |
-| Ray reconstruction | Off; NVIDIA DLSS Ray Reconstruction | Only participates in the ReSTIR lighting route and produces render-resolution denoised scene color. It neither selects presentation resolution nor replaces upscaling. |
-| Upscaling | Linear; NVIDIA DLSS Super Resolution | Always converts the selected raw or denoised render-resolution scene color into `ResolvedSceneColor` at output resolution. Linear is the baseline; external provider initialization failure resets to Linear rather than claiming DLSS output. |
-| Resolution/sample policy | viewport/window output extent; provider-resolved render extent; active single-sample raster attachments and Halton jitter | No Renderer MSAA, standalone TAA/FXAA/SMAA, or dynamic-resolution controller was found; RHI/sample vocabulary is not an active mode. |
-| Color grading | none | No grading parameters, transform/LUT asset path, pass, shader, selector, or editor workflow enters the frame. Tone-mapper selection is not grading. |
-| Chromatic aberration | none | No lens/channel distortion model, pass, selector, or viewport setting enters the frame. |
-| Frame generation | none | No generated-frame provider, identity, optical-flow input, pacing, UI policy, or extra presentation enters the frame. Reflex/PCL latency coordination is not synthesis. |
-| Presentation target | BackBuffer; ViewportProduct | Back-buffer frames add the copy into the imported presentable resource. Offscreen/editor viewports publish named products without owning swapchain presentation. |
-| Debug view | Lit, Wireframe, GBuffer, lighting, GPU-scene modes | One `RenderViewMode` selects the ordinary result, raster wireframe state, or a debug resolve before the common tone-map/encode path. Exact display-linear debug presentation is not implemented. |
+    | Decision axis | Available current branch | Important consequence | | -- -| -- -| -- -| | GBuffer | Rasterized;
+RayTracing | Raster uses vertex / pixel draws and depth attachment.Ray tracing resolves Inline
+    or Pipeline and writes the same semantic outputs with color `R32_Float` device depth.| | Surface lighting
+        | Lit uses the existing ReSTIR producer;
+per - view `RenderViewMode::ReferencePathTracer` selects a source
+        - present independent GPU transport / accumulation middle in the same frame architecture
+    | Ordinary lighting produces Direct and Indirect surface
+        - lighting lobes and requires ray
+        traversal.The Reference middle does not consume or lend authority to Lit output,
+        and remains uncompiled / GPU - unproved rather than an accepted oracle.There is no non - ray deferred - lighting branch.|
+            | Direct lighting | four analytic light kinds;
+Inline / Pipeline shadow visibility
+    | Produces direct diffuse / specular / subsurface lobes.Shadow traversal resolves independently from GBuffer traversal.|
+    | Indirect lighting | ReSTIR indirect;
+reference indirect | Produces indirect diffuse / specular lobes through inline secondary rays.Sky is an environment / background boundary,
+    not broad IBL or atmosphere support.| | Volumetric lighting | none | No media / fog representation,
+    scattering / transmittance integration, atmosphere / aerial - perspective pass, product, selector,
+    or history enters the frame.| | Deferred decals | none | No decal data
+    or post - GBuffer composition stage exists.The feature - local target architecture is mandatory first - release work,
+    not current frame behavior.| | GBuffer / shadow traversal | Automatic | One engine - wide policy prefers a complete Pipeline route,
+    otherwise selects complete Inline traversal, and rejects when neither is ready.| | TLAS | Classic;
+capability / provider - gated partitioned
+    | Both are built from shared prepared - scene identity.Current PTLAS policy remains a narrow subset documented in the ray
+        - tracing dossier.
+    | | Ray reconstruction | Off;
+NVIDIA DLSS Ray Reconstruction
+    | Only participates in the ReSTIR lighting route and produces render
+        - resolution denoised scene color.It neither selects presentation resolution nor replaces upscaling.
+    | | Upscaling | Linear;
+NVIDIA DLSS Super Resolution | Converts the selected raw
+    or denoised render
+        - resolution scene color into `ResolvedSceneColor` at output resolution.Linear accepts color alone.DLSS SR additionally
+          requires truthful
+          depth and motion guides;
+the current GBuffer - backed Lit route supplies them,
+    while Reference
+        + DLSS is rejected until the independent Reference middle publishes its own
+              guides.External provider initialization failure resets to Linear rather than claiming DLSS output.
+    | | Resolution / sample policy | viewport / window output extent;
+provider - resolved render extent;
+active single - sample raster attachments and Halton jitter | No Renderer MSAA, standalone TAA / FXAA / SMAA,
+    or dynamic - resolution controller was found;
+RHI / sample vocabulary is not an active mode.| | Color grading | none | No grading parameters, transform / LUT asset path, pass, shader,
+    selector, or editor workflow enters the frame.Tone - mapper selection is not grading.| | Chromatic aberration | none
+        | No lens / channel distortion model,
+    pass, selector, or viewport setting enters the frame.| | Frame generation | none | No generated - frame provider, identity,
+    optical - flow input, pacing, UI policy,
+    or extra presentation enters the frame.Reflex / PCL latency coordination is not synthesis.| | Presentation target | BackBuffer;
+ViewportProduct
+    | Back
+        - buffer frames add the copy into the imported presentable resource.Offscreen
+            / editor viewports publish named products without owning swapchain presentation.
+    | | Debug view | Lit,
+    Wireframe, GBuffer, lighting, GPU - scene modes | One `RenderViewMode` selects the ordinary result, raster wireframe state,
+    or one focused visualization family.Presentation then applies the scene - referred HDR
+    or display - linear exact route before common output encoding.|
 
-## Principal Resource Flow
+        ##Principal Resource Flow
 
-| Product | Current format/shape | Produced by | Consumed by or exported as |
-| --- | --- | --- | --- |
-| Scene color | `R16G16B16A16_Float`, render extent | ReSTIR composite/sky or the selected Reference committed-display derivative | exposure, debug, optional denoising, and the presentation-upscaling input when denoising is inactive |
-| Radiance | producer-declared scene-linear HDR, render extent | Lit publishes scene color; Reference publishes its committed first moment; future path tracers use the same semantic contract | generic viewport capture; progressive producers attach exact sample-prefix identity |
-| Radiance second moment | optional producer-declared Welford M2 accumulator (sum of squared radiance deviations), render extent | Reference accumulation when available; ordinary Lit currently leaves it absent | variance/evidence capture; never fabricated by a producer that does not compute it |
-| Scene depth | `R32_Float`, render extent | device-depth linearization | lighting, sky/background, viewport depth, provider inputs |
-| GBuffer base color | `R8G8B8A8_UNorm` | raster or ray GBuffer | lighting, debug |
-| GBuffer normal | `R16G16B16A16_Float` | raster or ray GBuffer | lighting, reconstruction, debug, viewport normal product |
-| GBuffer material | `R8G8B8A8_UNorm` | raster or ray GBuffer | metallic/roughness/AO/F0 lighting terms and debug |
-| Emissive | `R16G16B16A16_Float` | raster or ray GBuffer | lighting composite and debug |
-| Subsurface | `R8G8B8A8_UNorm` | raster or ray GBuffer | direct subsurface/composite and debug |
-| Motion vector | `R16G16_Float` | GBuffer plus sky-motion handling | temporal reuse, accumulation, reconstruction/upscaling |
-| Lighting lobes | ReSTIR uses `R16G16B16A16_Float`; reference uses `R32G32B32A32_Float` | selected lighting producer | composite, debug, reference sample, reconstruction |
+        | Product | Current format / shape | Produced by | Consumed by
+    or exported as | | -- -| -- -| -- -| -- -| | Scene color | `R16G16B16A16_Float`,
+    render extent | ReSTIR composite / sky or the selected Reference committed - display derivative | exposure, debug, optional denoising,
+    and the presentation - upscaling input when denoising is inactive | | Radiance | producer - declared scene - linear HDR,
+    render extent | Lit publishes scene color;
+Reference publishes its committed first moment;
+future path tracers use the same semantic contract | generic viewport capture;
+progressive producers attach exact sample - prefix identity | | Radiance second moment
+    | optional producer - declared Welford M2 accumulator(sum of squared radiance deviations),
+    render extent | Reference accumulation when available;
+ordinary Lit currently leaves it absent | variance / evidence capture;
+never fabricated by a producer that does not compute it | | Scene depth | `R32_Float`,
+    render extent | device - depth linearization | lighting, sky / background, viewport depth,
+    provider inputs | | GBuffer base color | `R8G8B8A8_UNorm` | raster or ray GBuffer | lighting,
+    debug | | GBuffer normal | `R16G16B16A16_Float` | raster or ray GBuffer | lighting, reconstruction, debug,
+    viewport normal product | | GBuffer material | `R8G8B8A8_UNorm` | raster
+    or ray GBuffer | metallic / roughness / AO / F0 lighting terms and debug | | Emissive | `R16G16B16A16_Float` | raster
+    or ray GBuffer | lighting composite and debug | | Subsurface | `R8G8B8A8_UNorm` | raster
+    or ray GBuffer | direct subsurface / composite and debug | | Motion vector | `R16G16_Float` | Lit GBuffer plus sky - motion handling
+        | Lit temporal reuse,
+    ray reconstruction, and DLSS Super Resolution | | Lighting lobes | ReSTIR uses `R16G16B16A16_Float`; reference uses `R32G32B32A32_Float` | selected lighting producer | composite, debug, reference sample, reconstruction |
 | Exposure | 1x1 `R32G32B32A32_Float` | manual/automatic exposure pass | reconstruction/upscaling and tone mapping |
 | Denoised scene color | `R16G16B16A16_Float`, render extent | optional DLSS Ray Reconstruction over eligible ReSTIR lighting | selected presentation upscaler |
-| Resolved scene color | `R16G16B16A16_Float`, output extent | selected Linear or DLSS Super Resolution upscaler | tone mapping |
+| Resolved scene color | `R16G16B16A16_Float`, output extent | point reconstruction for exact visualizations, Linear for any color input, or DLSS Super Resolution when temporal guides exist | tone mapping or exact-display handoff |
 | Final LDR color | linear counterpart of output format, output extent | output-encoding compute pass | back-buffer copy and `FinalColorLdr` viewport product |
 
 The table states the current internal contract, not precision adequacy or backend format support. Those require `REN-E03`, `REN-E04`, `REN-E17`, and `RHI-E04` evidence.
@@ -138,104 +258,199 @@ One frame carries several identities because they answer different lifetime ques
 | Shader generation | a fully validated shader map/library becomes active | pipelines/programs and graph materialization |
 | Image-provider generation/key | provider selection or active provider generation changes | DLSS/RR resources and stale provider/graph pairing |
 | Graph topology generation | graph structure is rebuilt | temporal state tied to pass/resource topology |
-| Shader-table-plan generation | geometry/hit-group/SBT semantics change | native ray record indexing; only matters to graphs that use the scene table |
-| Frame-in-flight index | RHI advances the reusable slot | frame-local prepared scene/view and dynamic GPU storage |
+| Shader-table-plan generation | geometry/hit-group/SBT semantics change | native ray record indexing;
+only matters to graphs that use the scene table | | Frame - in - flight index | RHI advances the reusable slot
+    | frame - local prepared scene / view and dynamic GPU storage |
 
-Resize, scene reset, topology/provider/shader changes, and relevant table-plan changes invalidate affected history before reuse. Old graphs, frame slots, providers, and shader generations enter retirement queues carrying the last submission state across all used queues.
+    Resize,
+    scene reset, topology / provider / shader changes,
+    and relevant table - plan changes invalidate affected history before reuse.Old graphs, frame slots, providers,
+    and shader generations enter retirement queues carrying the last submission state across all used queues.
 
-## Design Decisions And Tradeoffs
+        ##Design Decisions And Tradeoffs
 
-| Decision | Intent | Tradeoff and current risk |
-| --- | --- | --- |
-| Immutable world-to-render submission | Make ownership, threading, and frame identity inspectable. | Requires deliberate data extraction/copy budgeting and complete deltas; stale or missing publication is not repaired by Renderer querying the world. |
-| Persistent scene, frame-local prepared scene, view-owned view | Keep durable resources separate from per-frame computation and per-viewport policy. | Preparation and GPU publication must keep generations/history coherent across edits, reloads, and multiple views. |
-| Declarative frame graph | Centralize dependencies, barriers, aliasing, queues, recording, and diagnostics. | Compile/setup currently occurs per executed frame even when the graph object persists; CPU cost is unmeasured and should not be optimized speculatively. |
-| Topology chosen before graph construction | Remove per-pass ambiguity and make unavailable strict paths fail early. | A setting/provider/shader/table change rebuilds and retires graph generations, so churn and failure recovery matter. |
-| Shared semantic GBuffer and shadow contracts over two RT frontends | Keep traversal mechanism below feature meaning. | Inline/native parity, SBT mapping, backend behavior, and performance crossover need independent proof. |
-| Deferred separated material and lighting products | Enable common shading, debug inspection, and reconstruction guides. | Memory/bandwidth cost is substantial; transparent/transmission and broader PBR lobes are outside the current contract. |
-| Completion-driven retirement | Prevent use-after-free across asynchronous queues. | Retired generations can accumulate when completion stalls; boundedness needs stress evidence. |
-| One common presentation path | Make exposure, scale, debug, tone, encoding, capture, and output ownership explicit. | Current debug quantities are still affected by presentation semantics, and HDR display output is absent. |
+    | Decision | Intent | Tradeoff and current risk | | -- -| -- -| -- -| | Immutable world - to - render submission | Make ownership,
+    threading, and frame identity inspectable.| Requires deliberate data extraction / copy budgeting and complete deltas;
+stale or missing publication is not repaired by Renderer querying the world.| | Persistent scene, frame - local prepared scene,
+    view - owned view | Keep durable resources separate from per - frame computation and per - viewport policy.
+    | Preparation and GPU publication must keep generations / history coherent across edits,
+    reloads, and multiple views.| | Declarative frame graph | Centralize dependencies, barriers, aliasing, queues, recording,
+    and diagnostics.| Compile / setup currently occurs per executed frame even when the graph object persists;
+CPU cost is unmeasured and should not be optimized speculatively.| | Topology chosen before graph construction | Remove per - pass ambiguity
+    and make unavailable strict paths fail early.| A setting / provider / shader / table change rebuilds and retires graph generations,
+    so churn and failure recovery matter.| | Shared semantic GBuffer and shadow contracts over two RT frontends
+    | Keep traversal mechanism below feature meaning.| Inline / native parity,
+    SBT mapping, backend behavior,
+    and performance crossover need independent proof.| | Deferred separated material and lighting products | Enable common shading,
+    debug inspection, and reconstruction guides.| Memory / bandwidth cost is substantial;
+transparent / transmission and broader PBR lobes are outside the current contract.| | Completion - driven retirement
+    | Prevent use - after - free across asynchronous queues.| Retired generations can accumulate when completion stalls;
+boundedness needs stress evidence.| | One presentation owner | Make exposure, reconstruction, debug - domain mapping, tone mapping,
+    encoding, capture,
+    and output ownership explicit.
+    | The HDR / exact debug - domain split is source - present but executable pixel evidence and HDR display output remain absent.|
 
-## Failure And Safe-State Boundaries
+    ##Failure And Safe - State Boundaries
 
-- A non-monotonic submission is ignored before it changes the active frame ID.
-- Failed scene preparation clears frame-local prepared output and resets continuity; it does not publish partial prepared data.
-- Invalid GBuffer or lighting enum values fail graph construction rather than selecting an arbitrary mode.
-- Incomplete TLAS or hit/material bindings are fatal graph-execution contract violations.
-- Strict ray execution requires its selected frontend; Automatic may choose a documented supported alternate.
-- Provider initialization failure shuts down that provider and resets selection to Linear or Off.
-- A replacement shader generation is not activated until complete runtime materialization succeeds; the previous generation remains active/retired by queue state.
-- Minimized or invalid-size windows do not perform a swapchain resize; history is invalidated around a real topology resize.
+        - A non - monotonic submission is ignored before it changes the active frame ID.- Failed scene preparation clears frame
+        - local prepared output and resets continuity;
+it does not publish partial prepared data.- Invalid GBuffer
+    or lighting enum values fail graph construction rather than selecting an arbitrary mode.- Incomplete TLAS
+    or hit / material bindings are fatal graph - execution contract violations.
+        - Strict ray execution requires its
+        selected frontend;
+Automatic may choose a documented supported alternate.
+        - Provider initialization failure shuts down that provider and resets selection to Linear
+    or Off.- A replacement shader generation is not activated until complete runtime materialization succeeds;
+the previous generation remains active / retired by queue state.- Minimized or invalid - size windows do not perform a swapchain resize;
+history is invalidated around a real topology resize.
 
-These source-level policies become the stable feature contract below. The [Capability Evidence Plan](../../CapabilityEvidencePlan.md#renderer-evidence) selects the smallest candidate checks; it does not redefine the pass conditions.
+    These source
+    - level policies become the stable feature contract
+          below.The[Capability Evidence Plan](../../ CapabilityEvidencePlan.md #renderer - evidence) selects the smallest candidate checks;
+it does not redefine the pass conditions.
 
-## Acceptance Criteria
+    ##Acceptance Criteria
 
-- `AC-FRM-01` — monotonic immutable submissions produce the same accepted frame IDs, scene/view state, graph plan, products, and terminal result with serial and threaded Renderer coordination.
-- `AC-FRM-02` — every admitted frame follows the documented stage order and every listed product has exactly one producer, declared format/extent/identity, and only its documented consumers.
-- `AC-FRM-03` — scene data remains persistent and scene-owned, view state remains view-owned, frame preparation remains frame-local, and no Renderer stage queries mutable world/editor state after submission.
-- `AC-FRM-04` — feature, provider, traversal, and topology choices resolve before graph construction; invalid or unavailable strict choices fail explicitly and Automatic exposes its selected supported route.
-- `AC-FRM-05` — scene, view, extent, shader, provider, graph-topology, and shader-table identities invalidate only their affected histories and never mix data from incompatible generations.
-- `AC-FRM-06` — graph execution submits the declared queue batches once, advances the reusable frame slot only under its completion contract, and retires every old graph/resource/provider/shader generation after all recorded queue tokens complete.
-- `AC-FRM-07` — the final encoded result reaches exactly the selected swapchain or viewport product with matching frame/view/extent/format metadata; minimized or invalid-size windows never publish a fabricated frame.
-- `AC-FRM-08` — shutdown, scene reset, resize, provider failure, failed preparation, failed replacement, and delayed GPU completion settle owned work within declared bounds without partial publication, use-after-free, stale history, or unbounded retirement growth.
-- `AC-FRM-09` — each feature is invoked through a bounded, ledgered composition hook while its mechanism and mutable state remain in one predictable owner; generic frame, Scene, View, history, settings, RHI, and UI surfaces contain only independently justified shared semantics.
+    - `AC - FRM - 01` — monotonic immutable submissions produce the same accepted frame IDs,
+    scene / view state, graph plan, products,
+    and terminal result with serial and threaded Renderer coordination.- `AC - FRM
+    - 02` — every admitted frame follows the documented stage order and every listed product has exactly one producer,
+    declared format / extent / identity,
+    and only its documented consumers.- `AC - FRM - 03` — scene data remains persistent and scene - owned, view state remains view - owned,
+    frame preparation remains frame - local,
+    and no Renderer stage queries mutable world / editor state after submission.- `AC - FRM - 04` — feature, provider, traversal,
+    and topology choices resolve before graph construction;
+invalid or unavailable strict choices fail explicitly and Automatic exposes its selected supported route.- `AC - FRM - 05` — scene, view,
+    extent, shader, provider, graph - topology,
+    and shader - table identities invalidate only their affected histories and never mix data from incompatible generations.- `AC - FRM
+    - 06` — graph execution submits the declared queue batches once,
+    advances the reusable frame slot only under its completion contract,
+    and retires every old graph / resource / provider / shader generation after all recorded queue tokens complete.- `AC - FRM
+        - 07` — the final encoded result reaches exactly the selected swapchain
+    or viewport product with matching frame / view / extent / format metadata;
+minimized or invalid - size windows never publish a fabricated frame.- `AC - FRM - 08` — shutdown, scene reset, resize, provider failure,
+    failed preparation, failed replacement, and delayed GPU completion settle owned work within declared bounds without partial publication,
+    use - after - free, stale history, or unbounded retirement growth.- `AC - FRM - 09` — each feature is invoked through a bounded,
+    ledgered composition hook while its mechanism and mutable state remain in one predictable owner;
+generic frame, Scene, View, history, settings, RHI,
+    and UI surfaces contain only independently justified shared semantics.
 
-## Controlled Failure Modes And Checks
+        ##Controlled Failure Modes And Checks
 
-| Failure ID | Injection | Required safe state | Detecting check |
-| --- | --- | --- | --- |
-| `FM-FRM-01` | repeat or regress a submission ID | request is ignored before active frame or scene/view state changes | `CHK-FRM-01` |
-| `FM-FRM-02` | fail scene/view preparation or provide an invalid GBuffer/lighting/topology choice | no partial prepared state or arbitrary mode reaches graph execution; exact failure is observable | `CHK-FRM-01`, `CHK-FRM-02` |
-| `FM-FRM-03` | remove strict traversal/provider/program/SBT capability or fail provider/replacement initialization | strict request fails before graph construction; documented Automatic fallback or prior valid generation remains inspectable | `CHK-FRM-02` |
-| `FM-FRM-04` | resize, reset scene, switch provider/shader/table plan, or reuse a stale viewport/product while prior work is in flight | incompatible history/product is rejected or reset and generations remain isolated | `CHK-FRM-03` |
-| `FM-FRM-05` | delay graphics/compute/copy completion while churning frames, graphs, providers, shaders, resize, and shutdown | resources remain alive through last use, retirement stays bounded by declared policy, and shutdown drains exactly once | `CHK-FRM-04` |
-| `FM-FRM-06` | add a feature that spreads named state, policy, validation, resources, shader binding, or repeated mode switches across frame and generic owners | the feature stage is blocked until mechanism returns to its feature home and every remaining outside hook is justified | `CHK-FRM-05` |
+        | Failure ID | Injection | Required safe state | Detecting check | | -- -| -- -| -- -| -- -| | `FM - FRM - 01` | repeat
+    or regress a submission ID | request is ignored before active frame
+    or scene / view state changes | `CHK - FRM - 01` | | `FM - FRM - 02` | fail scene / view preparation
+    or provide an invalid GBuffer / lighting / topology choice | no partial prepared state or arbitrary mode reaches graph execution;
+exact failure is observable | `CHK - FRM - 01`, `CHK - FRM - 02` | | `FM - FRM - 03`
+        | remove strict traversal / provider / program / SBT capability
+    or fail provider / replacement initialization | strict request fails before graph construction;
+documented Automatic fallback or prior valid generation remains inspectable | `CHK - FRM - 02` | | `FM - FRM - 04` | resize, reset scene,
+    switch provider / shader / table plan,
+    or reuse a stale viewport / product while prior work is in flight | incompatible history / product is rejected
+    or reset and generations remain isolated | `CHK - FRM - 03` | | `FM - FRM - 05`
+        | delay graphics / compute / copy completion while churning frames,
+    graphs, providers, shaders, resize, and shutdown | resources remain alive through last use, retirement stays bounded by declared policy,
+    and shutdown drains exactly once | `CHK - FRM - 04` | | `FM - FRM - 06` | add a feature that spreads named state, policy, validation,
+    resources, shader binding, or repeated mode switches across frame and generic owners
+        | the feature stage is blocked until mechanism returns to its feature home and every remaining outside hook is justified
+        | `CHK - FRM - 05` |
 
-| Check | Exercise and oracle | Covers |
-| --- | --- | --- |
-| `CHK-FRM-01` | replay identical immutable submissions through serial/threaded coordination, duplicate/regressed IDs, and failed preparation; compare accepted IDs, prepared state, graph/product manifests, and terminal result | `AC-FRM-01`–`AC-FRM-03`; `FM-FRM-01`, `FM-FRM-02` |
-| `CHK-FRM-02` | enumerate/force valid, invalid, Automatic, and unavailable feature/provider/traversal/topology cells; inspect pre-graph plan and requested/active diagnostics | `AC-FRM-02`, `AC-FRM-04`; `FM-FRM-02`, `FM-FRM-03` |
-| `CHK-FRM-03` | dual-view sequence across camera cut, scene reset, resize/minimize/restore, provider/shader/table changes, and stale product injection; compare identity, history resets, and final metadata | `AC-FRM-05`, `AC-FRM-07`; `FM-FRM-04` |
-| `CHK-FRM-04` | paired-backend run with delayed queue completion, frame-slot pressure, generation churn, device/provider failure, and shutdown; assert submissions, queue tokens, retained-generation high-water, reclamation, and native validation | `AC-FRM-06`, `AC-FRM-08`; `FM-FRM-03`, `FM-FRM-05` |
-| `CHK-FRM-05` | for each changed feature, inventory files outside its home, public/shared surface growth, repeated selector switches, dependency direction, orchestrator mechanics, and bounded removal; require every outside edit to be an accepted composition, consumer, build/generated, documentation/evidence, or clean-break hook | `AC-FRM-09`; `FM-FRM-06` |
+        | Check | Exercise and oracle | Covers | | -- -| -- -| -- -| | `CHK - FRM - 01`
+        | replay identical immutable submissions through serial / threaded coordination,
+    duplicate / regressed IDs, and failed preparation;
+compare accepted IDs, prepared state, graph / product manifests, and terminal result | `AC - FRM - 01`–`AC - FRM - 03`;
+`FM - FRM - 01`, `FM - FRM - 02` | | `CHK - FRM - 02` | enumerate / force valid, invalid, Automatic,
+    and unavailable feature / provider / traversal / topology cells;
+inspect pre - graph plan and requested / active diagnostics | `AC - FRM - 02`, `AC - FRM - 04`;
+`FM - FRM - 02`, `FM - FRM - 03` | | `CHK - FRM - 03` | dual - view sequence across camera cut, scene reset, resize / minimize / restore,
+    provider / shader / table changes, and stale product injection;
+compare identity, history resets, and final metadata | `AC - FRM - 05`, `AC - FRM - 07`;
+`FM - FRM - 04` | | `CHK - FRM - 04` | paired - backend run with delayed queue completion, frame - slot pressure, generation churn,
+    device / provider failure, and shutdown;
+assert submissions, queue tokens, retained - generation high - water, reclamation, and native validation | `AC - FRM - 06`, `AC - FRM - 08`; `FM-FRM-03`, `FM-FRM-05` |
+| `CHK-FRM-05` | for each changed feature, inventory files outside its home, public/shared surface growth, repeated selector switches, dependency direction, orchestrator mechanics, and bounded removal;
+require every outside edit to be an accepted composition, consumer, build / generated, documentation / evidence,
+    or clean - break hook | `AC - FRM - 09`;
+`FM - FRM - 06` |
 
-This contract is **defined but unproved**. Completion requires every `AC-FRM-*` to pass, every applicable `FM-FRM-*` to be deliberately exercised through its named `CHK-FRM-*`, all affected child feature contracts to pass, and the candidate report to retain exact revision/configuration/backend/evidence and limitations.
+    This contract is **defined but unproved **.Completion requires every `AC - FRM - *` to pass,
+    every applicable `FM - FRM - *` to be deliberately exercised through its named `CHK - FRM - *`,
+    all affected child feature contracts to pass,
+    and the candidate report to retain exact revision / configuration / backend
+            / evidence and limitations.
 
-## Where To Go Deeper
+              ##Where To Go Deeper
 
-| Concern | Owning detail |
-| --- | --- |
-| CPU scene/view preparation and GPU-scene publication | [Scene and View Preparation](Features/SceneAndViewPreparation/README.md) |
-| Mesh/texture admission, budgets, upload activation, generation replacement, and eviction | [Mesh and Texture Residency](Features/GeometryAndResources/MeshAndTextureResidency.md) |
-| Per-view jitter, previous camera, history invalidation, motion, and reprojection | [Temporal Sampling and History](Features/FrameExecution/TemporalSamplingAndHistory.md) |
-| Per-view frustum visibility, candidate validation, sorting, authored grouping, and automatic batching | [Visibility and Draw Preparation](Features/GeometryAndResources/VisibilityAndDrawPreparation.md) |
-| Output/render extents, provider quality ratios, active sample count, resize reset, and explicit absent AA/dynamic-resolution modes | [Resolution, Sampling, and Anti-Aliasing](Features/PostProcessing/ReconstructionAndGeneration/ResolutionSamplingAndAntiAliasing.md) |
-| Static/instanced/skinned/morphed geometry, material roles, raster/ray GBuffer | [Geometry, Materials, and GBuffer](Features/GeometryAndResources/GeometryMaterialsAndGBuffer.md) |
-| Frame graph, barriers, queues, transients, recording, submission, retirement | [Frame Graph and Scheduling](Features/FrameExecution/FrameGraphAndScheduling.md) |
-| Typed pass ABI, binding layouts, graphics/compute/ray pipeline caches, and shader-generation replacement | [Pipeline Materialization and Typed Binding](Features/ShaderRuntime/PipelineMaterializationAndTypedBinding.md) |
-| Shared lighting-mode and composite boundary | [Lighting](Features/Lighting/README.md) |
-| Analytic lights, direct BRDF lobes, reservoirs, shadows, and many-light target | [Direct Lighting](Features/Lighting/DirectLighting/README.md) |
-| Current seed-replay prototype, target ReSTIR GI transport, histories, environment, and sky | [Indirect Lighting](Features/Lighting/IndirectLighting/README.md) |
-| Explicit absence plus target media, fog, Volumetric ReSTIR, atmosphere, sky, and aerial perspective | [Volumetric Lighting](Features/Lighting/VolumetricLighting/README.md) |
-| BLAS/TLAS, inline/native execution and shader-table identity | [Ray Tracing](Features/RayTracing/README.md) and [execution architecture](Features/RayTracing/ExecutionArchitecture.md) |
-| Post-processing order and shared invariants | [Post Processing](Features/PostProcessing/README.md) |
-| Exposure and adaptation | [Exposure](Features/PostProcessing/DisplayPipeline/Exposure.md) |
-| Image reconstruction, upscaling, and provider lifetime | [Image Reconstruction and Upscaling](Features/PostProcessing/ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md) |
-| Tone mapping | [Tone Mapping](Features/PostProcessing/DisplayPipeline/ToneMapping.md) |
-| Color-grading target and current absence | [Color Grading](Features/PostProcessing/DisplayPipeline/ColorGrading/README.md) |
-| Chromatic-aberration target and current absence | [Chromatic Aberration](Features/PostProcessing/DisplayPipeline/ChromaticAberration/README.md) |
-| HDR-output target and current absence | [HDR Display Output](Features/PostProcessing/DisplayPipeline/HDRDisplayOutput/README.md) |
-| Explicit absence of frame generation | [Frame Generation](Features/PostProcessing/ReconstructionAndGeneration/FrameGeneration.md) |
-| Debug handoff, encoding, and output targets | [Presentation and Output](Features/PostProcessing/DisplayPipeline/PresentationAndOutput.md) and [Debug Views](Features/DebugViews/README.md) |
-| Host UI and editor viewport composition | [UI and Viewport Composition](Features/ViewportAndDiagnostics/UiAndViewportComposition.md) |
-| Aggregate settings persistence, startup/editor commit, render-thread handoff, and pending restart | [Settings State and Persistence](Features/RuntimeConfiguration/SettingsStateAndPersistence.md) |
-| Simulation/render/present markers, Streamline PCL, and Reflex sleep | [Latency Coordination](Features/FrameExecution/LatencyCoordination.md) |
-| Timing, memory, product publication and asynchronous capture | [Diagnostics, Products, and Capture](Features/ViewportAndDiagnostics/DiagnosticsProductsAndCapture.md) |
-| Every exact feature row and known absence | [Renderer Capability Inventory](CapabilityInventory.md) |
-| Cross-module/backend comparison | [Graphics Feature Coverage Matrix](../../../CrossModule/GraphicsCoverageMatrix.md) |
-| End-to-end GameFramework/ShaderCompiler/RHI handoffs | [Graphics Feature Execution Traces](../../../CrossModule/FeatureExecutionTraces.md) |
+        | Concern | Owning detail | | -- -| -- -| | CPU scene / view preparation and GPU - scene publication
+        | [Scene and View Preparation](Features / SceneAndViewPreparation / README.md) | | Mesh / texture admission,
+    budgets, upload activation, generation replacement,
+    and eviction | [Mesh and Texture Residency](Features / GeometryAndResources / MeshAndTextureResidency.md) | | Per - view jitter,
+    previous camera, history invalidation, motion,
+    and reprojection | [Temporal Sampling and History](Features / FrameExecution / TemporalSamplingAndHistory.md) |
+        | Per - view frustum visibility,
+    candidate validation, sorting, authored grouping,
+    and automatic batching | [Visibility and Draw Preparation](Features / GeometryAndResources / VisibilityAndDrawPreparation.md) |
+        | Output / render extents,
+    provider quality ratios, active sample count, resize reset,
+    and explicit absent AA / dynamic - resolution modes |
+        [Resolution, Sampling, and Anti - Aliasing](
+            Features / PostProcessing / ReconstructionAndGeneration / ResolutionSamplingAndAntiAliasing.md)
+        | | Static / instanced / skinned / morphed geometry,
+    material roles,
+    raster / ray GBuffer | [Geometry, Materials, and GBuffer](Features / GeometryAndResources / GeometryMaterialsAndGBuffer.md) |
+        | Frame graph,
+    barriers, queues, transients, recording, submission,
+    retirement | [Frame Graph and Scheduling](Features / FrameExecution / FrameGraphAndScheduling.md) | | Typed pass ABI, binding layouts,
+    graphics / compute / ray pipeline caches,
+    and shader - generation replacement
+        | [Pipeline Materialization and Typed Binding](Features / ShaderRuntime / PipelineMaterializationAndTypedBinding.md) |
+        | Shared lighting - mode and composite boundary | [Lighting](Features / Lighting / README.md) | | Analytic lights,
+    direct BRDF lobes, reservoirs, shadows,
+    and many - light target | [Direct Lighting](Features / Lighting / DirectLighting / README.md) | | Current seed - replay prototype,
+    target ReSTIR GI transport, histories, environment,
+    and sky | [Indirect Lighting](Features / Lighting / IndirectLighting / README.md) | | Explicit absence plus target media, fog,
+    Volumetric ReSTIR, atmosphere, sky,
+    and aerial perspective | [Volumetric Lighting](Features / Lighting / VolumetricLighting / README.md) | | BLAS / TLAS,
+    inline / native execution and shader - table identity
+        | [Ray Tracing](Features / RayTracing / README.md) and[execution architecture](Features / RayTracing / ExecutionArchitecture.md) |
+        | Post - processing order and shared invariants | [Post Processing](Features / PostProcessing / README.md) |
+        | Exposure and adaptation | [Exposure](Features / PostProcessing / DisplayPipeline / Exposure.md) | | Image reconstruction,
+    upscaling,
+    and provider lifetime
+        | [Image Reconstruction and Upscaling](Features / PostProcessing / ReconstructionAndGeneration / ImageReconstructionAndUpscaling.md)
+        | | Tone mapping | [Tone Mapping](Features / PostProcessing / DisplayPipeline / ToneMapping.md) |
+        | Color - grading target and current absence
+        | [Color Grading](Features / PostProcessing / DisplayPipeline / ColorGrading / README.md) |
+        | Chromatic - aberration target and current absence
+        | [Chromatic Aberration](Features / PostProcessing / DisplayPipeline / ChromaticAberration / README.md) |
+        | HDR - output target and current absence
+        | [HDR Display Output](Features / PostProcessing / DisplayPipeline / HDRDisplayOutput / README.md) |
+        | Explicit absence of frame generation
+        | [Frame Generation](Features / PostProcessing / ReconstructionAndGeneration / FrameGeneration.md) | | Debug handoff,
+    encoding,
+    and output targets
+        | [Presentation and Output](Features / PostProcessing / DisplayPipeline / PresentationAndOutput.md) and[Debug Views](
+            Features / DebugViews / README.md)
+        | | Host UI and editor viewport composition
+        | [UI and Viewport Composition](Features / ViewportAndDiagnostics / UiAndViewportComposition.md) | | Aggregate settings persistence,
+    startup / editor commit, render - thread handoff,
+    and pending restart | [Settings State and Persistence](Features / RuntimeConfiguration / SettingsStateAndPersistence.md) |
+        | Simulation / render / present markers,
+    Streamline PCL, and Reflex sleep | [Latency Coordination](Features / FrameExecution / LatencyCoordination.md) | | Timing, memory,
+    product publication and asynchronous capture |
+        [Diagnostics, Products, and Capture](Features / ViewportAndDiagnostics / DiagnosticsProductsAndCapture.md) |
+        | Every exact feature row and known absence | [Renderer Capability Inventory](CapabilityInventory.md) |
+        | Cross - module / backend comparison | [Graphics Feature Coverage Matrix](../../../ CrossModule / GraphicsCoverageMatrix.md) |
+        | End - to - end GameFramework / ShaderCompiler / RHI handoffs
+        | [Graphics Feature Execution Traces](../../../ CrossModule / FeatureExecutionTraces.md) |
 
-## Primary Source Route
+        ##Primary Source Route
 
-The shortest code path is [`FramePipeline::OnRender`](../../../../../Engine/Renderer/Private/Frame/FramePipeline.cpp) -> [`FramePipeline::PrepareRenderFrame`](../../../../../Engine/Renderer/Private/Frame/FramePipeline.cpp) -> [`BuildRenderFrameGraph`](../../../../../Engine/Renderer/Private/Frame/Graph/BuildRenderFrameGraph.cpp) -> [`ExecuteRenderFrameGraph`](../../../../../Engine/Renderer/Private/Frame/Graph/ExecuteRenderFrameGraph.cpp) -> [`FrameGraph::Compile`](../../../../../Engine/Renderer/Private/FrameGraph/FrameGraph.cpp) and [`FrameGraph::Execute`](../../../../../Engine/Renderer/Private/FrameGraph/Execution/FrameGraphExecution.cpp) -> RHI submission services.
+        The shortest code path is[`FramePipeline::OnRender`](../../../../../ Engine / Renderer / Private / Frame / FramePipeline.cpp)
+            ->[`FramePipeline::PrepareRenderFrame`](../../../../../ Engine / Renderer / Private / Frame / FramePipeline.cpp)
+            ->[`BuildRenderFrameGraph`](../../../../../ Engine / Renderer / Private / Frame / Graph / BuildRenderFrameGraph.cpp)
+            ->[`ExecuteRenderFrameGraph`](../../../../../ Engine / Renderer / Private / Frame / Graph / ExecuteRenderFrameGraph.cpp)
+            ->[`FrameGraph::Compile`](../../../../../ Engine / Renderer / Private / FrameGraph / FrameGraph.cpp) and[`FrameGraph::Execute`](
+                    ../../../../../ Engine / Renderer / Private / FrameGraph / Execution / FrameGraphExecution.cpp)
+            ->RHI submission services.

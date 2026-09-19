@@ -1,8 +1,13 @@
-# D. Whole Repository Architecture Map
+#D.Whole Repository Architecture Map
 
-**Status:** current map; source-backed and descriptive, not a normative architecture or strategy contract
+**Status : **current map;
+source - backed and descriptive,
+    not a normative architecture
+    or strategy contract
 
-**Last verified:** repository-wide map 2026-08-28 at committed `master` revision `20814381`; Launcher ownership and repository code-style routes reverified 2026-08-31 at committed `master` revision `61fe39d9`; build-module dependency visibility reverified 2026-09-03 against the current working tree
+            * *Last verified : **repository
+        - wide map 2026 - 08 - 28 at committed `master` revision `20814381`;
+Launcher ownership and repository code - style routes reverified 2026 - 08 - 31 at committed `master` revision `61fe39d9`; build-module dependency visibility reverified 2026-09-03 against the current working tree
 
 **Scope:** implemented repository structure, target boundaries, runtime and tool flows, project catalog, and current source-evidence limits
 
@@ -13,32 +18,42 @@ This is the shortest current route through the repository. It names implemented 
 Target capability belongs to [Principal Graphics Requirements](../Strategy/Requirements.md), binding implementation rules are routed by the [Engineering task map](../Engineering/README.md#choose-by-task), and focused decisions belong to their architecture documents. In particular:
 
 - [Renderer and RHI Architecture Boundary](Decisions/RendererRhiBoundary.md) owns Renderer/RHI dependency and mechanism rules.
-- [Module Architecture And Capability Inventory](Modules/README.md) owns module navigation plus the dated, feature-level source inventory and explicit coverage/limitations; it does not own target architecture, release classification, or executable evidence.
-- [Product Workflow Coverage](CrossModule/ProductWorkflowCoverage.md) and [Product Execution Traces](CrossModule/ProductExecutionTraces.md) own the horizontal actor-journey comparison and vertical non-graphics handoff map; they do not prove usability or release readiness.
-- [World Coordinate, Units, and Transform Contract](Decisions/WorldCoordinateAndUnits.md) owns spatial semantics.
-- [Editor Viewport Camera Architecture](Decisions/EditorViewportCamera.md) owns the editor-view and scene-camera split.
-- [Shader System Architecture](CrossModule/ShaderSystem/README.md) owns the enduring authoring, compilation, cooked-artifact, runtime-materialization, and graph-use design. The [capability inventory](Modules/Tools/ShaderCompiler/README.md) owns the dated current-source view, and the [delivery plan](CrossModule/ShaderSystem/Plan.md) owns phase order.
-- [Bistro and San Miguel Acceptance Workloads](../Acceptance/GraphicsWorkloads.md) owns workload gates and evidence meaning.
+- [Module Architecture And Capability Inventory](Modules/README.md) owns module navigation plus the dated, feature-level source inventory and explicit coverage/limitations;
+it does not own target architecture, release classification, or executable evidence.
+        - [Product Workflow Coverage](CrossModule / ProductWorkflowCoverage.md) and[Product Execution Traces](
+            CrossModule / ProductExecutionTraces.md) own the horizontal actor
+        - journey comparison and vertical non - graphics handoff map;
+they do not prove usability
+    or release readiness.- [World Coordinate, Units, and Transform Contract](Decisions / WorldCoordinateAndUnits.md) owns spatial semantics.
+            - [Editor Viewport Camera Architecture](Decisions / EditorViewportCamera.md) owns the editor - view
+        and scene - camera split.- [Shader System Architecture](CrossModule / ShaderSystem / README.md) owns the enduring authoring,
+    compilation, cooked - artifact, runtime - materialization,
+    and graph - use design.The[capability inventory](Modules / Tools / ShaderCompiler / README.md) owns the dated current - source view,
+    and the[delivery plan](CrossModule / ShaderSystem / Plan.md) owns phase order.
+        - [Bistro and San Miguel Acceptance Workloads](../ Acceptance / GraphicsWorkloads.md) owns workload gates and evidence meaning
+              .
 
-Dated assessments retain the source state they observed. They are not silently rewritten into current architecture claims.
+          Dated assessments retain the source state they observed.They are not silently rewritten into current architecture claims.
 
-## Repository At A Glance
+          ##Repository At A Glance
 
-```text
-SparkleEngine
-|-- CMake/                 build profiles, artifact/project helpers, dependencies, boundary check
-|-- Config/                engine defaults
-|-- Engine/                runtime modules and engine shaders/assets
-|-- Tools/                 launcher, shader compiler, importers, and cookers
-|-- Projects/Showcase/     editor/runtime products, level catalog, small source content
-|-- Docs/                  strategy, architecture, engineering, acceptance, plan, and research knowledge
-|-- artifacts/             generated validation/development output; not source authority
-|-- build/                 generated build trees and dependency cache
-|-- logs/, Saved/          generated runtime and user-local state
-`-- .sparkle               repository marker used by tooling
+```text SparkleEngine
+    | --CMake / build profiles,
+    artifact / project helpers,
+    dependencies, boundary check | --Config / engine defaults | --Engine / runtime modules and engine shaders / assets | --Tools / launcher,
+    shader compiler, importers,
+    and cookers | --Projects / Showcase / editor / runtime products, level catalog, small source content | --Docs / strategy, architecture,
+    engineering, acceptance, plan, and research knowledge | --artifacts / generated validation / development output;
+not source authority | --build / generated build trees and dependency cache | --logs /,
+    Saved / generated runtime and user
+    - local state
+`--.sparkle repository marker used by tooling
 ```
 
-The top-level CMake project requires C++20, loads the Sparkle build profiles and artifact/project contracts, adds `Engine` and `Tools`, then discovers runnable projects through `Projects/*/.sparkle-project`. Optional content-pipeline, shader-compiler, KTX, NVIDIA Streamline, sanitizer, and strict-warning features are explicit CMake options.
+      The top
+    - level CMake project requires C
+    ++ 20, loads the Sparkle build profiles and artifact / project contracts, adds `Engine` and `Tools`,
+    then discovers runnable projects through `Projects/*/.sparkle-project`. Optional content-pipeline, shader-compiler, KTX, NVIDIA Streamline, sanitizer, and strict-warning features are explicit CMake options.
 
 ## Build And Module Boundaries
 
@@ -140,20 +155,20 @@ The `FrameGraph` object is rebuilt when output/topology, provider selection, lig
 
 | Feature | Current source owner and state |
 | --- | --- |
-| GBuffer | `Passes/GBuffer`; explicit rasterized and ray-traced algorithms. [Feature dossier](Modules/Engine/Renderer/Features/GeometryAndResources/GeometryMaterialsAndGBuffer.md). |
+| GBuffer | `Passes/GBuffer` owns shared targets and composition; `Raster` and `RayTracing` own the two concrete geometry frontends. [Feature dossier](Modules/Engine/Renderer/Features/GeometryAndResources/GeometryMaterialsAndGBuffer.md). |
 | Lighting | `Passes/Lighting` plus ReSTIR/reference producers; one family contract owns mode selection, lobe composition, sky boundary, and the Direct/Indirect/Volumetric taxonomy. [Family dossier](Modules/Engine/Renderer/Features/Lighting/README.md). |
 | Direct lighting | `Passes/Lighting/Direct`, `Passes/Lighting/Shadows`, and the direct reservoir route; four analytic light kinds feed direct diffuse/specular/subsurface lobes. ReSTIR DI conformance and runtime correctness remain unproved. [Feature package](Modules/Engine/Renderer/Features/Lighting/DirectLighting/README.md). |
-| Indirect lighting | A seed-replay reservoir prototype feeds indirect diffuse/specular lobes; sky is the environment/background boundary. ReSTIR GI/GRIS conformance is not established. [Feature package](Modules/Engine/Renderer/Features/Lighting/IndirectLighting/README.md). |
+| Indirect lighting | `Passes/Lighting/Restir/Indirect` owns the seed-replay reservoir prototype that feeds indirect diffuse/specular lobes; sky is the environment/background boundary. ReSTIR GI/GRIS conformance is not established. [Feature package](Modules/Engine/Renderer/Features/Lighting/IndirectLighting/README.md). |
 | Volumetric lighting | No participating-media, fog, scattering/transmittance, atmosphere, aerial-perspective product, pass, shader, or scene representation exists. A post-release research/discovery/architecture/plan package now owns the target. [Feature package](Modules/Engine/Renderer/Features/Lighting/VolumetricLighting/README.md). |
 | Deferred decals | No current authoring, scene/GPU data, primary GBuffer composition, or secondary-ray evaluation path exists; target design is kept separate from current state. [Feature-gap dossier](Modules/Engine/Renderer/Features/DeferredDecals/README.md). |
 | Post Processing | `Passes/PostProcessing`, `Passes/Presentation`, provider stacks, and output publication form one ordered family. [Family dossier](Modules/Engine/Renderer/Features/PostProcessing/README.md). |
 | Exposure | `Passes/PostProcessing/Exposure`; per-view manual/automatic metering and adaptation. [Feature dossier](Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/Exposure.md). |
 | Image reconstruction/upscaling | `Passes/Presentation/Upscaling`, provider stack, and ReSTIR reconstruction; one output-extent resolved product. [Feature dossier](Modules/Engine/Renderer/Features/PostProcessing/ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md). |
-| Tone mapping | `Passes/Presentation/ToneMapping`; exposure-weighted HDR to display-linear mapping through three fixed operators. [Feature dossier](Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ToneMapping.md). |
+| Tone mapping | `Passes/Presentation/Display/ToneMapping`; exposure-weighted HDR to display-linear mapping through three fixed operators. [Feature dossier](Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ToneMapping.md). |
 | Color grading | No grading controls, LUT workflow, transform, pass, shader, or selector exists. [Feature package and current absence contract](Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ColorGrading/README.md). |
 | Chromatic aberration | No lens/channel model, pass, shader, viewport setting, or selector exists. [Feature package and current absence contract](Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ChromaticAberration/README.md). |
 | Frame generation | No synthesis provider, DLSS-G registration, optical-flow input, generated-frame identity, pacing, UI, or present route exists; Reflex is latency infrastructure. [Negative capability dossier](Modules/Engine/Renderer/Features/PostProcessing/ReconstructionAndGeneration/FrameGeneration.md). |
-| Presentation/output | `Passes/Debug` and `Passes/Presentation`; debug handoff, output encoding, and output publication after tone mapping. [Feature dossier](Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/PresentationAndOutput.md). |
+| Presentation/output | `Passes/Visualization` owns focused visualization families; `Passes/Presentation/Upscaling` resolves output extent; `Passes/Presentation/Display` owns tone mapping and encoding; the Presentation root composes and publishes the result. [Feature dossier](Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/PresentationAndOutput.md). |
 | UI/viewport composition | `Private/UI` and `Private/Editor`; immutable packets, host overlay, editor viewport texture binding, and generation checks. [Feature dossier](Modules/Engine/Renderer/Features/ViewportAndDiagnostics/UiAndViewportComposition.md). |
 | Persistent GPU scene | `Scene/GpuScene`; geometry, material, lighting, and ray-tracing bindings derived from `RenderScene` |
 | Ray-tracing scene | `Scene/RayTracing` plus `RayTracing/Acceleration`; classic and capability-gated partitioned TLAS share scene identity |

@@ -1,5 +1,5 @@
 #include "PCH.h"
 
-#include "Passes/Presentation/LinearUpscaleShader.h"
+#include "Passes/Presentation/Upscaling/LinearUpscaleShader.h"
 
-IMPLEMENT_GLOBAL_SHADER(LinearUpscaleCS, "/Engine/Passes/Presentation/LinearUpscale.hlsl", "main", Compute);
+IMPLEMENT_GLOBAL_SHADER(LinearUpscaleCS, "/Engine/Passes/Presentation/Upscaling/LinearUpscale.hlsl", "main", Compute);

@@ -48,11 +48,14 @@ void AddLightingTargetClearPass(FrameGraphBuilder& builder, const RenderFrameGra
 		        lighting.ReconstructionGuides.DiffuseAlbedo,
 		        ResourceUsage::RenderTarget,
 		        "RayReconstructionDiffuseAlbedo");
+
 		    resourceBuilder.Write(
 		        lighting.ReconstructionGuides.SpecularAlbedo,
 		        ResourceUsage::RenderTarget,
 		        "RayReconstructionSpecularAlbedo");
+
 		    resourceBuilder.Write(lighting.ReconstructionGuides.Roughness, ResourceUsage::RenderTarget, "RayReconstructionRoughness");
+
 		    resourceBuilder.Write(
 		        lighting.ReconstructionGuides.SpecularHitDistance,
 		        ResourceUsage::RenderTarget,

@@ -2,7 +2,7 @@
 #include "Passes/Scene/SceneDenoisingPasses.h"
 
 #include "Frame/Graph/RenderFrameGraphSettings.h"
-#include "Passes/Lighting/Restir/RestirRayReconstruction.h"
+#include "Passes/Lighting/Restir/Reconstruction/RestirRayReconstruction.h"
 
 void AddSceneDenoisingPasses(
     FrameGraphBuilder& builder,
@@ -10,8 +10,5 @@ void AddSceneDenoisingPasses(
     RendererImageProviderStack& imageProviders,
     RenderFrameGraphResources& resources)
 {
-	if (settings.UseRayReconstruction)
-	{
-		AddRestirRayReconstructionPass(builder, settings, imageProviders, resources);
-	}
+	AddRestirRayReconstructionPass(builder, settings, imageProviders, resources);
 }

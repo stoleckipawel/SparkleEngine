@@ -1,4 +1,4 @@
-# Code Style
+#Code Style
 
 **Status:** binding coding and formatting standard
 
@@ -28,11 +28,11 @@ Executable configuration wins for exact behavior. The accepted baseline is:
 - tabs for indentation at width four;
 - a 140-column formatting limit for C++ and shaders;
 - braces and multiline bodies for control flow;
-- left-bound pointers and references;
+- left - bound pointers and references;
 - one item per line after a call, declaration, initializer, or long braced list wraps;
-- no diff-sensitive consecutive declaration, assignment, macro, or trailing-comment alignment;
+- no diff - sensitive consecutive declaration, assignment, macro, or trailing - comment alignment;
 - authored include and `using` order preserved;
-- indentation-only C++ comment formatting and no shader comment reflow;
+- indentation - only C++ comment formatting and no shader comment reflow;
 - warnings-as-errors for configured clang-tidy checks.
 
 The [Clang-Format Decision Record](../Decisions/ClangFormat.md) preserves the evidence, alternatives, and accepted ballot. [`.clang-format`](../../../.clang-format) and the inherited [shader override](../../../Engine/Assets/Shaders/.clang-format) remain authoritative for exact formatter behavior.
@@ -41,52 +41,95 @@ The clang-tidy naming configuration follows the binding scope in [Naming and Voc
 
 ### Formatter Enforcement Boundary
 
-clang-format owns whitespace and line layout. It MUST NOT insert or remove braces, reorder qualifiers, remove parentheses, sort includes or `using` declarations, or perform other semantic-looking rewrites. Run version 22.1.3 with `--Werror`; a version change is a deliberate formatting migration.
+clang-format owns whitespace and line layout. It MUST NOT insert or remove braces, reorder qualifiers, remove parentheses, sort includes or `using` declarations, or perform other semantic-looking rewrites. Run version 22.1.3 with `--Werror`;
+a version change is a deliberate formatting migration.
 
-Two accepted source-format rules are outside clang-format alone and are canonicalized by the repository entry point after shader formatting:
+    Two accepted source
+    - format rules are outside clang
+    - format alone and are canonicalized by the repository entry point after shader formatting :
 
-1. **No namespace-end comments.** Close named namespaces with `}` only. `FixNamespaceComments: false` prevents automatic additions but does not delete existing comments; `CodeStyle.ps1` removes them in `Format` mode and rejects them in `Check` mode.
-2. **HLSL attributes use their own line.** Place `[numthreads]`, `[loop]`, `[unroll]`, and equivalent shader attributes immediately above the declaration or statement they govern. clang-format 22.1.3 parses HLSL through its C++ fallback and can join these attributes to the governed construct; `CodeStyle.ps1` restores the accepted shader layout before writing or comparing canonical text.
+        1. * *No namespace
+    - end comments.**Close named namespaces with `
+}
+` only. `FixNamespaceComments : false` prevents automatic additions but does not delete existing comments;
+`CodeStyle.ps1` removes them in `Format` mode and rejects them in `Check` mode.2. * *HLSL attributes use their own line.**Place `[numthreads]`, `[loop]`, `
+    [unroll]`,
+    and equivalent shader attributes immediately above the declaration
+    or statement they govern.clang
+        - format 22.1.3 parses HLSL through its C++ fallback and can join these attributes to the governed construct;
+`CodeStyle.ps1` restores the accepted shader layout before writing
+    or comparing canonical text.
 
-### Repository Commands
+       ## #Repository Commands
 
-The repository entry point builds its manifest from tracked owned C++, headers, HLSL, and HLSLI under `Engine`, `Tools`, and `Projects`. It excludes only `Engine/RHI/Private/D3D12/ThirdParty`; build, artifact, generated, cache, and fetched-dependency trees are not tracked inputs.
+           The repository entry point builds its manifest from tracked owned C++,
+    headers, HLSL, and HLSLI under `Engine`, `Tools`, and `Projects`.It excludes only `Engine / RHI / Private / D3D12 / ThirdParty`;
+build, artifact, generated, cache,
+    and fetched
+        - dependency trees are not tracked inputs.
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File CMake/CodeStyle.ps1 -Mode Check
-powershell -NoProfile -ExecutionPolicy Bypass -File CMake/CodeStyle.ps1 -Mode Format
+```powershell powershell - NoProfile - ExecutionPolicy Bypass - File CMake / CodeStyle.ps1 - Mode Check powershell - NoProfile
+        - ExecutionPolicy Bypass - File CMake / CodeStyle.ps1
+        - Mode Format
 ```
 
-The equivalent configured targets are `code_style_check` and `code_style_format`. Pass `-ClangFormatPath <path>` to the script, set `SPARKLE_CLANG_FORMAT`, or configure `SPARKLE_CLANG_FORMAT_EXECUTABLE`; every route rejects versions other than 22.1.3. For the default or `Cpp` check, pass `-ClangTidyPath <path>`, set `SPARKLE_CLANG_TIDY`, or configure `SPARKLE_CLANG_TIDY_EXECUTABLE`; the check requires clang-tidy 22.1.3 and verifies that [`.clang-tidy`](../../../.clang-tidy) is valid for that toolchain. The check also rejects namespace-end comments, anonymous namespaces, multiple inheritance, and shader attributes that share a line with their declaration or statement. Configuration verification does not analyze translation units: clang-tidy invocations and compiler targets remain the semantic diagnostic owners, and the format target does not substitute for compiling affected code.
+        The equivalent configured targets are `code_style_check`
+    and `code_style_format`.Pass `- ClangFormatPath<path>` to the script,
+    set `SPARKLE_CLANG_FORMAT`, or configure `SPARKLE_CLANG_FORMAT_EXECUTABLE`;
+every route rejects versions other than 22.1.3. For the default or `Cpp` check, pass `- ClangTidyPath<path>`, set `SPARKLE_CLANG_TIDY`,
+    or configure `SPARKLE_CLANG_TIDY_EXECUTABLE`; the check requires clang-tidy 22.1.3 and verifies that [`.clang-tidy`](../../../.clang-tidy) is valid for that toolchain. The check also rejects namespace-end comments, anonymous namespaces, multiple inheritance, and shader attributes that share a line with their declaration or statement. Configuration verification does not analyze translation units: clang-tidy invocations and compiler targets remain the semantic diagnostic owners, and the format target does not substitute for compiling affected code.
 
 `-SourceFamily Cpp` and `-SourceFamily Shaders` narrow an explicit migration or diagnostic pass. Normal repository acceptance uses the default `All` manifest.
 
 ```cpp
 namespace Renderer
 {
-    class RenderDevice final : public DeviceContract
-    {
-    };
+	class RenderDevice final : public DeviceContract
+	{
+	};
 }
 ```
 
-```hlsl
-[numthreads(8, 8, 1)]
-void main(uint3 dispatchThreadId : SV_DispatchThreadID)
+```hlsl[numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
-    Dispatch(dispatchThreadId);
+	Dispatch(dispatchThreadId);
 }
 ```
 
-## Readability Rules
+    ##Readability Rules
 
-- Use one blank line as a semantic paragraph boundary when a function changes phase: acquire inputs, declare resources, derive state, schedule a cohesive pass group, resolve/present, and publish or return the result.
-- In frame-building code, keep consecutive calls that form one subpipeline together and separate different subpipelines or resource/publication phases. Do not put a blank line after every declaration or call.
-- Keep consecutive initialization or mutation of one record together.
-- Do not fragment one cohesive condition, expression, or initialization sequence with arbitrary whitespace.
-- Keep a declaration, call, assignment, return type, or signature on one line when it fits the configured limit and remains readable.
-- When a call or aggregate wraps, group elements by meaning; avoid stair-step fragmentation of simple access, casts, names, and ternaries.
-- Apply readability whitespace while changing the surrounding logic; do not create repository-wide whitespace churn. `.clang-format` remains authoritative and preserves at most one consecutive empty line.
+    - Use one blank line as a semantic paragraph boundary when a function changes phase : acquire inputs,
+    declare resources, derive state, schedule a cohesive pass group, resolve / present,
+    and publish or return the result.- In frame - building code,
+    keep consecutive calls that form one subpipeline together and separate different subpipelines
+    or resource / publication phases.Do not put a blank line after every declaration or call.- A call,
+    assignment, return, or aggregate
+        - initialization statement that wraps across multiple lines is its own visual paragraph.Leave one blank line before and after it;
+the opening
+    or closing brace of its block already supplies that boundary.Separate adjacent wrapped statements from each other
+                as well.Function declarations
+            / signatures and the lines inside one wrapped statement are not separate paragraphs.
+        - Keep consecutive initialization
+    or mutation of one record together.- Do not fragment one cohesive condition,
+    expression, or initialization sequence with arbitrary whitespace.- Keep a declaration, call, assignment, return type,
+    or signature on one line when it fits the configured limit and remains readable.- When a call or aggregate wraps,
+    group elements by meaning;
+avoid stair - step fragmentation of simple access, casts, names,
+    and ternaries.- Apply readability whitespace while changing the surrounding logic;
+do
+	not create repository - wide whitespace churn. `.clang
+	    - format` remains authoritative and preserves at most one consecutive empty line.
+
+```cpp BindRenderSceneGpuBuffer(graph, resources.Geometry.MorphWeights, sceneGpuBindings.Geometry.MorphWeights, "MorphWeights");
+
+BindRenderSceneGpuBuffer(
+    graph,
+    resources.Geometry.PreviousMorphWeights,
+    sceneGpuBindings.Geometry.PreviousMorphWeights,
+    "PreviousMorphWeights");
+
+PublishRenderSceneResources(resources);
+```
 
 This rule follows the maintenance and big-picture readability rationale in the [Epic C++ Coding Standard](https://dev.epicgames.com/documentation/unreal-engine/epic-cplusplus-coding-standard-for-unreal-engine) and LLVM's [local-uniformity guidance](https://llvm.org/docs/CodingStandards.html). Sparkle's semantic paragraph rule is repository policy; the external documents are precedent, not additional formatting authorities.
 
@@ -173,7 +216,7 @@ Shader attributes MUST appear on a separate line immediately before the declarat
 [unroll]
 for (uint sampleIndex = 0u; sampleIndex < sampleCount; ++sampleIndex)
 {
-    AccumulateSample(sampleIndex);
+	AccumulateSample(sampleIndex);
 }
 ```
 

@@ -1,62 +1,149 @@
-# Reference Path Tracer Staged Implementation Plan
+#Reference Path Tracer Staged Implementation Plan
 
-**Status:** **`PTD-00-R1 PASS`** remains the historical immutable discovery prerequisite; the 2026-09-13 repository-owner amendment replaces its Reference-shader binary64 policy with ordinary binary32 and must be included in the next independent numeric review; Stages 1-2 retain their historical frame/clean-break results; Stages 3-9 are **IMPLEMENTED / VALIDATION DEFERRED**; the Stage-6A target/show-flag decision is **SUPERSEDED** by the 2026-09-15 one-mode amendment, Stage 6C source is committed at `3b654728db3a35b4e2c859c8bf11116f4737800a`, and the Stage-9 source result is retained in [Stage 9 Source Evidence](Stage9SourceEvidence.md); Stage 9 has not earned its evidence-candidate gate and Stage 10 is not authorized; final reference/release acceptance remains separately gated by the retained GPU validation backlog, `REL-03`, release maps, support identities, and executable evidence
+**Status : ****`PTD - 00 - R1 PASS`** remains the historical immutable discovery prerequisite;
+the 2026 - 09 - 13 repository - owner amendment replaces its Reference
+    - shader binary64 policy with ordinary binary32 and must be included in the next independent numeric review;
+Stages 1 - 2 retain their historical frame / clean - break results;
+Stages 3 - 9 are** IMPLEMENTED / VALIDATION DEFERRED**;
+the Stage - 6A target / show - flag decision is * * SUPERSEDED * *by the 2026 - 09 - 15 one - mode amendment,
+    Stage 6C source is committed at `3b654728db3a35b4e2c859c8bf11116f4737800a`,
+    and the Stage - 9 source result is retained in[Stage 9 Source Evidence](Stage9SourceEvidence.md);
+Stage 9 has not earned its evidence - candidate gate and Stage 10 is not authorized;
+final reference / release acceptance remains separately gated by the retained GPU validation backlog, `REL - 03`, release maps,
+    support identities,
+    and executable evidence
 
-**Scope:** deliver `FCR-REN-08` end to end through one feature-local Renderer per-view session, one Reference estimator policy composed over a shared path-tracing semantic core, viewport-first Lit comparison, optional manual raw evidence publication, D3D12/Vulkan traversal parity, controlled failure, and release-map adoption
+        **Scope : **deliver `FCR
+    - REN - 08` end to end through one feature - local Renderer per - view session,
+    one Reference estimator policy composed over a shared path - tracing semantic core, viewport - first Lit comparison,
+    optional manual raw evidence publication, D3D12 / Vulkan traversal parity, controlled failure,
+    and release
+    - map adoption
 
-**Prepared:** R0 source audit at `669637cf23b9748f8b94635409e74159d31d0bc2`; R1 gate reconciliation rebased 2026-09-10 to committed source input `30597d7d0bb70af9f2836ab01d81d47c3e20bcde`; estimates are planning ranges, not schedule commitments
+        **Prepared : **R0 source audit at `669637cf23b9748f8b94635409e74159d31d0bc2`;
+R1 gate reconciliation rebased 2026 - 09 - 10 to committed source input `30597d7d0bb70af9f2836ab01d81d47c3e20bcde`;
+estimates are planning ranges,
+    not schedule commitments
 
-**Naming reconciliation:** the 2026-09-09 working-tree clean break makes `ReferencePathTracer` the sole feature name. The 2026-09-19 refinement names the display-ready viewport product `FinalColorLdr`, the producer-neutral scene-linear products `Radiance` and optional `RadianceSecondMoment`, their optional progressive identity `RenderProductSamplePrefix`, and the sole atomic publication operation `PublishViewportRenderProducts`. Lit and Reference producers publish through the same product contract; only the Reference feature owns its estimator, committed-prefix, checkpoint, and oracle policy. This follows Epic's Scene Color versus Final Color distinction and NVIDIA/Falcor's radiance terminology; it does not authorize or complete a plan stage.
+        * *Naming reconciliation : **the 2026
+    - 09 - 09 working - tree clean break makes `ReferencePathTracer` the sole feature name.The 2026 - 09 - 19 refinement names the display
+    - ready viewport product `FinalColorLdr`,
+    the producer - neutral scene - linear products `Radiance` and optional `RadianceSecondMoment`,
+    their optional progressive identity `RenderProductSamplePrefix`,
+    and the sole atomic publication operation `PublishViewportRenderProducts`.Lit and Reference producers publish through the same product
+            contract;
+only the Reference feature owns its estimator, committed - prefix, checkpoint,
+    and oracle policy.This follows Epic 's Scene Color versus Final Color distinction and NVIDIA/Falcor' s radiance terminology;
+it does not authorize
+    or complete a plan stage.
 
-**Priority reconciliation:** 2026-09-10 moves the first usable live viewport/Lit-comparison milestone ahead of traversal-parity expansion and evidence-artifact workflow; no stage is thereby authorized or completed.
+                * *Priority reconciliation : **2026
+            - 09 - 10 moves the first usable live viewport / Lit - comparison milestone ahead of traversal - parity expansion
+        and evidence - artifact workflow;
+no stage is thereby authorized
+    or completed.
 
-**Frame-recipe reconciliation:** `AC-RPT-22`/`FM-RPT-21`/`CHK-RPT-18` make the already accepted PTD-00 architecture executable: Reference Path Tracer is one alternate middle recipe of the original Sparkle frame, not a second renderer and not a layer over Lit. This clarification changes no frozen estimator, product, or Stage-0 scope and does not retroactively claim Stage-1 recipe evidence; Stage 2 owns the first implementation and proof.
+            ** Frame
+        - recipe reconciliation : ** `AC - RPT - 22`/`FM - RPT - 21`/`CHK - RPT - 18` make the already accepted PTD
+                                  - 00 architecture executable
+    : Reference Path Tracer is one alternate middle recipe of the original Sparkle frame,
+    not a second renderer and not a layer over Lit.This clarification changes no frozen estimator, product,
+    or Stage - 0 scope and does not retroactively claim Stage - 1 recipe evidence;
+Stage 2 owns the first implementation and proof.
 
-**External-precedent reconciliation:** `CHK-RPT-20` binds every implementation stage to the pinned NVIDIA RTXPT/Falcor/self-intersection sources and current official Epic Path Tracer product documentation through the [mid-delivery alignment matrix](Research.md#nvidia-and-epic-mid-delivery-alignment--2026-09-13). A row must remain source-present, evidence-passed, assigned to an exact later stage, deliberately different, or excluded by the frozen domain. Vendor feature presence or defaults never silently expand Sparkle scope or count as local proof.
+        ** External
+    - precedent reconciliation
+    : ** `CHK
+      - RPT
+      - 20` binds every implementation stage to the pinned NVIDIA RTXPT / Falcor / self
+      - intersection sources and current official Epic Path Tracer product documentation through the[mid - delivery alignment matrix](
+          Research.md #nvidia - and-epic - mid - delivery - alignment-- 2026 - 09 - 13)
+            .A row must remain source
+      - present,
+    evidence - passed, assigned to an exact later stage, deliberately different,
+    or excluded by the frozen domain.Vendor feature presence or defaults never silently expand Sparkle scope
+    or count as local proof.
 
-**Authority boundary:** [Transport And Estimator](TransportAndEstimator.md) owns mathematical semantics, [Execution Architecture](ExecutionArchitecture.md) owns system ownership/lifetime, [User Experience](UserExperience.md) owns the interactive workflow; the [feature dossier](README.md) owns `RPT-FS-*`, `AC-RPT-*`, `FM-RPT-*`, `CHK-RPT-*`, and definition of done; [Discovery](Discovery.md) owns `PTD-00`; the [completion study](Research.md) owns external precedent; this page owns delivery order, dependencies, clean breaks, estimates, prompts, and slice exit gates
+           ** Authority boundary : **[Transport And Estimator](TransportAndEstimator.md) owns mathematical semantics,
+    [Execution Architecture](ExecutionArchitecture.md) owns system ownership / lifetime,
+    [User Experience](UserExperience.md) owns the interactive workflow;
+the[feature dossier](README.md) owns `RPT - FS - *`, `AC - RPT - *`, `FM - RPT - *`, `CHK - RPT - *`, and definition of done;
+[Discovery](Discovery.md) owns `PTD - 00`;
+the[completion study](Research.md) owns external precedent; this page owns delivery order, dependencies, clean breaks, estimates, prompts, and slice exit gates
 
 **Current readiness:** **50/100 (`45/5/0/0`)**. Stage 7 makes the existing mode selectable immediately after Lit and adds the minimum generic request/progress fields needed for the live session. Stage 8 adds one automatic engine-wide Pipeline-then-Inline policy, one semantic `TraceSceneRay` API over thin frontend adapters, reusable material payload/hit mechanics, and the existing D3D12/Vulkan RHI path without adding RHI feature policy or a second renderer route. Game/runtime retains the same ordinary `ViewportRenderRequest` entry rather than a host fork. The current DevelopmentEditor C++ candidate compiles and links through `ShowcaseEditor`, but it remains shader-uncooked and GPU-unexercised, so no lifecycle, response-budget, camera-interaction, accessibility, backend/frontend parity, numeric, or reference-authority credit is added. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 **Non-claims:** Stage-7 source inspection and predecessor builds/cooks do not prove the current GPU shader candidate's accumulation precision, ordered lifecycle, response budget, material decode, robust endpoints, radiance, estimator correctness, runtime reachability, accessibility, convergence, backend parity, performance, package, Shipping exclusion, or accepted-reference authority.
 
-This plan exists now because the requested implementation route needs to be concrete and reviewable before code work. Its presence does not manufacture a `PTD-00` pass. Stage 0 must replace every provisional choice and estimate with the accepted discovery result; if the result changes architecture, this plan is revised before Stage 1 rather than bending implementation around stale prose.
+This plan exists now because the requested implementation route needs to be concrete and reviewable before code work. Its presence does not manufacture a `PTD-00` pass. Stage 0 must replace every provisional choice and estimate with the accepted discovery result;
+if the
+	result changes architecture,
+	    this plan is revised before Stage 1 rather than bending implementation around stale prose.
 
-> [!CAUTION]
-> Implementation stages may advance under the development-continuation policy when their source contract is complete and validation requiring an owner-run build, shader cook, GPU execution, or interactive Editor session is explicitly deferred. Deferred work is never a `PASS`. `REL-03`, release maps, named support machines, and the accumulated GPU validation backlog remain mandatory before final release/package/oracle-adoption claims.
+	    > [!CAUTION] > Implementation stages may advance under the development
+	        - continuation policy when their source contract is complete and validation requiring an owner - run build,
+	    shader cook, GPU execution, or interactive Editor session is explicitly deferred.Deferred work is never a `PASS`. `REL - 03`,
+	    release maps, named support machines,
+	    and the accumulated GPU validation backlog remain mandatory before final release / package / oracle
+	    - adoption claims.
 
-## Outcome
+	      ##Outcome
 
-Completion yields:
+	          Completion yields :
 
-- a bounded, deterministic `SurfaceTransportReference` per-view session over immutable Scene/View generations;
+	    -a bounded,
+	    deterministic `SurfaceTransportReference` per - view session over immutable Scene / View generations;
 - a separately named `FinitePathDiagnostic` route for analytic and event-isolation work;
-- independent camera rays, one reviewed NEE/MIS/Russian-roulette surface estimator, robust endpoints, exact sample identity, and complete invalid accounting;
-- scene-linear `Radiance` produced by the Reference estimator as EXR beauty plus hashes, evidence provenance, checkpoints, and atomic completion;
-- one Reference estimator policy over one shared path-tracing semantic core, behind automatically selected Inline and native Pipeline adapters on D3D12 and Vulkan;
-- a `Reference Path Tracer` view mode immediately after Lit that validates/starts automatically, shows exact progress/reset/completion, handles Editor and Game cameras through one identity path, and preserves only exact-identity Lit comparisons;
+- independent camera rays,
+    one reviewed NEE / MIS / Russian - roulette surface estimator, robust endpoints, exact sample identity, and complete invalid accounting;
+- scene
+    - linear `Radiance` produced by the Reference estimator as EXR beauty plus hashes,
+    evidence provenance, checkpoints, and atomic completion;
+- one Reference estimator policy over one shared path
+    - tracing semantic core,
+    behind automatically selected Inline and native Pipeline adapters on D3D12 and Vulkan;
+- a `Reference Path Tracer` view mode immediately after Lit that validates
+    / starts automatically,
+    shows exact progress / reset / completion, handles Editor and Game cameras through one identity path,
+    and preserves only exact - identity Lit comparisons;
 - optional manual raw save as a secondary consumer of that same session contract;
 - an analytic/minimal/external/statistical/backend/failure evidence ladder sufficient for `FCR-REN-08` and later `PTD-03` release-map adoption;
-- removal of the former GBuffer-seeded `LightingMode::ReferencePathTracer`, transitional `r.ReferencePathTracer`, global visualization selection, Editor mirror enum, and target/show-flag split in favor of one per-view `RenderViewMode::ReferencePathTracer`, without a compatibility layer or second scene/material system.
+- removal of the former GBuffer
+    - seeded `LightingMode::ReferencePathTracer`,
+    transitional `r.ReferencePathTracer`, global visualization selection, Editor mirror enum,
+    and target / show - flag split in favor of one per - view `RenderViewMode::ReferencePathTracer`,
+    without a compatibility layer
+    or second scene
+        / material system
+              .
 
-Anything less remains a candidate comparison. A cleaner image, larger sample count, passing build, or agreement with one external renderer does not close the feature.
+          Anything less remains a candidate comparison.A cleaner image,
+    larger sample count, passing build,
+    or agreement with one external renderer does not close the feature.
 
-## Delivery Priority
+       ##Delivery Priority
 
-The [User Experience product priority](UserExperience.md#product-priority-order) is binding on stage order:
+           The[User Experience product priority](UserExperience.md #product - priority - order)is binding on stage order:
 
-1. deliver a responsive, automatically accumulating viewport mode and Lit comparison loop over a PBR-correct in-memory result;
-2. prove its Renderer/RHI semantics and required backend/frontend routes;
+    1. deliver a responsive, automatically accumulating viewport mode and Lit comparison loop over a PBR - correct in - memory result;
+2. prove its Renderer / RHI semantics and required backend / frontend routes;
 3. reuse only the existing generic capture/readback needed for raw-result publication; and
 4. polish manual save and checkpoint interaction after the primary viewport experience is usable.
 
-Artifacts remain required for final oracle authority, but they are not the first product milestone. A completed EXR pipeline cannot advance the primary UX while the user cannot select the mode, move through the scene, see the latest view restart/refine live, read exact progress, or compare with Lit. The first usable viewport milestone is also not permission to call an unproved estimator a reference; mathematical and PBR correctness remain prerequisites.
+Artifacts remain required for final oracle authority, but they are not the first product milestone. A completed EXR pipeline cannot advance the primary UX while the user cannot select the mode, move through the scene, see the latest view restart/refine live, read exact progress, or compare with Lit. The first usable viewport milestone is also not permission to call an unproved estimator a reference;
+mathematical and PBR correctness remain prerequisites.
 
-## GPU-Only Transport Boundary
+    ##GPU
+    - Only Transport Boundary
 
-Sparkle's Reference Path Tracer is exclusively a GPU renderer. Primary-ray generation, traversal, hit interpretation, material and light evaluation, BSDF sampling/evaluation/PDFs, path integration, MIS, roulette, robust endpoints, sample generation, and accumulation execute in production GPU shaders through the existing Renderer/RHI route. Only that production GPU route may produce Reference radiance.
+            Sparkle's Reference Path Tracer is exclusively a GPU renderer. Primary-ray generation, traversal, hit interpretation, material and light evaluation, BSDF sampling/evaluation/PDFs, path integration, MIS, roulette, robust endpoints, sample generation, and accumulation execute in production GPU shaders through the existing Renderer/RHI route. Only that production GPU route may produce Reference radiance.
 
-Ordinary application and Renderer orchestration may prepare immutable Scene/View inputs, allocate and bind resources, submit GPU work, manage the per-view lifecycle, observe progress, copy a completed GPU result through the existing readback route, and publish artifacts. None of that orchestration may trace rays, reproduce shader transport math, generate comparison radiance, or become a second correctness authority. Hand-worked equations and external-renderer results are review or comparison oracles only; every Sparkle transport claim ultimately binds to the production GPU shader route.
+        Ordinary application and Renderer orchestration may prepare immutable Scene
+        / View inputs,
+    allocate and bind resources, submit GPU work, manage the per - view lifecycle, observe progress,
+    copy a completed GPU result through the existing readback route, and publish artifacts.None of that orchestration may trace rays,
+    reproduce shader transport math, generate comparison radiance,
+    or become a second correctness authority.Hand - worked equations and external - renderer results are review or comparison oracles only; every Sparkle transport claim ultimately binds to the production GPU shader route.
 
 ## Development Continuation And Deferred Validation
 
@@ -115,36 +202,98 @@ The range is intentionally honest about math review, two APIs, two traversal fro
 
 Every implementation prompt below inherits these rules. The executing agent must:
 
-1. start at the repository root; read `AGENTS.md`, `Docs/README.md`, the selected Engineering task routes, [Transport And Estimator](TransportAndEstimator.md), [Execution Architecture](ExecutionArchitecture.md), [User Experience](UserExperience.md), [feature acceptance](README.md), [Discovery](Discovery.md), and this plan in full;
-2. inspect `git status --short`, preserve unrelated dirty work, and inspect live owners/producers/consumers/lifetime/build membership with `rg` before editing;
-3. confirm all named design/scope prerequisites and prior-stage source handoffs. A deferred owner-operated build, shader cook, GPU run, or interactive workflow follows [Development Continuation And Deferred Validation](#development-continuation-and-deferred-validation) and does not by itself block the next implementation slice. Stop only when a required design/input is absent or stale, source contradicts the contract, an executed check finds a defect, or implementation cannot proceed without inventing policy;
+1. start at the repository root;
+read `AGENTS.md`, `Docs / README.md`, the selected Engineering task routes, [Transport And Estimator](TransportAndEstimator.md),
+    [Execution Architecture](ExecutionArchitecture.md), [User Experience](UserExperience.md), [feature acceptance](README.md),
+    [Discovery](Discovery.md), and this plan in full;
+2. inspect `git status-- short`, preserve unrelated dirty work,
+    and inspect live owners / producers / consumers / lifetime / build membership with `rg` before editing;
+3. confirm all named design / scope prerequisites and prior - stage source handoffs.A deferred owner - operated build, shader cook, GPU run,
+    or interactive workflow follows[Development Continuation And Deferred Validation](
+           #development - continuation - and-deferred - validation)
+        and does not by itself block the next implementation slice.Stop only when a required design / input is absent
+    or stale,
+    source contradicts the contract, an executed check finds a defect, or implementation cannot proceed without inventing policy;
 4. implement only the selected stage and defects required for its exit criteria. Do not begin later UI, general framework, performance, denoising, neural, material-system, or compatibility work;
-5. preserve Scene-owned scene data, View-owned view identity/camera data, one private Reference Path Tracer product/policy capsule, the existing small shared path-tracing/RayTracing/Lighting/Common shader owners, thin RHI traversal adapters, and the single-truth/copy budget. After preparation, pass the canonical `RenderFrame` through execution boundaries instead of unpacking parallel identity/time/Scene/View/ray-binding arguments or carrying the complete mutable viewport request beside its accepted View; pass only a focused one-shot control edge when the feature consumes one. Preserve the original Sparkle frame shell: `FramePipeline::BuildRenderFrameGraph` calls ordinary nested `Add...Passes` functions, while `AddSceneRenderingPasses` selects the accepted request's `RenderViewMode::ReferencePathTracer` and invokes either the Lit or Reference pass function directly before declaring shared exposure, optional scene denoising, and presentation-upscaling passes once. Never add a class-shaped graph stage, recipe/base interface, graph factory, dependency bag, global feature manager, Editor mirror enum, target/show-flag translation, graph-settings copy, process-global selector, RHI mode, second renderer/frame loop/submission path, or both estimator middles together;
-6. apply the [GPU-Only Transport Boundary](#gpu-only-transport-boundary) and [Shared Path-Tracing Family Boundary](#shared-path-tracing-family-boundary) before adding or naming any type, function, resource, or file. Keep only Reference target/claim, selected strategy set and admissibility, sample-stream identity/dimensions, finite/reference termination, per-view session/invalidation/progress, raw-result authority, evidence, and failure policy in the feature capsule. Extend the established `Common`, `Lighting`, `RayTracingHit*`, `PathSurface`, `RayTracingPathSample`, `PathSampling`, `PathLighting`, and `PathTracer` shader owners for camera/RNG mechanics, trace/hit/material/surface conversion, environment, path state/events, BSDF/light sample-evaluate-PDF, visibility, MIS/roulette arithmetic, robust rays, and accumulation arithmetic whose semantics are reusable by unbiased, optimized/biased, cache-backed, or denoised GPU path tracers. Search current Reference, `Path*`, ReSTIR, and cache-facing shader code before adding code. No generic mechanism may retain a `ReferencePathTracer` name; no Reference-only or biased/cache/denoiser policy may enter a shared owner; no second shared vocabulary may compete with an established one; and only the production GPU shader route may produce transport results;
+5. preserve Scene - owned scene data, View - owned view identity / camera data, one private Reference Path Tracer product / policy capsule,
+    the existing small shared path - tracing / RayTracing / Lighting / Common shader owners, thin RHI traversal adapters,
+    and the single - truth / copy budget.After preparation,
+    pass the canonical `RenderFrame` through execution boundaries instead of unpacking parallel identity / time / Scene / View / ray
+        - binding arguments
+    or carrying the complete mutable viewport request beside its accepted View; pass only a focused one-shot control edge when the feature consumes one. Preserve the original Sparkle frame shell: `FramePipeline::BuildRenderFrameGraph` calls ordinary nested `Add...Passes` functions, while `AddSceneRenderingPasses` selects the accepted request's `RenderViewMode::ReferencePathTracer` and invokes either the Lit or Reference pass function directly before declaring shared exposure, optional scene denoising, and presentation-upscaling passes once. Never add a class-shaped graph stage, recipe/base interface, graph factory, dependency bag, global feature manager, Editor mirror enum, target/show-flag translation, graph-settings copy, process-global selector, RHI mode, second renderer/frame loop/submission path, or both estimator middles together;
+6. apply the [GPU-Only Transport Boundary](#gpu-only-transport-boundary) and [Shared Path-Tracing Family Boundary](#shared-path-tracing-family-boundary) before adding or naming any type, function, resource, or file. Keep only Reference target/claim, selected strategy set and admissibility, sample-stream identity/dimensions, finite/reference termination, per-view session/invalidation/progress, raw-result authority, evidence, and failure policy in the feature capsule. Extend the established `Common`, `Lighting`, `RayTracingHit*`, `PathSurface`, `RayTracingPathSample`, `PathSampling`, `PathLighting`, and `PathTracer` shader owners for camera/RNG mechanics, trace/hit/material/surface conversion, environment, path state/events, BSDF/light sample-evaluate-PDF, visibility, MIS/roulette arithmetic, robust rays, and accumulation arithmetic whose semantics are reusable by unbiased, optimized/biased, cache-backed, or denoised GPU path tracers. Search current Reference, `Path*`, ReSTIR, and cache-facing shader code before adding code. No generic mechanism may retain a `ReferencePathTracer` name;
+no Reference - only or biased / cache / denoiser policy may enter a shared owner;
+no second shared vocabulary may compete with an established one;
+and only the production GPU shader route may produce transport results;
 7. perform clean breaks for Sparkle-owned contracts: update all producers/consumers/build/docs together and delete the replaced path. Do not add legacy readers, aliases, version bridges, fallback selectors, or dual representations;
-8. keep current code/behavior labels honest. Never use “unbiased,” “ground truth,” “converged,” or “accepted reference” beyond the exact passed scope;
-9. design each check with initial state, action/injection, oracle, matrix, artifact, maximum duration/resources, cleanup, and escalation. Use the cheapest claim-falsifying check first;
-10. do not add submitted test-only classes, fixtures, executables, files, CMake targets, feature-specific diagnostic passes/readbacks, debug panels, dashboards, or parallel inspection APIs. Use the real production route and existing generic capture/validation surfaces. A temporary focused probe is allowed only when a named criterion cannot be falsified more cheaply, and every probe must be removed before handoff;
+8. keep current code / behavior labels honest.Never use “unbiased,” “ground truth,” “converged,”
+    or “accepted reference” beyond the exact passed scope;
+9. design each check with initial state, action / injection, oracle, matrix, artifact, maximum duration / resources, cleanup,
+    and escalation.Use the cheapest claim - falsifying check first;
+10. do not add submitted test - only classes, fixtures, executables, files, CMake targets, feature - specific diagnostic passes / readbacks,
+    debug panels, dashboards, or parallel inspection APIs.Use the real production route and existing generic capture
+        / validation surfaces.A temporary focused probe is allowed only when a named criterion cannot be falsified more cheaply,
+    and every probe must be removed before handoff;
 11. execute `CHK-RPT-17` for the current stage. Retain `ARCH-RPT-<stage>` listing every touched production file outside the frozen feature and shader homes, its accepted hook category and necessity, all feature-named references outside the capsule, new public/shared types and fields, repeated selector switches, dependency direction, and bounded-removal proof. Any unlisted file or unjustified hook blocks the stage;
-12. from Stage 2 onward, execute `CHK-RPT-18` and retain `FRAME-RPT-<stage>` proving the sole recipe key/decision, mutually exclusive pass/resource provenance, shared frame shell, raw/display lineage, safe Lit/Reference topology transition, and absence of a second renderer or submission path;
-13. from Stage 3 onward, execute the source/ownership portion of `CHK-RPT-19` and retain `CORE-RPT-<stage>` classifying every changed GPU path-tracing operation as shared invariant, Reference policy, or optimized/cache/denoiser policy; list the owning existing file, every current consumer, likely ReSTIR PT/cache/denoiser boundary challenge, semantic-duplicate search, dependency direction, and bounded removal. A new Reference-prefixed mechanism requires a written explanation of why another GPU path tracer cannot use the same semantics. Compile affected Reference and optimized consumers before executable acceptance, or place that compilation in the explicit validation backlog when owner-operated validation is deferred;
+12. from Stage 2 onward, execute `CHK - RPT - 18` and retain `FRAME - RPT - <stage>` proving the sole recipe key / decision,
+    mutually exclusive pass / resource provenance, shared frame shell, raw / display lineage, safe Lit / Reference topology transition,
+    and absence of a second renderer or submission path;
+13. from Stage 3 onward,
+    execute the source / ownership portion of `CHK - RPT - 19` and retain `CORE - RPT - <stage>` classifying every changed GPU path
+    - tracing operation as shared invariant,
+    Reference policy, or optimized / cache / denoiser policy;
+list the owning existing file, every current consumer, likely ReSTIR PT / cache / denoiser boundary challenge, semantic - duplicate search,
+    dependency direction,
+    and bounded removal.A new Reference
+    - prefixed mechanism requires a
+    written explanation of why another GPU path tracer cannot use the same semantics.Compile affected Reference and optimized consumers
+        before executable acceptance,
+    or place that compilation in the explicit validation backlog when owner - operated validation is deferred;
 14. execute `CHK-RPT-20` for the stage's affected concerns: recheck the pinned NVIDIA revisions and current official Epic Path Tracer documentation, update the alignment row with its local owner/stage/evidence status, and retain every intentional difference or exclusion. Then run immediately available static checks, `architecture_boundary_check` whenever Renderer/RHI boundaries change, focused build/shader/GPU/interactive checks when selected for the current execution, and `git diff --check`. Record every unrun owner-operated check as deferred with its command/workflow and oracle. Do not claim unrun checks passed and do not convert deferral alone into `BLOCKED`;
-15. finish the stage with the binding [responsibility refinement](../../../../../../../Engineering/Workflow/ChangeLifecycle.md#finish-with-responsibility-refinement). Re-read the complete changed feature path and record one responsibility sentence for every substantive changed file, class, and function; split independently changing identity, lifecycle, GPU-resource, graph-pass, estimator, presentation, or artifact concerns, while keeping resources owned by the lifecycle that allocates, retains, releases, binds, and retires them rather than passing a sibling resource owner through state transitions; remove dead scaffolding, duplicate state/policy, ceremonial wrappers/helpers/namespaces, needless validation/diagnostics, and leaked implementation detail. This gate is decided by cohesion and knowledge removal, not line count or class count, and fails on either a god unit or fragmentation that merely relocates the same knowledge;
-16. leave one iteration record containing gate revision, decisions, changed files grouped by responsibility, deletions, the refinement result, `ARCH-RPT-<stage>`, `FRAME-RPT-<stage>` when applicable, `CORE-RPT-<stage>` when applicable, checks actually run, exact outputs/artifact links, deferred-validation backlog, known limitations, confirmed blockers, and the next permitted implementation stage.
+15. finish the stage with the binding [responsibility refinement](../../../../../../../Engineering/Workflow/ChangeLifecycle.md#finish-with-responsibility-refinement). Re-read the complete changed feature path and record one responsibility sentence for every substantive changed file, class, and function;
+split independently changing identity, lifecycle, GPU - resource, graph - pass, estimator, presentation, or artifact concerns,
+    while keeping resources owned by the lifecycle that allocates, retains, releases, binds,
+    and retires them rather than passing a sibling resource owner through state transitions;
+remove dead scaffolding, duplicate state / policy, ceremonial wrappers / helpers / namespaces, needless validation / diagnostics,
+    and leaked implementation detail.This gate is decided by cohesion and knowledge removal, not line count or class count,
+    and fails on either a god unit or fragmentation that merely relocates the same knowledge;
+16. leave one iteration record containing gate revision, decisions, changed files grouped by responsibility, deletions,
+    the refinement result, `ARCH - RPT - <stage>`, `FRAME - RPT - <stage>` when applicable, `CORE - RPT - <stage>` when applicable,
+    checks actually run, exact outputs / artifact links, deferred - validation backlog, known limitations, confirmed blockers,
+    and the next permitted implementation stage.
 
-Every prompt's `NON-NEGOTIABLE` paragraph is a contract, not motivational prose. A source-delivery handoff must classify each item as statically established, executable evidence passed, validation deferred, or falsified. Use **IMPLEMENTED / VALIDATION DEFERRED** when the implementation is complete but owner-operated evidence remains; use `BLOCKED` only for a confirmed defect, contradiction, missing required design/input, or implementation dependency that prevents meaningful progress. “Implemented,” a clean build, a plausible image, or a manual click-through cannot substitute for final acceptance evidence.
+        Every prompt's `NON-NEGOTIABLE` paragraph is a contract, not motivational prose. A source-delivery handoff must classify each item as statically established, executable evidence passed, validation deferred, or falsified. Use **IMPLEMENTED / VALIDATION DEFERRED** when the implementation is complete but owner-operated evidence remains; use `BLOCKED` only for a confirmed defect, contradiction, missing required design/input, or implementation dependency that prevents meaningful progress. “Implemented,” a clean build, a plausible image, or a manual click-through cannot substitute for final acceptance evidence.
 
-If source reality proves a plan instruction wrong, correct the owning architecture/plan document in the same stage and explain the divergence. Do not preserve a bad plan through code contortions.
+        If source reality proves a plan instruction wrong,
+    correct the owning architecture
+        / plan document in the same stage and explain the divergence.Do not preserve a bad plan through code contortions.
 
-## Cross-Stage Invariants
+          ##Cross
+    - Stage Invariants
 
-- Raw reference transport never consumes production GBuffer, ReSTIR, temporal reconstruction, denoised, exposed, tone-mapped, encoded, or screenshot data.
-- All Sparkle transport and accumulation run in production GPU shaders. Application/Renderer code may orchestrate, submit, observe, read back, and publish GPU results only; it never traces paths, reproduces the estimator or sampler, or produces Reference radiance.
-- Reference Path Tracer remains the alternate middle setup of the original frame: one per-view `RenderViewMode::ReferencePathTracer`, mutually exclusive estimator pass sets, and the same surrounding FramePipeline/Scene/View/frame-graph/RHI/viewport/UI/presentation owners. Editor owns labels/icons/menu placement and uses the Renderer mode directly; no mirror enum, target/flag split, mode in RHI, selector CVar, recipe hierarchy, graph factory, dependency bag, second renderer, or both-middle graph is permitted.
-- Reference Path Tracer is one policy consumer of the shared path-tracing core, not the engine's only path tracer. ReSTIR PT, radiance caches such as SHARC, denoised paths, and other optimized or biased estimators may reuse the core, but their biasing/cache/reconstruction policy never enters the raw Reference target by shared-code inference.
-- “Shared core” means the existing set of focused owners, not a new god include, manager, facade, or framework. Prefer extending `CommonRandom`, `CommonSampling`, `Lighting/Sky`, `RayTracingHit*`, `PathSurface`, `RayTracingPathSample`, `PathSampling`, `PathLighting`, and `PathTracer` according to their present responsibility over creating parallel `ReferencePathTracer*` vocabulary.
-- Before a Reference-named shader symbol is accepted, the stage review must prove it expresses Reference product policy rather than camera, RNG, tracing, hit reconstruction, material/surface data, emission/environment evaluation, BSDF/light sampling or PDFs, path state/events, throughput/radiance math, MIS/roulette arithmetic, ray robustness, or accumulation math that another path tracer will also need.
-- High-level frame orchestration names stages and contains the readable mode branch. Lit pass composition remains a focused local stage; Reference mechanism remains in the feature owner. Both produce the same downstream product contract. Parallel selector representations, UI presentation fields, provider decisions in the shared tail, or a polymorphic recipe/factory introduced only to hide the branch fail `CHK-RPT-18`.
+    - Raw reference transport never consumes production GBuffer,
+    ReSTIR, temporal reconstruction, denoised, exposed, tone - mapped, encoded,
+    or screenshot data.- All Sparkle transport and accumulation run in production GPU shaders.Application / Renderer code may orchestrate,
+    submit, observe, read back, and publish GPU results only;
+it never traces paths, reproduces the estimator or sampler, or produces Reference radiance.
+        - Reference Path Tracer remains the alternate middle setup of the original frame : one per
+                                                                                           - view `RenderViewMode::ReferencePathTracer`,
+    mutually exclusive estimator pass sets,
+    and the same surrounding FramePipeline / Scene / View / frame
+    - graph / RHI / viewport / UI / presentation owners.Editor owns labels / icons / menu placement and uses the Renderer mode directly;
+no mirror enum, target / flag split, mode in RHI, selector CVar, recipe hierarchy, graph factory, dependency bag, second renderer,
+    or both - middle graph is permitted.- Reference Path Tracer is one policy consumer of the shared path - tracing core,
+    not the engine's only path tracer. ReSTIR PT, radiance caches such as SHARC, denoised paths, and other optimized or biased estimators may reuse the core, but their biasing/cache/reconstruction policy never enters the raw Reference target by shared-code inference.
+    - “Shared core” means the existing set of focused owners,
+    not a new god include, manager, facade,
+    or framework.Prefer extending `CommonRandom`, `CommonSampling`, `Lighting / Sky`, `RayTracingHit *`, `PathSurface`, `RayTracingPathSample`, `PathSampling`, `PathLighting`,
+    and `PathTracer` according to their present responsibility over creating parallel `ReferencePathTracer *` vocabulary.
+    - Before a Reference - named shader symbol is accepted,
+    the stage review must prove it expresses Reference product policy rather than camera, RNG, tracing, hit reconstruction,
+    material / surface data, emission / environment evaluation, BSDF / light sampling or PDFs, path state / events,
+    throughput / radiance math, MIS / roulette arithmetic, ray robustness,
+    or accumulation math that another path tracer will also need.- High
+        - level frame orchestration names stages and contains the readable mode branch.Lit pass composition remains a focused local stage; Reference mechanism remains in the feature owner. Both produce the same downstream product contract. Parallel selector representations, UI presentation fields, provider decisions in the shared tail, or a polymorphic recipe/factory introduced only to hide the branch fail `CHK-RPT-18`.
 - Apply [Code Style's owner-local helper rule](../../../../../../../Engineering/Foundations/CodeStyle.md#owner-local-helper-placement): a namespace, wrapper, phase function, or collaborator that merely renames or forwards one operation is a stage failure. Call the operation directly until the abstraction owns real policy/state, hides nontrivial mechanism, establishes a required boundary, or has multiple meaningful consumers.
 - Validate untrusted requests and the Reference product's narrower domain once at the feature preflight/state-transition boundary; enforce universal Scene/View/resource invariants at their construction/publication owner. Camera, sampling, BSDF, light, traversal, and accumulation primitives then consume established invariants as direct math. Do not introduce `IsValid`/`IsSupported` scans, `Try*` call chains, finite/range rechecks, diagnostic sentinels, or boolean validity plumbing through the inner GPU path. Runtime branches remain only for mathematical support, sidedness/visibility/topology, stochastic outcomes, specified safety failure, or state that can genuinely race after preflight such as stale-generation commit.
 - Session seed, pixel, sample, and dimension identity never depends on frame timing, dispatch order, batch size, view-mode switching, or resume timing.
@@ -356,7 +505,7 @@ Retain `FRAME-RPT-2` through `CHK-RPT-18`, including the Lit/Reference/Lit topol
 | Evidence field | Retained result |
 | --- | --- |
 | Historical topology and current replacement | The executed Stage-2 revision used `CVarReferencePathTracer` to trigger graph retirement/rebuild and the direct feature composition call. That selector is deleted, not retained as authority. The accepted replacement carries one `RenderViewMode` on `ViewportRenderRequest`, freezes it into `RenderView`, uses it to disable the independent Lit denoising stage for Reference without overriding presentation-upscaler provider or quality and for the direct Lit-versus-Reference branch, and does not copy it into feature configuration, Application commands, or RHI. |
-| `FRAME-RPT-2` shared shell | Both middles share frame admission, prepared Scene/View, ray-tracing-scene publication, graph allocation/execution, RHI submission, viewport publication, and post-processing/presentation. Lit schedules GBuffer, lighting, exposure, optional ray-reconstruction denoising, and selected presentation upscaling. Reference schedules feature transport/display and exposure, bypasses Lit denoising, and reaches the same independently selected presentation upscaler. It schedules no GBuffer, ReSTIR/Lighting, or ray reconstruction and cannot retain or relabel Lit output. |
+| `FRAME-RPT-2` shared shell | Both middles share frame admission, prepared Scene/View, ray-tracing-scene publication, graph allocation/execution, RHI submission, viewport publication, and post-processing/presentation. Lit schedules GBuffer, lighting, exposure, optional ray-reconstruction denoising, and selected presentation upscaling. Reference schedules feature transport/display and exposure, bypasses Lit denoising, and reaches the same presentation-upscaling selector. Linear consumes its display derivative; providers that require absent temporal guides reject rather than consuming Lit buffers, fabricating guides, or silently falling back. Reference schedules no GBuffer, ReSTIR/Lighting, or ray reconstruction and cannot retain or relabel Lit output. |
 | Host and View-kind equivalence | At the Stage-2 candidate, the graph used the transitional built Reference CVar. Stages 6B/6C supersede that transport with the one per-view `RenderViewMode` while preserving the finding: no `RenderViewKind`, Editor-type, host conditional, second renderer, or runtime-specific estimator route selects the feature. DevelopmentEditor and DevelopmentGame compile the same feature owner in `SparkleRenderer`. |
 | `ARCH-RPT-2` outside-feature ledger | The historical Editor-to-Application command and dual-CVar route is deleted. `EditorViewportSession` retains only the selected generic Renderer mode for presentation; `ViewportPanel` publishes it on its ordinary request and consumes generic progress solely from published products. `RenderViewBuilder` freezes that value into the View, `ShouldUseRayReconstruction` disables the independent Lit denoising stage for Reference without overriding the chosen presentation upscaler or quality, `FramePipelineGraph.cpp` owns topology reconstruction, `BuildRenderFrameGraph.cpp` invokes `AddSceneRenderingPasses`, and that ordinary composition function owns the direct Reference branch. Class-shaped graph stages, recipe, Lit wrapper class, graph factory, forwarding composition, dependency bag, global feature manager, selector mirror, target/show-flag split, settings copy, and RHI mode surface are absent. No feature session type or mutable feature state was added to public Renderer, RHI, Scene, View, settings, history, or capture contracts. |
 | Speculative-machinery audit | Production search returns no `ReferencePathTracerCamera`, sampling/sampler, digest, range, session, diagnostic/debug, or readback implementation. The feature capsule contains four small Private files and no shader directory. Stage 3 owns camera/sample code only with its first transport consumer; Stage 6 owns session/digest/ranges with accumulation. |
@@ -626,7 +775,7 @@ Migrate every existing mode to the ordinary per-view request/View route and dele
 
 1. Replace the mixed `Visualization` contract with `RenderViewMode` on `ViewportRenderRequest` and immutable `RenderView`.
 2. Preserve one focused HLSL numeric mirror and View-derived shader scalar for existing debug consumers.
-3. Let raster GBuffer consume Wireframe and `VisualizeBuffers` consume the current buffer/lobe/instance modes.
+3. Let raster GBuffer consume Wireframe and let the GBuffer, lighting, and GPU-scene visualization families consume their explicitly owned modes.
 4. Make `EditorViewportSession`, `ViewportPanel`, and `ViewportTopPanel` use `RenderViewMode` directly. Keep labels, icons, menu grouping, and interaction in Editor.
 5. Clean-break `CVarVisualization`, `Renderer::SubmitVisualization`, `VisualizationCommand`, Application callback/translation, `EditorViewportViewMode`, its preset resolver, duplicate shader resolver, and orphan APIs/includes.
 6. Keep Reference unavailable until Stage 7. Add no show flags, overrides, registry, settings bag, diagnostics, capture field, or RHI field.
@@ -653,7 +802,7 @@ Stage 6B is **IMPLEMENTED / VALIDATION DEFERRED** in committed source revision `
 | --- | --- |
 | Per-view contract | `ViewportRenderRequest::ViewMode` is the one submitted value; `RenderViewBuilder` freezes it into `RenderView::viewMode` and derives `ViewUniformData::RenderViewModeIndex` for shader consumers. |
 | Editor route | `EditorViewportSession` stores the same mode, `ViewportTopPanel` owns presentation, and `ViewportPanel::SetViewMode` alone advances request generation when it changes. |
-| Consumers | Raster GBuffer reads Wireframe; `VisualizeBuffers` and instance visualization read the focused View-uniform index. |
+| Consumers | Raster GBuffer reads Wireframe; the GBuffer and lighting visualization families read the focused View-uniform index, while instance identity generation and its focused resolve own `GpuSceneInstances`. |
 | Clean break | Global visualization CVar/command/application translation, `Visualization`, `EditorViewportViewMode`, preset translation, and duplicate shader visualization helpers are deleted without aliases. |
 | Boundary | Renderer Public adds only the generic enum and request field. RHI and Renderer settings remain unaware. |
 | Deferred evidence | C++ compilation, Editor/runtime launch, shader cook, visual switching, threaded/serial execution, and two-viewport exercise remain unrun and unpassed. |

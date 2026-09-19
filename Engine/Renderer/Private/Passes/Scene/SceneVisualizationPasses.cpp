@@ -2,7 +2,9 @@
 #include "Passes/Scene/SceneVisualizationPasses.h"
 
 #include "Frame/Graph/RenderFrameGraphSettings.h"
-#include "Passes/Debug/VisualizeBuffers.h"
+#include "Passes/Visualization/GBufferVisualization.h"
+#include "Passes/Visualization/GpuSceneVisualization.h"
+#include "Passes/Visualization/LightingVisualization.h"
 
 void AddSceneVisualizationPasses(
     FrameGraphBuilder& builder,
@@ -10,8 +12,7 @@ void AddSceneVisualizationPasses(
     RenderViewMode viewMode,
     RenderFrameGraphResources& resources)
 {
-	if (viewMode >= RenderViewMode::GBufferDiffuse)
-	{
-		AddVisualizeBuffersPass(builder, settings.RenderExtent, resources);
-	}
+	AddGBufferVisualizationPass(builder, settings.RenderExtent, viewMode, resources);
+	AddLightingVisualizationPass(builder, settings.RenderExtent, viewMode, resources);
+	AddGpuSceneVisualizationPass(builder, settings.RenderExtent, viewMode, resources);
 }

@@ -1,13 +1,17 @@
 #include "../../PCH.h"
 #include "Passes/Presentation/PresentationPasses.h"
 
-#include "Passes/Presentation/OutputEncoding.h"
+#include "Passes/Presentation/Display/DisplayMapping.h"
+#include "Passes/Presentation/Display/OutputEncoding.h"
 #include "Passes/Presentation/PresentationOutput.h"
-#include "Passes/Presentation/ToneMapping.h"
 
-void AddPresentationPasses(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings, RenderFrameGraphResources& resources)
+void AddPresentationPasses(
+    FrameGraphBuilder& builder,
+    const RenderFrameGraphSettings& settings,
+    RenderViewMode viewMode,
+    RenderFrameGraphResources& resources)
 {
-	const FrameGraphTextureHandle toneMappedColor = AddToneMappingPass(builder, settings.OutputExtent, resources);
-	const FrameGraphTextureHandle encodedColor = AddOutputEncodingPass(builder, settings, toneMappedColor);
+	const FrameGraphTextureHandle displayLinearColor = AddDisplayMappingPass(builder, settings.OutputExtent, viewMode, resources);
+	const FrameGraphTextureHandle encodedColor = AddOutputEncodingPass(builder, settings, displayLinearColor);
 	AddPresentationOutputPass(builder, settings, encodedColor, resources);
 }

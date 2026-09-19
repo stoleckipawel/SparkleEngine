@@ -3,6 +3,7 @@
 
 #include "Debug/RendererCVars.h"
 #include "Frame/RenderFrame.h"
+#include "Frame/Graph/ViewportFrameProductExports.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Providers/RendererImageProviderStack.h"
@@ -15,32 +16,6 @@
 #include "Scene/RenderScene.h"
 #include "View/RenderViewState.h"
 #include "View/ViewportDisplaySettings.h"
-
-#include <string_view>
-
-static void ExportTextureIfValid(FrameGraphBuilder& builder, FrameGraphTextureHandle handle, std::string_view name) noexcept
-{
-	if (handle.IsValid())
-	{
-		builder.ExportTexture(handle, name);
-	}
-}
-
-static void ExportFrameProductRoots(
-    FrameGraphBuilder& builder,
-    const RenderFrameGraphSettings& settings,
-    const RenderFrameGraphResources& resources) noexcept
-{
-	builder.ExportTexture(resources.ViewportProducts.FinalColorLdr, "Viewport.FinalColorLdr");
-	if (HasAnyRenderOutputFlags(settings.RequestedOutputs, RenderOutputFlags::SceneDepth))
-	{
-		ExportTextureIfValid(builder, resources.ViewportProducts.SceneDepth, "Viewport.SceneDepth");
-	}
-	if (HasAnyRenderOutputFlags(settings.RequestedOutputs, RenderOutputFlags::Normals))
-	{
-		ExportTextureIfValid(builder, resources.ViewportProducts.Normals, "Viewport.Normals");
-	}
-}
 
 RenderViewportExtent FramePipeline::ResolveOutputExtent() const noexcept
 {
@@ -56,6 +31,7 @@ RenderFrameGraphSettings FramePipeline::ResolveFrameGraphSettings() const noexce
 {
 	const RenderViewportExtent outputExtent = ResolveOutputExtent();
 	const ResolvedViewportDisplaySettings displaySettings = ResolvedViewportDisplaySettings::Resolve(m_viewportRenderRequest.Exposure);
+
 	return RenderFrameGraphSettings{
 	    .RenderExtent = m_imageProviders->ResolveRenderExtent(outputExtent),
 	    .OutputExtent = outputExtent,
@@ -78,7 +54,7 @@ void FramePipeline::InitializeFrameGraph(const RenderFrameGraphSettings& setting
 	auto frameGraph = std::make_unique<FrameGraph>(&m_deviceServices.GetRenderHardwareInterface(), &m_window);
 	FrameGraphBuilder builder(*frameGraph, m_renderPassRuntimeCache);
 	RenderFrameGraphResources resources = BuildRenderFrameGraph(builder, settings);
-	ExportFrameProductRoots(builder, settings, resources);
+	ExportViewportFrameProducts(builder, settings, resources);
 
 	m_frameGraphSettings = settings;
 	m_builtGBufferAlgorithm = CVarGBufferAlgorithm.Get();

@@ -5,8 +5,8 @@
 #include "Debug/RendererCVars.h"
 #include "Passes/GBuffer/GBufferRenderTargets.h"
 #include "Passes/GBuffer/LinearizeDeviceZ.h"
-#include "Passes/GBuffer/RasterizedGBufferMesh.h"
-#include "Passes/GBuffer/RayTracingGBufferMesh.h"
+#include "Passes/GBuffer/Raster/RasterizedGBufferMesh.h"
+#include "Passes/GBuffer/RayTracing/RayTracingGBufferMesh.h"
 #include "Passes/GBuffer/SkyMotionVector.h"
 #include "Scene/RayTracing/RenderRayTracingScene.h"
 
@@ -17,9 +17,11 @@ void AddGBufferPasses(
     RenderRayTracingScene& rayTracingScene,
     RenderFrameGraphResources& resources)
 {
-	CreateGBufferRenderTargets(builder, sceneExtent, resources);
+	const GBufferAlgorithm algorithm = CVarGBufferAlgorithm.Get();
 
-	switch (CVarGBufferAlgorithm.Get())
+	CreateGBufferRenderTargets(builder, sceneExtent, algorithm, resources);
+
+	switch (algorithm)
 	{
 		case GBufferAlgorithm::Rasterized:
 			AddRasterizedGBufferMeshPass(builder, gpuMeshCache, resources);

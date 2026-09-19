@@ -4,7 +4,7 @@
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Presentation/PresentationPasses.h"
-#include "Passes/RayTracing/RayTracingScenePass.h"
+#include "Passes/Scene/RayTracingScenePass.h"
 #include "Passes/Scene/SceneRenderingPasses.h"
 #include "Scene/RenderScene.h"
 
@@ -24,7 +24,8 @@ RenderFrameGraphResources FramePipeline::BuildRenderFrameGraph(FrameGraphBuilder
 	    *m_imageProviders,
 	    *m_referencePathTracerSession,
 	    resources);
-	AddPresentationPasses(builder, settings, resources);
+
+	AddPresentationPasses(builder, settings, m_viewportRenderRequest.ViewMode, resources);
 
 	return resources;
 }

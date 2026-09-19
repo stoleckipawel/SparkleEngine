@@ -1,18 +1,14 @@
 #pragma once
 
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "RayTracing/Effects/Shadows/RayTracedShadowPassInput.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowUniformData.h"
+#include "Scene/Preparation/PreparedRenderScene.h"
 
-namespace RayTracedShadowPassData
-{
-	RayTracedShadowUniformData Build(const RayTracedShadowPassInput& input) noexcept;
-}
+RayTracedShadowUniformData BuildRayTracedShadowUniformData(const PreparedRenderScene& scene) noexcept;
 
 template <typename TParameterInstance> void BindRayTracedShadowParameters(FrameGraphBuilder& builder, TParameterInstance& parameters)
 {
-	builder.AddParameterSetup<RayTracedShadowPassInput>(
+	builder.AddParameterSetup<PreparedRenderScene>(
 	    parameters,
-	    [](auto& fields, const RayTracedShadowPassInput& input)
-	    { fields.RayTracedShadowConstants = RayTracedShadowPassData::Build(input); });
+	    [](auto& fields, const PreparedRenderScene& scene) { fields.RayTracedShadowConstants = BuildRayTracedShadowUniformData(scene); });
 }

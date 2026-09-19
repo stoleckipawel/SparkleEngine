@@ -1,6 +1,6 @@
-# Debug View Delivery Plan
+#Debug View Delivery Plan
 
-**Status:** implementation plan; not proof of build, runtime, visual, backend, or release acceptance
+**Status : **implementation plan; not proof of build, runtime, visual, backend, or release acceptance
 
 **Architecture authority:** [Render View Modes](ViewModes.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
 
@@ -27,10 +27,12 @@ The accepted value order is Lit `0`, Reference Path Tracer `1`, Wireframe `2`, c
 
 1. Put `RenderViewMode` on the ordinary viewport request and immutable View.
 2. Preserve a focused shader scalar derived from the View for existing debug shaders.
-3. Let raster GBuffer consume Wireframe and `VisualizeBuffers` consume buffer/lobe/instance values.
-4. Make Editor session and panel use the same type directly; keep labels/icons/menu grouping local to Editor.
-5. Delete global visualization selection, command translation, Editor mirror enum/preset resolver, duplicate shader resolver, and orphan includes/APIs in one clean break.
-6. Keep RHI and Renderer settings unaware.
+3. Let raster GBuffer consume Wireframe and let the independently activated GBuffer, lighting, and GPU-scene visualization families consume their own modes and products.
+4. Make Editor session and panel use the same type directly;
+keep labels / icons / menu grouping local to Editor.5. Delete global visualization selection, command translation,
+    Editor mirror enum / preset resolver, duplicate shader resolver,
+    and orphan includes / APIs in one clean break.6. Keep RHI and Renderer settings unaware.7. Partition debug resolve by GBuffer, lighting,
+    and GPU - scene product families.Give each family an explicit mode predicate, pass parameter surface, and shader; never use enum ordering or a catch-all visualization shader as family membership.
 
 This source shape is present in the current changelist. Compilation and runtime checks remain deferred.
 
@@ -40,28 +42,67 @@ This source shape is present in the current changelist. Compilation and runtime 
 2. Use the accepted request value to select presentation upscaling instead of ray reconstruction without overriding the chosen upscaler or quality, and for one direct Lit-versus-Reference branch in `AddSceneRenderingPasses` below `FramePipeline::BuildRenderFrameGraph`.
 3. Let the private Reference feature read the immutable View value for lifecycle activation.
 4. Delete `CVarReferencePathTracer`, its built cache, and all selector aliases.
-5. Keep the original frame shell and private feature ownership; do not add a recipe hierarchy, settings bag, diagnostics surface, or RHI state.
+5. Keep the original frame shell and private feature ownership;
+do
+	not add a recipe hierarchy, settings bag, diagnostics surface,
+	    or RHI state
+	           .
 
-This source shape is present in the current changelist. The Editor row remains unavailable until the Reference UX stage connects the live product; source presence is not usable-path proof.
+	       This source shape is present in the current changelist.The Editor row remains unavailable until the Reference UX stage connects
+	           the live product;
+source presence is not usable
+        - path proof.
 
-## DVP-3 - Correct Presentation Domains
+          ##DVP
+        - 3
+        - Correct Presentation Domains
 
-1. Classify each mode as scene-referred HDR or display-linear exact.
-2. Replace producer-local HDR preview curves with one owned display-mapping route.
-3. Apply exposure and the tone curve once to HDR modes; bypass both for exact modes; always preserve output encoding.
-4. Keep exposure history warm from the Lit scene and make render/output extent sampling explicit.
-5. Do not introduce show flags merely to route stock mode defaults. Resolve stock presentation policy from the selected mode at its presentation owner.
+        1. Classify each mode as scene
+        - referred HDR
+    or display - linear exact.2. Replace producer - local HDR preview curves with one owned display - mapping route.3. Apply exposure
+        and the tone curve once to HDR modes; bypass both for exact modes;
+always preserve output encoding.4. Keep exposure history warm from the Lit scene and make render
+                / output extent sampling explicit.5. Do not introduce show flags merely to route stock mode
+                      defaults.Resolve stock presentation policy from the selected mode at its presentation owner.
 
-## DVP-4 - Add Only Independent Controls
+                  ##DVP
+            - 4
+            - Add Only Independent Controls
 
-A per-view control may be added only with a real independent consumer and UX. Gizmo or overlay visibility may qualify. Wireframe, Reference Path Tracer, and debug products do not: they remain modes. Any added control must be orthogonal, resolved below mode selection, absent from RHI, and delivered with its disabled behavior and focused check.
+                A per
+            - view control may be added only with a real independent consumer
+        and UX.Gizmo
+    or overlay visibility may qualify.Wireframe,
+    Reference Path Tracer, and debug products do not : they remain modes.Any added control must be orthogonal,
+    resolved below mode selection, absent from RHI,
+    and delivered with its disabled behavior and focused check.
 
-## DVP-5 - Prove The Contract
+        ##DVP
+    - 5
+    - Prove The Contract
 
-Exercise enum/HLSL parity, every consumer, two-viewport isolation, Lit/Reference/Lit topology, exact/HDR numeric presentation, extent changes, output encoding, and advertised D3D12/Vulkan rows. Record only checks actually run in the owning completion report.
+            Exercise enum
+        / HLSL parity,
+    every consumer, two - viewport isolation, Lit / Reference / Lit topology, exact / HDR numeric presentation, extent changes,
+    output encoding,
+    and advertised D3D12
+        / Vulkan rows.Record only checks actually run in the owning completion report.
 
-## Ready-To-Use Source Cleanup Prompt
+          ##Ready
+    - To
+    - Use Source Cleanup Prompt
 
-```text
-Reconcile the live Debug Views and Reference Path Tracer source to Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/ViewModes.md. Keep RenderViewMode as the sole host-independent per-view rendering choice on ViewportRenderRequest and immutable RenderView. Keep Editor labels/icons/menu layout local while using the same enum directly. Consume the value only at the owning frame-composition, raster, debug-resolve, and feature-lifecycle decisions. Delete parallel Editor enums, preset translators, visualization targets, mode-shaped show flags, selection CVars, command bridges, graph/feature settings copies, compatibility aliases, and RHI fields. Preserve ReferencePathTracer = 1 and contiguous values. Keep the Reference implementation private and the shared frame shell unchanged. Add no diagnostics, registry, generic settings bag, recipe hierarchy, or speculative controls. Run focused source checks, architecture_boundary_check, documentation link/anchor checks, and git diff --check; report builds and runtime checks as deferred unless actually run.
+```text Reconcile the live Debug Views and Reference Path Tracer source to Docs / Architecture / Modules / Engine / Renderer / Features
+        / DebugViews / ViewModes.md.Keep RenderViewMode as the sole host
+    - independent per
+    - view rendering choice on ViewportRenderRequest and immutable RenderView.Keep Editor labels / icons
+        / menu layout local while using the same enum directly.Consume the value only at the owning frame
+    - composition,
+    raster, debug - resolve, and feature - lifecycle decisions.Delete parallel Editor enums, preset translators, visualization targets,
+    mode - shaped show flags, selection CVars, command bridges, graph / feature settings copies, compatibility aliases,
+    and RHI fields.Preserve ReferencePathTracer =
+        1 and contiguous values.Keep the Reference implementation private and the shared frame shell unchanged.Add no diagnostics,
+                            registry, generic settings bag, recipe hierarchy, or speculative controls.Run focused source checks,
+                            architecture_boundary_check, documentation link / anchor checks, and git diff-- check;
+report builds and runtime checks as deferred unless actually run.
 ```

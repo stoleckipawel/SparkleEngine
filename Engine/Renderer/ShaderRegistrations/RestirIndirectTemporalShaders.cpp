@@ -1,5 +1,5 @@
 #include "PCH.h"
 
-#include "Passes/RayTracing/RestirIndirectTemporalShader.h"
+#include "Passes/Lighting/Restir/Indirect/RestirIndirectTemporalShader.h"
 
-IMPLEMENT_GLOBAL_SHADER(RestirIndirectTemporalCS, "/Engine/Passes/RayTracing/RestirIndirectTemporal.hlsl", "main", Compute);
+IMPLEMENT_GLOBAL_SHADER(RestirIndirectTemporalCS, "/Engine/Passes/Lighting/Restir/Indirect/RestirIndirectTemporal.hlsl", "main", Compute);

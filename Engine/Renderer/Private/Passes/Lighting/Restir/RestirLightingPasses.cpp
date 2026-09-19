@@ -1,8 +1,8 @@
 #include "../../../PCH.h"
 #include "Passes/Lighting/Restir/RestirLightingPasses.h"
 
-#include "Passes/Lighting/Restir/RestirDirectLightingPasses.h"
-#include "Passes/Lighting/Restir/RestirIndirectLightingPasses.h"
+#include "Passes/Lighting/Direct/RestirDirectLightingPasses.h"
+#include "Passes/Lighting/Restir/Indirect/RestirIndirectLightingPasses.h"
 #include "Passes/Lighting/Restir/RestirLightingResources.h"
 
 void AddRestirLightingPasses(

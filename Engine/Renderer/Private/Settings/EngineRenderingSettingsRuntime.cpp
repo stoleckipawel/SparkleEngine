@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "Settings/EngineRenderingSettingsRuntime.h"
 
-#include "Passes/Presentation/OutputEncodingCVars.h"
+#include "Passes/Presentation/Display/OutputEncodingCVars.h"
 #include "View/ViewportDisplayCVars.h"
 #include "RayReconstruction/RayReconstructionSettings.h"
 #include "Debug/RendererCVars.h"

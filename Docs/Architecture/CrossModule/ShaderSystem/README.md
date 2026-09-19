@@ -1,85 +1,158 @@
-# Shader System Architecture
+#Shader System Architecture
 
-**Status:** feature dossier; target architecture, source-reconciled but not executable proof
+**Status : **feature dossier;
+target architecture,
+    source
+    - reconciled but not executable proof
 
-**Responsibility:** shader authoring identity, compilation inputs, cooked map/library shape, runtime materialization, typed graph use, ownership, failure policy, and capability boundaries
+        * *Responsibility : **shader authoring identity,
+    compilation inputs, cooked map / library shape, runtime materialization, typed graph use, ownership, failure policy,
+    and capability boundaries
 
-**Delivery sequence:** [Shader System Delivery Plan](Plan.md)
+            **Delivery sequence : **[Shader System Delivery Plan](Plan.md)
 
-**Migration provenance:** [Shader System Migration Baseline](MigrationBaseline.md)
+        * *Migration provenance : **[Shader System Migration Baseline](MigrationBaseline.md)
 
-**Current source inventory:** [Shader Compilation Capability Inventory](../../Modules/Tools/ShaderCompiler/README.md)
+        * *Current source inventory : **[Shader Compilation Capability Inventory](../../ Modules / Tools / ShaderCompiler / README.md)
 
-**Current readiness:** **50/100** — the source-integrated shader route is substantial; candidate compiler/backend/ABI, failure, performance, package, and adoption evidence remains absent. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
+        * *Current readiness : ****50 / 100 * * — the source
+    - integrated shader route is substantial;
+candidate compiler / backend / ABI, failure, performance, package,
+    and adoption evidence remains absent
+            .See[Current Feature Readiness](../../../ Acceptance / CurrentReadiness.md #foundation - world - content - shaders - and-tools)
+            .
 
-## At A Glance
+        ##At A Glance
 
-| Current/reconciled foundation | Chosen architecture | Explicitly deferred or rejected |
-| --- | --- | --- |
-| virtual shader sources, generated global shader map and cooked code library, typed runtime lookup, lazy generation-owned pipeline materialization, dependency manifest, and change selection | one concrete shader class owns source/entry/stage and its direct-dispatch parameter contract; frame graph owns semantic use; Renderer materializes complete pipelines; RHI lowers them | universal authored program/pass wrappers, filename identity, runtime compilation, generic permutations, PSO prewarming, duplicate AS shader variants, and a parallel shader subsystem |
+        | Current / reconciled foundation | Chosen architecture | Explicitly deferred
+    or rejected | | -- -| -- -| -- -| | virtual shader sources,
+    generated global shader map and cooked code library, typed runtime lookup, lazy generation - owned pipeline materialization,
+    dependency manifest,
+    and change selection | one concrete shader class owns source / entry / stage and its direct - dispatch parameter contract;
+frame graph owns semantic use;
+Renderer materializes complete pipelines;
+RHI lowers them | universal authored program / pass wrappers, filename identity, runtime compilation, generic permutations, PSO prewarming,
+    duplicate AS shader variants,
+    and a parallel shader subsystem |
 
-```mermaid
-flowchart LR
-    Shader[Concrete shader class<br/>source, entry, stage, parameters] --> Cook[ShaderCompiler<br/>dependency graph and compile jobs]
-    Cook --> Map[Global shader map]
-    Cook --> Library[Cooked code library]
-    Map --> Runtime[Renderer generation<br/>typed lookup and materialization]
-    Library --> Runtime
-    Runtime --> Graph[Frame graph semantic use]
-    Graph --> RHI[RHI pipeline and command lowering]
-    RHI --> Retire[All-queue completion retirement]
+```mermaid flowchart LR Shader[Concrete shader class<br /> source, entry, stage, parameters]--
+        > Cook[ShaderCompiler<br /> dependency graph and compile jobs] Cook-- > Map[Global shader map] Cook--
+        > Library[Cooked code library] Map-- > Runtime[Renderer generation<br /> typed lookup and materialization] Library--
+        > Runtime Runtime-- > Graph[Frame graph semantic use] Graph-- > RHI[RHI pipeline and command lowering] RHI--
+        > Retire[All - queue completion retirement]
 ```
 
-This page owns the target distinctions and design. The linked capability inventory owns the dated current source snapshot, and the plan owns migration order; neither is proof that the full target passed.
+          This page owns the target distinctions and design.The linked capability inventory owns the dated current source snapshot,
+    and the plan owns migration order;
+neither is proof that the full target passed.
 
-## Dossier Route
+    ##Dossier Route
 
-| Concern | Owner |
-| --- | --- |
-| enduring shader-system semantics and target shape | this page |
-| final criteria, failures, evidence pack, and completion | [Acceptance](Acceptance.md) |
-| dated current-source capability | [Shader Compilation Capability Inventory](../../Modules/Tools/ShaderCompiler/README.md) and [Renderer Shader Programs](../../Modules/Engine/Renderer/Features/ShaderRuntime/ShaderProgramCatalog.md) |
-| delivery order and phase exits | [Shader System Delivery Plan](Plan.md) |
-| external precedent and deferred PSO options | [Shader System Design Precedent](DesignPrecedent.md) |
-| frozen pre-migration inventory and deletion ledger | [Shader System Migration Baseline](MigrationBaseline.md) |
+    | Concern | Owner | | -- -| -- -| | enduring shader - system semantics and target shape | this page | | final criteria,
+    failures, evidence pack,
+    and completion | [Acceptance](Acceptance.md) | | dated current - source capability
+    | [Shader Compilation Capability Inventory](../../ Modules / Tools / ShaderCompiler / README.md) and[Renderer Shader
+            Programs](../../ Modules / Engine / Renderer / Features / ShaderRuntime / ShaderProgramCatalog.md)
+    | | delivery order and phase exits | [Shader System Delivery Plan](Plan.md) | | external precedent and deferred PSO options
+    | [Shader System Design Precedent](DesignPrecedent.md) | | frozen pre - migration inventory and deletion ledger
+    | [Shader System Migration Baseline](MigrationBaseline.md) |
 
-## Purpose And Authority
+    ##Purpose And Authority
 
-This document owns the enduring shader-system design. It does not own phase order, historical pre-migration counts, implementation status, or executable evidence. Code and build configuration prove current implementation; the adjacent acceptance contract owns final proof requirements; the delivery plan owns remaining work and validation order; the migration baseline preserves dated audit evidence.
+        This document owns the enduring shader
+        - system design.It does not own phase order,
+    historical pre - migration counts, implementation status,
+    or executable evidence.Code and build configuration prove current implementation;
+the adjacent acceptance contract owns final proof requirements;
+the delivery plan owns remaining work and validation order;
+the migration baseline preserves dated audit evidence.
 
-## Adversarial Review Verdict
+    ##Adversarial Review Verdict
 
-The 2026-08-15 review assumed every proposed Unreal/vendor analogy was wrong until a primary source, current Sparkle code, and a local requirement established its exact scope. The result keeps the end-to-end direction but narrows several earlier overclaims:
+        The 2026
+    - 08 - 15 review assumed every proposed Unreal / vendor analogy was wrong until a primary source,
+    current Sparkle code,
+    and a local requirement established its exact scope.The result keeps the end - to
+        - end direction but narrows several earlier overclaims :
 
-| Challenged claim | Verdict and proof boundary |
-| --- | --- |
-| The shader filename can replace pass identity. | Rejected. Epic global shaders, Donut/NVRHI-style shader creation, current multi-entry/multi-stage cases, and Sparkle's `GBuffer` prove source location, entry, shader stage, pipeline composition, and graph operation are different identities. |
-| Every pass needs a handwritten `PassName`. | Rejected. The semantic event label is necessary, but the one-to-one default can derive from the concrete shader class; only instance-specific text remains authored at scheduling. |
-| Authors need named shader packages. | Rejected. Authors need concrete shader classes and cooked runtime artifacts; physical map/library membership is generated delivery policy. |
+    | Challenged claim | Verdict and proof boundary | | -- -| -- -| | The shader filename can replace pass identity.
+    | Rejected.Epic global shaders,
+    Donut / NVRHI - style shader creation, current multi - entry / multi - stage cases,
+    and Sparkle's `GBuffer` prove source location, entry, shader stage, pipeline composition, and graph operation are different identities. |
+    | Every pass needs a handwritten `PassName`.| Rejected.The semantic event label is necessary,
+    but the one - to - one default can derive from the concrete shader class;
+only instance - specific text remains authored at scheduling.| | Authors need named shader packages.
+    | Rejected.Authors need concrete shader classes and cooked runtime artifacts; physical map/library membership is generated delivery policy. |
 | One shader parameter struct must be every pass struct. | Overconstrained and corrected. Epic RDG intentionally reuses shader parameters for common one-to-one passes but also supports pass parameters without shader semantics. Sparkle selects one owner per shader-visible field plus explicit pass-envelope composition. |
 | A compile-input hash requires a persistent compile-result cache. | Rejected. Sparkle needs deterministic input identity for diagnostics, deduplication within one operation, and provenance, but every selected job still invokes the compiler. |
-| A deduplicated compressed/streamed physical code library is always required. | Not proven for the current catalog. Exact hashes, maps, and code-record schemas are required; physical merging, compression, chunks, and streaming require measured byte/I/O value. |
-| D3D12 pipeline libraries and a long-lived shader/module cache are universal baseline best practice. | Rejected as universal. Complete pipeline descriptions, correct lazy graph-time materialization, and first-use measurement are the base contract. Async preparation, native caches, and shader/module object retention are backend/capability-specific measured follow-ups. |
-| A graphics graph caller should author one complete pipeline-state aggregate. | Rejected. Epic keeps a complete RHI initializer internally, but mesh-pass code supplies narrow render-state overrides, mesh/material processing supplies vertex/raster facts, and RDG attachments supply target compatibility. Sparkle's current `GraphicsShaderPipelineState` duplicates graph-owned formats and exposes backend-shaped mechanics at the feature call. |
+| A deduplicated compressed/streamed physical code library is always required. | Not proven for the current catalog. Exact hashes, maps, and code-record schemas are required;
+physical merging, compression, chunks,
+    and streaming require measured byte / I / O value.|
+    | D3D12 pipeline libraries and a long - lived shader / module cache are universal baseline best practice.
+    | Rejected as universal.Complete pipeline descriptions,
+    correct lazy graph - time materialization, and first - use measurement are the base contract.Async preparation, native caches,
+    and shader / module object retention are backend / capability - specific measured follow - ups.|
+    | A graphics graph caller should author one complete pipeline - state aggregate.
+    | Rejected.Epic keeps a complete RHI initializer internally,
+    but mesh - pass code supplies narrow render - state overrides, mesh / material processing supplies vertex / raster facts,
+    and RDG attachments supply target compatibility.Sparkle's current `GraphicsShaderPipelineState` duplicates graph-owned formats and exposes backend-shaped mechanics at the feature call. |
 
-“Epic-aligned” therefore means matching responsibility boundaries, invariants, failure behavior, and authoring ergonomics—not copying class names, macro volume, material-system scale, or every optional cache.
+“Epic - aligned” therefore means matching responsibility boundaries, invariants, failure behavior,
+    and authoring ergonomics—not copying class names, macro volume, material - system scale,
+    or every optional cache.
 
-## Decision Summary
+        ##Decision Summary
 
-1. Sparkle should adopt Unreal's global-shader flow as its core mental model: one concrete shader class owns its parameter contract and compile hooks; one implementation declaration supplies virtual source, entry point, and stage; cooking produces a global shader map and code records; runtime resolves a typed shader reference from the active map.
-2. A one-shader compute pass does not need an authored program alias, pass-registration macro, duplicate pass-parameter struct, or forwarding pass class. The frame graph should accept the shader type, its nested `Parameters`, a diagnostic label only when the generated default is insufficient, and the dispatch dimensions.
-3. Graphics work names the concrete vertex/pixel shader types at the draw site and supplies a real draw collaborator. Pass code sets only narrow blend/depth/stencil intent; graph attachments, mesh geometry, material policy, shader references, and the runtime pipeline owner contribute the rest. Ray tracing uses one narrowly scoped `RayTracingPipelineComposition` only because exports and hit groups form a real multi-stage execution unit. Sparkle does not add a universal authored `ShaderProgram` or frontend pipeline-description abstraction.
-4. A shader class declares nested `Parameters` only when that shader is a direct graph-dispatch binding owner. Compute and ray-generation shaders normally own them; miss, hit, intersection, and callable shaders do not repeat the ray-generation root schema. The frame graph consumes the selected dispatch shader's schema to declare resource access, and runtime binding/reflection validation derive from it. A multi-shader, shaderless, or local-record owner may add one small envelope only for fields that no shader root schema already owns.
+        1. Sparkle should adopt
+            Unreal's global-shader flow as its core mental model: one concrete shader class owns its parameter contract and compile hooks; one implementation declaration supplies virtual source, entry point, and stage; cooking produces a global shader map and code records; runtime resolves a typed shader reference from the active map. 2. A
+                one
+        - shader compute pass does not need an authored program alias,
+    pass - registration macro, duplicate pass - parameter struct, or forwarding pass class.The frame graph should accept the shader type,
+    its nested `Parameters`, a diagnostic label only when the generated default is insufficient,
+    and the dispatch dimensions.3. Graphics work names the concrete vertex
+    / pixel shader types at the draw site and supplies a real draw collaborator.Pass code sets only narrow blend / depth / stencil intent;
+graph attachments, mesh geometry, material policy, shader references,
+    and the runtime pipeline owner contribute the rest.Ray tracing uses one narrowly
+            scoped `RayTracingPipelineComposition` only because exports and hit groups form a real multi
+        - stage execution unit.Sparkle does not add a universal authored `ShaderProgram`
+    or frontend pipeline - description abstraction.4. A shader class declares nested `Parameters` only when that shader is a direct graph
+            - dispatch binding owner.Compute
+        and ray - generation shaders normally own them; miss, hit, intersection, and callable shaders do not repeat the ray-generation root schema. The frame graph consumes the selected dispatch shader's schema to declare resource access, and runtime binding/reflection validation derive from it. A multi-shader, shaderless, or local-record owner may add one small envelope only for fields that no shader root schema already owns.
 5. A semantic render-pass label remains necessary for frame-graph diagnostics, GPU markers, errors, captures, and profiling, but it does not select code. Generate the one-to-one default from the shader type and accept an instance override for mip, cascade, phase, view, or repeated use.
 6. A shader filename is a virtual source input, not the pass, shader-map, pipeline, or diagnostic identity.
 7. Sparkle should keep cooked shader data but replace handwritten packages with two generated authorities: `GlobalShaderMap` for typed logical lookup and `CookedShaderLibrary` for validated code records addressed by hash. The runtime pipeline owner holds generation-safe binding layouts and lazily materialized compute/graphics pipelines derived from active-map shader references plus complete internal state keys.
-8. Permutation infrastructure is deliberately postponed until after the non-permuted shader-map path is complete and accepted. The base map key is `(ShaderTypeId, Target)`; a later measured follow-up may extend it with a typed `PermutationId` without changing the lean one-variant authoring path.
-9. PSO precaching/prewarming, preload controls, and driver-cache integration remain outside this architecture. Exact lazy materialization replaces eager speculative variants before command recording; add earlier preparation only after measured first-use hitch evidence justifies it.
-10. Shader Tools should center `Apply Changed`, semantic shader/source selection, one operation state, source-located errors, and contextual next actions. Package/layout IDs, hashes, raw artifacts, full rebuild/reload, backend flags, and runtime materialization mechanics remain expert details.
-11. Inline ray queries and full ray-tracing pipelines remain different execution systems that share shader identity, parameters, maps, scene/TLAS/material data, semantic HLSL kernels, runtime generation, and retirement. Their native invocation and SBT mechanisms remain distinct, while this one plan delivers both without a parallel shader architecture.
-12. Classic TLAS versus partitioned TLAS and descriptor encoding versus device-address storage are RHI binding mechanics, not shader identities or effect choices. One shader class declares one semantic acceleration-structure parameter and one HLSL entry. The selected backend/provider lowers that parameter to its exact native descriptor representation. Sparkle deletes the duplicate device-address shader, raw-address shader uniform fields, access-mode frontend, and no-query shadow shader; it does not replace them with a hidden compiler variant or author-facing permutation.
-13. Shader resources use explicit view vocabulary: `CreateSRV` for read-only texture/buffer views and `CreateUAV` for writable texture/buffer views. Acceleration structures use one semantic `CreateAccelerationStructureBinding`; raster/depth outputs use neutral render-target/depth-target attachment bindings. Generic `Read` aliases and neutral `CreateRTV` / `CreateDSV` spellings do not survive.
-14. Raster attachments carry load/store/clear and depth/stencil access. Their graph resource descriptions derive target formats/count/sample compatibility automatically. `GpuMesh` supplies vertex input and topology; the mesh-pass owner supplies material-dependent fill/cull and pass render state; the pipeline owner assembles and keys the complete neutral descriptor. No caller repeats these facts.
+8. Permutation infrastructure is deliberately postponed until after the non-permuted shader-map path is complete and accepted. The base map key is `(ShaderTypeId, Target)`;
+a later measured follow - up may extend it with a typed `PermutationId` without changing the lean one
+    - variant authoring path.9. PSO precaching / prewarming,
+    preload controls,
+    and driver
+    - cache integration remain outside this architecture.Exact lazy materialization replaces eager speculative variants before command
+          recording;
+add earlier preparation only after measured first - use hitch evidence justifies it.10. Shader Tools should center `Apply Changed`,
+    semantic shader / source selection, one operation state, source - located errors, and contextual next actions.Package / layout IDs,
+    hashes, raw artifacts, full rebuild / reload, backend flags,
+    and runtime materialization mechanics remain expert details.11. Inline ray queries and full ray
+    - tracing pipelines remain different execution systems that share shader identity,
+    parameters, maps, scene / TLAS / material data, semantic HLSL kernels, runtime generation,
+    and retirement.Their native invocation and SBT mechanisms remain distinct,
+    while this one plan delivers both without a parallel shader architecture.12. Classic TLAS versus partitioned TLAS and descriptor
+        encoding versus device
+    - address storage are RHI binding mechanics,
+    not shader identities
+    or effect choices.One shader class declares one semantic acceleration - structure parameter
+        and one HLSL entry.The selected backend
+                / provider lowers that parameter to its exact native descriptor representation.Sparkle deletes the duplicate device
+            - address shader,
+    raw - address shader uniform fields, access - mode frontend, and no - query shadow shader; it does not replace them with a hidden compiler variant or author-facing permutation.
+13. Shader resources use explicit view vocabulary: `CreateSRV` for read-only texture/buffer views and `CreateUAV` for writable texture/buffer views. Acceleration structures use one semantic `CreateAccelerationStructureBinding`;
+raster / depth outputs use neutral render - target / depth
+        - target attachment bindings.Generic `Read` aliases and neutral `CreateRTV`
+            / `CreateDSV` spellings do not survive.14. Raster attachments carry load / store / clear
+    and depth / stencil access.Their graph resource descriptions derive target formats / count
+        / sample compatibility automatically. `GpuMesh` supplies vertex input
+    and topology;
+the mesh - pass owner supplies material - dependent fill / cull and pass render state;
+the pipeline owner assembles and keys the complete neutral descriptor. No caller repeats these facts.
 
 The short answer is therefore:
 
@@ -139,7 +212,9 @@ Pass labels and debug names may be human-readable. Lookup and reuse identities m
                                       record draw/dispatch
 ```
 
-There is one lookup chain, not a catalog plus handwritten program registry plus package cache. `GlobalShaderCatalog` describes what can be compiled. `GlobalShaderMap` is the active target-specific typed lookup. `CookedShaderLibrary` supplies validated bytes by hash. `RenderPassRuntimeCache` derives generation-bound layouts and pipelines from shader references plus the actual draw/dispatch description. The RHI owns neutral descriptors, record validation primitives, and backend objects; Renderer owns concrete shader classes, graph use, and runtime generation policy; ShaderCompiler owns source dependency, bounded compilation, map/library generation, and transactional publication.
+There is one lookup chain, not a catalog plus handwritten program registry plus package cache. `GlobalShaderCatalog` describes what can be compiled. `GlobalShaderMap` is the active target-specific typed lookup. `CookedShaderLibrary` supplies validated bytes by hash. `RenderPassRuntimeCache` derives generation-bound layouts and pipelines from shader references plus the actual draw/dispatch description. The RHI owns neutral descriptors, record validation primitives, and backend objects;
+Renderer owns concrete shader classes, graph use, and runtime generation policy;
+ShaderCompiler owns source dependency, bounded compilation, map/library generation, and transactional publication.
 
 ## Unreal-Aligned System Model
 
@@ -152,70 +227,86 @@ Unreal does not have one object called a "shader package" that owns every concer
 | `TShaderPermutationDomain` | typed, bounded permutation dimensions and stable IDs | deferred follow-up after the one-variant shader-map path is accepted | one registered shader type/target variant; no authored permutation domain |
 | `FShaderCompilerInput` | complete read-only input for one compilation | `ShaderCompileRequest` | implemented as the package-free compiler input for one shader type and target |
 | `FShaderCompileJob` / `FShaderCompileJobKey` / input hash | scheduled unit and logical shader/target key, plus a separate hash over all compiler-affecting inputs | `ShaderCompileJob` plus `ShaderCompileInputHash`; a small logical job ID may exist only for scheduling | implemented compile job and result records with in-operation identical-input fan-out |
-| `FShaderCompilingManager` and Shader Compile Workers | asynchronous coordination and compiler-process isolation | compile-job coordination on the existing cooker `TaskExecutor`; optional worker processes only when justified | one out-of-process cooker and one bounded `TaskExecutor` compile batch; no second pool or persistent compiler worker |
-| Global Shader Map / `TShaderMapRef<T>` | typed target-specific lookup and shader lifetime | `GlobalShaderMap` / `ShaderRef<Shader>` | implemented typed lookup into one validated map/library generation |
-| `FShaderMapResourceCode` | code hashes and map resource content | generated map resource record | map entries reference content-addressed library records by exact code hash |
-| `FShaderCodeLibrary` | cook-time collection of unique code and runtime loading by hash | `CookedShaderLibrary` | implemented as `CookedShaderLibrary.slib` with exact-hash lookup and publication validation |
-| `FShaderPipelineType` | optional declared stage grouping | no universal authoring abstraction; graphics names stage types at the draw site and ray tracing alone uses a focused typed pipeline composition | graphics draw names typed VS/PS stages; RT products use focused typed compositions and hit groups |
-| RDG shader/pass parameter structs | shader parameters can directly serve a one-to-one pass; pass envelopes and shaderless pass parameters are also valid | one shader-visible `Parameters` schema, reused or composed into a pass envelope without duplicating shader fields | nested typed `Parameters` drive shader binding; graph-only attachments and feature collaborators remain separate owners |
-| RDG event name | diagnostic/profiler identity of one graph operation | generated default label with an optional instance override | frame-graph pass names are formatted into diagnostic and event-scope labels; instance labels remain at scheduling sites |
-| `FMeshPassProcessorRenderState` | narrow pass-wide blend, depth/stencil, access, stencil-reference, and uniform-buffer overrides | smaller `RasterPassRenderState` containing only semantic blend/depth-stencil and dynamic stencil-reference choices; Sparkle attachment access stays graph-owned | `RasterPassRenderState` owns narrow pass intent; graph attachments and prepared mesh work own their facts |
-| `FGraphicsMinimalPipelineStateInitializer` | mesh-draw fixed-function and shader state without render-target state | internal `GraphicsPipelineKey` inputs contributed by shader references, mesh/material facts, and pass render state | `GraphicsPipelineRequest` and `GraphicsPipelineKey` combine exact shader, binding, pass, mesh, and attachment facts |
-| `FGraphicsPipelineRenderTargetsInfo` / `ExtractRenderTargetsInfo` | render-target information extracted from RDG attachment bindings | compatibility signature derived from graph resource descriptions; load/store/clear/access remain graph execution and validation facts | `GraphicsAttachmentSignature` is derived by the frame graph from bound attachments |
-| `FGraphicsPipelineStateInitializer` / `SetGraphicsPipelineState` | complete RHI-facing state and final materialization/binding | private complete `GraphicsPipelineDesc` assembled and lowered by Renderer/RHI owners | Renderer builds a complete `GraphicsPipelineDesc`; backend validation and lowering consume it without inventing feature policy |
-| PSO precache / shader pipeline cache | earlier pipeline preparation and hitch tracking | deferred until current lazy materialization shows a measured product hitch | generation-bound lazy materialization exists; no precache coordinator or persistent native cache |
+| `FShaderCompilingManager` and Shader Compile Workers | asynchronous coordination and compiler-process isolation | compile-job coordination on the existing cooker `TaskExecutor`;
+optional worker processes only when justified | one out - of - process cooker and one bounded `TaskExecutor` compile batch;
+no second pool
+    or persistent compiler worker | | Global Shader Map / `TShaderMapRef<T>` | typed target - specific lookup and shader lifetime
+        | `GlobalShaderMap` / `ShaderRef<Shader>` | implemented typed lookup into one validated map / library generation |
+        | `FShaderMapResourceCode` | code hashes and map resource content | generated map resource record
+        | map entries reference content - addressed library records by exact code hash | | `FShaderCodeLibrary`
+        | cook - time collection of unique code and runtime loading by hash | `CookedShaderLibrary`
+        | implemented as `CookedShaderLibrary.slib` with exact - hash lookup and publication validation | | `FShaderPipelineType`
+        | optional declared stage grouping | no universal authoring abstraction;
+graphics names stage types at the draw site and ray tracing alone uses a focused typed pipeline composition
+    | graphics draw names typed VS / PS stages;
+RT products use focused typed compositions and hit groups | | RDG shader / pass parameter structs
+    | shader parameters can directly serve a one - to - one pass;
+pass envelopes and shaderless pass parameters are also valid | one shader - visible `Parameters` schema,
+    reused or composed into a pass envelope without duplicating shader fields | nested typed `Parameters` drive shader binding;
+graph - only attachments and feature collaborators remain separate owners | | RDG event name
+    | diagnostic / profiler identity of one graph operation | generated default label with an optional instance override
+    | frame - graph pass names are formatted into diagnostic and event - scope labels;
+instance labels remain at scheduling sites | | `FMeshPassProcessorRenderState` | narrow pass - wide blend, depth / stencil, access,
+    stencil - reference,
+    and uniform - buffer overrides
+    | smaller `RasterPassRenderState` containing only semantic blend / depth - stencil and dynamic stencil - reference choices;
+Sparkle attachment access stays graph - owned | `RasterPassRenderState` owns narrow pass intent;
+graph attachments and prepared mesh work own their facts | | `FGraphicsMinimalPipelineStateInitializer`
+    | mesh - draw fixed - function and shader state without render - target state
+    | internal `GraphicsPipelineKey` inputs contributed by shader references,
+    mesh / material facts, and pass render state | `GraphicsPipelineRequest` and `GraphicsPipelineKey` combine exact shader, binding, pass,
+    mesh,
+    and attachment facts | | `FGraphicsPipelineRenderTargetsInfo` / `ExtractRenderTargetsInfo`
+    | render - target information extracted from RDG attachment bindings | compatibility signature derived from graph resource descriptions;
+load / store / clear / access remain graph execution and validation facts
+    | `GraphicsAttachmentSignature` is derived by the frame graph from bound attachments |
+    | `FGraphicsPipelineStateInitializer` / `SetGraphicsPipelineState` | complete RHI - facing state and final materialization / binding
+    | private complete `GraphicsPipelineDesc` assembled and lowered by Renderer / RHI owners
+    | Renderer builds a complete `GraphicsPipelineDesc`;
+backend validation and lowering consume it without inventing feature policy | | PSO precache / shader pipeline cache
+    | earlier pipeline preparation and hitch tracking | deferred until current lazy materialization shows a measured product hitch
+    | generation - bound lazy materialization exists;
+no precache coordinator
+    or persistent native cache |
 
-The mapping is architectural, not a request to copy Unreal class names or source code. Sparkle should keep names that fit its own standards while retaining the responsibility boundaries.
+        The mapping is architectural,
+    not a request to copy Unreal class names
+    or source code.Sparkle should keep names that fit its own standards while retaining the responsibility boundaries.
 
-### Full Lifecycle
+                ## #Full Lifecycle
 
-```text
-AUTHORING
-  shader class
-    + nested Parameters when it owns direct graph bindings
-    + optional compile eligibility/environment/validation hooks
-  IMPLEMENT_GLOBAL_SHADER(class, virtual source, entry, stage)
-                         |
-                         v
-CATALOG / COMPILE
-  validate and freeze ShaderTypeDesc records
-  create one ShaderCompileJob per (ShaderTypeId, Target)
-  preprocess virtual include closure -> input hash -> bounded compile
-  verify reflection against Shader::Parameters
-                         |
-                         v
-COOK / PUBLICATION
-  GlobalShaderMap: (ShaderTypeId, Target) -> ShaderCodeHash + ABI metadata
-  CookedShaderLibrary: ShaderCodeHash -> validated backend code record
-  development provenance: source/dependencies/compiler/symbols
-  publish the complete generation transactionally
-                         |
-                         v
-RUNTIME / FRAME GRAPH
-  open map + library -> ShaderRef<Shader>
-  AllocParameters<Shader>() -> fill declared graph inputs/outputs
-  Dispatch<Shader>(parameters, groupCount) or Draw<VS, PS>(parameters, draws)
-  RenderPassRuntimeCache lazily materializes generation-bound layout/pipeline before recording
-  Execute binds only declared resources and records commands
-                         |
-                         v
-DEVELOPMENT RELOAD
-  changed virtual paths -> reverse dependencies -> affected shader jobs
-  complete replacement map/library -> validate -> atomic swap
-  old generation retires after all recorded GPU submissions complete
+```text AUTHORING shader class
+                + nested Parameters when it owns direct graph bindings
+                + optional compile eligibility / environment / validation hooks IMPLEMENT_GLOBAL_SHADER(class, virtual source, entry, stage)
+            | v CATALOG / COMPILE validate
+        and freeze ShaderTypeDesc records create one ShaderCompileJob per(ShaderTypeId, Target)
+preprocess virtual include closure->input hash->bounded compile verify reflection against Shader::Parameters
+        | v COOK / PUBLICATION GlobalShaderMap : (ShaderTypeId, Target)->ShaderCodeHash
+            + ABI metadata CookedShaderLibrary : ShaderCodeHash->validated backend code record development provenance : source
+                / dependencies / compiler / symbols publish the complete generation transactionally
+        | v RUNTIME / FRAME GRAPH open map
+            + library->ShaderRef<Shader> AllocParameters<Shader>()->fill declared graph inputs
+                / outputs Dispatch<Shader>(parameters, groupCount)
+    or Draw<VS, PS>(parameters, draws) RenderPassRuntimeCache lazily materializes generation
+            - bound layout / pipeline before recording Execute binds only declared resources and records commands
+        | v DEVELOPMENT RELOAD changed virtual paths->reverse dependencies->affected shader jobs complete replacement map
+            / library->validate->atomic swap old generation retires after all recorded GPU submissions complete
 ```
 
-### The Separation That Prevents Bloat
+              ## #The Separation That Prevents Bloat
 
-The lean design is not "compile every file automatically." It is automatic generation from small, explicit declarations:
+              The lean design is not "compile every file automatically." It is automatic generation from small,
+    explicit declarations :
 
-- source files provide implementation text and includes;
-- shader classes provide executable entry points, direct-binding parameter metadata only where used, and only the compile hooks they actually need;
-- graph dispatch names the concrete shader type(s) and supplies execution dimensions or draw work;
-- parameter metadata provides the shared graph-resource and shader-binding contract;
+    -source files provide implementation text and includes;
+- shader classes provide executable entry points,
+    direct - binding parameter metadata only where used, and only the compile hooks they actually need;
+- graph dispatch names the concrete shader type(s)and supplies execution dimensions or draw work;
+- parameter metadata provides the shared graph - resource and shader - binding contract;
 - shader maps provide logical typed lookup;
-- code records provide exact hashed physical delivery; a library may merge duplicate blobs when measured useful;
-- pipeline descriptors add fixed-function state;
+- code records provide exact hashed physical delivery;
+a library may merge duplicate blobs when measured useful;
+- pipeline descriptors add fixed - function state;
 - render-pass labels provide diagnostics only.
 
 This is why filenames cannot safely replace shader types, graph operations, or pipelines. Automation derives map identity, code-library records, binding metadata, and runtime lookup. Authors state only facts the system cannot infer: class, virtual source, entry, stage, parameter fields, optional capability policy, and the actual dispatch/draw request.
@@ -230,26 +321,23 @@ The exact lean Sparkle target for a one-to-one compute shader is:
 class DirectLightingCS final : public GlobalShader<DirectLightingCS>
 {
 public:
-    BEGIN_SHADER_PARAMETER_STRUCT(Parameters, )
-        SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, DirectDiffuse)
-        SHADER_PARAMETER_TEXTURE_SRV(Texture2D, ShadowVisibility)
-        SHADER_PARAMETER_CBUFFER(ViewUniformData, View)
-    END_SHADER_PARAMETER_STRUCT()
+	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, )
+	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, DirectDiffuse)
+	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, ShadowVisibility)
+	SHADER_PARAMETER_CBUFFER(ViewUniformData, View)
+	END_SHADER_PARAMETER_STRUCT()
 };
 
-IMPLEMENT_GLOBAL_SHADER(
-    DirectLightingCS,
-    "/Engine/Passes/Lighting/Direct/DirectLighting.hlsl",
-    "main",
-    Compute);
+IMPLEMENT_GLOBAL_SHADER(DirectLightingCS, "/Engine/Passes/Lighting/Direct/DirectLighting.hlsl", "main", Compute);
 ```
 
-`DirectDiffuse`, `ShadowVisibility`, and `View` are each the one C++ member, graph/layout key, and reflected HLSL binding name. The type token is type information, not a second binding name; there is no author-facing alias or `_NAMED` escape hatch.
+`DirectDiffuse`, `ShadowVisibility`, and `View` are each the one C++ member, graph / layout key,
+    and reflected HLSL binding name.The type token is type information, not a second binding name;
+there is no author - facing alias or `_NAMED` escape hatch.
 
-Graph construction uses that class directly:
+                                     Graph construction uses that class directly :
 
-```cpp
-auto& parameters = builder.AllocParameters<DirectLightingCS>();
+```cpp auto& parameters = builder.AllocParameters<DirectLightingCS>();
 parameters.DirectDiffuse = builder.CreateUAV(directDiffuse);
 parameters.ShadowVisibility = builder.CreateSRV(shadowVisibility);
 parameters.View = viewUniforms;
@@ -257,24 +345,38 @@ parameters.View = viewUniforms;
 builder.Dispatch<DirectLightingCS>(parameters, groupCount);
 ```
 
-### Resource-View and Raster-Attachment Vocabulary
+    ## #Resource
+    - View and Raster
+    - Attachment Vocabulary
 
-Unreal exposes two legitimate read-only RDG forms: a direct `SHADER_PARAMETER_RDG_TEXTURE` resource reference and an explicit `SHADER_PARAMETER_RDG_TEXTURE_SRV` created with `FRDGBuilder::CreateSRV`. It exposes writable shader views through `CreateUAV`. It does not expose `FRDGBuilder::Read`, and it does not create raster attachments through a symmetric `CreateRTV`; graphics parameters use `FRenderTargetBinding` / `RENDER_TARGET_BINDING_SLOTS`. NVRHI makes the same semantic split: binding layouts distinguish `Texture_SRV`, buffer SRVs, texture/buffer UAVs, and `AccelStruct`, while render targets and depth targets belong to framebuffer attachments rather than shader binding sets.
+        Unreal exposes two legitimate read
+    - only RDG forms
+    : a direct `SHADER_PARAMETER_RDG_TEXTURE` resource reference and an explicit `SHADER_PARAMETER_RDG_TEXTURE_SRV` created
+          with `FRDGBuilder::CreateSRV`.It exposes writable shader views through `CreateUAV`.It does not expose `FRDGBuilder::Read`,
+    and it does not create raster attachments through a symmetric `CreateRTV`;
+graphics parameters use `FRenderTargetBinding` / `RENDER_TARGET_BINDING_SLOTS`.NVRHI makes the same semantic split
+    : binding layouts distinguish `Texture_SRV`,
+    buffer SRVs, texture / buffer UAVs, and `AccelStruct`,
+    while render targets and depth targets belong to framebuffer attachments rather than shader binding sets.
 
-Sparkle chooses the explicit-view form because its shader parameter metadata already describes a concrete shader binding and must drive graph access, descriptor materialization, and reflection from one field. The author-facing vocabulary is frozen as follows:
+    Sparkle chooses the explicit
+    - view form because its shader parameter metadata already describes a concrete shader binding and must drive graph access,
+    descriptor materialization,
+    and reflection from one field.The author - facing vocabulary is frozen as follows :
 
-| Use | Shader parameter declaration | Graph assignment |
-| --- | --- | --- |
-| read-only texture | `SHADER_PARAMETER_TEXTURE_SRV(Type, Name)` | `builder.CreateSRV(texture, optionalViewDesc)` |
-| read-only buffer | `SHADER_PARAMETER_BUFFER_SRV(Type, Name)` | `builder.CreateSRV(buffer, optionalViewDesc)` |
-| collaborator-owned read-only buffer | `SHADER_PARAMETER_EXTERNAL_BUFFER_SRV(Type, Name)` | focused draw collaborator supplies the already-materialized SRV as a binding override |
-| read/write texture | `SHADER_PARAMETER_TEXTURE_UAV(Type, Name)` | `builder.CreateUAV(texture, optionalViewDesc)` |
-| read/write buffer | `SHADER_PARAMETER_BUFFER_UAV(Type, Name)` | `builder.CreateUAV(buffer, optionalViewDesc)` |
-| scene acceleration structure | `SHADER_PARAMETER_ACCELERATION_STRUCTURE(Name)` | `builder.CreateAccelerationStructureBinding(sceneTlas)` |
-| raster color attachment | `SHADER_PARAMETER_RENDER_TARGET(Name)` in the narrow graphics envelope | `builder.CreateRenderTarget(texture)` |
-| raster depth attachment | `SHADER_PARAMETER_DEPTH_TARGET(Name)` in the narrow graphics envelope | `builder.CreateDepthTarget(texture)` |
+    | Use | Shader parameter declaration | Graph assignment | | -- -| -- -| -- -| | read - only texture
+    | `SHADER_PARAMETER_TEXTURE_SRV(Type, Name)` | `builder.CreateSRV(texture, optionalViewDesc)` | | read - only buffer
+    | `SHADER_PARAMETER_BUFFER_SRV(Type, Name)` | `builder.CreateSRV(buffer, optionalViewDesc)` | | collaborator - owned read - only buffer
+    | `SHADER_PARAMETER_EXTERNAL_BUFFER_SRV(Type, Name)`
+    | focused draw collaborator supplies the already - materialized SRV as a binding override | | read / write texture
+    | `SHADER_PARAMETER_TEXTURE_UAV(Type, Name)` | `builder.CreateUAV(texture, optionalViewDesc)` | | read / write buffer
+    | `SHADER_PARAMETER_BUFFER_UAV(Type, Name)` | `builder.CreateUAV(buffer, optionalViewDesc)` | | scene acceleration structure
+    | `SHADER_PARAMETER_ACCELERATION_STRUCTURE(Name)` | `builder.CreateAccelerationStructureBinding(sceneTlas)` | | raster color attachment
+    | `SHADER_PARAMETER_RENDER_TARGET(Name)` in the narrow graphics envelope | `builder.CreateRenderTarget(texture)` |
+    | raster depth attachment | `SHADER_PARAMETER_DEPTH_TARGET(Name)` in the narrow graphics envelope | `builder.CreateDepthTarget(texture)`
+    |
 
-`CreateSRV` and `CreateUAV` create graph-tracked shader views; their typed return values carry the parent resource, subresource/format selection, and access declared by the parameter metadata. `SHADER_PARAMETER_EXTERNAL_BUFFER_SRV` is the narrow exception for a buffer whose lifetime and descriptor are intentionally owned by a real draw collaborator, such as the GBuffer mesh cache's skinning and morph buffers. It remains part of the shader's one parameter schema, is explicitly excluded from graph-resource declaration, and must be supplied by that collaborator at draw binding. It is not a bypass for graph-owned resources. `CreateRenderTarget` and `CreateDepthTarget` create graph attachment bindings, not HLSL parameters or shader-visible descriptors. Load/store, mip, slice, resolve, and clear policy belong to those attachment bindings or the focused graphics envelope.
+`CreateSRV` and `CreateUAV` create graph - tracked shader views; their typed return values carry the parent resource, subresource/format selection, and access declared by the parameter metadata. `SHADER_PARAMETER_EXTERNAL_BUFFER_SRV` is the narrow exception for a buffer whose lifetime and descriptor are intentionally owned by a real draw collaborator, such as the GBuffer mesh cache's skinning and morph buffers. It remains part of the shader's one parameter schema, is explicitly excluded from graph-resource declaration, and must be supplied by that collaborator at draw binding. It is not a bypass for graph-owned resources. `CreateRenderTarget` and `CreateDepthTarget` create graph attachment bindings, not HLSL parameters or shader-visible descriptors. Load/store, mip, slice, resolve, and clear policy belong to those attachment bindings or the focused graphics envelope.
 
 There is deliberately no author-facing `Read(texture)` / `Read(buffer)` alias: it hides whether the shader receives an SRV, a copy source, an attachment load, or another access kind. There is deliberately no neutral `CreateRTV` / `CreateDSV`: those acronyms name backend-native D3D views and conflict with Sparkle's [neutral render-target vocabulary](../../../Engineering/Foundations/Naming.md#canonical-concurrency-and-rendering-terms). An acceleration structure is also not generalized into `CreateSRV`; NVRHI models it as `AccelStruct` and Vulkan gives it a distinct descriptor kind, so Sparkle retains one semantic acceleration-structure binding and lowers it privately per backend.
 
@@ -342,7 +444,7 @@ class RayTracingMaterialClosestHit final : public GlobalShader<RayTracingMateria
 
 IMPLEMENT_GLOBAL_SHADER(
 	RayTracingGBufferRGS,
-	"/Engine/Passes/RayTracing/RayTracingGBufferPipeline.hlsl",
+	"/Engine/Passes/GBuffer/RayTracing/RayTracingGBufferPipeline.hlsl",
 	"RayTracingGBufferRayGeneration",
 	RayGeneration);
 
