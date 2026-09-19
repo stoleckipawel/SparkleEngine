@@ -6,7 +6,7 @@
 
 **Architecture authority:** [Shader System Architecture](README.md)
 
-**Feature acceptance:** [Shader System � Acceptance](Acceptance.md)
+**Feature acceptance:** [Shader System — Acceptance](Acceptance.md)
 
 **Migration provenance:** [Shader System Migration Baseline](MigrationBaseline.md)
 
@@ -986,7 +986,7 @@ A fault-sensitive check temporarily perturbs one shared hit-store result and pro
 - Required generated artifacts match final source; no obsolete output, report, debug artifact, capture, log, or temporary proof file is unintentionally included.
 - Diagnostics are bounded, orchestration reads as named stages, and no owner/folder/function mixes unrelated responsibilities.
 - D3D12/Vulkan evidence proves attachment-derived graphics compatibility, granular pass state, exact-only pipeline variants, all six RT stages, GBuffer and shadow dual-mode parity, strict/automatic selection, explicit supported alternate algorithms, mandatory-product failure, table indexing/bounds, reload/device recreation, and submission-token retirement; every unsupported effect or unavailable claim is named precisely.
-- Repository-wide exact and semantic searches plus bidirectional owner traces prove every rejected responsibility is absent from runtime, tools, build membership, generated/cooked artifacts, frontend models, and current documentation�not merely renamed�and that shader authoring, metadata, map/library lookup, generation, graphics-state contribution/materialization, RT composition, native pipeline/table, scene mapping, graph execution, effect planning, and frontend intent each have one non-overlapping authority.
+- Repository-wide exact and semantic searches plus bidirectional owner traces prove every rejected responsibility is absent from runtime, tools, build membership, generated/cooked artifacts, frontend models, and current documentation—not merely renamed—and that shader authoring, metadata, map/library lookup, generation, graphics-state contribution/materialization, RT composition, native pipeline/table, scene mapping, graph execution, effect planning, and frontend intent each have one non-overlapping authority.
 - The final Code Review report classifies every touched site, records the complexity and performance result, contains no P0-P2 finding, and resolves every earlier `BLOCKED` claim with exact evidence or leaves the whole migration `BLOCKED`; partial acceptance is not allowed.
 - Branch is `master`, staged diff is empty, scoped checks pass where available, and the user receives the unstaged changelist for manual review.
 
@@ -1101,9 +1101,10 @@ Primary ray-tracing implementation references:
 
 ## Feature Acceptance Handoff
 
-Final acceptance is owned by the [Shader System � Acceptance](Acceptance.md) contract. This plan is complete only when every phase exit is closed and the candidate report links the exact evidence required there.
+Final acceptance is owned by the [Shader System — Acceptance](Acceptance.md) contract. This plan is complete only when every phase exit is closed and the candidate report links the exact evidence required there.
 
 ## Delivery Outcome
 
 A successful execution leaves the [Shader System Architecture](README.md) as the sole enduring design authority, the adjacent feature acceptance contract as the sole definition of done, and current code/build configuration as implementation truth. Deferred permutations, precaching, preload/streaming, and native driver-cache work require a new measured plan rather than extending this migration diary.
+
 

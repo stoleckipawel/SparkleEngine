@@ -8,7 +8,7 @@
 
 **Researched:** 2026-09-10; external repositories are pinned below, and mutable documentation is cited with its publisher
 
-**Current readiness:** Not applicable � research adds no readiness credit. The feature remains **0/100** and `Blocked` in [Current Feature Readiness](../../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** Not applicable — research adds no readiness credit. The feature remains **0/100** and `Blocked` in [Current Feature Readiness](../../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## Research Questions
 
@@ -66,7 +66,7 @@ The absence is useful: no legacy grade, LUT cache, selector, or compatibility re
 | Surface | Current source truth | Consequence for discovery |
 | --- | --- | --- |
 | frame ordering | [`SceneRenderingPasses.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Scene/SceneRenderingPasses.cpp) and [`PresentationPasses.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp) route resolved scene color into presentation; neither has a grade edge | `CGRD-02/03` must freeze the new grade edge rather than infer it from a nonexistent pass |
-| tone and encoding | [`ToneMapping.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/ Display /ToneMapping.cpp), [`OutputEncoding.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation / Display/OutputEncoding.cpp), and [`PresentationPasses.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp) produce and publish separately named `ToneMappedSceneColor` and `EncodedSceneColor` products | preserve separate scene grade, target tone/gamut, and output encoding authorities |
+| tone and encoding | [`ToneMapping.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/ToneMapping.cpp), [`OutputEncoding.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/OutputEncoding.cpp), and [`PresentationPasses.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp) produce and publish separately named `ToneMappedSceneColor` and `EncodedSceneColor` products | preserve separate scene grade, target tone/gamut, and output encoding authorities |
 | public display state | [`EngineRenderingDisplayTypes.h`](../../../../../../../../../Engine/Renderer/Public/Settings/EngineRenderingDisplayTypes.h) exposes tone, exposure, and encoding vocabulary only | add the smallest grade contract; do not imply current support |
 | settings persistence | [`EngineRenderingSettings.h`](../../../../../../../../../Engine/Renderer/Public/Settings/EngineRenderingSettings.h) is the existing display-settings route | extend it once; no grade singleton or shadow config |
 | per-view selection | [`ViewportContracts.h`](../../../../../../../../../Engine/Renderer/Public/Viewport/ViewportContracts.h) has no grade request/result | discovery must establish global/default versus per-view precedence and identity |
@@ -78,7 +78,7 @@ This trace was verified at committed revision `ca55e7d8`; concurrent user-owned 
 
 ### OpenColorIO
 
-OpenColorIO's `CDLTransform` implements ASC CDL-style slope/offset/power and documents different negative-value behavior for configuration versions and CDL styles.[^1] Its API distinguishes clamp and no-clamp styles, so the phrase �ASC CDL� alone does not settle Sparkle's negative/HDR behavior.[^2]
+OpenColorIO's `CDLTransform` implements ASC CDL-style slope/offset/power and documents different negative-value behavior for configuration versions and CDL styles.[^1] Its API distinguishes clamp and no-clamp styles, so the phrase “ASC CDL” alone does not settle Sparkle's negative/HDR behavior.[^2]
 
 OpenColorIO treats LUT files as transforms with parsing, interpolation, cache, path, and metadata concerns rather than as an arbitrary texture.[^3] This supports a semantic asset type and strict source/cooked identity. It does not require Sparkle to embed OpenColorIO, accept every format, or inherit its global cache model.
 
@@ -114,7 +114,7 @@ The repository also retains cross-backend/editor/player reference-image coverage
 
 | Concern | OpenColorIO | Filament | Unity Graphics | Sparkle discovery implication |
 | --- | --- | --- | --- | --- |
-| SOP negative behavior | explicit style/version choice | implementation-specific pipeline | pipeline-specific | `CGRD-04` must choose; �CDL� is insufficient |
+| SOP negative behavior | explicit style/version choice | implementation-specific pipeline | pipeline-specific | `CGRD-04` must choose; “CDL” is insufficient |
 | State owner | transform/config graph | View references an engine resource | volume/profile state | use View-owned selection with immutable runtime generation; no volume system |
 | LUT identity | file transform plus metadata/cache | generated 3D texture and optional custom data | generated LUT plus lookup texture | define source, cooked, runtime, and active identities separately |
 | Placement | configurable transform graph | grading/tone/output largely co-generated | pipeline/profile dependent | preserve Sparkle's separate grade/tone/output owners and freeze exact domain |

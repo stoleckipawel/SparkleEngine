@@ -82,20 +82,15 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 
 - Use one blank line as a semantic paragraph boundary when a function changes phase: acquire inputs, declare resources, derive state, schedule a cohesive pass group, resolve/present, and publish or return the result.
 - In frame-building code, keep consecutive calls that form one subpipeline together and separate different subpipelines or resource/publication phases. Do not put a blank line after every declaration or call.
-- A call,
-    assignment, return, or aggregate
-        - initialization statement that wraps across multiple lines is its own visual paragraph.Leave one blank line before and after it;
-the opening
-    or closing brace of its block already supplies that boundary.Separate adjacent wrapped statements from each other
-                as well.Function declarations
-            / signatures and the lines inside one wrapped statement are not separate paragraphs.
-        - Keep consecutive initialization or mutation of one record together.
+- A call, assignment, return, or aggregate-initialization statement that wraps across multiple lines is its own visual paragraph. Leave one blank line before and after it; the opening or closing brace of its block already supplies that boundary. Separate adjacent wrapped statements from each other as well. Function declarations/signatures and the lines inside one wrapped statement are not separate paragraphs.
+- Keep consecutive initialization or mutation of one record together.
 - Do not fragment one cohesive condition, expression, or initialization sequence with arbitrary whitespace.
 - Keep a declaration, call, assignment, return type, or signature on one line when it fits the configured limit and remains readable.
 - When a call or aggregate wraps, group elements by meaning; avoid stair-step fragmentation of simple access, casts, names, and ternaries.
 - Apply readability whitespace while changing the surrounding logic; do not create repository-wide whitespace churn. `.clang-format` remains authoritative and preserves at most one consecutive empty line.
 
-```cpp BindRenderSceneGpuBuffer(graph, resources.Geometry.MorphWeights, sceneGpuBindings.Geometry.MorphWeights, "MorphWeights");
+```cpp
+BindRenderSceneGpuBuffer(graph, resources.Geometry.MorphWeights, sceneGpuBindings.Geometry.MorphWeights, "MorphWeights");
 
 BindRenderSceneGpuBuffer(
     graph,
@@ -308,4 +303,3 @@ Consistent style is not visual sameness alone. A cohesive repository has:
 - local exceptions that are explicit, narrow, and evidence-backed;
 - no broad reformat mixed with semantic changes;
 - code review focused on design because mechanical style is automated.
-

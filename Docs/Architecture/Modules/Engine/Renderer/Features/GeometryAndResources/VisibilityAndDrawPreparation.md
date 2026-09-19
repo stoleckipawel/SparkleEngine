@@ -8,7 +8,7 @@
 
 **Parents and consumers:** [Scene and View Preparation](../SceneAndViewPreparation/README.md) owns scene/view construction; [Geometry, Materials, and GBuffer](GeometryMaterialsAndGBuffer.md) owns what accepted batches draw and publish
 
-**Current readiness:** **45/100** � CPU frustum classification, validation, sorting, and batching exist; evidence is open and occlusion, LOD, GPU-driven/indirect, stereo, and multiview are **0/100**. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **45/100** — CPU frustum classification, validation, sorting, and batching exist; evidence is open and occlusion, LOD, GPU-driven/indirect, stereo, and multiview are **0/100**. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## At A Glance
 
@@ -102,15 +102,15 @@ No current Renderer route was found for occlusion culling, HZB queries, portals,
 
 ## Acceptance Criteria
 
-- `AC-VIS-01` � analytic AABB/frustum cases, including all planes, boundary contact, large/small coordinates, transformed/deforming bounds, invalid bounds, and perspective/orthographic views, produce the declared visible set deterministically.
-- `AC-VIS-02` � all material classifications and invalid draw/mesh/group/material identities produce the declared accepted/rejected set without out-of-range access or partial publication.
-- `AC-VIS-03` � compatible authored and shared groups remain grouped; incompatible groups safely fall back without dropping, duplicating, or re-identifying instances.
-- `AC-VIS-04` � automatic batching on/off produces identical opaque/alpha-tested GBuffer values, depth, motion and object/material identity while batch/draw counts change only as declared.
-- `AC-VIS-05` � opaque sorting is deterministic from the complete batch key and object tie-break; changing any compatibility field cannot accidentally merge unlike work.
-- `AC-VIS-06` � transparent candidates are stable far-to-near singles with deterministic equal-distance tie-breaks and never enter preserved/automatic batches; this criterion does not approve blended transparency.
-- `AC-VIS-07` � task graph serial/parallel thresholds, partition counts, primitive counts at zero/one/127/128/129/power and large boundaries, cancellation, and executor failure yield equivalent complete results or a completely cleared failure result.
-- `AC-VIS-08` � workload and optional batch diagnostics exactly reconcile candidates, rejections, submitted indices, batches, batch sources, instances, and estimated saved draws.
-- `AC-VIS-09` � absent occlusion/LOD/GPU-driven/indirect/stereo/multiview paths remain unreachable and unadvertised until assigned their own owner, selector, fallback, criteria, and evidence.
+- `AC-VIS-01` — analytic AABB/frustum cases, including all planes, boundary contact, large/small coordinates, transformed/deforming bounds, invalid bounds, and perspective/orthographic views, produce the declared visible set deterministically.
+- `AC-VIS-02` — all material classifications and invalid draw/mesh/group/material identities produce the declared accepted/rejected set without out-of-range access or partial publication.
+- `AC-VIS-03` — compatible authored and shared groups remain grouped; incompatible groups safely fall back without dropping, duplicating, or re-identifying instances.
+- `AC-VIS-04` — automatic batching on/off produces identical opaque/alpha-tested GBuffer values, depth, motion and object/material identity while batch/draw counts change only as declared.
+- `AC-VIS-05` — opaque sorting is deterministic from the complete batch key and object tie-break; changing any compatibility field cannot accidentally merge unlike work.
+- `AC-VIS-06` — transparent candidates are stable far-to-near singles with deterministic equal-distance tie-breaks and never enter preserved/automatic batches; this criterion does not approve blended transparency.
+- `AC-VIS-07` — task graph serial/parallel thresholds, partition counts, primitive counts at zero/one/127/128/129/power and large boundaries, cancellation, and executor failure yield equivalent complete results or a completely cleared failure result.
+- `AC-VIS-08` — workload and optional batch diagnostics exactly reconcile candidates, rejections, submitted indices, batches, batch sources, instances, and estimated saved draws.
+- `AC-VIS-09` — absent occlusion/LOD/GPU-driven/indirect/stereo/multiview paths remain unreachable and unadvertised until assigned their own owner, selector, fallback, criteria, and evidence.
 
 ## Controlled Failure Modes And Checks
 
@@ -142,4 +142,5 @@ Primary evidence destination: `REN-E32` in the [Capability Evidence Plan](../../
 - `Engine/Renderer/Private/View/RenderView.h`, `MeshInstanceBatchBuilder.h`, and prepared-scene contracts
 - [`GBufferMeshBatchDrawer.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/Raster/GBufferMeshBatchDrawer.cpp)
 - [Scene/View Acceptance](../SceneAndViewPreparation/Acceptance.md) and [Geometry, Materials, and GBuffer](GeometryMaterialsAndGBuffer.md)
+
 

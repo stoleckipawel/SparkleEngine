@@ -10,7 +10,7 @@ evidence `S` only
 
 **Parent family:** [Post Processing](../README.md)
 
-**Current readiness:** **45/100** � three selectable tone operators exist in the integrated display path; numeric/colorimetric, extreme, alpha, backend, exact-domain, and visual proof remains open. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **45/100** — three selectable tone operators exist in the integrated display path; numeric/colorimetric, extreme, alpha, backend, exact-domain, and visual proof remains open. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## At A Glance
 
@@ -55,12 +55,12 @@ The shader clamps alpha with `saturate` while mapping RGB. Current source does n
 
 ## Acceptance Criteria
 
-- `AC-TMO-01` � Reinhard, ACES approximation, and ACES fitted filmic match a pinned CPU/reference implementation over black, gray, primary, negative, HDR ramp, and extreme finite inputs within declared precision.
-- `AC-TMO-02` � exposure is multiplied exactly once before the selected curve; changing exposure produces the reference result and no provider/debug/presentation stage duplicates it.
-- `AC-TMO-03` � output is `R16G16B16A16_Float` display-linear RGB at output extent; output encoding and color grading are not performed in this pass.
-- `AC-TMO-04` � alpha follows the documented saturated-input policy independently of RGB, including negative, unit, greater-than-one, NaN, and Inf cases.
-- `AC-TMO-05` � unknown selector values fail settings/graph resolution; all three valid operators are reported as requested/active per view with no silent substitution.
-- `AC-TMO-06` � D3D12 and Vulkan decoded outputs agree within the predeclared numeric tolerance for every operator/exposure case.
+- `AC-TMO-01` — Reinhard, ACES approximation, and ACES fitted filmic match a pinned CPU/reference implementation over black, gray, primary, negative, HDR ramp, and extreme finite inputs within declared precision.
+- `AC-TMO-02` — exposure is multiplied exactly once before the selected curve; changing exposure produces the reference result and no provider/debug/presentation stage duplicates it.
+- `AC-TMO-03` — output is `R16G16B16A16_Float` display-linear RGB at output extent; output encoding and color grading are not performed in this pass.
+- `AC-TMO-04` — alpha follows the documented saturated-input policy independently of RGB, including negative, unit, greater-than-one, NaN, and Inf cases.
+- `AC-TMO-05` — unknown selector values fail settings/graph resolution; all three valid operators are reported as requested/active per view with no silent substitution.
+- `AC-TMO-06` — D3D12 and Vulkan decoded outputs agree within the predeclared numeric tolerance for every operator/exposure case.
 
 ## Controlled Failure Modes And Checks
 
@@ -73,7 +73,7 @@ The shader clamps alpha with `saturate` while mapping RGB. Current source does n
 
 | Check | Exercise and oracle | Covers |
 | --- | --- | --- |
-| `CHK-TMO-01` | deterministic shader readback against pinned CPU curves over operator � exposure � RGB/alpha vectors | `AC-TMO-01`�`AC-TMO-04`; `FM-TMO-02`, `FM-TMO-03` |
+| `CHK-TMO-01` | deterministic shader readback against pinned CPU curves over operator × exposure × RGB/alpha vectors | `AC-TMO-01`–`AC-TMO-04`; `FM-TMO-02`, `FM-TMO-03` |
 | `CHK-TMO-02` | selector/per-view test over every valid operator plus invalid value and dual-viewport choices | `AC-TMO-05`; `FM-TMO-01` |
 | `CHK-TMO-03` | paired-backend raw display-linear readback followed by separate encoding verification | `AC-TMO-02`, `AC-TMO-03`, `AC-TMO-06`; `FM-TMO-03`, `FM-TMO-04` |
 
@@ -85,4 +85,5 @@ This contract is **defined but unproved**. It does not claim reference ACES colo
 - [`ToneMapping.hlsli`](../../../../../../../../Engine/Assets/Shaders/Display/ToneMapping.hlsli)
 - [`ToneMappingSettings.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/ToneMappingSettings.cpp)
 - [`ToneMapping.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/ToneMapping.cpp) and [`PresentationPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp)
+
 

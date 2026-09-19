@@ -10,7 +10,7 @@ evidence `S` only
 
 **Parent family:** [Post Processing](../README.md)
 
-**Current readiness:** **45/100** � manual/automatic exposure and per-view history source paths exist; numeric, adaptation/reset, scheduling, parity, color-domain, and quality evidence does not. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **45/100** — manual/automatic exposure and per-view history source paths exist; numeric, adaptation/reset, scheduling, parity, color-domain, and quality evidence does not. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## At A Glance
 
@@ -55,13 +55,13 @@ Default exposure is Automatic with ParallelReduction. Default multiplier bounds 
 
 ## Acceptance Criteria
 
-- `AC-EXP-01` � Manual mode resolves the requested multiplier plus compensation into the documented min/max range and remains invariant for fixed settings across frames and scheduling modes.
-- `AC-EXP-02` � ParallelReduction and DownsamplePyramid automatic metering produce finite values within predeclared tolerance for uniform, split, black, bright, NaN/Inf-contaminated, and high-dynamic-range fixtures.
-- `AC-EXP-03` � adaptation follows the declared asymmetric EV-per-second rates under controlled luminance steps and converges monotonically without overshoot outside tolerance.
-- `AC-EXP-04` � per-viewport overrides resolve once into `RenderView`; two views with different settings do not share or contaminate exposure history.
-- `AC-EXP-05` � camera cut, scene/view discontinuity, resize, mode/metering change, and relevant topology generation reset history to the documented first-frame result.
-- `AC-EXP-06` � graphics-queue and async-compute execution produce the same exposure/history values and correct dependencies; queue assignment is not called a speedup without measurement.
-- `AC-EXP-07` � the exposure producer reads pre-debug scene-linear lighting and supplies exactly one multiplier to provider/tone-mapping consumers; debug-view selection alone does not remeter or reset it.
+- `AC-EXP-01` — Manual mode resolves the requested multiplier plus compensation into the documented min/max range and remains invariant for fixed settings across frames and scheduling modes.
+- `AC-EXP-02` — ParallelReduction and DownsamplePyramid automatic metering produce finite values within predeclared tolerance for uniform, split, black, bright, NaN/Inf-contaminated, and high-dynamic-range fixtures.
+- `AC-EXP-03` — adaptation follows the declared asymmetric EV-per-second rates under controlled luminance steps and converges monotonically without overshoot outside tolerance.
+- `AC-EXP-04` — per-viewport overrides resolve once into `RenderView`; two views with different settings do not share or contaminate exposure history.
+- `AC-EXP-05` — camera cut, scene/view discontinuity, resize, mode/metering change, and relevant topology generation reset history to the documented first-frame result.
+- `AC-EXP-06` — graphics-queue and async-compute execution produce the same exposure/history values and correct dependencies; queue assignment is not called a speedup without measurement.
+- `AC-EXP-07` — the exposure producer reads pre-debug scene-linear lighting and supplies exactly one multiplier to provider/tone-mapping consumers; debug-view selection alone does not remeter or reset it.
 
 ## Controlled Failure Modes And Checks
 
@@ -74,7 +74,7 @@ Default exposure is Automatic with ParallelReduction. Default multiplier bounds 
 
 | Check | Exercise and oracle | Covers |
 | --- | --- | --- |
-| `CHK-EXP-01` | CPU/reference evaluation plus 1x1 readback over manual/automatic methods, luminance ramps, invalid/extreme inputs, bounds, compensation, and timestep series | `AC-EXP-01`�`AC-EXP-03`; `FM-EXP-01` |
+| `CHK-EXP-01` | CPU/reference evaluation plus 1x1 readback over manual/automatic methods, luminance ramps, invalid/extreme inputs, bounds, compensation, and timestep series | `AC-EXP-01`–`AC-EXP-03`; `FM-EXP-01` |
 | `CHK-EXP-02` | dual-viewport temporal sequence over overrides, cuts, resize, mode/metering switches, debug-mode changes, and scene reload | `AC-EXP-04`, `AC-EXP-05`, `AC-EXP-07`; `FM-EXP-02`, `FM-EXP-04` |
 | `CHK-EXP-03` | same fixture on graphics and async-compute scheduling with capability unavailable/available, plan/barrier inspection, decoded value comparison, and native validation | `AC-EXP-06`; `FM-EXP-03` |
 
@@ -86,4 +86,5 @@ This contract is **defined but unproved**. `REN-E13` owns candidate execution; t
         /ExposureAdaptation.cpp) and [`ExposureSettings.cpp`](../../../../../../../../Engine/Renderer/Private/ Passes / PostProcessing / Exposure / ExposureSettings.cpp)
 - [`ViewportDisplayCVars.cpp`](../../../../../../../../Engine/Renderer/Private/View/ ViewportDisplayCVars.cpp)
     - [`RenderViewBuilder.cpp`](../../../../../../../../ Engine / Renderer / Private / View / RenderViewBuilder.cpp)
+
 

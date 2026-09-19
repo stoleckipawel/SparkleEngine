@@ -67,16 +67,13 @@ The current source
 
 ## Acceptance Criteria
 
-- `AC-OUT-01` � Automatic, Linear, and sRGB choices resolve deterministically from the selected output format and encode a pinned display-linear ramp exactly once within declared tolerance.
-- `AC-OUT-02` � the output-encoding target uses the required linear-format counterpart and the final copy/publication preserves channel order, alpha policy, dimensions, and viewport rectangle.
-- `AC-OUT-03` � viewport 0 reaches the imported presentable back buffer; nonzero viewports publish generation-bound final color and requested depth/normal products without cross-viewport or stale-generation reuse.
-- `AC-OUT-04` � resize, minimize/restore, output-format change, viewport destruction/recreation, and scene reload rebuild/invalidate the right products and never present a stale prior image as current.
-- `AC-OUT-05` � SDR/Linear encoding is never advertised as HDR display support; HDR requested/active/fallback behavior delegates to `AC-HDR-*` and cannot bypass the HDR dossier.
-- `AC-OUT-06` � scene
-    - referred HDR debug modes receive exposure / tone mapping exactly once;
-display - linear exact modes bypass both;
-every mode receivesoutput encoding exactly once.
-- `AC-OUT-07` � D3D12 and Vulkan decoded back-buffer/offscreen products agree with the numerical oracle and produce no uncategorized native presentation/format validation issue.
+- `AC-OUT-01` — Automatic, Linear, and sRGB choices resolve deterministically from the selected output format and encode a pinned display-linear ramp exactly once within declared tolerance.
+- `AC-OUT-02` — the output-encoding target uses the required linear-format counterpart and the final copy/publication preserves channel order, alpha policy, dimensions, and viewport rectangle.
+- `AC-OUT-03` — viewport 0 reaches the imported presentable back buffer; nonzero viewports publish generation-bound final color and requested depth/normal products without cross-viewport or stale-generation reuse.
+- `AC-OUT-04` — resize, minimize/restore, output-format change, viewport destruction/recreation, and scene reload rebuild/invalidate the right products and never present a stale prior image as current.
+- `AC-OUT-05` — SDR/Linear encoding is never advertised as HDR display support; HDR requested/active/fallback behavior delegates to `AC-HDR-*` and cannot bypass the HDR dossier.
+- `AC-OUT-06` — scene-referred HDR debug modes receive exposure/tone mapping exactly once; display-linear exact modes bypass both; every mode receives output encoding exactly once.
+- `AC-OUT-07` — D3D12 and Vulkan decoded back-buffer/offscreen products agree with the numerical oracle and produce no uncategorized native presentation/format validation issue.
 
 ## Controlled Failure Modes And Checks
 
@@ -90,7 +87,7 @@ every mode receivesoutput encoding exactly once.
 
 | Check | Exercise and oracle | Covers |
 | --- | --- | --- |
-| `CHK-OUT-01` | shader/copy readback of known ramps over encoding � output-format � alpha/extreme-value cells | `AC-OUT-01`, `AC-OUT-02`, `AC-OUT-07`; `FM-OUT-01`, `FM-OUT-04` |
+| `CHK-OUT-01` | shader/copy readback of known ramps over encoding × output-format × alpha/extreme-value cells | `AC-OUT-01`, `AC-OUT-02`, `AC-OUT-07`; `FM-OUT-01`, `FM-OUT-04` |
 | `CHK-OUT-02` | swapchain and two offscreen viewports through resize, zero extent, minimize/restore, format change, destruction/recreation, reload, and capture | `AC-OUT-03`, `AC-OUT-04`; `FM-OUT-02`, `FM-OUT-03` |
 | `CHK-OUT-03` | inspect selectors, package/runtime UI, debug captures, and documentation for exact-debug and SDR claims; route all HDR state/evidence to `CHK-HDR-*` | `AC-OUT-05`, `AC-OUT-06`; `FM-OUT-05` |
 | `CHK-OUT-04` | paired D3D12/Vulkan presentation/offscreen run with decoded artifacts and native validation | `AC-OUT-02`, `AC-OUT-03`, `AC-OUT-07` |
@@ -100,9 +97,6 @@ This contract is **source - present but unproved**. Passing source checks does n
 
 ## Primary Source Routes
 
-- [`PresentationPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp), [`DisplayMapping.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/ Display / DisplayMapping.cpp), [`ToneMapping.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/ Display / ToneMapping.cpp),
-    and [`OutputEncoding.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/ Display / OutputEncoding.cpp)
-- [`OutputEncodingSettings.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/ Presentation / Display / OutputEncodingSettings.cpp)
-    - [`SceneRenderingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/ Scene / SceneRenderingPasses.cpp)
-        and[`PresentationPasses.cpp`](../../../../../../../../ Engine / Renderer / Private / Passes / Presentation / PresentationPasses.cpp)
-
+- [`PresentationPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp), [`DisplayMapping.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/DisplayMapping.cpp), [`ToneMapping.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/ToneMapping.cpp), and [`OutputEncoding.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/OutputEncoding.cpp)
+- [`OutputEncodingSettings.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/OutputEncodingSettings.cpp)
+- [`SceneRenderingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Scene/SceneRenderingPasses.cpp) and [`PresentationPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp)

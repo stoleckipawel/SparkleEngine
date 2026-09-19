@@ -21,7 +21,7 @@ The producer publishes linear scene radiance or a lighting contribution. The com
 
 The producer publishes a bounded diagnostic value in linear display space. Exposure and the tone curve are bypassed; output transfer encoding still runs exactly once. Scalar material values, encoded normals, material colors, and stable instance palettes belong here.
 
-�Exact� does not mean writing linear numbers into an encoded target. It means no content-dependent exposure or filmic curve changes the producer-authored display-linear value before the required output transfer.
+“Exact” does not mean writing linear numbers into an encoded target. It means no content-dependent exposure or filmic curve changes the producer-authored display-linear value before the required output transfer.
 
 ## Route
 
@@ -92,9 +92,10 @@ Renderer/RHI capture transport remains neutral. A higher-level evidence record m
 - Keep a producer-local HDR preview curve: rejected because it hides magnitude and creates double mapping.
 - Bypass all presentation for exact views: rejected because output transfer encoding is still required.
 - Add mode-shaped show flags or a visualization target: rejected because the selected mode already owns this stock policy.
-- Add a process-global �debug views bypass tone mapping� CVar: rejected because it cannot describe independent viewports and makes evidence ambiguous.
+- Add a process-global “debug views bypass tone mapping” CVar: rejected because it cannot describe independent viewports and makes evidence ambiguous.
 
 ## Evidence Boundary
 
 The source route implements this architecture. Numeric fixed-value checks, extent cases, dual-viewport isolation, output encoding, shader cook, D3D12/Vulkan execution, and captured pixels remain required evidence under [Acceptance](Acceptance.md).
+
 

@@ -10,9 +10,9 @@
 
 **Delivery authority:** [Geometry Cache Animation Delivery Plan](Plan.md)
 
-**Feature acceptance:** [Geometry Cache Animation � Acceptance](Acceptance.md)
+**Feature acceptance:** [Geometry Cache Animation — Acceptance](Acceptance.md)
 
-**Current readiness:** **0/100** � the inspected seams are adjacent foundations, not a geometry-cache implementation. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
+**Current readiness:** **0/100** — the inspected seams are adjacent foundations, not a geometry-cache implementation. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
 
 Code and executable build configuration remain authoritative. Reinspect every listed owner and absence before using this dated snapshot for implementation or release claims.
 
@@ -52,5 +52,6 @@ The Modern Sponza Animated Knight archive is the motivating workload, not a reas
 - the Maya source contains skin clusters, bind-pose data, joints, and animation curves;
 - `Exports/alembic/knight_ANIM_001.rnd.abc` and the published USD contain baked vertex deformation. The Alembic is the source intended for a geometry-cache path.
 
-The knight remains unaccepted as an animated workload until [Geometry Cache Animation � Acceptance](Acceptance.md) passes. Loading the static FBX, baking one pose, remapping controller names, or scaling only the knight entity does not close that gate.
+The knight remains unaccepted as an animated workload until [Geometry Cache Animation — Acceptance](Acceptance.md) passes. Loading the static FBX, baking one pose, remapping controller names, or scaling only the knight entity does not close that gate.
+
 

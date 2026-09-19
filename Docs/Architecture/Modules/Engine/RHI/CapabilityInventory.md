@@ -100,7 +100,7 @@ The public format vocabulary contains 23 concrete formats. Per-adapter support i
 | `RHI-FMT-05` | BC scalar/vector | BC4 and BC5 in UNORM and SNORM variants |
 | `RHI-FMT-06` | BC HDR | `BC6H_UF16` |
 
-This list is a format contract, not evidence that every listed use�sampled, storage, render-target, depth, copy, filtering�passes on every release adapter. The evidence matrix must record the required usage bits for release content.
+This list is a format contract, not evidence that every listed use—sampled, storage, render-target, depth, copy, filtering—passes on every release adapter. The evidence matrix must record the required usage bits for release content.
 
 ## Descriptor And Bindless Coverage
 
@@ -167,7 +167,7 @@ Ray tracing is not one boolean. The current contract separates acceleration stru
 | `RHI-RTC-03` | Reference path-traced direct/indirect | Source path present | Not found | Inline traversal only in this snapshot. |
 | `RHI-RTC-04` | ReSTIR indirect temporal/spatial/resolve | Source path present | Not found | Inline traversal only in this snapshot. |
 
-�Native ray tracing� must therefore be scoped to the GBuffer and direct-shadow effects, not the entire path/ReSTIR pipeline.
+“Native ray tracing” must therefore be scoped to the GBuffer and direct-shadow effects, not the entire path/ReSTIR pipeline.
 
 ## Presentation
 
@@ -213,4 +213,5 @@ Ray tracing is not one boolean. The current contract separates acceleration stru
 - Build membership and backend switches: `Engine/RHI/CMakeLists.txt` and root CMake options/assertions.
 - Material descriptor coverage: `Engine/Renderer/Private/Scene/Materials`, `Engine/Renderer/Private/Passes/GBuffer/Raster/GBufferMeshBatchDrawer.cpp`, and `Engine/Assets/Shaders/Material/MaterialTextureTable.hlsli`.
 - Effect traversal coverage: `Engine/Renderer/Private/Passes/GBuffer`, `Engine/Renderer/Private/Passes/Lighting`, and `Engine/Renderer/Private/RayTracing`.
+
 

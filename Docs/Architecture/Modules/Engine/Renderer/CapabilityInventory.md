@@ -17,7 +17,7 @@
 **Deeper routes:** [Rendering a Sparkle Frame](RenderingASparkleFrame.md), [Renderer feature dossiers](Features/README.md), [pipeline materialization and typed binding](Features/ShaderRuntime/PipelineMaterializationAndTypedBinding.md), [scene and view preparation](Features/SceneAndViewPreparation/README.md), [mesh and texture residency](Features/GeometryAndResources/MeshAndTextureResidency.md), [temporal sampling and history](Features/FrameExecution/TemporalSamplingAndHistory.md), [latency coordination](Features/FrameExecution/LatencyCoordination.md), [settings lifecycle](Features/RuntimeConfiguration/SettingsStateAndPersistence.md), [cross-system graphics coverage](../../../CrossModule/GraphicsCoverageMatrix.md), [producer-to-consumer execution traces](../../../CrossModule/FeatureExecutionTraces.md), and the [exact shader program catalog](Features/ShaderRuntime/ShaderProgramCatalog.md)
 
 > [!TIP]
-> This file is an exact reference ledger, not the best introduction. Start with the [Renderer overview](README.md), then search this page by `REN-*` ID or feature heading. Read the row's **state**, **coverage and limit**, **evidence**, and **release disposition** together; no single cell means �supported.�
+> This file is an exact reference ledger, not the best introduction. Start with the [Renderer overview](README.md), then search this page by `REN-*` ID or feature heading. Read the row's **state**, **coverage and limit**, **evidence**, and **release disposition** together; no single cell means “supported.”
 
 **Current readiness:** **36/100** across the tracked Renderer portfolio; this inventory contributes source knowledge, not verification or delivery credit. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#renderer).
 
@@ -136,7 +136,7 @@ The [RHI module](../RHI/README.md) owns backend-neutral GPU contracts and backen
 | `REN-MAT-09` | Alpha mask | Alpha mode/cutoff with shader discard/any-hit rejection | Yes | Yes |
 | `REN-MAT-10` | Double-sided | Culling/normal orientation semantics | Yes | Yes |
 
-No complete clear-coat, sheen, transmission/refraction, authored index-of-refraction, or anisotropic-material-lobe path was found in this inventory. Those terms must not be included under a generic �PBR supported� claim.
+No complete clear-coat, sheen, transmission/refraction, authored index-of-refraction, or anisotropic-material-lobe path was found in this inventory. Those terms must not be included under a generic “PBR supported” claim.
 
 ### GBuffer Outputs
 
@@ -392,4 +392,5 @@ executable pixel, extent, backend, and capture evidence remains pending.
 - Settings lifecycle: `Engine/Renderer/Private/Settings`, public settings contracts, `Engine/Application` startup, and `Engine/Editor` commit wiring.
 - Latency coordination: `Engine/Renderer/Private/Integrations`, `Engine/Renderer/Private/Streamline`, Renderer facade simulation calls, and RHI frame-marker hooks.
 - Build and shader registration membership: `Engine/Renderer/CMakeLists.txt`.
+
 

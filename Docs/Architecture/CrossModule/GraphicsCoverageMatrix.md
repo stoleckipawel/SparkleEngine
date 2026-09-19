@@ -18,7 +18,7 @@
 
 ## Reading The Matrix
 
-�D3D12� or �Vulkan� below means that the current source has an eligible implementation path behind runtime capability checks. It does not mean that the path was built or exercised on the snapshot date. �None� under fallback means the selection becomes unavailable or fails instead of silently becoming a non-ray implementation.
+“D3D12” or “Vulkan” below means that the current source has an eligible implementation path behind runtime capability checks. It does not mean that the path was built or exercised on the snapshot date. “None” under fallback means the selection becomes unavailable or fails instead of silently becoming a non-ray implementation.
 
 ## End-To-End Feature Coverage
 
@@ -63,7 +63,7 @@ each family privately early - outs unless selected and overwrites scene color be
 | --- | --- | --- | --- |
 | Capability source | Standard RHI AS support populates build, update, GPU-readable instance-buffer support | NVAPI provider query on an NVIDIA device, after DXR availability | `VK_NV_partitioned_acceleration_structure` extension, feature, and loaded functions on NVIDIA |
 | Runtime selection | Selected whenever AS exists and a usable PTLAS descriptor path is not selected | Selected only when `r.RayTracing.PreferPartitionedTlas` requests it and the provider reports both support and descriptor access | Never selected by the current code: capability records `SupportsDescriptorAccess=false`, so selection falls back to classic with reason `vulkan-ptlas-descriptor-path-unavailable` |
-| Renderer update path | Initial build; optional refit/update for later rigid changes via `r.RayTracing.Tlas.Refit` | Renderer builds its partition operation strategy and routes the RHI build through NVAPI | Low-level create/size/build operation surface exists, but it is not the Renderer�s active TLAS binding provider |
+| Renderer update path | Initial build; optional refit/update for later rigid changes via `r.RayTracing.Tlas.Refit` | Renderer builds its partition operation strategy and routes the RHI build through NVAPI | Low-level create/size/build operation surface exists, but it is not the Renderer’s active TLAS binding provider |
 | Shader binding | Standard acceleration-structure descriptor | Provider-selected partitioned-AS descriptor when supported | Vulkan binding-layout code can name the partitioned descriptor type, but current provider selection cannot reach it |
 | Honest claim | Implemented, capability-gated, unexecuted | Vendor/API-gated partial path, unexecuted | Low-level vocabulary and operations exist; selectable Renderer PTLAS is not currently supported |
 
@@ -80,7 +80,7 @@ Native RT pipelines currently adapt two effects only: ray GBuffer and direct-sha
 | Alpha coverage | Opaque and alpha mask | Opaque and alpha mask; any-hit handles rejection in pipeline mode | Any-hit/inline rejection | Hit evaluation respects mask data | Hit evaluation respects mask data |
 | Missing product coverage | No complete transparent blend/transmission pass | Same | No translucent shadow model | No complete transmissive path | No complete transmissive path |
 
-�Bindless� therefore describes a fixed-capacity material-texture array on selected ray paths, not a runtime-sized engine-wide resource model and not the raster GBuffer path.
+“Bindless” therefore describes a fixed-capacity material-texture array on selected ray paths, not a runtime-sized engine-wide resource model and not the raster GBuffer path.
 
 ## Render-Target And History Contract
 
@@ -149,4 +149,5 @@ Targeted source review did not find a complete current product path for runtime-
 ## Evidence Linkage
 
 The executable closure items for these rows are `RHI-E01` through `RHI-E16`, `REN-E01` through `REN-E33`, and `SHD-E01` through `SHD-E12` in the [Capability Evidence Plan](../Modules/CapabilityEvidencePlan.md). Candidate-specific results belong in [Feature Completion Reports](../../Acceptance/FeatureCompletionReports.md), not in this snapshot.
+
 

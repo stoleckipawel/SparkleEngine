@@ -6,7 +6,7 @@
 
 **Scope:** `REN-SCENE-03` through `REN-SCENE-10`, `REN-MAT-01` through `REN-MAT-10`, `REN-GBUF-01` through `REN-GBUF-08`, and `REN-FRONT-01` through `REN-FRONT-07`
 
-**Current readiness:** **50/100** for the current raster/GBuffer scope � integrated source paths exist; PBR/content/motion/backend/visual and draw-cost evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **50/100** for the current raster/GBuffer scope — integrated source paths exist; PBR/content/motion/backend/visual and draw-cost evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 ## At A Glance
 
@@ -123,14 +123,14 @@ Run the matrix across exact render extents, resize, scene reload, missing/pendin
 
 ## Acceptance Criteria
 
-- `AC-GMG-01` � every supported material component and default texture decodes to the documented GBuffer channel meaning and format for opaque raster, ray-inline, and ray-pipeline surfaces.
-- `AC-GMG-02` � raster, inline, and pipeline frontends agree within predeclared channel/depth tolerances for supported static, instanced, alpha-tested, double-sided, skinned, morphed, and combined deformation fixtures.
-- `AC-GMG-03` � current/previous transforms and deformation produce correct rigid, skinned, morphed, combined, and sky motion vectors across continuity and reset cases.
-- `AC-GMG-04` � the shared automatic resolver selects Pipeline when complete, otherwise Inline when complete, and rejects when neither route exists; no per-effect execution selector remains.
-- `AC-GMG-05` � the fixed ray material texture table accepts its documented capacity, rejects overflow before dispatch, and preserves material/descriptor identity under add/remove/reload.
-- `AC-GMG-06` � alpha cutoff edges, missing/default textures, invalid tangents/normals, invalid bounds, repeated geometry/material IDs, and double-sided orientation have deterministic documented results without stale data.
-- `AC-GMG-07` � transparent/transmissive, procedural, mesh/task/tessellation, and ray-wireframe requests remain explicitly unavailable; dormant BRDF/material-binding vocabulary is not presented as an active path.
-- `AC-GMG-08` � both backends create, transition, write, export/capture, and decode all eight GBuffer products without native validation errors or semantic drift.
+- `AC-GMG-01` — every supported material component and default texture decodes to the documented GBuffer channel meaning and format for opaque raster, ray-inline, and ray-pipeline surfaces.
+- `AC-GMG-02` — raster, inline, and pipeline frontends agree within predeclared channel/depth tolerances for supported static, instanced, alpha-tested, double-sided, skinned, morphed, and combined deformation fixtures.
+- `AC-GMG-03` — current/previous transforms and deformation produce correct rigid, skinned, morphed, combined, and sky motion vectors across continuity and reset cases.
+- `AC-GMG-04` — the shared automatic resolver selects Pipeline when complete, otherwise Inline when complete, and rejects when neither route exists; no per-effect execution selector remains.
+- `AC-GMG-05` — the fixed ray material texture table accepts its documented capacity, rejects overflow before dispatch, and preserves material/descriptor identity under add/remove/reload.
+- `AC-GMG-06` — alpha cutoff edges, missing/default textures, invalid tangents/normals, invalid bounds, repeated geometry/material IDs, and double-sided orientation have deterministic documented results without stale data.
+- `AC-GMG-07` — transparent/transmissive, procedural, mesh/task/tessellation, and ray-wireframe requests remain explicitly unavailable; dormant BRDF/material-binding vocabulary is not presented as an active path.
+- `AC-GMG-08` — both backends create, transition, write, export/capture, and decode all eight GBuffer products without native validation errors or semantic drift.
 
 ## Controlled Failure Modes And Checks
 
@@ -160,4 +160,5 @@ This contract is **defined but unproved**. Completion requires raw-product evide
 - [`RenderViewPreparation.cpp`](../../../../../../../Engine/Renderer/Private/View/RenderViewPreparation.cpp)
 - [`RenderGpuScene.cpp`](../../../../../../../Engine/Renderer/Private/Scene/GpuScene/RenderGpuScene.cpp)
 - [`MaterialTextureTableCapability.h`](../../../../../../../Engine/Renderer/Private/Scene/Materials/MaterialTextureTableCapability.h)
+
 

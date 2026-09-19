@@ -16,7 +16,7 @@
 
 **Non-claims:** the current transport/material/endpoint source and predecessor builds/cooks do not prove the current shader's execution, decode correctness, endpoint conservatism, Reference-produced `Radiance` correctness, convergence, backend parity, performance, package, Shipping, or release evidence.
 
-The target is one bounded, restartable **per-view reference session** selected by `RenderViewMode::ReferencePathTracer`, ordered immediately after Lit. The same mode travels through the ordinary view request and immutable `RenderView`; Editor owns only its label, icon, menu placement, and interaction, while RHI remains unaware. The feature is a specialized scene-rendering setup inside the existing `FramePipeline`, frame graph, Scene, View, and RHI architecture�not a separate renderer. `AddSceneRenderingPasses` is its sole graph-composition seam. It traces camera paths over immutable Scene- and View-owned generations, accumulates automatically while the effective view is unchanged, invalidates before mixing changed inputs, and can publish raw scene-linear evidence atomically. A secondary host submits the same Renderer semantic and receives the same session behavior. It is not a quality preset layered onto the retired GBuffer-seeded branch, and it does not duplicate frame ownership.
+The target is one bounded, restartable **per-view reference session** selected by `RenderViewMode::ReferencePathTracer`, ordered immediately after Lit. The same mode travels through the ordinary view request and immutable `RenderView`; Editor owns only its label, icon, menu placement, and interaction, while RHI remains unaware. The feature is a specialized scene-rendering setup inside the existing `FramePipeline`, frame graph, Scene, View, and RHI architecture—not a separate renderer. `AddSceneRenderingPasses` is its sole graph-composition seam. It traces camera paths over immutable Scene- and View-owned generations, accumulates automatically while the effective view is unchanged, invalidates before mixing changed inputs, and can publish raw scene-linear evidence atomically. A secondary host submits the same Renderer semantic and receives the same session behavior. It is not a quality preset layered onto the retired GBuffer-seeded branch, and it does not duplicate frame ownership.
 
 > [!IMPORTANT]
 > **Current state:** `PTD-01-R2 PASS` established selector order, one stateless Private owner, a proved generic progress reader, and the obsolete-route/generated-product clean break under `CHK-RPT-17`. Stages 3-6 later established source-present GPU transport and accumulation. The 2026-09-15 one-mode clean break superseded the proposed target/show-flag split. Stage 7 exposes that single mode and its minimum operational progress/actions through the ordinary viewport boundary. Stage 8 adds source-present Inline/Pipeline adapters over one kernel, one automatic shared frontend policy, and shared scene-trace mechanics. Stage 9 adds source-present manual raw artifact capture without another renderer or RHI capture route. None of this is accepted-reference output, artifact integrity evidence, or executable parity evidence.
@@ -39,7 +39,7 @@ Typed readback and minimal durable publication are added after that slice to ear
 | Live raw HDR accumulation, viewport derivative, exact progress/reset truth; later evidence readback, provenance, checkpoints, and atomic completion | Denoising, exposure, tone mapping, output encoding, or screenshot pixels in the oracle value |
 | Strict D3D12/Vulkan capability truth and thin Inline/RGS traversal adapters | Silent backend/frontend substitution or vendor-specific estimator forks |
 | First-class viewport view mode, truthful progress/reset feedback, Lit comparison retention, and manual raw export over the same session contract | A mandatory render wizard, command-line renderer, second path-tracer executable, or Shipping consumer debug surface by default |
-| Full supported surface-transport mode and a separately named finite-path diagnostic mode | A silently truncated �unbiased� result, contribution clamp, firefly filter, or approximate cache |
+| Full supported surface-transport mode and a separately named finite-path diagnostic mode | A silently truncated “unbiased” result, contribution clamp, firefly filter, or approximate cache |
 
 ## Current Route Versus Target Route
 
@@ -65,7 +65,7 @@ The completion change is therefore a clean break in selection and authority. It 
 | `SurfaceTransportReference` | For the included camera, surface, material, and light domain, the estimator targets the full supported surface-light-transport integral. | Compensated Russian roulette is the ordinary stochastic termination. An implementation safety ceiling is a detected sample/session failure, never an accepted zero contribution. | Candidate oracle after all applicable `AC-RPT-*` criteria pass. |
 | `FinitePathDiagnostic` | The estimator targets an explicitly declared maximum scattering-event domain. | The deterministic maximum is part of the artifact identity and output name. | Analytic fixtures, event isolation, convergence diagnosis, and cross-renderer matching; never silently substituted for the full product. |
 
-The Reference Path Tracer is not constrained to finish inside a real-time frame budget even though its primary interaction is a progressive viewport session. �Bounded session� means bounded requested samples, wall time, memory, checkpoint/export work, and cancellation latency. It does not authorize a hidden deterministic path cutoff in `SurfaceTransportReference`. Unsupported or unrepresentable events fail the session or keep the domain excluded; they do not disappear as black.
+The Reference Path Tracer is not constrained to finish inside a real-time frame budget even though its primary interaction is a progressive viewport session. “Bounded session” means bounded requested samples, wall time, memory, checkpoint/export work, and cancellation latency. It does not authorize a hidden deterministic path cutoff in `SurfaceTransportReference`. Unsupported or unrepresentable events fail the session or keep the domain excluded; they do not disappear as black.
 
 The first accepted domain should be the smallest complete surface domain exercised by the frozen release maps:
 
@@ -123,15 +123,15 @@ Sparkle's live frame route is the template: `FramePipeline::OnRender` admits and
 
 After canonical frame preparation, `FramePipeline` invokes the stateful Reference feature's narrow lifecycle operation with the prepared `RenderFrame` and focused action edge. The Reference owner updates its private session, writes generic progress plus the exact `RenderProductSamplePrefix` for its generic `Radiance` product into `ViewportFrameProducts`, and binds its persistent resources. `FramePipeline` then calls `PublishViewportRenderProducts` once to publish the prepared handles and metadata as one viewport-product snapshot. Submission has one matching feature notification. The complete mutable viewport request, session state, identity, resource owner, and product mutators remain inside the feature.
 
-`RenderViewKind` identifies existing producer semantics�Editor-authored `Scene` or runtime `Game`�and remains independent of the selected mode. Any supported kind whose request selects `RenderViewMode::ReferencePathTracer` reaches the same branch, feature owner, estimator, session, and downstream product contract. Editor uses that Renderer semantic directly while retaining only presentation state. No feature code branches on �Editor versus Game.�
+`RenderViewKind` identifies existing producer semantics—Editor-authored `Scene` or runtime `Game`—and remains independent of the selected mode. Any supported kind whose request selects `RenderViewMode::ReferencePathTracer` reaches the same branch, feature owner, estimator, session, and downstream product contract. Editor uses that Renderer semantic directly while retaining only presentation state. No feature code branches on “Editor versus Game.”
 
-Validation follows the same layering rule. The feature preflight validates externally supplied requests, supported-domain membership, and immutable input identity once before sample zero; universal Scene/View/resource invariants are enforced by their construction/publication owners. Inner camera, sampler, BSDF, light, traversal, estimator, and accumulation functions consume those established invariants as straightforward math. They do not carry `IsValid`/`IsSupported` scans, `Try*` call chains, repeated finite/range checks, diagnostic sentinels, or validity booleans between pure operations. Only estimator branches�mathematical support, sidedness/visibility/topology, stochastic outcomes, specified safety failure�and genuinely concurrent transitions such as stale sample-range completion remain local.
+Validation follows the same layering rule. The feature preflight validates externally supplied requests, supported-domain membership, and immutable input identity once before sample zero; universal Scene/View/resource invariants are enforced by their construction/publication owners. Inner camera, sampler, BSDF, light, traversal, estimator, and accumulation functions consume those established invariants as straightforward math. They do not carry `IsValid`/`IsSupported` scans, `Try*` call chains, repeated finite/range checks, diagnostic sentinels, or validity booleans between pure operations. Only estimator branches—mathematical support, sidedness/visibility/topology, stochastic outcomes, specified safety failure—and genuinely concurrent transitions such as stale sample-range completion remain local.
 
 `FramePipeline` owns the persistent Reference feature lifetime required across graph rebuilds and submissions. `AddSceneRenderingPasses` is the only graph-composition point allowed to choose Lit or Reference, while the feature owner retains validation, accumulation counters, reset classification, transport identity, sample state, shader binding, resource allocation, and error policy. No class-shaped graph stage, dependency record, recipe/base interface, factory, post-process stage, presentation path, View, or RHI frontend independently chooses the renderer again.
 
 ### One Frame, Two Middle Recipes
 
-�A view mode� means a different setup of the original frame, not a different frame architecture. The selected mode changes the middle recipe while preserving the common frame shell:
+“A view mode” means a different setup of the original frame, not a different frame architecture. The selected mode changes the middle recipe while preserving the common frame shell:
 
 ```mermaid
 flowchart LR
@@ -195,7 +195,7 @@ These are the only pre-authorized steady-state hooks. Every other outside-featur
 - separate Direct/Indirect/Accumulation owners distributed among generic lighting, ray-tracing effects, history, and settings folders;
 - feature-specific validation or progress truth reconstructed in Editor;
 - a generic feature manager, plugin registry, open-ended recipe registry, service locator, callback collection, or job service introduced for this mode; and
-- a �thin facade� whose callers still manipulate feature internals.
+- a “thin facade” whose callers still manipulate feature internals.
 
 Every implementation stage runs [the architecture-fitness check](README.md#required-checks-and-external-reference-use) and retains an exact outside-feature hook ledger. A successful build, small files, or a clean formatter result cannot pass feature enclosure.
 
@@ -567,4 +567,5 @@ Use:
 - [Staged implementation plan](Plan.md) for dependency order, work packages, deletions, prompts, and exit gates;
 - [Ray Tracing Execution Architecture](../../RayTracing/ExecutionArchitecture.md) for shared semantic-effect and frontend policy;
 - [Validation And Evidence](../../../../../../../Engineering/Verification/ValidationAndEvidence.md) for check design and claim-driven escalation.
+
 

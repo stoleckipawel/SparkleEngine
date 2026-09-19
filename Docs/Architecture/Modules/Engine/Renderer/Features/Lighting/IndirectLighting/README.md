@@ -14,7 +14,7 @@
 
 ## Outcome
 
-Sparkle needs a correct real-time indirect-lighting feature whose first-bounce and multi-bounce claims are mathematically explicit, compare against an independent reference, and remain useful under camera/scene motion. ReSTIR is the selected research family, not a license to call any reservoir of random seeds �ReSTIR GI.�
+Sparkle needs a correct real-time indirect-lighting feature whose first-bounce and multi-bounce claims are mathematically explicit, compare against an independent reference, and remain useful under camera/scene motion. ReSTIR is the selected research family, not a license to call any reservoir of random seeds “ReSTIR GI.”
 
 The delivery path is:
 
@@ -90,19 +90,19 @@ Atmospheric sky and fog live in [Volumetric Lighting](../VolumetricLighting/READ
 
 ## Acceptance Criteria
 
-- `AC-IND-01` � the admitted transport equation, path domain, light/environment sampling, BRDF sampling, MIS, roulette, and emission accounting map to exact code and independent hand/statistical cases.
-- `AC-IND-02` � initial one-bounce diffuse and glossy estimates are finite and statistically agree with analytic or accepted independent references before reservoir reuse and denoising.
-- `AC-IND-03` � the reservoir stores or reconstructs every path/sample fact required by its selected shift mapping; integer identity and counts are not rounded through binary32.
-- `AC-IND-04` � reconnection/replay/hybrid shifts pass support, inverse, Jacobian, roughness, visibility, and target-density tests; invalid shifts contribute no fabricated sample mass.
-- `AC-IND-05` � temporal/spatial reuse passes the ratified GRIS/ReSTIR normalization and effective-`M` contract, including correlation/bias classification and disocclusion behavior.
-- `AC-IND-06` � camera, motion, surface, material, normal, roughness, object, geometry, light, sky, extent, view, shader, traversal, and algorithm mutations invalidate exactly the required histories with no cross-view reuse.
-- `AC-IND-07` � direct NEE, emissive hits, environment misses, and indirect bounces are mutually accounted; adding path depth cannot deterministically double an earlier contribution.
-- `AC-IND-08` � raw diffuse/specular outputs and path/reservoir/confidence evidence remain observable before reconstruction; the denoiser has an explicit portable baseline and optional-provider failure contract.
-- `AC-IND-09` � the supported glossy/roughness/path-depth domain is explicit; unsupported delta/transmission/caustic cases report exclusion rather than plausible but mislabeled output.
-- `AC-IND-10` � quality, ray/path count, temporal lag, peak/history memory, and GPU time are recorded for frozen workloads and profiles; source-paper results do not fill the table.
-- `AC-IND-11` � D3D12 and Vulkan supported cells pass identical raw/statistical/temporal/failure semantics with native validation.
-- `AC-IND-12` � one feature capsule owns mechanism/history; every external hook has a reason and defect-detecting check; the seed-replay prototype is deleted in the replacement stage.
-- `AC-IND-13` � `FCR-REN-07` owns the candidate verdict with complete identity, references, thresholds, artifacts, and explicit blocked/excluded cells.
+- `AC-IND-01` — the admitted transport equation, path domain, light/environment sampling, BRDF sampling, MIS, roulette, and emission accounting map to exact code and independent hand/statistical cases.
+- `AC-IND-02` — initial one-bounce diffuse and glossy estimates are finite and statistically agree with analytic or accepted independent references before reservoir reuse and denoising.
+- `AC-IND-03` — the reservoir stores or reconstructs every path/sample fact required by its selected shift mapping; integer identity and counts are not rounded through binary32.
+- `AC-IND-04` — reconnection/replay/hybrid shifts pass support, inverse, Jacobian, roughness, visibility, and target-density tests; invalid shifts contribute no fabricated sample mass.
+- `AC-IND-05` — temporal/spatial reuse passes the ratified GRIS/ReSTIR normalization and effective-`M` contract, including correlation/bias classification and disocclusion behavior.
+- `AC-IND-06` — camera, motion, surface, material, normal, roughness, object, geometry, light, sky, extent, view, shader, traversal, and algorithm mutations invalidate exactly the required histories with no cross-view reuse.
+- `AC-IND-07` — direct NEE, emissive hits, environment misses, and indirect bounces are mutually accounted; adding path depth cannot deterministically double an earlier contribution.
+- `AC-IND-08` — raw diffuse/specular outputs and path/reservoir/confidence evidence remain observable before reconstruction; the denoiser has an explicit portable baseline and optional-provider failure contract.
+- `AC-IND-09` — the supported glossy/roughness/path-depth domain is explicit; unsupported delta/transmission/caustic cases report exclusion rather than plausible but mislabeled output.
+- `AC-IND-10` — quality, ray/path count, temporal lag, peak/history memory, and GPU time are recorded for frozen workloads and profiles; source-paper results do not fill the table.
+- `AC-IND-11` — D3D12 and Vulkan supported cells pass identical raw/statistical/temporal/failure semantics with native validation.
+- `AC-IND-12` — one feature capsule owns mechanism/history; every external hook has a reason and defect-detecting check; the seed-replay prototype is deleted in the replacement stage.
+- `AC-IND-13` — `FCR-REN-07` owns the candidate verdict with complete identity, references, thresholds, artifacts, and explicit blocked/excluded cells.
 
 ## Controlled Failure Modes
 
@@ -134,7 +134,7 @@ Atmospheric sky and fog live in [Volumetric Lighting](../VolumetricLighting/READ
 
 ## Definition Of Done
 
-Indirect Lighting is done only when `IND-D0` is accepted, the seed-replay path is removed, every included `IND-FS-*` maps to passing `AC-IND-*`/`CHK-IND-*`, controlled failures reach their safe state, supported path/backend/quality-time-memory cells pass, and `FCR-REN-07` records the exact candidate. This dossier does not raise the current 45/100 readiness. ReSTIR GI papers, RTXDI, Lumen, ReSTIR PT, or a visually pleasing denoised image provide precedent�not Sparkle acceptance.
+Indirect Lighting is done only when `IND-D0` is accepted, the seed-replay path is removed, every included `IND-FS-*` maps to passing `AC-IND-*`/`CHK-IND-*`, controlled failures reach their safe state, supported path/backend/quality-time-memory cells pass, and `FCR-REN-07` records the exact candidate. This dossier does not raise the current 45/100 readiness. ReSTIR GI papers, RTXDI, Lumen, ReSTIR PT, or a visually pleasing denoised image provide precedent—not Sparkle acceptance.
 
 ## Primary Source Routes
 
@@ -143,4 +143,5 @@ Indirect Lighting is done only when `IND-D0` is accepted, the seed-replay path i
 - [`PathLighting.hlsli`](../../../../../../../../Engine/Assets/Shaders/RayTracing/PathLighting.hlsli) and [`PathSampling.hlsli`](../../../../../../../../Engine/Assets/Shaders/RayTracing/PathSampling.hlsli)
 - [`RestirIndirectLightingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/Restir/ Indirect /RestirIndirectLightingPasses.cpp)
 - [`Sky.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/Sky/Sky.cpp) and [`LightingComposite.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/LightingComposite.cpp)
+
 

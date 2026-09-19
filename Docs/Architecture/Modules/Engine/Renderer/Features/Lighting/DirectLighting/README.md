@@ -14,7 +14,7 @@
 
 ## Outcome
 
-Sparkle needs one reliable direct-lighting feature that is analytically checkable at small light counts and scales to dense overlapping lights without changing the authored light contract. �MegaLights-like� is a product goal�many dynamic shadowed lights at bounded per-pixel work�not a request to copy Unreal internals. RTXDI and ReSTIR are algorithmic precedents, not automatic proof that Sparkle's current reservoir is correct.
+Sparkle needs one reliable direct-lighting feature that is analytically checkable at small light counts and scales to dense overlapping lights without changing the authored light contract. “MegaLights-like” is a product goal—many dynamic shadowed lights at bounded per-pixel work—not a request to copy Unreal internals. RTXDI and ReSTIR are algorithmic precedents, not automatic proof that Sparkle's current reservoir is correct.
 
 The delivery order is correctness first, controlled stochastic scaling second, denoising third, and quality/performance tuning last. A plausible image, a stable temporal image, or an SDK-derived implementation cannot replace an independent oracle.
 
@@ -35,7 +35,7 @@ The delivery order is correctness first, controlled stochastic scaling second, d
 The ordinary Lit recipe currently provides:
 
 - directional, point, spot, and rectangular lights with inspected capacities `2/1024/1024/1024`;
-- physical-looking author fields�directional illuminance in lux, point/spot luminous intensity in candela, and rectangular luminance in candela per square metre�without executed unit-conformance proof;
+- physical-looking author fields—directional illuminance in lux, point/spot luminous intensity in candela, and rectangular luminance in candela per square metre—without executed unit-conformance proof;
 - four initial uniform candidates per pixel, one temporal reuse pass, four fixed spatial neighbors, and a scalar luminance target;
 - a selected-light visibility signal through Inline ray queries or the Pipeline ray-tracing frontend;
 - separate `DirectDiffuse`, `DirectSpecular`, and `DirectSubsurface` scene-linear textures, later joined by `LightingComposite`;
@@ -43,7 +43,7 @@ The ordinary Lit recipe currently provides:
 
 The reservoir stores light type/index, a shape sample, weight sum, target, effective sample count, and validity. Temporal compatibility currently uses reprojected motion plus packed normal and view distance. The inspected path does not expose previous-to-current light-index translation, a selectable bias-correction mode, conservative visibility-reuse state, material/roughness/object identity, denoiser confidence, or disocclusion-specific candidate policy. The whole lighting-scene hash can reset history after broad mutations; it does not establish mathematically valid reuse for the histories that survive.
 
-The active direct BRDF is Cook�Torrance/GGX/Smith/Schlick plus Burley diffuse and a wrap-subsurface approximation. The implementation must be tested for lobe energy allocation�especially simultaneous diffuse and subsurface�rather than assumed correct from familiar function names.
+The active direct BRDF is Cook–Torrance/GGX/Smith/Schlick plus Burley diffuse and a wrap-subsurface approximation. The implementation must be tested for lobe energy allocation—especially simultaneous diffuse and subsurface—rather than assumed correct from familiar function names.
 
 ## Capability Decomposition
 
@@ -71,18 +71,18 @@ The active direct BRDF is Cook�Torrance/GGX/Smith/Schlick plus Burley diffuse 
 
 ## Acceptance Criteria
 
-- `AC-DIR-01` � four analytic light families satisfy frozen unit, attenuation, cone, shape-measure, range, and finite-boundary cases against predeclared analytic values.
-- `AC-DIR-02` � evaluation and sampling of each admitted BRDF lobe agree on direction convention, support, PDF measure, delta classification, and energy allocation; diffuse/subsurface cannot double-spend the same energy.
-- `AC-DIR-03` � exhaustive small-light GPU output agrees with the analytic/reference baseline within frozen absolute/relative/statistical tolerances before reservoir reuse is enabled.
-- `AC-DIR-04` � initial, temporal, and spatial reservoir stages pass normalization, `M` accounting, target-density, selected-sample replay, previous-light translation, and bias-mode tests.
-- `AC-DIR-05` � camera/light/geometry/material/alpha/extent/provider/shader mutations invalidate or translate exactly the affected history; disocclusions cannot reuse incompatible samples.
-- `AC-DIR-06` � Inline and Pipeline visibility agree for miss, opaque, alpha-mask, double-sided, finite segment, grazing, self-intersection, and area-light cases; strict unavailability is explicit.
-- `AC-DIR-07` � raw noisy lobes remain separately observable; the denoiser consumes declared motion/depth/normal/roughness/confidence identities and never turns non-finite or stale input into a pass.
-- `AC-DIR-08` � analytic, emissive, and environment candidate classes admitted by discovery use one light identity and exact selection/source PDFs; unsupported classes are rejected rather than sampled as black.
-- `AC-DIR-09` � quality degrades predictably as overlapping important lights exceed the sample budget; the active budget and resolved algorithm are visible and no �unlimited lights� claim is made.
-- `AC-DIR-10` � D3D12 and Vulkan pass the same raw-lobe, visibility, temporal, failure, and workload matrix with native validation; quality, time, and memory are reported separately.
-- `AC-DIR-11` � the feature is enclosed in one predictable owner and all external edits appear in the integration-hook ledger with a defect-detecting check.
-- `AC-DIR-12` � `FCR-REN-06` records the exact candidate, configuration, references, thresholds, artifacts, and `PASS/BLOCKED/EXCLUDED/SUPERSEDED` verdicts; documentation completion cannot pass it.
+- `AC-DIR-01` — four analytic light families satisfy frozen unit, attenuation, cone, shape-measure, range, and finite-boundary cases against predeclared analytic values.
+- `AC-DIR-02` — evaluation and sampling of each admitted BRDF lobe agree on direction convention, support, PDF measure, delta classification, and energy allocation; diffuse/subsurface cannot double-spend the same energy.
+- `AC-DIR-03` — exhaustive small-light GPU output agrees with the analytic/reference baseline within frozen absolute/relative/statistical tolerances before reservoir reuse is enabled.
+- `AC-DIR-04` — initial, temporal, and spatial reservoir stages pass normalization, `M` accounting, target-density, selected-sample replay, previous-light translation, and bias-mode tests.
+- `AC-DIR-05` — camera/light/geometry/material/alpha/extent/provider/shader mutations invalidate or translate exactly the affected history; disocclusions cannot reuse incompatible samples.
+- `AC-DIR-06` — Inline and Pipeline visibility agree for miss, opaque, alpha-mask, double-sided, finite segment, grazing, self-intersection, and area-light cases; strict unavailability is explicit.
+- `AC-DIR-07` — raw noisy lobes remain separately observable; the denoiser consumes declared motion/depth/normal/roughness/confidence identities and never turns non-finite or stale input into a pass.
+- `AC-DIR-08` — analytic, emissive, and environment candidate classes admitted by discovery use one light identity and exact selection/source PDFs; unsupported classes are rejected rather than sampled as black.
+- `AC-DIR-09` — quality degrades predictably as overlapping important lights exceed the sample budget; the active budget and resolved algorithm are visible and no “unlimited lights” claim is made.
+- `AC-DIR-10` — D3D12 and Vulkan pass the same raw-lobe, visibility, temporal, failure, and workload matrix with native validation; quality, time, and memory are reported separately.
+- `AC-DIR-11` — the feature is enclosed in one predictable owner and all external edits appear in the integration-hook ledger with a defect-detecting check.
+- `AC-DIR-12` — `FCR-REN-06` records the exact candidate, configuration, references, thresholds, artifacts, and `PASS/BLOCKED/EXCLUDED/SUPERSEDED` verdicts; documentation completion cannot pass it.
 
 ## Controlled Failure Modes
 
@@ -113,7 +113,7 @@ The active direct BRDF is Cook�Torrance/GGX/Smith/Schlick plus Burley diffuse 
 
 ## Definition Of Done
 
-Direct Lighting is done only when `DIR-D0` is accepted, every included `DIR-FS-*` maps to passing `AC-DIR-*`/`CHK-DIR-*`, controlled failures reach their safe states, the clean-break/enclosure and adoption contracts pass, supported D3D12/Vulkan quality-time-memory cells pass, and `FCR-REN-06` records the exact candidate verdict. RTXDI, MegaLights, NRD, FidelityFX, the current source path, and a future Reference Path Tracer are dependencies or precedents�not inherited evidence. First-release work remains subject to the repository release gate; unadmitted expansions such as photometric profiles, a shadow-map fallback, or emissive animation do not enter production merely because they are researched here.
+Direct Lighting is done only when `DIR-D0` is accepted, every included `DIR-FS-*` maps to passing `AC-DIR-*`/`CHK-DIR-*`, controlled failures reach their safe states, the clean-break/enclosure and adoption contracts pass, supported D3D12/Vulkan quality-time-memory cells pass, and `FCR-REN-06` records the exact candidate verdict. RTXDI, MegaLights, NRD, FidelityFX, the current source path, and a future Reference Path Tracer are dependencies or precedents—not inherited evidence. First-release work remains subject to the repository release gate; unadmitted expansions such as photometric profiles, a shadow-map fallback, or emissive animation do not enter production merely because they are researched here.
 
 ## Primary Source Routes
 
@@ -123,4 +123,5 @@ Direct Lighting is done only when `DIR-D0` is accepted, every included `DIR-FS-*
 - [`DirectShadowSignal.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/Shadows/DirectShadowSignal.cpp)
 - [`SurfaceLighting.hlsli`](../../../../../../../../Engine/Assets/Shaders/Lighting/SurfaceLighting.hlsli) and [`BRDF.hlsli`](../../../../../../../../Engine/Assets/Shaders/BRDF/BRDF.hlsli)
 - [`RenderGpuLightingPayloadBuilder.cpp`](../../../../../../../../Engine/Renderer/Private/Scene/GpuScene/RenderGpuLightingPayloadBuilder.cpp)
+
 

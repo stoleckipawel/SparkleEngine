@@ -38,7 +38,7 @@ The source ownership rule is concrete: `RenderScene` owns persistent scene data,
 | Step | Producer -> consumer | Exact data/operation | Gate or boundary |
 | --- | --- | --- | --- |
 | Material ingestion | Cooked/runtime material -> `RenderScene` material records | Factors plus eight texture-role identities, alpha mode/cutoff, sidedness, and shading data | General transparent blend/transmission has no complete render path |
-| Texture residency | `TextureCache` -> material descriptor table | Resident SRVs are written into the material�s bindful table | Eight roles; this path is not the 4096-entry ray material table |
+| Texture residency | `TextureCache` -> material descriptor table | Resident SRVs are written into the material’s bindful table | Eight roles; this path is not the 4096-entry ray material table |
 | Mesh preparation | Scene mesh instances -> `GpuMeshCache`/batch builder | Vertex/index streams, transforms, prior transforms, skin/morph data, and compatible auto batches | Public vertex contract is position/UV/normal/tangent and triangle list |
 | Graph declaration | GBuffer target factory -> frame graph | Six color-like attachments plus depth: base, normal, material, emissive, subsurface, motion, `D32_Float` depth | Required format attachment support is adapter-queried but unexecuted |
 | Pipeline materialization | `GBufferMeshPass` -> runtime pass cache -> RHI | Typed `GBufferVS/GBufferPS`, binding layout, graphics PSO and material descriptors | Shader generation and material/pipeline keys control reuse |
@@ -243,4 +243,5 @@ The exact names/domains remain in the [Feature Selector Catalog](../Modules/Engi
 ## Trace Closure Rule
 
 A vertical path is release-complete only when every stage has an owned producer, an owned consumer, a defined failure/fallback, and candidate-bound executable evidence. Source closure in this document earns only `S`; the corresponding `B`, `R`, `N`, `P`, and `A` work remains in the [Capability Evidence Plan](../Modules/CapabilityEvidencePlan.md).
+
 

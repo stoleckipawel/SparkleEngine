@@ -8,7 +8,7 @@
 
 **Verified:** 2026-09-10 against committed revision `ca55e7d8`; Renderer post-processing, display settings, shader, capture, viewport, and package paths were inspected as source only; concurrent user-owned dirty paths remain outside this gate evidence
 
-**Current readiness:** **0/100** � discovery adds no implementation or evidence credit. See [Current Feature Readiness](../../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **0/100** — discovery adds no implementation or evidence credit. See [Current Feature Readiness](../../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 Chromatic aberration is visually simple but semantically easy to fake. A feature claim needs an authored lens model, stable units, bounded sampling, explicit order, and exact identity. Colored fringes from reconstruction, filtering, motion, or encoding remain defects.
 
@@ -46,11 +46,11 @@ Excluded from both discovery and first release are physical calibration, lens pr
 
 ## Decision Recording Contract
 
-Each `CHRD-*` disposition records selected answer, alternatives rejected, source/experiment basis, affected semantic/architecture/UX/plan sections, exact constants/ranges, owner/reviewer/date, invalidation triggers, and evidence/check changes. �Follow Unity,� �looks good,� or a shader literal is not a disposition.
+Each `CHRD-*` disposition records selected answer, alternatives rejected, source/experiment basis, affected semantic/architecture/UX/plan sections, exact constants/ranges, owner/reviewer/date, invalidation triggers, and evidence/check changes. “Follow Unity,” “looks good,” or a shader literal is not a disposition.
 
 ## Current Source Truth
 
-At `ca55e7d8`, the then-current post-processing and presentation composition applied debug replacement before directly tone mapping, output encoding, and publishing the final product. The current owners are [`SceneRenderingPasses.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Scene/SceneRenderingPasses.cpp), [`PresentationPasses.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp), [`ToneMapping.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/ Display /ToneMapping.cpp), and [`OutputEncoding.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation / Display/OutputEncoding.cpp). [`ViewportDisplaySettings.h`](../../../../../../../../../Engine/Renderer/Private/View/ViewportDisplaySettings.h) has no lens state. No chromatic shader, pass, selector, history, or editor control was found.
+At `ca55e7d8`, the then-current post-processing and presentation composition applied debug replacement before directly tone mapping, output encoding, and publishing the final product. The current owners are [`SceneRenderingPasses.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Scene/SceneRenderingPasses.cpp), [`PresentationPasses.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp), [`ToneMapping.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/ToneMapping.cpp), and [`OutputEncoding.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/OutputEncoding.cpp). [`ViewportDisplaySettings.h`](../../../../../../../../../Engine/Renderer/Private/View/ViewportDisplaySettings.h) has no lens state. No chromatic shader, pass, selector, history, or editor control was found.
 
 The current gap permits one clean output-resolution insertion. It does not establish whether SDR and HDR target-linear values can share the same sampling pass, how exact debug products bypass it, or what authored strength means.
 
@@ -154,5 +154,5 @@ The gate report retains:
 
 ## Gate Decision
 
-The gate is currently **Blocked**. A future `PASS` requires all discovery criteria conjunctively, names the exact accepted dossier revisions, and authorizes only Stage 1 of [Plan](Plan.md)�not feature implementation, runtime support, or `FCR-REN-25`.
+The gate is currently **Blocked**. A future `PASS` requires all discovery criteria conjunctively, names the exact accepted dossier revisions, and authorizes only Stage 1 of [Plan](Plan.md)—not feature implementation, runtime support, or `FCR-REN-25`.
 

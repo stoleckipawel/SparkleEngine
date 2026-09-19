@@ -8,7 +8,7 @@
 
 **Verified:** 2026-09-10 against committed revision `ca55e7d8`; current Renderer, shader, texture-cooking, settings, editor, and package routes were re-inspected as source only; concurrent user-owned dirty work was present outside this package and was not treated as committed proof
 
-**Current readiness:** **0/100** � discovery adds no implementation, verification, delivery, or adoption credit. See [Current Feature Readiness](../../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **0/100** — discovery adds no implementation, verification, delivery, or adoption credit. See [Current Feature Readiness](../../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 Color grading cannot be reduced to adding a saturation value and a texture sample. The feature changes the meaning of scene color, introduces authored color data, crosses source-to-cooked asset identity, and must compose with exposure, tone mapping, debug views, SDR, and HDR. `CGRD-00` exists to keep those choices out of an implementation prompt.
 
@@ -173,4 +173,5 @@ The gate report is complete only when it retains:
 ## Gate Decision
 
 `CGRD-00` is **Blocked**. A reviewer may record `PASS` only when all discovery acceptance criteria pass conjunctively, the exact accepted revisions of the dossier, semantics, architecture, experience, and plan are named, and `DSP-5` plus release prerequisites permit work. A pass authorizes Stage 1 of [Plan](Plan.md), not the whole feature and not `FCR-REN-24`.
+
 

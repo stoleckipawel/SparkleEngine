@@ -10,7 +10,7 @@
 
 **Current source inventory:** [Shader Compilation Capability Inventory](../../Modules/Tools/ShaderCompiler/README.md)
 
-**Current readiness:** **50/100** � the source-integrated shader route is substantial; candidate compiler/backend/ABI, failure, performance, package, and adoption evidence remains absent. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
+**Current readiness:** **50/100** — the source-integrated shader route is substantial; candidate compiler/backend/ABI, failure, performance, package, and adoption evidence remains absent. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
 
 ## At A Glance
 
@@ -62,7 +62,7 @@ The 2026-08-15 review assumed every proposed Unreal/vendor analogy was wrong unt
 | D3D12 pipeline libraries and a long-lived shader/module cache are universal baseline best practice. | Rejected as universal. Complete pipeline descriptions, correct lazy graph-time materialization, and first-use measurement are the base contract. Async preparation, native caches, and shader/module object retention are backend/capability-specific measured follow-ups. |
 | A graphics graph caller should author one complete pipeline-state aggregate. | Rejected. Epic keeps a complete RHI initializer internally, but mesh-pass code supplies narrow render-state overrides, mesh/material processing supplies vertex/raster facts, and RDG attachments supply target compatibility. Sparkle's current `GraphicsShaderPipelineState` duplicates graph-owned formats and exposes backend-shaped mechanics at the feature call. |
 
-�Epic-aligned� therefore means matching responsibility boundaries, invariants, failure behavior, and authoring ergonomics�not copying class names, macro volume, material-system scale, or every optional cache.
+“Epic-aligned” therefore means matching responsibility boundaries, invariants, failure behavior, and authoring ergonomics—not copying class names, macro volume, material-system scale, or every optional cache.
 
 ## Decision Summary
 
@@ -412,7 +412,7 @@ The common Editor layout is deliberately small:
 +------------------------------------------------------------------------------+
 ```
 
-The primary list should normally expose shader name, stage, virtual source, active status, and graph consumers. Package ID, binding-layout ID, generation number, backend/profile, artifact directory, code/input hashes, compiler command, raw reflection, and disassembly are contextual details�not ten default columns. `Reload Cooked`, `Recook All`, package-targeted recook, compiler backend/target listing, and worker controls do not belong beside the common `Apply Changed` action. Validated publication activates automatically; `Rebuild All` and manual reload remain searchable expert recovery actions with an explanation of cost and risk.
+The primary list should normally expose shader name, stage, virtual source, active status, and graph consumers. Package ID, binding-layout ID, generation number, backend/profile, artifact directory, code/input hashes, compiler command, raw reflection, and disassembly are contextual details—not ten default columns. `Reload Cooked`, `Recook All`, package-targeted recook, compiler backend/target listing, and worker controls do not belong beside the common `Apply Changed` action. Validated publication activates automatically; `Rebuild All` and manual reload remain searchable expert recovery actions with an explanation of cost and risk.
 
 ```text
 Idle -> ChangesReady -> Compiling -> Validating -> Active
@@ -721,7 +721,7 @@ These sources supplement the detailed comparison in [Shader System Design Preced
 
 ## Feature Completion Contract
 
-The adjacent [Shader System � Acceptance](Acceptance.md) owns the final criteria, required evidence pack, controlled failure expectations, and completion handoff. This architecture defines the system those checks exercise; it does not claim that they passed.
+The adjacent [Shader System — Acceptance](Acceptance.md) owns the final criteria, required evidence pack, controlled failure expectations, and completion handoff. This architecture defines the system those checks exercise; it does not claim that they passed.
 
 ## Target Capability Requirements
 
@@ -895,8 +895,9 @@ Rejected as a default because Sparkle already runs the cooker out of process and
 
 ## Related Delivery Records
 
-- [Shader System � Acceptance](Acceptance.md) owns final proof and completion.
+- [Shader System — Acceptance](Acceptance.md) owns final proof and completion.
 - [Shader System Delivery Plan](Plan.md) owns phase order, change boundaries, validation sequencing, and phase exits.
 - [Shader System Migration Baseline](MigrationBaseline.md) preserves the frozen pre-migration inventory and deletion ledger.
 - [Ray-Tracing Execution Architecture](../../Modules/Engine/Renderer/Features/RayTracing/ExecutionArchitecture.md) owns enduring dual-execution and shader-table semantics.
+
 
