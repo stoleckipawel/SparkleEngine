@@ -1,5 +1,5 @@
 #include "../../PCH.h"
-#include "Passes/Lighting/LightingPasses.h"
+#include "Passes/Scene/SceneRenderingPasses.h"
 
 #include "Frame/Graph/RenderFrameGraphSettings.h"
 #include "Passes/Lighting/RealTimePathTracerPasses.h"
@@ -7,7 +7,7 @@
 #include "Passes/PostProcessing/ExposurePasses.h"
 #include "Passes/Presentation/SceneUpscalingPasses.h"
 
-void AddLightingPasses(
+void AddSceneRenderingPasses(
     FrameGraphBuilder& builder,
     const RenderFrameGraphSettings& settings,
     RenderViewMode viewMode,

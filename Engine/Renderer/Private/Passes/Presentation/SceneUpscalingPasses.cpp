@@ -20,7 +20,7 @@ void AddSceneUpscalingPasses(
 	}
 
 	const UpscalerPassResources inputs = CreateSceneUpscalingResources(builder, settings.OutputExtent, resources);
-	const EUpscalerProviderKind provider = settings.ImagePipeline == ImageProviderPipeline::NativeResolution ? EUpscalerProviderKind::Linear : CVarUpscalerProvider.Get();
+	const EUpscalerProviderKind provider = CVarUpscalerProvider.Get();
 
 	switch (provider)
 	{

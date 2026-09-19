@@ -3,6 +3,6 @@
 
 ImageProviderPipeline ResolveFrameImagePipeline(RenderViewMode viewMode) noexcept
 {
-	return viewMode == RenderViewMode::ReferencePathTracer ? ImageProviderPipeline::NativeResolution
+	return viewMode == RenderViewMode::ReferencePathTracer ? ImageProviderPipeline::PresentationUpscaling
 	                                                       : ImageProviderPipeline::RayReconstruction;
 }

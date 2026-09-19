@@ -140,7 +140,7 @@ An included volumetric tier is done only after `REL-11` admission, accepted `VOL
 ## Inspected Current Routes
 
 - [`BuildRenderFrameGraph.cpp`](../../../../../../../../Engine/Renderer/Private/Frame/Graph/BuildRenderFrameGraph.cpp) has no volume stage.
-- [`RealTimePathTracerPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/RealTimePathTracerPasses.cpp) directly owns surface-lighting targets, ReSTIR surface lobes, composite, Sky, reconstruction, and ordinary radiance publication; [`LightingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/LightingPasses.cpp) owns only renderer selection and the shared lighting tail.
+- [`RealTimePathTracerPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/RealTimePathTracerPasses.cpp) directly owns surface-lighting targets, ReSTIR surface lobes, composite, Sky, reconstruction, and ordinary radiance publication; [`SceneRenderingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Scene/SceneRenderingPasses.cpp) owns renderer selection and the shared exposure/resolution tail.
 - [`LightingRenderTargets.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/LightingRenderTargets.cpp) defines no volume product.
 - [`SceneSkyDesc.h`](../../../../../../../../Engine/GameFramework/Public/Scene/Sky/SceneSkyDesc.h) describes image-based sky intent, not atmosphere.
 - [`GltfMaterialImporter.cpp`](../../../../../../../../Tools/Import/SourceImporters/Private/Gltf/GltfMaterialImporter.cpp) does not establish a medium/content path.

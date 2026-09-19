@@ -148,10 +148,6 @@ void RendererImageProviderStack::ResetHistory() noexcept
 
 void RendererImageProviderStack::SetupFrame(const ImageProviderFrameInput& frameInput, ImageProviderPipeline pipeline)
 {
-	if (pipeline == ImageProviderPipeline::NativeResolution)
-	{
-		return;
-	}
 	ImageProviderFrameInput providerInput = frameInput;
 	providerInput.ResetHistory |= m_resetHistoryPending;
 	m_resetHistoryPending = false;
@@ -169,10 +165,6 @@ RenderViewportExtent RendererImageProviderStack::ResolveRenderExtent(
     RenderViewportExtent outputExtent,
     ImageProviderPipeline pipeline) noexcept
 {
-	if (pipeline == ImageProviderPipeline::NativeResolution)
-	{
-		return outputExtent;
-	}
 	if (pipeline == ImageProviderPipeline::RayReconstruction && m_rayReconstruction != nullptr)
 	{
 		return m_rayReconstruction->ResolveRenderExtent(outputExtent);

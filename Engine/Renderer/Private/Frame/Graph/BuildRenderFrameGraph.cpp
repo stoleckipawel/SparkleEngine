@@ -4,9 +4,9 @@
 #include "Debug/RendererCVars.h"
 #include "Frame/Graph/RenderFrameGraphResourceBindings.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Passes/Lighting/LightingPasses.h"
 #include "Passes/PostProcessing/PostProcessingPasses.h"
 #include "Passes/RayTracing/RayTracingScenePass.h"
+#include "Passes/Scene/SceneRenderingPasses.h"
 #include "Scene/RenderScene.h"
 
 RenderFrameGraphResources FramePipeline::BuildRenderFrameGraph(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings)
@@ -17,7 +17,7 @@ RenderFrameGraphResources FramePipeline::BuildRenderFrameGraph(FrameGraphBuilder
 	CreateRenderFrameGraphResources(builder, settings, resources);
 	AddRayTracingScenePass(builder, rayTracingScene, resources);
 
-	AddLightingPasses(
+	AddSceneRenderingPasses(
 	    builder,
 	    settings,
 	    m_viewportRenderRequest.ViewMode,

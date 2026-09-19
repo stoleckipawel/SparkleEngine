@@ -10,7 +10,7 @@ class RenderRayTracingScene;
 struct RenderFrameGraphSettings;
 struct RenderFrameGraphResources;
 
-void AddLightingPasses(
+void AddSceneRenderingPasses(
     FrameGraphBuilder& builder,
     const RenderFrameGraphSettings& settings,
     RenderViewMode viewMode,

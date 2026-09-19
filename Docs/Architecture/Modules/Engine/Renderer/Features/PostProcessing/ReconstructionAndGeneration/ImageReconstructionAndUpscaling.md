@@ -37,7 +37,7 @@ Vulkan currently refuses the external Streamline evaluation route instead of cla
 ## Ownership And Lifetime
 
 - Renderer settings/CVars express requested provider and quality; the provider stack owns readiness and resolved active state.
-- `AddSceneUpscalingPasses` visibly selects exactly one implemented presentation upscaler: Linear or NVIDIA DLSS. Native-resolution views resolve to Linear; generic provider evaluation remains below the concrete selector.
+- `AddSceneUpscalingPasses` visibly selects exactly one implemented presentation upscaler: Linear or NVIDIA DLSS. The selected provider and quality own the render extent, so DLSS NativeAA remains available at native resolution; generic provider evaluation remains below the concrete selector.
 - Provider key/generation contributes to graph topology and prevents a graph from binding stale provider state.
 - Old provider generations retire after their last queue submissions complete.
 - Reconstruction consumes ReSTIR guide products only when that topology is active. Linear/DLSS SR consume the normal scene/depth/motion/exposure inputs.
