@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frame/Graph/RenderFrameGraphResources.h"
 #include "Frame/Graph/RenderFrameGraphSettings.h"
 
 class FrameGraph;

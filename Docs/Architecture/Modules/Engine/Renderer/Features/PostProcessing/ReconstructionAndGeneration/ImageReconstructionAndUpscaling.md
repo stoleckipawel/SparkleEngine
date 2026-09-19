@@ -93,6 +93,6 @@ This contract is **defined but unproved**. Linear, DLSS SR, and DLSS RR receive 
 
 ## Primary Source Routes
 
-- [`Upscaling.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Upscaling.cpp)
+- [`SceneUpscaling.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/SceneUpscaling.cpp)
 - [`RendererImageProviderStack.cpp`](../../../../../../../../Engine/Renderer/Private/Providers/RendererImageProviderStack.cpp)
 - [`RestirRayReconstruction.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/Restir/RestirRayReconstruction.cpp)

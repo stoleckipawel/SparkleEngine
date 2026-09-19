@@ -29,14 +29,14 @@ TextureCache::TextureCache(
     RhiUploadService& uploadService,
     RhiCommandSubmissionService& submissions,
     TaskExecutor& taskExecutor,
-    TaskScope& applicationScope) :
+    TaskScope& parentScope) :
     m_resourceService(resourceService),
     m_descriptorService(descriptorService),
     m_textureFactory(resourceService, descriptorService, uploadService),
     m_submissions(submissions),
     m_taskExecutor(taskExecutor),
     m_taskScope(
-        std::make_unique<TaskScope>(TaskScopeDesc{TaskScopeKind::AssetGeneration, "Renderer texture generations"}, &applicationScope))
+        std::make_unique<TaskScope>(TaskScopeDesc{TaskScopeKind::AssetGeneration, "Renderer texture generations"}, &parentScope))
 {
 }
 

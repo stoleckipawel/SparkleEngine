@@ -154,7 +154,7 @@ These are discovery candidates. A changed choice must update semantics, architec
 
 - `REN-E27` owns the negative source/build/selector/pass/shader/asset/editor/documentation audit for chromatic aberration.
 - No runtime test is implied by this source-only absence finding.
-- Adjacent source routes inspected: [`PostProcessing.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/PostProcessing/PostProcessing.cpp), [`Presentation.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Presentation.cpp), and [`ViewportDisplaySettings.h`](../../../../../../../../../Engine/Renderer/Private/View/ViewportDisplaySettings.h).
+- Adjacent source routes inspected: [`PostProcessingPasses.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/PostProcessing/PostProcessingPasses.cpp), [`PresentationPasses.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp), and [`ViewportDisplaySettings.h`](../../../../../../../../../Engine/Renderer/Private/View/ViewportDisplaySettings.h).
 
 ### Current Negative Acceptance
 

@@ -2,18 +2,19 @@
 #include "Passes/Lighting/LightingComposite.h"
 
 #include "Core/Public/Math/MathUtils.h"
+#include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Lighting/LightingCompositeShader.h"
 
 void AddLightingCompositePass(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
-    FrameGraphTextureHandle output,
-    const LightingRenderTargets& lighting,
-    const GBufferRenderTargets& gbuffer)
+    const RenderFrameGraphResources& resources)
 {
+	const LightingRenderTargets& lighting = resources.Transient.Lighting;
+	const GBufferRenderTargets& gbuffer = resources.Transient.GBuffer;
 	auto& parameters = builder.AllocParameters<LightingCompositeCS>();
-	parameters->SceneColor = builder.CreateUAV(output);
+	parameters->SceneColor = builder.CreateUAV(resources.Transient.Scene.SceneColor);
 	parameters->DirectDiffuse = builder.CreateSRV(lighting.DirectDiffuse);
 	parameters->DirectSpecular = builder.CreateSRV(lighting.DirectSpecular);
 	parameters->DirectSubsurface = builder.CreateSRV(lighting.DirectSubsurface);

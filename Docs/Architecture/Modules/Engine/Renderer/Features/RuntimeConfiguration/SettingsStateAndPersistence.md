@@ -2,7 +2,7 @@
 
 **Status:** current feature dossier; source-backed, not round-trip, package, threaded-equivalence, or release evidence
 
-**Verified:** 2026-09-06 through committed `master` revision `c28b33bd`; public state/section, persistence, CVar runtime, editor callback, application startup, and Renderer control routes inspected; executable source is unchanged from the earlier `8414b5dc` audit
+**Verified:** source route re-audited 2026-09-19 against revision `d1108d44de49d90313abb43a66f924f89d6c6bb2` plus the current ownership-cleanup working tree; executable build/runtime evidence remains unrun
 
 **Scope:** `REN-SET-01` through `REN-SET-05`; owns the lifecycle of the aggregate rendering-settings state, editor commit, workspace persistence, startup restore, render-thread handoff, live versus restart-required application, and requested-state limitations. [Feature Selector Catalog](FeatureSelectorCatalog.md) remains the exact per-selector ledger.
 
@@ -22,15 +22,16 @@ The aggregate exists to make an editor commit coherent, not to centralize featur
 
 ## Feature Contract
 
-The settings layer coordinates many feature owners without becoming their implementation owner. `EngineRenderingSettingsState` is a value snapshot. `EngineRenderingSettingsSection` edits that snapshot, persists its owned names, and sends the whole state through an optional commit callback. The editor binds that callback to the host Renderer service; serial execution applies CVars directly, while threaded execution queues a `RenderSettingsChangedCommand` for the render execution context.
+The settings route coordinates three owners without merging them. Renderer publicly owns only `EngineRenderingSettingsState`, captures/applies that rendering state, and accepts it through its sequenced control boundary. Editor privately owns `EngineRenderingSettingsSection`, the mutable interaction model and restart message. Application owns `EngineRenderingSettingsPersistence`, startup restore order, filesystem location, and save-before-submit policy. Serial execution applies CVars directly, while threaded execution queues a `RenderSettingsChangedCommand` for the render execution context.
 
 ```text
 application startup
   -> load owned INI section -> set registered CVars
 
 editor setter
-  -> mutate aggregate state -> rewrite owned INI section
-  -> commit callback -> Renderer facade -> coordinator
+  -> mutate Editor-owned aggregate interaction state
+  -> Application callback -> rewrite owned INI section
+  -> Renderer facade -> coordinator
   -> serial apply or render-thread control command -> set changed CVars
   -> feature owners resolve active per-frame/topology behavior
 ```
@@ -45,7 +46,7 @@ The motivation is one coherent editor transaction and deterministic render-threa
 | persisted allowlist | 26 exact `r.*` names in `/Script/SparkleRenderer.EngineRenderingSettings` | View mode is deliberately not Renderer settings; `RenderViewMode` is one non-persisted per-view request value, while Editor owns its menu presentation and interaction |
 | persistence file | workspace `Config/DefaultEngine.ini`; writer replaces its one section and retains other loaded lines/sections | not an atomic temp-and-replace write; error/status is not returned |
 | startup | `Application` applies persisted settings before command-line CVar overrides | malformed values are currently attempted and their error text is discarded |
-| editor commit | each changed setter writes persistence, then invokes the bound host callback or directly applies CVars | whole snapshot is resent; unchanged fields are skipped by CVar comparison |
+| editor commit | each changed setter invokes the Application-owned callback; Application persists and submits the state | Editor has no filesystem access; whole snapshot is resent and unchanged fields are skipped by Renderer CVar comparison |
 | threaded Renderer | control queue transfers the snapshot to render execution context | ordering/backpressure and exit behavior need executable evidence |
 | restart-required fields | adapter preference and back-buffer format are compared with session-start values and produce a restart message | values are still persisted/submitted; the message, not an active-state object, expresses pending restart |
 | routed controls outside state | direct-shadow controls plus RHI back-buffer count/maximum frames in flight and other developer CVars | console/catalog-owned; absence from this state must not be presented as UI support |
@@ -65,9 +66,9 @@ Consequences that must remain explicit:
 
 ## Ownership Rules
 
-- This dossier owns aggregate state transport and persistence only. Each feature dossier owns value meaning, clamps, graph/history impact, capability fallback, and output evidence.
+- This dossier owns the cross-module aggregate state route. Each feature dossier owns value meaning, clamps, graph/history impact, capability fallback, and output evidence.
 - [Feature Selector Catalog](FeatureSelectorCatalog.md) owns exact names, defaults, domains, persistence membership, consumers, and absent/ineffective controls.
-- Application owns startup ordering; Editor owns panel interaction; Renderer coordinator owns cross-thread delivery; CVar/feature owners remain the active runtime authority.
+- Application owns persistence, filesystem location, startup ordering, and save-before-submit policy; Editor owns the private interaction model and restart presentation; Renderer owns the value contract, capture/apply operation, cross-thread delivery, and rendering consumers. CVar/feature owners remain the active runtime authority.
 - Adding a setting requires the state field, setter/UI, CVar/parser, persistence decision, runtime consumer, requested/active report, topology/history/restart behavior, and feature dossier to change together.
 
 ## Horizontal Coverage
@@ -83,7 +84,7 @@ Consequences that must remain explicit:
 ## Acceptance Criteria
 
 - `AC-SET-01` — public state, editor controls, setters, CVar capture/apply, persistence allowlist, selector catalog, and feature consumers agree field-for-field with intentional exclusions named.
-- `AC-SET-02` — a valid 26-name section round-trips exactly while comments and unrelated sections remain unchanged according to the declared formatting policy; per-viewport view mode remains outside Renderer settings persistence.
+- `AC-SET-02` — a valid 26-name section round-trips exactly while comments and unrelated sections remain unchanged according to the declared formatting policy; per-viewport view mode remains outside Application rendering-settings persistence.
 - `AC-SET-03` — malformed, unknown, duplicate, unreadable, unwritable, partial-write, and concurrent-edit cases return an actionable result and preserve a valid prior file/state rather than silently succeeding.
 - `AC-SET-04` — startup persisted values apply before command-line overrides; serial and threaded commits produce equivalent ordered CVar and next-frame resolved states.
 - `AC-SET-05` — live, topology/history-affecting, capability-gated, and restart-required changes expose requested/CVar/resolved/session-active state and reason without false activation.
@@ -111,8 +112,8 @@ This contract is **defined but unproved**. The current implementation does not y
 ## Primary Source Routes
 
 - [`EngineRenderingSettings.h`](../../../../../../../Engine/Renderer/Public/Settings/EngineRenderingSettings.h)
-- [`EngineRenderingSettings.cpp`](../../../../../../../Engine/Renderer/Private/Settings/EngineRenderingSettings.cpp)
-- [`EngineRenderingSettingsPersistence.cpp`](../../../../../../../Engine/Renderer/Private/Settings/EngineRenderingSettingsPersistence.cpp)
+- [`EngineRenderingSettingsSection.cpp`](../../../../../../../Engine/Editor/Private/Settings/EngineRenderingSettingsSection.cpp)
+- [`EngineRenderingSettingsPersistence.cpp`](../../../../../../../Engine/Application/Private/RenderingSettings/EngineRenderingSettingsPersistence.cpp)
 - [`EngineRenderingSettingsRuntime.cpp`](../../../../../../../Engine/Renderer/Private/Settings/EngineRenderingSettingsRuntime.cpp)
 - [`RenderCoordinator.cpp`](../../../../../../../Engine/Renderer/Private/Concurrency/Coordinator/RenderCoordinator.cpp) and [`RendererExecutionContext.cpp`](../../../../../../../Engine/Renderer/Private/Concurrency/Coordinator/RendererExecutionContext.cpp)
 - [`Application.cpp`](../../../../../../../Engine/Application/Private/Application.cpp) and [`UI.cpp`](../../../../../../../Engine/Editor/Private/UI.cpp)

@@ -14,7 +14,7 @@
 | --- | --- | --- | --- |
 | None | graph output proceeds unchanged | no UI work | a stale prior UI result must not be implied |
 | HostOverlay | scene output remains the composition target | immutable packet is replayed through the RHI ImGui route | blend/color/DPI and packet lifetime unproved |
-| EditorViewport | final graph color becomes a typed viewport product | matching generation is registered and drawn by editor presentation | stale/wrong viewport texture or unbounded registration growth |
+| Viewport | final graph color becomes a typed viewport product | matching generation is registered and drawn by the submitted viewport UI packet | stale/wrong viewport texture or unbounded registration growth |
 
 ```mermaid
 flowchart LR
@@ -38,13 +38,13 @@ Composition occurs after the scene graph and before final submit. This gives hos
 | --- | --- | --- |
 | None | no UI work | scene output continues unchanged |
 | HostOverlay | replay packet through the RHI ImGui renderer inside a presentation overlay pass | empty draw data produces no overlay |
-| EditorViewport | transition final viewport color to shader read, resolve/publish a texture handle, require packet/product viewport-generation agreement, draw the editor presentation pass, then return the product to Common state | missing graph/product/texture retires the viewport texture; empty or generation-mismatched packet is not drawn |
+| Viewport | transition final viewport color to shader read, resolve/publish a texture handle, require packet/product viewport-generation agreement, draw the viewport presentation pass, then return the product to Common state | missing graph/product/texture retires the viewport texture; empty or generation-mismatched packet is not drawn |
 
 ## Ownership And Lifetime
 
 - Application/Editor produces immutable draw data; Renderer owns when it is replayed relative to graph execution and submit.
 - RHI owns the actual ImGui/native resource rendering mechanism and transitions requested by Renderer.
-- `EditorTextureRegistry` gives the viewport a generation-derived handle and maps other native texture IDs for editor/diagnostic consumers.
+- Renderer UI's private `UiTextureRegistry` gives the viewport a generation-derived `UiTextureHandle` and maps other texture IDs for UI/diagnostic consumers. The binding is published separately from `RenderProduct`; viewport products remain rendering-only metadata.
 - The inspected non-viewport registration list appends unique bindings and has only the `uint32` slot-space bound; no explicit unregister/reclamation owner was found. Long-session growth and stale-handle behavior are therefore Partial capability, not an unlimited-lifetime guarantee.
 
 ## Failure, Tradeoffs, And Evidence
@@ -56,7 +56,7 @@ Composition occurs after the scene graph and before final submit. This gives hos
 
 ## Acceptance Criteria
 
-- `AC-UVC-01` — None, HostOverlay, and EditorViewport modes execute only their documented post-graph/pre-submit behavior and do not alter scene products when no UI work is requested.
+- `AC-UVC-01` — None, HostOverlay, and Viewport modes execute only their documented post-graph/pre-submit behavior and do not alter scene products when no UI work is requested.
 - `AC-UVC-02` — immutable packet replay preserves vertex/index/command order, clipping, texture selection, premultiplied/straight-alpha contract, color transfer, and draw-data lifetime through submission.
 - `AC-UVC-03` — host overlay composition matches the declared blend/color result across transparent, opaque, nested clip, empty, high-DPI, and resize fixtures without changing input ownership.
 - `AC-UVC-04` — editor viewport draw occurs only when packet and product viewport generations match; missing/stale product or texture retires/refuses the handle and never draws another viewport's image.
@@ -88,4 +88,4 @@ This contract is **defined but unproved**. The absence of a crash or the presenc
 
 - [`UiFrameRenderer.cpp`](../../../../../../../Engine/Renderer/Private/UI/UiFrameRenderer.cpp)
 - [`UiRenderPacketPlayer.cpp`](../../../../../../../Engine/Renderer/Private/UI/UiRenderPacketPlayer.cpp)
-- [`EditorTextureRegistry.cpp`](../../../../../../../Engine/Renderer/Private/Editor/EditorTextureRegistry.cpp)
+- [`UiTextureRegistry.cpp`](../../../../../../../Engine/Renderer/Private/UI/UiTextureRegistry.cpp)

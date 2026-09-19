@@ -53,7 +53,7 @@ void ImGuiRenderPacketBuilder::AppendTextureUpdates(const ImDrawData& drawData)
 			continue;
 		}
 
-		const EditorTextureHandle handle = EditorTextureHandle::ImGuiTexture(static_cast<std::uint32_t>(texture->UniqueID));
+		const UiTextureHandle handle = UiTextureHandle::ImGuiTexture(static_cast<std::uint32_t>(texture->UniqueID));
 		switch (texture->Status)
 		{
 			case ImTextureStatus_WantCreate:
@@ -75,7 +75,7 @@ void ImGuiRenderPacketBuilder::AppendTextureUpdates(const ImDrawData& drawData)
 	}
 }
 
-bool ImGuiRenderPacketBuilder::AppendTextureUpload(ImTextureData& texture, EditorTextureHandle handle)
+bool ImGuiRenderPacketBuilder::AppendTextureUpload(ImTextureData& texture, UiTextureHandle handle)
 {
 	if (texture.Pixels == nullptr || texture.Width <= 0 || texture.Height <= 0 || texture.BytesPerPixel <= 0)
 	{
@@ -154,7 +154,7 @@ void ImGuiRenderPacketBuilder::AppendDrawList(const ImDrawList& drawList)
 		m_packet.Commands.push_back(
 		    UiDrawCommand{
 		        .ClipRect = {command.ClipRect.x, command.ClipRect.y, command.ClipRect.z, command.ClipRect.w},
-		        .TextureHandle = EditorTextureHandle::Unpack(packedTextureHandle),
+		        .TextureHandle = UiTextureHandle::Unpack(packedTextureHandle),
 		        .ElementCount = command.ElemCount,
 		        .IndexOffset = command.IdxOffset,
 		        .VertexOffset = static_cast<std::int32_t>(command.VtxOffset),

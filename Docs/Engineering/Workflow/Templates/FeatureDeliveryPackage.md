@@ -937,7 +937,7 @@ The [Reference Path Tracer package](../../../Architecture/Modules/Engine/Rendere
 - [Research](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Research.md) separates pinned NVIDIA/AMD/Epic/neutral precedent from local proof;
 - [Transport And Estimator](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/TransportAndEstimator.md) is the feature-specific `Semantics.md` equivalent;
 - [Execution Architecture](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/ExecutionArchitecture.md) owns the per-view reference session, immutable inputs, invalidation, execution, artifact, and clean-break target;
-- [User Experience](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/UserExperience.md) owns the viewport-first Lit comparison, Editor/Game camera behavior, raw-save/offscreen journey, and presentation truth;
+- [User Experience](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/UserExperience.md) owns the viewport-first Lit comparison, Editor/Game camera behavior, manual raw-save journey, and presentation truth;
 - [Staged Plan](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md) carries dependency-ordered prompts whose non-negotiable paragraphs are exit gates.
 
 Use the example for depth and separation of authority, not for renderer-specific vocabulary, stage count, formulas, estimates, IDs, or feature scope.

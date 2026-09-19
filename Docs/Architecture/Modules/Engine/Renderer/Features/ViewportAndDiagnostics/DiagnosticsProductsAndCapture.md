@@ -34,7 +34,7 @@ Renderer exposes bounded observations of the frame it actually prepared/submitte
 | Mesh diagnostics | GPU mesh cache -> snapshot | cache/residency/detail information exposed through Renderer facade |
 | Texture diagnostics | texture cache -> snapshot/editor texture registration | cache/residency rows and UI-usable texture handles |
 | Memory diagnostics | Renderer memory monitor + cache/RHI budgets -> snapshot | combined renderer/resource budget view ticked at frame begin |
-| Viewport products | frame graph -> `ViewportRenderProductPublication` | final color, scene depth, normals, extents and generation identity |
+| Viewport products | frame graph -> `ViewportRenderProductPublication` | final color, scene depth, normals, producer-neutral scene-linear radiance, optional radiance second moment, extents and generation identity |
 | Async capture | public request -> coordinator -> `ViewportCaptureService` -> RHI readback -> ticket-addressed completion | requested viewport/intermediate product read back without blocking submission or host-level feature dispatch |
 | Mesh preview | Renderer preview product/handle route -> editor | editor-consumable mesh preview; fidelity/usability unproved |
 
@@ -50,6 +50,8 @@ BeginViewportCapture(request, id)
 ```
 
 The coordinator admits at most three outstanding capture tickets. Each accepted ticket remains owned by its requester until that requester takes the matching completion; the Renderer does not expose an anonymous FIFO and does not drop an admitted completion to make room for another. A fourth request is rejected before readback allocation. "No result yet" means that exact ticket is pending, not success. The current result records frame, scene, provider and immutable product provenance plus failure and readback dimensions/format; it does not carry shader or graph-topology generation. Requested-versus-resolved product and color/encoding metadata therefore remain documentation/evidence gaps rather than implied state.
+
+Product names describe data rather than the feature that produced it. `Radiance` is the scene-linear HDR first moment: Lit publishes its pre-exposure scene color and the Reference middle publishes its committed estimator mean. `RadianceSecondMoment` is optional; the current Reference producer uses it for its committed Welford M2 accumulator and ordinary Lit leaves it absent. Progressive producers attach `RenderProductSamplePrefix`; non-progressive producers leave it empty. Reference-specific convergence, checkpoint, and authority claims remain outside this generic capture contract.
 
 ## Where Observation Occurs In A Frame
 

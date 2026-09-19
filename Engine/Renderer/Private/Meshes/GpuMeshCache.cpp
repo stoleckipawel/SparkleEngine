@@ -20,11 +20,11 @@ GpuMeshCache::GpuMeshCache(
     RenderHardwareInterface& renderHardwareInterface,
     RhiCommandSubmissionService& submissions,
     TaskExecutor& taskExecutor,
-    TaskScope& applicationScope) :
+    TaskScope& parentScope) :
     m_renderHardwareInterface(&renderHardwareInterface),
     m_submissions(&submissions),
     m_taskExecutor(&taskExecutor),
-    m_taskScope(std::make_unique<TaskScope>(TaskScopeDesc{TaskScopeKind::AssetGeneration, "Renderer mesh generations"}, &applicationScope))
+	    m_taskScope(std::make_unique<TaskScope>(TaskScopeDesc{TaskScopeKind::AssetGeneration, "Renderer mesh generations"}, &parentScope))
 {
 }
 

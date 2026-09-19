@@ -114,7 +114,7 @@ The [Direct Lighting package](../Modules/Engine/Renderer/Features/Lighting/Direc
 | Upscaling | Linear or NVIDIA DLSS SR when reconstruction did not produce resolved color | render-extent scene/depth/motion/exposure -> output-extent `ResolvedSceneColor` | Exactly one resolution owner; NVIDIA failure resets to Linear |
 | Debug handoff | selected visualization may replace resolved scene color | requested GBuffer/lighting/scene product -> visualization color | Current diagnostics still flow through tone mapping and encoding |
 | Tone mapping | exposure plus Reinhard, ACES approximation, or ACES fitted filmic | resolved scene-referred HDR -> display-linear `ToneMappedSceneColor` | No public None/bypass; fixed operators are not a color-grading system |
-| Output | Automatic/Linear/sRGB encoding, then copy or product publication | display-linear color -> encoded back buffer or `FinalSceneColor` | No PQ/scRGB/HDR10/display-nit contract |
+| Output | Automatic/Linear/sRGB encoding, then copy or product publication | display-linear color -> encoded back buffer or `FinalColorLdr` | No PQ/scRGB/HDR10/display-nit contract |
 | Explicit absent stages | no graph owner | no color-grading/LUT transform, chromatic-aberration lens effect, or generated-frame synthesis occurs | Reflex/PCL latency coordination and temporal reconstruction are not frame generation |
 
 The [Post Processing family dossier](../Modules/Engine/Renderer/Features/PostProcessing/README.md) owns this order. Its child dossiers keep each supported or absent capability independently reviewable.
@@ -179,7 +179,7 @@ The per-cache defaults and absence of global priority/LRU/pressure arbitration a
 | Step | Producer -> consumer | Current transition | Gap or failure boundary |
 | --- | --- | --- | --- |
 | startup restore | `Application` -> settings persistence -> CVar registry | allowlisted values from the owned INI section apply before command-line overrides | missing file is ignored; malformed parse diagnostics are discarded |
-| editor rendering-settings edit | Editor panel -> `EngineRenderingSettingsSection` | one setter mutates the 26-field snapshot and commits | only its 26 owned names persist; per-viewport view mode is a separate `EditorViewportSession` concern |
+| editor rendering-settings edit | Editor panel -> Editor-private `EngineRenderingSettingsSection` -> Application persistence/submit -> Renderer settings control | one setter mutates the 26-field snapshot; Application persists it and submits the Renderer-owned value | only its 26 owned names persist; per-viewport view mode is a separate `EditorViewportSession` concern |
 | save | section -> workspace `Config/DefaultEngine.ini` | first matching owned section is replaced; other loaded lines/sections are retained | truncate-and-rewrite returns no open/write/flush status and is not concurrency-safe/atomic |
 | handoff | commit callback -> host -> `Renderer::SubmitRenderingSettings` | whole value snapshot crosses the public facade | no callback applies CVars directly; editor binds the host callback |
 | execution | coordinator -> CVar owners | serial applies directly; threaded mode queues `RenderSettingsChangedCommand` to render context | queue ordering/backpressure/shutdown equivalence is unproved |

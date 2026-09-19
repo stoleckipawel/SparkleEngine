@@ -30,7 +30,7 @@ private:
 
 	std::unique_ptr<FramePipeline> CreateFramePipeline(
 	    TaskExecutor& taskExecutor,
-	    TaskScope& applicationTaskScope,
+	    TaskScope& assetTaskParentScope,
 	    bool enableUiRenderPackets) noexcept;
 	void ReloadShaders();
 	std::uint64_t GetShaderGeneration() const noexcept;

@@ -153,7 +153,7 @@ This contract is **defined but unproved**. Completion requires raw-product evide
 
 ## Primary Source Routes
 
-- [`GBuffer.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/GBuffer.cpp) and [`GBufferFormats.h`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/GBufferFormats.h)
+- [`GBufferPasses.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/GBufferPasses.cpp), [`GBufferRenderTargets.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/GBufferRenderTargets.cpp), and [`GBufferFormats.h`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/GBufferFormats.h)
 - [`RasterizedGBuffer.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/RasterizedGBuffer.cpp)
 - [`RayTracingGBuffer.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/RayTracingGBuffer.cpp)
 - [`SceneDepth.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/SceneDepth.cpp) and [`SkyMotionVectors.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/SkyMotionVectors.cpp)

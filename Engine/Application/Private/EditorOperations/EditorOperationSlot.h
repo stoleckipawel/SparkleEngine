@@ -22,7 +22,7 @@ public:
 	template <typename TOperation>
 	bool Start(TaskName taskName, std::string_view activeMessage, TOperation operation, std::string& errorMessage) noexcept
 	{
-		if (m_execution.IsValid() && !m_execution.IsSettled())
+		if (m_execution.IsValid())
 		{
 			errorMessage = activeMessage;
 			return false;
@@ -51,6 +51,8 @@ public:
 		}
 		return false;
 	}
+
+	bool IsOccupied() const noexcept { return m_execution.IsValid(); }
 
 	bool TryConsume(TResult& result) noexcept
 	{

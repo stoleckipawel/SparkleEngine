@@ -8,6 +8,7 @@
 #include "Panels/RenderingSettingsPanelUi.h"
 #include "Panels/RenderingUpscalingSettingsPanel.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
+#include "Settings/EngineRenderingSettingsSection.h"
 #include "Style/SparkleUiPalette.h"
 
 #include <imgui.h>

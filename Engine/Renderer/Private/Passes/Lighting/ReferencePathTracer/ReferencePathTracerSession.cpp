@@ -2,23 +2,40 @@
 
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerSession.h"
 
-#include "Frame/RenderFrame.h"
 #include "Core/Public/Hash/HashUtils.h"
+#include "Frame/Graph/RenderFrameGraphResources.h"
+#include "Frame/RenderFrame.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerResources.h"
 #include "RHI/Public/Core/RhiCapabilities.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "Scene/Materials/MaterialData.h"
 #include "Scene/Materials/MaterialTextureTableCapability.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
+#include "Scene/RayTracing/RenderRayTracingScene.h"
 #include "View/RenderView.h"
 
 #include <algorithm>
 
-ReferencePathTracerSession::ReferencePathTracerSession(RenderDeviceServices& deviceServices, RendererMemoryMonitor& memoryMonitor) noexcept
-    :
+ReferencePathTracerSession::ReferencePathTracerSession(
+    RenderDeviceServices& deviceServices,
+    RendererMemoryMonitor& memoryMonitor,
+    RenderRayTracingScene& rayTracingScene) noexcept :
     m_deviceServices(deviceServices),
+    m_rayTracingScene(rayTracingScene),
     m_resources(deviceServices, memoryMonitor)
 {
+}
+
+bool ReferencePathTracerSession::PrepareFrame(
+    const RenderFrame& frame,
+    ViewportRenderAction action,
+    std::uint64_t actionSequence,
+    ViewportFrameProducts& products,
+    FrameGraph& frameGraph) noexcept
+{
+	products.Progress = Update(frame, action, actionSequence, m_rayTracingScene.GetExecutionFrontend());
+	products.RadianceSamplePrefix = GetRadianceSamplePrefix();
+	return BindResources(frameGraph);
 }
 
 static_assert(
@@ -298,7 +315,7 @@ bool ReferencePathTracerSession::BindResources(FrameGraph& frameGraph) const noe
 	return !m_selected || (m_unavailableReason == ViewportRenderProgressReason::None && m_resources.Bind(frameGraph));
 }
 
-void ReferencePathTracerSession::RecordSubmission(RhiSubmissionToken token) noexcept
+void ReferencePathTracerSession::OnFrameSubmitted(RhiSubmissionToken token) noexcept
 {
 	if (m_selected && m_resources.IsAllocated())
 	{
@@ -389,19 +406,19 @@ ViewportRenderProgress ReferencePathTracerSession::GetProgress() const noexcept
 	return ViewportRenderProgress{
 	    .State = state,
 	    .Reason = m_unavailableReason != ViewportRenderProgressReason::None ? m_unavailableReason : m_lastReason,
-	    .CompletedWork = m_committedSamples,
-	    .TargetWork = TargetSampleCount,
-	    .DiscardedWork = m_discardedSamples,
+	    .CompletedSamples = m_committedSamples,
+	    .TargetSamples = TargetSampleCount,
+	    .DiscardedSamples = m_discardedSamples,
 	    .OwnerViewportId = m_ownerViewportId,
 	    .SamplesPerSecond = m_samplesPerSecond,
 	    .EstimatedSecondsRemaining = estimatedSeconds,
 	    .RetentionAvailable = m_retentionAvailable};
 }
 
-RenderProduct::Provenance ReferencePathTracerSession::GetRawProvenance() const noexcept
+RenderProductSamplePrefix ReferencePathTracerSession::GetRadianceSamplePrefix() const noexcept
 {
-	return RenderProduct::Provenance{
-	    .IdentitySha256 = m_identitySha256,
-	    .CommittedWork = m_committedSamples,
-	    .TargetWork = TargetSampleCount};
+	return RenderProductSamplePrefix{
+	    .RenderIdentitySha256 = m_identitySha256,
+	    .SampleCount = m_committedSamples,
+	    .TargetSampleCount = TargetSampleCount};
 }

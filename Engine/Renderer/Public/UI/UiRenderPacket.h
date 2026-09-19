@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Editor/EditorTextureHandle.h"
+#include "UiTextureHandle.h"
 #include "../RendererAPI.h"
 
 #include <array>
@@ -24,7 +24,7 @@ enum class UiDrawCommandKind : std::uint8_t
 struct UiDrawCommand final
 {
 	std::array<float, 4> ClipRect = {};
-	EditorTextureHandle TextureHandle = {};
+	UiTextureHandle TextureHandle = {};
 	std::uint32_t ElementCount = 0;
 	std::uint32_t IndexOffset = 0;
 	std::int32_t VertexOffset = 0;
@@ -43,7 +43,7 @@ struct UiDrawList final
 
 struct UiTextureUpload final
 {
-	EditorTextureHandle Texture;
+	UiTextureHandle Texture;
 	std::uint32_t Width = 0;
 	std::uint32_t Height = 0;
 	std::uint32_t PixelOffset = 0;
@@ -53,7 +53,7 @@ struct UiTextureUpload final
 enum class UiPresentationMode : std::uint8_t
 {
 	None,
-	EditorViewport,
+	Viewport,
 	HostOverlay
 };
 
@@ -71,7 +71,7 @@ struct SPARKLE_RENDERER_API UiRenderPacket final
 	std::vector<UiDrawList> DrawLists;
 	std::vector<std::byte> TexturePixels;
 	std::vector<UiTextureUpload> TextureUploads;
-	std::vector<EditorTextureHandle> TextureReleases;
+	std::vector<UiTextureHandle> TextureReleases;
 
 	bool HasDrawData() const noexcept;
 };

@@ -45,7 +45,7 @@ void RendererHost::SettleForShutdown() noexcept
 
 std::unique_ptr<FramePipeline> RendererHost::CreateFramePipeline(
     TaskExecutor& taskExecutor,
-    TaskScope& applicationTaskScope,
+    TaskScope& assetTaskParentScope,
     bool enableUiRenderPackets) noexcept
 {
 	RenderDeviceServices& deviceServices = m_backendOwner->GetDeviceServices();
@@ -55,6 +55,6 @@ std::unique_ptr<FramePipeline> RendererHost::CreateFramePipeline(
 	    *m_renderPassRuntimeCache,
 	    *m_memoryMonitor,
 	    taskExecutor,
-	    applicationTaskScope,
+	    assetTaskParentScope,
 	    enableUiRenderPackets));
 }

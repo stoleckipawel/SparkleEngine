@@ -4,7 +4,7 @@
 
 #include "Frame/Graph/RenderProductGraphHandle.h"
 
-void ViewportRenderProductPublication::Publish(
+void PublishViewportRenderProducts(
     ViewportRenderProducts& products,
     const ViewportRenderRequest& request,
     const ViewportFrameProducts& frameProducts,
@@ -14,9 +14,9 @@ void ViewportRenderProductPublication::Publish(
 	products.Clear();
 	products.SetGeneration(request.Generation);
 	products.SetProduct(
-	    RenderOutputFlags::SceneColor,
+	    RenderOutputFlags::FinalColorLdr,
 	    RenderProduct{
-	        .Handle = ToRenderProductHandle(frameProducts.FinalSceneColor),
+	        .Handle = ToRenderProductHandle(frameProducts.FinalColorLdr),
 	        .Extent = outputExtent,
 	        .Format = RenderProductFormat::ColorLdr});
 
@@ -40,22 +40,25 @@ void ViewportRenderProductPublication::Publish(
 		        .Format = RenderProductFormat::ColorHdr});
 	}
 
-	if (frameProducts.RawSceneColor.IsValid())
+	if (frameProducts.Radiance.IsValid())
 	{
 		products.SetProduct(
-		    RenderOutputFlags::RawSceneColor,
+		    RenderOutputFlags::Radiance,
 		    RenderProduct{
-		        .Handle = ToRenderProductHandle(frameProducts.RawSceneColor),
+		        .Handle = ToRenderProductHandle(frameProducts.Radiance),
 		        .Extent = renderExtent,
-		        .Format = RenderProductFormat::ColorHdr});
+		        .Format = RenderProductFormat::ColorHdr,
+		        .SamplePrefix = frameProducts.RadianceSamplePrefix});
 	}
-	if (frameProducts.RawSceneColorMoment2.IsValid())
+	if (frameProducts.RadianceSecondMoment.IsValid())
 	{
 		products.SetProduct(
-		    RenderOutputFlags::RawSceneColorMoment2,
+		    RenderOutputFlags::RadianceSecondMoment,
 		    RenderProduct{
-		        .Handle = ToRenderProductHandle(frameProducts.RawSceneColorMoment2),
+		        .Handle = ToRenderProductHandle(frameProducts.RadianceSecondMoment),
 		        .Extent = renderExtent,
-		        .Format = RenderProductFormat::ColorHdr});
+		        .Format = RenderProductFormat::ColorHdr,
+		        .SamplePrefix = frameProducts.RadianceSamplePrefix});
 	}
+	products.SetProgress(frameProducts.Progress);
 }

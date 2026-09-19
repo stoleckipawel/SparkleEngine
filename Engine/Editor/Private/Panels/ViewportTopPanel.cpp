@@ -4,6 +4,7 @@
 #include "Level/Level.h"
 #include "Level/LevelSession.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
+#include "Settings/EngineRenderingSettingsSection.h"
 #include "Style/SparkleUiPalette.h"
 #include "Util/UiUtil.h"
 #include "Viewport/ViewportCameraProperties.h"

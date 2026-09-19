@@ -19,11 +19,13 @@ struct RenderFrameGraphTransientResources final
 
 struct ViewportFrameProducts final
 {
-	FrameGraphTextureHandle FinalSceneColor = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle FinalColorLdr = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle SceneDepth = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle Normals = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle RawSceneColor = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle RawSceneColorMoment2 = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle Radiance = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle RadianceSecondMoment = FrameGraphTextureHandle::Invalid();
+	RenderProductSamplePrefix RadianceSamplePrefix = {};
+	ViewportRenderProgress Progress = {};
 };
 
 struct RenderSceneGpuLightingResources final

@@ -14,7 +14,7 @@
 #include "Panels/UsedTexturesPanel.h"
 #include "Panels/ViewportPanel.h"
 #include "Panels/ViewportTopPanel.h"
-#include "Renderer/Public/Settings/EngineRenderingSettings.h"
+#include "Settings/EngineRenderingSettingsSection.h"
 #include "Renderer/Public/UI/ImGuiRenderPacketBuilder.h"
 #include "Scene/Model/EditorSceneModel.h"
 #include "Scene/Model/EditorSceneModelBuilder.h"
@@ -72,7 +72,6 @@ void UI::InitializeCorePanels()
 	m_mainMenuBar = std::make_unique<MainMenuBarPanel>(m_levelSession, m_window);
 	ConfigureMainMenuBarWindowActions();
 	m_editorConsoleSystem = std::make_unique<EditorConsoleSystem>();
-	m_renderingSettings = std::make_unique<EngineRenderingSettingsSection>();
 	m_restartService = std::make_unique<EditorRestartService>();
 	m_settingsPanel = std::make_unique<SettingsPanel>();
 	m_settingsPanel->SetRenderingSettings(m_renderingSettings.get());
@@ -169,7 +168,14 @@ void UI::ConfigureMainMenuBarWindowActions()
 			    m_settingsPanel->SetOpen(true);
 		    }
 	    });
-	m_mainMenuBar->SetViewportCaptureHandler([this]() { m_viewportCaptureRequested = true; });
+	m_mainMenuBar->SetViewportCaptureHandler(
+	    [this]()
+	    {
+		    if (m_viewportPanel)
+		    {
+			    m_viewportPanel->RequestOutputAction(ViewportOutputAction::CapturePresentation);
+		    }
+	    });
 }
 
 void UI::SubscribeToWindowEvents(Window& window)

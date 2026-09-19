@@ -18,9 +18,10 @@
 void AddRasterizedGBufferMeshPass(
     FrameGraphBuilder& builder,
     GpuMeshCache& gpuMeshCache,
-    const GBufferRenderTargets& targets,
-    const RenderFrameGraphImportedSceneResources& externalResources)
+    const RenderFrameGraphResources& resources)
 {
+	const GBufferRenderTargets& targets = resources.Transient.GBuffer;
+	const RenderFrameGraphImportedSceneResources& externalResources = resources.ImportedScene;
 	auto& parameters = builder.AllocGraphParameters<GBufferGraphParameters>("GBuffer");
 	parameters->BaseColor =
 	    builder.CreateRenderTarget(targets.BaseColor, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);

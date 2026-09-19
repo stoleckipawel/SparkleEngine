@@ -58,7 +58,6 @@ private:
 	ShaderRecookRequest m_queuedRequest;
 	std::string m_lastPublicationDiagnostic;
 	ShaderSourceChangeTracker m_shaderSourceChangeTracker;
-	bool m_hasActiveRecook = false;
 	bool m_hasQueuedRecook = false;
 	bool m_reloadRequested = false;
 	bool m_hasAcceptedPublication = false;

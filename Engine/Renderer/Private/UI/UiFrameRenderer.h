@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Renderer/Public/Editor/EditorTextureHandle.h"
+#include "Renderer/Public/UI/UiTextureHandle.h"
 #include "RHI/Public/Interop/ResourceState.h"
 
 #include <cstdint>
 #include <memory>
 
-class EditorTextureRegistry;
+class UiTextureRegistry;
 class FrameGraph;
 class RenderDeviceServices;
 class UiRenderPacketPlayer;
@@ -22,14 +22,15 @@ public:
 	UiFrameRenderer(const UiFrameRenderer&) = delete;
 	UiFrameRenderer& operator=(const UiFrameRenderer&) = delete;
 
-	EditorTextureHandle RegisterEditorTexture(std::uint64_t nativeTextureId) noexcept;
+	UiTextureHandle RegisterUiTexture(std::uint64_t nativeTextureId) noexcept;
+	UiTextureHandle GetViewportTexture() const noexcept { return m_viewportTexture; }
 	void BeginFrame() noexcept;
 	void Render(const UiRenderPacket& packet, FrameGraph* frameGraph, ViewportRenderProducts& viewportProducts) noexcept;
 
 private:
 	bool BeginViewportPresentation(FrameGraph& frameGraph, ViewportRenderProducts& viewportProducts) noexcept;
 	void EndViewportPresentation(FrameGraph& frameGraph, const ViewportRenderProducts& viewportProducts) noexcept;
-	void RenderEditorViewport(const UiRenderPacket& packet, FrameGraph* frameGraph, ViewportRenderProducts& viewportProducts) noexcept;
+	void RenderViewport(const UiRenderPacket& packet, FrameGraph* frameGraph, ViewportRenderProducts& viewportProducts) noexcept;
 	void RenderHostOverlay(const UiRenderPacket& packet) noexcept;
 	void Play(const UiRenderPacket& packet) noexcept;
 	void TransitionViewportProduct(
@@ -39,6 +40,7 @@ private:
 
 	RenderDeviceServices& m_deviceServices;
 	std::unique_ptr<UiRenderPacketPlayer> m_packetPlayer;
-	std::unique_ptr<EditorTextureRegistry> m_textureRegistry;
+	std::unique_ptr<UiTextureRegistry> m_textureRegistry;
+	UiTextureHandle m_viewportTexture;
 	bool m_ownsBackend = false;
 };

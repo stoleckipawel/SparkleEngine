@@ -35,7 +35,7 @@ ViewportPanel::ViewportPanel(float leftInsetPixels, float rightInsetPixels) noex
 	m_renderRequest.ViewportId = 1;
 	m_renderRequest.Generation = 1;
 	m_renderRequest.ViewKind = RenderViewKind::Scene;
-	m_renderRequest.RequestedOutputs = RenderOutputFlags::SceneColor | RenderOutputFlags::SceneDepth;
+	m_renderRequest.RequestedOutputs = RenderOutputFlags::FinalColorLdr | RenderOutputFlags::SceneDepth;
 	m_renderRequest.Extent = RenderViewportExtent{1280u, 720u};
 }
 
@@ -83,9 +83,9 @@ void ViewportPanel::SetRenderProducts(const ViewportRenderProducts& renderProduc
 	m_renderProducts = renderProducts;
 }
 
-void ViewportPanel::SetSceneColorTexture(EditorTextureHandle texture) noexcept
+void ViewportPanel::SetFinalColorTexture(UiTextureHandle texture) noexcept
 {
-	m_sceneColorTexture = texture;
+	m_finalColorTexture = texture;
 }
 
 void ViewportPanel::SetExposureOverrides(const ViewportExposureOverrides& overrides) noexcept
@@ -102,9 +102,9 @@ const ViewportRenderRequest& ViewportPanel::GetRenderRequest() const noexcept
 	return m_renderRequest;
 }
 
-ReferencePathTracerOutputAction ViewportPanel::ConsumeReferencePathTracerOutputAction() noexcept
+ViewportOutputAction ViewportPanel::ConsumeOutputAction() noexcept
 {
-	return std::exchange(m_referencePathTracerOutputAction, ReferencePathTracerOutputAction::None);
+	return std::exchange(m_outputAction, ViewportOutputAction::None);
 }
 
 bool ViewportPanel::GetInputBounds(float& left, float& top, float& right, float& bottom) const noexcept
@@ -132,8 +132,7 @@ void ViewportPanel::BuildEmptyState() noexcept
 {
 	ImGui::TextDisabled("Viewport output unavailable");
 	ImGui::Spacing();
-	ImGui::TextWrapped(
-	    "EditorApplication is requesting runtime scene output, but no scene color surface is available for presentation yet.");
+	ImGui::TextWrapped("EditorApplication is requesting runtime output, but no final LDR color surface is available for presentation yet.");
 }
 
 void ViewportPanel::BuildProgressOverlay() noexcept
@@ -146,7 +145,7 @@ void ViewportPanel::BuildProgressOverlay() noexcept
 
 	const ImVec2 viewportMin = ImGui::GetWindowPos();
 	ImGui::SetCursorScreenPos(ImVec2(viewportMin.x + 12.0f, viewportMin.y + 12.0f));
-	DrawReferencePathTracerOverlay(progress, m_renderRequest, m_referencePathTracerOutputAction);
+	DrawReferencePathTracerOverlay(progress, m_renderRequest, m_outputAction);
 }
 
 void ViewportPanel::BuildUI(bool disableInteraction)
@@ -183,14 +182,14 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 	const ImVec2 availableRegion = ImGui::GetContentRegionAvail();
 	UpdateRequestedExtent(availableRegion.x, availableRegion.y);
 
-	const RenderProduct* sceneColor = m_renderProducts.FindProduct(RenderOutputFlags::SceneColor);
-	if (!m_sceneColorTexture || sceneColor == nullptr)
+	const RenderProduct* finalColor = m_renderProducts.FindProduct(RenderOutputFlags::FinalColorLdr);
+	if (!m_finalColorTexture || finalColor == nullptr)
 	{
 		BuildEmptyState();
 	}
 	else
 	{
-		const ImVec2 imageSize = ViewportImageLayout::ComputeViewportImageSize(availableRegion, sceneColor->Extent);
+		const ImVec2 imageSize = ViewportImageLayout::ComputeViewportImageSize(availableRegion, finalColor->Extent);
 		const ImVec2 start = ImGui::GetCursorPos();
 		if (availableRegion.x > imageSize.x)
 		{
@@ -201,7 +200,7 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 			ImGui::SetCursorPosY(start.y + ((availableRegion.y - imageSize.y) * 0.5f));
 		}
 
-		ImGui::Image(static_cast<ImTextureID>(m_sceneColorTexture.Pack()), imageSize);
+		ImGui::Image(static_cast<ImTextureID>(m_finalColorTexture.Pack()), imageSize);
 	}
 	BuildProgressOverlay();
 

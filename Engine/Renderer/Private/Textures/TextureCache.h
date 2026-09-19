@@ -52,7 +52,7 @@ public:
 	    RhiUploadService& uploadService,
 	    RhiCommandSubmissionService& submissions,
 	    TaskExecutor& taskExecutor,
-	    TaskScope& applicationScope);
+	    TaskScope& parentScope);
 	~TextureCache() noexcept;
 
 	TextureCache(const TextureCache&) = delete;

@@ -82,7 +82,7 @@ bool ViewportCaptureService::BeginCapture(
 		m_completedCaptures.push_back(ViewportCaptureCompletion{.Id = id, .Readback = {.Result = std::move(result)}});
 		return false;
 	}
-	result.Source = source.Product->Source;
+	result.SamplePrefix = source.Product->SamplePrefix;
 
 	RhiCaptureService& captureService = m_deviceServices.GetRenderHardwareInterface().GetCaptureService();
 	const RhiCaptureTicket ticket = captureService.BeginTextureReadback(
@@ -129,7 +129,7 @@ void ViewportCaptureService::Poll() noexcept
 		                    .FrameId = rhiReadback.Result.FrameId,
 		                    .SceneGeneration = pending.Result.SceneGeneration,
 		                    .ProviderGeneration = pending.Result.ProviderGeneration,
-		                    .Source = pending.Result.Source,
+		                    .SamplePrefix = pending.Result.SamplePrefix,
 		                    .FailureReason = rhiReadback.Result.FailureReason},
 		            .Pixels = std::move(rhiReadback.Pixels),
 		            .Width = rhiReadback.Width,

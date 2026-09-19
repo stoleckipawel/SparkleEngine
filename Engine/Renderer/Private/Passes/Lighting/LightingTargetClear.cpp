@@ -1,41 +1,39 @@
 #include "../../PCH.h"
 #include "Passes/Lighting/LightingTargetClear.h"
 
+#include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassCommandContext.h"
 #include "FrameGraph/ResourceUsage.h"
 
 #include <array>
 
-class LightingTargetClearPlan final
+static constexpr const char* LightingTargetClearPassName = "LightingTargetClear";
+
+static auto GetLightingTargets(const LightingRenderTargets& lighting) noexcept
 {
-public:
-	static constexpr const char* kLightingTargetClearPassName = "LightingTargetClear";
+	return std::array{
+	    lighting.DirectDiffuse,
+	    lighting.DirectSpecular,
+	    lighting.DirectSubsurface,
+	    lighting.IndirectDiffuse,
+	    lighting.IndirectSpecular};
+}
 
-	static auto GetLightingTargets(const LightingRenderTargets& lighting) noexcept
-	{
-		return std::array{
-		    lighting.DirectDiffuse,
-		    lighting.DirectSpecular,
-		    lighting.DirectSubsurface,
-		    lighting.IndirectDiffuse,
-		    lighting.IndirectSpecular};
-	}
-
-	static auto GetRayReconstructionGuideTargets(const LightingRenderTargets& lighting) noexcept
-	{
-		return std::array{
-		    lighting.ReconstructionGuides.DiffuseAlbedo,
-		    lighting.ReconstructionGuides.SpecularAlbedo,
-		    lighting.ReconstructionGuides.Roughness,
-		    lighting.ReconstructionGuides.SpecularHitDistance};
-	}
-};
-
-void AddLightingTargetClearPass(FrameGraphBuilder& builder, const LightingRenderTargets& lighting)
+static auto GetRayReconstructionGuideTargets(const LightingRenderTargets& lighting) noexcept
 {
+	return std::array{
+	    lighting.ReconstructionGuides.DiffuseAlbedo,
+	    lighting.ReconstructionGuides.SpecularAlbedo,
+	    lighting.ReconstructionGuides.Roughness,
+	    lighting.ReconstructionGuides.SpecularHitDistance};
+}
+
+void AddLightingTargetClearPass(FrameGraphBuilder& builder, const RenderFrameGraphResources& resources)
+{
+	const LightingRenderTargets& lighting = resources.Transient.Lighting;
 	builder.AddPass(
-	    LightingTargetClearPlan::kLightingTargetClearPassName,
+	    LightingTargetClearPassName,
 	    EFrameGraphPassKind::Raster,
 	    [lighting](PassResourceBuilder& resourceBuilder)
 	    {
@@ -63,13 +61,13 @@ void AddLightingTargetClearPass(FrameGraphBuilder& builder, const LightingRender
 	    },
 	    [lighting](PassCommandContext& context)
 	    {
-		    for (FrameGraphTextureHandle target : LightingTargetClearPlan::GetLightingTargets(lighting))
+		    for (FrameGraphTextureHandle target : GetLightingTargets(lighting))
 		    {
 			    context.Resources.ClearRenderTarget(context.Commands, target);
 		    }
 		    if (lighting.ReconstructionGuides.IsValid())
 		    {
-			    for (FrameGraphTextureHandle target : LightingTargetClearPlan::GetRayReconstructionGuideTargets(lighting))
+			    for (FrameGraphTextureHandle target : GetRayReconstructionGuideTargets(lighting))
 			    {
 				    context.Resources.ClearRenderTarget(context.Commands, target);
 			    }

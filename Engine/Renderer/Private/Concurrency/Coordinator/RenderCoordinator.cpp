@@ -23,7 +23,7 @@ RenderCoordinator::RenderCoordinator(
 		    g_renderCoordinatorLogger,
 		    __FILE__,
 		    __LINE__,
-		    "RendererExecutionConfig has no application TaskExecutor or root TaskScope.");
+		    "RendererExecutionConfig has no asset-task executor or parent scope.");
 	}
 	Initialize();
 	m_resizeHandle = ScopedEventHandle(window.OnResized, window.OnResized.Add([this] { SubmitResize(); }));
@@ -171,6 +171,18 @@ ViewportRenderProducts RenderCoordinator::GetViewportRenderProducts() const
 
 	std::lock_guard lock(m_readStateMutex);
 	return m_publishedViewportProducts;
+}
+
+UiTextureHandle RenderCoordinator::GetViewportPresentationTexture() const
+{
+	m_producerOwner.AssertAccess();
+	if (!m_config.IsThreaded())
+	{
+		return GetSerialContext().GetViewportPresentationTexture();
+	}
+
+	std::lock_guard lock(m_readStateMutex);
+	return m_publishedViewportTexture;
 }
 
 void RenderCoordinator::SubmitResize()

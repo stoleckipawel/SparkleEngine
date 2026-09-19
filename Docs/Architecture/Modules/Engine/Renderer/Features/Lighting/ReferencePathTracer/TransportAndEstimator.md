@@ -4,7 +4,7 @@
 
 **Responsibility:** define one notation, estimator, event algorithm, probability-measure contract, PBR material boundary, numerical policy, equation-to-code ledger, and mathematical failure checklist for `SurfaceTransportReference` and `FinitePathDiagnostic`
 
-**Authority boundary:** [Discovery](Discovery.md) owns ratification and implementation authorization, [Execution Architecture](ExecutionArchitecture.md) owns system ownership and lifetime, [User Experience](UserExperience.md) owns the human and automation workflow, the [feature dossier](README.md) owns acceptance, [Research](Research.md) owns precedent, and the [staged plan](Plan.md) owns delivery order and prompts
+**Authority boundary:** [Discovery](Discovery.md) owns ratification and implementation authorization, [Execution Architecture](ExecutionArchitecture.md) owns system ownership and lifetime, [User Experience](UserExperience.md) owns the interactive and manual-output workflow, the [feature dossier](README.md) owns acceptance, [Research](Research.md) owns precedent, and the [staged plan](Plan.md) owns delivery order and prompts
 
 **Prepared:** re-audited 2026-09-10 against committed `master` revision `669637cf23b9748f8b94635409e74159d31d0bc2`; the current shader route was inspected, but no equation was implemented or executed
 

@@ -438,7 +438,7 @@ Required reference paths:
 - real-time ray/path result with the classical denoiser or reconstruction baseline;
 - neural result only after its separate model contract is met.
 
-Until [`PTD-00`](../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Discovery.md) and then [`FCR-REN-08`](FeatureCompletionReports.md#initial-completion-report-registry) pass, Sparkle's current high-sample `ReferencePathTracer` output is a **candidate comparison**, not ground truth. Reference-dependent PBR and lighting verdicts remain blocked unless an analytic or independent accepted oracle can decide the exact claim without that route. The target Reference Path Tracer need not meet the 30 FPS interactive target while accumulating, but its viewport/offscreen session duration, exact progress, reset/cancellation, memory/disk bounds, and optional artifact terminal state must be controlled.
+Until [`PTD-00`](../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Discovery.md) and then [`FCR-REN-08`](FeatureCompletionReports.md#initial-completion-report-registry) pass, Sparkle's current high-sample `ReferencePathTracer` output is a **candidate comparison**, not ground truth. Reference-dependent PBR and lighting verdicts remain blocked unless an analytic or independent accepted oracle can decide the exact claim without that route. The target Reference Path Tracer need not meet the 30 FPS interactive target while accumulating, but its viewport session duration, exact progress, reset/cancellation, memory/disk bounds, and optional manually requested artifact terminal state must be controlled.
 
 Every comparison freezes:
 

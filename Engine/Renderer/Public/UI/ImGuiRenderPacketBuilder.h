@@ -18,7 +18,7 @@ public:
 private:
 	void Reserve(const ImDrawData& drawData);
 	void AppendTextureUpdates(const ImDrawData& drawData);
-	bool AppendTextureUpload(ImTextureData& texture, EditorTextureHandle handle);
+	bool AppendTextureUpload(ImTextureData& texture, UiTextureHandle handle);
 	void AppendDrawList(const ImDrawList& drawList);
 
 	UiRenderPacket m_packet;

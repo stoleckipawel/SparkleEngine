@@ -1,7 +1,7 @@
 #pragma once
 
+#include "Editor/Capture/ViewportCaptureSlot.h"
 #include "EditorOperations/EditorOperationSlot.h"
-#include "Renderer/Public/Viewport/ViewportContracts.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -21,7 +21,6 @@ private:
 	std::filesystem::path BuildOutputPath(std::uint64_t frameId) const;
 
 	EditorOperationSlot<ViewportCaptureResult> m_writeOperation;
-	ViewportCaptureId m_activeCapture;
+	ViewportCaptureSlot m_capture;
 	std::filesystem::path m_outputPath;
-	ViewportCaptureResult m_lastResult;
 };

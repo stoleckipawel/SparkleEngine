@@ -1,39 +1,13 @@
 #include "PCH.h"
 #include "Settings/EngineRenderingSettingsRuntime.h"
 
-#include "Core/Public/Console/CVar.h"
-#include "Core/Public/Console/CVarRegistry.h"
-#include "Core/Public/Strings/StringUtils.h"
 #include "Passes/Presentation/OutputEncodingCVars.h"
 #include "View/ViewportDisplayCVars.h"
 #include "RayReconstruction/RayReconstructionSettings.h"
 #include "Debug/RendererCVars.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 #include "RHI/Public/CVars/RHICVars.h"
-#include "Settings/EngineRenderingSettingsPersistence.h"
 #include "Upscaling/UpscalerSettings.h"
-
-#include <string>
-#include <string_view>
-
-void EngineRenderingSettingsRuntime::ApplyPersistedValue(std::string_view key, std::string_view value)
-{
-	const std::string trimmedKey = Strings::TrimCopy(key);
-	if (!EngineRenderingSettingsPersistence::IsPersistedName(trimmedKey))
-	{
-		return;
-	}
-
-	ConsoleVariableBase* variable = ConsoleVariableRegistry::Get().Find(trimmedKey);
-	if (variable == nullptr)
-	{
-		return;
-	}
-
-	const std::string persistedValue = Strings::TrimCopy(value);
-	std::string errorMessage;
-	(void) variable->TrySetValueFromString(persistedValue, errorMessage);
-}
 
 EngineRenderingSettingsState EngineRenderingSettingsRuntime::Capture() noexcept
 {
@@ -100,9 +74,4 @@ void EngineRenderingSettingsRuntime::Apply(const EngineRenderingSettingsState& s
 	setCVarIfChanged(CVarRayTracingPtlasPartitionUpdateMode, state.PtlasPartitionUpdateMode);
 	setCVarIfChanged(CVarRayTracingPtlasMarkAllDynamicInPartition, state.PtlasMarkAllDynamicInPartition);
 	setCVarIfChanged(CVarRayTracingPtlasModeChangeDistance, state.PtlasModeChangeDistance);
-}
-
-void EngineRenderingSettingsRuntime::ApplyPersistedValues() noexcept
-{
-	EngineRenderingSettingsPersistence::Load(&EngineRenderingSettingsRuntime::ApplyPersistedValue);
 }

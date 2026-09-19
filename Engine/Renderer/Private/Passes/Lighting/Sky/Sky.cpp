@@ -2,6 +2,7 @@
 #include "Passes/Lighting/Sky/Sky.h"
 
 #include "Core/Public/Math/MathUtils.h"
+#include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Lighting/Sky/SkyShader.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
@@ -10,14 +11,12 @@
 void AddSkyPass(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
-    FrameGraphTextureHandle output,
-    FrameGraphTextureHandle sceneDepth,
-    FrameGraphTextureHandle sky)
+    const RenderFrameGraphResources& resources)
 {
 	auto& parameters = builder.AllocParameters<SkyCS>();
-	parameters->SceneColor = builder.CreateUAV(output);
-	parameters->SceneDepth = builder.CreateSRV(sceneDepth);
-	parameters->SkyTexture = builder.CreateSRV(sky);
+	parameters->SceneColor = builder.CreateUAV(resources.Transient.Scene.SceneColor);
+	parameters->SceneDepth = builder.CreateSRV(resources.Transient.Scene.SceneDepth);
+	parameters->SkyTexture = builder.CreateSRV(resources.ImportedScene.Sky);
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,

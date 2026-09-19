@@ -40,7 +40,7 @@ void TextureDiagnosticsSnapshotBuilder::Add(
 	row.MipCount = texture.MipCount;
 	row.EstimatedByteSize = texture.EstimatedByteSize;
 	const std::uint64_t nativeTextureId = m_descriptorService.GetResourceViewGpuHandle(texture.ShaderResourceView).Value;
-	row.PreviewTexture = m_resolvePreviewTexture ? m_resolvePreviewTexture(nativeTextureId) : EditorTextureHandle{};
+	row.PreviewTexture = m_resolvePreviewTexture ? m_resolvePreviewTexture(nativeTextureId) : UiTextureHandle{};
 	row.StreamManaged = streamManaged;
 	m_snapshot.push_back(std::move(row));
 }

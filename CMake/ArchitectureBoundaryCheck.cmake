@@ -60,6 +60,34 @@ endfunction()
 function(sparkle_boundary_scan_file absolute_path)
     sparkle_boundary_relative_path(_relative_path "${absolute_path}")
 
+    if(_relative_path MATCHES "^Engine/Editor/Public/Panels/" AND
+       NOT _relative_path STREQUAL "Engine/Editor/Public/Panels/ViewportOutputAction.h")
+        sparkle_boundary_append_failure(
+            "EDITOR_PANELS_REMAIN_PRIVATE"
+            "${_relative_path}"
+            "1"
+            "Editor panel implementations are private; the public surface may expose bounded host intents, not panel classes."
+            "${_relative_path}")
+    endif()
+
+    if(_relative_path MATCHES "^Engine/Renderer/(Public|Private)/Editor/")
+        sparkle_boundary_append_failure(
+            "RENDERER_NO_EDITOR_SUBSYSTEM"
+            "${_relative_path}"
+            "1"
+            "Renderer may expose rendering and UI-rendering contracts, but Editor-owned state and naming belong to the Editor or Application modules."
+            "${_relative_path}")
+    endif()
+
+    if(_relative_path MATCHES "^Engine/Renderer/Private/Passes/(Debug/Debug|GBuffer/GBuffer|Lighting/Lighting|Lighting/Direct/DirectLightReservoir|Lighting/ReferencePathTracer/ReferencePathTracer|Lighting/Restir/Restir(Direct|Indirect)?Lighting|Lighting/Restir/RestirIndirectReservoirs|PostProcessing/ExposureMomentChain|PostProcessing/ExposureMomentPasses|PostProcessing/PostProcessing|Presentation/Presentation|Presentation/Upscaling|RayTracing/RayTracingScene)[.](h|cpp)$")
+        sparkle_boundary_append_failure(
+            "RENDERER_PASS_FILE_ROLE_NAMING"
+            "${_relative_path}"
+            "1"
+            "Pass orchestration files use the Passes suffix; singular or PassDefinitions files define GPU work; target/resource files name that responsibility explicitly."
+            "${_relative_path}")
+    endif()
+
     if(_relative_path MATCHES "${SPARKLE_BOUNDARY_RENDERER_PRIVATE_ONLY_PUBLIC_PATH_REGEX}")
         sparkle_boundary_append_failure(
             "RENDERER_IMPLEMENTATION_CONTRACT_REMAINS_PRIVATE"
@@ -87,6 +115,37 @@ function(sparkle_boundary_scan_file absolute_path)
     foreach(_line IN LISTS _lines)
         math(EXPR _line_number "${_line_number} + 1")
         string(REPLACE "__SPARKLE_SEMICOLON__" ";" _line "${_line}")
+
+        if(_relative_path MATCHES "^Engine/Renderer/Private/Passes/.+Passes[.]cpp$")
+            if(_line MATCHES "builder[.](AddPass|Dispatch|DispatchAsync)")
+                sparkle_boundary_append_failure(
+                    "RENDERER_PASS_ORCHESTRATION_NO_GPU_IMPLEMENTATION"
+                    "${_relative_path}"
+                    "${_line_number}"
+                    "Passes files order named operations and do not define GPU dispatches directly."
+                    "${_line}")
+            endif()
+            if(_line MATCHES "resources[.][A-Za-z0-9_.]+[ 	]*=" OR
+               _line MATCHES "[.]IsValid[(]" OR
+               _line MATCHES "Get[A-Za-z0-9_]*(Upscaler|Reconstruction)Provider[(]")
+                sparkle_boundary_append_failure(
+                    "RENDERER_PASS_ORCHESTRATION_READS_AS_INTENT"
+                    "${_relative_path}"
+                    "${_line_number}"
+                    "Passes orchestration calls named rendering operations; resource publication, handle guards, and provider selection stay in the called owner."
+                    "${_line}")
+            endif()
+        endif()
+
+        if(_relative_path STREQUAL "Engine/Renderer/Private/Passes/Lighting/LightingPasses.cpp" AND
+           _line MATCHES "#include[^\n]*Passes/(GBuffer|Lighting/RealTimeLighting|Lighting/Restir|Lighting/ReferencePathTracer/(ReferencePathTracerDisplay|ReferencePathTracerResources|ReferencePathTracerSession|ReferencePathTracerTransport))")
+            sparkle_boundary_append_failure(
+                "RENDERER_LIGHTING_COMPOSITION_READS_AS_INTENT"
+                "${_relative_path}"
+                "${_line_number}"
+                "Lighting composition selects the real-time or Reference renderer and leaves each renderer's GBuffer, ReSTIR, provider, resource, and pass mechanics behind its AddPasses entry."
+                "${_line}")
+        endif()
 
         if(_relative_path MATCHES "^Engine/RHI/" AND _line MATCHES "#include[^\n]*Renderer/|SparkleRenderer")
             sparkle_boundary_append_failure(
@@ -180,6 +239,26 @@ function(sparkle_boundary_scan_file absolute_path)
                 "${_relative_path}"
                 "${_line_number}"
                 "Renderer public contracts must not expose or depend on Renderer implementation headers."
+                "${_line}")
+        endif()
+
+        if(_relative_path MATCHES "^Engine/Renderer/" AND
+           _line MATCHES "EditorTexture|EngineRenderingSettings(Section|Persistence)")
+            sparkle_boundary_append_failure(
+                "RENDERER_NO_EDITOR_OR_PERSISTENCE_POLICY"
+                "${_relative_path}"
+                "${_line_number}"
+                "Renderer owns rendering state and GPU execution, not Editor interaction models or filesystem persistence policy."
+                "${_line}")
+        endif()
+
+        if(_relative_path STREQUAL "Engine/Renderer/Public/Viewport/ViewportContracts.h" AND
+           _line MATCHES "UiTextureHandle|EditorTextureHandle")
+            sparkle_boundary_append_failure(
+                "RENDER_PRODUCT_NO_UI_BINDING"
+                "${_relative_path}"
+                "${_line_number}"
+                "Viewport render products contain render semantics only; UI presentation bindings cross the dedicated Renderer UI seam."
                 "${_line}")
         endif()
 
@@ -294,25 +373,25 @@ function(sparkle_boundary_scan_file absolute_path)
                 "${_line}")
         endif()
 
-        if(NOT _relative_path MATCHES "^Engine/Renderer/Private/(Frame/FramePipeline[.]cpp|Frame/Graph/BuildRenderFrameGraph[.]cpp|Passes/Lighting/ReferencePathTracer/)" AND
+        if(NOT _relative_path MATCHES "^Engine/Renderer/Private/(Frame/FramePipeline[.]cpp|Passes/Lighting/LightingPasses[.]cpp|Passes/Lighting/ReferencePathTracer/)" AND
            NOT _relative_path STREQUAL "Engine/Renderer/ShaderRegistrations/ReferencePathTracerShaders.cpp" AND
            _line MATCHES "#include[^\n]*Passes/Lighting/ReferencePathTracer/")
             sparkle_boundary_append_failure(
                 "REFERENCE_PATH_TRACER_CPP_CAPSULE"
                 "${_relative_path}"
                 "${_line_number}"
-                "Reference Path Tracer implementation headers remain inside the feature, its two frame integration sites, and shader registration."
+                "Reference Path Tracer implementation headers remain inside the feature, the lighting composition and frame-lifecycle owners, and shader registration."
                 "${_line}")
         endif()
 
         if(_relative_path MATCHES "^Engine/Renderer/Private/" AND
-           NOT _relative_path MATCHES "^Engine/Renderer/Private/(Frame/FramePipelineGraph[.]cpp|Frame/Graph/BuildRenderFrameGraph[.]cpp|Passes/Lighting/ReferencePathTracer/)" AND
+           NOT _relative_path MATCHES "^Engine/Renderer/Private/(Frame/Graph/RenderFrameGraphSettings[.]cpp|Passes/Lighting/LightingPasses[.]cpp|Passes/Lighting/ReferencePathTracer/)" AND
            _line MATCHES "RenderViewMode::ReferencePathTracer")
             sparkle_boundary_append_failure(
                 "REFERENCE_PATH_TRACER_SELECTOR_HOOK_BUDGET"
                 "${_relative_path}"
                 "${_line_number}"
-                "The Reference selector is read only for provider topology, the alternate middle branch, and feature-local lifecycle state."
+                "The Reference selector is read only by frame-image topology policy, the alternate middle branch, and feature-local lifecycle state."
                 "${_line}")
         endif()
 
@@ -367,7 +446,8 @@ function(sparkle_boundary_scan_file absolute_path)
         endif()
 
         if(_relative_path STREQUAL "Engine/Renderer/Private/Frame/Graph/BuildRenderFrameGraph.cpp" AND
-           _line MATCHES "Passes/.+Pass\\.h")
+           _line MATCHES "Passes/.+Pass\\.h" AND
+           NOT _line MATCHES "Passes/RayTracing/RayTracingScenePass[.]h")
             sparkle_boundary_append_failure(
                 "FRAME_ORCHESTRATOR_NO_PASS_IMPLEMENTATIONS"
                 "${_relative_path}"

@@ -99,9 +99,7 @@ void RuntimeApplication::Initialize()
 void RuntimeApplication::InitializeHost()
 {
 	m_timer = std::make_unique<Timer>();
-	m_window = std::make_unique<Window>(
-	    "Sparkle Engine",
-	    WindowOptions{.Width = m_options.WindowWidth, .Height = m_options.WindowHeight, .Visible = m_options.WindowVisible});
+	m_window = std::make_unique<Window>("Sparkle Engine");
 }
 
 void RuntimeApplication::InitializeInput()
@@ -140,7 +138,7 @@ void RuntimeApplication::InitializeRenderer()
 
 	rendererConfig.EnableUiRenderPackets = m_options.EnableUiRenderPackets || m_options.EnableRuntimeConsole;
 	rendererConfig.AssetTaskExecutor = &m_taskRuntime->GetExecutor();
-	rendererConfig.ApplicationTaskScope = &m_taskRuntime->GetApplicationScope();
+	rendererConfig.AssetTaskParentScope = &m_taskRuntime->GetApplicationScope();
 	m_renderer = std::make_unique<Renderer>(*m_timer, *m_window, rendererConfig);
 }
 

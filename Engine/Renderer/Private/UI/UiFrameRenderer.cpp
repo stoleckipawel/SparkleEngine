@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "UI/UiFrameRenderer.h"
 
-#include "Editor/EditorTextureRegistry.h"
+#include "UI/UiTextureRegistry.h"
 #include "Frame/Graph/RenderProductGraphHandle.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Renderer/Public/UI/UiRenderPacket.h"
@@ -16,7 +16,7 @@
 UiFrameRenderer::UiFrameRenderer(RenderDeviceServices& deviceServices, bool ownsBackend) :
     m_deviceServices(deviceServices),
     m_packetPlayer(std::make_unique<UiRenderPacketPlayer>()),
-    m_textureRegistry(std::make_unique<EditorTextureRegistry>()),
+    m_textureRegistry(std::make_unique<UiTextureRegistry>()),
     m_ownsBackend(ownsBackend)
 {
 	if (m_ownsBackend)
@@ -34,7 +34,7 @@ UiFrameRenderer::~UiFrameRenderer() noexcept
 	}
 }
 
-EditorTextureHandle UiFrameRenderer::RegisterEditorTexture(std::uint64_t nativeTextureId) noexcept
+UiTextureHandle UiFrameRenderer::RegisterUiTexture(std::uint64_t nativeTextureId) noexcept
 {
 	return m_textureRegistry->Register(nativeTextureId);
 }
@@ -49,13 +49,18 @@ void UiFrameRenderer::BeginFrame() noexcept
 
 void UiFrameRenderer::Render(const UiRenderPacket& packet, FrameGraph* frameGraph, ViewportRenderProducts& viewportProducts) noexcept
 {
+	if (packet.PresentationMode != UiPresentationMode::Viewport)
+	{
+		m_textureRegistry->RetireViewportTexture();
+		m_viewportTexture = {};
+	}
 	switch (packet.PresentationMode)
 	{
 		case UiPresentationMode::HostOverlay:
 			RenderHostOverlay(packet);
 			break;
-		case UiPresentationMode::EditorViewport:
-			RenderEditorViewport(packet, frameGraph, viewportProducts);
+		case UiPresentationMode::Viewport:
+			RenderViewport(packet, frameGraph, viewportProducts);
 			break;
 		case UiPresentationMode::None:
 		default:
@@ -65,25 +70,29 @@ void UiFrameRenderer::Render(const UiRenderPacket& packet, FrameGraph* frameGrap
 
 bool UiFrameRenderer::BeginViewportPresentation(FrameGraph& frameGraph, ViewportRenderProducts& viewportProducts) noexcept
 {
-	const RenderProduct* product = viewportProducts.FindProduct(RenderOutputFlags::SceneColor);
+	const RenderProduct* product = viewportProducts.FindProduct(RenderOutputFlags::FinalColorLdr);
 	if (product == nullptr || !product->Handle)
 	{
 		return false;
 	}
 
-	RenderProduct publishedProduct = *product;
 	TransitionViewportProduct(frameGraph, viewportProducts, ResourceState::ShaderResource);
 	const FrameGraphResourceHandle resource = ToFrameGraphResourceHandle(product->Handle);
 	const std::uint64_t textureId =
 	    m_deviceServices.GetImGuiRenderer().ResolveTextureId(frameGraph.ResolveShaderResourceView(FrameGraphTextureHandle{resource}));
 	if (textureId == 0u)
 	{
+		m_viewportTexture = {};
 		TransitionViewportProduct(frameGraph, viewportProducts, ResourceState::Common);
 		return false;
 	}
 
-	publishedProduct.EditorTexture = m_textureRegistry->PublishViewportTexture(textureId, viewportProducts.GetGeneration());
-	viewportProducts.SetProduct(RenderOutputFlags::SceneColor, publishedProduct);
+	m_viewportTexture = m_textureRegistry->PublishViewportTexture(textureId, viewportProducts.GetGeneration());
+	if (!m_viewportTexture)
+	{
+		TransitionViewportProduct(frameGraph, viewportProducts, ResourceState::Common);
+		return false;
+	}
 	return true;
 }
 
@@ -92,7 +101,7 @@ void UiFrameRenderer::EndViewportPresentation(FrameGraph& frameGraph, const View
 	TransitionViewportProduct(frameGraph, viewportProducts, ResourceState::Common);
 }
 
-void UiFrameRenderer::RenderEditorViewport(
+void UiFrameRenderer::RenderViewport(
     const UiRenderPacket& packet,
     FrameGraph* frameGraph,
     ViewportRenderProducts& viewportProducts) noexcept
@@ -100,6 +109,7 @@ void UiFrameRenderer::RenderEditorViewport(
 	if (frameGraph == nullptr || !BeginViewportPresentation(*frameGraph, viewportProducts))
 	{
 		m_textureRegistry->RetireViewportTexture();
+		m_viewportTexture = {};
 		return;
 	}
 
@@ -140,7 +150,7 @@ void UiFrameRenderer::TransitionViewportProduct(
     const ViewportRenderProducts& viewportProducts,
     ResourceState after) noexcept
 {
-	const RenderProduct* product = viewportProducts.FindProduct(RenderOutputFlags::SceneColor);
+	const RenderProduct* product = viewportProducts.FindProduct(RenderOutputFlags::FinalColorLdr);
 	if (product == nullptr || !product->Handle)
 	{
 		return;

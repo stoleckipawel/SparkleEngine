@@ -31,7 +31,7 @@ ResolvedSceneColor
   -> optional Debug Views replacement
   -> Tone Mapping
   -> Output Encoding
-  -> back-buffer copy or FinalSceneColor viewport product
+  -> back-buffer copy or FinalColorLdr viewport product
 ```
 
 | Stage | Choices | Current boundary |
@@ -45,7 +45,7 @@ The current debug handoff makes `REN-POST-10` Partial: bounded, false-color, and
 ## Output Ownership
 
 - Viewport ID 0 imports the presentable back buffer and copies encoded color into it.
-- Nonzero viewport requests retain `FinalSceneColor`; `SceneDepth` and `Normals` may also be exported as viewport products.
+- Nonzero viewport requests retain `FinalColorLdr`; `SceneDepth` and `Normals` may also be exported as viewport products.
 - Product identity carries viewport-request generation, extent, and format. Capture provenance remains incomplete for shader/graph generation and requested-versus-resolved product/color interpretation.
 - UI composition happens after graph execution and is owned by [UI and Viewport Composition](../../ViewportAndDiagnostics/UiAndViewportComposition.md), not by the color-conversion passes.
 - Frame generation is absent; one executed render frame leads to the normal submission/present route without a generated-frame owner.
@@ -87,6 +87,6 @@ This contract is **defined but unproved**. Passing SDR encoding/publication does
 
 ## Primary Source Routes
 
-- [`Presentation.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Presentation.cpp)
+- [`PresentationPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp), [`ToneMapping.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/ToneMapping.cpp), and [`OutputEncoding.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/OutputEncoding.cpp)
 - [`OutputEncodingSettings.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/OutputEncodingSettings.cpp)
-- [`PostProcessing.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/PostProcessing/PostProcessing.cpp)
+- [`PostProcessingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/PostProcessing/PostProcessingPasses.cpp)

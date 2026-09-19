@@ -110,6 +110,8 @@ The Reference Path Tracer is explicitly **one frame with an alternate middle rec
 | Product | Current format/shape | Produced by | Consumed by or exported as |
 | --- | --- | --- | --- |
 | Scene color | `R16G16B16A16_Float`, render extent | ReSTIR composite/sky or the selected Reference committed-display derivative | upscaling, debug, tone mapping |
+| Radiance | producer-declared scene-linear HDR, render extent | Lit publishes scene color; Reference publishes its committed first moment; future path tracers use the same semantic contract | generic viewport capture; progressive producers attach exact sample-prefix identity |
+| Radiance second moment | optional producer-declared Welford M2 accumulator (sum of squared radiance deviations), render extent | Reference accumulation when available; ordinary Lit currently leaves it absent | variance/evidence capture; never fabricated by a producer that does not compute it |
 | Scene depth | `R32_Float`, render extent | device-depth linearization | lighting, sky/background, viewport depth, provider inputs |
 | GBuffer base color | `R8G8B8A8_UNorm` | raster or ray GBuffer | lighting, debug |
 | GBuffer normal | `R16G16B16A16_Float` | raster or ray GBuffer | lighting, reconstruction, debug, viewport normal product |
@@ -120,7 +122,7 @@ The Reference Path Tracer is explicitly **one frame with an alternate middle rec
 | Lighting lobes | ReSTIR uses `R16G16B16A16_Float`; reference uses `R32G32B32A32_Float` | selected lighting producer | composite, debug, reference sample, reconstruction |
 | Exposure | 1x1 `R32G32B32A32_Float` | manual/automatic exposure pass | reconstruction/upscaling and tone mapping |
 | Resolved scene color | `R16G16B16A16_Float`, output extent | ray reconstruction or upscaling | debug and tone mapping |
-| Encoded scene color | linear counterpart of output format, output extent | output-encoding compute pass | back-buffer copy and `FinalSceneColor` viewport product |
+| Final LDR color | linear counterpart of output format, output extent | output-encoding compute pass | back-buffer copy and `FinalColorLdr` viewport product |
 
 The table states the current internal contract, not precision adequacy or backend format support. Those require `REN-E03`, `REN-E04`, `REN-E17`, and `RHI-E04` evidence.
 

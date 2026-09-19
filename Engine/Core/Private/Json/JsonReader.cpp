@@ -10,15 +10,7 @@
 
 namespace Json
 {
-	void SkipWhitespace(std::string_view document, std::size_t& cursor) noexcept
-	{
-		while (cursor < document.size() && std::isspace(static_cast<unsigned char>(document[cursor])))
-		{
-			++cursor;
-		}
-	}
-
-	bool TryReadString(std::string_view document, std::size_t& cursor, std::string& outValue)
+	static bool TryReadString(std::string_view document, std::size_t& cursor, std::string& outValue)
 	{
 		if (cursor >= document.size() || document[cursor++] != '"')
 		{

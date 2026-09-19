@@ -139,7 +139,7 @@ This current contract is **defined but unproved**. The target [Execution Archite
 ## Primary Source Routes
 
 - [`RenderRayTracingScene.cpp`](../../../../../../../Engine/Renderer/Private/Scene/RayTracing/RenderRayTracingScene.cpp)
-- [`RayTracingScene.cpp`](../../../../../../../Engine/Renderer/Private/Passes/RayTracing/RayTracingScene.cpp)
+- [`RayTracingScenePass.cpp`](../../../../../../../Engine/Renderer/Private/Passes/RayTracing/RayTracingScenePass.cpp)
 - [`RayTracingBlasCache.cpp`](../../../../../../../Engine/Renderer/Private/RayTracing/Acceleration/RayTracingBlasCache.cpp), [`RayTracingClassicTlasStrategy.cpp`](../../../../../../../Engine/Renderer/Private/RayTracing/Acceleration/RayTracingClassicTlasStrategy.cpp), and the adjacent PTLAS strategy owners
 - [`RayTracingShaderTablePlan.cpp`](../../../../../../../Engine/Renderer/Private/Scene/RayTracing/RayTracingShaderTablePlan.cpp)
 - [`RayTracingGBuffer.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/RayTracingGBuffer.cpp)

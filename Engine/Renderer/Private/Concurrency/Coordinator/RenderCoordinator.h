@@ -5,6 +5,7 @@
 #include "Host/RendererBackendConfiguration.h"
 #include "Renderer/Public/Concurrency/RendererExecutionConfig.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
+#include "Renderer/Public/UI/UiTextureHandle.h"
 #include "Viewport/ViewportCaptureCompletion.h"
 #include "Core/Public/Events/ScopedEventHandle.h"
 #include "Core/Public/Threading/ThreadOwnership.h"
@@ -39,6 +40,7 @@ public:
 	void RenderFrame();
 
 	ViewportRenderProducts GetViewportRenderProducts() const;
+	UiTextureHandle GetViewportPresentationTexture() const;
 	void ReloadShaders();
 	std::uint64_t GetShaderGeneration() const noexcept;
 	MeshDiagnosticsSnapshot CaptureMeshDiagnostics();
@@ -98,6 +100,7 @@ private:
 	bool m_startSucceeded = false;
 	mutable std::mutex m_readStateMutex;
 	ViewportRenderProducts m_publishedViewportProducts;
+	UiTextureHandle m_publishedViewportTexture;
 	std::atomic<std::uint64_t> m_shaderGeneration{0};
 	std::size_t m_outstandingViewportCaptureCount = 0;
 	std::vector<ViewportCaptureCompletion> m_publishedViewportCaptures;

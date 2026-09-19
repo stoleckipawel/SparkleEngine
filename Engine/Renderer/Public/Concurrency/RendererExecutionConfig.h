@@ -19,7 +19,7 @@ struct SPARKLE_RENDERER_API RendererExecutionConfig final
 	std::uint32_t RenderPipelineDepth = 0;
 	bool EnableUiRenderPackets = false;
 	TaskExecutor* AssetTaskExecutor = nullptr;
-	TaskScope* ApplicationTaskScope = nullptr;
+	TaskScope* AssetTaskParentScope = nullptr;
 
 	bool IsThreaded() const noexcept;
 	bool HasAssetTaskRuntime() const noexcept;

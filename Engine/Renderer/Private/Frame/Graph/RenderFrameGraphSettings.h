@@ -25,3 +25,5 @@ struct RenderFrameGraphSettings final
 
 	bool operator==(const RenderFrameGraphSettings&) const noexcept = default;
 };
+
+ImageProviderPipeline ResolveFrameImagePipeline(RenderViewMode viewMode) noexcept;

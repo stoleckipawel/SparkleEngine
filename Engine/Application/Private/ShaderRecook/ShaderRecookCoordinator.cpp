@@ -40,7 +40,7 @@ void ShaderRecookCoordinator::RequestRecook(ShaderRecookRequest request) noexcep
 		}
 	}
 
-	if (m_hasActiveRecook)
+	if (m_operation.IsOccupied())
 	{
 		if (m_hasQueuedRecook && m_queuedRequest.Type == ShaderRecookRequestType::Changed
 		    && request.Type == ShaderRecookRequestType::Changed)
@@ -90,7 +90,7 @@ void ShaderRecookCoordinator::Update(Renderer& renderer, bool reloadRequested) n
 		HandleManualReload(renderer);
 	}
 
-	if (!m_hasActiveRecook)
+	if (!m_operation.IsOccupied())
 	{
 		HandleExternalRecookPublication(renderer);
 		return;
@@ -102,7 +102,6 @@ void ShaderRecookCoordinator::Update(Renderer& renderer, bool reloadRequested) n
 		return;
 	}
 
-	m_hasActiveRecook = false;
 	CompleteRecook(renderer, std::move(result));
 
 	if (m_hasQueuedRecook)
@@ -113,7 +112,7 @@ void ShaderRecookCoordinator::Update(Renderer& renderer, bool reloadRequested) n
 		StartRecook(std::move(queuedRequest));
 	}
 
-	if (!m_hasActiveRecook)
+	if (!m_operation.IsOccupied())
 	{
 		HandleExternalRecookPublication(renderer);
 	}
@@ -147,7 +146,6 @@ void ShaderRecookCoordinator::StartRecook(ShaderRecookRequest request) noexcept
 		return;
 	}
 	m_latestRequestId = requestId;
-	m_hasActiveRecook = true;
 	PublishStatus(
 	    std::format(
 	        "Shader recook #{} started for {} through the shader compiler process (baselinePublicationId={}).",

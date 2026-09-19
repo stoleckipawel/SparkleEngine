@@ -29,7 +29,7 @@ public:
 	    RenderHardwareInterface& renderHardwareInterface,
 	    RhiCommandSubmissionService& submissions,
 	    TaskExecutor& taskExecutor,
-	    TaskScope& applicationScope);
+	    TaskScope& parentScope);
 	~GpuMeshCache() noexcept;
 
 	GpuMeshCache(const GpuMeshCache&) = delete;

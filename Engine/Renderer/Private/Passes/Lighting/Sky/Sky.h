@@ -1,13 +1,8 @@
 #pragma once
 
-#include "Frame/Graph/RenderFrameGraphTargets.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraphBuilder;
+struct RenderFrameGraphResources;
 
-void AddSkyPass(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    FrameGraphTextureHandle output,
-    FrameGraphTextureHandle sceneDepth,
-    FrameGraphTextureHandle sky);
+void AddSkyPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources);

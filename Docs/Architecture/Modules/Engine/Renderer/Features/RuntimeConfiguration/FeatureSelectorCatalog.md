@@ -17,7 +17,7 @@ A registered name is not automatically a feature. A trustworthy selector has a p
 
 ## Persisted Renderer Settings Section
 
-`EngineRenderingSettingsPersistence` owns 26 names under `/Script/SparkleRenderer.EngineRenderingSettings` in workspace `Config/DefaultEngine.ini`. The editor settings section captures/applies the same state. View mode is not a Renderer setting: it is one non-persisted `RenderViewMode` selected by each viewport owner; Editor owns only its presentation and interaction.
+Application-private `EngineRenderingSettingsPersistence` owns 26 names under `/Script/SparkleRenderer.EngineRenderingSettings` in workspace `Config/DefaultEngine.ini`. The Editor-private settings section edits the Renderer-owned state value and submits it through Application. Renderer contains neither filesystem persistence nor an Editor interaction model. View mode is not a Renderer setting: it is one non-persisted `RenderViewMode` selected by each viewport owner; Editor owns only its presentation and interaction.
 
 | Feature | Persisted selectors | Default/request boundary | Active owner and effect |
 | --- | --- | --- | --- |
@@ -120,7 +120,7 @@ This selector contract is **defined but unproved**. A registered or persisted na
 ## Primary Source Routes
 
 - [`RendererCVars.cpp`](../../../../../../../Engine/Renderer/Private/Debug/RendererCVars.cpp)
-- [`EngineRenderingSettingsRuntime.cpp`](../../../../../../../Engine/Renderer/Private/Settings/EngineRenderingSettingsRuntime.cpp) and [`EngineRenderingSettingsPersistence.cpp`](../../../../../../../Engine/Renderer/Private/Settings/EngineRenderingSettingsPersistence.cpp)
+- [`EngineRenderingSettingsRuntime.cpp`](../../../../../../../Engine/Renderer/Private/Settings/EngineRenderingSettingsRuntime.cpp) and [`EngineRenderingSettingsPersistence.cpp`](../../../../../../../Engine/Application/Private/RenderingSettings/EngineRenderingSettingsPersistence.cpp)
 - [`ViewportDisplayCVars.cpp`](../../../../../../../Engine/Renderer/Private/View/ViewportDisplayCVars.cpp)
 - [`UpscalerSettings.cpp`](../../../../../../../Engine/Renderer/Private/Upscaling/UpscalerSettings.cpp) and [`RayReconstructionSettings.cpp`](../../../../../../../Engine/Renderer/Private/RayReconstruction/RayReconstructionSettings.cpp)
 - [`RayTracedShadowCVars.cpp`](../../../../../../../Engine/Renderer/Private/RayTracing/Effects/Shadows/RayTracedShadowCVars.cpp) and [`RestirIndirectLightingCVars.cpp`](../../../../../../../Engine/Renderer/Private/RayTracing/Effects/RestirLighting/RestirIndirectLightingCVars.cpp)

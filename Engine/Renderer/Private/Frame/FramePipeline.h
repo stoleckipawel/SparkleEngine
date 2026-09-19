@@ -8,6 +8,7 @@
 #include "Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "Viewport/ViewportCaptureCompletion.h"
 #include "Viewport/ViewportContracts.h"
+#include "Renderer/Public/UI/UiTextureHandle.h"
 
 #include <cstdint>
 #include <memory>
@@ -22,12 +23,12 @@ class FrameGraph;
 class FrameGraphBuilder;
 class RenderDeviceServices;
 class GpuMeshCache;
+class ReferencePathTracerSession;
 class RendererExecutionContext;
 class RendererHost;
 class RendererImageProviderStack;
 class RendererMemoryMonitor;
 class RenderPassRuntimeCache;
-class ReferencePathTracer;
 class RenderScene;
 class RenderScenePreparation;
 class RenderViewPreparation;
@@ -63,12 +64,13 @@ private:
 	    RenderPassRuntimeCache& renderPassRuntimeCache,
 	    RendererMemoryMonitor& memoryMonitor,
 	    TaskExecutor& taskExecutor,
-	    TaskScope& applicationTaskScope,
+	    TaskScope& assetTaskParentScope,
 	    bool enableUiRenderPackets) noexcept;
 
 	void SubmitViewportRenderRequest(ViewportRenderRequest request) noexcept { m_viewportRenderRequest = std::move(request); }
 	void RequestResize(RenderViewportExtent extent, bool minimized) noexcept;
 	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept { return m_viewportRenderProducts; }
+	UiTextureHandle GetViewportPresentationTexture() const noexcept;
 
 	void OnRender(RenderFrameSubmission submission, const RenderFrameTime& time, const UiRenderPacket& ui) noexcept;
 
@@ -131,7 +133,7 @@ private:
 	std::uint64_t m_graphTopologyGeneration = 0u;
 	std::unique_ptr<UiFrameRenderer> m_uiFrameRenderer;
 	std::unique_ptr<ViewportCaptureService> m_viewportCaptureService;
-	std::unique_ptr<ReferencePathTracer> m_referencePathTracer;
+	std::unique_ptr<ReferencePathTracerSession> m_referencePathTracerSession;
 	bool m_resizePending = false;
 	bool m_windowMinimized = false;
 	bool m_frameGraphExecutable = true;

@@ -17,7 +17,7 @@ RendererExecutionContext::RendererExecutionContext(
 	m_rendererHost = std::make_unique<RendererHost>(window, backendConfiguration);
 	m_pipeline = m_rendererHost->CreateFramePipeline(
 	    *executionConfig.AssetTaskExecutor,
-	    *executionConfig.ApplicationTaskScope,
+	    *executionConfig.AssetTaskParentScope,
 	    executionConfig.EnableUiRenderPackets);
 }
 
@@ -74,6 +74,12 @@ const ViewportRenderProducts& RendererExecutionContext::GetViewportRenderProduct
 {
 	m_owner.AssertAccess();
 	return m_pipeline->GetViewportRenderProducts();
+}
+
+UiTextureHandle RendererExecutionContext::GetViewportPresentationTexture() const noexcept
+{
+	m_owner.AssertAccess();
+	return m_pipeline->GetViewportPresentationTexture();
 }
 
 std::vector<ViewportCaptureCompletion> RendererExecutionContext::TakeCompletedViewportCaptures()

@@ -1,8 +1,8 @@
 # Reference Path Tracer User Experience Contract
 
-**Status:** Stage-0-frozen development-product experience accepted by `PTD-00-R1 PASS` at immutable dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300`; Stage-7 menu/progress/action and Stage-9 evidence/output source are **IMPLEMENTED / VALIDATION DEFERRED**, while executable first-use, artifact integrity, failure/recovery, accessibility, automation equivalence, and evidence authority remain unproved
+**Status:** Stage-0-frozen development-product experience accepted by `PTD-00-R1 PASS` at immutable dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300`; Stage-7 menu/progress/action and Stage-9 manual evidence/output source are **IMPLEMENTED / VALIDATION DEFERRED**, while executable first-use, artifact integrity, failure/recovery, accessibility, and evidence authority remain unproved
 
-**Responsibility:** define how a developer, lighting engineer, or technical artist discovers, enters, navigates, observes, compares, resets, pauses, diagnoses, and secondarily exports or automates the Reference Path Tracer
+**Responsibility:** define how a developer, lighting engineer, or technical artist discovers, enters, navigates, observes, compares, resets, pauses, diagnoses, and secondarily exports the Reference Path Tracer
 
 **Authority boundary:** the [feature dossier](README.md) owns binary acceptance and failure verdicts, [Transport And Estimator](TransportAndEstimator.md) owns mathematical meaning, [Execution Architecture](ExecutionArchitecture.md) owns per-view session/state/data ownership, [Discovery](Discovery.md) owns ratification, and the [staged plan](Plan.md) owns implementation order and prompts
 
@@ -10,10 +10,10 @@
 
 **Naming reconciliation:** the 2026-09-09 working-tree clean break makes `ReferencePathTracer` the sole feature name; no UX capability or acceptance result is thereby implied.
 
-**Priority reconciliation:** 2026-09-10 makes the live viewport comparison loop the first usable milestone and moves polished save/checkpoint/offscreen workflow behind it; this is a planning decision, not implementation evidence.
+**Priority reconciliation:** 2026-09-10 makes the live viewport comparison loop the first usable milestone and moves polished manual save/checkpoint workflow behind it; the 2026-09-19 clean break removes command-line and hidden-render execution from the feature.
 
 > [!IMPORTANT]
-> The primary product is a first-class viewport view mode, not a separate render wizard. Selecting **Reference Path Tracer** must put the current view into a correct, bounded reference configuration and begin accumulation automatically. Export and noninteractive execution are secondary consumers of the same Renderer session semantics.
+> The product is a first-class viewport view mode, not a separate render wizard or command-line renderer. Selecting **Reference Path Tracer** must put the current view into a correct, bounded reference configuration and begin accumulation automatically. Manual export consumes that same viewport session.
 
 ## Product Priority Order
 
@@ -22,7 +22,7 @@ Delivery and review follow this strict order:
 1. **P0 — live viewport comparison loop:** the mode is immediately after Lit, starts automatically, continuously presents the newest completely committed prefix, remains navigable, visibly resets on camera/radiance changes, settles into uninterrupted accumulation when change stops, reports exact progress, and supports fast Lit-to-reference comparison.
 2. **P1 — trustworthy Renderer/RHI reference semantics:** independent camera rays, one PBR-correct estimator, immutable Scene/View identity, deterministic samples, raw scene-linear accumulation, strict capability truth, and no stale-prefix mixing make the viewport result dependable.
 3. **P2 — minimum acceptance evidence:** raw readback, immutable identity/provenance, statistical comparison, and explicit failure results exist only as needed to falsify correctness and retain completion evidence.
-4. **P3 — secondary artifact workflows:** polished save, checkpoint, offscreen, path-management, and automation conveniences follow the usable viewport slice. They reuse its session and never become a prerequisite for ordinary comparison.
+4. **P3 — secondary artifact workflows:** polished manual save, checkpoint, and path management follow the usable viewport slice. They reuse its session and never become a prerequisite for ordinary comparison.
 
 P0 does not lower the mathematical bar: a responsive but physically wrong view is not usable. Conversely, artifact plumbing cannot be counted as progress toward the primary product while the live view is hidden, frozen during navigation, slow to reflect a new camera, unable to explain resets, or unsafe to compare with Lit. Final oracle authority still requires the evidence gates in the [feature dossier](README.md); this ordering controls implementation priority, not acceptance dilution.
 
@@ -42,10 +42,10 @@ These are Stage-0 design inputs, not claims about the current implementation. A 
 | Preview/progress | Present the newest completely committed current-identity prefix at least every `250 ms` while work completes; publish progress at `10 Hz` maximum and accessible announcements at `1 Hz` maximum. First current-identity prefix must appear within `2 s` on the accepted support/map matrix. |
 | Pause/cancel/close | Stop assigning work immediately. Late results are generation-rejected. Reach `Paused`, `Cancelled`, or a named device failure within `2 s` after the current quantum. Closing a viewport and normal application shutdown default to cancel-without-checkpoint; verified earlier results remain intact. |
 | Retention | Suspension retains the one prefix while its reference allocations remain within `min(2 GiB, 25% of reported local GPU budget)`. On UMA use reported local/available device memory. If budget is zero/unknown or the session exceeds it, `Pause` is disabled with `Retention unavailable`; switching to Lit settles and releases the prefix, so returning starts validation at ordinal zero. Stage 9 may add checkpoint-backed alternatives without changing this in-memory rule. Pressure eviction of an already suspended prefix announces the release and leaves no implied resume. |
-| Duration | Interactive and offscreen sessions default to an `8 h` wall-time limit; reaching it enters `TimedOut` and never publishes completion. If retention is available, it preserves the prefix and `Extend And Resume` continues it; otherwise it releases the prefix after settlement, labels `No resumable prefix`, and both `Extend And Resume` and `Restart` revalidate and begin ordinal zero. |
+| Duration | Interactive sessions default to an `8 h` wall-time limit; reaching it enters `TimedOut` and never publishes completion. If retention is available, it preserves the prefix and `Extend And Resume` continues it; otherwise it releases the prefix after settlement, labels `No resumable prefix`, and both `Extend And Resume` and `Restart` revalidate and begin ordinal zero. |
 | Disk | Preflight requires predicted staging plus final output plus `10%`, and refuses a single invocation predicted above `64 GiB`. No partial result is promoted on exhaustion. |
-| Evidence actions | `Pause` is memory-only. `Checkpoint And Pause`, `Save Current Prefix`, and `Save When Complete` are P3 Expert actions. An identity change cancels a pending save intent; it never retargets it automatically. `Cancel After Checkpoint` means finish and verify the current checkpoint transaction, then stop; ordinary `Cancel` abandons staging. |
-| Shipping | `ShippingEditor` and `ShippingGame` compile out the Reference mode producer/control and every session factory, overlay, request parser, ApplicationEditor operation, writer, optional codec dependency, package entry, and public documentation route. RHI contains no Reference enumerator or mode field. Source presence elsewhere is not consumer reachability. |
+| Evidence actions | `Pause` is memory-only. `Checkpoint And Pause`, `Save Current Prefix`, and `Save Complete` are P3 Expert actions initiated explicitly from the current viewport. An identity change cancels a pending capture intent; it never retargets it automatically. `Cancel After Checkpoint` means finish and verify the current checkpoint transaction, then stop; ordinary `Cancel` abandons staging. |
+| Shipping | `ShippingEditor` and `ShippingGame` compile out the Reference mode producer/control and every session factory, overlay, ApplicationEditor operation, writer, optional codec dependency, package entry, and public documentation route. RHI contains no Reference enumerator or mode field. Source presence elsewhere is not consumer reachability. |
 
 The numerical bounds are implementation contracts immediately. A development machine either meets the capability/resource predicates and reports measured behavior or returns the frozen unavailable/capacity result; it does not invent different limits. Naming minimum/reference release machines and claiming those bounds as supported-product performance remains a Stage-10 release gate.
 
@@ -70,7 +70,7 @@ The Renderer semantic is host-agnostic and supports both Editor `Scene` views an
 | --- | --- | --- |
 | Lighting/PBR engineer | Switch Lit and Reference Path Tracer on one unchanged view to inspect a real-time lighting difference. | An admitted retained prefix remains valid across the comparison switch; a no-retention exit is disclosed and restarts at zero. Both modes use the same canonical scene and camera identity. |
 | Technical artist or content reviewer | Enter the mode without renderer setup, observe progress, move to another composition, and understand why accumulation restarted or cannot proceed. | The viewport always names the current state, exact prefix/target, and most recent invalidation or blocking semantic. |
-| Evidence/release owner | Export a completed current-view result or reproduce it noninteractively with exact identity. | Raw EXR, manifest, uncertainty summary, and comparison are linked to one input digest and exact prefix. |
+| Evidence/release owner | Manually export a completed current-view result with exact identity. | Raw EXR, manifest, uncertainty summary, and comparison are linked to one input digest and exact prefix. |
 | Support/graphics investigator | Reproduce a reset loop, unsupported scene, failed export, or backend problem. | One root cause, view/scene/setting identity, next action, replay manifest, and bounded support record are available. |
 
 ## View Mode Placement And One-Click Entry
@@ -230,7 +230,7 @@ Reference details are available from the progress overlay and rendering details 
 | View | View identity, camera, render extent/crop/filter, frozen time where admitted. | Read from the current canonical view; no second camera picker is required for the main path. |
 | Execution | Process backend and automatically resolved active frontend. | Read-only product truth; no Reference-specific execution override or per-effect fallback policy. |
 | Resources | GPU memory, wall-time, cancellation bounds, overlay/preview cadence; checkpoint policy under Evidence. | Predicted and active usage are visible; values are bounded. Camera response outranks secondary readback/export work. |
-| Evidence/Output *(secondary, collapsed by default)* | Raw readback status, optional checkpoint, `Save When Complete`, destination, raw beauty/manifest selection, optional display preview. | Ordinary viewport comparison requires none of these fields; prior completed output is preserved. |
+| Evidence/Output *(secondary, collapsed by default)* | Raw readback status, immediate complete/partial/checkpoint buttons, destination, raw beauty/manifest selection, optional display preview. | Ordinary viewport comparison requires none of these fields; prior completed output is preserved. |
 
 Selecting the mode runs deterministic automatic preflight before sample zero. Supported defaults proceed without confirmation. A blocker names the first unsupported camera, scene object, material, light, feature-matrix row, capability, or capacity condition and offers a concrete next action. There is no `Render Anyway` for the raw reference product.
 
@@ -247,10 +247,9 @@ When several blockers exist, the first cause is deterministic: request/schema, b
 
 ## Secondary Saving And Evidence Artifact Experience
 
-Saving exists to retain evidence and exchange raw results; it is not the expected daily interaction and must not delay delivery or responsiveness of the live viewport comparison loop. The first usable milestone may omit polished saving, checkpoint, and offscreen UX. When these secondary surfaces land, they obey the same session identity:
+Saving exists to retain evidence and exchange raw results; it is not the expected daily interaction and must not delay delivery or responsiveness of the live viewport comparison loop. The first usable milestone may omit polished saving and checkpoint UX. When these secondary surfaces land, they obey the same session identity:
 
 - `Save Raw Result` is enabled for a complete current prefix and writes raw `beauty.exr`, the accepted statistical summary, hashes, and `manifest.json` last.
-- `Save When Complete` registers an export intent against the current digest and target. Any identity reset cancels the intent with a visible reason; it never retargets or exports the discarded view under a new identity.
 - `Save Current Prefix` is an expert action. Its manifest says `PartialPrefix`, records the exact committed SPP, and cannot be discovered or labeled as a completed candidate reference.
 - The optional viewport-looking image is labeled `Display Preview — not raw reference` and records exposure/tone/gamut/encoding plus the raw hash.
 - Export consumes the same session accumulation through typed readback. It does not launch a second estimator or retrace an already complete matching view.
@@ -258,33 +257,9 @@ Saving exists to retain evidence and exchange raw results; it is not the expecte
 - A save defaults to the exact current session render extent and raw precision. It never silently substitutes a thumbnail, viewport screenshot, UI-scaled backbuffer, preview texture, or lower default export resolution. Any explicit crop or extent change is identity-bearing and therefore starts a distinct measurement.
 - `Render At Resolution...` is the only high-resolution override: it displays width, height, predicted accumulator memory/disk, and the fact that accepting creates a new measurement at ordinal zero. It is capped at `16384 x 16384`, the resource budgets above, and the accepted hardware matrix. The ordinary mode remains at the current physical Renderer extent; export never upscales it.
 
-The Completed details lead with state, exact prefix/digest, authority label, and uncertainty status, then `Open Folder`, `Copy Raw Path`, `Copy Manifest Path`, `Compare Raw...`, and `Copy Replay Command`. A screenshot, preview, checkpoint, staging directory, or failed partial output is never the default result.
+The Completed details lead with state, exact prefix/digest, authority label, and uncertainty status, then `Open Folder`, `Copy Raw Path`, `Copy Manifest Path`, and `Compare Raw...`. A screenshot, preview, checkpoint, staging directory, or failed partial output is never the default result.
 
-## Noninteractive And Runtime Contract
-
-Automation remains a secondary evidence surface and is not part of the first usable viewport milestone. One `ShowcaseEditor` operation may create an offscreen Game-kind RenderView and run the same Reference Path Tracer session, for example:
-
-```text
-ShowcaseEditor.exe --reference-path-tracer-request Saved/ReferencePathTracer/request.json
-```
-
-The exact development-only invocation is `ShowcaseEditor.exe --reference-path-tracer-request <request.json>`. The request is strict UTF-8 JSON with no BOM, duplicate keys, comments, NaN/Inf, fractional integer fields, or unknown fields. Relative `project`, `level`, and `outputDirectory` paths resolve against the request file's canonical parent; canonicalization failure, traversal outside the declared project for `level`, an existing nonempty invocation directory, or a destination below an immutable install root is `InvalidRequest`. The operation creates one unique child named from the digest and invocation UUID and never overwrites an existing artifact.
-
-| JSON member | Requirement and default |
-| --- | --- |
-| `schema` | Required exact string `sparkle.reference-path-tracer.request/1`. |
-| `project`, `level`, `camera` | `project` is a required filesystem path to the project descriptor. `level` is a required filesystem path below that project's content root. `camera` is either exact `ActiveGameCamera` or `uuid:<lowercase RFC-4122 UUID>` naming one serialized scene-camera object. Missing/duplicate UUID identity is `InvalidRequest`; display names are forbidden as identity. |
-| `product` | Optional enum, default `SurfaceTransportReference`; alternative `FinitePathDiagnostic` requires `finiteSurfaceVertices` in `[1,4096]`, which is otherwise forbidden. |
-| `width`, `height` | Required integers in `[1,16384]`; crop is optional four-integer half-open `[x0,y0,x1,y1]` inside the extent and defaults to the full extent. Filter is optional exact enum `Box` and defaults to `Box`. |
-| `targetSpp` | Required integer in `[1,1048576]`. `seed` and `replicate` are optional uint32 and default to `0`. |
-| `backend` | Required exact enum `D3D12` or `Vulkan` and must equal the process backend. |
-| `timeoutSeconds` | Optional integer `[1,28800]`, default `28800`. `maxOutputGiB` is optional integer `[1,64]`, default `64`, and can only narrow the global cap. |
-| `checkpointPolicy` | Optional exact enum `None` or `OnTimeout`; default `None`. `OnTimeout` requires the checkpoint feature and writable destination at preflight. |
-| `outputDirectory` | Required path. Raw beauty, the accepted statistical summary, hashes, and manifest are written according to the fixed artifact schema. |
-
-The submission contains serializable Application intent only. It never serializes Renderer handles, UI state, loaded scene data, descriptors, or a second estimator configuration. Standard output is UTF-8 JSON Lines: zero or more progress objects with exact `schema:"sparkle.reference-path-tracer.event/1"`, `type:"progress"`, `state`, `committedSpp`, `targetSpp`, `digest`, and monotonic `sequence`, followed by exactly one terminal object with the same exact schema, `type:"terminal"`, `status`, `exitCode`, `digest` or `null`, `manifestPath` or `null`, `manifestSha256` or `null`, `checkpointPath` or `null`, and one stable `reasonCode`. Standard error contains bounded sanitized human-readable errors only. A crash or missing/multiple terminal records is `InternalFailure` to the caller. Stable process exits are `0 Completed`, `2 InvalidRequest`, `3 UnsupportedDomain` or `UnsupportedCapability`, `4 Cancelled`, `5 TimedOut`, `6 CapacityExceeded`, `7 DeviceLost`, `8 PublicationFailed` or `CheckpointRejected`, and `9 InternalFailure`.
-
-Stable noninteractive terminal categories are `Completed`, `InvalidRequest`, `UnsupportedDomain`, `UnsupportedCapability`, `Cancelled`, `TimedOut`, `CapacityExceeded`, `DeviceLost`, `PublicationFailed`, `CheckpointRejected`, and `InternalFailure`. Equivalent viewport/offscreen intent resolves the same canonical Renderer digest and sample stream; invocation identity and wall-clock timing may differ.
+## Runtime Contract
 
 A non-Editor interactive application selects `RenderViewMode::ReferencePathTracer` on its ordinary viewport request and presents progress through its own UI. It does not depend on Editor code.
 
@@ -326,9 +301,9 @@ The frozen dry-run matrix is keyboard-only selection/actions/focus order; non-co
 
 | Profile | Frozen reachability |
 | --- | --- |
-| `DebugEditor`, `DevelopmentEditor` | View-mode selector, overlay/details, semantic Renderer API, exact request CLI, ApplicationEditor operation, raw writer, and support details included. |
-| `DebugGame`, `DevelopmentGame` | The same Renderer `ReferencePathTracer` mode and session are included and selectable through an approved ordinary viewport control; no Editor dependency or Game-specific estimator exists. Offscreen artifact writing remains ApplicationEditor-owned because filesystem publication is a separate tool responsibility. |
-| `ShippingEditor`, `ShippingGame` | The Reference mode producer/control and every session factory, generic command-line reachability, request CLI, writer/operation, support promise, optional artifact dependency, package entry, and public documentation route are compiled out. RHI exposes no Reference value; no session can start. |
+| `DebugEditor`, `DevelopmentEditor` | View-mode selector, overlay/details, semantic Renderer API, manual ApplicationEditor artifact operation, raw writer, and support details included. |
+| `DebugGame`, `DevelopmentGame` | The same Renderer `ReferencePathTracer` mode and session are included and selectable through an approved ordinary viewport control; no Editor dependency or Game-specific estimator exists. |
+| `ShippingEditor`, `ShippingGame` | The Reference mode producer/control and every session factory, writer/operation, support promise, optional artifact dependency, package entry, and public documentation route are compiled out. RHI exposes no Reference value; no session can start. |
 
 The current repository does not yet prove this matrix: the transitional global Reference composition CVar is removed and development-host source uses one ordinary request, but Renderer still links into shipping profiles and no package/Shipping exclusion proof has run. Source presence is not Shipping reachability evidence.
 
@@ -340,7 +315,7 @@ An independent read-only reviewer attempted to reconstruct first use from source
 
 The current Stage-7 working tree exposes the mode immediately after Lit, starts the existing feature session automatically, reports exact committed/target SPP, distinguishes reset/accumulation/pause/completion/unavailability, retains the latest reset and discarded prefix, estimates throughput/ETA, discloses route/backend and raw-versus-display meaning, and provides pause/resume/restart plus explicit single-session transfer. Unsupported selection offers a direct return to Lit and never relabels Lit output as Reference. Editor strings and controls live in one private feature overlay; the viewport panel contains one call. Game/runtime continues through the same public `ViewportRenderRequest` and `RuntimeApplication::SubmitViewportRenderRequest` route without importing Editor code.
 
-This is source evidence only. No build, GPU run, interactive camera exercise, response-budget measurement, keyboard/focus/DPI/accessibility review, Game host workflow, backend comparison, or Shipping exclusion proof has run. Timeout, durable cancellation/checkpoint, raw save, and offscreen automation remain later-stage work and cannot be inferred from the overlay.
+This is source evidence only. No build, GPU run, interactive camera exercise, response-budget measurement, keyboard/focus/DPI/accessibility review, Game host workflow, backend comparison, or Shipping exclusion proof has run. Timeout, durable cancellation/checkpoint, and raw save remain later-stage work and cannot be inferred from the overlay.
 
 ## Professional Defaults And Guardrails
 
@@ -410,10 +385,10 @@ The implementation sequence has two non-interchangeable gates. The primary viewp
 
 The complete workflow is ready for `FCR-REN-08` consideration only when the primary gate remains passing and:
 
-9. `CHK-RPT-02` proves viewport, runtime, and noninteractive equivalent intents resolve to the same semantic digest and sample stream;
+9. `CHK-RPT-02` proves Editor and runtime viewport intents resolve to the same semantic digest and sample stream;
 10. `CHK-RPT-13` exercises capability, capacity, timeout, cancellation, device, checkpoint, disk, and publication failures with bounded cleanup/recovery;
 11. `CHK-RPT-10` proves every display/save/open/compare action keeps raw and presentation lineage separate; and
-12. full-resolution raw save, locale, spaces, non-ASCII, read-only install, offscreen automation, support, and output discovery pass their declared evidence matrices.
+12. full-resolution manual raw save, locale, spaces, non-ASCII, read-only install, support, and output discovery pass their declared evidence matrices.
 
 This page defines the intended experience; the [feature dossier](README.md#acceptance-criteria) and signed `FCR-REN-08` report own the eventual verdict.
 
@@ -422,6 +397,6 @@ This page defines the intended experience; the [feature dossier](README.md#accep
 - Epic's official [Path Tracer documentation](https://dev.epicgames.com/documentation/en-us/unreal-engine/path-tracer-in-unreal-engine) is the direct interaction precedent: viewport View Mode selection, progressive accumulation for a still view, invalidation on camera/view/material/object change, target-SPP progress display, and runtime enablement. Its documented dynamic-animation invalidation gaps are a negative precedent, not behavior to reproduce.
 - SparkleEngine [Editor Engineering](../../../../../../../Engineering/Modules/Editor.md) is the binding local authority for intent-first workflows, operation ownership, bounded background work, failure presentation, keyboard access, and lifecycle safety.
 - The pinned [RTXPT reference controls](https://github.com/NVIDIA-RTX/RTXPT/blob/f08d1c739071e0faad0c7c274d861124c511abab/Rtxpt/SampleUI.cpp#L778-L866) and [Falcor PathTracer guide](https://github.com/NVIDIAGameWorks/Falcor/blob/eb540f6748774680ce0039aaf3ac9279266ec521/docs/usage/path-tracer.md#overview) are expert-control, reset, and progressive-rendering precedents, including negative lessons about defaults and label authority.
-- AMD's pinned [Baikal workflow description](https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRender-Baikal/blob/2d5a5d0eb2092d75adf637bf6f381d7e9307e986/README.md) and [Radeon ProRender backend article](https://gpuopen.com/learn/radeon-prorender-2-02-10/) provide automation/data-generation and final-versus-preview precedents.
+- AMD's pinned [Baikal workflow description](https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRender-Baikal/blob/2d5a5d0eb2092d75adf637bf6f381d7e9307e986/README.md) and [Radeon ProRender backend article](https://gpuopen.com/learn/radeon-prorender-2-02-10/) provide final-versus-preview precedents.
 - The [OpenEXR Technical Introduction](https://openexr.com/en/latest/TechnicalIntroduction.html) informs raw channel, metadata, and lossless-format presentation; it does not define Sparkle's artifact or evidence authority.
 - [Research](Research.md) owns the complete pinned implementation/source ledger, approved uses, and non-claims.

@@ -3,8 +3,7 @@
 
 #include "Editor/EditorUiFrameRenderer.h"
 #include "Editor/Public/UI.h"
-#include "Editor/Capture/EditorViewportCaptureCoordinator.h"
-#include "Editor/ReferencePathTracer/ReferencePathTracerArtifactCoordinator.h"
+#include "Editor/Viewport/EditorViewportOutputCoordinator.h"
 #include "EditorOperations/EditorOperationRuntime.h"
 #include "Input/InputSystem.h"
 #include "Renderer.h"
@@ -22,8 +21,7 @@ struct EditorApplication::State final
 	std::unique_ptr<UI> Ui;
 	std::unique_ptr<EditorOperationRuntime> OperationRuntime;
 	std::unique_ptr<ShaderRecookCoordinator> ShaderRecook;
-	std::unique_ptr<EditorViewportCaptureCoordinator> ViewportCapture;
-	std::unique_ptr<ReferencePathTracerArtifactCoordinator> ReferenceArtifacts;
+	std::unique_ptr<EditorViewportOutputCoordinator> ViewportOutput;
 };
 
 EditorApplication::EditorApplication() = default;
@@ -78,13 +76,9 @@ void EditorApplication::InitializeEditorOperations()
 		m_state->ShaderRecook = std::make_unique<ShaderRecookCoordinator>(*m_state->OperationRuntime);
 	}
 
-	if (!m_state->ViewportCapture)
+	if (!m_state->ViewportOutput)
 	{
-		m_state->ViewportCapture = std::make_unique<EditorViewportCaptureCoordinator>(*m_state->OperationRuntime);
-	}
-	if (!m_state->ReferenceArtifacts)
-	{
-		m_state->ReferenceArtifacts = std::make_unique<ReferencePathTracerArtifactCoordinator>(*m_state->OperationRuntime);
+		m_state->ViewportOutput = std::make_unique<EditorViewportOutputCoordinator>(*m_state->OperationRuntime);
 	}
 }
 
@@ -110,7 +104,13 @@ void EditorApplication::InitializeUi()
 	    .MaterialVariants = [&world]() { return world.CaptureMaterialVariants(); },
 	    .SubmitWorldEdit = [&world](WorldEditCommand command, std::uint64_t generation)
 	    { return world.SubmitEdit(std::move(command), generation); },
-	    .SubmitRenderingSettings = [&renderer](EngineRenderingSettingsState settings) { renderer.SubmitRenderingSettings(settings); },
+	    .RenderingSettings = renderer.CaptureRenderingSettings(),
+	    .SubmitRenderingSettings = [&renderer](EngineRenderingSettingsState settings)
+	    {
+		    SaveRenderingSettings(settings);
+		    renderer.SubmitRenderingSettings(std::move(settings));
+	    },
+	    .CaptureRenderingSettings = [&renderer]() { return renderer.CaptureRenderingSettings(); },
 	    .HostWindow = m_state->Runtime->GetWindow(),
 	    .Input = m_state->Runtime->GetInputSystem()});
 
@@ -163,8 +163,7 @@ bool EditorApplication::Tick()
 
 void EditorApplication::UpdateEditorOperations(Renderer& renderer)
 {
-	m_state->ViewportCapture->Update(renderer);
-	m_state->ReferenceArtifacts->Update(renderer, renderer.GetViewportRenderProducts());
+	m_state->ViewportOutput->Update(renderer);
 
 	if (m_state->Ui->ConsumeShaderRecookRequest())
 	{
@@ -177,14 +176,7 @@ void EditorApplication::UpdateEditorOperations(Renderer& renderer)
 void EditorApplication::RenderEditorFrame(Renderer& renderer)
 {
 	EditorUiFrameRenderer::Render(*m_state->Runtime, renderer, *m_state->Ui);
-	if (m_state->Ui->ConsumeViewportCaptureRequest())
-	{
-		m_state->ViewportCapture->Request(renderer, m_state->Runtime->GetTimer().GetFrameCount());
-	}
-	m_state->ReferenceArtifacts->Request(
-	    m_state->Ui->ConsumeReferencePathTracerOutputAction(),
-	    renderer,
-	    renderer.GetViewportRenderProducts());
+	m_state->ViewportOutput->HandleAction(*m_state->Ui, renderer, m_state->Runtime->GetTimer().GetFrameCount());
 
 	m_state->Runtime->SubmitViewportRenderRequest(m_state->Ui->GetViewportRenderRequest());
 }
@@ -197,8 +189,7 @@ void EditorApplication::Shutdown()
 	}
 
 	m_state->Ui.reset();
-	m_state->ReferenceArtifacts.reset();
-	m_state->ViewportCapture.reset();
+	m_state->ViewportOutput.reset();
 	m_state->ShaderRecook.reset();
 	m_state->OperationRuntime.reset();
 	m_state->Runtime->Shutdown();

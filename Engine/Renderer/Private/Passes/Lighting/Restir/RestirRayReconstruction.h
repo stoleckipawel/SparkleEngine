@@ -1,13 +1,12 @@
 #pragma once
 
 class FrameGraphBuilder;
-class IRayReconstructionProvider;
+class RendererImageProviderStack;
 struct RenderFrameGraphResources;
-struct RenderViewportExtent;
+struct RenderFrameGraphSettings;
 
 void AddRestirRayReconstructionPass(
     FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    RenderViewportExtent outputExtent,
-    IRayReconstructionProvider* rayReconstructionProvider,
+    const RenderFrameGraphSettings& settings,
+    RendererImageProviderStack& imageProviders,
     RenderFrameGraphResources& resources);

@@ -120,6 +120,7 @@ void RenderCoordinator::PublishReadState()
 	{
 		std::lock_guard lock(m_readStateMutex);
 		m_publishedViewportProducts = m_context->GetViewportRenderProducts();
+		m_publishedViewportTexture = m_context->GetViewportPresentationTexture();
 		std::vector<ViewportCaptureCompletion> captures = m_context->TakeCompletedViewportCaptures();
 		for (ViewportCaptureCompletion& capture : captures)
 		{

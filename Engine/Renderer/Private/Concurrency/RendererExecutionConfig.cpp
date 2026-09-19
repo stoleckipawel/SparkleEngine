@@ -9,7 +9,7 @@ bool RendererExecutionConfig::IsThreaded() const noexcept
 
 bool RendererExecutionConfig::HasAssetTaskRuntime() const noexcept
 {
-	return AssetTaskExecutor != nullptr && ApplicationTaskScope != nullptr;
+	return AssetTaskExecutor != nullptr && AssetTaskParentScope != nullptr;
 }
 
 std::uint32_t RendererExecutionConfig::GetFrameQueueCapacity() const noexcept

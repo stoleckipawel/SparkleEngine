@@ -10,23 +10,49 @@
 #include <chrono>
 #include <cstdint>
 
-class ReferencePathTracer;
 class FrameGraph;
 class FrameGraphBuilder;
 class RendererMemoryMonitor;
 class RenderDeviceServices;
+class RenderRayTracingScene;
 struct PreparedRenderScene;
 struct RenderFrame;
+struct RenderFrameGraphResources;
+struct RenderFrameGraphSettings;
 struct RenderView;
+struct ViewportFrameProducts;
 
 class ReferencePathTracerSession final
 {
+public:
+	ReferencePathTracerSession(
+	    RenderDeviceServices& deviceServices,
+	    RendererMemoryMonitor& memoryMonitor,
+	    RenderRayTracingScene& rayTracingScene) noexcept;
+
+	bool PrepareFrame(
+	    const RenderFrame& frame,
+	    ViewportRenderAction action,
+	    std::uint64_t actionSequence,
+	    ViewportFrameProducts& products,
+	    FrameGraph& frameGraph) noexcept;
+	void OnFrameSubmitted(RhiSubmissionToken token) noexcept;
+
 private:
-	friend class ReferencePathTracer;
+	friend void AddReferencePathTracerPasses(
+	    FrameGraphBuilder& builder,
+	    const RenderFrameGraphSettings& settings,
+	    ReferencePathTracerSession& session,
+	    RenderFrameGraphResources& resources);
+	friend void AddReferencePathTracerTransportPass(
+	    FrameGraphBuilder& builder,
+	    RenderViewportExtent extent,
+	    const RenderFrameGraphResources& resources,
+	    const ReferencePathTracerGraphResources& graphResources,
+	    const ReferencePathTracerUniformData& uniformData,
+	    RenderRayTracingScene& rayTracingScene);
 
 	static constexpr std::uint32_t WorkRowsPerDispatch = 32u;
-
-	ReferencePathTracerSession(RenderDeviceServices& deviceServices, RendererMemoryMonitor& memoryMonitor) noexcept;
 
 	ViewportRenderProgress Update(
 	    const RenderFrame& frame,
@@ -36,7 +62,6 @@ private:
 	void ReserveGraphResources(FrameGraphBuilder& builder, RenderViewportExtent extent);
 	const ReferencePathTracerGraphResources& GetGraphResources() const noexcept { return m_resources.GetGraphResources(); }
 	bool BindResources(FrameGraph& frameGraph) const noexcept;
-	void RecordSubmission(RhiSubmissionToken token) noexcept;
 
 	const ReferencePathTracerUniformData& GetUniformData() const noexcept { return m_uniformData; }
 
@@ -67,9 +92,10 @@ private:
 	void Suspend() noexcept;
 	void FinalizeSuspension() noexcept;
 	ViewportRenderProgress GetProgress() const noexcept;
-	RenderProduct::Provenance GetRawProvenance() const noexcept;
+	RenderProductSamplePrefix GetRadianceSamplePrefix() const noexcept;
 
 	RenderDeviceServices& m_deviceServices;
+	RenderRayTracingScene& m_rayTracingScene;
 	ReferencePathTracerResources m_resources;
 	ReferencePathTracerUniformData m_uniformData = {};
 	ReferencePathTracerIdentity m_identity = {};

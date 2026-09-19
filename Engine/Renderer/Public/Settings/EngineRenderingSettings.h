@@ -8,8 +8,6 @@
 #include "RendererAPI.h"
 
 #include <cstdint>
-#include <functional>
-#include <string>
 
 struct EngineRenderingSettingsState final
 {
@@ -39,69 +37,3 @@ struct EngineRenderingSettingsState final
 	bool PtlasMarkAllDynamicInPartition = false;
 	float PtlasModeChangeDistance = 100.0f;
 };
-
-class SPARKLE_RENDERER_API EngineRenderingSettingsSection final
-{
-public:
-	using CommitHandler = std::function<void(EngineRenderingSettingsState)>;
-
-	EngineRenderingSettingsSection();
-	EngineRenderingSettingsSection(const EngineRenderingSettingsSection&) = delete;
-	EngineRenderingSettingsSection& operator=(const EngineRenderingSettingsSection&) = delete;
-	EngineRenderingSettingsSection(EngineRenderingSettingsSection&&) = delete;
-	EngineRenderingSettingsSection& operator=(EngineRenderingSettingsSection&&) = delete;
-
-	const EngineRenderingSettingsState& GetState() const noexcept { return m_state; }
-	void SetCommitHandler(CommitHandler handler);
-	void RefreshFromRuntimeState() noexcept;
-	bool HasPendingRestart() const noexcept;
-	std::string BuildPendingRestartMessage() const;
-
-	void SetVSync(bool enabled);
-	void SetBackBufferFormat(PixelFormat format);
-	void SetPreferHighPerformanceAdapter(bool enabled);
-	void SetToneMapper(EngineToneMapper toneMapper);
-	void SetExposureMode(EngineExposureMode mode);
-	void SetExposureMeteringMethod(EngineExposureMeteringMethod method);
-	void SetOutputColorEncoding(EngineOutputColorEncoding encoding);
-	void SetManualExposure(float exposure);
-	void SetExposureCompensation(float compensation);
-	void SetExposureTargetLuminance(float luminance);
-	void SetExposureMin(float exposure);
-	void SetExposureMax(float exposure);
-	void SetExposureAdaptationSpeedUp(float speed);
-	void SetExposureAdaptationSpeedDown(float speed);
-	void SetUpscalerProvider(EUpscalerProviderKind provider);
-	void SetUpscalerQualityMode(EUpscalerQualityMode mode);
-	void SetRayReconstructionMode(EngineRayReconstructionMode mode);
-	void SetGBufferAlgorithm(GBufferAlgorithm algorithm);
-	void SetMeshAutoBatching(bool enabled);
-	void SetRefitTlas(bool enabled);
-	void SetPtlasActive(bool active);
-	void SetPtlasPartitionsPerAxis(std::uint32_t partitionsPerAxis);
-	void SetPtlasPartitionUpdateMode(RayTracingPtlasPartitionUpdateMode mode);
-	void SetPtlasMarkAllDynamicInPartition(bool enabled);
-	void SetPtlasModeChangeDistance(float distance);
-
-private:
-	template <typename TValue> void SetValue(TValue& destination, TValue value)
-	{
-		if (destination == value)
-		{
-			return;
-		}
-		destination = value;
-		CommitState();
-	}
-
-	void CommitState();
-	bool ComputePendingRestart() const noexcept;
-	std::string DescribePendingRestart() const;
-
-	EngineRenderingSettingsState m_state{};
-	PixelFormat m_sessionBackBufferFormat = RhiPresentationDefaults::DefaultBackBufferFormat;
-	bool m_sessionPreferHighPerformanceAdapter = true;
-	CommitHandler m_commitHandler;
-};
-
-SPARKLE_RENDERER_API void ApplyPersistedEngineRenderingSettingsToCVars() noexcept;

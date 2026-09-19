@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Frame/Graph/RenderFrameGraphResources.h"
-#include "Passes/Lighting/Restir/RestirIndirectReservoirs.h"
+#include "Passes/Lighting/Restir/RestirIndirectReservoirResources.h"
 
 class FrameGraphBuilder;
 

@@ -38,7 +38,7 @@ static bool EncodeCheckpoint(
 	    reinterpret_cast<const std::uint8_t*>(moment2Bytes.data() + moment2Bytes.size()));
 	const std::size_t pixelCount = static_cast<std::size_t>(mean.Width) * mean.Height;
 	planes[2].resize(pixelCount * sizeof(std::uint32_t));
-	const std::uint32_t committed = static_cast<std::uint32_t>(source.Source.CommittedWork);
+	const std::uint32_t committed = static_cast<std::uint32_t>(source.SamplePrefix.SampleCount);
 	for (std::size_t pixel = 0; pixel < pixelCount; ++pixel)
 	{
 		std::memcpy(planes[2].data() + pixel * sizeof(committed), &committed, sizeof(committed));
@@ -64,11 +64,11 @@ static bool EncodeCheckpoint(
 	writer.WriteValue<std::uint32_t>(1u);
 	writer.WriteValue<std::uint32_t>(1u);
 	writer.WriteValue<std::uint64_t>(0u);
-	writer.WriteValue(source.Source.CommittedWork);
-	writer.WriteBytes(source.Source.IdentitySha256);
+	writer.WriteValue(source.SamplePrefix.SampleCount);
+	writer.WriteArray(std::span<const std::byte>(source.SamplePrefix.RenderIdentitySha256));
 	const std::size_t headerHashOffset = bytes.size();
 	const Hash::Sha256Digest zeroHash{};
-	writer.WriteBytes(zeroHash);
+	writer.WriteArray(std::span<const std::byte>(zeroHash));
 	const std::array<std::array<std::uint8_t, 8>, 3> names = {
 	    std::array<std::uint8_t, 8>{'M', 'e', 'a', 'n', 'R', 'G', 'B', 0},
 	    std::array<std::uint8_t, 8>{'M', '2', 'R', 'G', 'B', 0, 0, 0},
@@ -91,7 +91,7 @@ static bool EncodeCheckpoint(
 	{
 		writer.WriteArray(std::span<const std::uint8_t>(names[plane]));
 		writer.WriteValue<std::uint64_t>(planes[plane].size());
-		writer.WriteBytes(planeHashes[plane]);
+		writer.WriteArray(std::span<const std::byte>(planeHashes[plane]));
 	}
 	checkpoint.assign(reinterpret_cast<const std::byte*>(bytes.data()), reinterpret_cast<const std::byte*>(bytes.data() + bytes.size()));
 	return true;
@@ -160,7 +160,7 @@ std::string ReferencePathTracerArtifactEncoding::BuildManifest(
 	    {"beautyBytes", std::to_string(artifact.Beauty.size())},
 	    {"beautySha256", Json::QuoteString(beautyHash)},
 	    {"committedBegin", "0"},
-	    {"committedEnd", std::to_string(request.Mean.Result.Source.CommittedWork)},
+	    {"committedEnd", std::to_string(request.Mean.Result.SamplePrefix.SampleCount)},
 	    {"displayProduct", Json::QuoteString("separate viewport derivative")},
 	    {"frameId", std::to_string(request.Mean.Result.FrameId)},
 	    {"height", std::to_string(artifact.Height)},
@@ -168,9 +168,9 @@ std::string ReferencePathTracerArtifactEncoding::BuildManifest(
 	    {"rawProduct", Json::QuoteString("scene-linear RGB32F")},
 	    {"sceneGeneration", std::to_string(request.Mean.Result.SceneGeneration)},
 	    {"schema", Json::QuoteString("sparkle-reference-path-tracer-artifact-v1")},
-	    {"sessionDigestSha256", Json::QuoteString(Hash::Sha256ToHex(request.Mean.Result.Source.IdentitySha256))},
+	    {"sessionDigestSha256", Json::QuoteString(Hash::Sha256ToHex(request.Mean.Result.SamplePrefix.RenderIdentitySha256))},
 	    {"status", Json::QuoteString(status)},
-	    {"targetSpp", std::to_string(request.Mean.Result.Source.TargetWork)},
+	    {"targetSpp", std::to_string(request.Mean.Result.SamplePrefix.TargetSampleCount)},
 	    {"width", std::to_string(artifact.Width)}};
 	if (!checkpointHash.empty())
 	{

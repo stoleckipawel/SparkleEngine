@@ -17,13 +17,6 @@ struct SPARKLE_PLATFORM_API WindowMessageEvent
 	bool handled = false;
 };
 
-struct SPARKLE_PLATFORM_API WindowOptions final
-{
-	std::uint32_t Width = 1280u;
-	std::uint32_t Height = 720u;
-	bool Visible = true;
-};
-
 class SPARKLE_PLATFORM_API Window final
 {
 public:
@@ -35,7 +28,7 @@ public:
 		FullScreen
 	};
 
-	explicit Window(std::string_view windowTitle, WindowOptions options = {});
+	explicit Window(std::string_view windowTitle);
 	~Window();
 
 	Window(const Window&) = delete;
@@ -108,5 +101,4 @@ private:
 	State m_state = State::Normal;
 	int m_pendingShowCommand = kNoShowCommand;
 	bool m_bShouldClose = false;
-	WindowOptions m_options;
 };

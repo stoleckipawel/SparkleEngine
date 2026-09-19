@@ -2,6 +2,8 @@
 
 #include "ApplicationAPI.h"
 
+struct EngineRenderingSettingsState;
+
 class SPARKLE_APPLICATION_API Application
 {
 public:
@@ -21,4 +23,5 @@ public:
 
 protected:
 	Application() = default;
+	static void SaveRenderingSettings(const EngineRenderingSettingsState& settings);
 };

@@ -3,6 +3,7 @@
 #include "Concurrency/Control/RendererExecutionControl.h"
 #include "Core/Public/Threading/ThreadOwnership.h"
 #include "Viewport/ViewportCaptureCompletion.h"
+#include "Renderer/Public/UI/UiTextureHandle.h"
 
 #include <cstdint>
 #include <memory>
@@ -33,6 +34,7 @@ private:
 	void ExecuteControl(RendererExecutionControl control) noexcept;
 
 	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept;
+	UiTextureHandle GetViewportPresentationTexture() const noexcept;
 	std::vector<ViewportCaptureCompletion> TakeCompletedViewportCaptures();
 	std::uint64_t GetShaderGeneration() const noexcept;
 	void CompleteDiagnostics(const RenderDiagnosticsCommand& command);

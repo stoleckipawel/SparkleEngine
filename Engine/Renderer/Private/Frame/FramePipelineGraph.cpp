@@ -5,6 +5,7 @@
 #include "Frame/RenderFrame.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
+#include "Providers/ImageProviderPipeline.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "Pipeline/RenderPassRuntimeCache.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
@@ -13,6 +14,7 @@
 #include "Resources/History/FrameHistory.h"
 #include "Scene/RayTracing/RenderRayTracingScene.h"
 #include "Scene/RenderScene.h"
+#include "View/RenderViewState.h"
 #include "View/ViewportDisplaySettings.h"
 
 #include <string_view>
@@ -30,7 +32,7 @@ static void ExportFrameProductRoots(
     const RenderFrameGraphSettings& settings,
     const RenderFrameGraphResources& resources) noexcept
 {
-	ExportTextureIfValid(builder, resources.ViewportProducts.FinalSceneColor, "Viewport.FinalSceneColor");
+	ExportTextureIfValid(builder, resources.ViewportProducts.FinalColorLdr, "Viewport.FinalColorLdr");
 	if (HasAnyRenderOutputFlags(settings.RequestedOutputs, RenderOutputFlags::SceneDepth))
 	{
 		ExportTextureIfValid(builder, resources.ViewportProducts.SceneDepth, "Viewport.SceneDepth");
@@ -55,9 +57,7 @@ RenderFrameGraphSettings FramePipeline::ResolveFrameGraphSettings() const noexce
 {
 	const RenderViewportExtent outputExtent = ResolveOutputExtent();
 	const ResolvedViewportDisplaySettings displaySettings = ResolvedViewportDisplaySettings::Resolve(m_viewportRenderRequest.Exposure);
-	const ImageProviderPipeline imagePipeline = m_viewportRenderRequest.ViewMode == RenderViewMode::ReferencePathTracer
-	    ? ImageProviderPipeline::NativeResolution
-	    : ImageProviderPipeline::RayReconstruction;
+	const ImageProviderPipeline imagePipeline = ResolveFrameImagePipeline(m_viewportRenderRequest.ViewMode);
 	return RenderFrameGraphSettings{
 	    .RenderExtent = m_imageProviders->ResolveRenderExtent(outputExtent, imagePipeline),
 	    .OutputExtent = outputExtent,

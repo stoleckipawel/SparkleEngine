@@ -78,7 +78,7 @@ The ordinary surface-lighting family is complete only when [Direct Lighting](Dir
 
 ## Primary Source Route
 
-- [`Lighting.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/Lighting.cpp) owns ordinary target creation, ReSTIR producer dispatch, composite, sky, and reconstruction placement.
+- [`LightingPasses.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/LightingPasses.cpp) owns only Lit-versus-Reference selection plus shared exposure/upscaling placement. [`RealTimePathTracerPasses.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/RealTimePathTracerPasses.cpp) encloses the ordinary GBuffer, real-time lighting, reconstruction, and radiance-publication route; [`RealTimeLightingPasses.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/RealTimeLightingPasses.cpp) owns its lighting-target, ReSTIR, composite, and sky sequence.
 - [`LightingRenderTargets.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/LightingRenderTargets.cpp) owns the five ordinary-lighting lobe products.
 - [`LightingComposite.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/LightingComposite.cpp) owns the direct/indirect/emissive join.
 - [`Sky.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Lighting/Sky/Sky.cpp) owns background sky fill, not volumetric transport.

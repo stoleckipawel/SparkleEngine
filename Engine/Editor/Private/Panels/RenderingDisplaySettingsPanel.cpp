@@ -5,6 +5,7 @@
 #include "Panels/ExposureSettingsEditor.h"
 #include "Panels/RenderingSettingsPanelUi.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
+#include "Settings/EngineRenderingSettingsSection.h"
 
 #include <imgui.h>
 

@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "UI/UiRenderPacketPlayer.h"
 
-#include "Editor/EditorTextureRegistry.h"
+#include "UI/UiTextureRegistry.h"
 #include "RHI/Public/UI/RhiImGuiRenderer.h"
 
 #include <imgui.h>
@@ -13,7 +13,7 @@ struct UiRenderPacketPlayer::PlaybackStorage final
 {
 	struct Texture final
 	{
-		EditorTextureHandle Handle;
+		UiTextureHandle Handle;
 		std::unique_ptr<ImTextureData> Data;
 		bool PendingRelease = false;
 	};
@@ -31,7 +31,7 @@ UiRenderPacketPlayer::UiRenderPacketPlayer() :
 
 UiRenderPacketPlayer::~UiRenderPacketPlayer() noexcept = default;
 
-void UiRenderPacketPlayer::Render(const UiRenderPacket& packet, const EditorTextureRegistry& textures, RhiImGuiRenderer& renderer)
+void UiRenderPacketPlayer::Render(const UiRenderPacket& packet, const UiTextureRegistry& textures, RhiImGuiRenderer& renderer)
 {
 	const bool hasPendingRelease = std::any_of(
 	    m_storage->Textures.begin(),
@@ -74,7 +74,7 @@ void UiRenderPacketPlayer::ApplyTextureUpdates(const UiRenderPacket& packet)
 		ApplyTextureUpload(packet, upload);
 	}
 
-	for (EditorTextureHandle handle : packet.TextureReleases)
+	for (UiTextureHandle handle : packet.TextureReleases)
 	{
 		QueueTextureRelease(handle);
 	}
@@ -132,7 +132,7 @@ void UiRenderPacketPlayer::ApplyTextureUpload(const UiRenderPacket& packet, cons
 	m_storage->TextureUpdates.push_back(texture);
 }
 
-void UiRenderPacketPlayer::QueueTextureRelease(EditorTextureHandle handle) noexcept
+void UiRenderPacketPlayer::QueueTextureRelease(UiTextureHandle handle) noexcept
 {
 	ImTextureData* texture = FindTexture(handle);
 	if (texture == nullptr)
@@ -154,7 +154,7 @@ void UiRenderPacketPlayer::QueueTextureRelease(EditorTextureHandle handle) noexc
 	}
 }
 
-ImTextureData* UiRenderPacketPlayer::FindTexture(EditorTextureHandle handle) const noexcept
+ImTextureData* UiRenderPacketPlayer::FindTexture(UiTextureHandle handle) const noexcept
 {
 	for (const PlaybackStorage::Texture& texture : m_storage->Textures)
 	{
@@ -188,7 +188,7 @@ void UiRenderPacketPlayer::CopyDrawList(
     const UiRenderPacket& packet,
     const UiDrawList& packetList,
     std::size_t drawListIndex,
-    const EditorTextureRegistry& textures)
+    const UiTextureRegistry& textures)
 {
 	ImDrawList& drawList = *m_storage->DrawLists[drawListIndex];
 	drawList.VtxBuffer.resize(packetList.VertexCount);

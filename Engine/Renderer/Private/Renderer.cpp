@@ -4,6 +4,7 @@
 #include "Concurrency/Coordinator/RenderCoordinator.h"
 #include "GameFramework/Public/Rendering/RenderFrameSubmission.h"
 #include "Integrations/RendererExternalRuntime.h"
+#include "Settings/EngineRenderingSettingsRuntime.h"
 
 class RendererFacadeState final
 {
@@ -32,6 +33,16 @@ void Renderer::SubmitViewportRenderRequest(ViewportRenderRequest request) noexce
 ViewportRenderProducts Renderer::GetViewportRenderProducts() const
 {
 	return m_state->Coordinator.GetViewportRenderProducts();
+}
+
+UiTextureHandle Renderer::GetViewportPresentationTexture() const
+{
+	return m_state->Coordinator.GetViewportPresentationTexture();
+}
+
+EngineRenderingSettingsState Renderer::CaptureRenderingSettings() const noexcept
+{
+	return EngineRenderingSettingsRuntime::Capture();
 }
 
 void Renderer::ReloadShaders()

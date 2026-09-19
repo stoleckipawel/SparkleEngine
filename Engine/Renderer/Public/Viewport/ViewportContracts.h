@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Editor/EditorTextureHandle.h"
 #include "../RendererAPI.h"
 #include "../Settings/EngineRenderingDisplayTypes.h"
 #include "Core/Public/Hash/HashUtils.h"
@@ -13,8 +12,7 @@
 #include <vector>
 
 class FramePipeline;
-class UiFrameRenderer;
-class ViewportRenderProductPublication;
+struct ViewportFrameProducts;
 
 enum class RenderViewKind : std::uint8_t
 {
@@ -28,13 +26,13 @@ enum class RenderViewKind : std::uint8_t
 enum class RenderOutputFlags : std::uint16_t
 {
 	None = 0,
-	SceneColor = 1 << 0,
+	FinalColorLdr = 1 << 0,
 	SceneDepth = 1 << 1,
 	ObjectId = 1 << 2,
 	Normals = 1 << 3,
 	OverlayMask = 1 << 4,
-	RawSceneColor = 1 << 5,
-	RawSceneColorMoment2 = 1 << 6,
+	Radiance = 1 << 5,
+	RadianceSecondMoment = 1 << 6,
 };
 
 SPARKLE_RENDERER_API RenderOutputFlags operator|(RenderOutputFlags lhs, RenderOutputFlags rhs) noexcept;
@@ -99,27 +97,26 @@ enum class RenderProductFormat : std::uint8_t
 	Float = 5,
 };
 
+struct RenderProductSamplePrefix final
+{
+	Hash::Sha256Digest RenderIdentitySha256 = {};
+	std::uint64_t SampleCount = 0;
+	std::uint64_t TargetSampleCount = 0;
+
+	bool operator==(const RenderProductSamplePrefix&) const noexcept = default;
+};
+
 struct RenderProduct
 {
-	struct Provenance final
-	{
-		Hash::Sha256Digest IdentitySha256 = {};
-		std::uint64_t CommittedWork = 0;
-		std::uint64_t TargetWork = 0;
-
-		bool operator==(const Provenance&) const noexcept = default;
-	};
-
 	RenderProductHandle Handle = {};
 	RenderViewportExtent Extent = {};
 	RenderProductFormat Format = RenderProductFormat::Unknown;
-	EditorTextureHandle EditorTexture = {};
-	Provenance Source = {};
+	RenderProductSamplePrefix SamplePrefix = {};
 };
 
 struct SPARKLE_RENDERER_API ViewportCaptureRequest
 {
-	RenderOutputFlags Output = RenderOutputFlags::SceneColor;
+	RenderOutputFlags Output = RenderOutputFlags::FinalColorLdr;
 	// Zero accepts the currently published frame. A non-zero value rejects a
 	// capture if the requested render product has already advanced.
 	std::uint64_t ExpectedFrameId = 0;
@@ -138,7 +135,7 @@ struct SPARKLE_RENDERER_API ViewportCaptureResult
 	std::uint64_t FrameId = 0;
 	std::uint64_t SceneGeneration = 0;
 	std::uint64_t ProviderGeneration = 0;
-	RenderProduct::Provenance Source = {};
+	RenderProductSamplePrefix SamplePrefix = {};
 	std::string FailureReason;
 
 	explicit operator bool() const noexcept;
@@ -180,7 +177,7 @@ struct SPARKLE_RENDERER_API ViewportRenderRequest
 	ViewportRenderAction RenderAction = ViewportRenderAction::None;
 	RenderViewportExtent Extent = {};
 	RenderViewSelectionToken ViewSelection = {};
-	RenderOutputFlags RequestedOutputs = RenderOutputFlags::SceneColor;
+	RenderOutputFlags RequestedOutputs = RenderOutputFlags::FinalColorLdr;
 	ViewportExposureOverrides Exposure;
 };
 
@@ -220,9 +217,9 @@ struct SPARKLE_RENDERER_API ViewportRenderProgress final
 {
 	ViewportRenderProgressState State = ViewportRenderProgressState::None;
 	ViewportRenderProgressReason Reason = ViewportRenderProgressReason::None;
-	std::uint64_t CompletedWork = 0;
-	std::uint64_t TargetWork = 0;
-	std::uint64_t DiscardedWork = 0;
+	std::uint64_t CompletedSamples = 0;
+	std::uint64_t TargetSamples = 0;
+	std::uint64_t DiscardedSamples = 0;
 	std::uint64_t OwnerViewportId = 0;
 	double SamplesPerSecond = 0.0;
 	double EstimatedSecondsRemaining = 0.0;
@@ -237,7 +234,7 @@ struct SPARKLE_RENDERER_API ViewportRenderProducts
 
 	const RenderProduct* FindProduct(RenderOutputFlags output) const noexcept;
 
-	const RenderProduct& GetSceneColor() const noexcept { return m_sceneColor; }
+	const RenderProduct& GetFinalColorLdr() const noexcept { return m_finalColorLdr; }
 	const RenderProduct& GetSceneDepth() const noexcept { return m_sceneDepth; }
 	const RenderProduct& GetObjectId() const noexcept { return m_objectId; }
 	const RenderProduct& GetNormals() const noexcept { return m_normals; }
@@ -246,8 +243,12 @@ struct SPARKLE_RENDERER_API ViewportRenderProducts
 
 private:
 	friend class FramePipeline;
-	friend class UiFrameRenderer;
-	friend class ViewportRenderProductPublication;
+	friend void PublishViewportRenderProducts(
+	    ViewportRenderProducts& products,
+	    const ViewportRenderRequest& request,
+	    const ViewportFrameProducts& frameProducts,
+	    RenderViewportExtent renderExtent,
+	    RenderViewportExtent outputExtent) noexcept;
 
 	void Clear() noexcept;
 
@@ -255,7 +256,6 @@ private:
 
 	void ClearProduct(RenderOutputFlags output) noexcept;
 	void SetProduct(RenderOutputFlags output, RenderProduct product) noexcept;
-	void SetProductProvenance(RenderOutputFlags output, RenderProduct::Provenance provenance) noexcept;
 	void SetProgress(ViewportRenderProgress progress) noexcept { m_progress = progress; }
 
 	RenderProduct* SelectProduct(RenderOutputFlags output) noexcept;
@@ -264,12 +264,12 @@ private:
 
 	RenderOutputFlags m_availableOutputs = RenderOutputFlags::None;
 	std::uint64_t m_generation = 0;
-	RenderProduct m_sceneColor = {};
+	RenderProduct m_finalColorLdr = {};
 	RenderProduct m_sceneDepth = {};
 	RenderProduct m_objectId = {};
 	RenderProduct m_normals = {};
 	RenderProduct m_overlayMask = {};
-	RenderProduct m_rawSceneColor = {};
-	RenderProduct m_rawSceneColorMoment2 = {};
+	RenderProduct m_radiance = {};
+	RenderProduct m_radianceSecondMoment = {};
 	ViewportRenderProgress m_progress = {};
 };

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Panels/ReferencePathTracer/ReferencePathTracerOutput.h"
+#include "Panels/ViewportOutputAction.h"
 
 struct ViewportRenderProgress;
 struct ViewportRenderRequest;
@@ -8,4 +8,4 @@ struct ViewportRenderRequest;
 void DrawReferencePathTracerOverlay(
     const ViewportRenderProgress& progress,
     ViewportRenderRequest& request,
-    ReferencePathTracerOutputAction& outputAction) noexcept;
+    ViewportOutputAction& outputAction) noexcept;

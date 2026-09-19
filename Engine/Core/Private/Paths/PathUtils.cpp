@@ -131,12 +131,6 @@ namespace Paths
 		return result;
 	}
 
-	std::string ToUtf8String(const std::filesystem::path& path)
-	{
-		const std::u8string utf8 = path.generic_u8string();
-		return std::string(reinterpret_cast<const char*>(utf8.data()), utf8.size());
-	}
-
 	std::wstring MakePathKey(const std::filesystem::path& path)
 	{
 		const std::filesystem::path normalizedPath = Normalize(path);

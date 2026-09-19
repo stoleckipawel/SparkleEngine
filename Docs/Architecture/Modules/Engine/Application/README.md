@@ -65,6 +65,7 @@ The module is a composition root. Its quality depends on preserving the boundari
 | `APP-013` | Editor shader recook | Capability-gated | Editor-only coordinator tracks changed sources, launches `ShaderCompiler`, supports all/selected/changed requests and cancellation, reads the publication signal, then requests Renderer generation reload. Requires tool/source workspace state. | `S` |
 | `APP-014` | Editor operation service | Implemented path | Serializes/updates long-running editor operations and exposes progress/result to UI, currently including shader recook. It is not a generic plugin task framework. | `S` |
 | `APP-015` | Viewport capture | Implemented path | Editor capture coordinator turns a UI request into Renderer capture work and reports completion/failure through the editor host. File correctness and UX evidence remain open. | `S` |
+| `APP-016` | Rendering-settings persistence | Implemented path | Application owns startup restore and workspace INI writes for the Renderer-owned settings value; Editor owns the interaction model and Renderer owns capture/apply plus rendering consumers. Persistence durability and packaged-user location remain incomplete. | `S` |
 
 ## Vertical Runtime Trace
 
@@ -75,7 +76,7 @@ Project `main` calls the editor or runtime launch function -> command-line CVars
 Application is the host contributor, not a second product-journey authority. [`FCR-PROD-01`](../../Projects/Showcase/README.md#fcr-prod-01-runtime-consumer-contract) owns the consumer AC/FM/CHK and [`FCR-PROD-04`](../Editor/README.md#fcr-prod-04-editor-contract) owns the Editor AC/FM/CHK. Application must make those results possible through one shared lifecycle while preserving these source-backed facts:
 
 - `RunRuntimeApplication()` constructs default `RuntimeApplicationOptions`, whose runtime console is currently enabled; that state violates the frozen `ShippingGame` contract until the build/product route makes console erasure structural.
-- `RunEditorApplication()` layers `SparkleApplicationEditor` over the runtime host and explicitly disables the runtime console in favor of Editor UI; Editor-only shader recook/capture/operation sources are excluded from `SparkleApplication` membership.
+- `RunEditorApplication()` is the single interactive Editor product entry. It layers `SparkleApplicationEditor` over the runtime host and explicitly disables the runtime console in favor of Editor UI. Editor-only shader recook/capture/operation sources are excluded from `SparkleApplication` membership.
 - close requests are observed in `BeginFrame()` and owners are reset in an explicit order, but `RunRuntimeApplication()` currently returns `0` after `Application::Run()` without a product-specific failure result. Runtime/init/device/content failures therefore need a single exit-status contract before candidate evidence.
 - host initialization currently creates the window, tasks/world/level, Renderer, and optional console before any consumer prerequisite screen. Unsupported OS/CPU/GPU/content must be rejected at the earliest owning boundary rather than appearing as an Application success.
 

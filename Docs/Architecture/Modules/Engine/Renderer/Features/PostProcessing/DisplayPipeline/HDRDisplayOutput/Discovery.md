@@ -51,7 +51,7 @@ At `ca55e7d8`:
 - [`RhiPresentationService.h`](../../../../../../../../../Engine/RHI/Public/Presentation/RhiPresentationService.h) exposes current present format but no output capability, color space, luminance, metadata, or requested/active/fallback result.
 - [`D3D12SwapChain.cpp`](../../../../../../../../../Engine/RHI/Private/D3D12/SwapChain/D3D12SwapChain.cpp) creates/resizes/presents a format-selected flip swapchain without output/color-space/HDR policy.
 - [`VulkanSwapChain.cpp`](../../../../../../../../../Engine/RHI/Private/Vulkan/SwapChain/VulkanSwapChain.cpp) accepts only the requested format paired with `VK_COLOR_SPACE_SRGB_NONLINEAR_KHR`.
-- [`Presentation.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Presentation.cpp) tone maps, encodes, copies, and publishes an SDR-oriented product; UI is composed through a separate RHI overlay route.
+- [`ToneMapping.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/ToneMapping.cpp) and [`OutputEncoding.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/OutputEncoding.cpp) define the transforms; [`PresentationPasses.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp) copies and publishes the SDR-oriented product. UI is composed through a separate RHI overlay route.
 
 This is a verified source-backed absence. It does not establish which Advanced Color route is correct for Sparkle or that the host/UI composition can use a specific swapchain tuple.
 

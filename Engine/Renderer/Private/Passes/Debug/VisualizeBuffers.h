@@ -1,13 +1,11 @@
 #pragma once
 
-#include "Frame/Graph/RenderFrameGraphTargets.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraphBuilder;
+struct RenderFrameGraphResources;
 
 void AddVisualizeBuffersPass(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
-    FrameGraphTextureHandle resolvedSceneColor,
-    const LightingRenderTargets& lighting,
-    const GBufferRenderTargets& gbuffer);
+    const RenderFrameGraphResources& resources);

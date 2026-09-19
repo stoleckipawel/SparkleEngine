@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Frame/Graph/RenderFrameGraphTargets.h"
-
 class FrameGraphBuilder;
+struct RenderFrameGraphResources;
 
-void AddLightingTargetClearPass(FrameGraphBuilder& builder, const LightingRenderTargets& lighting);
+void AddLightingTargetClearPass(FrameGraphBuilder& builder, const RenderFrameGraphResources& resources);

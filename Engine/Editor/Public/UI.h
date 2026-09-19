@@ -10,7 +10,7 @@
 #include "../../Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
 #include "Scene/SceneObjectSelection.h"
-#include "Panels/ReferencePathTracer/ReferencePathTracerOutput.h"
+#include "Panels/ViewportOutputAction.h"
 #include "../../GameFramework/Public/Rendering/RenderViewCameraData.h"
 #include "../../GameFramework/Public/Scene/Camera/CameraInputIntent.h"
 #include "../../GameFramework/Public/World/WorldChange.h"
@@ -49,7 +49,9 @@ struct EditorHostServices final
 	std::function<std::uint64_t()> WorldGeneration;
 	std::function<WorldMaterialVariantView()> MaterialVariants;
 	std::function<WorldEditResult(WorldEditCommand, std::uint64_t)> SubmitWorldEdit;
+	EngineRenderingSettingsState RenderingSettings;
 	std::function<void(EngineRenderingSettingsState)> SubmitRenderingSettings;
+	std::function<EngineRenderingSettingsState()> CaptureRenderingSettings;
 	Window& HostWindow;
 	InputSystem& Input;
 };
@@ -78,14 +80,13 @@ public:
 	const ViewportRenderRequest& GetViewportRenderRequest() const noexcept;
 	RenderViewCameraData UpdateViewportCamera(const CameraInputIntent& intent, float deltaSeconds) noexcept;
 	void SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept;
-	void SetViewportSceneColorTexture(EditorTextureHandle texture) noexcept;
+	void SetViewportFinalColorTexture(UiTextureHandle texture) noexcept;
 	void SetDiagnosticsProviders(EditorDiagnosticsProviders providers);
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
 	EditorConsoleSystem* GetEditorConsoleSystem() noexcept { return m_editorConsoleSystem.get(); }
 	bool ConsumeShaderReloadRequest() noexcept;
 	bool ConsumeShaderRecookRequest() noexcept;
-	bool ConsumeViewportCaptureRequest() noexcept;
-	ReferencePathTracerOutputAction ConsumeReferencePathTracerOutputAction() noexcept;
+	ViewportOutputAction ConsumeViewportOutputAction() noexcept;
 	UiRenderPacket ConsumeRenderPacket();
 
 	void Update();
@@ -152,7 +153,6 @@ private:
 	std::uint64_t m_viewportGeneration = 0;
 	bool m_shaderReloadRequested = false;
 	bool m_shaderRecookRequested = false;
-	bool m_viewportCaptureRequested = false;
 	bool m_isImGuiContextInitialized = false;
 	bool m_isWin32BackendInitialized = false;
 

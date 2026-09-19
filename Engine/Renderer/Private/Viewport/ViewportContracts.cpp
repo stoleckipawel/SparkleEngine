@@ -68,23 +68,14 @@ const RenderProduct* ViewportRenderProducts::FindProduct(RenderOutputFlags outpu
 void ViewportRenderProducts::Clear() noexcept
 {
 	m_availableOutputs = RenderOutputFlags::None;
-	m_sceneColor = {};
+	m_finalColorLdr = {};
 	m_sceneDepth = {};
 	m_objectId = {};
 	m_normals = {};
 	m_overlayMask = {};
-	m_rawSceneColor = {};
-	m_rawSceneColorMoment2 = {};
+	m_radiance = {};
+	m_radianceSecondMoment = {};
 	m_progress = {};
-}
-
-void ViewportRenderProducts::SetProductProvenance(RenderOutputFlags output, RenderProduct::Provenance provenance) noexcept
-{
-	RenderProduct* product = SelectProduct(output);
-	if (product != nullptr)
-	{
-		product->Source = provenance;
-	}
 }
 
 void ViewportRenderProducts::ClearProduct(RenderOutputFlags output) noexcept
@@ -126,8 +117,8 @@ const RenderProduct* ViewportRenderProducts::SelectProduct(RenderOutputFlags out
 {
 	switch (output)
 	{
-		case RenderOutputFlags::SceneColor:
-			return &m_sceneColor;
+		case RenderOutputFlags::FinalColorLdr:
+			return &m_finalColorLdr;
 		case RenderOutputFlags::SceneDepth:
 			return &m_sceneDepth;
 		case RenderOutputFlags::ObjectId:
@@ -136,10 +127,10 @@ const RenderProduct* ViewportRenderProducts::SelectProduct(RenderOutputFlags out
 			return &m_normals;
 		case RenderOutputFlags::OverlayMask:
 			return &m_overlayMask;
-		case RenderOutputFlags::RawSceneColor:
-			return &m_rawSceneColor;
-		case RenderOutputFlags::RawSceneColorMoment2:
-			return &m_rawSceneColorMoment2;
+		case RenderOutputFlags::Radiance:
+			return &m_radiance;
+		case RenderOutputFlags::RadianceSecondMoment:
+			return &m_radianceSecondMoment;
 		case RenderOutputFlags::None:
 		default:
 			return nullptr;

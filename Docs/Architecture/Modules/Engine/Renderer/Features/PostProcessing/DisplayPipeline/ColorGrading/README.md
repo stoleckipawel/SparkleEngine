@@ -165,7 +165,7 @@ This table is the single feature-surface mapping. Companion documents own the de
 
 - `REN-E26` owns the negative source/build/selector/pass/shader/asset/editor/documentation audit for color grading.
 - No runtime test is implied by this source-only absence finding.
-- Adjacent source routes inspected: [`PostProcessing.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/PostProcessing/PostProcessing.cpp), [`Presentation.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Presentation.cpp), and [`EngineRenderingDisplayTypes.h`](../../../../../../../../../Engine/Renderer/Public/Settings/EngineRenderingDisplayTypes.h).
+- Adjacent source routes inspected: [`PostProcessingPasses.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/PostProcessing/PostProcessingPasses.cpp), [`PresentationPasses.cpp`](../../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp), and [`EngineRenderingDisplayTypes.h`](../../../../../../../../../Engine/Renderer/Public/Settings/EngineRenderingDisplayTypes.h).
 
 ### Current Negative Acceptance
 

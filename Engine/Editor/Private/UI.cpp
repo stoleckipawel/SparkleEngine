@@ -15,7 +15,7 @@
 #include "Panels/ViewportPanel.h"
 #include "Panels/ViewportTopPanel.h"
 #include "Renderer/Public/Diagnostics/RendererMemoryDiagnostics.h"
-#include "Renderer/Public/Editor/EditorTextureHandle.h"
+#include "Renderer/Public/UI/UiTextureHandle.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 #include "Renderer/Public/UI/ImGuiRenderPacketBuilder.h"
 #include "Renderer/Public/UI/UiRenderPacket.h"
@@ -23,6 +23,7 @@
 #include "Scene/Model/EditorSceneModel.h"
 #include "Scene/Model/EditorSceneModelBuilder.h"
 #include "Scene/Transactions/EditorTransactionHistory.h"
+#include "Settings/EngineRenderingSettingsSection.h"
 #include "Settings/EditorRestartService.h"
 #include "Viewport/EditorViewportSession.h"
 #include "Window/Window.h"
@@ -40,7 +41,7 @@ const ViewportRenderRequest& UI::GetViewportRenderRequest() const noexcept
 		ViewportRenderRequest request{};
 		request.ViewportId = 1;
 		request.ViewKind = RenderViewKind::Scene;
-		request.RequestedOutputs = RenderOutputFlags::SceneColor | RenderOutputFlags::SceneDepth;
+		request.RequestedOutputs = RenderOutputFlags::FinalColorLdr | RenderOutputFlags::SceneDepth;
 		return request;
 	}();
 
@@ -74,11 +75,11 @@ void UI::SetViewportRenderProducts(const ViewportRenderProducts& products) noexc
 	}
 }
 
-void UI::SetViewportSceneColorTexture(EditorTextureHandle texture) noexcept
+void UI::SetViewportFinalColorTexture(UiTextureHandle texture) noexcept
 {
 	if (m_viewportPanel)
 	{
-		m_viewportPanel->SetSceneColorTexture(texture);
+		m_viewportPanel->SetFinalColorTexture(texture);
 	}
 }
 
@@ -125,16 +126,9 @@ bool UI::ConsumeShaderRecookRequest() noexcept
 	return requested;
 }
 
-bool UI::ConsumeViewportCaptureRequest() noexcept
+ViewportOutputAction UI::ConsumeViewportOutputAction() noexcept
 {
-	const bool requested = m_viewportCaptureRequested;
-	m_viewportCaptureRequested = false;
-	return requested;
-}
-
-ReferencePathTracerOutputAction UI::ConsumeReferencePathTracerOutputAction() noexcept
-{
-	return m_viewportPanel ? m_viewportPanel->ConsumeReferencePathTracerOutputAction() : ReferencePathTracerOutputAction::None;
+	return m_viewportPanel ? m_viewportPanel->ConsumeOutputAction() : ViewportOutputAction::None;
 }
 
 UiRenderPacket UI::ConsumeRenderPacket()
@@ -157,6 +151,10 @@ UI::UI(EditorHostServices hostServices) :
 	    .MaterialVariants = std::move(hostServices.MaterialVariants)});
 	m_transactionHistory = std::make_unique<EditorTransactionHistory>(std::move(hostServices.SubmitWorldEdit));
 	m_renderPacketBuilder = std::make_unique<ImGuiRenderPacketBuilder>();
+	m_renderingSettings = std::make_unique<EngineRenderingSettingsSection>(
+	    std::move(hostServices.RenderingSettings),
+	    std::move(hostServices.SubmitRenderingSettings),
+	    std::move(hostServices.CaptureRenderingSettings));
 
 	InitializeImGuiContext();
 	ApplyDpiScale(m_window->GetDpiScale());
@@ -169,10 +167,6 @@ UI::UI(EditorHostServices hostServices) :
 	if (m_viewportSession && m_viewportPanel)
 	{
 		m_viewportSession->SetViewModeChangedHandler([this](RenderViewMode viewMode) { m_viewportPanel->SetViewMode(viewMode); });
-	}
-	if (m_renderingSettings)
-	{
-		m_renderingSettings->SetCommitHandler(std::move(hostServices.SubmitRenderingSettings));
 	}
 	SubscribeToWindowEvents(hostServices.HostWindow);
 }
@@ -203,7 +197,7 @@ void UI::Update()
 
 	NewFrame();
 	Build();
-	m_renderPacket = m_renderPacketBuilder->Build(*ImGui::GetDrawData(), UiPresentationMode::EditorViewport, m_viewportGeneration);
+	m_renderPacket = m_renderPacketBuilder->Build(*ImGui::GetDrawData(), UiPresentationMode::Viewport, m_viewportGeneration);
 }
 
 bool UI::IsReady() const noexcept

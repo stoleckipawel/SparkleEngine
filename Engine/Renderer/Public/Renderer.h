@@ -8,6 +8,7 @@
 #include "Viewport/ViewportContracts.h"
 #include "Concurrency/RendererExecutionConfig.h"
 #include "UI/UiRenderPacket.h"
+#include "UI/UiTextureHandle.h"
 #include "Settings/EngineRenderingSettings.h"
 
 #include <cstdint>
@@ -37,6 +38,8 @@ public:
 	void EndSimulationFrame(std::uint64_t frameId) noexcept;
 
 	ViewportRenderProducts GetViewportRenderProducts() const;
+	UiTextureHandle GetViewportPresentationTexture() const;
+	EngineRenderingSettingsState CaptureRenderingSettings() const noexcept;
 
 	void ReloadShaders();
 	std::uint64_t GetShaderGeneration() const noexcept;

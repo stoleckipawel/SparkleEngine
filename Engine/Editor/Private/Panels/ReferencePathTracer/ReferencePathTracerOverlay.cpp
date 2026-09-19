@@ -2,7 +2,7 @@
 
 #include "Panels/ReferencePathTracer/ReferencePathTracerOverlay.h"
 
-#include "Panels/ReferencePathTracer/ReferencePathTracerOutput.h"
+#include "Panels/ViewportOutputAction.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 #include <algorithm>
@@ -42,7 +42,7 @@ static void RequestAction(ViewportRenderRequest& request, ViewportRenderAction a
 void DrawReferencePathTracerOverlay(
     const ViewportRenderProgress& progress,
     ViewportRenderRequest& request,
-    ReferencePathTracerOutputAction& outputAction) noexcept
+    ViewportOutputAction& outputAction) noexcept
 {
 	const bool unavailable = progress.State == ViewportRenderProgressState::Unavailable;
 	const bool paused = progress.State == ViewportRenderProgressState::Paused;
@@ -77,16 +77,16 @@ void DrawReferencePathTracerOverlay(
 	}
 	else
 	{
-		const float fraction = progress.TargetWork == 0
+		const float fraction = progress.TargetSamples == 0
 		    ? 0.0f
-		    : (std::min) (1.0f, static_cast<float>(progress.CompletedWork) / static_cast<float>(progress.TargetWork));
+		    : (std::min) (1.0f, static_cast<float>(progress.CompletedSamples) / static_cast<float>(progress.TargetSamples));
 		char sampleLabel[64] = {};
 		std::snprintf(
 		    sampleLabel,
 		    sizeof(sampleLabel),
 		    "%llu / %llu SPP",
-		    static_cast<unsigned long long>(progress.CompletedWork),
-		    static_cast<unsigned long long>(progress.TargetWork));
+		    static_cast<unsigned long long>(progress.CompletedSamples),
+		    static_cast<unsigned long long>(progress.TargetSamples));
 		ImGui::Text("%s%s", stateLabel, complete ? " - target prefix reached" : "");
 		ImGui::ProgressBar(fraction, ImVec2(-1.0f, 0.0f), sampleLabel);
 
@@ -147,42 +147,37 @@ void DrawReferencePathTracerOverlay(
 		ImGui::Text("State: %s", stateLabel);
 		ImGui::Text(
 		    "Committed prefix: %llu / %llu SPP",
-		    static_cast<unsigned long long>(progress.CompletedWork),
-		    static_cast<unsigned long long>(progress.TargetWork));
+		    static_cast<unsigned long long>(progress.CompletedSamples),
+		    static_cast<unsigned long long>(progress.TargetSamples));
 		ImGui::Text("Last event: %s", reasonLabel);
-		ImGui::Text("Discarded prefix: %llu SPP", static_cast<unsigned long long>(progress.DiscardedWork));
+		ImGui::Text("Discarded prefix: %llu SPP", static_cast<unsigned long long>(progress.DiscardedSamples));
 		ImGui::Separator();
-		ImGui::TextUnformatted("Raw: scene-linear HDR accumulation");
-		ImGui::TextUnformatted("Display: viewport presentation derived from raw accumulation");
+		ImGui::TextUnformatted("Reference radiance: scene-linear HDR sample mean");
+		ImGui::TextUnformatted("Final color: viewport presentation derived from Reference radiance");
 		ImGui::SeparatorText("Evidence / Output");
-		const bool hasPrefix = !unavailable && progress.CompletedWork > 0;
+		const bool hasPrefix = !unavailable && progress.CompletedSamples > 0;
 		ImGui::BeginDisabled(!hasPrefix || complete);
 		if (ImGui::Button("Save partial prefix"))
 		{
 			RequestAction(request, ViewportRenderAction::Pause);
-			outputAction = ReferencePathTracerOutputAction::SavePartial;
+			outputAction = ViewportOutputAction::SaveCurrentPrefix;
 		}
 		ImGui::EndDisabled();
 		ImGui::SameLine();
 		ImGui::BeginDisabled(!complete);
 		if (ImGui::Button("Save complete"))
 		{
-			outputAction = ReferencePathTracerOutputAction::SaveComplete;
+			outputAction = ViewportOutputAction::SaveComplete;
 		}
 		ImGui::EndDisabled();
-		if (!unavailable && !complete && ImGui::Button("Save when complete"))
-		{
-			outputAction = ReferencePathTracerOutputAction::SaveWhenComplete;
-		}
-		ImGui::SameLine();
 		ImGui::BeginDisabled(!hasPrefix);
 		if (ImGui::Button("Save checkpoint"))
 		{
 			RequestAction(request, ViewportRenderAction::Pause);
-			outputAction = ReferencePathTracerOutputAction::SaveCheckpoint;
+			outputAction = ViewportOutputAction::SaveCheckpoint;
 		}
 		ImGui::EndDisabled();
-		ImGui::TextDisabled("Raw scene-linear HDR at the session extent; viewport presentation is not exported.");
+		ImGui::TextDisabled("Scene-linear Reference radiance at the session extent; final viewport color is not exported.");
 		ImGui::EndPopup();
 	}
 
