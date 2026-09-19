@@ -30,10 +30,12 @@ template <typename TShader> static auto& BuildReferencePathTracerParameters(
 	    .MipFilter = RhiSamplerMipFilter::None,
 	    .Address =
 	        RhiSamplerAddressModes{.U = RhiSamplerAddressMode::Wrap, .V = RhiSamplerAddressMode::Clamp, .W = RhiSamplerAddressMode::Clamp}};
+
 	BindSceneShaderParameters(builder, parameters, resources);
 	builder.AddPassParameterSetup(
 	    parameters,
 	    [uniformData = &uniformData](auto& fields) { fields.ReferencePathTracerConstants = *uniformData; });
+
 	return parameters;
 }
 

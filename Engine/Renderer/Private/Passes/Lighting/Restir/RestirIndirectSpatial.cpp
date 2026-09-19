@@ -24,8 +24,10 @@ void AddRestirIndirectSpatialPass(
 	parameters->GBufferNormal = builder.CreateSRV(resources.Transient.GBuffer.Normal);
 	parameters->GBufferMaterial = builder.CreateSRV(resources.Transient.GBuffer.Material);
 	parameters->SceneDepth = builder.CreateSRV(resources.Transient.Scene.SceneDepth);
+
 	BindSceneShaderParameters(builder, parameters, resources);
 	BindRayTracedShadowParameters(builder, parameters);
+
 	builder.AddPassParameterSetup(
 	    parameters,
 	    [](auto& fields)
@@ -33,6 +35,7 @@ void AddRestirIndirectSpatialPass(
 		    const RestirIndirectLightingSettings settings = BuildRestirIndirectLightingSettings();
 		    fields.RestirIndirectConstants = RestirIndirectLightingUniformData{.BounceCount = settings.BounceCount};
 	    });
+
 	builder.Dispatch<RestirIndirectSpatialCS>(
 	    parameters,
 	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});

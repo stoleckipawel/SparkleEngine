@@ -21,6 +21,7 @@ void AddSkyPass(
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,
 	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Clamp)};
+
 	builder.AddParameterSetup<RenderView>(
 	    parameters,
 	    [](auto& fields, const RenderView& view)
@@ -32,6 +33,7 @@ void AddSkyPass(
 	builder.AddParameterSetup<PreparedRenderScene>(
 	    parameters,
 	    [](auto& fields, const PreparedRenderScene& scene) { fields.Sky = MakeSkyUniformData(scene.sky); });
+
 	builder.Dispatch<SkyCS>(
 	    parameters,
 	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});

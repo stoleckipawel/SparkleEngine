@@ -4,17 +4,17 @@
 #include "Core/Public/Diagnostics/Error.h"
 #include "Debug/RendererCVars.h"
 #include "Passes/GBuffer/GBufferRenderTargets.h"
-#include "Passes/GBuffer/SceneDepth.h"
-#include "Passes/GBuffer/RayTracingGBuffer.h"
-#include "Passes/GBuffer/RasterizedGBuffer.h"
-#include "Passes/GBuffer/SkyMotionVectors.h"
+#include "Passes/GBuffer/LinearizeDeviceZ.h"
+#include "Passes/GBuffer/RasterizedGBufferMesh.h"
+#include "Passes/GBuffer/RayTracingGBufferMesh.h"
+#include "Passes/GBuffer/SkyMotionVector.h"
 #include "Scene/RayTracing/RenderRayTracingScene.h"
 
 void AddGBufferPasses(
     FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
     GpuMeshCache& gpuMeshCache,
     RenderRayTracingScene& rayTracingScene,
-    RenderViewportExtent sceneExtent,
     RenderFrameGraphResources& resources)
 {
 	CreateGBufferRenderTargets(builder, sceneExtent, resources);

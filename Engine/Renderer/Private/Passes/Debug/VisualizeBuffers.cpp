@@ -31,7 +31,9 @@ void AddVisualizeBuffersPass(
 	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
 	parameters->GBufferEmissive = builder.CreateSRV(gbuffer.Emissive);
 	parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
+
 	builder.AddParameterSetup<RenderView>(parameters, [](auto& fields, const RenderView& view) { fields.View = view.uniform; });
+
 	builder.Dispatch<VisualizeBuffersCS>(
 	    parameters,
 	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});

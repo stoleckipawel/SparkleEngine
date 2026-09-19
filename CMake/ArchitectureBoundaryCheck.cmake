@@ -79,12 +79,21 @@ function(sparkle_boundary_scan_file absolute_path)
             "${_relative_path}")
     endif()
 
-    if(_relative_path MATCHES "^Engine/Renderer/Private/Passes/(Debug/Debug|GBuffer/GBuffer|Lighting/Lighting|Lighting/Direct/DirectLightReservoir|Lighting/ReferencePathTracer/ReferencePathTracer|Lighting/Restir/Restir(Direct|Indirect)?Lighting|Lighting/Restir/RestirIndirectReservoirs|PostProcessing/ExposureMomentChain|PostProcessing/ExposureMomentPasses|PostProcessing/PostProcessing|Presentation/Presentation|Presentation/Upscaling|RayTracing/RayTracingScene)[.](h|cpp)$")
+    if(_relative_path MATCHES "^Engine/Renderer/Private/Passes/(Debug/Debug|GBuffer/(GBuffer|RasterizedGBuffer|RayTracingGBuffer|SceneDepth|SkyMotionVectors)|Lighting/Lighting|Lighting/Direct/DirectLightReservoir|Lighting/ReferencePathTracer/ReferencePathTracer|Lighting/Restir/Restir(Direct|Indirect)?Lighting|Lighting/Restir/RestirIndirectReservoirs|Lighting/Shadows/ShadowVisibility|PostProcessing/(Exposure|ExposureMetering|ExposureMomentChain|ExposureMomentPasses|PostProcessing)|Presentation/(LinearUpscaling|Presentation|Upscaling)|RayTracing/RayTracingScene)[.](h|cpp)$")
         sparkle_boundary_append_failure(
             "RENDERER_PASS_FILE_ROLE_NAMING"
             "${_relative_path}"
             "1"
             "Pass orchestration files use the Passes suffix; singular or PassDefinitions files define GPU work; target/resource files name that responsibility explicitly."
+            "${_relative_path}")
+    endif()
+
+    if(_relative_path MATCHES "^Engine/Renderer/Private/Passes/Lighting/RealTimeLightingPasses[.](h|cpp)$")
+        sparkle_boundary_append_failure(
+            "RENDERER_REALTIME_PATH_TRACER_OWNS_LIGHTING"
+            "${_relative_path}"
+            "1"
+            "The real-time path-tracer composition directly owns its GBuffer, lighting, reconstruction, and publication sequence; do not restore a forwarding lighting wrapper."
             "${_relative_path}")
     endif()
 

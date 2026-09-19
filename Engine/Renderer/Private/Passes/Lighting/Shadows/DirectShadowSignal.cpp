@@ -5,7 +5,7 @@
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Lighting/Shadows/DirectShadowSignalShader.h"
-#include "Passes/Lighting/Shadows/ShadowVisibility.h"
+#include "Passes/Lighting/Shadows/DirectShadowSignalResources.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowPassData.h"
 #include "RayTracing/RayTracingMaterialPass.h"
 #include "Scene/RayTracing/RenderRayTracingScene.h"
@@ -22,8 +22,10 @@ template <typename TShader> static auto& BuildDirectShadowSignalParameters(
 	parameters->CurrentReservoirWeight = builder.CreateSRV(shadowSignals.ReservoirHistory.Weight.Current);
 	parameters->SceneDepth = builder.CreateSRV(resources.Transient.Scene.SceneDepth);
 	parameters->GBufferNormal = builder.CreateSRV(resources.Transient.GBuffer.Normal);
+
 	BindSceneShaderParameters(builder, parameters, resources);
 	BindRayTracedShadowParameters(builder, parameters);
+
 	return parameters;
 }
 

@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "Passes/GBuffer/RayTracingGBuffer.h"
+#include "Passes/GBuffer/RayTracingGBufferMesh.h"
 
 #include "Core/Public/Math/MathUtils.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
@@ -14,6 +14,7 @@ template <typename TShader>
 static auto& BuildRayTracingGBufferParameters(FrameGraphBuilder& builder, const RenderFrameGraphResources& resources)
 {
 	const GBufferRenderTargets& targets = resources.Transient.GBuffer;
+
 	auto& parameters = builder.AllocParameters<TShader>();
 	parameters->GBufferBaseColor = builder.CreateUAV(targets.BaseColor);
 	parameters->GBufferNormal = builder.CreateUAV(targets.Normal);
@@ -22,7 +23,9 @@ static auto& BuildRayTracingGBufferParameters(FrameGraphBuilder& builder, const 
 	parameters->GBufferSubsurface = builder.CreateUAV(targets.Subsurface);
 	parameters->GBufferDeviceZ = builder.CreateUAV(targets.DeviceZ);
 	parameters->GBufferMotionVector = builder.CreateUAV(targets.MotionVector);
+
 	BindSceneShaderParameters(builder, parameters, resources);
+
 	return parameters;
 }
 

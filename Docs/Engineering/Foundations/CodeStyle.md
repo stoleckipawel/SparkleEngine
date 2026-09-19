@@ -80,11 +80,15 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 
 ## Readability Rules
 
-- Use blank lines to expose acquire, transform, commit, and publish stages.
+- Use one blank line as a semantic paragraph boundary when a function changes phase: acquire inputs, declare resources, derive state, schedule a cohesive pass group, resolve/present, and publish or return the result.
+- In frame-building code, keep consecutive calls that form one subpipeline together and separate different subpipelines or resource/publication phases. Do not put a blank line after every declaration or call.
 - Keep consecutive initialization or mutation of one record together.
 - Do not fragment one cohesive condition, expression, or initialization sequence with arbitrary whitespace.
 - Keep a declaration, call, assignment, return type, or signature on one line when it fits the configured limit and remains readable.
 - When a call or aggregate wraps, group elements by meaning; avoid stair-step fragmentation of simple access, casts, names, and ternaries.
+- Apply readability whitespace while changing the surrounding logic; do not create repository-wide whitespace churn. `.clang-format` remains authoritative and preserves at most one consecutive empty line.
+
+This rule follows the maintenance and big-picture readability rationale in the [Epic C++ Coding Standard](https://dev.epicgames.com/documentation/unreal-engine/epic-cplusplus-coding-standard-for-unreal-engine) and LLVM's [local-uniformity guidance](https://llvm.org/docs/CodingStandards.html). Sparkle's semantic paragraph rule is repository policy; the external documents are precedent, not additional formatting authorities.
 
 [Repository Structure and Ownership](ModuleOwnership.md) owns function/class decomposition and orchestration/mechanism boundaries; formatting does not substitute for that review.
 

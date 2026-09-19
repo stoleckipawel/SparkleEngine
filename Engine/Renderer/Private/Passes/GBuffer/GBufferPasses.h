@@ -9,7 +9,7 @@ class RenderRayTracingScene;
 
 void AddGBufferPasses(
     FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
     GpuMeshCache& gpuMeshCache,
     RenderRayTracingScene& rayTracingScene,
-    RenderViewportExtent sceneExtent,
     RenderFrameGraphResources& resources);

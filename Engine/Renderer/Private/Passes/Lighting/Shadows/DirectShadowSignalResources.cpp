@@ -1,5 +1,5 @@
 #include "../../../PCH.h"
-#include "Passes/Lighting/Shadows/ShadowVisibility.h"
+#include "Passes/Lighting/Shadows/DirectShadowSignalResources.h"
 
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"

@@ -2,8 +2,8 @@
 #include "Passes/PostProcessing/ExposurePasses.h"
 
 #include "Frame/Graph/RenderFrameGraphResources.h"
-#include "Passes/PostProcessing/Exposure.h"
-#include "Passes/PostProcessing/ExposureMetering.h"
+#include "Passes/PostProcessing/ExposureAdaptation.h"
+#include "Passes/PostProcessing/ExposureMeteringPasses.h"
 
 void AddExposurePasses(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings, const RenderFrameGraphResources& resources)
 {
@@ -11,10 +11,10 @@ void AddExposurePasses(FrameGraphBuilder& builder, const RenderFrameGraphSetting
 	switch (settings.ExposureMeteringMethod)
 	{
 		case EngineExposureMeteringMethod::ParallelReduction:
-			moments = BuildExposureReductionMoments(builder, settings.RenderExtent, resources);
+			moments = AddExposureReductionPasses(builder, settings.RenderExtent, resources);
 			break;
 		case EngineExposureMeteringMethod::DownsamplePyramid:
-			moments = BuildExposureDownsampleMoments(builder, settings.RenderExtent, resources);
+			moments = AddExposureDownsamplePasses(builder, settings.RenderExtent, resources);
 			break;
 		default:
 		{
@@ -22,5 +22,6 @@ void AddExposurePasses(FrameGraphBuilder& builder, const RenderFrameGraphSetting
 			Diagnostics::Fatal(logger, __FILE__, __LINE__, "Exposure settings contain an unknown metering method.");
 		}
 	}
+
 	AddExposureAdaptationPass(builder, moments, resources);
 }

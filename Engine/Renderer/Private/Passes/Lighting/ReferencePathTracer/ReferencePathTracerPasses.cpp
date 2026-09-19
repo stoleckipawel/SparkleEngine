@@ -17,6 +17,7 @@ void AddReferencePathTracerPasses(
 	session.ReserveGraphResources(builder, settings.RenderExtent);
 	const ReferencePathTracerGraphResources& graphResources = session.GetGraphResources();
 	const ReferencePathTracerUniformData& uniformData = session.GetUniformData();
+
 	AddReferencePathTracerTransportPass(
 	    builder,
 	    settings.RenderExtent,
@@ -25,5 +26,6 @@ void AddReferencePathTracerPasses(
 	    uniformData,
 	    session.m_rayTracingScene);
 	AddReferencePathTracerDisplayPass(builder, settings.RenderExtent, resources, graphResources, uniformData);
+
 	PublishReferencePathTracerProducts(graphResources, resources);
 }

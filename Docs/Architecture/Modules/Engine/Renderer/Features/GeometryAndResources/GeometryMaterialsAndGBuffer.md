@@ -154,9 +154,9 @@ This contract is **defined but unproved**. Completion requires raw-product evide
 ## Primary Source Routes
 
 - [`GBufferPasses.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/GBufferPasses.cpp), [`GBufferRenderTargets.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/GBufferRenderTargets.cpp), and [`GBufferFormats.h`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/GBufferFormats.h)
-- [`RasterizedGBuffer.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/RasterizedGBuffer.cpp)
-- [`RayTracingGBuffer.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/RayTracingGBuffer.cpp)
-- [`SceneDepth.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/SceneDepth.cpp) and [`SkyMotionVectors.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/SkyMotionVectors.cpp)
+- [`RasterizedGBufferMesh.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/RasterizedGBufferMesh.cpp)
+- [`RayTracingGBufferMesh.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/RayTracingGBufferMesh.cpp)
+- [`LinearizeDeviceZ.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/LinearizeDeviceZ.cpp) and [`SkyMotionVector.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/SkyMotionVector.cpp)
 - [`RenderViewPreparation.cpp`](../../../../../../../Engine/Renderer/Private/View/RenderViewPreparation.cpp)
 - [`RenderGpuScene.cpp`](../../../../../../../Engine/Renderer/Private/Scene/GpuScene/RenderGpuScene.cpp)
 - [`MaterialTextureTableCapability.h`](../../../../../../../Engine/Renderer/Private/Scene/Materials/MaterialTextureTableCapability.h)

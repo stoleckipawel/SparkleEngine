@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "Passes/GBuffer/SkyMotionVectors.h"
+#include "Passes/GBuffer/SkyMotionVector.h"
 
 #include "Core/Public/Math/MathUtils.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
@@ -13,9 +13,11 @@ void AddSkyMotionVectorPass(
     const RenderFrameGraphResources& resources)
 {
 	const GBufferRenderTargets& targets = resources.Transient.GBuffer;
+
 	auto& parameters = builder.AllocParameters<SkyMotionVectorCS>();
 	parameters->GBufferDeviceZ = builder.CreateSRV(targets.DeviceZ);
 	parameters->GBufferMotionVector = builder.CreateUAV(targets.MotionVector);
+
 	builder.AddParameterSetup<RenderView>(
 	    parameters,
 	    [](auto& fields, const RenderView& view)
@@ -24,6 +26,7 @@ void AddSkyMotionVectorPass(
 		    fields.ViewCamera = view.cameraUniform;
 		    fields.ViewTemporal = view.temporalUniform;
 	    });
+
 	builder.DispatchAsync<SkyMotionVectorCS>(
 	    parameters,
 	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});

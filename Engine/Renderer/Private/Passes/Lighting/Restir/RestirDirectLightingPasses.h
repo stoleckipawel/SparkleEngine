@@ -8,6 +8,6 @@ class RenderRayTracingScene;
 
 void AddRestirDirectLightingPasses(
     FrameGraphBuilder& builder,
-    RenderRayTracingScene& rayTracingScene,
     RenderViewportExtent sceneExtent,
+    RenderRayTracingScene& rayTracingScene,
     RenderFrameGraphResources& resources);

@@ -1,5 +1,5 @@
 #include "../../PCH.h"
-#include "Passes/Presentation/LinearUpscaling.h"
+#include "Passes/Presentation/LinearUpscale.h"
 
 #include "Core/Public/Math/MathUtils.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"

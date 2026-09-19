@@ -25,8 +25,10 @@ void AddRestirIndirectTemporalPass(
 	parameters->GBufferNormal = builder.CreateSRV(resources.Transient.GBuffer.Normal);
 	parameters->GBufferMaterial = builder.CreateSRV(resources.Transient.GBuffer.Material);
 	parameters->SceneDepth = builder.CreateSRV(resources.Transient.Scene.SceneDepth);
+
 	BindSceneShaderParameters(builder, parameters, resources);
 	BindRayTracedShadowParameters(builder, parameters);
+
 	const auto invalidateTemporalHistory = [](auto& fields, bool hasBeenProduced)
 	{
 		if (!hasBeenProduced)
@@ -36,9 +38,11 @@ void AddRestirIndirectTemporalPass(
 			fields.ViewTemporal = temporal;
 		}
 	};
+
 	builder.AddResourceProductionSetup(parameters, resources.History.RestirIndirectReservoir.Sample.Previous, invalidateTemporalHistory);
 	builder.AddResourceProductionSetup(parameters, resources.History.RestirIndirectReservoir.Weight.Previous, invalidateTemporalHistory);
 	builder.AddResourceProductionSetup(parameters, resources.History.RestirIndirectReservoir.Surface.Previous, invalidateTemporalHistory);
+
 	builder.AddPassParameterSetup(
 	    parameters,
 	    [](auto& fields)
@@ -46,6 +50,7 @@ void AddRestirIndirectTemporalPass(
 		    const RestirIndirectLightingSettings settings = BuildRestirIndirectLightingSettings();
 		    fields.RestirIndirectConstants = RestirIndirectLightingUniformData{.BounceCount = settings.BounceCount};
 	    });
+
 	builder.Dispatch<RestirIndirectTemporalCS>(
 	    parameters,
 	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});

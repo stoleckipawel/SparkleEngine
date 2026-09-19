@@ -4,7 +4,7 @@
 #include "Frame/Graph/RenderFrameGraphResourceBindings.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "Frame/Graph/RenderFrameGraphSettings.h"
-#include "Passes/Presentation/LinearUpscaling.h"
+#include "Passes/Presentation/LinearUpscale.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "RayReconstruction/RayReconstructionPass.h"
 #include "RayReconstruction/RayReconstructionSettings.h"

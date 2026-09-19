@@ -1,5 +1,5 @@
 #include "../../PCH.h"
-#include "Passes/PostProcessing/ExposureMetering.h"
+#include "Passes/PostProcessing/ExposureMeteringPasses.h"
 
 #include "Core/Public/Math/MathUtils.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
@@ -7,7 +7,7 @@
 
 #include <algorithm>
 
-ExposureMomentTexture BuildExposureReductionMoments(
+ExposureMomentTexture AddExposureReductionPasses(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
     const RenderFrameGraphResources& resources)
@@ -30,7 +30,7 @@ ExposureMomentTexture BuildExposureReductionMoments(
 	return current;
 }
 
-ExposureMomentTexture BuildExposureDownsampleMoments(
+ExposureMomentTexture AddExposureDownsamplePasses(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
     const RenderFrameGraphResources& resources)

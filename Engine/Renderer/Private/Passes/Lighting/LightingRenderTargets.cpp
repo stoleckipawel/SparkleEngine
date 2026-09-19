@@ -31,6 +31,7 @@ void CreateRealTimeLightingRenderTargets(
 	lighting.DirectSubsurface = CreateLightingTexture(builder, "DirectSubsurface", sceneExtent, radianceFormat);
 	lighting.IndirectDiffuse = CreateLightingTexture(builder, "IndirectDiffuse", sceneExtent, radianceFormat);
 	lighting.IndirectSpecular = CreateLightingTexture(builder, "IndirectSpecular", sceneExtent, radianceFormat);
+
 	const RenderViewportExtent guideExtent = IsRayReconstructionEnabled() ? sceneExtent : RenderViewportExtent{1u, 1u};
 	lighting.ReconstructionGuides.DiffuseAlbedo = CreateLightingTexture(
 	    builder,

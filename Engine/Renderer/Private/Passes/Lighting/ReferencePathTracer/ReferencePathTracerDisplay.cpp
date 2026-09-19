@@ -21,9 +21,11 @@ void AddReferencePathTracerDisplayPass(
 	parameters->CommittedMean = builder.CreateUAV(graphResources.CommittedMean);
 	parameters->CommittedM2 = builder.CreateUAV(graphResources.CommittedM2);
 	parameters->SceneColor = builder.CreateUAV(resources.Transient.Scene.SceneColor);
+
 	builder.AddPassParameterSetup(
 	    parameters,
 	    [uniformData = &uniformData](auto& fields) { fields.ReferencePathTracerConstants = *uniformData; });
+
 	builder.Dispatch<ReferencePathTracerDisplayCS>(
 	    "ReferencePathTracer.CommittedDisplay",
 	    parameters,

@@ -39,6 +39,21 @@ Prefer persistent indexed state plus dirty ranges over full scene rebuild/upload
 - High-level composition bodies read as rendering intent in execution order: add the selected renderer, add exposure, add upscaling, and add presentation. Their conditionals may select a real implementation or output policy, but they do not inspect handle validity, choose providers, allocate targets/history, assemble parameter records, map products, or repeat a child feature's enablement policy. Those mechanics belong to the narrow `Add...Pass`/`Add...Passes`, resource, or publication owner named by the orchestration call.
 - Pass source files have one role. A singular pass file owns one GPU pass definition and its parameter binding; a cohesive `*PassDefinitions` file may own a tightly related implementation family; and a `*Passes` file only orders already-defined passes, selects a route, creates composition-level products, or publishes the result. Resource/target construction lives in an explicitly named `*Resources` or `*RenderTargets` file. Never combine shader dispatch implementation, route selection, unrelated post-processing, and topology policy in one generic feature file.
 - File and function names state the rendered operation and composition level: `AddToneMappingPass`, `AddRealTimePathTracerPasses`, `LightingPasses.cpp`, and `GBufferRenderTargets.cpp` are representative. Avoid vague `Process`, `Execute`, `Utility`, or feature-only filenames when the unit actually owns a narrower pass, target, or orchestration responsibility.
+
+### Frame-authoring vocabulary
+
+Use the same verb and file shape at every composition depth:
+
+| Shape | Meaning |
+| --- | --- |
+| `Build...Graph` | Assemble and return one complete graph-level product at the owning root. |
+| `Add...Passes` in `*Passes.cpp` | Order semantic operations or select mutually exclusive implementations; do not encode a GPU dispatch. |
+| `Add...Pass` in an operation-named file | Define one semantic graph pass and bind the parameters it owns. |
+| `Create...Resources` / `Create...RenderTargets` | Declare graph resources owned by that feature or composition scope. |
+| `Publish...Products` | Map completed producer outputs to producer-neutral frame or viewport products. |
+| `Resolve...` | Make a side-effect-free policy choice; do not mutate the graph or feature lifetime. |
+
+The source filename uses the primary operation or owner stem: `LinearizeDeviceZ.cpp` defines `AddLinearizeDeviceZPass`, `ExposureAdaptation.cpp` defines `AddExposureAdaptationPass`, and `DirectShadowSignalResources.cpp` creates `DirectShadowSignalResources`. Pluralization is semantic: use `Passes` only when the function can order more than one pass or choose among pass implementations. Sibling composition functions use the same parameter order—builder first, immutable settings/context next, mutable feature owners next, and the output resource aggregate last. Do not rename established rendering data (`SceneDepth`, shader types, resource members) merely to mirror the operation that produces it.
 - `RenderViewMode` is the one host-independent per-view rendering choice. It names mutually exclusive rendered views such as Lit, Wireframe, a focused buffer view, or Reference Path Tracer; `ViewportRenderRequest` carries it and `RenderView` freezes it. Editor owns labels, icons, menu grouping, shortcuts, and widget state, but does not mirror or translate this rendering semantic through an Editor enum.
 - Renderer owns the meaning and execution of each `RenderViewMode`: canonical scene/view data, graph composition, passes, resources, shader parameters, feature lifecycle, and generic products/progress. A mode is not a settings bag and must not accumulate unrelated toggles.
 - A mode has one rendering meaning and one declared primary consumer. Reference Path Tracer selects the alternate middle, Wireframe selects raster fill, and buffer/lobe/instance modes select the debug resolve. Do not re-encode any of these as a CVar, show flag, target enum, Editor enum, graph setting, feature setting, or RHI field. Passes and shaders receive the mode only where they select among the products that pass owns.

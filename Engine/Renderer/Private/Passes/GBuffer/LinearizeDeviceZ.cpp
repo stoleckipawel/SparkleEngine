@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "Passes/GBuffer/SceneDepth.h"
+#include "Passes/GBuffer/LinearizeDeviceZ.h"
 
 #include "Core/Public/Math/MathUtils.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"

@@ -32,6 +32,7 @@ static auto GetRayReconstructionGuideTargets(const LightingRenderTargets& lighti
 void AddLightingTargetClearPass(FrameGraphBuilder& builder, const RenderFrameGraphResources& resources)
 {
 	const LightingRenderTargets& lighting = resources.Transient.Lighting;
+
 	builder.AddPass(
 	    LightingTargetClearPassName,
 	    EFrameGraphPassKind::Raster,
@@ -42,6 +43,7 @@ void AddLightingTargetClearPass(FrameGraphBuilder& builder, const RenderFrameGra
 		    resourceBuilder.Write(lighting.DirectSubsurface, ResourceUsage::RenderTarget, "DirectSubsurface");
 		    resourceBuilder.Write(lighting.IndirectDiffuse, ResourceUsage::RenderTarget, "IndirectDiffuse");
 		    resourceBuilder.Write(lighting.IndirectSpecular, ResourceUsage::RenderTarget, "IndirectSpecular");
+
 		    if (lighting.ReconstructionGuides.IsValid())
 		    {
 			    resourceBuilder.Write(
@@ -65,6 +67,7 @@ void AddLightingTargetClearPass(FrameGraphBuilder& builder, const RenderFrameGra
 		    {
 			    context.Resources.ClearRenderTarget(context.Commands, target);
 		    }
+
 		    if (lighting.ReconstructionGuides.IsValid())
 		    {
 			    for (FrameGraphTextureHandle target : GetRayReconstructionGuideTargets(lighting))

@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "Passes/GBuffer/RasterizedGBuffer.h"
+#include "Passes/GBuffer/RasterizedGBufferMesh.h"
 
 #include "Config/DepthConvention.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
@@ -22,6 +22,7 @@ void AddRasterizedGBufferMeshPass(
 {
 	const GBufferRenderTargets& targets = resources.Transient.GBuffer;
 	const RenderFrameGraphImportedSceneResources& externalResources = resources.ImportedScene;
+
 	auto& parameters = builder.AllocGraphParameters<GBufferGraphParameters>("GBuffer");
 	parameters->BaseColor =
 	    builder.CreateRenderTarget(targets.BaseColor, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
@@ -40,6 +41,7 @@ void AddRasterizedGBufferMeshPass(
 	    FrameGraphAttachmentLoadAction::Clear,
 	    FrameGraphAttachmentStoreAction::Store,
 	    FrameGraphDepthStencilAccess::ReadWrite);
+
 	parameters->Shader.Vertex.MeshInstances = builder.CreateSRV<MeshInstanceData>(externalResources.Scene.Geometry.MeshInstances);
 	parameters->Shader.Vertex.MeshInstanceSlots = builder.CreateSRV<std::uint32_t>(externalResources.Scene.Geometry.MeshInstanceSlots);
 	parameters->Shader.Vertex.JointMatrices = builder.CreateSRV<JointMatrixData>(externalResources.Scene.Geometry.JointMatrices);
@@ -48,6 +50,7 @@ void AddRasterizedGBufferMeshPass(
 	parameters->Shader.Vertex.MorphWeights = builder.CreateSRV<float>(externalResources.Scene.Geometry.MorphWeights);
 	parameters->Shader.Vertex.PreviousMorphWeights = builder.CreateSRV<float>(externalResources.Scene.Geometry.PreviousMorphWeights);
 	parameters->Shader.Pixel.SamplerAniso16xWrap = RhiSamplerDesc{.MaxAnisotropy = RhiSamplerAnisotropy::X16};
+
 	auto frameInput = std::make_shared<GBufferMeshPassInput>();
 	builder.AddParameterSetup<PreparedRenderScene>(
 	    [frameInput](const PreparedRenderScene& preparedScene) { frameInput->PreparedScene = std::cref(preparedScene); });
@@ -64,10 +67,12 @@ void AddRasterizedGBufferMeshPass(
 		    fields.Shader.Pixel.View = view.uniform;
 		    fields.Shader.Pixel.ViewTemporal = view.temporalUniform;
 	    });
+
 	RasterPassRenderState renderState;
 	renderState.SetOpaqueBlend();
 	renderState.SetDepthTest(DepthConvention::GetDepthComparisonLessEqualFunc());
 	renderState.SetDepthWrite(true);
 	renderState.DisableStencil();
+
 	builder.Draw<GBufferVS, GBufferPS>(parameters, renderState, GBufferMeshPass(gpuMeshCache, frameInput));
 }

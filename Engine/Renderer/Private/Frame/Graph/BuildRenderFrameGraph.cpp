@@ -12,9 +12,11 @@
 RenderFrameGraphResources FramePipeline::BuildRenderFrameGraph(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings)
 {
 	RenderRayTracingScene& rayTracingScene = m_renderScene->GetRayTracingScene();
+
 	RenderFrameGraphResources resources = {};
 	CreateRenderFrameGraphResources(builder, settings, resources);
 	AddRayTracingScenePass(builder, rayTracingScene, resources);
+
 	AddLightingPasses(
 	    builder,
 	    settings,
