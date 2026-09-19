@@ -49,6 +49,8 @@ void UiFrameRenderer::BeginFrame() noexcept
 
 void UiFrameRenderer::Render(const UiRenderPacket& packet, FrameGraph* frameGraph, ViewportRenderProducts& viewportProducts) noexcept
 {
+	m_packetPlayer->SynchronizeTextures(packet, m_deviceServices.GetImGuiRenderer());
+
 	if (packet.PresentationMode != UiPresentationMode::Viewport)
 	{
 		m_textureRegistry->RetireViewportTexture();

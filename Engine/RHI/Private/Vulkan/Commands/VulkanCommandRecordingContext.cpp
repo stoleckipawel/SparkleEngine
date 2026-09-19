@@ -401,7 +401,6 @@ void VulkanCommandRecordingContext::ResetSlot(CommandSlot& slot) noexcept
 
 	slot.DescriptorPool->Reset();
 	slot.UploadPage->Reset();
-	slot.CommandList->AbandonTransientAllocationUses();
 	slot.CommandList->ResetTrackedResources();
 	slot.CommandList->ResetBoundState();
 	slot.CommandList->SetRecording(false);
@@ -516,7 +515,6 @@ VulkanCommandRecordingContext::CommandSlot* VulkanCommandRecordingContext::Consu
 void VulkanCommandRecordingContext::ResolveSubmittedSlot(CommandSlot& slot, RhiSubmissionToken token) noexcept
 {
 	slot.CommandList->ResolveTrackedResources(token);
-	slot.CommandList->ResolveTransientAllocationUses(token);
 	slot.RetirementToken = token;
 	slot.State = SlotState::Submitted;
 }

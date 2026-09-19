@@ -18,13 +18,14 @@ public:
 	UiRenderPacketPlayer(const UiRenderPacketPlayer&) = delete;
 	UiRenderPacketPlayer& operator=(const UiRenderPacketPlayer&) = delete;
 
+	void SynchronizeTextures(const UiRenderPacket& packet, RhiImGuiRenderer& renderer);
 	void Render(const UiRenderPacket& packet, const UiTextureRegistry& textures, RhiImGuiRenderer& renderer);
 	void Shutdown(RhiImGuiRenderer& renderer) noexcept;
 
 private:
 	struct PlaybackStorage;
 
-	void ApplyTextureUpdates(const UiRenderPacket& packet);
+	void ApplyTextureChanges(const UiRenderPacket& packet);
 	void ApplyTextureUpload(const UiRenderPacket& packet, const UiTextureUpload& upload);
 	void QueueTextureRelease(UiTextureHandle handle) noexcept;
 	ImTextureData* FindTexture(UiTextureHandle handle) const noexcept;

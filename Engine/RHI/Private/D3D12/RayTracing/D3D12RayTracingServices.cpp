@@ -8,6 +8,7 @@
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/Memory/D3D12GpuAllocation.h"
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
+#include "D3D12/Resources/D3D12ResourceService.h"
 #include "Validation/RhiContract.h"
 
 #include <cstring>
@@ -26,9 +27,11 @@ namespace D3D12RayTracingText
 D3D12RayTracingServices::D3D12RayTracingServices(
     D3D12Rhi& rhi,
     D3D12GpuMemoryAllocator& memoryAllocator,
+    D3D12ResourceService& resourceService,
     D3D12NvapiRayTracingProvider& nvapiProvider) noexcept :
     m_rhi(&rhi),
     m_memoryAllocator(&memoryAllocator),
+    m_resourceService(&resourceService),
     m_nvapiProvider(&nvapiProvider),
     m_classicTlasServices(rhi, memoryAllocator),
     m_partitionedTlasServices(rhi, memoryAllocator, nvapiProvider)
@@ -212,5 +215,5 @@ std::unique_ptr<RayTracingShaderTable> D3D12RayTracingServices::CreateRayTracing
 	{
 		throw Diagnostics::Error("D3D12 ray-tracing shader-table creation requires complete pipeline readiness.");
 	}
-	return std::make_unique<D3D12RayTracingShaderTable>(*m_rhi, desc);
+	return std::make_unique<D3D12RayTracingShaderTable>(*m_rhi, *m_resourceService, desc);
 }

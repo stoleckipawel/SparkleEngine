@@ -692,7 +692,8 @@ void VulkanGpuMemoryAllocator::DrainCompletedReleases(const std::array<std::uint
 		while (pendingMemoryBlock != m_impl->PendingMemoryBlockReleases.end())
 		{
 			if (pendingMemoryBlock->Record == nullptr
-			    || (pendingMemoryBlock->Record->RecordingReferenceCount.load(std::memory_order_relaxed) == 0
+			    || (pendingMemoryBlock->Record->AliasingResourceCount == 0
+			        && pendingMemoryBlock->Record->RecordingReferenceCount.load(std::memory_order_relaxed) == 0
 			        && pendingMemoryBlock->Record->LastUse.IsComplete(completedValues)))
 			{
 				readyMemoryBlockReleases.push_back(std::move(pendingMemoryBlock->Record));

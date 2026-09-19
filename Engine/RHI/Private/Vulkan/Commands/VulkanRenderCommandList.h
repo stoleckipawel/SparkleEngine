@@ -21,7 +21,6 @@ class VulkanRecordingDescriptorPool;
 class VulkanRecordingUploadPage;
 class VulkanBindingLayout;
 class VulkanRhi;
-class VulkanUploadService;
 struct VulkanResourceStateMapping;
 class VulkanRenderCommandList final : public RenderCommandList
 {
@@ -124,8 +123,6 @@ public:
 
 private:
 	friend class VulkanCommandRecordingContext;
-	friend class VulkanUploadService;
-
 	struct BufferBinding final
 	{
 		VkBuffer Buffer = VK_NULL_HANDLE;
@@ -163,10 +160,6 @@ private:
 	    PFN_vkCmdBeginDebugUtilsLabelEXT beginLabel,
 	    PFN_vkCmdEndDebugUtilsLabelEXT endLabel,
 	    PFN_vkCmdInsertDebugUtilsLabelEXT insertLabel) noexcept;
-	void TrackTransientAllocation(VulkanGpuAllocationRecord& allocation) noexcept;
-	void ResolveTransientAllocationUses(RhiSubmissionToken submissionToken) noexcept;
-	void AbandonTransientAllocationUses() noexcept;
-	void ReleaseTransientAllocationUses(RhiSubmissionToken submissionToken) noexcept;
 	void OnResourceTrackingStarted(RhiResourceHandle resource) noexcept override;
 	void OnResourceTrackingFinished(RhiResourceHandle resource, RhiSubmissionToken submissionToken) noexcept override;
 
@@ -254,7 +247,6 @@ private:
 	std::vector<RhiGpuDescriptorHandle> m_retainedDescriptorHandles;
 	std::vector<VkBuffer> m_retainedDescriptorBuffers;
 	std::vector<RecordingResourceUse> m_recordingResourceUses;
-	std::vector<VulkanGpuAllocationRecord*> m_transientAllocationUses;
 	std::size_t m_recordingResourceReleaseIndex = 0;
 	VulkanDebugEventFunctions m_debugEvents = {};
 	std::array<VkImageView, MaxRenderTargets> m_renderTargets = {};

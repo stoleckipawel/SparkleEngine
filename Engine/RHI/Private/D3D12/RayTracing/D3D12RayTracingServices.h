@@ -11,12 +11,17 @@
 
 class D3D12GpuMemoryAllocator;
 class D3D12Rhi;
+class D3D12ResourceService;
 struct ID3D12GraphicsCommandList7;
 
 class D3D12RayTracingServices final : public RhiRayTracingService
 {
 public:
-	D3D12RayTracingServices(D3D12Rhi& rhi, D3D12GpuMemoryAllocator& memoryAllocator, D3D12NvapiRayTracingProvider& nvapiProvider) noexcept;
+	D3D12RayTracingServices(
+	    D3D12Rhi& rhi,
+	    D3D12GpuMemoryAllocator& memoryAllocator,
+	    D3D12ResourceService& resourceService,
+	    D3D12NvapiRayTracingProvider& nvapiProvider) noexcept;
 
 	RhiClassicTlasService& GetClassicTlasService() noexcept override;
 	const RhiClassicTlasService& GetClassicTlasService() const noexcept override;
@@ -62,6 +67,7 @@ public:
 private:
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12GpuMemoryAllocator* m_memoryAllocator = nullptr;
+	D3D12ResourceService* m_resourceService = nullptr;
 	D3D12NvapiRayTracingProvider* m_nvapiProvider = nullptr;
 	D3D12ClassicTlasServices m_classicTlasServices;
 	D3D12PartitionedTlasServices m_partitionedTlasServices;

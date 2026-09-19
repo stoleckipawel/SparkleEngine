@@ -9,8 +9,6 @@
 
 #include <backends/imgui_impl_dx12.h>
 
-#include <limits>
-
 static const auto g_d3d12ImGuiBackendLogger = Logging::GetOrCreateLogger("RHI.D3D12.ImGui");
 
 D3D12ImGuiBackend::D3D12ImGuiBackend(D3D12RenderHardwareInterface& renderHardwareInterface) noexcept :
@@ -77,6 +75,13 @@ std::uint64_t D3D12ImGuiBackend::ResolveTextureId(RhiGpuDescriptorHandle shaderR
 	return shaderResourceView.Value;
 }
 
+void D3D12ImGuiBackend::UpdateTexture(ImTextureData& texture) noexcept
+{
+	ImGuiContext* previousContext = ActivateContext();
+	ImGui_ImplDX12_UpdateTexture(&texture);
+	RestoreContext(previousContext);
+}
+
 void D3D12ImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 {
 	ImGuiContext* previousContext = ActivateContext();
@@ -87,16 +92,6 @@ void D3D12ImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 	            .Consumer = ERhiNativeInteropConsumer::Presentation,
 	            .Reason = "Render ImGui draw data through D3D12 backend"}),
 	    drawData);
-	RestoreContext(previousContext);
-}
-
-void D3D12ImGuiBackend::ReleaseTexture(ImTextureData& texture) noexcept
-{
-	ImGuiContext* previousContext = ActivateContext();
-	texture.UnusedFrames = (std::numeric_limits<int>::max)();
-	texture.WantDestroyNextFrame = true;
-	texture.SetStatus(ImTextureStatus_WantDestroy);
-	ImGui_ImplDX12_UpdateTexture(&texture);
 	RestoreContext(previousContext);
 }
 

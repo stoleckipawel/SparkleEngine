@@ -47,7 +47,10 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
 	    std::make_unique<RhiPipelineServiceAdapter<D3D12Rhi, D3D12Pipeline, D3D12RayTracingPipeline, D3D12BindingLayoutCompiler>>(rhi);
 	m_descriptorService = std::make_unique<D3D12DescriptorService>(rhi, descriptorHeapManager, m_capabilities);
 	m_resourceService = std::make_unique<D3D12ResourceService>(rhi, memoryAllocator, m_capabilities);
-	m_rayTracingServices = std::make_unique<D3D12RayTracingServices>(rhi, memoryAllocator, rhi.GetNvapiRayTracingProvider());
+
+	m_rayTracingServices =
+	    std::make_unique<D3D12RayTracingServices>(rhi, memoryAllocator, *m_resourceService, rhi.GetNvapiRayTracingProvider());
+
 	m_diagnostics = CreateD3D12RenderDiagnostics(rhi, swapChain.GetMaximumFramesInFlight());
 	m_capabilities = BuildCapabilities();
 	m_imguiBackend = std::make_unique<D3D12ImGuiBackend>(*this);

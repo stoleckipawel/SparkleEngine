@@ -48,7 +48,8 @@ VulkanRayTracingShaderTable::VulkanRayTracingShaderTable(
     VulkanRhi& rhi,
     VulkanGpuMemoryAllocator& memoryAllocator,
     const RayTracingShaderTableDesc& desc) :
-    RayTracingShaderTable(desc.Generation, desc.Pipeline != nullptr ? desc.Pipeline->GetGeneration() : 0)
+    RayTracingShaderTable(desc.Generation, desc.Pipeline != nullptr ? desc.Pipeline->GetGeneration() : 0),
+    m_memoryAllocator(&memoryAllocator)
 {
 	RhiContract::ValidateRayTracingShaderTableDesc(desc);
 	const auto* pipeline = dynamic_cast<const VulkanRayTracingPipeline*>(desc.Pipeline);
@@ -121,5 +122,13 @@ VulkanRayTracingShaderTable::VulkanRayTracingShaderTable(
 	    || !memoryAllocator.WriteAllocation(*m_allocation, bytes.data(), bytes.size()))
 	{
 		throw Diagnostics::Error("Vulkan shader-table allocation or upload failed.");
+	}
+}
+
+VulkanRayTracingShaderTable::~VulkanRayTracingShaderTable() noexcept
+{
+	if (m_allocation != nullptr)
+	{
+		m_memoryAllocator->QueueDestroyResource(std::move(m_allocation));
 	}
 }

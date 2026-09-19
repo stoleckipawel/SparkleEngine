@@ -5,6 +5,7 @@
 #include "Core/Public/Diagnostics/Error.h"
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/Pipeline/D3D12RayTracingPipeline.h"
+#include "D3D12/Resources/D3D12ResourceService.h"
 #include "D3D12/Resources/D3D12UploadBuffer.h"
 #include "RayTracing/RhiRayTracingShaderTablePacking.h"
 #include "Validation/RhiContract.h"
@@ -36,8 +37,12 @@ std::vector<std::byte> D3D12RayTracingShaderTable::CollectShaderIdentifiers(
 	return identifiers;
 }
 
-D3D12RayTracingShaderTable::D3D12RayTracingShaderTable(D3D12Rhi& rhi, const RayTracingShaderTableDesc& desc) :
-    RayTracingShaderTable(desc.Generation, desc.Pipeline != nullptr ? desc.Pipeline->GetGeneration() : 0)
+D3D12RayTracingShaderTable::D3D12RayTracingShaderTable(
+    D3D12Rhi& rhi,
+    D3D12ResourceService& resourceService,
+    const RayTracingShaderTableDesc& desc) :
+    RayTracingShaderTable(desc.Generation, desc.Pipeline != nullptr ? desc.Pipeline->GetGeneration() : 0),
+    m_resourceService(&resourceService)
 {
 	RhiContract::ValidateRayTracingShaderTableDesc(desc);
 	const auto* pipeline = dynamic_cast<const D3D12RayTracingPipeline*>(desc.Pipeline);
@@ -79,6 +84,14 @@ D3D12RayTracingShaderTable::D3D12RayTracingShaderTable(D3D12Rhi& rhi, const RayT
 	if (desc.DebugName != nullptr)
 	{
 		m_allocation->Resource->SetName(desc.DebugName);
+	}
+}
+
+D3D12RayTracingShaderTable::~D3D12RayTracingShaderTable() noexcept
+{
+	if (m_allocation != nullptr)
+	{
+		m_resourceService->ReleaseOwnedResource(MakeD3D12OwnedResourceHandle(std::move(m_allocation)));
 	}
 }
 

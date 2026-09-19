@@ -20,8 +20,8 @@ public:
 	virtual void Initialize() = 0;
 	virtual void BeginFrame() noexcept = 0;
 	virtual std::uint64_t ResolveTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept = 0;
+	virtual void UpdateTexture(ImTextureData& texture) noexcept = 0;
 	virtual void RenderDrawData(ImDrawData* drawData) noexcept = 0;
-	virtual void ReleaseTexture(ImTextureData& texture) noexcept = 0;
 	virtual void Shutdown() noexcept = 0;
 
 protected:

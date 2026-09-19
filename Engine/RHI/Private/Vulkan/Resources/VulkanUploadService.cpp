@@ -112,7 +112,7 @@ bool VulkanUploadService::UploadBuffer(
 	RecordBufferUpload(vulkanCommandList, *destinationRecord, *stagingResource, data.size(), finalState);
 
 	commandList.TrackResource(RhiResourceHandle{destinationRecord->Buffer});
-	vulkanCommandList.TrackTransientAllocation(*stagingResource);
+	commandList.TrackResource(RhiResourceHandle{stagingResource->Buffer});
 	m_memoryAllocator->QueueDestroyResource(std::move(stagingResource));
 	return true;
 }
@@ -142,7 +142,7 @@ bool VulkanUploadService::UploadTexture(
 	RecordTextureUpload(vulkanCommandList, *destinationRecord, *stagingResource, textureUpload, copyRegions, finalState);
 
 	commandList.TrackResource(RhiResourceHandle{destinationRecord->Image});
-	vulkanCommandList.TrackTransientAllocation(*stagingResource);
+	commandList.TrackResource(RhiResourceHandle{stagingResource->Buffer});
 	m_memoryAllocator->QueueDestroyResource(std::move(stagingResource));
 	return true;
 }

@@ -302,7 +302,8 @@ void D3D12ResourceService::DrainCompletedResourceReleases() noexcept
 	    [&completedValues](const std::unique_ptr<D3D12GpuHeapRecord>& record)
 	    {
 		    return record == nullptr
-		        || (record->RecordingReferenceCount.load(std::memory_order_relaxed) == 0 && record->LastUse.IsComplete(completedValues));
+		        || (record->AliasingResourceCount == 0 && record->RecordingReferenceCount.load(std::memory_order_relaxed) == 0
+		            && record->LastUse.IsComplete(completedValues));
 	    });
 	m_pendingOwnedMemoryBlockReleases.erase(heapEraseBegin, m_pendingOwnedMemoryBlockReleases.end());
 }

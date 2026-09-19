@@ -292,15 +292,15 @@ void VulkanRecordingResourceTable::RetainReference(VulkanGpuAllocationRecord& re
 
 void VulkanRecordingResourceTable::ReleaseReference(VulkanGpuAllocationRecord& record) noexcept
 {
-	const std::uint32_t previousReferences = record.RecordingReferenceCount.fetch_sub(1, std::memory_order_relaxed);
-	assert(previousReferences != 0);
-
 	if (record.ParentMemoryBlock != nullptr)
 	{
 		const std::uint32_t previousBlockReferences =
 		    record.ParentMemoryBlock->RecordingReferenceCount.fetch_sub(1, std::memory_order_relaxed);
 		assert(previousBlockReferences != 0);
 	}
+
+	const std::uint32_t previousReferences = record.RecordingReferenceCount.fetch_sub(1, std::memory_order_relaxed);
+	assert(previousReferences != 0);
 }
 
 void VulkanRecordingResourceTable::ReleaseReference(VulkanGpuAllocationRecord& record, RhiSubmissionToken submissionToken) noexcept

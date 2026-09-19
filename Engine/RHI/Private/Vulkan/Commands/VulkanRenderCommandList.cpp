@@ -2,14 +2,11 @@
 
 #include "Vulkan/Commands/VulkanRenderCommandList.h"
 
-#include "Vulkan/Memory/VulkanGpuAllocation.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 #include "Vulkan/Pipeline/VulkanPipeline.h"
 #include "Vulkan/Resources/VulkanRecordingUploadPage.h"
 #include "Core/Public/Diagnostics/Verify.h"
 #include "Interop/RhiInteropService.h"
-
-#include <atomic>
 
 static const auto g_vulkanRenderCommandListLogger = Logging::GetOrCreateLogger("RHI.Vulkan.CommandList");
 
@@ -23,13 +20,11 @@ VulkanRenderCommandList::VulkanRenderCommandList()
 	m_retainedDescriptorHandles.reserve(32);
 	m_retainedDescriptorBuffers.reserve(32);
 	m_recordingResourceUses.reserve(32);
-	m_transientAllocationUses.reserve(32);
 }
 
 VulkanRenderCommandList::~VulkanRenderCommandList() noexcept
 {
 	ResetTrackedResources();
-	AbandonTransientAllocationUses();
 }
 
 void VulkanRenderCommandList::CloseOpenRendering() noexcept
@@ -73,69 +68,6 @@ ERhiBackendApi VulkanRenderCommandList::GetBackendApi() const noexcept
 bool VulkanRenderCommandList::IsCoordinatorRecording() const noexcept
 {
 	return m_recordingOwner.IsCoordinator();
-}
-
-void VulkanRenderCommandList::TrackTransientAllocation(VulkanGpuAllocationRecord& allocation) noexcept
-{
-	allocation.RecordingReferenceCount.fetch_add(1, std::memory_order_relaxed);
-	if (allocation.ParentMemoryBlock != nullptr)
-	{
-		allocation.ParentMemoryBlock->RecordingReferenceCount.fetch_add(1, std::memory_order_relaxed);
-	}
-
-	m_transientAllocationUses.push_back(&allocation);
-}
-
-void VulkanRenderCommandList::ResolveTransientAllocationUses(RhiSubmissionToken submissionToken) noexcept
-{
-	ReleaseTransientAllocationUses(submissionToken);
-}
-
-void VulkanRenderCommandList::AbandonTransientAllocationUses() noexcept
-{
-	ReleaseTransientAllocationUses({});
-}
-
-void VulkanRenderCommandList::ReleaseTransientAllocationUses(RhiSubmissionToken submissionToken) noexcept
-{
-	for (VulkanGpuAllocationRecord* allocation : m_transientAllocationUses)
-	{
-		if (allocation == nullptr)
-		{
-			continue;
-		}
-
-		allocation->LastUse.MarkUsed(submissionToken);
-		if (allocation->ParentMemoryBlock != nullptr)
-		{
-			allocation->ParentMemoryBlock->LastUse.MarkUsed(submissionToken);
-		}
-
-		const std::uint32_t previousReferences = allocation->RecordingReferenceCount.fetch_sub(1, std::memory_order_relaxed);
-		if (previousReferences == 0)
-		{
-			Diagnostics::Fatal(
-			    g_vulkanRenderCommandListLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Vulkan transient allocation recording reference underflowed.");
-		}
-
-		if (allocation->ParentMemoryBlock != nullptr)
-		{
-			VulkanGpuMemoryBlockRecord& memoryBlock = *allocation->ParentMemoryBlock;
-			const std::uint32_t previousBlockReferences = memoryBlock.RecordingReferenceCount.fetch_sub(1, std::memory_order_relaxed);
-			if (previousBlockReferences == 0)
-			{
-				Diagnostics::Fatal(
-				    g_vulkanRenderCommandListLogger,
-				    __FILE__,
-				    __LINE__,
-				    "Vulkan transient memory-block recording reference underflowed.");
-			}
-		}
-	}
-	m_transientAllocationUses.clear();
 }
 
 void VulkanRenderCommandList::OnResourceTrackingStarted(RhiResourceHandle resource) noexcept

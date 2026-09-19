@@ -19,8 +19,8 @@ public:
 	void Initialize() override;
 	void BeginFrame() noexcept override;
 	std::uint64_t ResolveTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept override;
+	void UpdateTexture(ImTextureData& texture) noexcept override;
 	void RenderDrawData(ImDrawData* drawData) noexcept override;
-	void ReleaseTexture(ImTextureData& texture) noexcept override;
 	void Shutdown() noexcept override;
 
 private:

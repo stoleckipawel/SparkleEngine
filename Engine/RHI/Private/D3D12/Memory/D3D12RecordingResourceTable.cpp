@@ -120,14 +120,14 @@ void D3D12RecordingResourceTable::RetainReference(D3D12GpuAllocationRecord& reco
 
 void D3D12RecordingResourceTable::ReleaseReference(D3D12GpuAllocationRecord& record) noexcept
 {
-	const std::uint32_t previousReferences = record.RecordingReferenceCount.fetch_sub(1, std::memory_order_relaxed);
-	assert(previousReferences != 0);
-
 	if (record.ParentHeap != nullptr)
 	{
 		const std::uint32_t previousHeapReferences = record.ParentHeap->RecordingReferenceCount.fetch_sub(1, std::memory_order_relaxed);
 		assert(previousHeapReferences != 0);
 	}
+
+	const std::uint32_t previousReferences = record.RecordingReferenceCount.fetch_sub(1, std::memory_order_relaxed);
+	assert(previousReferences != 0);
 }
 
 void D3D12RecordingResourceTable::ReleaseReference(D3D12GpuAllocationRecord& record, RhiSubmissionToken submissionToken) noexcept

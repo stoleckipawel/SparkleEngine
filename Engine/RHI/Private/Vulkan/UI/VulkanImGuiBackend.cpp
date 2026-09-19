@@ -9,8 +9,6 @@
 
 #include <backends/imgui_impl_vulkan.h>
 
-#include <limits>
-
 static const auto g_vulkanImGuiBackendLogger = Logging::GetOrCreateLogger("RHI.Vulkan.ImGui");
 
 VulkanImGuiBackend::VulkanImGuiBackend(
@@ -134,6 +132,13 @@ std::uint64_t VulkanImGuiBackend::ResolveTextureId(RhiGpuDescriptorHandle shader
 	return textureId;
 }
 
+void VulkanImGuiBackend::UpdateTexture(ImTextureData& texture) noexcept
+{
+	ImGuiContext* previousContext = ActivateContext();
+	ImGui_ImplVulkan_UpdateTexture(&texture);
+	RestoreContext(previousContext);
+}
+
 void VulkanImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 {
 	if (drawData == nullptr)
@@ -156,16 +161,6 @@ void VulkanImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 	}
 
 	ImGui_ImplVulkan_RenderDrawData(drawData, commandBuffer);
-	RestoreContext(previousContext);
-}
-
-void VulkanImGuiBackend::ReleaseTexture(ImTextureData& texture) noexcept
-{
-	ImGuiContext* previousContext = ActivateContext();
-	texture.UnusedFrames = (std::numeric_limits<int>::max)();
-	texture.WantDestroyNextFrame = true;
-	texture.SetStatus(ImTextureStatus_WantDestroy);
-	ImGui_ImplVulkan_UpdateTexture(&texture);
 	RestoreContext(previousContext);
 }
 

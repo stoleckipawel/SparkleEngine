@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <limits>
 
 struct UiRenderPacketPlayer::PlaybackStorage final
 {
@@ -31,18 +32,35 @@ UiRenderPacketPlayer::UiRenderPacketPlayer() :
 
 UiRenderPacketPlayer::~UiRenderPacketPlayer() noexcept = default;
 
-void UiRenderPacketPlayer::Render(const UiRenderPacket& packet, const UiTextureRegistry& textures, RhiImGuiRenderer& renderer)
+void UiRenderPacketPlayer::SynchronizeTextures(const UiRenderPacket& packet, RhiImGuiRenderer& renderer)
 {
 	const bool hasPendingRelease = std::any_of(
 	    m_storage->Textures.begin(),
 	    m_storage->Textures.end(),
 	    [](const PlaybackStorage::Texture& texture) { return texture.PendingRelease; });
-	if (!packet.HasDrawData() && packet.TextureUploads.empty() && packet.TextureReleases.empty() && !hasPendingRelease)
+
+	if (packet.TextureUploads.empty() && packet.TextureReleases.empty() && !hasPendingRelease)
 	{
 		return;
 	}
 
-	ApplyTextureUpdates(packet);
+	ApplyTextureChanges(packet);
+
+	for (ImTextureData* texture : m_storage->TextureUpdates)
+	{
+		renderer.UpdateTexture(*texture);
+	}
+
+	RetireReleasedTextures();
+}
+
+void UiRenderPacketPlayer::Render(const UiRenderPacket& packet, const UiTextureRegistry& textures, RhiImGuiRenderer& renderer)
+{
+	if (!packet.HasDrawData())
+	{
+		return;
+	}
+
 	PrepareDrawLists(packet.DrawLists.size());
 	for (std::size_t drawListIndex = 0; drawListIndex < packet.DrawLists.size(); ++drawListIndex)
 	{
@@ -51,21 +69,23 @@ void UiRenderPacketPlayer::Render(const UiRenderPacket& packet, const UiTextureR
 
 	PrepareDrawData(packet);
 	renderer.RenderDrawData(&m_storage->DrawData);
-	RetireReleasedTextures();
 }
 
 void UiRenderPacketPlayer::Shutdown(RhiImGuiRenderer& renderer) noexcept
 {
 	for (PlaybackStorage::Texture& texture : m_storage->Textures)
 	{
-		renderer.ReleaseTexture(*texture.Data);
+		texture.Data->UnusedFrames = (std::numeric_limits<int>::max)();
+		texture.Data->WantDestroyNextFrame = true;
+		texture.Data->SetStatus(ImTextureStatus_WantDestroy);
+		renderer.UpdateTexture(*texture.Data);
 	}
 
 	m_storage->Textures.clear();
 	m_storage->TextureUpdates.resize(0);
 }
 
-void UiRenderPacketPlayer::ApplyTextureUpdates(const UiRenderPacket& packet)
+void UiRenderPacketPlayer::ApplyTextureChanges(const UiRenderPacket& packet)
 {
 	m_storage->TextureUpdates.resize(0);
 
@@ -87,6 +107,7 @@ void UiRenderPacketPlayer::ApplyTextureUpdates(const UiRenderPacket& packet)
 		}
 
 		++texture.Data->UnusedFrames;
+
 		if (std::find(m_storage->TextureUpdates.begin(), m_storage->TextureUpdates.end(), texture.Data.get())
 		    == m_storage->TextureUpdates.end())
 		{
@@ -241,5 +262,5 @@ void UiRenderPacketPlayer::PrepareDrawData(const UiRenderPacket& packet)
 	drawData.DisplayPos = {packet.DisplayPosition[0], packet.DisplayPosition[1]};
 	drawData.DisplaySize = {packet.DisplaySize[0], packet.DisplaySize[1]};
 	drawData.FramebufferScale = {packet.FramebufferScale[0], packet.FramebufferScale[1]};
-	drawData.Textures = m_storage->TextureUpdates.Size != 0 ? &m_storage->TextureUpdates : nullptr;
+	drawData.Textures = nullptr;
 }

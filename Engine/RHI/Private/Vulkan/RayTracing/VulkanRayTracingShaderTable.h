@@ -17,8 +17,12 @@ class VulkanRayTracingShaderTable final : public RayTracingShaderTable
 {
 public:
 	VulkanRayTracingShaderTable(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator, const RayTracingShaderTableDesc& desc);
+	~VulkanRayTracingShaderTable() noexcept override;
 
-	RhiResourceHandle GetResource() const noexcept override { return RhiResourceHandle{m_allocation.get()}; }
+	RhiResourceHandle GetResource() const noexcept override
+	{
+		return m_allocation != nullptr ? GetVulkanResourceHandle(*m_allocation) : RhiResourceHandle{};
+	}
 	RhiRayTracingShaderTableRegion GetRayGenerationRegion() const noexcept override { return m_rayGeneration; }
 	RhiRayTracingShaderTableRegion GetMissRegion() const noexcept override { return m_miss; }
 	RhiRayTracingShaderTableRegion GetHitGroupRegion() const noexcept override { return m_hitGroup; }
@@ -32,6 +36,7 @@ private:
 	    std::span<const std::byte> groupHandles,
 	    std::uint32_t handleSize);
 
+	VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
 	std::unique_ptr<VulkanGpuAllocationRecord> m_allocation;
 	RhiRayTracingShaderTableRegion m_rayGeneration;
 	RhiRayTracingShaderTableRegion m_miss;
