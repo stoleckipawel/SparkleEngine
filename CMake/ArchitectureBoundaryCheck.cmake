@@ -79,7 +79,7 @@ function(sparkle_boundary_scan_file absolute_path)
             "${_relative_path}")
     endif()
 
-    if(_relative_path MATCHES "^Engine/Renderer/Private/Passes/(Debug/Debug|GBuffer/(GBuffer|RasterizedGBuffer|RayTracingGBuffer|SceneDepth|SkyMotionVectors)|Lighting/Lighting|Lighting/Direct/DirectLightReservoir|Lighting/ReferencePathTracer/ReferencePathTracer|Lighting/Restir/Restir(Direct|Indirect)?Lighting|Lighting/Restir/RestirIndirectReservoirs|Lighting/Shadows/ShadowVisibility|PostProcessing/(Exposure|ExposureMetering|ExposureMomentChain|ExposureMomentPasses|PostProcessing)|Presentation/(LinearUpscaling|Presentation|Upscaling)|RayTracing/RayTracingScene)[.](h|cpp)$")
+    if(_relative_path MATCHES "^Engine/Renderer/Private/Passes/(Debug/Debug|GBuffer/(GBuffer|RasterizedGBuffer|RayTracingGBuffer|SceneDepth|SkyMotionVectors)|Lighting/Lighting|Lighting/Direct/DirectLightReservoir|Lighting/ReferencePathTracer/ReferencePathTracer|Lighting/Restir/Restir(Direct|Indirect)?Lighting|Lighting/Restir/RestirIndirectReservoirs|Lighting/Shadows/ShadowVisibility|PostProcessing/(Exposure|ExposureMetering|ExposureMomentChain|ExposureMomentPasses|PostProcessing)|Presentation/(LinearUpscaling|Presentation|SceneUpscaling|Upscaling)|RayTracing/RayTracingScene)[.](h|cpp)$")
         sparkle_boundary_append_failure(
             "RENDERER_PASS_FILE_ROLE_NAMING"
             "${_relative_path}"
@@ -135,7 +135,8 @@ function(sparkle_boundary_scan_file absolute_path)
                     "${_line}")
             endif()
             if(_line MATCHES "resources[.][A-Za-z0-9_.]+[ 	]*=" OR
-               _line MATCHES "[.]IsValid[(]" OR
+               (_line MATCHES "[.]IsValid[(]" AND
+                NOT _relative_path STREQUAL "Engine/Renderer/Private/Passes/Presentation/SceneUpscalingPasses.cpp") OR
                _line MATCHES "Get[A-Za-z0-9_]*(Upscaler|Reconstruction)Provider[(]")
                 sparkle_boundary_append_failure(
                     "RENDERER_PASS_ORCHESTRATION_READS_AS_INTENT"
@@ -144,6 +145,16 @@ function(sparkle_boundary_scan_file absolute_path)
                     "Passes orchestration calls named rendering operations; resource publication, handle guards, and provider selection stay in the called owner."
                     "${_line}")
             endif()
+        endif()
+
+        if(_relative_path STREQUAL "Engine/Renderer/Private/Passes/Presentation/SceneUpscalingPasses.cpp" AND
+           _line MATCHES "AddUpscalerPass|Get[A-Za-z0-9_]*UpscalerProvider|IUpscalerProvider")
+            sparkle_boundary_append_failure(
+                "RENDERER_UPSCALING_SELECTOR_NAMES_IMPLEMENTATIONS"
+                "${_relative_path}"
+                "${_line_number}"
+                "The scene-upscaling selector names and invokes each supported implementation; generic provider evaluation stays below the selected operation."
+                "${_line}")
         endif()
 
         if(_relative_path STREQUAL "Engine/Renderer/Private/Passes/Lighting/LightingPasses.cpp" AND

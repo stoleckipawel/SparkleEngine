@@ -57,13 +57,16 @@ void ReferencePathTracerResources::Allocate(RenderViewportExtent extent)
 	{
 		return;
 	}
+
 	Release();
+
 	RhiResourceService& resources = m_deviceServices.GetRenderHardwareInterface().GetResourceService();
 	const RhiTextureResourceDesc desc{
 	    .Width = extent.Width,
 	    .Height = extent.Height,
 	    .Format = PixelFormat::R32G32B32A32_Float,
 	    .AllowUnorderedAccess = true};
+
 	m_allocation.WorkingMean = resources.CreateTextureResource(
 	    desc,
 	    ResourceState::Common,
@@ -88,6 +91,7 @@ void ReferencePathTracerResources::Allocate(RenderViewportExtent extent)
 	    RhiMemoryCategory::Texture,
 	    RhiMemoryResidencyClass::DeviceLocal,
 	    L"ReferencePathTracer.CommittedM2");
+
 	m_allocation.Extent = extent;
 	m_allocation.Bytes = resources.GetTextureAllocationInfo(desc).SizeInBytes * 4u;
 	m_used = false;
@@ -112,6 +116,7 @@ void ReferencePathTracerResources::Release() noexcept
 	{
 		resources.ReleaseOwnedResource(m_allocation.CommittedM2);
 	}
+
 	m_allocation = {};
 	m_used = false;
 }
@@ -122,12 +127,15 @@ bool ReferencePathTracerResources::Bind(FrameGraph& frameGraph) const noexcept
 	{
 		return false;
 	}
+
 	const ResourceState workingState = m_used ? ResourceState::ShaderResource : ResourceState::Common;
 	const ResourceState committedState = m_used ? ResourceState::UnorderedAccess : ResourceState::Common;
+
 	frameGraph.BindPersistentTexture(m_graphResources.WorkingMean, m_allocation.WorkingMean, workingState);
 	frameGraph.BindPersistentTexture(m_graphResources.WorkingM2, m_allocation.WorkingM2, workingState);
 	frameGraph.BindPersistentTexture(m_graphResources.CommittedMean, m_allocation.CommittedMean, committedState);
 	frameGraph.BindPersistentTexture(m_graphResources.CommittedM2, m_allocation.CommittedM2, committedState);
+
 	return true;
 }
 
@@ -143,7 +151,9 @@ bool ReferencePathTracerResources::CanRetain() const noexcept
 	{
 		return false;
 	}
+
 	const std::uint64_t retentionBudget = (std::min) (std::uint64_t{2} * 1024u * 1024u * 1024u, memory.MemoryUsage.TotalBudgetBytes / 4u);
+
 	return m_allocation.Bytes <= retentionBudget;
 }
 

@@ -27,6 +27,7 @@ ExposureMomentTexture AddExposureReductionPasses(
 		current = next;
 		++level;
 	}
+
 	return current;
 }
 
@@ -50,5 +51,6 @@ ExposureMomentTexture AddExposureDownsamplePasses(
 		current = next;
 		++level;
 	}
+
 	return current;
 }

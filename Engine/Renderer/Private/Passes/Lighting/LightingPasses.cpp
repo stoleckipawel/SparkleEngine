@@ -5,7 +5,7 @@
 #include "Passes/Lighting/RealTimePathTracerPasses.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerPasses.h"
 #include "Passes/PostProcessing/ExposurePasses.h"
-#include "Passes/Presentation/SceneUpscaling.h"
+#include "Passes/Presentation/SceneUpscalingPasses.h"
 
 void AddLightingPasses(
     FrameGraphBuilder& builder,
@@ -27,5 +27,5 @@ void AddLightingPasses(
 	}
 
 	AddExposurePasses(builder, settings, resources);
-	AddSceneUpscalingPass(builder, settings, imageProviders, resources);
+	AddSceneUpscalingPasses(builder, settings, imageProviders, resources);
 }

@@ -8,6 +8,5 @@
 extern ConsoleVariable<EUpscalerProviderKind> CVarUpscalerProvider;
 extern ConsoleVariable<EUpscalerQualityMode> CVarUpscalerQualityMode;
 
-bool IsExternalUpscalerEnabled() noexcept;
 std::uint32_t GetUpscalerProviderSelectionKey() noexcept;
 const char* UpscalerQualityModeToString(EUpscalerQualityMode mode) noexcept;

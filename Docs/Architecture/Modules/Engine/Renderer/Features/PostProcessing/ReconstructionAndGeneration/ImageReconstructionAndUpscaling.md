@@ -37,6 +37,7 @@ Vulkan currently refuses the external Streamline evaluation route instead of cla
 ## Ownership And Lifetime
 
 - Renderer settings/CVars express requested provider and quality; the provider stack owns readiness and resolved active state.
+- `AddSceneUpscalingPasses` visibly selects exactly one implemented presentation upscaler: Linear or NVIDIA DLSS. Native-resolution views resolve to Linear; generic provider evaluation remains below the concrete selector.
 - Provider key/generation contributes to graph topology and prevents a graph from binding stale provider state.
 - Old provider generations retire after their last queue submissions complete.
 - Reconstruction consumes ReSTIR guide products only when that topology is active. Linear/DLSS SR consume the normal scene/depth/motion/exposure inputs.
@@ -93,6 +94,6 @@ This contract is **defined but unproved**. Linear, DLSS SR, and DLSS RR receive 
 
 ## Primary Source Routes
 
-- [`SceneUpscaling.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/SceneUpscaling.cpp)
+- [`SceneUpscalingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/SceneUpscalingPasses.cpp), [`SceneUpscalingResources.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/SceneUpscalingResources.cpp), and [`NvidiaDlssUpscale.cpp`](../../../../../../../../Engine/Renderer/Private/Upscaling/NvidiaDlss/NvidiaDlssUpscale.cpp)
 - [`RendererImageProviderStack.cpp`](../../../../../../../../Engine/Renderer/Private/Providers/RendererImageProviderStack.cpp)
 - [`RestirRayReconstruction.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/Restir/RestirRayReconstruction.cpp)

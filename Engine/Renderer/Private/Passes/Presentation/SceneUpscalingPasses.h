@@ -5,7 +5,7 @@ class RendererImageProviderStack;
 struct RenderFrameGraphResources;
 struct RenderFrameGraphSettings;
 
-void AddSceneUpscalingPass(
+void AddSceneUpscalingPasses(
     FrameGraphBuilder& builder,
     const RenderFrameGraphSettings& settings,
     RendererImageProviderStack& imageProviders,

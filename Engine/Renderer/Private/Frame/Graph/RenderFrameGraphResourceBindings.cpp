@@ -79,6 +79,7 @@ void BindRenderSceneGpuResources(
 	RenderSceneGpuResourceBindings::Bind(graph, resources.Lighting.PointLights, sceneGpuBindings.Lighting.PointLights, "PointLights");
 	RenderSceneGpuResourceBindings::Bind(graph, resources.Lighting.SpotLights, sceneGpuBindings.Lighting.SpotLights, "SpotLights");
 	RenderSceneGpuResourceBindings::Bind(graph, resources.Lighting.RectLights, sceneGpuBindings.Lighting.RectLights, "RectLights");
+
 	RenderSceneGpuResourceBindings::Bind(graph, resources.Geometry.MeshInstances, sceneGpuBindings.Geometry.MeshInstances, "MeshInstances");
 	RenderSceneGpuResourceBindings::Bind(
 	    graph,
@@ -97,6 +98,7 @@ void BindRenderSceneGpuResources(
 	    resources.Geometry.PreviousMorphWeights,
 	    sceneGpuBindings.Geometry.PreviousMorphWeights,
 	    "PreviousMorphWeights");
+
 	RenderSceneGpuResourceBindings::Bind(
 	    graph,
 	    resources.RayTracing.Vertices,
@@ -167,6 +169,7 @@ void CreateRenderFrameGraphResources(
 	resources.ImportedScene.Sky = sky;
 	resources.ImportedScene.Scene = DeclareRenderSceneGpuResources(builder);
 	resources.History = DeclareFrameHistoryResources(builder);
+
 	resources.ViewportProducts.SceneDepth = sceneDepth;
 }
 

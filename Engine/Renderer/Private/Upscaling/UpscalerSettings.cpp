@@ -10,11 +10,6 @@ ConsoleVariable<EUpscalerQualityMode> CVarUpscalerQualityMode(
     EUpscalerQualityMode::NativeAA,
     "Renderer upscaler quality mode: 0=NativeAA, 1=Quality, 2=Balanced, 3=Performance, 4=UltraPerformance.");
 
-bool IsExternalUpscalerEnabled() noexcept
-{
-	return CVarUpscalerProvider.Get() != EUpscalerProviderKind::Linear;
-}
-
 std::uint32_t GetUpscalerProviderSelectionKey() noexcept
 {
 	return static_cast<std::uint32_t>(CVarUpscalerProvider.Get());
