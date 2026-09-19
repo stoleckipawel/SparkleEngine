@@ -31,9 +31,9 @@ namespace MaterialTextureTableSampling
 		return textureSlot < 4u ? textureIndices0[textureSlot] : textureIndices1[textureSlot - 4u];
 	}
 
-	float2 TransformUv(float2 uv, float4 linear, float2 offset)
+	float2 TransformUv(float2 uv, float4 linearTransform, float2 offset)
 	{
-		return float2(linear.x * uv.x + linear.y * uv.y, linear.z * uv.x + linear.w * uv.y) + offset;
+		return float2(linearTransform.x * uv.x + linearTransform.y * uv.y, linearTransform.z * uv.x + linearTransform.w * uv.y) + offset;
 	}
 
 	int AddressTexel(int texel, uint extent, uint mode)

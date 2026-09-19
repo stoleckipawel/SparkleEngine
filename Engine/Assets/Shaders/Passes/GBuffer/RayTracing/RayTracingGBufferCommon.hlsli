@@ -11,7 +11,6 @@
 #include "/Engine/Passes/GBuffer/GBufferPacking.hlsli"
 #include "/Engine/Passes/GBuffer/MotionVector.hlsli"
 
-#include "/Engine/RayTracing/RayTracingHitUniformData.hlsli"
 #include "/Engine/RayTracing/RayTracingMaterialHit.hlsli"
 #include "/Engine/RayTracing/RayTracingSceneTrace.hlsli"
 

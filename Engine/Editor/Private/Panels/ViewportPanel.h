@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../EditorAPI.h"
-#include "ViewportOutputAction.h"
+#include "EditorAPI.h"
+#include "Panels/ViewportOutputAction.h"
 #include "../../../Renderer/Public/Viewport/ViewportContracts.h"
 #include "../../../Renderer/Public/UI/UiTextureHandle.h"
 #include "Input/Dispatch/InputLayer.h"

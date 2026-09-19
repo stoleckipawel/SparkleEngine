@@ -61,59 +61,65 @@ RayTracingEvaluatedTriangle EvaluateRayTracingTriangle(uint instanceId, uint pri
 	return result;
 }
 
-float3 InterpolateRayTracingPosition(RayTracingEvaluatedTriangle triangle)
+float3 InterpolateRayTracingPosition(RayTracingEvaluatedTriangle evaluatedTriangle)
 {
-	precise float3 edge1 = triangle.V1.Position - triangle.V0.Position;
-	precise float3 edge2 = triangle.V2.Position - triangle.V0.Position;
-	precise float3 position = triangle.V0.Position + mad(triangle.BarycentricWeights.y, edge1, triangle.BarycentricWeights.z * edge2);
+	precise float3 edge1 = evaluatedTriangle.V1.Position - evaluatedTriangle.V0.Position;
+	precise float3 edge2 = evaluatedTriangle.V2.Position - evaluatedTriangle.V0.Position;
+	precise float3 position =
+	    evaluatedTriangle.V0.Position + mad(evaluatedTriangle.BarycentricWeights.y, edge1, evaluatedTriangle.BarycentricWeights.z * edge2);
 	return position;
 }
 
-float3 EvaluatePreviousRayTracingPosition(RayTracingHitTriangle triangle, MeshInstanceData mesh)
+float3 EvaluatePreviousRayTracingPosition(RayTracingHitTriangle hitTriangle, MeshInstanceData mesh)
 {
-	const uint localVertex0 = triangle.VertexIndices.x - triangle.Instance.FirstVertex;
-	const uint localVertex1 = triangle.VertexIndices.y - triangle.Instance.FirstVertex;
-	const uint localVertex2 = triangle.VertexIndices.z - triangle.Instance.FirstVertex;
+	const uint localVertex0 = hitTriangle.VertexIndices.x - hitTriangle.Instance.FirstVertex;
+	const uint localVertex1 = hitTriangle.VertexIndices.y - hitTriangle.Instance.FirstVertex;
+	const uint localVertex2 = hitTriangle.VertexIndices.z - hitTriangle.Instance.FirstVertex;
 	const MorphedVertexAttributes morphed0 = ApplyPreviousMorphing(mesh,
-	                                                               triangle.Instance.MorphTargetDeltaOffset,
+	                                                               hitTriangle.Instance.MorphTargetDeltaOffset,
 	                                                               localVertex0,
-	                                                               triangle.V0.Position,
-	                                                               triangle.V0.Normal,
-	                                                               triangle.V0.Tangent.xyz);
+	                                                               hitTriangle.V0.Position,
+	                                                               hitTriangle.V0.Normal,
+	                                                               hitTriangle.V0.Tangent.xyz);
 
 	const MorphedVertexAttributes morphed1 = ApplyPreviousMorphing(mesh,
-	                                                               triangle.Instance.MorphTargetDeltaOffset,
+	                                                               hitTriangle.Instance.MorphTargetDeltaOffset,
 	                                                               localVertex1,
-	                                                               triangle.V1.Position,
-	                                                               triangle.V1.Normal,
-	                                                               triangle.V1.Tangent.xyz);
+	                                                               hitTriangle.V1.Position,
+	                                                               hitTriangle.V1.Normal,
+	                                                               hitTriangle.V1.Tangent.xyz);
 
 	const MorphedVertexAttributes morphed2 = ApplyPreviousMorphing(mesh,
-	                                                               triangle.Instance.MorphTargetDeltaOffset,
+	                                                               hitTriangle.Instance.MorphTargetDeltaOffset,
 	                                                               localVertex2,
-	                                                               triangle.V2.Position,
-	                                                               triangle.V2.Normal,
-	                                                               triangle.V2.Tangent.xyz);
+	                                                               hitTriangle.V2.Position,
+	                                                               hitTriangle.V2.Normal,
+	                                                               hitTriangle.V2.Tangent.xyz);
 
-	const float3 p0 = ApplyPreviousSkinning(mesh, triangle.VertexIndices.x, morphed0.Position, morphed0.Normal, morphed0.Tangent).Position;
-	const float3 p1 = ApplyPreviousSkinning(mesh, triangle.VertexIndices.y, morphed1.Position, morphed1.Normal, morphed1.Tangent).Position;
-	const float3 p2 = ApplyPreviousSkinning(mesh, triangle.VertexIndices.z, morphed2.Position, morphed2.Normal, morphed2.Tangent).Position;
+	const float3 p0 =
+	    ApplyPreviousSkinning(mesh, hitTriangle.VertexIndices.x, morphed0.Position, morphed0.Normal, morphed0.Tangent).Position;
+	const float3 p1 =
+	    ApplyPreviousSkinning(mesh, hitTriangle.VertexIndices.y, morphed1.Position, morphed1.Normal, morphed1.Tangent).Position;
+	const float3 p2 =
+	    ApplyPreviousSkinning(mesh, hitTriangle.VertexIndices.z, morphed2.Position, morphed2.Normal, morphed2.Tangent).Position;
 	precise float3 edge1 = p1 - p0;
 	precise float3 edge2 = p2 - p0;
-	precise float3 position = p0 + mad(triangle.BarycentricWeights.y, edge1, triangle.BarycentricWeights.z * edge2);
+	precise float3 position = p0 + mad(hitTriangle.BarycentricWeights.y, edge1, hitTriangle.BarycentricWeights.z * edge2);
 	return position;
 }
 
-float2 InterpolateRayTracingTexCoord0(RayTracingEvaluatedTriangle triangle)
+float2 InterpolateRayTracingTexCoord0(RayTracingEvaluatedTriangle evaluatedTriangle)
 {
-	return triangle.V0.TexCoord0 * triangle.BarycentricWeights.x + triangle.V1.TexCoord0 * triangle.BarycentricWeights.y
-	    + triangle.V2.TexCoord0 * triangle.BarycentricWeights.z;
+	return evaluatedTriangle.V0.TexCoord0 * evaluatedTriangle.BarycentricWeights.x
+	    + evaluatedTriangle.V1.TexCoord0 * evaluatedTriangle.BarycentricWeights.y
+	    + evaluatedTriangle.V2.TexCoord0 * evaluatedTriangle.BarycentricWeights.z;
 }
 
-float4 InterpolateRayTracingColor(RayTracingEvaluatedTriangle triangle)
+float4 InterpolateRayTracingColor(RayTracingEvaluatedTriangle evaluatedTriangle)
 {
-	return triangle.V0.Color * triangle.BarycentricWeights.x + triangle.V1.Color * triangle.BarycentricWeights.y
-	    + triangle.V2.Color * triangle.BarycentricWeights.z;
+	return evaluatedTriangle.V0.Color * evaluatedTriangle.BarycentricWeights.x
+	    + evaluatedTriangle.V1.Color * evaluatedTriangle.BarycentricWeights.y
+	    + evaluatedTriangle.V2.Color * evaluatedTriangle.BarycentricWeights.z;
 }
 
 #endif

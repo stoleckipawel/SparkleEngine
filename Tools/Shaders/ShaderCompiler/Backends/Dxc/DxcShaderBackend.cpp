@@ -242,6 +242,12 @@ void DxcShaderBackend::BuildCompileArguments(
 	outArgs.push_back(DXC_ARG_ENABLE_STRICTNESS);
 	outArgs.push_back(DXC_ARG_ALL_RESOURCES_BOUND);
 
+	if (request.UnitKind == ShaderCompileUnitKind::Library && !IsSpirVTarget(request.Target))
+	{
+		outArgs.push_back(L"-auto-binding-space");
+		outArgs.push_back(L"0");
+	}
+
 	if (request.TreatWarningsAsErrors)
 	{
 		outArgs.push_back(DXC_ARG_WARNINGS_ARE_ERRORS);

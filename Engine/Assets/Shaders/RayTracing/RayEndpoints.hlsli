@@ -49,16 +49,16 @@ namespace RayEndpoints
 		return transformedNormal * rsqrt(dot(transformedNormal, transformedNormal));
 	}
 
-	SurfaceEndpointError BuildSurfaceEndpointError(RayTracingEvaluatedTriangle triangle,
+	SurfaceEndpointError BuildSurfaceEndpointError(RayTracingEvaluatedTriangle evaluatedTriangle,
 	                                               MeshInstanceData mesh,
 	                                               float3 positionObject,
 	                                               float3 normalObject)
 	{
-		const float3 edge1 = triangle.V1.Position - triangle.V0.Position;
-		const float3 edge2 = triangle.V2.Position - triangle.V0.Position;
+		const float3 edge1 = evaluatedTriangle.V1.Position - evaluatedTriangle.V0.Position;
+		const float3 edge2 = evaluatedTriangle.V2.Position - evaluatedTriangle.V0.Position;
 		const float3 extent3 = abs(edge1) + abs(edge2) + abs(abs(edge1) - abs(edge2));
 		const float extent = max(extent3.x, max(extent3.y, extent3.z));
-		const float3 objectError = ReconstructionError * abs(triangle.V0.Position) + TriangleIntersectionError * extent;
+		const float3 objectError = ReconstructionError * abs(evaluatedTriangle.V0.Position) + TriangleIntersectionError * extent;
 		const float3x3 worldLinear = (float3x3)mesh.WorldMatrix;
 		const float3 worldTranslation = float3(mesh.WorldMatrix._41, mesh.WorldMatrix._42, mesh.WorldMatrix._43);
 
@@ -76,13 +76,13 @@ namespace RayEndpoints
 		return result;
 	}
 
-	float SurfaceErrorBound(RayTracingEvaluatedTriangle triangle,
+	float SurfaceErrorBound(RayTracingEvaluatedTriangle evaluatedTriangle,
 	                        MeshInstanceData mesh,
 	                        float3 positionObject,
 	                        float3 positionWorld,
 	                        float3 normalObject)
 	{
-		const SurfaceEndpointError error = BuildSurfaceEndpointError(triangle, mesh, positionObject, normalObject);
+		const SurfaceEndpointError error = BuildSurfaceEndpointError(evaluatedTriangle, mesh, positionObject, normalObject);
 		return error.BaseOffset + dot(float4(abs(positionWorld), 1.0f), error.TraversalSensitivity);
 	}
 

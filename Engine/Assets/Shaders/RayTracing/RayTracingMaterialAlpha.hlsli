@@ -3,7 +3,7 @@
 #include "/Engine/Material/MaterialTextureTable.hlsli"
 #include "/Engine/RayTracing/RayTracingHitData.hlsli"
 
-Texture2D MaterialTextureTable[4096];
+Texture2D MaterialTextureTable[4096] : register(t0, space1);
 
 float4 SampleRayTracingMaterialTexture(RayTracingHitMaterial material, uint textureSlot, float2 uv)
 {
@@ -31,12 +31,12 @@ bool PassesRayTracingMaterialAlpha(RayTracingHitMaterial material, float2 texCoo
 
 bool ResolveRayTracingCandidateAlpha(uint instanceId, uint primitiveIndex, float2 barycentrics, bool frontFace)
 {
-	const RayTracingHitTriangle triangle = LoadRayTracingHitTriangle(instanceId, primitiveIndex, barycentrics);
-	if (!frontFace && (triangle.Instance.Flags & RayTracingHitSurface::InstanceFlagTwoSided) == 0u)
+	const RayTracingHitTriangle hitTriangle = LoadRayTracingHitTriangle(instanceId, primitiveIndex, barycentrics);
+	if (!frontFace && (hitTriangle.Instance.Flags & RayTracingHitSurface::InstanceFlagTwoSided) == 0u)
 	{
 		return false;
 	}
-	return PassesRayTracingMaterialAlpha(triangle.Material,
-	                                     InterpolateRayTracingHitTexCoord0(triangle),
-	                                     InterpolateRayTracingHitColor(triangle));
+	return PassesRayTracingMaterialAlpha(hitTriangle.Material,
+	                                     InterpolateRayTracingHitTexCoord0(hitTriangle),
+	                                     InterpolateRayTracingHitColor(hitTriangle));
 }

@@ -3,7 +3,7 @@
 #include "/Engine/CommonPS.hlsli"
 #include "/Engine/Debug/InstanceView.hlsli"
 #include "/Engine/Passes/GBuffer/GBufferPacking.hlsli"
-#include "MotionVector.hlsli"
+#include "/Engine/Passes/GBuffer/MotionVector.hlsli"
 
 struct GBufferOutput
 {

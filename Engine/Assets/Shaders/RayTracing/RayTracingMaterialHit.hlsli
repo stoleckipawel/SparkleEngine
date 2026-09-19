@@ -91,14 +91,16 @@ RayTracingMaterialSample EvaluateRayTracingHitMaterial(RayTracingHitMaterial mat
 
 RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult trace, float3 rayDirectionWorld)
 {
-	const RayTracingEvaluatedTriangle triangle = EvaluateRayTracingTriangle(trace.InstanceId, trace.PrimitiveIndex, trace.Barycentrics);
+	const RayTracingEvaluatedTriangle evaluatedTriangle =
+	    EvaluateRayTracingTriangle(trace.InstanceId, trace.PrimitiveIndex, trace.Barycentrics);
 	const MeshInstanceData mesh = MeshInstances[trace.InstanceId];
-	const float3 positionObject = InterpolateRayTracingPosition(triangle);
+	const float3 positionObject = InterpolateRayTracingPosition(evaluatedTriangle);
 	const float3 positionWorld = RayEndpoints::TransformPosition(positionObject, mesh.WorldMatrix);
-	const float3 normalObject = cross(triangle.V1.Position - triangle.V0.Position, triangle.V2.Position - triangle.V0.Position);
+	const float3 normalObject =
+	    cross(evaluatedTriangle.V1.Position - evaluatedTriangle.V0.Position, evaluatedTriangle.V2.Position - evaluatedTriangle.V0.Position);
 	const float3 outwardGeometricNormal = RayEndpoints::TransformGeometricNormal(normalObject, mesh);
 
-	const bool twoSided = (triangle.Instance.Flags & RayTracingHitSurface::InstanceFlagTwoSided) != 0u;
+	const bool twoSided = (evaluatedTriangle.Instance.Flags & RayTracingHitSurface::InstanceFlagTwoSided) != 0u;
 
 	RayTracingHitSurfaceData surface = (RayTracingHitSurfaceData)0;
 	if (!trace.FrontFace && !twoSided)
@@ -110,12 +112,15 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	const float faceSign = trace.FrontFace ? 1.0f : -1.0f;
 	const float3 geometricNormal = outwardGeometricNormal * faceSign;
 
-	const float3 localNormal = triangle.V0.Normal * triangle.BarycentricWeights.x + triangle.V1.Normal * triangle.BarycentricWeights.y
-	    + triangle.V2.Normal * triangle.BarycentricWeights.z;
-	const float3 localTangent = triangle.V0.Tangent * triangle.BarycentricWeights.x + triangle.V1.Tangent * triangle.BarycentricWeights.y
-	    + triangle.V2.Tangent * triangle.BarycentricWeights.z;
-	const float interpolatedTangentSign = triangle.V0.TangentSign * triangle.BarycentricWeights.x
-	    + triangle.V1.TangentSign * triangle.BarycentricWeights.y + triangle.V2.TangentSign * triangle.BarycentricWeights.z;
+	const float3 localNormal = evaluatedTriangle.V0.Normal * evaluatedTriangle.BarycentricWeights.x
+	    + evaluatedTriangle.V1.Normal * evaluatedTriangle.BarycentricWeights.y
+	    + evaluatedTriangle.V2.Normal * evaluatedTriangle.BarycentricWeights.z;
+	const float3 localTangent = evaluatedTriangle.V0.Tangent * evaluatedTriangle.BarycentricWeights.x
+	    + evaluatedTriangle.V1.Tangent * evaluatedTriangle.BarycentricWeights.y
+	    + evaluatedTriangle.V2.Tangent * evaluatedTriangle.BarycentricWeights.z;
+	const float interpolatedTangentSign = evaluatedTriangle.V0.TangentSign * evaluatedTriangle.BarycentricWeights.x
+	    + evaluatedTriangle.V1.TangentSign * evaluatedTriangle.BarycentricWeights.y
+	    + evaluatedTriangle.V2.TangentSign * evaluatedTriangle.BarycentricWeights.z;
 	const float tangentSign = interpolatedTangentSign >= 0.0f ? 1.0f : -1.0f;
 
 	float3 vertexNormal = normalize(mul(localNormal, (float3x3)mesh.WorldInverseTranspose));
@@ -129,9 +134,9 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	tangentWorld = OrthonormalizeTangent(tangentWorld, vertexNormal);
 	float3 bitangentWorld = ComputeBitangentFromSign(vertexNormal, tangentWorld, tangentSign);
 
-	const float2 texCoord0 = InterpolateRayTracingTexCoord0(triangle);
+	const float2 texCoord0 = InterpolateRayTracingTexCoord0(evaluatedTriangle);
 	const RayTracingMaterialSample material =
-	    EvaluateRayTracingHitMaterial(triangle.Material, texCoord0, InterpolateRayTracingColor(triangle));
+	    EvaluateRayTracingHitMaterial(evaluatedTriangle.Material, texCoord0, InterpolateRayTracingColor(evaluatedTriangle));
 
 	float3 shadingNormal = TransformTangentNormalToWorld(material.NormalTangent, vertexNormal, tangentWorld, bitangentWorld);
 	shadingNormal *= faceSign;
@@ -149,7 +154,7 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	surface.PreviousPositionWorld = positionWorld;
 
 	surface.GeometricNormalWorld = geometricNormal;
-	surface.PositionError = RayEndpoints::SurfaceErrorBound(triangle, mesh, positionObject, positionWorld, normalObject);
+	surface.PositionError = RayEndpoints::SurfaceErrorBound(evaluatedTriangle, mesh, positionObject, positionWorld, normalObject);
 	surface.NormalWorld = shadingNormal;
 	surface.TangentWorld = tangentWorld;
 	surface.BitangentWorld = bitangentWorld;
@@ -157,8 +162,8 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	surface.TangentSign = tangentSign;
 	surface.TexCoord0 = texCoord0;
 
-	surface.MaterialSlot = triangle.Instance.MaterialSlot;
-	surface.GeometryFlags = triangle.Instance.GeometryFlags;
+	surface.MaterialSlot = evaluatedTriangle.Instance.MaterialSlot;
+	surface.GeometryFlags = evaluatedTriangle.Instance.GeometryFlags;
 	surface.RejectionReason = RayTracingHitSurface::ReasonNone;
 
 	surface.BaseColor = material.BaseColor.rgb;
@@ -166,11 +171,11 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurface(RayTracingTraceResult t
 	surface.SubsurfaceColor = material.SubsurfaceColor;
 	surface.Roughness = material.Roughness;
 	surface.Metallic = material.Metallic;
-	surface.DielectricF0 = triangle.Material.F0;
+	surface.DielectricF0 = evaluatedTriangle.Material.F0;
 	surface.AmbientOcclusion = material.AmbientOcclusion;
 	surface.Alpha = material.BaseColor.a;
 	surface.SubsurfaceStrength = material.SubsurfaceStrength;
-	surface.AlphaMode = triangle.Material.AlphaMode;
+	surface.AlphaMode = evaluatedTriangle.Material.AlphaMode;
 
 	surface.GpuSceneSlot = mesh.GpuSceneSlot;
 	surface.InstanceId = trace.InstanceId;
@@ -185,9 +190,9 @@ RayTracingHitSurfaceData ReconstructRayTracingHitSurfaceWithPrevious(RayTracingT
 	RayTracingHitSurfaceData surface = ReconstructRayTracingHitSurface(trace, rayDirectionWorld);
 	if (surface.Valid)
 	{
-		const RayTracingHitTriangle triangle = LoadRayTracingHitTriangle(trace.InstanceId, trace.PrimitiveIndex, trace.Barycentrics);
+		const RayTracingHitTriangle hitTriangle = LoadRayTracingHitTriangle(trace.InstanceId, trace.PrimitiveIndex, trace.Barycentrics);
 		const MeshInstanceData mesh = MeshInstances[trace.InstanceId];
-		const float3 previousPositionObject = EvaluatePreviousRayTracingPosition(triangle, mesh);
+		const float3 previousPositionObject = EvaluatePreviousRayTracingPosition(hitTriangle, mesh);
 
 		surface.PreviousPositionWorld = RayEndpoints::TransformPosition(previousPositionObject, mesh.PreviousWorldMatrix);
 	}

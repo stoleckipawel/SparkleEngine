@@ -6,7 +6,6 @@
 #include "/Engine/Common/Color.hlsli"
 #include "/Engine/Common/Random.hlsli"
 #include "/Engine/Lighting/RestirReservoirCommon.hlsli"
-#include "/Engine/RayTracing/Shadows/RayTracedShadowVisibility.hlsli"
 #include "/Engine/RayTracing/GBufferPathSurface.hlsli"
 #include "/Engine/RayTracing/PathLighting.hlsli"
 
