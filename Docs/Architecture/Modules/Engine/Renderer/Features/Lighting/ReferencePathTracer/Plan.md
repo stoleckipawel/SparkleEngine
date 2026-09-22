@@ -831,6 +831,10 @@ Stage 9 is **IMPLEMENTED / VALIDATION DEFERRED** against source input `df2f0c065
 
 The exact source correspondence, TinyEXR revision/license/security/build review, checks run, and deferred evidence are retained in [Stage 9 Source Evidence](Stage9SourceEvidence.md). The focused DevelopmentEditor `ShowcaseEditor` C++ build passes; no shader cook, Editor/GPU run, artifact round trip, fault injection, statistical/oracle matrix, external comparison, or backend/frontend validation ran. Consequently Stage 9 has not produced an evidence candidate, no `CHK-RPT-03` through `CHK-RPT-13` row passes, readiness remains unchanged, and Stage 10 is not authorized.
 
+### Presentation-stability correction - 2026-09-19
+
+The earlier shared-tail wording that made Reference output enter the configured Lit upscaler and reject providers lacking Reference-owned temporal guides is superseded. A configured DLSS SR provider caused an exception to escape `noexcept` graph construction when Reference Path Tracer was selected. The corrected contract preserves the user's configured Lit provider and quality without executing that provider over Reference output: Reference accumulates at physical output extent and reaches the same shared presentation tail through its mode-owned color-only Linear resolve. Returning to Lit resumes the unchanged configured provider. This is presentation policy only; it neither changes raw accumulation nor supplies fabricated GBuffer depth/motion to Reference transport. Paired D3D12/Vulkan runtime validation remains required and is not claimed by this source correction.
+
 ## Stage 10 - Adopt References, Verify Packaging, Remove Superseded Paths, And Close
 
 ### Objective
@@ -934,5 +938,4 @@ Escalation changes the smallest falsified surface first. It does not begin with 
 This plan is complete only when the acceptance owner records `FCR-REN-08 PASS` against one immutable evidence set and every applicable `AC-RPT-01` through `23` passes. If scope, math, sampler, material/light semantics, compiler/shader identity, backend/frontend, accumulation, artifact schema, architecture hooks, frame-recipe topology, shared path-tracing core, external precedent, or release content changes later, the completion report names the invalidated evidence and reruns the smallest affected checks, including `CHK-RPT-17` for any source-shape change, `CHK-RPT-18` for any recipe/resource-lineage change, `CHK-RPT-19` for any path-family semantic or ownership change, and `CHK-RPT-20` for any NVIDIA/Epic source or correspondence change.
 
 An implemented tracer with incomplete evidence is **not complete**. A fully evidenced finite-path diagnostic is **not the full surface reference**. A package workflow with a shared or post-processed oracle is **not trustworthy**. The plan is designed to make those substitutions impossible to hide.
-
 

@@ -85,13 +85,13 @@ The Reference Path Tracer is selected by the typed per-view `RenderViewMode::Ref
 
 - `SurfaceTransportReference` product;
 - independent camera-ray primary visibility;
-- fixed current render extent and accepted reconstruction filter;
+- current physical output extent and the mode-owned color-only Linear presentation resolve;
 - accepted automatic traversal route and process backend, with the active values visible in details;
 - stateless seed/sample/dimension stream and exact target SPP;
 - raw scene-linear HDR accumulation with no ReSTIR, temporal reconstruction, denoiser, contribution clamp, exposure, tone map, gamut transform, encoder, or screenshot value in transport;
 - separately applied viewport display transform for human inspection.
 
-These values are mode-owned resolved semantics, not a batch of hidden mutations to persistent Lit settings. Leaving the mode restores the user's prior Lit configuration exactly. Expert overrides must be explicit, validated, identity-bearing, and resettable to the accepted mode preset.
+These values are mode-owned resolved semantics, not a batch of hidden mutations to persistent Lit settings. A configured temporal Lit upscaler remains selected but does not execute over Reference output until the Reference middle owns truthful temporal guides; returning to Lit resumes that unchanged provider and quality. Expert overrides must be explicit, validated, identity-bearing, and resettable to the accepted mode preset.
 
 If the mode is unsupported, the viewport retains its last valid presentation and shows **Reference Path Tracer unavailable** with the first failed capability/domain condition and one next action. It never silently falls back to Lit, ReSTIR, a GBuffer-seeded candidate, another backend, or black output while leaving the reference label selected.
 

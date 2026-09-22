@@ -97,14 +97,8 @@ The Reference Path Tracer is explicitly **one frame with an alternate middle rec
 | GBuffer/shadow traversal | Automatic | One engine-wide policy prefers a complete Pipeline route, otherwise selects complete Inline traversal, and rejects when neither is ready. |
 | TLAS | Classic; capability/provider-gated partitioned | Both are built from shared prepared-scene identity. Current PTLAS policy remains a narrow subset documented in the ray-tracing dossier. |
 | Ray reconstruction | Off; NVIDIA DLSS Ray Reconstruction | Only participates in the ReSTIR lighting route and produces render-resolution denoised scene color. It neither selects presentation resolution nor replaces upscaling. |
-| Upscaling | Linear; NVIDIA DLSS Super Resolution | Converts the selected raw or denoised render-resolution scene color into `ResolvedSceneColor` at output resolution. Linear accepts color alone.DLSS SR additionally
-          requires truthful
-          depth and motion guides;
-the current GBuffer - backed Lit route supplies them,
-    while Reference
-        + DLSS is rejected until the independent Reference middle publishes its own
-              guides.External provider initialization failure resets to Linear rather than claiming DLSS output. |
-| Resolution/sample policy | viewport/window output extent; provider-resolved render extent; active single-sample raster attachments and Halton jitter | No Renderer MSAA, standalone TAA/FXAA/SMAA, or dynamic-resolution controller was found; RHI/sample vocabulary is not an active mode. |
+| Upscaling | Linear; NVIDIA DLSS Super Resolution | Converts the selected raw or denoised render-resolution scene color into `ResolvedSceneColor` at output resolution. The GBuffer-backed Lit route may use configured DLSS SR because it supplies truthful depth and motion guides. Reference Path Tracer keeps that Lit configuration intact but uses a color-only Linear resolve at physical output extent; it neither feeds fabricated Lit guides to DLSS nor terminates graph construction because the configured Lit provider is inapplicable. External-provider initialization failure resets the configured Lit provider to Linear rather than claiming DLSS output. |
+| Resolution/sample policy | viewport/window output extent; provider-resolved Lit render extent; output-resolution Reference accumulation; active single-sample raster attachments and Halton jitter | Reference accumulation and its display derivative use the physical output extent independently of the configured Lit upscaler ratio. No Renderer MSAA, standalone TAA/FXAA/SMAA, or dynamic-resolution controller was found; RHI/sample vocabulary is not an active mode. |
 | Color grading | none | No grading parameters, transform/LUT asset path, pass, shader, selector, or editor workflow enters the frame. Tone-mapper selection is not grading. |
 | Chromatic aberration | none | No lens/channel distortion model, pass, selector, or viewport setting enters the frame. |
 | Frame generation | none | No generated-frame provider, identity, optical-flow input, pacing, UI policy, or extra presentation enters the frame. Reflex/PCL latency coordination is not synthesis. |
@@ -247,4 +241,3 @@ This contract is **defined but unproved**. Completion requires every `AC-FRM-*` 
 ## Primary Source Route
 
 The shortest code path is [`FramePipeline::OnRender`](../../../../../Engine/Renderer/Private/Frame/FramePipeline.cpp) -> [`FramePipeline::PrepareRenderFrame`](../../../../../Engine/Renderer/Private/Frame/FramePipeline.cpp) -> [`BuildRenderFrameGraph`](../../../../../Engine/Renderer/Private/Frame/Graph/BuildRenderFrameGraph.cpp) -> [`ExecuteRenderFrameGraph`](../../../../../Engine/Renderer/Private/Frame/Graph/ExecuteRenderFrameGraph.cpp) -> [`FrameGraph::Compile`](../../../../../Engine/Renderer/Private/FrameGraph/FrameGraph.cpp) and [`FrameGraph::Execute`](../../../../../Engine/Renderer/Private/FrameGraph/Execution/FrameGraphExecution.cpp) -> RHI submission services.
-
