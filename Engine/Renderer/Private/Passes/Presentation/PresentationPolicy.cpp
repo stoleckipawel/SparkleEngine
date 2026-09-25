@@ -34,12 +34,20 @@ RenderViewPresentationDomain ResolveRenderViewPresentationDomain(RenderViewMode 
 
 SceneUpscalingMethod ResolveSceneUpscalingMethod(RenderViewMode viewMode)
 {
+	if (viewMode == RenderViewMode::ReferencePathTracer)
+	{
+		return SceneUpscalingMethod::Linear;
+	}
+
 	return ResolveRenderViewPresentationDomain(viewMode) == RenderViewPresentationDomain::DisplayLinearExact
 	    ? SceneUpscalingMethod::Point
 	    : SceneUpscalingMethod::ConfiguredProvider;
 }
 
-bool HasTemporalUpscalingGuides(RenderViewMode viewMode) noexcept
+RenderViewportExtent ResolveSceneRenderExtent(
+    RenderViewMode viewMode,
+    RenderViewportExtent outputExtent,
+    RenderViewportExtent configuredRenderExtent)
 {
-	return viewMode != RenderViewMode::ReferencePathTracer;
+	return ResolveSceneUpscalingMethod(viewMode) == SceneUpscalingMethod::ConfiguredProvider ? configuredRenderExtent : outputExtent;
 }

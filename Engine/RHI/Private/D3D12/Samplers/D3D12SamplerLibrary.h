@@ -31,6 +31,7 @@ public:
 		LinearNoMipWrap,
 		LinearNoMipClamp,
 		LinearNoMipMirror,
+		LinearNoMipWrapClampClamp,
 
 		Aniso1xWrap,
 		Aniso1xClamp,

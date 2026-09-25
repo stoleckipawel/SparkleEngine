@@ -6,6 +6,7 @@
 #include "Frame/Graph/ViewportFrameProductExports.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
+#include "Passes/Presentation/PresentationPolicy.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "Pipeline/RenderPassRuntimeCache.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
@@ -31,9 +32,10 @@ RenderFrameGraphSettings FramePipeline::ResolveFrameGraphSettings() const noexce
 {
 	const RenderViewportExtent outputExtent = ResolveOutputExtent();
 	const ResolvedViewportDisplaySettings displaySettings = ResolvedViewportDisplaySettings::Resolve(m_viewportRenderRequest.Exposure);
+	const RenderViewportExtent configuredRenderExtent = m_imageProviders->ResolveRenderExtent(outputExtent);
 
 	return RenderFrameGraphSettings{
-	    .RenderExtent = m_imageProviders->ResolveRenderExtent(outputExtent),
+	    .RenderExtent = ResolveSceneRenderExtent(m_viewportRenderRequest.ViewMode, outputExtent, configuredRenderExtent),
 	    .OutputExtent = outputExtent,
 	    .UseRayReconstruction = ShouldUseRayReconstruction(m_viewportRenderRequest.ViewMode),
 	    .OutputFormat = m_deviceServices.GetRenderHardwareInterface().GetPresentationService().GetPresentColorFormat(),

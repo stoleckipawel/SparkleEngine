@@ -21,25 +21,28 @@ void AddSceneUpscalingPasses(
 	const SceneUpscalingMethod method = ResolveSceneUpscalingMethod(viewMode);
 	const EUpscalerProviderKind provider = CVarUpscalerProvider.Get();
 
-	if (method == SceneUpscalingMethod::ConfiguredProvider && provider == EUpscalerProviderKind::NvidiaDlss
-	    && !HasTemporalUpscalingGuides(viewMode))
-	{
-		throw Diagnostics::Error(
-		    "NVIDIA DLSS cannot process Reference Path Tracer output until the Reference middle publishes truthful depth and motion "
-		    "guides.");
-	}
-
 	resources.Presentation.ResolvedSceneColor = CreateResolvedSceneColorTarget(builder, settings.OutputExtent);
 
-	if (method == SceneUpscalingMethod::Point)
+	switch (method)
 	{
-		AddPointUpscalePass(
-		    builder,
-		    resources.Presentation.SceneColorInput,
-		    resources.Presentation.ResolvedSceneColor,
-		    settings.OutputExtent);
+		case SceneUpscalingMethod::Linear:
+			AddLinearUpscalePass(
+			    builder,
+			    resources.Presentation.SceneColorInput,
+			    resources.Presentation.ResolvedSceneColor,
+			    settings.OutputExtent);
 
-		return;
+			return;
+		case SceneUpscalingMethod::Point:
+			AddPointUpscalePass(
+			    builder,
+			    resources.Presentation.SceneColorInput,
+			    resources.Presentation.ResolvedSceneColor,
+			    settings.OutputExtent);
+
+			return;
+		case SceneUpscalingMethod::ConfiguredProvider:
+			break;
 	}
 
 	switch (provider)

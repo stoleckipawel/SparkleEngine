@@ -13,9 +13,13 @@ enum class RenderViewPresentationDomain : std::uint8_t
 enum class SceneUpscalingMethod : std::uint8_t
 {
 	ConfiguredProvider,
+	Linear,
 	Point,
 };
 
 RenderViewPresentationDomain ResolveRenderViewPresentationDomain(RenderViewMode viewMode);
 SceneUpscalingMethod ResolveSceneUpscalingMethod(RenderViewMode viewMode);
-bool HasTemporalUpscalingGuides(RenderViewMode viewMode) noexcept;
+RenderViewportExtent ResolveSceneRenderExtent(
+    RenderViewMode viewMode,
+    RenderViewportExtent outputExtent,
+    RenderViewportExtent configuredRenderExtent);

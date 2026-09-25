@@ -7,6 +7,16 @@ static const auto g_samplerLibraryLogger = Logging::GetOrCreateLogger("RHI.D3D12
 
 bool D3D12SamplerLibrary::TryGetSlot(const RhiSamplerDesc& samplerDesc, Slot& outSlot) noexcept
 {
+	const RhiSamplerDesc linearNoMipWrapClampClamp{
+	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
+	    .MipFilter = RhiSamplerMipFilter::None,
+	    .Address = {.U = RhiSamplerAddressMode::Wrap, .V = RhiSamplerAddressMode::Clamp, .W = RhiSamplerAddressMode::Clamp}};
+	if (samplerDesc == linearNoMipWrapClampClamp)
+	{
+		outSlot = Slot::LinearNoMipWrapClampClamp;
+		return true;
+	}
+
 	RhiSamplerAddressMode addressMode = RhiSamplerAddressMode::Wrap;
 	if (!TryGetUniformAddressMode(samplerDesc, addressMode))
 	{
@@ -168,6 +178,15 @@ D3D12SamplerLibrary::D3D12SamplerLibrary(D3D12Rhi& rhi, RhiDescriptorService& de
 	    RhiSamplerMipFilter::None,
 	    RhiSamplerAddressMode::Mirror,
 	    RhiSamplerAnisotropy::X1);
+	CreateSampler(
+	    Slot::LinearNoMipWrapClampClamp,
+	    RhiSamplerDesc{
+	        .MinMagFilter = RhiSamplerMinMagFilter::Linear,
+	        .MipFilter = RhiSamplerMipFilter::None,
+	        .Address = {
+	            .U = RhiSamplerAddressMode::Wrap,
+	            .V = RhiSamplerAddressMode::Clamp,
+	            .W = RhiSamplerAddressMode::Clamp}});
 
 	createSampler(
 	    Slot::Aniso1xWrap,
@@ -281,8 +300,8 @@ void D3D12SamplerLibrary::CreateSampler(Slot slot, const RhiSamplerDesc& sampler
 	D3D12_SAMPLER_DESC desc = {};
 	desc.Filter = ToD3D12Filter(samplerDesc.MinMagFilter, samplerDesc.MipFilter, isAnisotropic);
 	desc.AddressU = ToD3D12Address(samplerDesc.Address.U);
-	desc.AddressV = desc.AddressU;
-	desc.AddressW = desc.AddressU;
+	desc.AddressV = ToD3D12Address(samplerDesc.Address.V);
+	desc.AddressW = ToD3D12Address(samplerDesc.Address.W);
 	desc.MipLODBias = 0.0f;
 	desc.MaxAnisotropy = maxAnisotropy;
 	desc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;

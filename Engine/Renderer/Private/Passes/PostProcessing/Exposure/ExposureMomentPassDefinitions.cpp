@@ -12,9 +12,7 @@ void AddExposureSceneReductionPass(FrameGraphBuilder& builder, FrameGraphTexture
 	auto& parameters = builder.AllocParameters<ExposureReduceSceneCS>();
 	parameters->SceneColor = builder.CreateSRV(sceneColor);
 	parameters->LuminanceMomentsOutput = builder.CreateUAV(output.Handle);
-	builder.DispatchAsync<ExposureReduceSceneCS>(
-	    parameters,
-	    ComputeDispatchDesc{MathUtils::DivideRoundUp(output.Width, 16u), MathUtils::DivideRoundUp(output.Height, 16u), 1u});
+	builder.DispatchAsync<ExposureReduceSceneCS>(parameters, ComputeDispatchDesc{output.Width, output.Height, 1u});
 }
 
 void AddExposureTextureReductionPass(FrameGraphBuilder& builder, const ExposureMomentTexture& input, const ExposureMomentTexture& output)
@@ -22,9 +20,7 @@ void AddExposureTextureReductionPass(FrameGraphBuilder& builder, const ExposureM
 	auto& parameters = builder.AllocParameters<ExposureReduceTextureCS>();
 	parameters->LuminanceMomentsInput = builder.CreateSRV(input.Handle);
 	parameters->LuminanceMomentsOutput = builder.CreateUAV(output.Handle);
-	builder.DispatchAsync<ExposureReduceTextureCS>(
-	    parameters,
-	    ComputeDispatchDesc{MathUtils::DivideRoundUp(output.Width, 16u), MathUtils::DivideRoundUp(output.Height, 16u), 1u});
+	builder.DispatchAsync<ExposureReduceTextureCS>(parameters, ComputeDispatchDesc{output.Width, output.Height, 1u});
 }
 
 void AddExposureSceneDownsamplePass(FrameGraphBuilder& builder, FrameGraphTextureHandle sceneColor, const ExposureMomentTexture& output)
