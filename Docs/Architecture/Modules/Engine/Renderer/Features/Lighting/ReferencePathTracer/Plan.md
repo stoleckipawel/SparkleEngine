@@ -1,6 +1,6 @@
 # Reference Path Tracer Staged Implementation Plan
 
-**Status:** **`PTD-00-R1 PASS`** remains the historical immutable discovery prerequisite; the 2026-09-13 repository-owner amendment replaces its Reference-shader binary64 policy with ordinary binary32 and must be included in the next independent numeric review; Stages 1-2 retain their historical frame/clean-break results; Stages 3-9 are **IMPLEMENTED / VALIDATION DEFERRED**; the Stage-6A target/show-flag decision is **SUPERSEDED** by the 2026-09-15 one-mode amendment, Stage 6C source is committed at `3b654728db3a35b4e2c859c8bf11116f4737800a`, and the Stage-9 source result is retained in [Stage 9 Source Evidence](Stage9SourceEvidence.md); Stage 9 has not earned its evidence-candidate gate and Stage 10 is not authorized; final reference/release acceptance remains separately gated by the retained GPU validation backlog, `REL-03`, release maps, support identities, and executable evidence
+**Status:** **`PTD-00-R1 PASS`** remains the historical immutable discovery prerequisite; Stages 1-2 retain their historical frame/clean-break results and Stages 3-9 remain **IMPLEMENTED / VALIDATION DEFERRED** at source level. Reconciled 2026-09-26 against `abe538470fe4e3a3cc5b454f1c5aa54bbd888b60`: D3D12 reaches the selectable mode after two selection-time fixes, but Lit and Reference currently render effectively black scene lighting while GBuffer diffuse remains populated. Stage 9 is therefore **BLOCKED FOR EVIDENCE-CANDIDATE/USABLE CLAIMS**, Stage 10 is not authorized, and final reference/release acceptance remains gated by root-cause repair, the complete GPU validation backlog, `REL-03`, release maps, support identities, and executable evidence
 
 **Scope:** deliver `FCR-REN-08` end to end through one feature-local Renderer per-view session, one Reference estimator policy composed over a shared path-tracing semantic core, viewport-first Lit comparison, optional manual raw evidence publication, D3D12/Vulkan traversal parity, controlled failure, and release-map adoption
 
@@ -16,9 +16,9 @@
 
 **Authority boundary:** [Transport And Estimator](TransportAndEstimator.md) owns mathematical semantics, [Execution Architecture](ExecutionArchitecture.md) owns system ownership/lifetime, [User Experience](UserExperience.md) owns the interactive workflow; the [feature dossier](README.md) owns `RPT-FS-*`, `AC-RPT-*`, `FM-RPT-*`, `CHK-RPT-*`, and definition of done; [Discovery](Discovery.md) owns `PTD-00`; the [completion study](Research.md) owns external precedent; this page owns delivery order, dependencies, clean breaks, estimates, prompts, and slice exit gates
 
-**Current readiness:** **50/100 (`45/5/0/0`)**. Stage 7 makes the existing mode selectable immediately after Lit and adds the minimum generic request/progress fields needed for the live session. Stage 8 adds one automatic engine-wide Pipeline-then-Inline policy, one semantic `TraceSceneRay` API over thin frontend adapters, reusable material payload/hit mechanics, and the existing D3D12/Vulkan RHI path without adding RHI feature policy or a second renderer route. Game/runtime retains the same ordinary `ViewportRenderRequest` entry rather than a host fork. The current DevelopmentEditor C++ candidate compiles and links through `ShowcaseEditor`, but it remains shader-uncooked and GPU-unexercised, so no lifecycle, response-budget, camera-interaction, accessibility, backend/frontend parity, numeric, or reference-authority credit is added. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **50/100 (`45/5/0/0`)**. The current source retains the ordinary selectable mode, private session, shared transport core, automatic frontend policy, D3D12/Vulkan RHI routes, and manual publication path. D3D12 execution has reached selection and progress, but the observed black-lighting result prevents verification credit and invalidates any usable-viewport claim. Lifecycle, response-budget, camera interaction, accessibility, artifact integrity, backend/frontend parity, numeric correctness, and reference authority remain unproved. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
-**Non-claims:** Stage-7 source inspection and predecessor builds/cooks do not prove the current GPU shader candidate's accumulation precision, ordered lifecycle, response budget, material decode, robust endpoints, radiance, estimator correctness, runtime reachability, accessibility, convergence, backend parity, performance, package, Shipping exclusion, or accepted-reference authority.
+**Non-claims:** reaching the menu, advancing progress, eliminating the two observed crashes, or displaying sky does not prove correct scene lighting. Source inspection and predecessor builds/cooks also do not prove the current GPU shader candidate's accumulation precision, ordered lifecycle, response budget, material decode, robust endpoints, radiance, estimator correctness, accessibility, convergence, backend parity, performance, package, Shipping exclusion, or accepted-reference authority.
 
 This plan exists now because the requested implementation route needs to be concrete and reviewable before code work. Its presence does not manufacture a `PTD-00` pass. Stage 0 must replace every provisional choice and estimate with the accepted discovery result; if the result changes architecture, this plan is revised before Stage 1 rather than bending implementation around stale prose.
 
@@ -51,6 +51,33 @@ The [User Experience product priority](UserExperience.md#product-priority-order)
 4. polish manual save and checkpoint interaction after the primary viewport experience is usable.
 
 Artifacts remain required for final oracle authority, but they are not the first product milestone. A completed EXR pipeline cannot advance the primary UX while the user cannot select the mode, move through the scene, see the latest view restart/refine live, read exact progress, or compare with Lit. The first usable viewport milestone is also not permission to call an unproved estimator a reference; mathematical and PBR correctness remain prerequisites.
+
+## Current Recovery And Completion Route - 2026-09-26
+
+The source stages do not need to be repeated wholesale. The current candidate must first clear the earliest observed functional failure, then execute the retained evidence ladder in dependency order. This section orders remaining work; it does not replace the dossier's acceptance criteria or convert a manual observation into retained evidence.
+
+### Observed candidate state
+
+| Observation | Consequence |
+| --- | --- |
+| Selecting Reference with a configured DLSS provider previously failed during graph construction because Reference lacked temporal guides. | The source now keeps Lit's configured provider untouched, renders Reference at output extent, and uses a color-only Linear resolve. This fix requires D3D12/Vulkan regression proof. |
+| D3D12 then failed to resolve the Reference sky sampler because the backend catalog assumed one address mode for all axes. | The D3D12 library now has one explicit `LinearNoMipWrapClampClamp` slot and lowers U/V/W independently. This remains backend mechanism, not Reference policy, and requires paired regression proof. |
+| After those fixes, Reference accumulated and displayed sky but scene geometry remained effectively black. Lit was also effectively black while GBuffer diffuse remained populated. | The first failing shared lighting/presentation product must be identified before changing Reference estimator policy. The common symptom blocks Stage-9 evidence-candidate and usable-viewport claims. |
+| Correcting the exposure reduction dispatch did not make scene lighting visible in the observed run. | Exposure under-dispatch was a real source defect but is not accepted as the root cause of the current black result. Investigation must continue from measured product boundaries. |
+
+### Required execution order
+
+1. **Restore a correct shared lighting baseline.** Use the populated GBuffer attributes as the control and locate the first incorrect product across scene-light upload/counts, direct/indirect lighting, visibility, exposure input/output, and presentation. Repair the actual shared owner. Do not add Reference-only intensity, fallback lighting, GBuffer transport, fabricated guides, per-scene constants, or diagnostic infrastructure to make the image look plausible.
+2. **Rebuild and cook the exact candidate.** Bind every subsequent result to source revision, configuration, shader compiler/settings, shader hashes, backend, adapter/driver, scene, camera, and content generation. A stale cooked shader invalidates the observation.
+3. **Clear the D3D12 viewport gate.** Exercise Lit, GBuffer controls, lighting-lobe views, Reference selection, finite nontrivial scene radiance, progressive sample commits, camera-motion reset/refinement, pause/resume/restart, Lit/Reference/Lit retention, resize, close, and second-view capacity. Retain `CHK-RPT-02`, `03`, `05`, `09`, `15`, and `18` evidence rather than a success screenshot.
+4. **Clear the Vulkan and frontend gate.** Repeat the same semantic inputs under Vulkan and every automatically selected complete Inline/Pipeline route with native validation. Then execute the raw paired comparison required by `CHK-RPT-12`; a successful launch alone is insufficient.
+5. **Prove raw-product and artifact integrity.** Exercise exact committed-prefix capture, FLOAT EXR decode/round trip, checkpoint mean/M2/count restoration, hashes, provenance mutation, cancellation, access/disk failure, interruption, and completion-file-last publication under `CHK-RPT-09`, `10`, and `13`.
+6. **Execute the estimator evidence ladder.** Run `CHK-RPT-03` through `11` with the frozen analytic/metamorphic scenes, hand cases, injected PDF/MIS/emission/roulette/sample/endpoint/accumulation defects, independent replicates, and semantically matched external renderers. Do not tune thresholds or scope after observing output.
+7. **Finish product and release proof.** Complete Editor and Game/runtime first use, accessibility, response/resource budgets, unsupported routes, Shipping exclusion, clean package operation, release maps, and every remaining `CHK-RPT-14` through `20` cell. Only then may Stage 10 submit `FCR-REN-08`.
+
+### Recovery gate
+
+Stage 9 remains source-delivered, but it cannot produce an evidence candidate until steps 1-6 pass for one immutable candidate. Stage 10 remains unauthorized until that evidence candidate also satisfies the exact release inputs named by Stage 10. Manual work may be deferred without erasing source progress, but an observed black frame is an active failed product criterion rather than merely an unrun check.
 
 ## GPU-Only Transport Boundary
 
@@ -835,6 +862,10 @@ The exact source correspondence, TinyEXR revision/license/security/build review,
 
 The earlier shared-tail wording that made Reference output enter the configured Lit upscaler and reject providers lacking Reference-owned temporal guides is superseded. A configured DLSS SR provider caused an exception to escape `noexcept` graph construction when Reference Path Tracer was selected. The corrected contract preserves the user's configured Lit provider and quality without executing that provider over Reference output: Reference accumulates at physical output extent and reaches the same shared presentation tail through its mode-owned color-only Linear resolve. Returning to Lit resumes the unchanged configured provider. This is presentation policy only; it neither changes raw accumulation nor supplies fabricated GBuffer depth/motion to Reference transport. Paired D3D12/Vulkan runtime validation remains required and is not claimed by this source correction.
 
+### Runtime reconciliation - 2026-09-26
+
+Later D3D12 execution reached Reference selection and progress after the presentation correction and the explicit mixed-address sky-sampler repair. It then exposed an unresolved effectively black scene-lighting result shared by Lit and Reference while GBuffer diffuse remained populated. Therefore the dated Stage-9 statement above remains accurate as its source handoff, but the current candidate is now more specifically **BLOCKED FOR EVIDENCE-CANDIDATE/USABLE CLAIMS** by an observed defect. Follow [Current Recovery And Completion Route](#current-recovery-and-completion-route---2026-09-26); do not proceed directly to Stage 10 or patch Reference output independently of the shared lighting root cause.
+
 ## Stage 10 - Adopt References, Verify Packaging, Remove Superseded Paths, And Close
 
 ### Objective
@@ -938,4 +969,3 @@ Escalation changes the smallest falsified surface first. It does not begin with 
 This plan is complete only when the acceptance owner records `FCR-REN-08 PASS` against one immutable evidence set and every applicable `AC-RPT-01` through `23` passes. If scope, math, sampler, material/light semantics, compiler/shader identity, backend/frontend, accumulation, artifact schema, architecture hooks, frame-recipe topology, shared path-tracing core, external precedent, or release content changes later, the completion report names the invalidated evidence and reruns the smallest affected checks, including `CHK-RPT-17` for any source-shape change, `CHK-RPT-18` for any recipe/resource-lineage change, `CHK-RPT-19` for any path-family semantic or ownership change, and `CHK-RPT-20` for any NVIDIA/Epic source or correspondence change.
 
 An implemented tracer with incomplete evidence is **not complete**. A fully evidenced finite-path diagnostic is **not the full surface reference**. A package workflow with a shared or post-processed oracle is **not trustworthy**. The plan is designed to make those substitutions impossible to hide.
-

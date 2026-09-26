@@ -1,18 +1,20 @@
 # Reference Path Tracer Transport And Estimator Contract
 
-**Status:** Stage-0-frozen mathematical contract with a 2026-09-13 repository-owner precision amendment and Stage-3 source correspondence; Stage 3 is **IMPLEMENTED / VALIDATION DEFERRED**, with no real raw GPU oracle result or estimator-authority claim
+**Status:** Stage-0-frozen mathematical contract with the 2026-09-13 binary32 amendment and source correspondence through the implemented transport stages; executable estimator validation remains deferred, and the current black-lighting result blocks any usable-radiance or Reference-authority claim
 
 **Responsibility:** define one notation, estimator, event algorithm, probability-measure contract, PBR material boundary, numerical policy, equation-to-code ledger, and mathematical failure checklist for `SurfaceTransportReference` and `FinitePathDiagnostic`
 
 **Authority boundary:** [Discovery](Discovery.md) owns ratification and implementation authorization, [Execution Architecture](ExecutionArchitecture.md) owns system ownership and lifetime, [User Experience](UserExperience.md) owns the interactive and manual-output workflow, the [feature dossier](README.md) owns acceptance, [Research](Research.md) owns precedent, and the [staged plan](Plan.md) owns delivery order and prompts
 
-**Prepared:** re-audited 2026-09-10 against committed `master` revision `669637cf23b9748f8b94635409e74159d31d0bc2`; the current shader route was inspected, but no equation was implemented or executed
+**Prepared:** mathematical decisions frozen 2026-09-10 and source correspondence subsequently extended through Stage 6; current runtime disposition reconciled 2026-09-26 against committed revision `abe538470fe4e3a3cc5b454f1c5aa54bbd888b60`
 
 **Naming reconciliation:** the 2026-09-09 working-tree clean break makes `ReferencePathTracer` the sole feature name; no mathematical decision or claim is thereby accepted.
 
 **Precision amendment:** the production Reference Path Tracer shader uses ordinary IEEE-754 binary32 throughout camera, transport, BSDF, PDF, MIS, roulette, ray-endpoint, radiance, and accumulation work. It does not declare or emulate shader float64. Hand-worked higher-precision values and external tools may define comparison tolerances, while the generic RHI/backend float64 capability remains available to unrelated future shaders; neither creates another Sparkle transport implementation or Reference Path Tracer dependency. This replaces the earlier binary64 shader/accumulator choice and requires the normal GPU/numeric evidence before final acceptance.
 
 **Non-claims:** this specification does not prove that the current or future implementation is unbiased, energy conserving, numerically robust, converged, backend-equivalent, or usable as an oracle
+
+**Current runtime reconciliation:** D3D12 now reaches the Reference kernel and advances progress, but the observed frame contains sky with effectively black scene geometry. Lit is also effectively black while GBuffer diffuse remains populated. This does not identify the estimator as the root cause, and it provides no positive evidence for any `MATH-*` row. The shared lighting/presentation failure must be localized first; then every formula-changing row still requires the frozen analytic, injected-fault, higher-precision, statistical, and paired-backend checks.
 
 > [!IMPORTANT]
 > An implementer may not select a missing constant, BRDF variant, normal treatment, PDF measure, invalid-sample rule, or threshold while writing code. `PTD-00` must first fill every decision slot below, record the reviewing experts, and bind the result to one immutable report revision.

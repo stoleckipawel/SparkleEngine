@@ -1,12 +1,12 @@
 # Reference Path Tracer User Experience Contract
 
-**Status:** Stage-0-frozen development-product experience accepted by `PTD-00-R1 PASS` at immutable dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300`; Stage-7 menu/progress/action and Stage-9 manual evidence/output source are **IMPLEMENTED / VALIDATION DEFERRED**, while executable first-use, artifact integrity, failure/recovery, accessibility, and evidence authority remain unproved
+**Status:** Stage-0-frozen development-product experience accepted by `PTD-00-R1 PASS`; Stage-7 menu/progress/action and Stage-9 manual evidence/output source remain **IMPLEMENTED / VALIDATION DEFERRED**, while the current candidate is **BLOCKED FOR FIRST-USE SUCCESS** because Lit and Reference do not yet present usable scene lighting
 
 **Responsibility:** define how a developer, lighting engineer, or technical artist discovers, enters, navigates, observes, compares, resets, pauses, diagnoses, and secondarily exports the Reference Path Tracer
 
 **Authority boundary:** the [feature dossier](README.md) owns binary acceptance and failure verdicts, [Transport And Estimator](TransportAndEstimator.md) owns mathematical meaning, [Execution Architecture](ExecutionArchitecture.md) owns per-view session/state/data ownership, [Discovery](Discovery.md) owns ratification, and the [staged plan](Plan.md) owns implementation order and prompts
 
-**Prepared:** re-audited 2026-09-10 against committed `master` revision `669637cf23b9748f8b94635409e74159d31d0bc2`; Stage-7 source reconciled 2026-09-15 from base `7fa195192e81101990d7a3f31057680c07717b9d`; Stage-9 source refinement reconciled 2026-09-18 from base `df2f0c0658cbf1cbdc0355c050a496cb513709e5`; no current-candidate build, interactive, artifact, accessibility, package, or clean-machine workflow was exercised
+**Prepared:** source and owner-run first-use state reconciled 2026-09-26 against committed `master` revision `abe538470fe4e3a3cc5b454f1c5aa54bbd888b60`; current D3D12 observations are manual and do not substitute for retained interaction, artifact, accessibility, package, or clean-machine evidence
 
 **Naming reconciliation:** the 2026-09-09 working-tree clean break makes `ReferencePathTracer` the sole feature name; no UX capability or acceptance result is thereby implied.
 
@@ -313,9 +313,24 @@ An independent read-only reviewer attempted to reconstruct first use from source
 
 ## Stage-7 Source Reconciliation
 
-The current Stage-7 working tree exposes the mode immediately after Lit, starts the existing feature session automatically, reports exact committed/target SPP, distinguishes reset/accumulation/pause/completion/unavailability, retains the latest reset and discarded prefix, estimates throughput/ETA, discloses route/backend and raw-versus-display meaning, and provides pause/resume/restart plus explicit single-session transfer. Unsupported selection offers a direct return to Lit and never relabels Lit output as Reference. Editor strings and controls live in one private feature overlay; the viewport panel contains one call. Game/runtime continues through the same public `ViewportRenderRequest` and `RuntimeApplication::SubmitViewportRenderRequest` route without importing Editor code.
+The current source exposes the mode immediately after Lit, starts the feature session automatically, reports exact committed/target SPP, distinguishes reset/accumulation/pause/completion/unavailability, retains the latest reset and discarded prefix, estimates throughput/ETA, explains raw-versus-display meaning, and provides pause/resume/restart plus explicit single-session transfer. Unsupported selection offers a direct return to Lit and never relabels Lit output as Reference. Editor strings and controls live in one private feature overlay; the viewport panel contains one call. Game/runtime continues through the same public `ViewportRenderRequest` and `RuntimeApplication::SubmitViewportRenderRequest` route without importing Editor code. The current overlay does not yet present the automatically resolved frontend/backend details required by the frozen details contract.
 
-This is source evidence only. No build, GPU run, interactive camera exercise, response-budget measurement, keyboard/focus/DPI/accessibility review, Game host workflow, backend comparison, or Shipping exclusion proof has run. Timeout, durable cancellation/checkpoint, and raw save remain later-stage work and cannot be inferred from the overlay.
+This remains primarily source evidence. A D3D12 DevelopmentEditor owner run reached selection and progressive state after the presentation and sampler crash fixes, but it did not produce a successful first-use result: Reference showed sky with effectively black scene geometry, and Lit was also effectively black while GBuffer diffuse remained populated. No interactive camera matrix, response-budget measurement, keyboard/focus/DPI/accessibility review, Game host workflow, Vulkan/backend comparison, artifact round trip, or Shipping exclusion proof has passed.
+
+## Current First-Use Reconciliation - 2026-09-26
+
+| First-use step | Current observation | Disposition |
+| --- | --- | --- |
+| Find and select the mode | The Editor menu exposes Reference immediately after Lit and selection reaches the real alternate middle. | **Reached on D3D12**, not yet retained as a clean transcript. |
+| Start automatically and show progress | The session begins and the overlay advances committed/target samples without a separate Start action. | **Reached partially.** Progress is operational truth, not image correctness. |
+| See a useful current-camera result | Reference shows sky but effectively black scene geometry; Lit is also effectively black. | **Failed.** This blocks the primary product milestone. |
+| Move, stop, reset, and refine | Source identity includes canonical camera state. The complete translation/rotation/cut/projection/resize response matrix has not been executed on a correct image. | **Unproved.** Do not infer it from changing SPP. |
+| Switch Lit -> Reference -> Lit -> Reference | The one-mode frame route and suspension contract exist, but comparison is not meaningful while both lighting views are black. | **Unproved.** Retention and exact revalidation still need direct observation. |
+| Pause, resume, restart, transfer, and close | Controls and session states exist. Settlement, resource retention, second-view ownership, shutdown, and recovery budgets have not passed. | **Unproved.** |
+| Save raw output/checkpoint | Buttons and source workflow exist. No exact-prefix EXR/checkpoint round trip or failure recovery has passed. | **Unproved and secondary to the viewport blocker.** |
+| Use Game/runtime and Vulkan | The same request semantic exists in source. | **Not executed for the current candidate.** |
+
+The next UX evidence run begins only after the shared lighting result is visibly nontrivial and finite. It then exercises the full happy path and each state/action on the same immutable candidate; reopening the menu or watching progress advance is not sufficient.
 
 ## Professional Defaults And Guardrails
 
