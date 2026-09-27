@@ -6,7 +6,7 @@
 
 #include <iomanip>
 
-static const auto g_lightingSectionWriterLogger = Logging::GetOrCreateLogger("GameFramework.LevelParsing");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_lightingSectionWriterLogger, "GameFramework.LevelParsing");
 
 namespace LevelParsing
 {

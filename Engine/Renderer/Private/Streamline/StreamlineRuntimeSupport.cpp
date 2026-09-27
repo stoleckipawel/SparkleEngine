@@ -11,7 +11,7 @@
   #include <condition_variable>
   #include <mutex>
 
-static const auto g_streamlineRuntimeLogger = Logging::GetOrCreateLogger("Renderer.Streamline.Runtime");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_streamlineRuntimeLogger, "Renderer.Streamline.Runtime");
 
 class StreamlineRuntime final
 {

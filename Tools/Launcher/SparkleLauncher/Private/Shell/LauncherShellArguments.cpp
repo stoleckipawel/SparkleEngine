@@ -55,6 +55,12 @@ namespace SparkleLauncher
 			}
 		}
 
+		if (!m_outArguments->DryRunOperationId.empty() && !m_outArguments->RunOperationId.empty())
+		{
+			*m_error << "SparkleLauncher: --dry-run and --run are mutually exclusive.\n";
+			return false;
+		}
+
 		return true;
 	}
 

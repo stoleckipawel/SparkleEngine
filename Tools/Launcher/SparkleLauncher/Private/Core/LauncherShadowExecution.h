@@ -13,6 +13,12 @@ namespace SparkleLauncher
 		Failed,
 	};
 
+	enum class LauncherShadowCompletionPolicy
+	{
+		WaitForCompletion,
+		ReleaseCallingArtifact,
+	};
+
 	struct LauncherShadowStartResult final
 	{
 		LauncherShadowStartState State = LauncherShadowStartState::Failed;
@@ -23,5 +29,5 @@ namespace SparkleLauncher
 	LauncherShadowStartResult StartLauncherShadow(
 	    const std::filesystem::path& repositoryRoot,
 	    const std::vector<std::string>& arguments,
-	    bool waitForExit);
+	    LauncherShadowCompletionPolicy completionPolicy);
 }

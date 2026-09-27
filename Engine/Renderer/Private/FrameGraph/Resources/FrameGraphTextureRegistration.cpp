@@ -7,7 +7,7 @@
 
 #include <format>
 
-static const auto g_frameGraphTextureLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_frameGraphTextureLogger, "Renderer.FrameGraph");
 
 namespace FrameGraphTextureRegistration
 {

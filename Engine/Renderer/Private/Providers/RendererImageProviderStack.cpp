@@ -16,7 +16,7 @@
 #include <array>
 #include <limits>
 
-static const auto g_rendererImageProviderStackLogger = Logging::GetOrCreateLogger("Renderer.ImageProviders");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_rendererImageProviderStackLogger, "Renderer.ImageProviders");
 
 RendererImageProviderStack::RendererImageProviderStack(
     RenderHardwareInterface& renderHardwareInterface,

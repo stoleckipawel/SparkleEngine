@@ -8,7 +8,7 @@
 #include <format>
 #include <sstream>
 
-static const auto g_shaderParameterStructVerifierLogger = Logging::GetOrCreateLogger("ShaderCompiler.ParameterStructVerifier");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_shaderParameterStructVerifierLogger, "ShaderCompiler.ParameterStructVerifier");
 
 static const char* GetResourceKindName(CookedShaderResourceKind kind) noexcept
 {

@@ -9,7 +9,7 @@
 
 #include <format>
 
-static const auto g_vulkanShaderModuleLogger = Logging::GetOrCreateLogger("RHI.Vulkan.ShaderModule");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanShaderModuleLogger, "RHI.Vulkan.ShaderModule");
 
 VulkanShaderModule::VulkanShaderModule(VulkanRhi& rhi, const RhiShaderStageDesc& desc, std::string_view pipelineName) :
     m_device(rhi.GetDevice())

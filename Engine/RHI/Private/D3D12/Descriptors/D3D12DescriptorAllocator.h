@@ -29,8 +29,6 @@ public:
 private:
 	std::optional<UINT> TryAllocateContiguousFromFreeListLocked(uint32_t count);
 	D3D12DescriptorHandle AllocateContiguousFromLinearRangeLocked(uint32_t count);
-	static const std::shared_ptr<spdlog::logger>& Logger() noexcept;
-
 	D3D12DescriptorHeap* m_heap;
 	std::vector<UINT> m_freeIndices;
 	UINT m_currentOffset = 0;

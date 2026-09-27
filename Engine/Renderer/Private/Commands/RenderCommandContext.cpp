@@ -3,7 +3,7 @@
 
 #include <cstdio>
 
-static const auto g_renderCommandContextLogger = Logging::GetOrCreateLogger("Renderer.CommandContext");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_renderCommandContextLogger, "Renderer.CommandContext");
 
 RenderCommandContext::RenderCommandContext(RenderCommandList& commandList) noexcept :
     m_commandList(&commandList)

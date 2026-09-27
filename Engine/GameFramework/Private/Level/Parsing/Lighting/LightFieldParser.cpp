@@ -8,7 +8,7 @@
 
 #include <format>
 
-static const auto g_lightFieldParserLogger = Logging::GetOrCreateLogger("GameFramework.LightFieldParser");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_lightFieldParserLogger, "GameFramework.LightFieldParser");
 
 namespace LevelParsing
 {

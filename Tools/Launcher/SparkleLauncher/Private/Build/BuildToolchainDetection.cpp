@@ -199,7 +199,7 @@ namespace SparkleLauncher
 		status.Items.push_back(MakeToolStatus(
 		    "shader-compiler-sdk",
 		    "Shader compiler SDK (DXC + Slang bundle)",
-		    true,
+		    false,
 		    shaderCompilerSdk.Available,
 		    shaderCompilerSdk.Root,
 		    shaderCompilerSdk.Detail));
@@ -223,7 +223,7 @@ namespace SparkleLauncher
 			                                   : "Optional unless Vulkan-backed integrations are enabled.";
 		}
 		status.Items.push_back(
-		    MakeToolStatus("vulkan-sdk", "Vulkan SDK", vulkanSdkRequired, vulkanSdk.Available, vulkanSdk.Root, std::move(vulkanDetail)));
+		    MakeToolStatus("vulkan-sdk", "Vulkan SDK", false, vulkanSdk.Available, vulkanSdk.Root, std::move(vulkanDetail)));
 		if (vulkanSdkRequired)
 		{
 			status.ConfigurePrerequisitesAvailable = status.ConfigurePrerequisitesAvailable && vulkanSdk.Available;

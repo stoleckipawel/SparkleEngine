@@ -3,7 +3,7 @@
 
 #include "Concurrency/Coordinator/RendererExecutionContext.h"
 
-static const auto g_renderCoordinatorLogger = Logging::GetOrCreateLogger("Renderer.Coordinator");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_renderCoordinatorLogger, "Renderer.Coordinator");
 
 void RenderCoordinator::Initialize()
 {

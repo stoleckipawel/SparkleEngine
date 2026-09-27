@@ -14,7 +14,7 @@
 #include <map>
 #include <string_view>
 
-static const auto g_vulkanBindingLayoutLogger = Logging::GetOrCreateLogger("RHI.Vulkan.BindingLayout");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanBindingLayoutLogger, "RHI.Vulkan.BindingLayout");
 
 class VulkanBindingLayoutCompilerImpl final
 {

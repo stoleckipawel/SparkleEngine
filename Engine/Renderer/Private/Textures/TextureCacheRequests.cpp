@@ -11,7 +11,7 @@
 #include <format>
 #include <utility>
 
-static const auto g_textureCacheLogger = Logging::GetOrCreateLogger("Renderer.TextureCache");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_textureCacheLogger, "Renderer.TextureCache");
 
 void TextureCache::LoadDefaultTextures(RenderCommandList& commandList, std::vector<RhiResourceHandle>& uploadedResources)
 {

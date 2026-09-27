@@ -240,7 +240,7 @@ The catalog also records disabled future Modern Sponza add-ons for Ivy, Trees, F
 | `Tools/Cooking/*Cooker` | texture, mesh, material, scene, and project cook products |
 | `Tools/Support/ToolConsoleSupport` | shared host-tool console support |
 
-The Launcher GUI uses the deployed `RepositoryRoot.txt` as its repository authority. `LauncherMainWindow` remains the lifecycle and composition shell; `LauncherWorkflowPanel` owns workflow-catalog navigation and selection state, while `LauncherActivityPanel` owns the in-memory run list and output presentation. Quick Start projects the level catalog and resolves a requested level/run mode through existing typed sync, build, cook, and final-run capabilities. The Build, Cook, Sync, and Clean pages project those same backend operations; they do not own parallel implementations.
+The Launcher resolves its repository from an explicit `--root` request, the current directory, or executable ancestry; its deployable artifact does not carry a build-machine absolute-path marker. `LauncherMainWindow` remains the lifecycle and composition shell; `LauncherWorkflowPanel` owns workflow-catalog navigation and selection state, while `LauncherActivityPanel` owns the in-memory run list and output presentation. Quick Start projects the level catalog and resolves a requested level/run mode through existing typed sync, build, cook, and final-run capabilities. The Build, Cook, Sync, and Clean pages project those same backend operations; they do not own parallel implementations.
 
 Generated-location ownership is similarly explicit: Core's public
 `ProductUserStatePaths` value is the engine/product boundary for per-user

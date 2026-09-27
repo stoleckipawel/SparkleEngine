@@ -9,7 +9,7 @@
 
 #include <array>
 
-static const auto g_vulkanRenderCommandListLogger = Logging::GetOrCreateLogger("RHI.Vulkan.CommandList");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanRenderCommandListLogger, "RHI.Vulkan.CommandList");
 
 void VulkanRenderCommandList::SetPrimitiveTopology(RhiPrimitiveTopology) noexcept
 {

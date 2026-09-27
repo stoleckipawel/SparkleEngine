@@ -2,7 +2,7 @@
 
 #include "Animation/AnimationDiagnostics.h"
 
-static const auto g_animationEvaluationLogger = Logging::GetOrCreateLogger("GameFramework.AnimationEvaluation");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_animationEvaluationLogger, "GameFramework.AnimationEvaluation");
 
 namespace AnimationDiagnostics
 {

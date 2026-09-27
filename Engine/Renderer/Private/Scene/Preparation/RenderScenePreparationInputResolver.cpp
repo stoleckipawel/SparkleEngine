@@ -18,7 +18,7 @@
 #include <span>
 #include <utility>
 
-static const auto g_renderPreparationInputResolverLogger = Logging::GetOrCreateLogger("Renderer.RenderScenePreparationInputResolver");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_renderPreparationInputResolverLogger, "Renderer.RenderScenePreparationInputResolver");
 
 RenderScenePreparationInputResolver::RenderScenePreparationInputResolver(GpuMeshCache& gpuMeshCache, TextureCache& textureCache) noexcept :
     m_gpuMeshCache(&gpuMeshCache),

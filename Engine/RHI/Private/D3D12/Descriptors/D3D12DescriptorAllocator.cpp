@@ -3,15 +3,11 @@
 
 #include <algorithm>
 
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogD3D12DescriptorAllocator, "RHI.D3D12.Descriptors");
+
 D3D12DescriptorAllocator::D3D12DescriptorAllocator(D3D12DescriptorHeap* heap) noexcept :
     m_heap(heap)
 {
-}
-
-const std::shared_ptr<spdlog::logger>& D3D12DescriptorAllocator::Logger() noexcept
-{
-	static const auto logger = Logging::GetOrCreateLogger("RHI.D3D12.Descriptors");
-	return logger;
 }
 
 std::optional<UINT> D3D12DescriptorAllocator::TryAllocateContiguousFromFreeListLocked(uint32_t count)
@@ -52,7 +48,7 @@ D3D12DescriptorHandle D3D12DescriptorAllocator::AllocateContiguousFromLinearRang
 {
 	if (m_currentOffset + count > m_heap->GetNumDescriptors())
 	{
-		Diagnostics::Fatal(Logger(), __FILE__, __LINE__, "Descriptor heap cannot allocate contiguous block (insufficient space).");
+		Diagnostics::Fatal(LogD3D12DescriptorAllocator, __FILE__, __LINE__, "Descriptor heap cannot allocate contiguous block (insufficient space).");
 	}
 
 	const UINT startIndex = m_currentOffset;
@@ -77,7 +73,7 @@ D3D12DescriptorHandle D3D12DescriptorAllocator::Allocate()
 	}
 	else
 	{
-		Diagnostics::Fatal(Logger(), __FILE__, __LINE__, "Descriptor heap is full.");
+		Diagnostics::Fatal(LogD3D12DescriptorAllocator, __FILE__, __LINE__, "Descriptor heap is full.");
 	}
 
 	return m_heap->GetHandleAt(index);

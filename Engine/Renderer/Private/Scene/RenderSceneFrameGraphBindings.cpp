@@ -12,7 +12,7 @@
 #include "Scene/RayTracing/RenderRayTracingFrameBindings.h"
 #include "Textures/RendererTexture.h"
 
-static const auto g_renderSceneFrameGraphLogger = Logging::GetOrCreateLogger("Renderer.RenderSceneFrameGraph");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_renderSceneFrameGraphLogger, "Renderer.RenderSceneFrameGraph");
 
 static void BindRayTracingScene(
     FrameGraph& frameGraph,

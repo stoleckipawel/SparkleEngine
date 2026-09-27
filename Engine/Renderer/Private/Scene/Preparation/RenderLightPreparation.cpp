@@ -7,7 +7,7 @@
 
 #include <cmath>
 
-static const auto g_renderLightPreparationLogger = Logging::GetOrCreateLogger("Renderer.RenderLightPreparation");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_renderLightPreparationLogger, "Renderer.RenderLightPreparation");
 
 void RenderLightPreparation::PrepareRange(std::span<const RenderLightData> inputs, std::span<PreparedRenderLight> outputs) noexcept
 {

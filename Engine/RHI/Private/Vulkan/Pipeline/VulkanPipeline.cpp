@@ -17,7 +17,7 @@
 #include <span>
 #include <vector>
 
-static const auto g_vulkanPipelineLogger = Logging::GetOrCreateLogger("RHI.Vulkan.Pipeline");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanPipelineLogger, "RHI.Vulkan.Pipeline");
 
 class VulkanPipelineImplementation final
 {

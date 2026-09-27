@@ -183,6 +183,15 @@ namespace Diagnostics
 		std::abort();
 	}
 
+	[[noreturn]] void Fatal(
+	    const Logging::LogCategory& category,
+	    const char* file,
+	    std::uint32_t line,
+	    std::string_view message) noexcept
+	{
+		Fatal(category.GetLogger(), file, line, message);
+	}
+
 	void BreakInDebuggerIfAttached() noexcept
 	{
 		BreakAttachedDebugger();
@@ -193,7 +202,7 @@ namespace Diagnostics
 		try
 		{
 			const std::string record = BuildHResultRecord(result, expression);
-			auto logger = Logging::GetOrCreateLogger("Verify");
+			SPARKLE_DEFINE_LOG_CATEGORY_STATIC(logger, "Verify");
 			WriteRecord(logger, file, line, record, spdlog::level::critical);
 		}
 		catch (...)

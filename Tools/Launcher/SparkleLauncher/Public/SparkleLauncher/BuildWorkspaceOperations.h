@@ -132,6 +132,7 @@ namespace SparkleLauncher
 		std::string Group;
 		std::string DisplayName;
 		std::string Description;
+		bool ReplacesLauncherArtifact = false;
 	};
 
 	struct BuildWorkspaceOperationRequest

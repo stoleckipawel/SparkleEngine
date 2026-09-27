@@ -7,7 +7,7 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Resources/RhiUploadService.h"
 
-static const auto g_gpuSkinInfluenceBufferLogger = Logging::GetOrCreateLogger("Renderer.GpuSkinInfluenceBuffer");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_gpuSkinInfluenceBufferLogger, "Renderer.GpuSkinInfluenceBuffer");
 
 GpuSkinInfluenceBuffer::~GpuSkinInfluenceBuffer() noexcept
 {

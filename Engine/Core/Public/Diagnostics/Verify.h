@@ -14,6 +14,11 @@ namespace Diagnostics
 	    const char* file,
 	    std::uint32_t line,
 	    std::string_view message) noexcept;
+	[[noreturn]] SPARKLE_CORE_API void Fatal(
+	    const Logging::LogCategory& category,
+	    const char* file,
+	    std::uint32_t line,
+	    std::string_view message) noexcept;
 	SPARKLE_CORE_API void BreakInDebuggerIfAttached() noexcept;
 	[[noreturn]] SPARKLE_CORE_API void CheckHResult(
 	    std::int32_t result,

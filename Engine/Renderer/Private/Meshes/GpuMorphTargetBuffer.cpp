@@ -9,7 +9,7 @@
 
 #include <algorithm>
 
-static const auto g_gpuMorphTargetBufferLogger = Logging::GetOrCreateLogger("Renderer.GpuMorphTargetBuffer");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_gpuMorphTargetBufferLogger, "Renderer.GpuMorphTargetBuffer");
 
 GpuMorphTargetBuffer::GpuMorphTargetBuffer() noexcept = default;
 

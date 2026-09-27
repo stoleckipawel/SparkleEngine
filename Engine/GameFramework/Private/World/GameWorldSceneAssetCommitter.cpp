@@ -12,7 +12,7 @@
 
 #include <utility>
 
-static const auto g_sceneAssetCommitterLogger = Logging::GetOrCreateLogger("GameFramework.SceneAssetCommitter");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_sceneAssetCommitterLogger, "GameFramework.SceneAssetCommitter");
 
 GameWorldSceneAssetCommitter::GameWorldSceneAssetCommitter(ECS::GameWorldState& world, GameWorldResourceStores& resources) noexcept :
     m_state(world),

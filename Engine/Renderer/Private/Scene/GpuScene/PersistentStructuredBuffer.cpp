@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <cstring>
 
-static const auto g_persistentStructuredBufferLogger = Logging::GetOrCreateLogger("Renderer.PersistentStructuredBuffer");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_persistentStructuredBufferLogger, "Renderer.PersistentStructuredBuffer");
 
 void PersistentStructuredBuffer::Update(
     RhiResourceService& resourceService,

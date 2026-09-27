@@ -157,5 +157,6 @@ bool RenderPassRuntimeCache::IsComplete(const RhiSubmissionState& state) const n
 
 [[noreturn]] void RenderPassRuntimeCache::HandleRuntimeCreationFailure(std::string_view errorMessage) const
 {
-	Diagnostics::Fatal(Logging::GetOrCreateLogger("Renderer"), __FILE__, __LINE__, errorMessage);
+	SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogRenderer, "Renderer");
+	Diagnostics::Fatal(LogRenderer, __FILE__, __LINE__, errorMessage);
 }

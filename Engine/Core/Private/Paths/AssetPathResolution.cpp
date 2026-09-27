@@ -9,6 +9,8 @@
 #include <system_error>
 #include <utility>
 
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogCoreFileSystem, "Core.FileSystem");
+
 class AssetPathSearch final
 {
 public:
@@ -130,7 +132,7 @@ namespace Filesystem
 		}
 
 		Diagnostics::Fatal(
-		    Logging::GetOrCreateLogger("Core.FileSystem"),
+		    LogCoreFileSystem,
 		    __FILE__,
 		    __LINE__,
 		    std::string(GetAssetTypeName(type)) + " asset not found: " + inputPath.string());

@@ -21,7 +21,7 @@
 #include <chrono>
 #include <utility>
 
-static const auto g_textureCacheLogger = Logging::GetOrCreateLogger("Renderer.TextureCache");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_textureCacheLogger, "Renderer.TextureCache");
 
 TextureCache::TextureCache(
     RhiResourceService& resourceService,

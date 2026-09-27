@@ -8,7 +8,7 @@
 
 #include <algorithm>
 
-static const auto g_vulkanSamplerLibraryLogger = Logging::GetOrCreateLogger("RHI.Vulkan.Samplers");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanSamplerLibraryLogger, "RHI.Vulkan.Samplers");
 
 VulkanSamplerLibrary::VulkanSamplerLibrary(VulkanRhi& rhi, VulkanDescriptorService& descriptorService) noexcept :
     m_rhi(rhi),

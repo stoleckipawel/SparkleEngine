@@ -9,7 +9,7 @@
 #include "Level/Loading/SceneLoadExecutor.h"
 #include "World/GameWorld.h"
 
-static const auto g_levelSessionLogger = Logging::GetOrCreateLogger("GameFramework.LevelSession");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_levelSessionLogger, "GameFramework.LevelSession");
 
 LevelSession::LevelSession(GameWorld& world, TaskExecutor& taskExecutor, TaskScope& applicationScope) :
     m_gameWorld(&world),

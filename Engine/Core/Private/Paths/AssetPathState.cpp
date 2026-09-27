@@ -124,7 +124,7 @@ namespace Filesystem::Private
 
 	void ValidateConfiguredPaths(const AssetPathState& state)
 	{
-		const auto logger = Logging::GetOrCreateLogger("Core");
+		SPARKLE_DEFINE_LOG_CATEGORY_STATIC(logger, "Core");
 		ValidatePath(logger, "Working Directory", state.workingDirectory, true);
 		ValidatePath(logger, "Executable Directory", state.executableDirectory, true);
 		ValidatePath(logger, "Workspace", state.workspacePath, true);

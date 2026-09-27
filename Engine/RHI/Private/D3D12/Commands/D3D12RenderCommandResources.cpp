@@ -5,7 +5,7 @@
 #include "D3D12/D3D12TypeConversions.h"
 #include "Core/Public/Diagnostics/Verify.h"
 
-static const auto g_d3d12RenderCommandListLogger = Logging::GetOrCreateLogger("RHI.D3D12.CommandList");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_d3d12RenderCommandListLogger, "RHI.D3D12.CommandList");
 
 void D3D12RenderCommandList::CopyResource(RhiResourceHandle destinationResource, RhiResourceHandle sourceResource) noexcept
 {

@@ -8,7 +8,7 @@
 
 #include <format>
 
-static const auto g_rhiShaderBindingReflectionLogger = Logging::GetOrCreateLogger("RHI.ShaderBindingReflection");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_rhiShaderBindingReflectionLogger, "RHI.ShaderBindingReflection");
 
 class RhiShaderBindingReflectionImplementation final
 {

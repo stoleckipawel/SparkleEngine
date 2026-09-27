@@ -44,15 +44,27 @@ namespace SparkleLauncher
 
 		if (!arguments.RunOperationId.empty())
 		{
+			LauncherShadowCompletionPolicy completionPolicy = LauncherShadowCompletionPolicy::WaitForCompletion;
+			const std::optional<BuildWorkspaceOperationDefinition> buildOperation =
+			    FindBuildWorkspaceOperationDefinition(arguments.RunOperationId);
+			if (buildOperation.has_value() && buildOperation->ReplacesLauncherArtifact)
+			{
+				completionPolicy = LauncherShadowCompletionPolicy::ReleaseCallingArtifact;
+			}
+
 			std::vector<std::string> shadowArguments;
 			for (int index = 1; index < argc; ++index)
 			{
 				shadowArguments.emplace_back(argv[index]);
 			}
 			const LauncherShadowStartResult shadow =
-			    StartLauncherShadow(repository->RootPath, shadowArguments, true);
+			    StartLauncherShadow(repository->RootPath, shadowArguments, completionPolicy);
 			if (shadow.State == LauncherShadowStartState::Started)
 			{
+				if (completionPolicy == LauncherShadowCompletionPolicy::ReleaseCallingArtifact)
+				{
+					output << "Operation handed off to the per-user Launcher shadow; progress and result are recorded in Launcher logs.\n";
+				}
 				return shadow.ExitCode;
 			}
 			if (shadow.State == LauncherShadowStartState::Failed)

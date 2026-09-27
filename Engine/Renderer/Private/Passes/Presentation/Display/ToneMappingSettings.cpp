@@ -1,7 +1,7 @@
 #include "../../../PCH.h"
 #include "Passes/Presentation/Display/ToneMappingSettings.h"
 
-static const auto g_toneMappingSettingsLogger = Logging::GetOrCreateLogger("Renderer.ToneMappingSettings");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_toneMappingSettingsLogger, "Renderer.ToneMappingSettings");
 
 static std::uint32_t ToShaderToneMapper(EngineToneMapper toneMapper) noexcept
 {

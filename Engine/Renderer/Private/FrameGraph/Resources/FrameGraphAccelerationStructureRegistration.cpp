@@ -7,7 +7,7 @@
 
 #include <format>
 
-static const auto g_frameGraphAccelerationStructureLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_frameGraphAccelerationStructureLogger, "Renderer.FrameGraph");
 
 class FrameGraphAccelerationStructureBindingValidator final
 {

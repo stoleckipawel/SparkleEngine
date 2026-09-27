@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-static const auto g_pipelineLogger = Logging::GetOrCreateLogger("RHI.D3D12.Pipeline");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_pipelineLogger, "RHI.D3D12.Pipeline");
 
 void D3D12Pipeline::SetStreamOutput(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc) noexcept
 {

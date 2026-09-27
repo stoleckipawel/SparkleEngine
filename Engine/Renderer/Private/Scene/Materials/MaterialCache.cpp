@@ -16,7 +16,7 @@
 #include <array>
 #include <format>
 
-static const auto g_materialCacheLogger = Logging::GetOrCreateLogger("Renderer.MaterialCache");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_materialCacheLogger, "Renderer.MaterialCache");
 
 MaterialCache::MaterialCache(TextureCache& textureCache, RenderHardwareInterface& renderHardwareInterface) noexcept :
     m_textureCache(textureCache),

@@ -69,6 +69,11 @@ namespace Filesystem
 		return BuildRoot / "_dependency-sync" / std::string(dependencyId);
 	}
 
+	std::filesystem::path WorkspaceOutputPaths::LauncherBuildDirectory() const
+	{
+		return BuildRoot / "private" / "tools" / "SparkleLauncher";
+	}
+
 	WorkspaceTargetOutputPaths WorkspaceOutputPaths::ProjectTargetOutputs(
 	    std::string_view projectName,
 	    std::string_view productRole,

@@ -28,7 +28,7 @@
 #include <optional>
 #include <utility>
 
-static const auto g_gameWorldLogger = Logging::GetOrCreateLogger("GameFramework.GameWorld");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_gameWorldLogger, "GameFramework.GameWorld");
 
 GameWorld::GameWorld(TaskExecutor& taskExecutor) :
     m_state(std::make_unique<ECS::GameWorldState>()),

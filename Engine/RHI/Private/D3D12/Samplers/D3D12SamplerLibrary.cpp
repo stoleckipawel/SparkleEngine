@@ -3,7 +3,7 @@
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/D3D12TypeConversions.h"
 
-static const auto g_samplerLibraryLogger = Logging::GetOrCreateLogger("RHI.D3D12.Samplers");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_samplerLibraryLogger, "RHI.D3D12.Samplers");
 
 bool D3D12SamplerLibrary::TryGetSlot(const RhiSamplerDesc& samplerDesc, Slot& outSlot) noexcept
 {

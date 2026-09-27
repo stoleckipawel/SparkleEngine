@@ -4,6 +4,8 @@
 
 #include "Core/Public/Console/CVar.h"
 
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogApplicationConcurrency, "Application.Concurrency");
+
 namespace ConcurrencyLaunchCVars
 {
 	ConsoleVariable<bool> g_threadedRenderer("r.ThreadedRenderer", true, "Run renderer/RHI ownership on Sparkle.RenderThread.");
@@ -25,7 +27,7 @@ namespace ConcurrencyLaunchCVars
 		if (renderPipelineDepth > 2u)
 		{
 			Diagnostics::Fatal(
-			    Logging::GetOrCreateLogger("Application.Concurrency"),
+			    LogApplicationConcurrency,
 			    __FILE__,
 			    __LINE__,
 			    "r.RenderPipelineDepth is outside the supported range [0, 2].");

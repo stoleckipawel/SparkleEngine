@@ -3,7 +3,7 @@
 
 #include "Core/Public/Diagnostics/Verify.h"
 
-static const auto g_materialHandleResolverLogger = Logging::GetOrCreateLogger("Renderer.MaterialHandleResolver");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_materialHandleResolverLogger, "Renderer.MaterialHandleResolver");
 
 namespace MaterialHandleResolver
 {

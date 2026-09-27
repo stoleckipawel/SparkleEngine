@@ -9,6 +9,8 @@
 #include <format>
 #include <memory>
 
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogFrameGraphBarrierPlayback, "Renderer.FrameGraph");
+
 class FrameGraphBarrierFailureReporter final
 {
 public:
@@ -29,7 +31,7 @@ public:
 	    std::string_view afterResourceName) noexcept
 	{
 		Diagnostics::Fatal(
-		    Logger(),
+		    LogFrameGraphBarrierPlayback,
 		    __FILE__,
 		    __LINE__,
 		    std::format(
@@ -49,7 +51,7 @@ public:
 	    std::string_view resourceName) noexcept
 	{
 		Diagnostics::Fatal(
-		    Logger(),
+		    LogFrameGraphBarrierPlayback,
 		    __FILE__,
 		    __LINE__,
 		    std::format(
@@ -64,12 +66,6 @@ public:
 		        ResourceStateToString(barrier.after)));
 	}
 
-private:
-	static const std::shared_ptr<spdlog::logger>& Logger() noexcept
-	{
-		static const auto logger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
-		return logger;
-	}
 };
 
 void FrameGraph::EmitCompiledBarriers(RenderCommandContext& commandContext, const std::vector<FrameGraphBarrier>& barriers) const noexcept

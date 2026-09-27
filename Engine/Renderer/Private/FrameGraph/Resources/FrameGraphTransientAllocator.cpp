@@ -7,6 +7,8 @@
 #include <cassert>
 #include <string>
 
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogFrameGraphTransientAllocator, "Renderer.FrameGraph");
+
 class FrameGraphTransientAllocationPolicy final
 {
 public:
@@ -283,7 +285,7 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 
 		default:
 			Diagnostics::Fatal(
-			    Logging::GetOrCreateLogger("Renderer.FrameGraph"),
+			    LogFrameGraphTransientAllocator,
 			    __FILE__,
 			    __LINE__,
 			    "FrameGraphTransientAllocator: unsupported transient resource kind for heap-backed allocation");

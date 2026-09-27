@@ -177,6 +177,16 @@ function(sparkle_boundary_scan_file absolute_path)
                 "${_line}")
         endif()
 
+		if(NOT _relative_path STREQUAL "Engine/Core/Private/Diagnostics/Logger.cpp" AND
+		   _line MATCHES "GetOrCreateLogger")
+			sparkle_boundary_append_failure(
+				"LOGGING_REGISTRY_REMAINS_CORE_PRIVATE"
+				"${_relative_path}"
+				"${_line_number}"
+				"Consumers declare a LogCategory; logger registry creation and lifetime remain private to Core diagnostics."
+				"${_line}")
+		endif()
+
         if(_relative_path MATCHES "^Engine/RHI/Public/" AND _line MATCHES "FrameGraph")
             sparkle_boundary_append_failure(
                 "RHI_PUBLIC_NO_FRAME_GRAPH_POLICY"

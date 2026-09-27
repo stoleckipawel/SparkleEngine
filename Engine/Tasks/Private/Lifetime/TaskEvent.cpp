@@ -9,7 +9,7 @@
 #include <stop_token>
 #include <utility>
 
-static const auto g_taskEventLogger = Logging::GetOrCreateLogger("Tasks.Event");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogTaskEvent, "Tasks.Event");
 
 struct TaskEvent::State final
 {
@@ -33,7 +33,7 @@ std::uint64_t TaskEvent::State::IssueIdentity() noexcept
 	{
 		if (identity == 0)
 		{
-			Diagnostics::Fatal(g_taskEventLogger, __FILE__, __LINE__, "TaskEvent identity exhausted.");
+			Diagnostics::Fatal(LogTaskEvent, __FILE__, __LINE__, "TaskEvent identity exhausted.");
 		}
 
 		const std::uint64_t next = identity == (std::numeric_limits<std::uint64_t>::max)() ? 0 : identity + 1;

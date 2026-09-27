@@ -56,7 +56,6 @@ public:
 private:
 	struct NativeSubmission;
 
-	static const std::shared_ptr<spdlog::logger>& GetLogger();
 	static std::uint64_t GetWaitTimeoutNanoseconds() noexcept;
 	bool ResolveWaitState(std::span<const RhiSubmissionToken> waitTokens, RhiSubmissionState& waitState) const noexcept;
 	void BuildNativeSubmission(

@@ -12,7 +12,7 @@
 #include <stdexcept>
 #include <utility>
 
-static const auto g_taskExecutorLogger = Logging::GetOrCreateLogger("Tasks.Executor");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogTaskExecutor, "Tasks.Executor");
 
 void TaskExecutor::Implementation::Runtime::ValidateConfiguration(const TaskExecutorConfig& config)
 {
@@ -185,7 +185,7 @@ void TaskExecutor::Implementation::Runtime::ExecuteSerial(
 	catch (...)
 	{
 		Diagnostics::Fatal(
-		    g_taskExecutorLogger,
+		    LogTaskExecutor,
 		    __FILE__,
 		    __LINE__,
 		    "Serial task execution failed after admission and could not publish completion.");
@@ -211,7 +211,7 @@ void TaskExecutor::Implementation::Runtime::StartExecution(
 	catch (...)
 	{
 		Diagnostics::Fatal(
-		    g_taskExecutorLogger,
+		    LogTaskExecutor,
 		    __FILE__,
 		    __LINE__,
 		    "Threaded task execution failed after admission and could not safely roll back publication.");

@@ -10,7 +10,7 @@
 
 #include <format>
 
-static const auto g_levelRegistryLogger = Logging::GetOrCreateLogger("GameFramework.LevelRegistry");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_levelRegistryLogger, "GameFramework.LevelRegistry");
 
 LevelRegistry::LevelRegistry()
 {

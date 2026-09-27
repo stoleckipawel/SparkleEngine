@@ -50,7 +50,7 @@ private:
 
 	[[noreturn]] static void Fail(const char* message) noexcept
 	{
-		static const auto logger = Logging::GetOrCreateLogger("RHI.Presentation");
+		SPARKLE_DEFINE_LOG_CATEGORY_STATIC(logger, "RHI.Presentation");
 		Diagnostics::Fatal(logger, __FILE__, __LINE__, message);
 	}
 

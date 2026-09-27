@@ -4,7 +4,7 @@
 
 #include "Vulkan/Core/VulkanResult.h"
 
-static const auto g_vulkanDebugLayerLogger = Logging::GetOrCreateLogger("RHI.Vulkan.DebugLayer");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanDebugLayerLogger, "RHI.Vulkan.DebugLayer");
 
 VulkanDebugLayer::~VulkanDebugLayer() noexcept
 {

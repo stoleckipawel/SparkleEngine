@@ -5,7 +5,7 @@
 #include "Vulkan/Commands/VulkanCommandQueue.h"
 #include "Vulkan/Core/VulkanResult.h"
 
-static const auto g_vulkanRhiLogger = Logging::GetOrCreateLogger("RHI.Vulkan");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanRhiLogger, "RHI.Vulkan");
 
 VulkanRhi::VulkanRhi() noexcept
 {

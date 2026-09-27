@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <unordered_set>
 
-static const auto g_rayTracingClassicTlasBuilderLogger = Logging::GetOrCreateLogger("Renderer.RayTracing.ClassicTlasBuilder");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_rayTracingClassicTlasBuilderLogger, "Renderer.RayTracing.ClassicTlasBuilder");
 
 struct RayTracingClassicTlasBuilder::BuildState final
 {

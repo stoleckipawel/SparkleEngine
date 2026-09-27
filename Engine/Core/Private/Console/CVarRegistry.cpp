@@ -4,7 +4,7 @@
 
 #include <string>
 
-static const auto g_cvarRegistryLogger = Logging::GetOrCreateLogger("Core.Console");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogCoreConsole, "Core.Console");
 
 ConsoleVariableBase::ConsoleVariableBase(std::string_view name, std::string_view description, std::type_index valueType) noexcept :
     m_name(name),
@@ -25,7 +25,7 @@ void ConsoleVariableRegistry::Register(ConsoleVariableBase& variable) noexcept
 	if (!inserted)
 	{
 		Diagnostics::Fatal(
-		    g_cvarRegistryLogger,
+		    LogCoreConsole,
 		    __FILE__,
 		    __LINE__,
 		    "ConsoleVariableRegistry: Duplicate cvar registration for '" + std::string(variable.GetName()) + "'");

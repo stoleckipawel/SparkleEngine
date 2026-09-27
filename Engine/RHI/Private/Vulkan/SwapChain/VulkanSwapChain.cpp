@@ -16,7 +16,7 @@
 #include <limits>
 #include <utility>
 
-static const auto g_vulkanSwapChainLogger = Logging::GetOrCreateLogger("RHI.Vulkan.SwapChain");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanSwapChainLogger, "RHI.Vulkan.SwapChain");
 
 VulkanSwapChain::VulkanSwapChain(
     VulkanRhi& rhi,

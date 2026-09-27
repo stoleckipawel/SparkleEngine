@@ -8,7 +8,7 @@
 
 #include <algorithm>
 
-static const auto g_textureCompressionPolicyLogger = Logging::GetOrCreateLogger("TextureCooker.CompressionPolicy");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_textureCompressionPolicyLogger, "TextureCooker.CompressionPolicy");
 
 namespace TextureCookPipeline
 {

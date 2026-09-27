@@ -9,7 +9,7 @@
 
 #include <backends/imgui_impl_vulkan.h>
 
-static const auto g_vulkanImGuiBackendLogger = Logging::GetOrCreateLogger("RHI.Vulkan.ImGui");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanImGuiBackendLogger, "RHI.Vulkan.ImGui");
 
 VulkanImGuiBackend::VulkanImGuiBackend(
     VulkanRenderHardwareInterface& renderHardwareInterface,

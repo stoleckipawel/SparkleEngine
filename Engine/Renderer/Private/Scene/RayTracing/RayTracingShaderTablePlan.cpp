@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <limits>
 
-static const auto g_rayTracingShaderTablePlanLogger = Logging::GetOrCreateLogger("Renderer.RayTracing.ShaderTablePlan");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_rayTracingShaderTablePlanLogger, "Renderer.RayTracing.ShaderTablePlan");
 
 void RayTracingShaderTablePlan::Synchronize(std::span<const RenderPrimitive> primitives, const RenderMaterialTable& materials) noexcept
 {

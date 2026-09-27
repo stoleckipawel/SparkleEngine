@@ -1,7 +1,7 @@
 #include "../../../PCH.h"
 #include "Passes/PostProcessing/Exposure/ExposureSettings.h"
 
-static const auto g_exposureSettingsLogger = Logging::GetOrCreateLogger("Renderer.ExposureSettings");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_exposureSettingsLogger, "Renderer.ExposureSettings");
 
 static std::uint32_t ToShaderExposureMode(EngineExposureMode mode) noexcept
 {

@@ -92,6 +92,54 @@ namespace SparkleLauncher
 		return process;
 	}
 
+	ProcessRequest MakeCMakeLauncherConfigureRequest(
+	    const std::filesystem::path& repositoryRoot,
+	    const BuildToolchainStatus& toolchain,
+	    std::string_view operationId,
+	    std::string_view logFileName)
+	{
+		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
+		ProcessRequest process = MakeCMakeConfigureRequest(repositoryRoot, toolchain, operationId, logFileName);
+		if (!process.Arguments.empty())
+		{
+			process.Arguments.pop_back();
+		}
+		process.WorkingDirectory = repositoryRoot;
+		process.Arguments.push_back("-S");
+		process.Arguments.push_back((repositoryRoot / "Tools" / "Launcher").string());
+		process.Arguments.push_back("-B");
+		process.Arguments.push_back(outputs.LauncherBuildDirectory().string());
+		return process;
+	}
+
+	ProcessRequest MakeCMakeLauncherBuildRequest(
+	    const std::filesystem::path& repositoryRoot,
+	    const BuildToolchainStatus& toolchain,
+	    std::string_view operationId,
+	    std::string_view profileName,
+	    std::string_view logFileName)
+	{
+		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
+		ProcessRequest process;
+		process.ExecutablePath = toolchain.CMakePath;
+		process.WorkingDirectory = repositoryRoot;
+		process.LogPath = ResolveLauncherOperationLogPath(repositoryRoot, operationId, logFileName);
+		process.Arguments = {
+		    "--build",
+		    outputs.LauncherBuildDirectory().string(),
+		    "--config",
+		    std::string(profileName),
+		    "--target",
+		    "SparkleLauncher"};
+		if (CMakeGeneratorUsesMsBuildArguments(toolchain.Generator))
+		{
+			process.Arguments.push_back("--");
+			const std::vector<std::string> buildToolArguments = GetDefaultBuildToolArguments();
+			process.Arguments.insert(process.Arguments.end(), buildToolArguments.begin(), buildToolArguments.end());
+		}
+		return process;
+	}
+
 	ProcessRequest MakeCMakeDependencySyncRequest(
 	    const std::filesystem::path& repositoryRoot,
 	    const BuildToolchainStatus& toolchain,

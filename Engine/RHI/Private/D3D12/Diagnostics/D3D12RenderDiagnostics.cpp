@@ -23,7 +23,7 @@
 #include <string_view>
 #include <vector>
 
-static const auto g_d3d12RenderDiagnosticsLogger = Logging::GetOrCreateLogger("RHI.D3D12.Diagnostics");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_d3d12RenderDiagnosticsLogger, "RHI.D3D12.Diagnostics");
 
 class D3D12RenderObjectDiagnostics final : public RenderObjectDiagnostics
 {

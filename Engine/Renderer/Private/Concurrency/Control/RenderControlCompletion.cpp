@@ -2,7 +2,7 @@
 
 #include "Core/Public/Diagnostics/Verify.h"
 
-static const auto g_renderControlCompletionLogger = Logging::GetOrCreateLogger("Renderer.ControlCompletion");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_renderControlCompletionLogger, "Renderer.ControlCompletion");
 
 void RenderControlCompletion::Complete(RenderControlResult result)
 {

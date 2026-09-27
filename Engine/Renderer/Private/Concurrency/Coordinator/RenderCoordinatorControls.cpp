@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <limits>
 
-static const auto g_renderCoordinatorLogger = Logging::GetOrCreateLogger("Renderer.Coordinator");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_renderCoordinatorLogger, "Renderer.Coordinator");
 
 template <typename TResult> TResult RenderCoordinator::ExtractControlResult(RenderControlResult result)
 {

@@ -10,7 +10,7 @@
 
 #include <algorithm>
 
-static const auto g_rayTracingPartitionedTlasStrategyLogger = Logging::GetOrCreateLogger("Renderer.RayTracing.PartitionedTlasStrategy");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_rayTracingPartitionedTlasStrategyLogger, "Renderer.RayTracing.PartitionedTlasStrategy");
 
 bool RayTracingPartitionedTlasStrategy::IsUsablePartitionPlan(const RayTracingPtlasPartitionPlan* partitionPlan) noexcept
 {

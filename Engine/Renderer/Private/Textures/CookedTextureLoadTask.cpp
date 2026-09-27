@@ -6,7 +6,7 @@
 #include "Tasks/Public/TaskGraph.h"
 #include "Tasks/Public/TaskScope.h"
 
-static const auto g_cookedTextureLoadTaskLogger = Logging::GetOrCreateLogger("Renderer.CookedTextureLoadTask");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_cookedTextureLoadTaskLogger, "Renderer.CookedTextureLoadTask");
 
 TaskExecution CookedTextureLoadTask::Launch(
     TaskExecutor& taskExecutor,

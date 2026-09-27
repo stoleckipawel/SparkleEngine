@@ -8,7 +8,7 @@
 #include <format>
 #include <string_view>
 
-static const auto g_renderGpuLightingPayloadBuilderLogger = Logging::GetOrCreateLogger("Renderer.RenderGpuLightingPayloadBuilder");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_renderGpuLightingPayloadBuilderLogger, "Renderer.RenderGpuLightingPayloadBuilder");
 
 class RenderGpuLightingContract final
 {

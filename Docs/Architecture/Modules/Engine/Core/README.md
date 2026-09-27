@@ -31,7 +31,7 @@ Core keeps dependencies pointed downward by owning only reusable mechanisms. Tha
 
 | ID | Capability | State | Exact current coverage and limit | Evidence |
 | --- | --- | --- | --- | --- |
-| `CORE-001` | Named diagnostics | Implemented path | Process-wide `spdlog` bootstrap, named logger lookup/creation, active log-file discovery, runtime level control, fatal/verify helpers, and debugger break-if-attached. Fatal paths are process-terminating policy, not recoverable errors. | `S` |
+| `CORE-001` | Named diagnostics | Implemented path | Process-wide `spdlog` bootstrap, lightweight declared `LogCategory` frontend, Core-private named logger creation/lifetime, active log-file discovery, runtime level control, fatal/verify helpers, and debugger break-if-attached. Fatal paths are process-terminating policy, not recoverable errors. | `S` |
 | `CORE-002` | Console-variable registry | Implemented path | Statically registered typed CVars support bool, integral, floating, enum-as-number, and string values. Lookup and string mutation report parse errors. There is no persistence layer in Core. | `S` |
 | `CORE-003` | Console command/session | Implemented path | Runtime/editor command scopes, registry, argument parsing, autocomplete, bounded history, bounded 512-record session output, and built-ins for help/list/get/set. Product hosts decide which commands are reachable. | `S` |
 | `CORE-004` | Event dispatch | Implemented path | Fixed-capacity typed synchronous events return handles; `ScopedEventHandle` removes a subscription on destruction. This is same-thread callback dispatch, not an asynchronous message bus. | `S` |
@@ -59,6 +59,16 @@ Producer builds temporary files -> `Files::FilePublication` groups temporary/fin
 ### Configuration entry
 
 Static `ConsoleVariable<T>` construction registers with the singleton registry -> command-line or console host resolves the name -> string parsing mutates the typed value -> Application/Renderer/RHI reads it at its chosen boundary. Core provides no persistence, range schema, restart policy, or UI ownership; those remain with the consumer.
+
+### Logging category ownership
+
+A receiver declares a stable category with `SPARKLE_DEFINE_LOG_CATEGORY_STATIC`
+in its implementation file, or pairs `SPARKLE_DECLARE_LOG_CATEGORY` in a
+shared header with one `SPARKLE_DEFINE_LOG_CATEGORY` definition. Receivers log
+through that category and do not cache `shared_ptr<spdlog::logger>` instances or
+create registry entries. `SparkleCore` alone owns lazy category resolution,
+registry synchronization, sinks, levels, and logger lifetime. This keeps the
+frontend declarative while preserving one backend policy and one creation path.
 
 ### Workspace-derived paths
 

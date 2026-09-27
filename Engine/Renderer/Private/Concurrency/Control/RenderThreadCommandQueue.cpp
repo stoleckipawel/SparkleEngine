@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "Concurrency/Control/RenderThreadCommandQueue.h"
 
-static const auto g_renderThreadCommandQueueLogger = Logging::GetOrCreateLogger("Renderer.ThreadCommandQueue");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_renderThreadCommandQueueLogger, "Renderer.ThreadCommandQueue");
 
 RenderThreadCommandQueue::RenderThreadCommandQueue(std::size_t capacity) :
     m_capacity(capacity)

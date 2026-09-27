@@ -443,7 +443,7 @@ const wchar_t* D3D12CommandRecordingContext::QueueTypeName(ERhiQueueType queueTy
 
 [[noreturn]] void D3D12CommandRecordingContext::FailClose(const CommandSlot& slot, HRESULT result) noexcept
 {
-	const auto logger = Logging::GetOrCreateLogger("RHI.D3D12.Commands");
+	SPARKLE_DEFINE_LOG_CATEGORY_STATIC(logger, "RHI.D3D12.Commands");
 	RhiDiagnosticMessage diagnosticMessage;
 	while (slot.Owner->m_rhi->TryPopDebugMessage(diagnosticMessage))
 	{
@@ -469,7 +469,7 @@ const wchar_t* D3D12CommandRecordingContext::QueueTypeName(ERhiQueueType queueTy
 
 [[noreturn]] void D3D12CommandRecordingContext::FailExhausted(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept
 {
-	const auto logger = Logging::GetOrCreateLogger("RHI.D3D12.Commands");
+	SPARKLE_DEFINE_LOG_CATEGORY_STATIC(logger, "RHI.D3D12.Commands");
 	Diagnostics::Fatal(
 	    logger,
 	    __FILE__,

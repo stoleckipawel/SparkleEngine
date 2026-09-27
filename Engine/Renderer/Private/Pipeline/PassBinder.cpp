@@ -9,7 +9,7 @@
 #include <string>
 #include <string_view>
 
-static const auto g_passBinderLogger = Logging::GetOrCreateLogger("Renderer.PassBinder");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_passBinderLogger, "Renderer.PassBinder");
 
 struct PassBinder::BindingRequest final
 {

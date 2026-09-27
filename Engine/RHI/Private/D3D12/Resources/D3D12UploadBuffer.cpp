@@ -4,7 +4,7 @@
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 #include <cstring>
 
-static const auto g_d3d12UploadBufferLogger = Logging::GetOrCreateLogger("RHI.D3D12.UploadBuffer");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_d3d12UploadBufferLogger, "RHI.D3D12.UploadBuffer");
 
 std::unique_ptr<D3D12GpuAllocationRecord> D3D12UploadBuffer::Upload(D3D12Rhi& rhi, const void* data, size_t dataSize)
 {

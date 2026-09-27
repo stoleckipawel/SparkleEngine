@@ -14,7 +14,7 @@
 #include <regex>
 #include <sstream>
 
-static const auto g_includeClosureHasherLogger = Logging::GetOrCreateLogger("ShaderCompiler.IncludeClosureHasher");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_includeClosureHasherLogger, "ShaderCompiler.IncludeClosureHasher");
 
 void IncludeClosureHasher::VisitFile(
     std::string_view filePath,

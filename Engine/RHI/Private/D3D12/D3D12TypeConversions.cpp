@@ -4,7 +4,7 @@
 
 #include "Core/Public/Diagnostics/Verify.h"
 
-static const auto g_d3d12TypeConversionsLogger = Logging::GetOrCreateLogger("RHI.D3D12.TypeConversions");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_d3d12TypeConversionsLogger, "RHI.D3D12.TypeConversions");
 
 namespace D3D12ResourceFormatTranslation
 {

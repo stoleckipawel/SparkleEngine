@@ -18,7 +18,7 @@
 #include <format>
 #include <string>
 
-static const auto g_vulkanCommandRecordingLogger = Logging::GetOrCreateLogger("RHI.Vulkan.Commands");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanCommandRecordingLogger, "RHI.Vulkan.Commands");
 
 VulkanCommandRecordingContext::VulkanCommandRecordingContext(
     VulkanRhi& rhi,

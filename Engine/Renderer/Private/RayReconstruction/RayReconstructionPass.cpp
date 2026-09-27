@@ -6,7 +6,7 @@
 #include "FrameGraph/Execution/PassCommandContext.h"
 #include "RayReconstruction/RayReconstructionProvider.h"
 
-static const auto g_rayReconstructionPassLogger = Logging::GetOrCreateLogger("Renderer.RayReconstructionPass");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_rayReconstructionPassLogger, "Renderer.RayReconstructionPass");
 
 void AddRayReconstructionPass(
     FrameGraphBuilder& builder,

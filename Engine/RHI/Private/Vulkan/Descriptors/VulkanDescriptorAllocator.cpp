@@ -12,7 +12,7 @@
 #include <array>
 #include <format>
 
-static const auto g_vulkanDescriptorAllocatorLogger = Logging::GetOrCreateLogger("RHI.Vulkan.DescriptorAllocator");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanDescriptorAllocatorLogger, "RHI.Vulkan.DescriptorAllocator");
 
 VulkanDescriptorAllocator::VulkanDescriptorAllocator(VulkanRhi& rhi) noexcept :
     m_rhi(rhi),

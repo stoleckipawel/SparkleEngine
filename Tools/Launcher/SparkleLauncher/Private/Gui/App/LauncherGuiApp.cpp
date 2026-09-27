@@ -95,7 +95,10 @@ namespace SparkleLauncher
 		}
 
 		const LauncherShadowStartResult shadow =
-		    StartLauncherShadow(repositoryRoot, {"--root", repositoryRoot.string()}, false);
+		    StartLauncherShadow(
+		        repositoryRoot,
+		        {"--root", repositoryRoot.string()},
+		        LauncherShadowCompletionPolicy::ReleaseCallingArtifact);
 		if (shadow.State == LauncherShadowStartState::Started)
 		{
 			return shadow.ExitCode;

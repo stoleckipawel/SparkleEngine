@@ -18,7 +18,7 @@ namespace Threading
 {
 
 	thread_local std::string g_currentThreadRole = "Sparkle.UnlabeledThread";
-	auto g_threadOwnershipLogger = Logging::GetOrCreateLogger("Threading.Ownership");
+	SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogThreadOwnership, "Threading.Ownership");
 
 	void SetCurrentThreadRole(std::string_view role) noexcept
 	{
@@ -57,6 +57,6 @@ namespace Threading
 		    location.file_name(),
 		    location.line(),
 		    location.function_name());
-		Diagnostics::Fatal(g_threadOwnershipLogger, location.file_name(), location.line(), message);
+		Diagnostics::Fatal(LogThreadOwnership, location.file_name(), location.line(), message);
 	}
 }

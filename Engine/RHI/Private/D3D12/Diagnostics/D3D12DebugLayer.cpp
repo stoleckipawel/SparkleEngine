@@ -7,7 +7,7 @@
 
   #include <format>
 
-static const auto g_d3d12DiagnosticsLogger = Logging::GetOrCreateLogger("RHI.D3D12.Diagnostics");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_d3d12DiagnosticsLogger, "RHI.D3D12.Diagnostics");
 
 namespace D3D12DebugLayerDiagnostics
 {

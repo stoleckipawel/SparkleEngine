@@ -25,7 +25,7 @@
 #include <utility>
 #include <vector>
 
-static const auto g_textureCookBatchExecutorLogger = Logging::GetOrCreateLogger("TextureCooker.BatchExecutor");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_textureCookBatchExecutorLogger, "TextureCooker.BatchExecutor");
 
 class TextureSourceComApartment final
 {

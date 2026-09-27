@@ -9,7 +9,7 @@
 
 #include <backends/imgui_impl_dx12.h>
 
-static const auto g_d3d12ImGuiBackendLogger = Logging::GetOrCreateLogger("RHI.D3D12.ImGui");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_d3d12ImGuiBackendLogger, "RHI.D3D12.ImGui");
 
 D3D12ImGuiBackend::D3D12ImGuiBackend(D3D12RenderHardwareInterface& renderHardwareInterface) noexcept :
     m_renderHardwareInterface(renderHardwareInterface)

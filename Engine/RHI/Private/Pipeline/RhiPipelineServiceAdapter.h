@@ -55,7 +55,7 @@ public:
 private:
 	[[noreturn]] static void Fail(const char* message)
 	{
-		static const auto logger = Logging::GetOrCreateLogger("RHI.Pipeline");
+		SPARKLE_DEFINE_LOG_CATEGORY_STATIC(logger, "RHI.Pipeline");
 		Diagnostics::Fatal(logger, __FILE__, __LINE__, message);
 	}
 

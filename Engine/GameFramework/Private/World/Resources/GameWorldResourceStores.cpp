@@ -5,7 +5,7 @@
 #include <atomic>
 #include <limits>
 
-static const auto g_gameWorldResourceStoresLogger = Logging::GetOrCreateLogger("GameFramework.ResourceStores");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_gameWorldResourceStoresLogger, "GameFramework.ResourceStores");
 
 std::uint32_t GameWorldResourceStores::IssueGeneration() noexcept
 {

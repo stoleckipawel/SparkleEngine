@@ -11,7 +11,7 @@
 #include <dwmapi.h>
 #include <string>
 
-static const auto g_platformLogger = Logging::GetOrCreateLogger("Platform");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_platformLogger, "Platform");
 
 Window::Window(std::string_view windowTitle)
 {

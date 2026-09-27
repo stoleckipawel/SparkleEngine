@@ -10,7 +10,7 @@
 #include "RayTracing/Acceleration/RayTracingPtlasPartitionPlanner.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 
-static const auto g_renderRayTracingSceneLogger = Logging::GetOrCreateLogger("Renderer.RenderRayTracingScene");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_renderRayTracingSceneLogger, "Renderer.RenderRayTracingScene");
 
 static RayTracingExecutionFrontend SelectExecutionFrontend(const RayTracingCapabilityReport& capabilities) noexcept
 {

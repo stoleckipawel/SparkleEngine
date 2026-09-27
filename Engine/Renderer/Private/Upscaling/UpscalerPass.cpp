@@ -6,7 +6,7 @@
 #include "FrameGraph/Execution/PassCommandContext.h"
 #include "Upscaling/UpscalerProvider.h"
 
-static const auto g_upscalerPassLogger = Logging::GetOrCreateLogger("Renderer.UpscalerPass");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_upscalerPassLogger, "Renderer.UpscalerPass");
 
 void AddUpscalerPass(
     FrameGraphBuilder& builder,

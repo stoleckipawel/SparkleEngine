@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <utility>
 
-static const auto g_frameExecutionDiagnosticsLogger = Logging::GetOrCreateLogger("Renderer.FrameExecutionDiagnostics");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_frameExecutionDiagnosticsLogger, "Renderer.FrameExecutionDiagnostics");
 
 FrameExecutionDiagnostics::FrameExecutionDiagnostics(RenderDiagnostics& backendDiagnostics) noexcept :
     m_backendDiagnostics(&backendDiagnostics),

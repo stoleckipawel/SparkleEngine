@@ -13,7 +13,7 @@
 #include <array>
 #include <utility>
 
-static const auto g_gpuMeshCacheLogger = Logging::GetOrCreateLogger("Renderer.GpuMeshCache");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_gpuMeshCacheLogger, "Renderer.GpuMeshCache");
 
 const GpuMesh* GpuMeshCache::Resolve(GpuMeshHandle handle) const noexcept
 {

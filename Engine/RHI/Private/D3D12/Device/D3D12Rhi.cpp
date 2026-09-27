@@ -9,7 +9,7 @@
 
 #include "RHI/Public/Diagnostics/RhiDiagnostics.h"
 
-static const auto g_d3d12RhiLogger = Logging::GetOrCreateLogger("RHI.D3D12");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_d3d12RhiLogger, "RHI.D3D12");
 static constexpr std::uint32_t kD3D12RayTracingMaxDeclarableShaderPayloadSizeInBytes = 4096;
 static constexpr std::uint32_t kNvidiaVendorId = 0x10DE;
 

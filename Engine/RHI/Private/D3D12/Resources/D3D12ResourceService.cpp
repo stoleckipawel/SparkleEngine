@@ -11,6 +11,8 @@
 #include <cstring>
 #include <d3d12.h>
 
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogD3D12Diagnostics, "RHI.D3D12.Diagnostics");
+
 D3D12ResourceService::D3D12ResourceService(
     D3D12Rhi& rhi,
     D3D12GpuMemoryAllocator& memoryAllocator,
@@ -493,6 +495,6 @@ void D3D12ResourceService::CollectCrashDiagnosticsOnce() noexcept
 	RhiDiagnosticMessage message{};
 	while (m_rhi->TryPopDebugMessage(message))
 	{
-		SPDLOG_LOGGER_WARN(Logging::GetOrCreateLogger("RHI.D3D12.Diagnostics"), "{}", message.Text);
+		SPDLOG_LOGGER_WARN(LogD3D12Diagnostics.GetLogger(), "{}", message.Text);
 	}
 }

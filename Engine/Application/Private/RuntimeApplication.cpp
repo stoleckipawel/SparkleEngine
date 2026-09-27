@@ -26,6 +26,8 @@
 #include <memory>
 #include <utility>
 
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogApplicationConcurrency, "Application.Concurrency");
+
 bool RuntimeApplication::WantsImGuiInputCapture() noexcept
 {
 	const ImGuiContext* currentContext = ImGui::GetCurrentContext();
@@ -128,7 +130,7 @@ void RuntimeApplication::InitializeRenderer()
 		if (rendererConfig.RenderPipelineDepth >= CVarMaximumFramesInFlight.Get())
 		{
 			Diagnostics::Fatal(
-			    Logging::GetOrCreateLogger("Application.Concurrency"),
+			    LogApplicationConcurrency,
 			    __FILE__,
 			    __LINE__,
 			    "r.RenderPipelineDepth must be lower than r.MaximumFramesInFlight so queued simulation frames have distinct GPU frame "

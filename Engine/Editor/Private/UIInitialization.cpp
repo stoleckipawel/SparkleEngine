@@ -33,7 +33,7 @@
 
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-static std::shared_ptr<spdlog::logger> g_editorLogger = Logging::GetOrCreateLogger("Editor");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_editorLogger, "Editor");
 
 void UI::InitializeImGuiContext()
 {

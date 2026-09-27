@@ -82,7 +82,7 @@ private:
 		if (m_resourceAllocation == nullptr || m_resourceAllocation->Resource == nullptr)
 		{
 			Diagnostics::Fatal(
-			    Logging::GetOrCreateLogger("RHI.D3D12.ConstantBuffer"),
+			    LogD3D12ConstantBuffer,
 			    __FILE__,
 			    __LINE__,
 			    "D3D12ConstantBuffer: failed to allocate constant buffer.");
@@ -106,6 +106,7 @@ private:
 	}
 
 private:
+	SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogD3D12ConstantBuffer, "RHI.D3D12.ConstantBuffer");
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
 	ComPtr<ID3D12Resource2> m_resource = nullptr;

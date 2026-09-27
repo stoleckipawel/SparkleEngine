@@ -184,6 +184,15 @@ not carry a build-machine absolute path. Mutating shell operations and the GUI
 run from per-user shadow generations so the deployed bundle remains unlocked
 for self-update.
 
+The `launcher.build.self` operation consumes this Launcher-owned entry point
+directly. It always refreshes that small graph before its focused incremental
+build and does not read or rewrite the full-workspace freshness stamp. Full
+workspace SDK readiness remains a separate capability gate. Because this
+operation replaces the loaded Launcher artifact, its operation definition
+declares that effect and shell invocation releases the calling artifact after
+starting the per-user shadow; progress and completion are read from the
+operation log rather than a parent process that would keep the target locked.
+
 `dist/` is reserved for future immutable staged packages and archives. Its name
 does not imply that release assembly exists: package manifests, signing,
 relocation, clean-machine verification, and the release workflow remain absent.

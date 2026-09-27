@@ -21,7 +21,7 @@ struct RayTracingSceneBuildPassInput final
 	std::optional<std::reference_wrapper<const RayTracingPtlasPartitionPlan>> ViewPlan;
 };
 
-static const auto g_rayTracingSceneFrameGraphLogger = Logging::GetOrCreateLogger("Renderer.RayTracingSceneFrameGraph");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_rayTracingSceneFrameGraphLogger, "Renderer.RayTracingSceneFrameGraph");
 
 void AddRayTracingScenePass(FrameGraphBuilder& builder, RenderRayTracingScene& rayTracingScene, RenderFrameGraphResources& resources)
 {

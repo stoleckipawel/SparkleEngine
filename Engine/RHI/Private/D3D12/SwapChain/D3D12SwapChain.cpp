@@ -9,7 +9,7 @@
 
 #include <format>
 
-static const auto g_d3d12SwapChainLogger = Logging::GetOrCreateLogger("RHI.D3D12.SwapChain");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_d3d12SwapChainLogger, "RHI.D3D12.SwapChain");
 
 D3D12SwapChain::D3D12SwapChain(
     D3D12Rhi& rhi,

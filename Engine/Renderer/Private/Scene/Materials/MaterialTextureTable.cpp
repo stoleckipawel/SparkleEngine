@@ -9,7 +9,7 @@
 #include <limits>
 #include <utility>
 
-static const auto g_materialTextureTableLogger = Logging::GetOrCreateLogger("Renderer.MaterialTextureTable");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_materialTextureTableLogger, "Renderer.MaterialTextureTable");
 
 void MaterialTextureTable::Reset() noexcept
 {

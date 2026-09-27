@@ -4,7 +4,7 @@
 #include "Core/Public/Diagnostics/Verify.h"
 #include "Core/Public/Strings/StringUtils.h"
 
-static const auto g_textureCookPolicyCodecLogger = Logging::GetOrCreateLogger("TextureCooker.PolicyCodec");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_textureCookPolicyCodecLogger, "TextureCooker.PolicyCodec");
 
 TextureColorSpace TextureCookPolicyCodec::ParseColorSpace(std::string_view value)
 {

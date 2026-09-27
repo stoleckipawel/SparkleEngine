@@ -274,16 +274,9 @@ namespace SparkleLauncher
 				return;
 			}
 			case BuildWorkspaceOperationKind::CompileLauncher:
-				if (!RequireSyncedSourceDependencies(plan))
-				{
-					return;
-				}
-				if (!RequireCurrentWorkspace(plan))
-				{
-					return;
-				}
+				AddConfigureStep(plan);
 				AddBuildStep(plan, request.EditorProfile, {"SparkleLauncher"});
-				AddPlannedEffect(plan, "Rebuild the launcher executable and deployed runtime files.");
+				AddPlannedEffect(plan, "Configure the Launcher-owned product graph, then rebuild its executable and deployed runtime files.");
 				plan.CanRun = true;
 				return;
 			case BuildWorkspaceOperationKind::CompileEditor:
@@ -391,7 +384,8 @@ namespace SparkleLauncher
 		        "launcher.build.self",
 		        "Build",
 		        "Build Launcher",
-		        "Optional local rebuild of Sparkle Launcher for development or customization."},
+		        "Optional local rebuild of Sparkle Launcher for development or customization.",
+		        true},
 		    {BuildWorkspaceOperationKind::CompileEditor,
 		        "workspace.build.editor",
 		        "Build",

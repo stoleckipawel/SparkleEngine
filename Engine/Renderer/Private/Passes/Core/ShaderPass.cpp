@@ -14,7 +14,7 @@
 #include <cassert>
 #include <string>
 
-static const auto g_shaderPassLogger = Logging::GetOrCreateLogger("Renderer");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_shaderPassLogger, "Renderer");
 
 bool DeclareShaderPassParameterUsages(PassResourceBuilder& builder, const PassParameterSet& parameterSet, const char* passName) noexcept
 {

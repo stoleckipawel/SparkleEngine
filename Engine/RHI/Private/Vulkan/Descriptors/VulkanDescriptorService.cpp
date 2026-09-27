@@ -16,7 +16,7 @@
 #include <algorithm>
 #include <utility>
 
-static const auto g_vulkanDescriptorServiceLogger = Logging::GetOrCreateLogger("RHI.Vulkan.DescriptorService");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanDescriptorServiceLogger, "RHI.Vulkan.DescriptorService");
 
 bool VulkanDescriptorService::ResourceViewRecord::IsAllocated() const noexcept
 {

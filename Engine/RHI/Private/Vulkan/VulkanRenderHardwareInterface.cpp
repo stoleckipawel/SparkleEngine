@@ -28,7 +28,7 @@
 
 #include <array>
 
-static const auto g_vulkanRenderHardwareInterfaceLogger = Logging::GetOrCreateLogger("RHI.Vulkan.Interface");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanRenderHardwareInterfaceLogger, "RHI.Vulkan.Interface");
 
 VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
     VulkanRhi& rhi,

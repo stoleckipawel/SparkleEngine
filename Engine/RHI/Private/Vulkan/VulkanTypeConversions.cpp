@@ -4,7 +4,7 @@
 
 #include "Core/Public/Diagnostics/Verify.h"
 
-static const auto g_vulkanTypeConversionsLogger = Logging::GetOrCreateLogger("RHI.Vulkan.TypeConversions");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanTypeConversionsLogger, "RHI.Vulkan.TypeConversions");
 
 VkFormat VulkanTypeConversions::ToVkFormat(PixelFormat format) noexcept
 {

@@ -7,7 +7,7 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Window/Window.h"
 
-static const auto g_frameGraphLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_frameGraphLogger, "Renderer.FrameGraph");
 
 FrameGraph::AllocatedParameterInstanceBase::~AllocatedParameterInstanceBase() noexcept = default;
 

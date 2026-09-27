@@ -9,7 +9,7 @@
 
 #include <format>
 
-static const auto g_vulkanPipelineLayoutBuilderLogger = Logging::GetOrCreateLogger("RHI.Vulkan.PipelineLayout");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanPipelineLayoutBuilderLogger, "RHI.Vulkan.PipelineLayout");
 
 VulkanPipelineLayout::VulkanPipelineLayout(VkDevice device, VkPipelineLayout layout) noexcept :
     m_device(device),

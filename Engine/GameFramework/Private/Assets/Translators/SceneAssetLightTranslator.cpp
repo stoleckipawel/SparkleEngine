@@ -6,7 +6,7 @@
 
 #include <string>
 
-static const auto g_sceneAssetLightTranslatorLogger = Logging::GetOrCreateLogger("GameFramework.SceneAssetLightTranslator");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_sceneAssetLightTranslatorLogger, "GameFramework.SceneAssetLightTranslator");
 
 namespace Assets
 {

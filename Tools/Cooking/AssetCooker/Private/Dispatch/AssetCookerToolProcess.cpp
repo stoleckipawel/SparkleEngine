@@ -13,7 +13,7 @@ int AssetCookerToolProcess::Run(
     const std::filesystem::path& workingDirectory,
     std::stop_token cancellation)
 {
-	static const auto toolProcessLogger = Logging::GetOrCreateLogger("Tools.AssetCooker.Process");
+	SPARKLE_DEFINE_LOG_CATEGORY_STATIC(toolProcessLogger, "Tools.AssetCooker.Process");
 
 	Process::ChildProcessResult result = Process::ChildProcess::Run(
 	    Process::ChildProcessRequest{

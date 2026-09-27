@@ -15,7 +15,7 @@ public:
 	    {"Sky", "Defaults/default_cubemap.stex"}};
 };
 
-static const auto g_defaultTexturesLogger = Logging::GetOrCreateLogger("Renderer.DefaultTextures");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_defaultTexturesLogger, "Renderer.DefaultTextures");
 
 const DefaultTextureDesc& DefaultTextures::GetDesc(DefaultTexture type)
 {

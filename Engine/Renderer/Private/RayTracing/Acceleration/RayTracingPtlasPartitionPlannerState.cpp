@@ -7,8 +7,9 @@
 #include <algorithm>
 #include <cmath>
 
-static const auto g_rayTracingPtlasPartitionPlannerStateLogger =
-    Logging::GetOrCreateLogger("Renderer.RayTracing.PtlasPartitionPlannerState");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(
+    g_rayTracingPtlasPartitionPlannerStateLogger,
+    "Renderer.RayTracing.PtlasPartitionPlannerState");
 
 class RayTracingPtlasPartitionPlannerStateConstants final
 {

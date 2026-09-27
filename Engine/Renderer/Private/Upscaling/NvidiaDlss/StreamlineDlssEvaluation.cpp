@@ -9,7 +9,7 @@
 
   #include <sl_dlss.h>
 
-static const auto g_streamlineDlssEvaluationLogger = Logging::GetOrCreateLogger("Renderer.Streamline.DLSS");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_streamlineDlssEvaluationLogger, "Renderer.Streamline.DLSS");
 
 RenderViewportExtent QueryStreamlineDlssOptimalRenderExtent(RenderViewportExtent outputExtent, EUpscalerQualityMode qualityMode) noexcept
 {

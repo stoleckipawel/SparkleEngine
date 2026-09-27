@@ -10,7 +10,7 @@
 
 #include <format>
 
-static const auto g_rendererTextureFactoryLogger = Logging::GetOrCreateLogger("Renderer.RendererTextureFactory");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_rendererTextureFactoryLogger, "Renderer.RendererTextureFactory");
 
 RendererTextureFactory::RendererTextureFactory(
     RhiResourceService& resourceService,

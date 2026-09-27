@@ -13,7 +13,7 @@
 #include "DxilReflectionExtractor.h"
 #include "SpirVReflectionExtractor.h"
 
-static const auto g_dxcShaderBackendLogger = Logging::GetOrCreateLogger(std::string{kDxcCompilerLoggerCategory});
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_dxcShaderBackendLogger, kDxcCompilerLoggerCategory);
 
 DxcShaderBackend::DxcShaderBackend()
 {

@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-static const auto g_rayTracingPtlasPartitionPlannerLogger = Logging::GetOrCreateLogger("Renderer.RayTracing.PartitionPlanner");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_rayTracingPtlasPartitionPlannerLogger, "Renderer.RayTracing.PartitionPlanner");
 
 RayTracingPtlasPartitionPlanner::RayTracingPtlasPartitionPlanner() noexcept = default;
 

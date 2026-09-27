@@ -14,6 +14,14 @@ namespace SparkleLauncher
 {
 	static ProcessRequest MakeConfigureRequest(const BuildWorkspaceOperationPlan& plan)
 	{
+		if (plan.Kind == BuildWorkspaceOperationKind::CompileLauncher)
+		{
+			return MakeCMakeLauncherConfigureRequest(
+			    plan.RepositoryRoot,
+			    plan.Toolchain,
+			    plan.Operation.Id,
+			    "Configure.txt");
+		}
 		if (!plan.Request.SourceDependencyId.empty())
 		{
 			return MakeCMakeDependencySyncRequest(
@@ -31,6 +39,15 @@ namespace SparkleLauncher
 	    std::string_view profileName,
 	    const std::vector<std::string>& targets)
 	{
+		if (plan.Kind == BuildWorkspaceOperationKind::CompileLauncher)
+		{
+			return MakeCMakeLauncherBuildRequest(
+			    plan.RepositoryRoot,
+			    plan.Toolchain,
+			    plan.Operation.Id,
+			    profileName,
+			    "Build.txt");
+		}
 		return MakeCMakeBuildRequest(plan.RepositoryRoot, plan.Toolchain, plan.Operation.Id, profileName, targets, "Build.txt");
 	}
 
@@ -82,7 +99,8 @@ namespace SparkleLauncher
 		step.Id = "configure";
 		step.DisplayName = "Generate build files";
 		step.Request = MakeConfigureRequest(plan);
-		step.UpdatesBuildFilesFreshness = plan.Request.SourceDependencyId.empty();
+		step.UpdatesBuildFilesFreshness =
+		    plan.Kind != BuildWorkspaceOperationKind::CompileLauncher && plan.Request.SourceDependencyId.empty();
 		steps.push_back(std::move(step));
 	}
 
@@ -175,6 +193,7 @@ namespace SparkleLauncher
 				return steps;
 			}
 			case BuildWorkspaceOperationKind::CompileLauncher:
+				AddConfigureStep(steps, plan);
 				AddBuildStep(steps, plan, plan.Request.EditorProfile, {"SparkleLauncher"});
 				return steps;
 			case BuildWorkspaceOperationKind::CompileEditor:

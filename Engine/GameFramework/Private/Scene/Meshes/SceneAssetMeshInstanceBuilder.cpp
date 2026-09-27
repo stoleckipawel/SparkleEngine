@@ -6,7 +6,7 @@
 #include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/SkeletalCookedMesh.h"
 
-static const auto g_sceneAssetMeshInstanceBuilderLogger = Logging::GetOrCreateLogger("GameFramework.SceneAssetMeshInstanceBuilder");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_sceneAssetMeshInstanceBuilderLogger, "GameFramework.SceneAssetMeshInstanceBuilder");
 
 class SceneAssetMaterialResolution final
 {

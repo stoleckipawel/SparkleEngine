@@ -53,7 +53,7 @@ namespace SparkleLauncher
 	LauncherShadowStartResult StartLauncherShadow(
 	    const std::filesystem::path& repositoryRoot,
 	    const std::vector<std::string>& arguments,
-	    bool waitForExit)
+	    LauncherShadowCompletionPolicy completionPolicy)
 	{
 		LauncherShadowStartResult result;
 		const std::filesystem::path currentExecutable = CurrentLauncherExecutable();
@@ -108,7 +108,7 @@ namespace SparkleLauncher
 		const QString program = QString::fromStdWString(shadowExecutable.wstring());
 		const QString workingDirectory = QString::fromStdWString(repositoryRoot.wstring());
 		const QStringList processArguments = ToQStringList(arguments);
-		if (!waitForExit)
+		if (completionPolicy == LauncherShadowCompletionPolicy::ReleaseCallingArtifact)
 		{
 			if (!QProcess::startDetached(program, processArguments, workingDirectory))
 			{

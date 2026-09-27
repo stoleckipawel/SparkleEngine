@@ -8,7 +8,7 @@
   #include <nvapi.h>
 #endif
 
-static const auto g_d3d12NvapiRayTracingLogger = Logging::GetOrCreateLogger("RHI.D3D12.NVAPI.RayTracing");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_d3d12NvapiRayTracingLogger, "RHI.D3D12.NVAPI.RayTracing");
 
 #if SPARKLE_RHI_WITH_D3D12_NVAPI
   #if defined(NVAPI_GET_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PREBUILD_INFO_PARAMS_VER) \

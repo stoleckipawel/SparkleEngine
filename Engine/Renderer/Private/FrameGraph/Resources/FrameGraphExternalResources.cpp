@@ -8,7 +8,7 @@
 #include <cassert>
 #include <format>
 
-static const auto g_frameGraphExternalLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_frameGraphExternalLogger, "Renderer.FrameGraph");
 
 class FrameGraphExternalResourceContract final
 {

@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeap.h"
 
-static const auto g_descriptorHeapLogger = Logging::GetOrCreateLogger("RHI.D3D12.Descriptors");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_descriptorHeapLogger, "RHI.D3D12.Descriptors");
 
 static constexpr UINT kRenderTargetDescriptorHeapSize = 4096;
 static constexpr UINT kDepthStencilDescriptorHeapSize = 4096;

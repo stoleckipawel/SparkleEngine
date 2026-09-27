@@ -9,7 +9,7 @@
 
 #include <span>
 
-static const auto g_rayTracingBlasGeometryBuilderLogger = Logging::GetOrCreateLogger("Renderer.RayTracing.BlasGeometryBuilder");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_rayTracingBlasGeometryBuilderLogger, "Renderer.RayTracing.BlasGeometryBuilder");
 
 bool RayTracingBlasGeometryBuilder::GeometryEquals(const RhiRayTracingGeometryDesc& left, const RhiRayTracingGeometryDesc& right) noexcept
 {

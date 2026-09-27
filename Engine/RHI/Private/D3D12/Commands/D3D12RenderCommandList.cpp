@@ -13,7 +13,7 @@
 #include <array>
 #include <string>
 
-static const auto g_d3d12RenderCommandListLogger = Logging::GetOrCreateLogger("RHI.D3D12.CommandList");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_d3d12RenderCommandListLogger, "RHI.D3D12.CommandList");
 
 D3D12RenderCommandList::D3D12RenderCommandList(
     D3D12RenderHardwareInterface& owner,

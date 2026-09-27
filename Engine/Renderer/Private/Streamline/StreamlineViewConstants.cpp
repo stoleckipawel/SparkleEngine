@@ -7,7 +7,7 @@
   #include <string>
   #include <string_view>
 
-static const auto g_streamlineViewConstantsLogger = Logging::GetOrCreateLogger("Renderer.StreamlineViewConstants");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_streamlineViewConstantsLogger, "Renderer.StreamlineViewConstants");
 
 class StreamlineViewConstantTranslation final
 {

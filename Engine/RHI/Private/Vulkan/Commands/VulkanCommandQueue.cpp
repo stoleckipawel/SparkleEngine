@@ -8,6 +8,8 @@
 #include <array>
 #include <format>
 
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogVulkanCommandQueue, "RHI.Vulkan.Queue");
+
 struct VulkanCommandQueue::NativeSubmission final
 {
 	std::array<VkSemaphore, RhiQueueTypeCount + 1> WaitSemaphores;
@@ -20,12 +22,6 @@ struct VulkanCommandQueue::NativeSubmission final
 	std::uint32_t WaitCount = 0;
 	std::uint32_t SignalCount = 0;
 };
-
-const std::shared_ptr<spdlog::logger>& VulkanCommandQueue::GetLogger()
-{
-	static const auto logger = Logging::GetOrCreateLogger("RHI.Vulkan.Queue");
-	return logger;
-}
 
 std::uint64_t VulkanCommandQueue::GetWaitTimeoutNanoseconds() noexcept
 {
@@ -50,7 +46,7 @@ VulkanCommandQueue::VulkanCommandQueue(VulkanRhi& rhi, ERhiQueueType queueType, 
 	const VkResult result = vkCreateSemaphore(rhi.GetDevice(), &semaphoreInfo, nullptr, &m_timelineSemaphore);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fatal(GetLogger(), __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateSemaphore(timeline)", result));
+		Diagnostics::Fatal(LogVulkanCommandQueue, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateSemaphore(timeline)", result));
 	}
 }
 
@@ -69,7 +65,7 @@ RhiSubmissionToken VulkanCommandQueue::Submit(const VulkanQueueSubmission& submi
 	m_owner.AssertAccess();
 	if (m_nativeQueue == nullptr || m_nativeQueue->Queue == VK_NULL_HANDLE || submission.CommandBuffers.empty())
 	{
-		Diagnostics::Fatal(GetLogger(), __FILE__, __LINE__, "Submit called without a queue or command buffer");
+		Diagnostics::Fatal(LogVulkanCommandQueue, __FILE__, __LINE__, "Submit called without a queue or command buffer");
 		return {};
 	}
 
@@ -86,7 +82,7 @@ RhiSubmissionToken VulkanCommandQueue::Submit(const VulkanQueueSubmission& submi
 	const VkResult submitResult = SubmitNative(nativeSubmission.SubmitInfo);
 	if (!VulkanResult::Succeeded(submitResult))
 	{
-		Diagnostics::Fatal(GetLogger(), __FILE__, __LINE__, VulkanResult::FormatFailure("vkQueueSubmit", submitResult));
+		Diagnostics::Fatal(LogVulkanCommandQueue, __FILE__, __LINE__, VulkanResult::FormatFailure("vkQueueSubmit", submitResult));
 		return {};
 	}
 
@@ -104,7 +100,7 @@ bool VulkanCommandQueue::ResolveWaitState(std::span<const RhiSubmissionToken> wa
 		}
 		if (!m_rhi.GetCommandQueue(token.Queue).HasSubmitted(token.Value))
 		{
-			Diagnostics::Fatal(GetLogger(), __FILE__, __LINE__, "Submit rejected a wait for an unsubmitted queue value");
+			Diagnostics::Fatal(LogVulkanCommandQueue, __FILE__, __LINE__, "Submit rejected a wait for an unsubmitted queue value");
 			return false;
 		}
 
@@ -193,7 +189,7 @@ void VulkanCommandQueue::DrainForSwapChainRecreation() noexcept
 
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fatal(GetLogger(), __FILE__, __LINE__, VulkanResult::FormatFailure("vkQueueWaitIdle", result));
+		Diagnostics::Fatal(LogVulkanCommandQueue, __FILE__, __LINE__, VulkanResult::FormatFailure("vkQueueWaitIdle", result));
 	}
 }
 
@@ -206,7 +202,7 @@ void VulkanCommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexce
 	}
 	if (!HasSubmitted(submissionValue))
 	{
-		Diagnostics::Fatal(GetLogger(), __FILE__, __LINE__, "CPU wait rejected an unsubmitted value");
+		Diagnostics::Fatal(LogVulkanCommandQueue, __FILE__, __LINE__, "CPU wait rejected an unsubmitted value");
 		return;
 	}
 	if (IsSubmissionComplete(submissionValue))
@@ -225,7 +221,7 @@ void VulkanCommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexce
 	if (!VulkanResult::Succeeded(result))
 	{
 		Diagnostics::Fatal(
-		    GetLogger(),
+		    LogVulkanCommandQueue,
 		    __FILE__,
 		    __LINE__,
 		    std::format(

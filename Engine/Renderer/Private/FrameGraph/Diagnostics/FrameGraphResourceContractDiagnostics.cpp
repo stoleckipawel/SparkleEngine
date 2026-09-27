@@ -12,7 +12,7 @@
 class FrameGraphResourceContractFailureReporter final
 {
 public:
-	inline static const auto g_frameGraphContractLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
+	SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_frameGraphContractLogger, "Renderer.FrameGraph");
 
 	static bool ReportValidationFailure(std::string_view passName, std::string_view message) noexcept
 	{

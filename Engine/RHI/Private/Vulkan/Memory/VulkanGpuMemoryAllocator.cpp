@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 
-static const auto g_vulkanMemoryLogger = Logging::GetOrCreateLogger("RHI.Vulkan.Memory");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanMemoryLogger, "RHI.Vulkan.Memory");
 
 using VulkanMemoryCategoryAggregation = RhiMemoryCategoryAggregation<std::uint32_t>;
 

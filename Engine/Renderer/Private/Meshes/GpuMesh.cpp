@@ -14,7 +14,7 @@
 #include <span>
 #include <utility>
 
-static const auto g_gpuMeshLogger = Logging::GetOrCreateLogger("Renderer.GpuMesh");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_gpuMeshLogger, "Renderer.GpuMesh");
 
 GpuMesh::GpuMesh(GpuMeshHandle handle) noexcept :
     m_handle(handle)

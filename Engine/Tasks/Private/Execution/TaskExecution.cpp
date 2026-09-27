@@ -19,7 +19,7 @@
 #include <thread>
 #include <utility>
 
-static const auto g_taskExecutionLogger = Logging::GetOrCreateLogger("Tasks.Execution");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogTaskExecution, "Tasks.Execution");
 
 TaskExecution::State::State(std::uint64_t generation)
 {
@@ -39,7 +39,7 @@ void TaskExecution::State::Publish(TaskExecutionCompletion completion)
 		std::scoped_lock lock(Mutex);
 		if (Settled)
 		{
-			Diagnostics::Fatal(g_taskExecutionLogger, __FILE__, __LINE__, "Task execution completion was published more than once.");
+			Diagnostics::Fatal(LogTaskExecution, __FILE__, __LINE__, "Task execution completion was published more than once.");
 		}
 		Data = std::move(completion);
 		Settled = true;

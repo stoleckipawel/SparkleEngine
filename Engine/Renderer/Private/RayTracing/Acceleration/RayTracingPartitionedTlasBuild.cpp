@@ -16,7 +16,7 @@
 #include <unordered_set>
 #include <vector>
 
-static const auto g_rayTracingPartitionedTlasBuildLogger = Logging::GetOrCreateLogger("Renderer.RayTracing.PartitionedTlasBuild");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_rayTracingPartitionedTlasBuildLogger, "Renderer.RayTracing.PartitionedTlasBuild");
 
 struct RayTracingPartitionedTlasStrategy::PartitionedBuildState final
 {

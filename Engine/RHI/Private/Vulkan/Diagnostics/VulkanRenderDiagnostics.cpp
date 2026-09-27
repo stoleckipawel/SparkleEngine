@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 
-static const auto g_vulkanRenderDiagnosticsLogger = Logging::GetOrCreateLogger("RHI.Vulkan.Diagnostics");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanRenderDiagnosticsLogger, "RHI.Vulkan.Diagnostics");
 
 class VulkanRenderObjectDiagnostics final : public RenderObjectDiagnostics
 {

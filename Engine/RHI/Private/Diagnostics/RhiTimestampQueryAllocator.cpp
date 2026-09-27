@@ -4,7 +4,7 @@
 
 #include <limits>
 
-static const auto g_rhiTimestampQueryAllocatorLogger = Logging::GetOrCreateLogger("RHI.Diagnostics.TimestampAllocator");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_rhiTimestampQueryAllocatorLogger, "RHI.Diagnostics.TimestampAllocator");
 
 RhiTimestampQueryAllocator::RhiTimestampQueryAllocator(std::uint32_t poolCount, std::uint32_t queriesPerPool) :
     m_freeQueryIndices(poolCount)

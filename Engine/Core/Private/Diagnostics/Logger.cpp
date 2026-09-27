@@ -26,6 +26,22 @@
 namespace Logging
 {
 	static constexpr std::string_view kCoreLoggerName = "SparkleCore";
+	static std::shared_ptr<spdlog::logger> GetOrCreateLogger(std::string_view name) noexcept;
+
+	std::shared_ptr<spdlog::logger> LogCategory::GetLogger() const noexcept
+	{
+		return GetOrCreateLogger(m_name);
+	}
+
+	std::shared_ptr<spdlog::logger> LogCategory::operator->() const noexcept
+	{
+		return GetLogger();
+	}
+
+	LogCategory::operator std::shared_ptr<spdlog::logger>() const noexcept
+	{
+		return GetLogger();
+	}
 
 	using LoggerMap = std::unordered_map<std::string, std::shared_ptr<spdlog::logger>>;
 
@@ -216,7 +232,7 @@ namespace Logging
 		return it != namedLoggers.end() ? it->second : nullptr;
 	}
 
-	std::shared_ptr<spdlog::logger> GetOrCreateLogger(std::string_view name) noexcept
+	static std::shared_ptr<spdlog::logger> GetOrCreateLogger(std::string_view name) noexcept
 	{
 		Initialize();
 

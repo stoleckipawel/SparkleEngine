@@ -14,7 +14,7 @@
 #include <vector>
 #include <Windows.h>
 
-static const auto g_d3d12MemoryLogger = Logging::GetOrCreateLogger("RHI.D3D12.Memory");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_d3d12MemoryLogger, "RHI.D3D12.Memory");
 
 struct D3D12GpuMemoryAllocator::Impl
 {

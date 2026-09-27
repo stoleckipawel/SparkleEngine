@@ -12,7 +12,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-static const auto g_renderGpuRayTracingPayloadBuilderLogger = Logging::GetOrCreateLogger("Renderer.RenderGpuRayTracingPayloadBuilder");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_renderGpuRayTracingPayloadBuilderLogger, "Renderer.RenderGpuRayTracingPayloadBuilder");
 
 struct RenderGpuMeshHitDataOffsets final
 {

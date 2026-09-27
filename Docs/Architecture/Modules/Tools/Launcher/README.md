@@ -55,7 +55,7 @@ Launcher is a capability planner and operation host. It is not a package manager
 | `LAUNCH-009` | Build-file generation | Implemented path | `workspace.generate-build-files` selects Visual Studio or Rider-oriented generator flow, x64, MSVC/clang-cl, Qt, and the feature set; it always owns canonical `build/` and writes a freshness stamp. Root CMake rejects output elsewhere, while isolated validation configurations must pair `build/variants/<name>` with `artifacts/<name>/`. | `S` |
 | `LAUNCH-010` | Freshness diagnosis | Implemented path | Detects missing build/cache/solution/stamp, generator mismatch, feature mismatch, source-list/input change, and unsupported state; build actions can configure first when stale. | `S` |
 | `LAUNCH-011` | Workspace build | Implemented path | `workspace.build` builds selected Editor, Runtime, CookTools, and Launcher scopes/targets; focused operations build launcher/editor/runtime/cook tools separately. | `S` |
-| `LAUNCH-012` | Launcher self-build | Implemented path | GUI execution and every mutating shell operation hand off to a per-user shadow generation before work. `launcher.build.self` therefore builds the local deployed Launcher without locking its output; replacement and relaunch still require runtime evidence. | `S` |
+| `LAUNCH-012` | Launcher self-build | Implemented path | GUI execution and every mutating shell operation hand off to a per-user shadow generation before work. Operation metadata marks a build that replaces the Launcher artifact, so a shell caller releases the loaded artifact instead of synchronously holding it; progress and the terminal result remain in Launcher logs. `launcher.build.self` configures the Launcher-owned product entry point and builds that graph without depending on full-workspace freshness or optional engine SDKs; replacement and relaunch still require runtime evidence. | `S` |
 | `LAUNCH-013` | Host-tool install | Partial | `workspace.install-host-tool` delegates to a registered launcher-owned provider when a detected tool advertises install support. This is not a general package manager. | `S` |
 
 Launcher source construction has its own top-level `Tools/Launcher` CMake
@@ -65,6 +65,12 @@ embedded icon asset, and writes CMake/compiler state beneath
 the full workspace. This separation is structural: no bootstrap/product mode
 argument changes either graph, and optional SDKs or engine dependencies enrich
 Launcher capabilities only after runtime detection.
+
+Toolchain discovery separates Launcher construction requirements from full
+workspace configure requirements. CMake, the selected native generator and
+compiler, Git, Windows SDK, and Qt gate Launcher construction. Shader compiler
+and Vulkan/Streamline SDK state remains visible and gates only workspace
+operations whose selected feature set needs it.
 
 ## Content, Cook, Run, And Maintenance Operations
 

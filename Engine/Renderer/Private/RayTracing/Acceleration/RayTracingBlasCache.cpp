@@ -13,7 +13,7 @@
 
 #include <utility>
 
-static const auto g_rayTracingBlasCacheLogger = Logging::GetOrCreateLogger("Renderer.RayTracing");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_rayTracingBlasCacheLogger, "Renderer.RayTracing");
 
 bool RayTracingBlasCache::BlasHandle::IsValid() const noexcept
 {

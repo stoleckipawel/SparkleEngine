@@ -27,7 +27,7 @@ static void BindRenderSceneGpuBuffer(
 {
 	if (!buffer)
 	{
-		static const auto logger = Logging::GetOrCreateLogger("Renderer.RenderSceneGpuResources");
+		SPARKLE_DEFINE_LOG_CATEGORY_STATIC(logger, "Renderer.RenderSceneGpuResources");
 		Diagnostics::Fatal(logger, __FILE__, __LINE__, "Render-scene GPU buffer publication is incomplete.");
 	}
 

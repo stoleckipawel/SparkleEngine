@@ -6,7 +6,7 @@
 
 namespace OutputEncodingSettings
 {
-	static const auto g_logger = Logging::GetOrCreateLogger("Renderer.OutputEncodingSettings");
+	SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_logger, "Renderer.OutputEncodingSettings");
 
 	std::uint32_t ResolveShaderValue() noexcept
 	{

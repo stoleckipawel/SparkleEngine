@@ -23,11 +23,24 @@ namespace SparkleLauncher
 	    std::string_view sourceDependencyId,
 	    std::string_view logFileName);
 
+	ProcessRequest MakeCMakeLauncherConfigureRequest(
+	    const std::filesystem::path& repositoryRoot,
+	    const BuildToolchainStatus& toolchain,
+	    std::string_view operationId,
+	    std::string_view logFileName);
+
 	ProcessRequest MakeCMakeBuildRequest(
 	    const std::filesystem::path& repositoryRoot,
 	    const BuildToolchainStatus& toolchain,
 	    std::string_view operationId,
 	    std::string_view profileName,
 	    const std::vector<std::string>& targets,
+	    std::string_view logFileName);
+
+	ProcessRequest MakeCMakeLauncherBuildRequest(
+	    const std::filesystem::path& repositoryRoot,
+	    const BuildToolchainStatus& toolchain,
+	    std::string_view operationId,
+	    std::string_view profileName,
 	    std::string_view logFileName);
 }

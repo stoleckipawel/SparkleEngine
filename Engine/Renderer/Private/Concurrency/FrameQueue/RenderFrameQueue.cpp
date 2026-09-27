@@ -3,7 +3,7 @@
 
 #include <limits>
 
-static const auto g_renderFrameQueueLogger = Logging::GetOrCreateLogger("Renderer.FrameQueue");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_renderFrameQueueLogger, "Renderer.FrameQueue");
 
 RenderFrameQueue::RenderFrameQueue(std::uint32_t capacity) :
     m_slots(std::make_unique<Slot[]>(capacity)),

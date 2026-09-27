@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <cmath>
 
-static const auto g_textureFormatPolicyLogger = Logging::GetOrCreateLogger("TextureCooker.FormatPolicy");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_textureFormatPolicyLogger, "TextureCooker.FormatPolicy");
 
 namespace TextureCookPipeline
 {

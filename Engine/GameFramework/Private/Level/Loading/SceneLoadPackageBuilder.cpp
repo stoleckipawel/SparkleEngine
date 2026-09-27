@@ -18,7 +18,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-static const auto g_sceneLoadPackageBuilderLogger = Logging::GetOrCreateLogger("GameFramework.SceneLoadPackageBuilder");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_sceneLoadPackageBuilderLogger, "GameFramework.SceneLoadPackageBuilder");
 
 class SceneLoadPackageAssembly final
 {

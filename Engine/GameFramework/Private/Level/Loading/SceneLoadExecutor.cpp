@@ -20,7 +20,7 @@ public:
 	static constexpr std::size_t kMaximumAssetsPerRequest = 256;
 };
 
-static const auto g_sceneLoadExecutorLogger = Logging::GetOrCreateLogger("GameFramework.SceneLoadExecutor");
+SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_sceneLoadExecutorLogger, "GameFramework.SceneLoadExecutor");
 
 namespace Assets
 {
