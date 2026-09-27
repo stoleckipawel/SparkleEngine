@@ -101,6 +101,12 @@ user-state grammar. Related target binary, library, and symbol directories
 travel together as `WorkspaceTargetOutputPaths` so the three destinations
 cannot drift through duplicated call-site logic.
 
+Maintenance scope IDs are defined and parsed by the public maintenance
+contract. The private maintenance planner expands each scope into one typed
+clean-action list; both preview/counting and execution project that same list.
+Cleanup mechanics receive the exact destructive and preserved paths and do not
+infer special directories from filenames such as `_deps`.
+
 ## Vertical Quick-Start Trace
 
 Launcher discovers repository/content -> loads settings/catalog -> capability registry evaluates requested `levels.run` -> if host/dependency/workspace/content/cook prerequisite is missing it returns one concrete operation -> user executes it in a scoped background task -> planner revalidates inputs/readiness immediately before each destructive/process step -> child output and exit status update activity -> downstream capability IDs are invalidated -> resolution repeats until `levels.run` launches the editor/runtime child.

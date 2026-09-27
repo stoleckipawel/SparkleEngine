@@ -2,10 +2,10 @@
 
 #include "SparkleLauncher/MaintenanceOperations.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <vector>
-#include <cstdint>
 
 namespace SparkleLauncher
 {
@@ -22,9 +22,12 @@ namespace SparkleLauncher
 		std::string DisplayName;
 		std::filesystem::path DestructivePath;
 		std::filesystem::path PreservedPath;
+		std::string PreviewDetail;
 		MaintenanceCleanBehavior CleanBehavior = MaintenanceCleanBehavior::RemovePath;
 		bool DeletesGeneratedOutput = false;
 	};
 
+	std::vector<CleanScope> ResolveRequestedCleanScopes(const MaintenanceOperationRequest& request);
+	std::vector<MaintenanceOperationProcessStep> BuildMaintenanceCleanSteps(const MaintenanceOperationPlan& plan);
 	std::vector<MaintenanceOperationProcessStep> BuildMaintenanceProcessStepsForPlan(const MaintenanceOperationPlan& plan);
 }

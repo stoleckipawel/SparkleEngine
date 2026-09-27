@@ -70,8 +70,7 @@ AssetCookerServiceResult AssetCookerService::Cook(const char* projectName, const
 	}
 
 	std::vector<AssetCookerOutputRecord> outputs;
-	const bool succeeded =
-	    CookProjects(repositoryRoot, resolvedConfiguration, resolvedToolProfile, category, projects, diagnostics, outputs);
+	const bool succeeded = CookProjects(repositoryRoot, resolvedToolProfile, category, projects, diagnostics, outputs);
 	return Finish(succeeded, diagnostics, std::move(outputs));
 }
 
@@ -93,7 +92,6 @@ bool AssetCookerService::ResolveProjects(
 
 bool AssetCookerService::CookProjects(
     const std::filesystem::path& repositoryRoot,
-    std::string_view configuration,
     std::string_view toolProfile,
     AssetCookerCategory category,
     const std::vector<std::string>& projects,
@@ -102,7 +100,7 @@ bool AssetCookerService::CookProjects(
 {
 	for (const std::string& projectName : projects)
 	{
-		if (!CookProject(repositoryRoot, projectName, configuration, toolProfile, category, diagnostics, outOutputs))
+		if (!CookProject(repositoryRoot, projectName, toolProfile, category, diagnostics, outOutputs))
 		{
 			return false;
 		}
@@ -114,14 +112,13 @@ bool AssetCookerService::CookProjects(
 bool AssetCookerService::CookProject(
     const std::filesystem::path& repositoryRoot,
     std::string_view projectName,
-    std::string_view configuration,
     std::string_view toolProfile,
     AssetCookerCategory category,
     AssetCookerDiagnostics& diagnostics,
     std::vector<AssetCookerOutputRecord>& outOutputs) const
 {
 	AssetCookerProjectCookPlan plan;
-	if (!AssetCookerDiscovery::BuildProjectCookPlan(repositoryRoot, projectName, configuration, toolProfile, category, plan, diagnostics))
+	if (!AssetCookerDiscovery::BuildProjectCookPlan(repositoryRoot, projectName, toolProfile, category, plan, diagnostics))
 	{
 		return false;
 	}

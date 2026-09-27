@@ -186,6 +186,10 @@ function(sparkle_configure_project_artifacts target_name project_name product_ro
         "projects/${project_name}/${product_role}")
 endfunction()
 
+function(sparkle_get_project_cooked_directory output_variable project_name)
+    set(${output_variable} "${_sparkle_project_artifact_root}/${project_name}/cooked" PARENT_SCOPE)
+endfunction()
+
 function(sparkle_declare_runtime_dll_owner product_target)
     if(NOT TARGET ${product_target})
         message(FATAL_ERROR "Unknown Sparkle product target '${product_target}'")

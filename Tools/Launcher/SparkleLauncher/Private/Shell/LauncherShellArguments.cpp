@@ -8,12 +8,6 @@
 
 namespace SparkleLauncher
 {
-	struct LauncherCleanScopeOption final
-	{
-		std::string_view Name;
-		CleanScope Scope;
-	};
-
 	class LauncherShellArgumentParser final
 	{
 	public:
@@ -30,7 +24,6 @@ namespace SparkleLauncher
 		std::optional<std::string_view> ReadRequiredValue(std::string_view missingValueMessage);
 
 		static bool IsProfileTarget(std::string_view profileName, BuildProfileTarget target);
-		static bool TryParseCleanScope(std::string_view text, CleanScope& outScope) noexcept;
 
 		int m_argumentCount = 0;
 		char** m_arguments = nullptr;
@@ -247,29 +240,6 @@ namespace SparkleLauncher
 	{
 		const std::optional<BuildProfile> profile = FindBuildProfile(profileName);
 		return profile.has_value() && profile->Target == target;
-	}
-
-	bool LauncherShellArgumentParser::TryParseCleanScope(std::string_view text, CleanScope& outScope) noexcept
-	{
-		static constexpr LauncherCleanScopeOption options[] = {
-		    {"cooked", CleanScope::CookedOutputs},
-		    {"build-tree", CleanScope::BuildTree},
-		    {"artifacts", CleanScope::ArtifactOutputs},
-		    {"workspace-state", CleanScope::WorkspaceState},
-		    {"deps", CleanScope::ThirdPartyDependencyCache},
-		    {"logs", CleanScope::Logs},
-		    {"clean-all", CleanScope::PristineGeneratedWorkspace}};
-
-		for (const LauncherCleanScopeOption& option : options)
-		{
-			if (option.Name == text)
-			{
-				outScope = option.Scope;
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 	bool ParseLauncherShellArguments(int argc, char** argv, LauncherShellArguments& outArguments, std::ostream& error)

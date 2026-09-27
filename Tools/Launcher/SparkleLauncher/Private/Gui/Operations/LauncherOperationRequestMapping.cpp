@@ -22,31 +22,9 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 
 	static CleanScope ParseCleanScope(const QString& text)
 	{
-		if (text == "build-tree")
-		{
-			return CleanScope::BuildTree;
-		}
-		if (text == "artifacts")
-		{
-			return CleanScope::ArtifactOutputs;
-		}
-		if (text == "workspace-state")
-		{
-			return CleanScope::WorkspaceState;
-		}
-		if (text == "deps")
-		{
-			return CleanScope::ThirdPartyDependencyCache;
-		}
-		if (text == "logs")
-		{
-			return CleanScope::Logs;
-		}
-		if (text == "clean-all")
-		{
-			return CleanScope::PristineGeneratedWorkspace;
-		}
-		return CleanScope::CookedOutputs;
+		CleanScope scope = CleanScope::CookedOutputs;
+		TryParseCleanScope(text.toStdString(), scope);
+		return scope;
 	}
 
 	static std::vector<BuildWorkspaceScope> ParseBuildScopes(const QString& text)

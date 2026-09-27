@@ -1,13 +1,8 @@
 #include "SparkleLauncher/MaintenanceOperations.h"
 
-#include "Core/Public/FileSystemUtils.h"
-#include "Core/Public/Paths/ProductUserStatePaths.h"
 #include "MaintenanceOperationProcessRequests.h"
-#include "LauncherStatePaths.h"
-#include "Core/Public/Paths/WorkspaceOutputPaths.h"
 
 #include <algorithm>
-#include <cstdint>
 #include <optional>
 #include <sstream>
 #include <system_error>
@@ -83,165 +78,37 @@ namespace SparkleLauncher
 		plan.CleanTargets.push_back(std::move(target));
 	}
 
-	static void AddContentGeneratedTargets(MaintenanceOperationPlan& plan, bool includeBuild, bool includeLogs, bool includeState)
+	static std::string CleanTargetDisplayName(std::string_view processDisplayName)
 	{
-		const std::filesystem::path contentPath = plan.RepositoryRoot / "Projects" / plan.Request.ContentId;
-		if (includeBuild)
-		{
-			AddCleanTarget(plan, "Content build tree", contentPath / "build", "Generated content build files.");
-		}
-		if (includeLogs)
-		{
-			AddCleanTarget(plan, "Content logs", contentPath / "logs", "Content diagnostic logs.");
-		}
-		if (includeState)
-		{
-			AddCleanTarget(plan, "Content ImGui state", contentPath / "imgui.ini", "Content UI state.");
-		}
+		static constexpr std::string_view cleanPrefix = "Clean ";
+		return std::string(
+		    processDisplayName.starts_with(cleanPrefix) ? processDisplayName.substr(cleanPrefix.size()) : processDisplayName);
 	}
 
-	static void PopulateCleanTargetsForScope(
-	    MaintenanceOperationPlan& plan,
-	    CleanScope scope,
-	    const Filesystem::ProductUserStatePaths& productUserState,
-	    const Filesystem::WorkspaceOutputPaths& outputs,
-	    const LauncherStatePaths& launcherState)
+	static std::string CleanTargetDetail(const MaintenanceOperationProcessStep& step)
 	{
-		switch (scope)
+		if (!step.PreviewDetail.empty())
 		{
-			case CleanScope::CookedOutputs:
-				AddCleanTarget(
-				    plan,
-				    "Cooked content",
-				    outputs.CookedProjectDirectory(plan.Request.ContentId),
-				    "Generated cooked assets for this workspace.");
-				return;
-			case CleanScope::BuildTree:
-				AddCleanTarget(
-				    plan,
-				    "Build tree contents",
-				    outputs.BuildRoot,
-				    "Contents are removed except build/_deps.");
-				AddCleanTarget(
-				    plan,
-				    "Root generated CMake/VS files",
-				    plan.RepositoryRoot,
-				    "Root *.sln, *.slnx, *.vcxproj, CMakeCache.txt, cmake_install.cmake, Makefile, and CMakeFiles.");
-				AddContentGeneratedTargets(plan, true, false, false);
-				return;
-			case CleanScope::ArtifactOutputs:
-				AddCleanTarget(
-				    plan,
-				    "Generated artifacts",
-				    outputs.ArtifactRoot,
-				    "Generated runnable artifacts, diagnostics, libraries, symbols, and cooked outputs.");
-				return;
-			case CleanScope::WorkspaceState:
-				AddCleanTarget(plan, "Visual Studio workspace state", plan.RepositoryRoot / ".vs", ".vs directory.");
-				AddCleanTarget(plan, "VS Code workspace state", plan.RepositoryRoot / ".vscode", ".vscode directory.");
-				AddCleanTarget(plan, "Rider workspace state", plan.RepositoryRoot / ".idea", ".idea directory.");
-				AddCleanTarget(plan, "Root ImGui state", plan.RepositoryRoot / "imgui.ini", "Root imgui.ini.");
-				AddContentGeneratedTargets(plan, false, false, true);
-				AddCleanTarget(
-				    plan,
-				    "Product user settings",
-				    productUserState.SettingsRoot,
-				    "Per-repository editor and runtime settings stored outside the source tree.");
-				return;
-			case CleanScope::ThirdPartyDependencyCache:
-				AddCleanTarget(
-				    plan,
-				    "Third-party dependency cache",
-				    outputs.DependencyCacheRoot,
-				    "FetchContent dependency cache; configure will re-download dependencies.");
-				return;
-			case CleanScope::Logs:
-				AddCleanTarget(plan, "Legacy repository logs", plan.RepositoryRoot / "logs", "Legacy root logs from older builds.");
-				AddCleanTarget(
-				    plan,
-				    "Product logs",
-				    productUserState.LogsRoot,
-				    "Per-repository editor and runtime logs stored outside the source tree.");
-				AddCleanTarget(
-				    plan,
-				    "Launcher logs",
-				    launcherState.LogsRoot,
-				    "Per-repository launcher logs stored in the user-local launcher state directory.");
-				AddContentGeneratedTargets(plan, false, true, false);
-				return;
-			case CleanScope::PristineGeneratedWorkspace:
-				AddCleanTarget(
-				    plan,
-				    "Build tree",
-				    outputs.BuildRoot,
-				    "Full build tree including dependency cache and private build-system outputs.");
-				AddCleanTarget(
-				    plan,
-				    "Development artifacts",
-				    outputs.ArtifactRoot,
-				    "Generated runnable artifacts, diagnostics, libraries, symbols, and cooked outputs.");
-				AddCleanTarget(plan, "Visual Studio workspace state", plan.RepositoryRoot / ".vs", ".vs directory.");
-				AddCleanTarget(plan, "VS Code workspace state", plan.RepositoryRoot / ".vscode", ".vscode directory.");
-				AddCleanTarget(plan, "Rider workspace state", plan.RepositoryRoot / ".idea", ".idea directory.");
-				AddCleanTarget(plan, "Legacy repository logs", plan.RepositoryRoot / "logs", "Legacy root logs from older builds.");
-				AddCleanTarget(
-				    plan,
-				    "Product user state",
-				    productUserState.Root,
-				    "Per-repository editor/runtime settings, logs, captures, crashes, and cache.");
-				AddCleanTarget(
-				    plan,
-				    "Launcher state",
-				    launcherState.Root,
-				    "Per-repository launcher logs, activity history, and cached workflow state.");
-				AddCleanTarget(plan, "Root ImGui state", plan.RepositoryRoot / "imgui.ini", "Root imgui.ini.");
-				AddCleanTarget(
-				    plan,
-				    "Root generated CMake/VS files",
-				    plan.RepositoryRoot,
-				    "Root *.sln, *.slnx, *.vcxproj, CMakeCache.txt, cmake_install.cmake, Makefile, and CMakeFiles.");
-				AddContentGeneratedTargets(plan, true, true, true);
-				return;
-		}
-	}
-
-	static std::vector<CleanScope> ResolveRequestedCleanScopes(const MaintenanceOperationRequest& request)
-	{
-		std::vector<CleanScope> scopes = request.RequestedCleanScopes;
-		if (scopes.empty())
-		{
-			scopes.push_back(request.RequestedCleanScope);
+			return step.PreviewDetail;
 		}
 
-		std::vector<CleanScope> uniqueScopes;
-		for (const CleanScope scope : scopes)
+		switch (step.CleanBehavior)
 		{
-			if (std::find(uniqueScopes.begin(), uniqueScopes.end(), scope) == uniqueScopes.end())
-			{
-				uniqueScopes.push_back(scope);
-			}
+			case MaintenanceCleanBehavior::RemoveDirectoryContentsPreservingPath:
+				return "Directory contents are removed except the preserved path: " + step.PreservedPath.string();
+			case MaintenanceCleanBehavior::RemoveRootGeneratedFiles:
+				return "Only recognized root CMake and IDE generated files are removed.";
+			case MaintenanceCleanBehavior::RemovePath:
+				return "The exact generated or user-local path selected by this clean scope is removed.";
 		}
-		return uniqueScopes;
+		return "Generated output selected by this clean scope.";
 	}
 
 	static void PopulateCleanTargets(MaintenanceOperationPlan& plan)
 	{
-		if (!plan.Request.RequestedCleanTargets.empty())
+		for (const MaintenanceOperationProcessStep& step : BuildMaintenanceCleanSteps(plan))
 		{
-			for (const MaintenanceCleanPathSpec& target : plan.Request.RequestedCleanTargets)
-			{
-				AddCleanTarget(plan, target.DisplayName, target.Path, target.Detail);
-			}
-			return;
-		}
-
-		const Filesystem::ProductUserStatePaths productUserState =
-		    Filesystem::ResolveDevelopmentProductUserStatePaths(plan.RepositoryRoot, plan.Request.ContentId);
-		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(plan.RepositoryRoot);
-		const LauncherStatePaths launcherState = ResolveLauncherStatePaths(plan.RepositoryRoot);
-		for (const CleanScope scope : ResolveRequestedCleanScopes(plan.Request))
-		{
-			PopulateCleanTargetsForScope(plan, scope, productUserState, outputs, launcherState);
+			AddCleanTarget(plan, CleanTargetDisplayName(step.DisplayName), step.DestructivePath, CleanTargetDetail(step));
 		}
 	}
 
@@ -312,6 +179,11 @@ namespace SparkleLauncher
 
 	std::string ToString(CleanScope scope)
 	{
+		return std::string(CleanScopeId(scope));
+	}
+
+	std::string_view CleanScopeId(CleanScope scope) noexcept
+	{
 		switch (scope)
 		{
 			case CleanScope::CookedOutputs:
@@ -319,7 +191,7 @@ namespace SparkleLauncher
 			case CleanScope::BuildTree:
 				return "build-tree";
 			case CleanScope::ArtifactOutputs:
-				return "artifact-outputs";
+				return "artifacts";
 			case CleanScope::WorkspaceState:
 				return "workspace-state";
 			case CleanScope::ThirdPartyDependencyCache:
@@ -331,6 +203,26 @@ namespace SparkleLauncher
 		}
 
 		return "unknown";
+	}
+
+	bool TryParseCleanScope(std::string_view text, CleanScope& outScope) noexcept
+	{
+		static constexpr CleanScope scopes[] = {CleanScope::CookedOutputs,
+		    CleanScope::BuildTree,
+		    CleanScope::ArtifactOutputs,
+		    CleanScope::WorkspaceState,
+		    CleanScope::ThirdPartyDependencyCache,
+		    CleanScope::Logs,
+		    CleanScope::PristineGeneratedWorkspace};
+		for (const CleanScope scope : scopes)
+		{
+			if (CleanScopeId(scope) == text)
+			{
+				outScope = scope;
+				return true;
+			}
+		}
+		return false;
 	}
 
 	const std::vector<MaintenanceOperationDefinition>& GetMaintenanceOperationDefinitions()

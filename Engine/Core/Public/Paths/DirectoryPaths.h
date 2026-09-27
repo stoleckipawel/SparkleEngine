@@ -2,14 +2,12 @@
 
 #include "Core/Public/CoreAPI.h"
 
-#include <array>
 #include <cstdint>
 #include <filesystem>
 #include <string_view>
 
 namespace Paths
 {
-	SPARKLE_CORE_API std::array<std::filesystem::path, 2> ExecutableLookupCandidates(std::string_view executableFileName);
 	SPARKLE_CORE_API std::filesystem::path LogFile(std::string_view configuredFile = {}, bool ensureParentExists = true);
 	SPARKLE_CORE_API std::filesystem::path CookedSceneManifest(std::string_view sceneAssetId);
 	SPARKLE_CORE_API std::filesystem::path CookedSceneManifestRelative(const std::filesystem::path& relativeManifestPath);

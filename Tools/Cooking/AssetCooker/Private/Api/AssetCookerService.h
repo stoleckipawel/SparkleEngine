@@ -31,7 +31,6 @@ private:
 	    std::vector<std::string>& outProjects) const;
 	bool CookProjects(
 	    const std::filesystem::path& repositoryRoot,
-	    std::string_view configuration,
 	    std::string_view toolProfile,
 	    AssetCookerCategory category,
 	    const std::vector<std::string>& projects,
@@ -40,7 +39,6 @@ private:
 	bool CookProject(
 	    const std::filesystem::path& repositoryRoot,
 	    std::string_view projectName,
-	    std::string_view configuration,
 	    std::string_view toolProfile,
 	    AssetCookerCategory category,
 	    AssetCookerDiagnostics& diagnostics,

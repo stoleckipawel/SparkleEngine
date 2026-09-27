@@ -92,13 +92,12 @@ std::vector<std::string> AssetCookerDiscovery::DiscoverProjects(
 bool AssetCookerDiscovery::BuildProjectCookPlan(
     const std::filesystem::path& repositoryRoot,
     std::string_view projectName,
-    std::string_view configuration,
     std::string_view toolProfile,
     AssetCookerCategory category,
     AssetCookerProjectCookPlan& outPlan,
     AssetCookerDiagnostics& diagnostics)
 {
-	InitializePlan(repositoryRoot, projectName, configuration, toolProfile, category, outPlan);
+	InitializePlan(repositoryRoot, projectName, toolProfile, category, outPlan);
 
 	if (!PathExists(outPlan.projectRoot / std::string(Filesystem::kProjectMarker)))
 	{
@@ -132,7 +131,6 @@ bool AssetCookerDiscovery::CategoryNeedsScenes(AssetCookerCategory category) noe
 void AssetCookerDiscovery::InitializePlan(
     const std::filesystem::path& repositoryRoot,
     std::string_view projectName,
-    std::string_view configuration,
     std::string_view toolProfile,
     AssetCookerCategory category,
     AssetCookerProjectCookPlan& outPlan)

@@ -118,12 +118,14 @@ endforeach()
 
 sparkle_configure_development_tool_artifacts(ShaderCompiler)
 sparkle_declare_runtime_dll_owner(ShaderCompiler SparkleCore)
+sparkle_get_project_cooked_directory(SHADER_COMPILER_VALIDATION_COOKED_DIRECTORY Shared)
 
 add_custom_target(ShaderCompilerCliValidation
     COMMAND ${CMAKE_COMMAND}
         "-DSHADER_COMPILER_EXECUTABLE=$<TARGET_FILE:ShaderCompiler>"
         "-DWORKING_DIRECTORY=${CMAKE_SOURCE_DIR}"
         "-DREPRESENTATIVE_PROJECT=Shared"
+        "-DCOOKED_SHADER_DIRECTORY=${SHADER_COMPILER_VALIDATION_COOKED_DIRECTORY}/Shaders"
         "-DREPRESENTATIVE_SHADER=ComputeClearCS"
         "-DREPRESENTATIVE_VIRTUAL_SOURCE=/Engine/Passes/Compute/ComputeClear.hlsl"
         -P "${CMAKE_CURRENT_SOURCE_DIR}/ValidateShaderCompilerCli.cmake"

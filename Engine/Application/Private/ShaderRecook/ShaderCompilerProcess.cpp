@@ -4,7 +4,7 @@
 #include "ShaderRecook/ShaderCompilerProcess.h"
 
 #include "Core/Public/Files/FileUtils.h"
-#include "Core/Public/Paths/DirectoryPaths.h"
+#include "Core/Public/Paths/WorkspaceOutputPaths.h"
 #include "Core/Public/Process/ChildProcess.h"
 #include "Core/Public/Process/CommandLineUtils.h"
 
@@ -139,15 +139,14 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunToolCommand(std::string_vi
 
 std::filesystem::path ShaderCompilerProcess::ResolveExecutable() noexcept
 {
-	const auto candidates = Paths::ExecutableLookupCandidates("ShaderCompiler.exe");
+	const std::filesystem::path executableDirectory = Filesystem::GetExecutableDirectory();
+	const std::string profileName = executableDirectory.filename().string();
+	const Filesystem::WorkspaceOutputPaths outputs =
+	    Filesystem::ResolveWorkspaceOutputPaths(Filesystem::GetWorkspaceRootPath());
+	const std::filesystem::path executablePath =
+	    outputs.ToolTargetOutputs("ShaderCompiler", profileName).BinaryDirectory / "ShaderCompiler.exe";
 	std::error_code error;
-	for (const std::filesystem::path& candidate : candidates)
-	{
-		if (std::filesystem::exists(candidate, error) && !error)
-			return candidate;
-		error.clear();
-	}
-	return {};
+	return std::filesystem::is_regular_file(executablePath, error) && !error ? executablePath : std::filesystem::path{};
 }
 
 std::filesystem::path ShaderCompilerProcess::ResolveProjectDirectory() noexcept

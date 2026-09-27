@@ -1,6 +1,5 @@
 #include "MaintenanceOperationProcessRequests.h"
 
-#include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Paths/ProductUserStatePaths.h"
 #include "LauncherStatePaths.h"
 #include "Core/Public/Paths/WorkspaceOutputPaths.h"
@@ -16,13 +15,15 @@ namespace SparkleLauncher
 	    std::string displayName,
 	    std::filesystem::path path,
 	    MaintenanceCleanBehavior behavior,
-	    std::filesystem::path preservedPath = {})
+	    std::filesystem::path preservedPath = {},
+	    std::string previewDetail = {})
 	{
 		MaintenanceOperationProcessStep step;
 		step.Id = std::move(id);
 		step.DisplayName = std::move(displayName);
 		step.DestructivePath = std::move(path);
 		step.PreservedPath = std::move(preservedPath);
+		step.PreviewDetail = std::move(previewDetail);
 		step.CleanBehavior = behavior;
 		step.DeletesGeneratedOutput = true;
 		steps.push_back(std::move(step));
@@ -60,7 +61,7 @@ namespace SparkleLauncher
 		}
 	}
 
-	static std::vector<CleanScope> ResolveRequestedCleanScopes(const MaintenanceOperationRequest& request)
+	std::vector<CleanScope> ResolveRequestedCleanScopes(const MaintenanceOperationRequest& request)
 	{
 		std::vector<CleanScope> scopes = request.RequestedCleanScopes;
 		if (scopes.empty())
@@ -249,7 +250,7 @@ namespace SparkleLauncher
 		}
 	}
 
-	static void AddCleanSteps(std::vector<MaintenanceOperationProcessStep>& steps, const MaintenanceOperationPlan& plan)
+	static void AppendCleanSteps(std::vector<MaintenanceOperationProcessStep>& steps, const MaintenanceOperationPlan& plan)
 	{
 		if (!plan.Request.RequestedCleanTargets.empty())
 		{
@@ -260,7 +261,9 @@ namespace SparkleLauncher
 				    "clean-explicit-target",
 				    "Clean " + target.DisplayName,
 				    target.Path,
-				    MaintenanceCleanBehavior::RemovePath);
+				    MaintenanceCleanBehavior::RemovePath,
+				    {},
+				    target.Detail);
 			}
 			return;
 		}
@@ -275,6 +278,13 @@ namespace SparkleLauncher
 		}
 	}
 
+	std::vector<MaintenanceOperationProcessStep> BuildMaintenanceCleanSteps(const MaintenanceOperationPlan& plan)
+	{
+		std::vector<MaintenanceOperationProcessStep> steps;
+		AppendCleanSteps(steps, plan);
+		return steps;
+	}
+
 	std::vector<MaintenanceOperationProcessStep> BuildMaintenanceProcessStepsForPlan(const MaintenanceOperationPlan& plan)
 	{
 		std::vector<MaintenanceOperationProcessStep> steps;
@@ -286,8 +296,7 @@ namespace SparkleLauncher
 		switch (plan.Kind)
 		{
 			case MaintenanceOperationKind::CleanWorkspace:
-				AddCleanSteps(steps, plan);
-				return steps;
+				return BuildMaintenanceCleanSteps(plan);
 		}
 
 		return steps;

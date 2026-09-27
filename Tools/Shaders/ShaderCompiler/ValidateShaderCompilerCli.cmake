@@ -6,6 +6,10 @@ if(NOT DEFINED WORKING_DIRECTORY OR WORKING_DIRECTORY STREQUAL "")
     message(FATAL_ERROR "WORKING_DIRECTORY is required.")
 endif()
 
+if(NOT DEFINED COOKED_SHADER_DIRECTORY OR COOKED_SHADER_DIRECTORY STREQUAL "")
+    message(FATAL_ERROR "COOKED_SHADER_DIRECTORY is required.")
+endif()
+
 if(NOT DEFINED REPRESENTATIVE_SHADER OR REPRESENTATIVE_SHADER STREQUAL "")
     set(REPRESENTATIVE_SHADER "ComputeClearCS")
 endif()
@@ -81,9 +85,9 @@ function(require_artifact_hashes expected_map expected_library claim)
 endfunction()
 
 set(global_shader_map_path
-    "${WORKING_DIRECTORY}/artifacts/dev/projects/${REPRESENTATIVE_PROJECT}/cooked/Shaders/GlobalShaderMap.smap")
+    "${COOKED_SHADER_DIRECTORY}/GlobalShaderMap.smap")
 set(cooked_shader_library_path
-    "${WORKING_DIRECTORY}/artifacts/dev/projects/${REPRESENTATIVE_PROJECT}/cooked/Shaders/CookedShaderLibrary.slib")
+    "${COOKED_SHADER_DIRECTORY}/CookedShaderLibrary.slib")
 
 run_shader_compiler(list-backends)
 run_shader_compiler(list-targets)
@@ -119,7 +123,7 @@ require_output_match("${second_repeat_output}" "compileJobs=2" "the second expli
 require_artifact_hashes("${full_map_hash}" "${full_library_hash}" "the second explicit repeated operation")
 
 set(cancellation_signal
-    "${WORKING_DIRECTORY}/artifacts/dev/projects/${REPRESENTATIVE_PROJECT}/cooked/Shaders/ShaderCompilerCliValidation.cancel")
+    "${COOKED_SHADER_DIRECTORY}/ShaderCompilerCliValidation.cancel")
 file(WRITE "${cancellation_signal}" "cancel")
 expect_shader_compiler_failure(
     cook --shader-id "${REPRESENTATIVE_SHADER}" --target DxilSm66 --target SpirV16

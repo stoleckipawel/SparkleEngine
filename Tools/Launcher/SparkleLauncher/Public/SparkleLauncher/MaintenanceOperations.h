@@ -5,11 +5,11 @@
 #include "SparkleLauncher/OperationModel.h"
 #include "SparkleLauncher/ProcessRunner.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
 #include <string_view>
-#include <cstdint>
 #include <vector>
 
 namespace SparkleLauncher
@@ -96,6 +96,8 @@ namespace SparkleLauncher
 
 	std::string ToString(MaintenanceOperationKind kind);
 	std::string ToString(CleanScope scope);
+	std::string_view CleanScopeId(CleanScope scope) noexcept;
+	bool TryParseCleanScope(std::string_view text, CleanScope& outScope) noexcept;
 	const std::vector<MaintenanceOperationDefinition>& GetMaintenanceOperationDefinitions();
 	std::optional<MaintenanceOperationDefinition> FindMaintenanceOperationDefinition(std::string_view operationId);
 	MaintenanceOperationPlan PlanMaintenanceOperation(std::string_view operationId, const MaintenanceOperationRequest& request);

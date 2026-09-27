@@ -118,6 +118,15 @@ value; it does not independently rebuild those correlated trees. Mechanics
 that need only a destination receive that destination, not a repository root
 plus enough policy to rediscover it.
 
+This rule also applies across tool and validation modules. Asset-cook planning
+resolves its cooked destination, tool executables, and private scratch root
+once; cooking stages consume those concrete paths. Shader validation asks the
+CMake artifact contract for the representative project's cooked directory
+instead of spelling the artifact tree in a validation script. Workspace clean
+preview and execution consume one typed action list, including the exact path
+preserved inside a partially cleaned directory, so displayed and destructive
+targets cannot drift through parallel scope switches.
+
 The same boundary applies to build configuration. Target files call the
 owner-specific `sparkle_configure_project_artifacts`,
 `sparkle_configure_launcher_artifacts`,

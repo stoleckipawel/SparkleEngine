@@ -227,7 +227,14 @@ namespace SparkleLauncher
 		std::error_code errorCode;
 		if (!std::filesystem::is_directory(outputs.DevelopmentArtifactRoot, errorCode))
 		{
-			return !errorCode;
+			if (!errorCode)
+			{
+				return true;
+			}
+
+			errorMessage = "Failed to inspect development artifacts: " + outputs.DevelopmentArtifactRoot.string() + ": "
+			    + errorCode.message();
+			return false;
 		}
 
 		std::filesystem::directory_iterator iterator(outputs.DevelopmentArtifactRoot, errorCode);

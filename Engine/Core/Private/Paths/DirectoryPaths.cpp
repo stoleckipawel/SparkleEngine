@@ -13,13 +13,6 @@
 
 namespace Paths
 {
-	std::array<std::filesystem::path, 2> ExecutableLookupCandidates(std::string_view executableFileName)
-	{
-		const std::filesystem::path executableDirectory = Filesystem::GetExecutableDirectory();
-		const std::filesystem::path executableName{std::string(executableFileName)};
-		return {executableDirectory / executableName, executableDirectory.parent_path() / executableName};
-	}
-
 	std::filesystem::path LogFile(std::string_view configuredFile, bool ensureParentExists)
 	{
 		std::filesystem::path configuredPath{std::string(configuredFile)};

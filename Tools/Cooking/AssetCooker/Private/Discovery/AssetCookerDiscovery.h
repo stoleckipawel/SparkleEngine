@@ -21,7 +21,6 @@ public:
 	static bool BuildProjectCookPlan(
 	    const std::filesystem::path& repositoryRoot,
 	    std::string_view projectName,
-	    std::string_view configuration,
 	    std::string_view toolProfile,
 	    AssetCookerCategory category,
 	    AssetCookerProjectCookPlan& outPlan,
@@ -33,7 +32,6 @@ private:
 	static void InitializePlan(
 	    const std::filesystem::path& repositoryRoot,
 	    std::string_view projectName,
-	    std::string_view configuration,
 	    std::string_view toolProfile,
 	    AssetCookerCategory category,
 	    AssetCookerProjectCookPlan& outPlan);
