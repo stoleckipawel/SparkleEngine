@@ -1,8 +1,9 @@
 #include "LauncherCleanUiModel.h"
 
 #include "Core/Public/Paths/ProductUserStatePaths.h"
-#include "SparkleLauncher/BuildProfileCatalog.h"
 #include "Core/Public/Paths/WorkspaceOutputPaths.h"
+#include "SparkleLauncher/BuildProfileCatalog.h"
+#include "SparkleLauncher/MaintenanceOperations.h"
 
 #include <QtCore/QRegularExpression>
 
@@ -14,64 +15,55 @@ namespace SparkleLauncher
 	    const QString& scope)
 	{
 		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
-		if (scope == "cooked")
-		{
-			return outputs.CookedProjectDirectory(projectId.toStdString());
-		}
-		if (scope == "build-tree")
-		{
-			return outputs.BuildRoot;
-		}
-		if (scope == "artifacts")
-		{
-			return outputs.ArtifactRoot;
-		}
-		if (scope == "workspace-state")
+		CleanScope cleanScope = CleanScope::CookedOutputs;
+		if (!TryParseCleanScope(scope.toStdString(), cleanScope))
 		{
 			return repositoryRoot;
 		}
-		if (scope == "deps")
+
+		switch (cleanScope)
 		{
-			return outputs.DependencyCacheRoot;
-		}
-		if (scope == "logs")
-		{
-			const Filesystem::ProductUserStatePaths productState =
-			    Filesystem::ResolveDevelopmentProductUserStatePaths(repositoryRoot, projectId.toStdString());
-			return productState.LogsRoot;
+			case CleanScope::CookedOutputs:
+				return outputs.CookedProjectDirectory(projectId.toStdString());
+			case CleanScope::BuildTree:
+				return outputs.BuildRoot;
+			case CleanScope::ArtifactOutputs:
+				return outputs.ArtifactRoot;
+			case CleanScope::WorkspaceState:
+			case CleanScope::PristineGeneratedWorkspace:
+				return repositoryRoot;
+			case CleanScope::ThirdPartyDependencyCache:
+				return outputs.DependencyCacheRoot;
+			case CleanScope::Logs:
+				return Filesystem::ResolveDevelopmentProductUserStatePaths(repositoryRoot, projectId.toStdString()).LogsRoot;
 		}
 		return repositoryRoot;
 	}
 
 	QString CleanScopeDisplayName(const QString& scopeValue)
 	{
-		if (scopeValue == "cooked")
+		CleanScope scope = CleanScope::CookedOutputs;
+		if (!TryParseCleanScope(scopeValue.toStdString(), scope))
 		{
-			return "Cooked Content";
+			return scopeValue;
 		}
-		if (scopeValue == "build-tree")
+
+		switch (scope)
 		{
-			return "Build Outputs";
-		}
-		if (scopeValue == "artifacts")
-		{
-			return "Generated Artifacts";
-		}
-		if (scopeValue == "workspace-state")
-		{
-			return "IDE And Workspace State";
-		}
-		if (scopeValue == "deps")
-		{
-			return "Source Dependency Cache";
-		}
-		if (scopeValue == "logs")
-		{
-			return "Log Files";
-		}
-		if (scopeValue == "clean-all")
-		{
-			return "Clean All";
+			case CleanScope::CookedOutputs:
+				return "Cooked Content";
+			case CleanScope::BuildTree:
+				return "Build Outputs";
+			case CleanScope::ArtifactOutputs:
+				return "Generated Artifacts";
+			case CleanScope::WorkspaceState:
+				return "IDE And Workspace State";
+			case CleanScope::ThirdPartyDependencyCache:
+				return "Source Dependency Cache";
+			case CleanScope::Logs:
+				return "Log Files";
+			case CleanScope::PristineGeneratedWorkspace:
+				return "Clean All";
 		}
 		return scopeValue;
 	}
