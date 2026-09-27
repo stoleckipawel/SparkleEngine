@@ -24,13 +24,9 @@ namespace Filesystem
 
 	// Stateless root discovery for early bootstrap code
 	std::filesystem::path ResolveWorkspaceRootPath();
-	std::filesystem::path ResolveBuildOutputRootPath();
-	std::filesystem::path ResolveLogsRootPath();
 
 	// Cached repository roots
 	const std::filesystem::path& GetWorkspaceRootPath();
-	const std::filesystem::path& GetBuildOutputRootPath();
-	const std::filesystem::path& GetLogsRootPath();
 	const std::filesystem::path& GetProjectPath();
 	const std::filesystem::path& GetProjectAssetsPath();
 	const std::filesystem::path& GetEnginePath();

@@ -9,7 +9,7 @@
 #include "LauncherSettings.h"
 #include "LauncherWorkflowCatalog.h"
 
-#include "SparkleLauncher/LauncherPaths.h"
+#include "Core/Public/Paths/WorkspaceOutputPaths.h"
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QProcess>
@@ -370,8 +370,12 @@ namespace SparkleLauncher
 			return;
 		}
 
+		const Filesystem::WorkspaceOutputPaths workspaceOutputs =
+		    Filesystem::ResolveWorkspaceOutputPaths(m_repositoryRoot);
+		const Filesystem::WorkspaceTargetOutputPaths launcherOutputs =
+		    workspaceOutputs.LauncherTargetOutputs(m_settings.EditorProfile().toStdString());
 		const std::filesystem::path relaunchedExecutablePath =
-		    GetLauncherArtifactDirectory(m_repositoryRoot, m_settings.EditorProfile().toStdString())
+		    launcherOutputs.BinaryDirectory
 		    / std::filesystem::path(QCoreApplication::applicationFilePath().toStdString()).filename();
 		const QString executablePath = QString::fromStdString(relaunchedExecutablePath.string());
 		const bool started = QProcess::startDetached(executablePath, {});

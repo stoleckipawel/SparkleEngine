@@ -3,6 +3,7 @@
 #include "Paths/FileSystemDiscovery.h"
 
 #include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/PathFormatting.h"
 #include "Core/Public/Paths/PathUtils.h"
 #include "Core/Public/Strings/StringUtils.h"
 
@@ -21,18 +22,20 @@ namespace Filesystem::Private
 {
 	std::string GetExecutableStem()
 	{
-		return Strings::ToLowerCopy(Filesystem::GetExecutablePath().stem().string());
+		return Filesystem::GetExecutablePath().stem().string();
 	}
 
 	std::string InferProjectNameFromExecutableStem(std::string executableStem)
 	{
-		if (executableStem.size() > std::string_view("editor").size() && executableStem.ends_with("editor"))
+		if (executableStem.size() > std::string_view("Editor").size()
+		    && PathFormatting::EndsWithIgnoreCase(executableStem, "Editor"))
 		{
-			executableStem.resize(executableStem.size() - std::string_view("editor").size());
+			executableStem.resize(executableStem.size() - std::string_view("Editor").size());
 		}
-		else if (executableStem.size() > std::string_view("runtime").size() && executableStem.ends_with("runtime"))
+		else if (executableStem.size() > std::string_view("Runtime").size()
+		         && PathFormatting::EndsWithIgnoreCase(executableStem, "Runtime"))
 		{
-			executableStem.resize(executableStem.size() - std::string_view("runtime").size());
+			executableStem.resize(executableStem.size() - std::string_view("Runtime").size());
 		}
 
 		if (executableStem.empty())
@@ -40,7 +43,6 @@ namespace Filesystem::Private
 			return {};
 		}
 
-		executableStem.front() = static_cast<char>(std::toupper(static_cast<unsigned char>(executableStem.front())));
 		return executableStem;
 	}
 
@@ -166,6 +168,7 @@ namespace Filesystem::Private
 
 		return std::nullopt;
 	}
+
 }
 
 namespace Filesystem
@@ -301,13 +304,4 @@ namespace Filesystem
 		return !workingDirectory.empty() && !errorCode ? Paths::Normalize(workingDirectory) : Paths::Normalize(GetExecutableDirectory());
 	}
 
-	std::filesystem::path ResolveBuildOutputRootPath()
-	{
-		return Paths::Normalize(ResolveWorkspaceRootPath() / "build");
-	}
-
-	std::filesystem::path ResolveLogsRootPath()
-	{
-		return Paths::Normalize(ResolveWorkspaceRootPath() / "logs");
-	}
 }

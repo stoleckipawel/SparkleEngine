@@ -103,6 +103,7 @@ bool RuntimeConsoleOverlay::InitializeImGuiContext()
 
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	io.IniFilename = nullptr;
 	ImGuiRenderPacketBuilder::ConfigureProducerContext();
 	return true;
 }

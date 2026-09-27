@@ -3,6 +3,7 @@
 #include "Editor/Capture/EditorViewportCaptureCoordinator.h"
 
 #include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/ProductUserStatePaths.h"
 #include "Editor/Capture/ViewportCaptureWriter.h"
 #include "Renderer.h"
 
@@ -51,5 +52,6 @@ void EditorViewportCaptureCoordinator::Update(Renderer& renderer)
 
 std::filesystem::path EditorViewportCaptureCoordinator::BuildOutputPath(std::uint64_t frameId) const
 {
-	return Filesystem::GetWorkspaceRootPath() / "Saved" / "Captures" / ("Viewport_" + std::to_string(frameId) + ".bmp");
+	const Filesystem::ProductUserStatePaths& userState = Filesystem::GetProductUserStatePaths();
+	return userState.CapturesRoot / ("Viewport_" + std::to_string(frameId) + ".bmp");
 }

@@ -7,7 +7,6 @@ set(SPARKLE_LAUNCHER_CORE_PUBLIC_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LevelOperations.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LevelRunOperations.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/MaintenanceOperations.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LauncherPaths.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/OperationModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/ProcessRunner.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/ContentDiscovery.h
@@ -21,7 +20,8 @@ set(SPARKLE_LAUNCHER_CORE_FOUNDATION_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/BuildProfileCatalog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/LauncherRepositoryContext.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/LauncherRepositoryContext.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/LauncherPaths.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/LauncherStatePaths.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/LauncherStatePaths.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/OperationModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/ProcessRunner.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/ContentDiscovery.cpp

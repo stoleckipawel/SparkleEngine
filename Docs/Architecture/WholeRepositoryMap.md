@@ -34,9 +34,13 @@ SparkleEngine
 |-- Docs/                  strategy, architecture, engineering, acceptance, plan, and research knowledge
 |-- artifacts/             generated validation/development output; not source authority
 |-- build/                 generated build trees and dependency cache
-|-- logs/, Saved/          generated runtime and user-local state
 `-- .sparkle               repository marker used by tooling
 ```
+
+Mutable editor/runtime state is not repository content. Development products
+use `%LOCALAPPDATA%/SparkleEngine/Development/<repository-id>/<Product>/` and
+packaged `v0.1` products use `%LOCALAPPDATA%/SparkleEngine/<Product>/v0.1/`,
+with typed `Settings`, `Logs`, `Captures`, `Crashes`, and `Cache` children.
 
 The top-level CMake project requires C++20, loads the Sparkle build profiles and artifact/project contracts, adds `Engine` and `Tools`, then discovers runnable projects through `Projects/*/.sparkle-project`. Optional content-pipeline, shader-compiler, KTX, NVIDIA Streamline, sanitizer, and strict-warning features are explicit CMake options.
 
@@ -238,6 +242,15 @@ The catalog also records disabled future Modern Sponza add-ons for Ivy, Trees, F
 
 The Launcher GUI uses the deployed `RepositoryRoot.txt` as its repository authority. `LauncherMainWindow` remains the lifecycle and composition shell; `LauncherWorkflowPanel` owns workflow-catalog navigation and selection state, while `LauncherActivityPanel` owns the in-memory run list and output presentation. Quick Start projects the level catalog and resolves a requested level/run mode through existing typed sync, build, cook, and final-run capabilities. The Build, Cook, Sync, and Clean pages project those same backend operations; they do not own parallel implementations.
 
+Generated-location ownership is similarly explicit: Core's public
+`ProductUserStatePaths` value is the engine/product boundary for per-user
+mutable state, and Core's `WorkspaceOutputPaths` is the shared boundary for
+repository-generated outputs. Launcher's private `LauncherStatePaths`
+collaboration owns launcher-specific leaf paths. Their concrete directory
+grammar and platform/repository identity mechanics remain private
+implementations; consumers do not reconstruct those paths from repository or
+user-state roots.
+
 `ShowcaseEditor` links the editor host and `ShowcaseRuntime` links the runtime host. Distribution packaging remains manual and outside Launcher ownership.
 
 ## Validation And Evidence Boundaries
@@ -274,4 +287,3 @@ The repository-wide documentation reconciliation remains a static source/build-c
 - `Tools/Shaders/ShaderCompiler/Private/Cooking`
 - `Tools/Launcher/SparkleLauncher/Private`
 - `Projects/Showcase/Levels.catalog`
-

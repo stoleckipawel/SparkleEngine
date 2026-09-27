@@ -23,11 +23,11 @@ struct AssetCookerSceneEntry final
 struct AssetCookerProjectCookPlan final
 {
 	std::string projectName;
-	std::string configuration;
-	std::string toolProfile;
-	std::filesystem::path repositoryRoot;
 	std::filesystem::path projectRoot;
 	std::filesystem::path cookedRoot;
+	std::filesystem::path shaderCompilerPath;
+	std::filesystem::path textureCookerPath;
+	std::filesystem::path temporaryRoot;
 	std::vector<AssetCookerSceneEntry> sceneEntries;
 	std::vector<AssetCookerPlanStep> steps;
 };

@@ -3,7 +3,7 @@
 #include "LauncherLayoutWidgets.h"
 #include "LauncherUiDesign.h"
 
-#include "SparkleLauncher/LauncherPaths.h"
+#include "Core/Public/Paths/WorkspaceOutputPaths.h"
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/Qt>
@@ -39,12 +39,12 @@ namespace SparkleLauncher
 		const std::string assetName = fileName.toStdString();
 		const std::filesystem::path applicationVisualPath =
 		    std::filesystem::path(QCoreApplication::applicationDirPath().toStdString()) / "Visuals" / assetName;
-		const std::array<std::filesystem::path, 5> candidates = {
+		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
+		const std::array<std::filesystem::path, 4> candidates = {
 		    repositoryRoot / "Tools" / "Launcher" / "SparkleLauncher" / "Assets" / "Visuals" / assetName,
 		    applicationVisualPath,
-		    GetArtifactDirectory(repositoryRoot) / "dev" / "launcher" / "Visuals" / assetName,
-		    GetArtifactDirectory(repositoryRoot) / "diagnostics" / "launcher-visual-assets" / assetName,
-		    GetArtifactDirectory(repositoryRoot) / "diagnostics" / "launcher-visual-assets"
+		    outputs.DiagnosticsRoot / "launcher-visual-assets" / assetName,
+		    outputs.DiagnosticsRoot / "launcher-visual-assets"
 		        / (std::filesystem::path(assetName).stem().string() + ".png")};
 		for (const std::filesystem::path& candidate : candidates)
 		{

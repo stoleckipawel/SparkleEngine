@@ -3,30 +3,132 @@
 # Generated build trees are private CMake/MSBuild state. Runnable development
 # products live under artifacts/.
 
-set(SPARKLE_BUILD_ROOT "${CMAKE_BINARY_DIR}")
-set(SPARKLE_ARTIFACT_ROOT "${CMAKE_SOURCE_DIR}/artifacts" CACHE PATH "Generated development artifact root.")
-set(SPARKLE_ARTIFACT_VARIANT "" CACHE STRING "Optional artifact namespace for an alternate build tree.")
+set(_sparkle_canonical_build_root "${CMAKE_SOURCE_DIR}/build")
+get_filename_component(_sparkle_canonical_build_root "${_sparkle_canonical_build_root}" ABSOLUTE)
+get_filename_component(_sparkle_configured_build_root "${CMAKE_BINARY_DIR}" ABSOLUTE)
+set(SPARKLE_ARTIFACT_VARIANT "" CACHE STRING "Artifact namespace for an isolated build/variants/<name> workspace.")
+
+file(RELATIVE_PATH
+    _sparkle_build_root_relative_to_canonical
+    "${_sparkle_canonical_build_root}"
+    "${_sparkle_configured_build_root}")
+
+if(IS_ABSOLUTE "${_sparkle_build_root_relative_to_canonical}"
+   OR _sparkle_build_root_relative_to_canonical MATCHES "^\\.\\.([/\\\\]|$)")
+    message(FATAL_ERROR
+        "Sparkle build trees must stay under '${_sparkle_canonical_build_root}'. "
+        "Use SparkleLauncher for the canonical workspace or configure an isolated validation tree as "
+        "'build/variants/<name>' with '-DSPARKLE_ARTIFACT_VARIANT=<name>'. "
+        "Rejected build tree: '${_sparkle_configured_build_root}'.")
+endif()
+
+set(_sparkle_artifact_root "${CMAKE_SOURCE_DIR}/artifacts")
+set(FETCHCONTENT_BASE_DIR "${_sparkle_canonical_build_root}/_deps" CACHE PATH
+    "Shared Sparkle source-dependency cache; fixed beneath the canonical build root." FORCE)
+
+set(_sparkle_legacy_generated_paths
+    "${CMAKE_SOURCE_DIR}/Saved"
+    "${CMAKE_SOURCE_DIR}/imgui.ini"
+    "${CMAKE_SOURCE_DIR}/CMakeCache.txt"
+    "${CMAKE_SOURCE_DIR}/CMakeFiles"
+    "${CMAKE_SOURCE_DIR}/bin"
+    "${CMAKE_SOURCE_DIR}/obj"
+    "${CMAKE_SOURCE_DIR}/bld"
+    "${CMAKE_SOURCE_DIR}/Debug"
+    "${CMAKE_SOURCE_DIR}/DebugPublic"
+    "${CMAKE_SOURCE_DIR}/Release"
+    "${CMAKE_SOURCE_DIR}/Releases"
+    "${CMAKE_SOURCE_DIR}/x64"
+    "${CMAKE_SOURCE_DIR}/x86"
+    "${CMAKE_SOURCE_DIR}/Intermediate"
+    "${CMAKE_SOURCE_DIR}/DerivedDataCache"
+    "${CMAKE_SOURCE_DIR}/Temp"
+    "${CMAKE_SOURCE_DIR}/Tmp"
+    "${CMAKE_SOURCE_DIR}/Scratch")
+file(GLOB _sparkle_legacy_build_roots LIST_DIRECTORIES TRUE "${CMAKE_SOURCE_DIR}/build-*")
+file(GLOB _sparkle_legacy_root_build_files LIST_DIRECTORIES FALSE
+    "${CMAKE_SOURCE_DIR}/*.sln"
+    "${CMAKE_SOURCE_DIR}/*.slnx"
+    "${CMAKE_SOURCE_DIR}/*.vcxproj"
+    "${CMAKE_SOURCE_DIR}/*.vcxproj.filters"
+    "${CMAKE_SOURCE_DIR}/*.vcxproj.user"
+    "${CMAKE_SOURCE_DIR}/cmake_install.cmake"
+    "${CMAKE_SOURCE_DIR}/Makefile")
+file(GLOB _sparkle_legacy_project_outputs LIST_DIRECTORIES TRUE
+    "${CMAKE_SOURCE_DIR}/Projects/*/build"
+    "${CMAKE_SOURCE_DIR}/Projects/*/Cooked"
+    "${CMAKE_SOURCE_DIR}/Projects/*/cooked"
+    "${CMAKE_SOURCE_DIR}/Projects/*/logs"
+    "${CMAKE_SOURCE_DIR}/Projects/*/StreamlineLogs"
+    "${CMAKE_SOURCE_DIR}/Projects/*/imgui.ini")
+list(APPEND _sparkle_legacy_generated_paths
+    ${_sparkle_legacy_build_roots}
+    ${_sparkle_legacy_root_build_files}
+    ${_sparkle_legacy_project_outputs})
+
+set(_sparkle_existing_legacy_generated_paths)
+foreach(_sparkle_legacy_path IN LISTS _sparkle_legacy_generated_paths)
+    if(EXISTS "${_sparkle_legacy_path}")
+        list(APPEND _sparkle_existing_legacy_generated_paths "${_sparkle_legacy_path}")
+    endif()
+endforeach()
+if(_sparkle_existing_legacy_generated_paths)
+    list(JOIN _sparkle_existing_legacy_generated_paths "\n  - " _sparkle_legacy_path_list)
+    message(FATAL_ERROR
+        "Legacy generated paths exist outside Sparkle's owned output roots:\n  - ${_sparkle_legacy_path_list}\n"
+        "Use SparkleLauncher cleanup after preserving any wanted captures. New builds must write only to build/, artifacts/, "
+        "or the documented per-user state root.")
+endif()
+
+# A launcher built before the per-user logging cutover creates repository-root
+# logs while bootstrapping its replacement. Keep this path visible and warn, but
+# do not strand that one-way self-update route with a configure failure.
+if(EXISTS "${CMAKE_SOURCE_DIR}/logs")
+    message(WARNING
+        "Legacy repository logs exist at '${CMAKE_SOURCE_DIR}/logs'. The current launcher can finish its self-update, then "
+        "the Launcher Logs cleanup removes this transition output. Newly built processes write logs beneath the per-user state root.")
+endif()
 
 if(SPARKLE_ARTIFACT_VARIANT AND NOT SPARKLE_ARTIFACT_VARIANT MATCHES "^[A-Za-z0-9._-]+$")
     message(FATAL_ERROR "SPARKLE_ARTIFACT_VARIANT contains unsupported path characters: '${SPARKLE_ARTIFACT_VARIANT}'")
 endif()
 
-if(SPARKLE_ARTIFACT_VARIANT)
-    set(SPARKLE_ACTIVE_ARTIFACT_ROOT "${SPARKLE_ARTIFACT_ROOT}/${SPARKLE_ARTIFACT_VARIANT}")
+if(_sparkle_configured_build_root STREQUAL _sparkle_canonical_build_root)
+    if(SPARKLE_ARTIFACT_VARIANT)
+        message(FATAL_ERROR
+            "The canonical 'build/' tree must publish to canonical 'artifacts/'. "
+            "SPARKLE_ARTIFACT_VARIANT is valid only with its matching 'build/variants/<name>' tree.")
+    endif()
 else()
-    set(SPARKLE_ACTIVE_ARTIFACT_ROOT "${SPARKLE_ARTIFACT_ROOT}")
+    if(NOT _sparkle_build_root_relative_to_canonical MATCHES "^variants[/\\\\][A-Za-z0-9._-]+$")
+        message(FATAL_ERROR
+            "Alternate Sparkle build trees must use exactly 'build/variants/<name>'. "
+            "Rejected build tree: '${_sparkle_configured_build_root}'.")
+    endif()
+
+    get_filename_component(_sparkle_build_variant_name "${_sparkle_configured_build_root}" NAME)
+    if(NOT SPARKLE_ARTIFACT_VARIANT STREQUAL _sparkle_build_variant_name)
+        message(FATAL_ERROR
+            "Alternate Sparkle build tree '${_sparkle_configured_build_root}' must publish to its matching isolated artifact namespace. "
+            "Pass '-DSPARKLE_ARTIFACT_VARIANT=${_sparkle_build_variant_name}'.")
+    endif()
 endif()
 
-set(SPARKLE_DEV_ARTIFACT_ROOT "${SPARKLE_ACTIVE_ARTIFACT_ROOT}/dev")
-set(SPARKLE_DEV_LAUNCHER_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/launcher")
-set(SPARKLE_DEV_TOOLS_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/tools")
-set(SPARKLE_DEV_PROJECTS_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/projects")
-set(SPARKLE_DEV_RUNTIME_SUPPORT_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/runtime-support")
-set(SPARKLE_DEV_LIBRARY_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/libraries")
-set(SPARKLE_DIAGNOSTICS_ROOT "${SPARKLE_ACTIVE_ARTIFACT_ROOT}/diagnostics")
-set(SPARKLE_SYMBOL_ROOT "${SPARKLE_ACTIVE_ARTIFACT_ROOT}/symbols")
+if(SPARKLE_ARTIFACT_VARIANT)
+    set(_sparkle_active_artifact_root "${_sparkle_artifact_root}/${SPARKLE_ARTIFACT_VARIANT}")
+else()
+    set(_sparkle_active_artifact_root "${_sparkle_artifact_root}")
+endif()
 
-function(sparkle_set_product_artifact_directories target_name runtime_root symbol_owner)
+set(_sparkle_development_artifact_root "${_sparkle_active_artifact_root}/dev")
+set(_sparkle_launcher_artifact_root "${_sparkle_development_artifact_root}/launcher")
+set(_sparkle_tool_artifact_root "${_sparkle_development_artifact_root}/tools")
+set(_sparkle_project_artifact_root "${_sparkle_development_artifact_root}/projects")
+set(_sparkle_runtime_support_artifact_root "${_sparkle_development_artifact_root}/runtime-support")
+set(_sparkle_library_artifact_root "${_sparkle_development_artifact_root}/libraries")
+set(_sparkle_symbol_artifact_root "${_sparkle_active_artifact_root}/symbols")
+
+function(_sparkle_set_target_artifact_directories target_name runtime_root symbol_owner)
     if(NOT TARGET ${target_name})
         message(FATAL_ERROR "Unknown Sparkle target '${target_name}'")
     endif()
@@ -34,9 +136,9 @@ function(sparkle_set_product_artifact_directories target_name runtime_root symbo
     set_target_properties(${target_name} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${runtime_root}/$<CONFIG>"
         LIBRARY_OUTPUT_DIRECTORY "${runtime_root}/$<CONFIG>"
-        ARCHIVE_OUTPUT_DIRECTORY "${SPARKLE_DEV_LIBRARY_ROOT}/${symbol_owner}/$<CONFIG>"
-        PDB_OUTPUT_DIRECTORY "${SPARKLE_SYMBOL_ROOT}/${symbol_owner}/$<CONFIG>"
-        COMPILE_PDB_OUTPUT_DIRECTORY "${SPARKLE_SYMBOL_ROOT}/${symbol_owner}/$<CONFIG>/obj"
+        ARCHIVE_OUTPUT_DIRECTORY "${_sparkle_library_artifact_root}/${symbol_owner}/$<CONFIG>"
+        PDB_OUTPUT_DIRECTORY "${_sparkle_symbol_artifact_root}/${symbol_owner}/$<CONFIG>"
+        COMPILE_PDB_OUTPUT_DIRECTORY "${_sparkle_symbol_artifact_root}/${symbol_owner}/$<CONFIG>/obj"
     )
 
     foreach(config_type IN LISTS CMAKE_CONFIGURATION_TYPES)
@@ -44,9 +146,9 @@ function(sparkle_set_product_artifact_directories target_name runtime_root symbo
         set_target_properties(${target_name} PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY_${config_upper} "${runtime_root}/${config_type}"
             LIBRARY_OUTPUT_DIRECTORY_${config_upper} "${runtime_root}/${config_type}"
-            ARCHIVE_OUTPUT_DIRECTORY_${config_upper} "${SPARKLE_DEV_LIBRARY_ROOT}/${symbol_owner}/${config_type}"
-            PDB_OUTPUT_DIRECTORY_${config_upper} "${SPARKLE_SYMBOL_ROOT}/${symbol_owner}/${config_type}"
-            COMPILE_PDB_OUTPUT_DIRECTORY_${config_upper} "${SPARKLE_SYMBOL_ROOT}/${symbol_owner}/${config_type}/obj"
+            ARCHIVE_OUTPUT_DIRECTORY_${config_upper} "${_sparkle_library_artifact_root}/${symbol_owner}/${config_type}"
+            PDB_OUTPUT_DIRECTORY_${config_upper} "${_sparkle_symbol_artifact_root}/${symbol_owner}/${config_type}"
+            COMPILE_PDB_OUTPUT_DIRECTORY_${config_upper} "${_sparkle_symbol_artifact_root}/${symbol_owner}/${config_type}/obj"
         )
     endforeach()
 
@@ -55,26 +157,33 @@ function(sparkle_set_product_artifact_directories target_name runtime_root symbo
         set_target_properties(${target_name} PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY_${config_upper} "${runtime_root}/${CMAKE_BUILD_TYPE}"
             LIBRARY_OUTPUT_DIRECTORY_${config_upper} "${runtime_root}/${CMAKE_BUILD_TYPE}"
-            ARCHIVE_OUTPUT_DIRECTORY_${config_upper} "${SPARKLE_DEV_LIBRARY_ROOT}/${symbol_owner}/${CMAKE_BUILD_TYPE}"
-            PDB_OUTPUT_DIRECTORY_${config_upper} "${SPARKLE_SYMBOL_ROOT}/${symbol_owner}/${CMAKE_BUILD_TYPE}"
-            COMPILE_PDB_OUTPUT_DIRECTORY_${config_upper} "${SPARKLE_SYMBOL_ROOT}/${symbol_owner}/${CMAKE_BUILD_TYPE}/obj"
+            ARCHIVE_OUTPUT_DIRECTORY_${config_upper} "${_sparkle_library_artifact_root}/${symbol_owner}/${CMAKE_BUILD_TYPE}"
+            PDB_OUTPUT_DIRECTORY_${config_upper} "${_sparkle_symbol_artifact_root}/${symbol_owner}/${CMAKE_BUILD_TYPE}"
+            COMPILE_PDB_OUTPUT_DIRECTORY_${config_upper} "${_sparkle_symbol_artifact_root}/${symbol_owner}/${CMAKE_BUILD_TYPE}/obj"
         )
     endif()
 endfunction()
 
 function(sparkle_configure_launcher_artifacts target_name)
-    sparkle_set_product_artifact_directories(${target_name} "${SPARKLE_DEV_LAUNCHER_ROOT}" "launcher")
+    _sparkle_set_target_artifact_directories(${target_name} "${_sparkle_launcher_artifact_root}" "launcher")
 endfunction()
 
 function(sparkle_configure_development_tool_artifacts target_name)
-    sparkle_set_product_artifact_directories(${target_name} "${SPARKLE_DEV_TOOLS_ROOT}/${target_name}" "tools/${target_name}")
+    _sparkle_set_target_artifact_directories(${target_name} "${_sparkle_tool_artifact_root}/${target_name}" "tools/${target_name}")
 endfunction()
 
 function(sparkle_configure_runtime_support_artifacts target_name)
-    sparkle_set_product_artifact_directories(
+    _sparkle_set_target_artifact_directories(
         ${target_name}
-        "${SPARKLE_DEV_RUNTIME_SUPPORT_ROOT}/${target_name}"
+        "${_sparkle_runtime_support_artifact_root}/${target_name}"
         "runtime-support/${target_name}")
+endfunction()
+
+function(sparkle_configure_project_artifacts target_name project_name product_role)
+    _sparkle_set_target_artifact_directories(
+        ${target_name}
+        "${_sparkle_project_artifact_root}/${project_name}/${product_role}"
+        "projects/${project_name}/${product_role}")
 endfunction()
 
 function(sparkle_declare_runtime_dll_owner product_target)
@@ -129,6 +238,6 @@ function(sparkle_stage_nvidia_streamline_runtime product_target)
 endfunction()
 
 message(STATUS
-    "Sparkle roots: build=${SPARKLE_BUILD_ROOT}; artifacts=${SPARKLE_ACTIVE_ARTIFACT_ROOT}; "
-    "dev=${SPARKLE_DEV_ARTIFACT_ROOT}")
+    "Sparkle roots: build=${_sparkle_configured_build_root}; artifacts=${_sparkle_active_artifact_root}; "
+    "dev=${_sparkle_development_artifact_root}")
 message(STATUS "Sparkle artifact variant: ${SPARKLE_ARTIFACT_VARIANT}")

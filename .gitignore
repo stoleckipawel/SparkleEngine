@@ -5,31 +5,11 @@
 # Keep these rules path-based and intentional. Do not ignore folders by generic
 # names everywhere, because this repository contains real source directories such
 # as `Tools/Launcher/SparkleLauncher/Private/Build`.
-/Build/
 /build/
-/build-*/
-/bin/
-/obj/
-/bld/
 
 # Generated artifact and package roots introduced by the release architecture.
 /artifacts/
 /dist/
-
-/[Ss]aved/
-/[Ii]ntermediate/
-/[Dd]erived[Dd]ata[Cc]ache/
-/[Tt]emp/
-/[Tt]mp/
-/[Tt]mp-*/
-/[Tt]mp_*/
-/[Ss]cratch/
-
-# Project-local generated outputs.
-Projects/**/build/
-Projects/**/[Cc]ooked/
-Projects/**/logs/
-Projects/**/StreamlineLogs/
 
 # Showcase source media is acquired explicitly through the launcher. Catalog,
 # level, provenance, and conversion records remain tracked outside these roots.
@@ -39,16 +19,6 @@ Projects/**/StreamlineLogs/
 /Projects/Showcase/Assets/Meshes/JungleRuins/
 /Projects/Showcase/Assets/Meshes/LPSHead/Publisher/
 /Projects/Showcase/Assets/Meshes/CornellBox/Publisher/
-
-# Build results accidentally emitted at the repository root.
-# Nested source folders named Debug/Release are real code and must remain visible.
-/[Dd]ebug*/
-/[Dd]ebugPublic/
-/[Rr]elease*/
-/[Rr]eleases/
-/x64/
-/x86/
-/[Aa][Rr][Mm]*/
 
 # Keep shader debug include files tracked.
 !Engine/Assets/Shaders/Debug/
@@ -64,8 +34,6 @@ mono_crash.*
 
 # Editor files
 .history
-imgui.ini
-Projects/**/imgui.ini
 .vscode/
 .vscode/*.code-workspace
 .vscode/settings.json
@@ -95,55 +63,6 @@ Projects/**/imgui.ini
 .vs20*/.vscode/launch.json
 .vs20*/.vscode/extensions.json
 
-# CMake and build system files
-*.vcxproj*
-*.sln
-*.slnx
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
-
-# Compiled binaries and intermediate files accidentally emitted into source.
-*.a
-*.dll
-*.dylib
-*.exe
-*.exp
-*.idb
-*.ilk
-*.iobj
-*.ipch
-*.ipdb
-*.lib
-*.lo
-*.o
-*.obj
-*.pch
-*.pdb
-*.pyd
-*.so
-*.so.*
-*.tlog
-*.lastbuildstate
-
-# Local databases, caches, logs, crash dumps, and temporary editor files.
-*.db
-*.db-shm
-*.db-wal
-*.cache
-*.dmp
-*.log
-*.stackdump
-*.temp
-*.tmp
-*.bak
-*.orig
-*.rej
-*.swp
-*.swo
-*~
-
 # Python bytecode, environments, and tool caches.
 __pycache__/
 *.py[cod]
@@ -158,13 +77,3 @@ venv/
 .DS_Store
 Desktop.ini
 Thumbs.db
-
-# Large third-party SDK downloads are declared by CMake and cached under
-# build/_deps; keep ad-hoc local copies out of source.
-/External/NVIDIA/*.zip
-
-# Generated logs and measurement captures stay out of commits.
-# If a performance investigation needs to be preserved, move the artifact to a
-# deliberate docs/attachment location instead of committing it from logs/.
-/logs/.*
-/logs/*

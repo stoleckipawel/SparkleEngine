@@ -1,8 +1,7 @@
 #include "NativeBuildOutputReset.h"
 
-#include "SparkleLauncher/LauncherPaths.h"
+#include "Core/Public/Paths/WorkspaceOutputPaths.h"
 
-#include <array>
 #include <string_view>
 #include <system_error>
 
@@ -112,7 +111,10 @@ namespace SparkleLauncher
 		return true;
 	}
 
-	static bool RemoveGeneratedBuildTree(const std::filesystem::path& buildDirectory, std::string& errorMessage)
+	static bool RemoveGeneratedBuildTree(
+	    const std::filesystem::path& buildDirectory,
+	    const std::filesystem::path& dependencyCacheRoot,
+	    std::string& errorMessage)
 	{
 		std::error_code errorCode;
 		if (!std::filesystem::is_directory(buildDirectory, errorCode))
@@ -132,7 +134,7 @@ namespace SparkleLauncher
 		{
 			const std::filesystem::path path = iterator->path();
 			iterator.increment(errorCode);
-			if (path.filename() == "_deps")
+			if (path.lexically_normal() == dependencyCacheRoot.lexically_normal())
 			{
 				if (!RemoveDependencyBuildState(path, errorMessage))
 				{
@@ -155,8 +157,11 @@ namespace SparkleLauncher
 		return true;
 	}
 
-	static bool RemoveProjectBuildOutputs(const std::filesystem::path& projectsDirectory, std::string& errorMessage)
+	static bool RemoveProjectBuildOutputs(
+	    const Filesystem::WorkspaceOutputPaths& outputs,
+	    std::string& errorMessage)
 	{
+		const std::filesystem::path& projectsDirectory = outputs.ProjectArtifactRoot;
 		std::error_code errorCode;
 		if (!std::filesystem::is_directory(projectsDirectory, errorCode))
 		{
@@ -169,39 +174,42 @@ namespace SparkleLauncher
 			return false;
 		}
 
-		std::filesystem::recursive_directory_iterator iterator(
-		    projectsDirectory,
-		    std::filesystem::directory_options::skip_permission_denied,
-		    errorCode);
-		const std::filesystem::recursive_directory_iterator end;
+		std::filesystem::directory_iterator iterator(projectsDirectory, errorCode);
+		const std::filesystem::directory_iterator end;
 		while (!errorCode && iterator != end)
 		{
-			const std::filesystem::path path = iterator->path();
-			if (!iterator->is_directory(errorCode))
+			const std::filesystem::path projectDirectory = iterator->path();
+			const bool isProjectDirectory = iterator->is_directory(errorCode);
+			iterator.increment(errorCode);
+			if (errorCode)
 			{
-				iterator.increment(errorCode);
-				continue;
+				break;
 			}
-
-			const std::string name = path.filename().string();
-			if (name == "cooked")
+			if (!isProjectDirectory)
 			{
-				iterator.disable_recursion_pending();
-				iterator.increment(errorCode);
-				continue;
-			}
-			if (name == "editor" || name == "runtime")
-			{
-				iterator.disable_recursion_pending();
-				iterator.increment(errorCode);
-				if (!RemoveGeneratedPath(path, errorMessage))
+				if (!RemoveGeneratedPath(projectDirectory, errorMessage))
 				{
 					return false;
 				}
 				continue;
 			}
 
-			iterator.increment(errorCode);
+			const std::filesystem::path cookedDirectory =
+			    outputs.CookedProjectDirectory(projectDirectory.filename().string()).lexically_normal();
+			std::filesystem::directory_iterator projectIterator(projectDirectory, errorCode);
+			while (!errorCode && projectIterator != end)
+			{
+				const std::filesystem::path path = projectIterator->path();
+				projectIterator.increment(errorCode);
+				if (path.lexically_normal() == cookedDirectory)
+				{
+					continue;
+				}
+				if (!RemoveGeneratedPath(path, errorMessage))
+				{
+					return false;
+				}
+			}
 		}
 		if (errorCode)
 		{
@@ -210,6 +218,41 @@ namespace SparkleLauncher
 		}
 
 		return true;
+	}
+
+	static bool RemoveCompiledDevelopmentArtifacts(
+	    const Filesystem::WorkspaceOutputPaths& outputs,
+	    std::string& errorMessage)
+	{
+		std::error_code errorCode;
+		if (!std::filesystem::is_directory(outputs.DevelopmentArtifactRoot, errorCode))
+		{
+			return !errorCode;
+		}
+
+		std::filesystem::directory_iterator iterator(outputs.DevelopmentArtifactRoot, errorCode);
+		const std::filesystem::directory_iterator end;
+		while (!errorCode && iterator != end)
+		{
+			const std::filesystem::path path = iterator->path();
+			iterator.increment(errorCode);
+			if (path.lexically_normal() == outputs.ProjectArtifactRoot.lexically_normal())
+			{
+				continue;
+			}
+			if (!RemoveGeneratedPath(path, errorMessage))
+			{
+				return false;
+			}
+		}
+		if (errorCode)
+		{
+			errorMessage = "Failed to enumerate development artifacts: " + outputs.DevelopmentArtifactRoot.string() + ": "
+			    + errorCode.message();
+			return false;
+		}
+
+		return RemoveProjectBuildOutputs(outputs, errorMessage);
 	}
 
 	bool RequiresNativeBuildOutputReset(BuildFilesFreshnessState state)
@@ -223,31 +266,20 @@ namespace SparkleLauncher
 	    std::string& errorMessage)
 	{
 		errorMessage.clear();
+		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
 		if (!ValidateBuildDirectoryResetScope(repositoryRoot, buildDirectory, errorMessage))
 		{
 			return false;
 		}
-		if (!RemoveGeneratedBuildTree(buildDirectory, errorMessage))
+		if (!RemoveGeneratedBuildTree(buildDirectory, outputs.DependencyCacheRoot, errorMessage))
 		{
 			return false;
 		}
 
-		const std::filesystem::path developerArtifacts = GetDeveloperArtifactDirectory(repositoryRoot);
-		const std::array<std::filesystem::path, 5> compiledArtifactRoots = {
-		    developerArtifacts / "launcher",
-		    developerArtifacts / "libraries",
-		    developerArtifacts / "runtime-support",
-		    developerArtifacts / "tools",
-		    GetSymbolDirectory(repositoryRoot),
-		};
-		for (const std::filesystem::path& path : compiledArtifactRoots)
+		if (!RemoveCompiledDevelopmentArtifacts(outputs, errorMessage))
 		{
-			if (!RemoveGeneratedPath(path, errorMessage))
-			{
-				return false;
-			}
+			return false;
 		}
-
-		return RemoveProjectBuildOutputs(developerArtifacts / "projects", errorMessage);
+		return RemoveGeneratedPath(outputs.SymbolsRoot, errorMessage);
 	}
 }

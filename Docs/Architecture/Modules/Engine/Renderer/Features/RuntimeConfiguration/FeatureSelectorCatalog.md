@@ -17,7 +17,7 @@ A registered name is not automatically a feature. A trustworthy selector has a p
 
 ## Persisted Renderer Settings Section
 
-Application-private `EngineRenderingSettingsPersistence` owns 26 names under `/Script/SparkleRenderer.EngineRenderingSettings` in workspace `Config/DefaultEngine.ini`. The Editor-private settings section edits the Renderer-owned state value and submits it through Application. Renderer contains neither filesystem persistence nor an Editor interaction model. View mode is not a Renderer setting: it is one non-persisted `RenderViewMode` selected by each viewport owner; Editor owns only its presentation and interaction.
+Application-private `EngineRenderingSettingsPersistence` owns 26 names under `/Script/SparkleRenderer.EngineRenderingSettings`. It applies immutable workspace/package `Config/DefaultEngine.ini` first, overlays per-user `Settings/EngineRendering.ini`, and writes only the user file. The Editor-private settings section edits the Renderer-owned state value and submits it through Application. Renderer contains neither filesystem persistence nor an Editor interaction model. View mode is not a Renderer setting: it is one non-persisted `RenderViewMode` selected by each viewport owner; Editor owns only its presentation and interaction.
 
 | Feature | Persisted selectors | Default/request boundary | Active owner and effect |
 | --- | --- | --- | --- |

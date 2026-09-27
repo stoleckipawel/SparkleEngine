@@ -6,6 +6,7 @@
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Json/JsonReader.h"
+#include "Core/Public/Paths/WorkspaceOutputPaths.h"
 #include "Core/Public/Strings/StringUtils.h"
 
 #include <filesystem>
@@ -34,7 +35,9 @@ public:
 
 	static std::optional<std::filesystem::path> FindLatestTextureCookSummary()
 	{
-		const std::filesystem::path summaryRoot = Filesystem::GetWorkspaceRootPath() / "artifacts" / "diagnostics" / "cook" / "Summaries";
+		const Filesystem::WorkspaceOutputPaths workspaceOutputs =
+		    Filesystem::ResolveWorkspaceOutputPaths(Filesystem::GetWorkspaceRootPath());
+		const std::filesystem::path summaryRoot = workspaceOutputs.DiagnosticsRoot / "cook" / "Summaries";
 		std::error_code errorCode;
 		if (!std::filesystem::exists(summaryRoot, errorCode) || errorCode)
 		{

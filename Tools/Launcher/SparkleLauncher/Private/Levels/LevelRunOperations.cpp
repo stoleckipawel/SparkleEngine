@@ -2,8 +2,9 @@
 
 #include "LevelRunOperationProcessRequests.h"
 #include "Core/Public/FileSystemUtils.h"
-#include "SparkleLauncher/LauncherPaths.h"
+#include "LauncherStatePaths.h"
 #include "SparkleLauncher/ToolResolver.h"
+#include "Core/Public/Paths/WorkspaceOutputPaths.h"
 
 #include <algorithm>
 #include <optional>
@@ -64,8 +65,9 @@ namespace SparkleLauncher
 	    std::string_view relativeDirectory)
 	{
 		const std::string relativeScope(relativeDirectory);
-		return DirectoryHasRegularFiles(GetCookedProjectDirectory(repositoryRoot, projectId) / relativeScope)
-		    || DirectoryHasRegularFiles(GetSharedCookedProjectDirectory(repositoryRoot) / relativeScope);
+		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
+		return DirectoryHasRegularFiles(outputs.CookedProjectDirectory(projectId) / relativeScope)
+		    || DirectoryHasRegularFiles(outputs.SharedCookedProjectDirectory() / relativeScope);
 	}
 
 	static std::filesystem::path FirstExistingOrPreferred(const std::vector<std::filesystem::path>& candidates)
@@ -151,7 +153,8 @@ namespace SparkleLauncher
 		    {"profile", plan.Request.ProductProfile},
 		    {"level", plan.Request.LevelId},
 		    {"graphicsApi", plan.Request.GraphicsApi}};
-		plan.Operation.LogPath = GetLauncherOperationLogPath(plan.Request.RepositoryRoot, definition->Id, "Latest.txt");
+		plan.Operation.LogPath =
+		    ResolveLauncherOperationLogPath(plan.Request.RepositoryRoot, definition->Id, "Latest.txt");
 		if (plan.Request.LevelId.empty())
 		{
 			AddReadiness(plan, "A catalog level id is required.");
@@ -183,12 +186,13 @@ namespace SparkleLauncher
 			fileName += ".exe";
 		}
 #endif
+		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(plan.Request.RepositoryRoot);
 		plan.ExecutablePath = FirstExistingOrPreferred({
-		    GetProjectTargetArtifactDirectory(
-		        plan.Request.RepositoryRoot,
+		    outputs.ProjectTargetOutputs(
 		        plan.Request.ContentId,
 		        plan.Request.RunMode == LevelRunMode::Editor ? "editor" : "runtime",
 		        plan.Request.ProductProfile)
+		        .BinaryDirectory
 		        / fileName,
 		    ResolveSparkleToolPath(plan.Request.RepositoryRoot, plan.Request.ProductProfile, plan.TargetName),
 		});

@@ -458,7 +458,7 @@ Raw publication defaults to the exact current session render extent and numeric 
 
 A progressive UI preview may read the latest completely committed prefix at a bounded cadence and pass it through a separately identified display transform. Preview work cannot delay sample-prefix commits beyond the accepted budget, mutate the accumulator, feed transport, change the stop rule, or become the saved comparison source.
 
-Default development output is under `Saved/ReferencePathTracer/<ExportInvocationId>`. An explicit output path must pass canonicalization, writable-root, free-space, overwrite, and atomic-publish checks. Packaged execution depends on the release writable-root contract; the installation directory is never assumed writable.
+Default output is under the product user root at `Captures/ReferencePathTracer/<render-identity>/<ExportInvocationId>`. An explicit output path must pass canonicalization, writable-root, free-space, overwrite, and atomic-publish checks. Packaged execution uses the same release writable-root contract; the installation directory is never assumed writable.
 
 ## Traversal And Backend Strategy
 

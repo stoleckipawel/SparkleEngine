@@ -17,14 +17,9 @@ namespace Filesystem
 		return Private::GetAssetPathState().workspacePath;
 	}
 
-	const std::filesystem::path& GetBuildOutputRootPath()
+	const ProductUserStatePaths& GetProductUserStatePaths()
 	{
-		return Private::GetAssetPathState().buildOutputRootPath;
-	}
-
-	const std::filesystem::path& GetLogsRootPath()
-	{
-		return Private::GetAssetPathState().logsRootPath;
+		return Private::GetAssetPathState().productUserStatePaths;
 	}
 
 	const std::filesystem::path& GetProjectPath()

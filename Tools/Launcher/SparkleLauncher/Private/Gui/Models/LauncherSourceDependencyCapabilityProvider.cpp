@@ -4,7 +4,7 @@
 #include "LauncherOperationRequestMapping.h"
 
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
-#include "SparkleLauncher/LauncherPaths.h"
+#include "Core/Public/Paths/WorkspaceOutputPaths.h"
 #include "SparkleLauncher/SourceDependencyState.h"
 
 #include <filesystem>
@@ -23,7 +23,8 @@ namespace SparkleLauncher
 	std::string RegisterSourceDependencyCapabilities(LauncherCapabilityRegistry& registry, const LauncherCapabilityContext& context)
 	{
 		const LauncherOperationRequest request = context.Request;
-		const std::filesystem::path dependencyCacheRoot = GetBuildDirectory(request.RepositoryRoot) / "_deps";
+		const Filesystem::WorkspaceOutputPaths workspaceOutputs = Filesystem::ResolveWorkspaceOutputPaths(request.RepositoryRoot);
+		const std::filesystem::path dependencyCacheRoot = workspaceOutputs.DependencyCacheRoot;
 		std::vector<std::string> dependencyCapabilityIds;
 		std::string error;
 		for (const SourceDependencyEntry& dependency : GetSourceDependencies())

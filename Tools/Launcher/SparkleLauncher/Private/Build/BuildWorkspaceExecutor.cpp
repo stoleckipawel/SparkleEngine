@@ -3,7 +3,7 @@
 #include "NativeBuildOutputReset.h"
 #include "BuildWorkspaceProcessRequests.h"
 #include "Core/Public/Diagnostics/Error.h"
-#include "SparkleLauncher/LauncherPaths.h"
+#include "Core/Public/Paths/WorkspaceOutputPaths.h"
 #include "SparkleLauncher/SourceDependencyState.h"
 
 #include <algorithm>
@@ -223,7 +223,8 @@ namespace SparkleLauncher
 			return std::nullopt;
 		}
 
-		const SourceDependencyInventoryStatus status = InspectSourceDependencyCache(GetBuildDirectory(plan.RepositoryRoot) / "_deps");
+		const Filesystem::WorkspaceOutputPaths workspaceOutputs = Filesystem::ResolveWorkspaceOutputPaths(plan.RepositoryRoot);
+		const SourceDependencyInventoryStatus status = InspectSourceDependencyCache(workspaceOutputs.DependencyCacheRoot);
 		if (status.AllEnabledDependenciesReady)
 		{
 			return std::nullopt;
@@ -255,8 +256,8 @@ namespace SparkleLauncher
 			return "Unknown source dependency: " + plan.Request.SourceDependencyId + ".";
 		}
 
-		const SourceDependencyValidation validation =
-		    ValidateSourceDependency(*dependency, GetBuildDirectory(plan.RepositoryRoot) / "_deps");
+		const Filesystem::WorkspaceOutputPaths workspaceOutputs = Filesystem::ResolveWorkspaceOutputPaths(plan.RepositoryRoot);
+		const SourceDependencyValidation validation = ValidateSourceDependency(*dependency, workspaceOutputs.DependencyCacheRoot);
 		if (validation.Ready)
 		{
 			return std::nullopt;
@@ -333,7 +334,8 @@ namespace SparkleLauncher
 
 	static bool ClearSourceDependencyCache(const BuildWorkspaceOperationPlan& plan, std::string& errorMessage)
 	{
-		const std::filesystem::path dependencyCachePath = GetBuildDirectory(plan.RepositoryRoot) / "_deps";
+		const Filesystem::WorkspaceOutputPaths workspaceOutputs = Filesystem::ResolveWorkspaceOutputPaths(plan.RepositoryRoot);
+		const std::filesystem::path dependencyCachePath = workspaceOutputs.DependencyCacheRoot;
 		std::error_code errorCode;
 		const bool exists = std::filesystem::exists(dependencyCachePath, errorCode);
 		if (errorCode)

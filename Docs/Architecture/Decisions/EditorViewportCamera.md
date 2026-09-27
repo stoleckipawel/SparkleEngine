@@ -20,7 +20,7 @@ CameraInputIntentCollector -- raw CameraInputIntent
           |
           +--> GameWorld ---------------- runtime navigation settings
           |
-          `--> EditorViewportSession ----- Saved/Config/EditorViewport.ini
+          `--> EditorViewportSession ----- user Settings/EditorViewport.ini
                         |
                         | immutable RenderViewCameraData
                         v
@@ -35,7 +35,7 @@ The editor starts its free view from the active scene camera when a world genera
 | --- | --- | --- |
 | Authored camera transform, vertical FOV, near/far planes, projection, and active state | GameFramework scene camera | Level data |
 | Free editor view pose | `EditorViewportSession` | Current editor session |
-| Viewport move speed, rotation speed, invert-Y, projection, orthographic height, and exposure overrides | Editor viewport settings | Per-workspace user file under `Saved/Config/EditorViewport.ini` |
+| Viewport move speed, rotation speed, invert-Y, projection, orthographic height, and exposure overrides | Editor viewport settings | Per-repository product user file under `%LOCALAPPDATA%/SparkleEngine/Development/<repository-id>/<Product>/Settings/EditorViewport.ini` |
 | Runtime navigation policy | `GameWorld` | Runtime world session only |
 | Effective render camera | Immutable `RenderViewCameraData` inside `RenderViewInput` | One submitted frame |
 | Renderer display defaults and tone mapper | Renderer settings | Existing renderer-settings owner |
@@ -67,7 +67,7 @@ Tone mapping remains a renderer default rather than a camera override. Renderer 
 
 Navigation preferences and viewport exposure state are not serialized into camera actors or level descriptions. `MoveSpeed` was removed from the current level representation, project level files, ECS camera storage, world read/edit contracts, and scene-camera inspector. Old generated/local data is regenerated under the repository's clean-break policy; there is no migration reader, alias, or dual representation.
 
-`Saved/Config/EditorViewport.ini` is disposable local editor state. Failure to read it uses sanitized defaults. Failure to write it leaves the accepted in-memory session state active and does not affect level saving.
+`Settings/EditorViewport.ini` beneath the typed per-user product root is disposable local editor state. Failure to read it uses sanitized defaults. Failure to write it leaves the accepted in-memory session state active and does not affect level saving.
 
 ## Cost Model
 

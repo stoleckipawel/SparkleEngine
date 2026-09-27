@@ -52,7 +52,7 @@ Launcher is a capability planner and operation host. It is not a package manager
 | `LAUNCH-006` | Repository/content discovery | Implemented path | Resolves repository markers, `RepositoryRoot.txt`, default Showcase content, project marker, catalog, and artifact paths; reports unreadable/missing state. | `S` |
 | `LAUNCH-007` | Toolchain detection | Implemented path | CMake, MSBuild/Ninja, Visual Studio/vswhere/installer, Rider, Git, MSVC or clang-cl, Qt/qmake, Windows SDK, shader SDK/runtime, Vulkan SDK, and Streamline/source state. Some entries are advisory; plan owns requiredness. | `S` |
 | `LAUNCH-008` | Source dependency sync | Capability-gated | `workspace.sync-code` can populate one or all enabled FetchContent caches and refresh configure state; dependency inventory checks required files and exposes per-dependency cleanup. Network/recovery behavior is not evidenced here. | `S` |
-| `LAUNCH-009` | Build-file generation | Implemented path | `workspace.generate-build-files` selects Visual Studio or Rider-oriented generator flow, x64, MSVC/clang-cl, Qt, feature set, and writes a freshness stamp. | `S` |
+| `LAUNCH-009` | Build-file generation | Implemented path | `workspace.generate-build-files` selects Visual Studio or Rider-oriented generator flow, x64, MSVC/clang-cl, Qt, and the feature set; it always owns canonical `build/` and writes a freshness stamp. Root CMake rejects output elsewhere, while isolated validation configurations must pair `build/variants/<name>` with `artifacts/<name>/`. | `S` |
 | `LAUNCH-010` | Freshness diagnosis | Implemented path | Detects missing build/cache/solution/stamp, generator mismatch, feature mismatch, source-list/input change, and unsupported state; build actions can configure first when stale. | `S` |
 | `LAUNCH-011` | Workspace build | Implemented path | `workspace.build` builds selected Editor, Runtime, CookTools, and Launcher scopes/targets; focused operations build launcher/editor/runtime/cook tools separately. | `S` |
 | `LAUNCH-012` | Launcher self-build | Implemented path | `launcher.build.self` builds the local launcher artifact. Replacing a currently running binary and relaunch handoff require runtime evidence. | `S` |
@@ -69,8 +69,37 @@ Launcher is a capability planner and operation host. It is not a package manager
 | `LAUNCH-018` | Run level | Implemented path | `levels.run` resolves editor/game target and matching profile, checks executable plus cooked mesh/texture/shader readiness, sets level/API environment, uses the project directory, and launches the real product child process. | `S` |
 | `LAUNCH-019` | Build profiles | Implemented path | All six Debug/Development/Shipping x Editor/Game profiles; focused target name is `<Project>Editor` or `<Project>Runtime`. | `S` |
 | `LAUNCH-020` | Graphics API choice | Implemented path | Run request carries `d3d12` or other accepted API text to product environment; actual compiled backend/device validation remains product evidence. | `S` |
-| `LAUNCH-021` | Clean workspace | Implemented path | `workspace.clean` supports confirmed cooked outputs, build tree, artifacts, IDE state, dependency cache, logs, or pristine generated workspace; previews exact targets/counts/bytes and supports preserved paths. | `S` |
+| `LAUNCH-021` | Clean workspace | Implemented path | `workspace.clean` supports confirmed cooked outputs, build tree, artifacts, IDE state, dependency cache, typed per-user development logs/settings, legacy outputs, or pristine generated workspace; previews exact targets/counts/bytes and supports preserved paths. | `S` |
 | `LAUNCH-022` | Logs/recovery | Implemented path | Per-step log paths, captured output, status/timing/exit code, categorized recovery hints, copy-output UI, and history records. Diagnostic usefulness still needs first-user evidence. | `S` |
+
+## Path API Boundary
+
+Launcher code consumes two deliberately separate contracts:
+
+- Core's `WorkspaceOutputPaths` owns repository-generated build and artifact
+  locations, including the dependency cache and owner/profile-specific
+  products. Build, cook, run, clean, capability, and GUI preview code all use
+  this contract.
+- The private `LauncherStatePaths` collaboration owns per-user launcher
+  settings, activity, archives, live instances, and operation logs. It never
+  exposes or derives workspace products.
+
+Core privately implements workspace-output and user-state directory grammar;
+`SparkleLauncherCore` privately implements Launcher leaf paths. Callers do not
+own repository hashing, platform-local state selection, or literal root
+segments. Product/editor mutable state is not a Launcher path variant: the
+Launcher uses Core's public `ProductUserStatePaths` contract when it must
+inspect or clean that state. This separation prevents a broad path utility
+from becoming a second layout authority.
+
+Launcher planners and UI orchestrators resolve these contracts at their
+operation boundary, then hand concrete semantic paths to dependency checks,
+process steps, cleanup mechanics, and preview models. A receiving feature may
+add only its own leaf filename or owner-specific diagnostic subtree. It must
+not accept a repository root merely to reproduce shared build, artifact, or
+user-state grammar. Related target binary, library, and symbol directories
+travel together as `WorkspaceTargetOutputPaths` so the three destinations
+cannot drift through duplicated call-site logic.
 
 ## Vertical Quick-Start Trace
 
@@ -86,7 +115,7 @@ Launcher is **Developer-only** and must remain an optional frontend over the sou
 | `AC-PROD03-02` | Readiness distinguishes ready, missing, stale, unsupported, unavailable, failed, cancelled, timed out, skipped, and missing-artifact states; success requires zero exit plus every operation-specific final artifact/consumer oracle. |
 | `AC-PROD03-03` | Run follows the final `ShowcaseEditor`/`ShowcaseRuntime` child through requested-level activation or actionable failure; Launcher process creation/PID/exit alone is never success. |
 | `AC-PROD03-04` | Cancellation and close settle the owned process tree/task scope once within budget, retain the final log/result, preserve the prior accepted products, and permit a clean retry. |
-| `AC-PROD03-05` | Clean/force-recook previews canonical contained targets and byte/file counts, requires explicit confirmation, honors preserved paths, and changes no source or per-user runtime state. |
+| `AC-PROD03-05` | Clean/force-recook previews canonical contained targets and byte/file counts, requires explicit confirmation, honors preserved paths, changes no source, and touches per-user development state only when that typed scope is explicitly previewed. Packaged runtime state is outside workspace cleanup. |
 
 | ID | Cause/injection, safe result, and affected criterion |
 | --- | --- |

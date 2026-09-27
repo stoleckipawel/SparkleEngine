@@ -2,7 +2,7 @@
 
 #include "Core/Public/Json/JsonReader.h"
 #include "Core/Public/Strings/StringUtils.h"
-#include "SparkleLauncher/LauncherPaths.h"
+#include "Core/Public/Paths/WorkspaceOutputPaths.h"
 
 #include <chrono>
 #include <cctype>
@@ -88,8 +88,9 @@ namespace SparkleLauncher
 
 	std::filesystem::path GetBuildSolutionPath(const std::filesystem::path& repositoryRoot)
 	{
+		const Filesystem::WorkspaceOutputPaths workspaceOutputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
 		const std::filesystem::path solutionBasePath =
-		    GetBuildDirectory(repositoryRoot) / ReadRootCMakeProjectName(repositoryRoot).value_or("Sparkle");
+		    workspaceOutputs.BuildRoot / ReadRootCMakeProjectName(repositoryRoot).value_or("Sparkle");
 		std::filesystem::path candidate = solutionBasePath;
 		candidate += ".sln";
 		if (std::filesystem::exists(candidate))

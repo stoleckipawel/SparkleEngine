@@ -4,7 +4,7 @@
 
 **Verified:** source route re-audited 2026-09-19 against revision `d1108d44de49d90313abb43a66f924f89d6c6bb2` plus the current ownership-cleanup working tree; executable build/runtime evidence remains unrun
 
-**Scope:** `REN-SET-01` through `REN-SET-05`; owns the lifecycle of the aggregate rendering-settings state, editor commit, workspace persistence, startup restore, render-thread handoff, live versus restart-required application, and requested-state limitations. [Feature Selector Catalog](FeatureSelectorCatalog.md) remains the exact per-selector ledger.
+**Scope:** `REN-SET-01` through `REN-SET-05`; owns the lifecycle of the aggregate rendering-settings state, editor commit, per-user persistence, startup restore, render-thread handoff, live versus restart-required application, and requested-state limitations. [Feature Selector Catalog](FeatureSelectorCatalog.md) remains the exact per-selector ledger.
 
 **Current readiness:** **40/100** — settings edit/load/save/handoff is reachable; durable error reporting, malformed/concurrent/package storage, queue pressure, and structured requested-versus-active state remain incomplete. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
@@ -13,10 +13,10 @@
 | Question | Current answer |
 | --- | --- |
 | what is edited? | one aggregate `EngineRenderingSettingsState`; 26 fields describe requested rendering configuration |
-| what is persisted? | 26 allowlisted `r.*` values in the workspace `Config/DefaultEngine.ini`; view mode is owned separately by each viewport session |
+| what is persisted? | 26 allowlisted `r.*` values in per-user `Settings/EngineRendering.ini`; source/package `Config/DefaultEngine.ini` supplies immutable defaults, and view mode is owned separately by each viewport session |
 | how does it reach rendering? | startup applies the section before command-line overrides; editor commits go through the Renderer facade and serial or render-thread control path |
 | what becomes active immediately? | only settings whose feature owner can apply them without recreation; adapter and back-buffer format changes require restart |
-| what is missing? | atomic/user-scoped packaged persistence, surfaced parse/write errors, and a structured requested-versus-active/fallback status model |
+| what is missing? | atomic persistence, surfaced parse/write errors, round-trip/package evidence, and a structured requested-versus-active/fallback status model |
 
 The aggregate exists to make an editor commit coherent, not to centralize feature policy. Each feature still resolves capability, fallback, topology, and active state at its own owner.
 
@@ -26,7 +26,7 @@ The settings route coordinates three owners without merging them. Renderer publi
 
 ```text
 application startup
-  -> load owned INI section -> set registered CVars
+  -> load immutable defaults, then user override -> set registered CVars
 
 editor setter
   -> mutate Editor-owned aggregate interaction state
@@ -44,7 +44,7 @@ The motivation is one coherent editor transaction and deterministic render-threa
 | --- | --- | --- |
 | aggregate public state | 26 fields: presentation/device, tone/output, exposure, upscale/RR, GBuffer/RT, batching, and TLAS/PTLAS | value snapshot; it does not contain per-viewport UI state or active provider/capability/fallback reasons |
 | persisted allowlist | 26 exact `r.*` names in `/Script/SparkleRenderer.EngineRenderingSettings` | View mode is deliberately not Renderer settings; `RenderViewMode` is one non-persisted per-view request value, while Editor owns its menu presentation and interaction |
-| persistence file | workspace `Config/DefaultEngine.ini`; writer replaces its one section and retains other loaded lines/sections | not an atomic temp-and-replace write; error/status is not returned |
+| persistence files | immutable workspace/package `Config/DefaultEngine.ini`, then per-user `Settings/EngineRendering.ini`; writes replace the owned section only in the user file and retain its other loaded lines/sections | not an atomic temp-and-replace write; error/status is not returned |
 | startup | `Application` applies persisted settings before command-line CVar overrides | malformed values are currently attempted and their error text is discarded |
 | editor commit | each changed setter invokes the Application-owned callback; Application persists and submits the state | Editor has no filesystem access; whole snapshot is resent and unchanged fields are skipped by Renderer CVar comparison |
 | threaded Renderer | control queue transfers the snapshot to render execution context | ordering/backpressure and exit behavior need executable evidence |
@@ -53,14 +53,14 @@ The motivation is one coherent editor transaction and deterministic render-threa
 
 ## Persistence Semantics And Known Gaps
 
-The loader ignores missing files, comments, blank lines, other sections, unknown names, and registered-name lookup failures. It trims key/value strings. Valid allowlisted values are parsed by the owning CVar. Invalid parse diagnostics are presently discarded. The writer creates the parent directory best-effort, reads the existing file, removes the first matching owned section, inserts a freshly generated 26-value section, and truncates/re-writes the file.
+The loader applies the immutable default file first and the per-user override second. It ignores missing files, comments, blank lines, other sections, unknown names, and registered-name lookup failures. It trims key/value strings. Valid allowlisted values are parsed by the owning CVar. Invalid parse diagnostics are presently discarded. The writer creates the user-settings parent directory best-effort, reads the existing user file, removes the first matching owned section, inserts a freshly generated 26-value section, and truncates/re-writes only that user file.
 
 Consequences that must remain explicit:
 
 - no status reaches the caller for directory creation, open, write, flush, or truncation failure;
 - concurrent edits can be overwritten between read and truncate;
 - malformed/unknown/duplicate section/value behavior has no user-facing diagnostic contract;
-- workspace-root persistence does not establish a writable packaged-user configuration route;
+- the per-user package route is source-present but lacks packaged standard-user and reset/retention evidence;
 - no schema/version/migration compatibility path exists or is intended under the current clean-break policy;
 - requested state, CVar state, resolved graph/provider state, and restart-active state are not one thing and must be reported separately where a feature can reject, clamp, defer, or fall back.
 

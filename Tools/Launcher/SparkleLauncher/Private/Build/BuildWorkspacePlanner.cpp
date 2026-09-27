@@ -7,7 +7,8 @@
 #include "Core/Public/Strings/StringUtils.h"
 #include "SparkleLauncher/ArtifactNaming.h"
 #include "SparkleLauncher/BuildProfileCatalog.h"
-#include "SparkleLauncher/LauncherPaths.h"
+#include "LauncherStatePaths.h"
+#include "Core/Public/Paths/WorkspaceOutputPaths.h"
 
 #include <algorithm>
 #include <optional>
@@ -469,11 +470,12 @@ namespace SparkleLauncher
 		{
 			plan.Operation.Inputs.push_back({"hostTool", request.HostToolId});
 		}
-		plan.Operation.LogPath = GetLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
+		plan.Operation.LogPath = ResolveLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
 		plan.Request = request;
 		plan.Toolchain = DetectBuildToolchain(request.RepositoryRoot, request.PreferredIde, request.Compiler);
 		plan.Freshness = CheckBuildFilesFreshness(request.RepositoryRoot, plan.Toolchain);
-		plan.SourceDependencies = InspectSourceDependencyCache(GetBuildDirectory(request.RepositoryRoot) / "_deps");
+		const Filesystem::WorkspaceOutputPaths workspaceOutputs = Filesystem::ResolveWorkspaceOutputPaths(request.RepositoryRoot);
+		plan.SourceDependencies = InspectSourceDependencyCache(workspaceOutputs.DependencyCacheRoot);
 
 		AddReadiness(
 		    plan,

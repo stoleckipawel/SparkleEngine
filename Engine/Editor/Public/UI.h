@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <string>
 
 class Timer;
 class MainMenuBarPanel;
@@ -155,6 +156,7 @@ private:
 	bool m_shaderRecookRequested = false;
 	bool m_isImGuiContextInitialized = false;
 	bool m_isWin32BackendInitialized = false;
+	std::string m_imguiIniPath;
 
 	ScopedEventHandle m_windowMessageHandle;
 	ScopedEventHandle m_windowDpiScaleHandle;

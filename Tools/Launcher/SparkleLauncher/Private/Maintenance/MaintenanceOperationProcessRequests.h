@@ -12,7 +12,7 @@ namespace SparkleLauncher
 	enum class MaintenanceCleanBehavior : std::uint8_t
 	{
 		RemovePath,
-		RemoveBuildDirectoryContentsPreservingDependencies,
+		RemoveDirectoryContentsPreservingPath,
 		RemoveRootGeneratedFiles
 	};
 
@@ -21,6 +21,7 @@ namespace SparkleLauncher
 		std::string Id;
 		std::string DisplayName;
 		std::filesystem::path DestructivePath;
+		std::filesystem::path PreservedPath;
 		MaintenanceCleanBehavior CleanBehavior = MaintenanceCleanBehavior::RemovePath;
 		bool DeletesGeneratedOutput = false;
 	};

@@ -4,6 +4,7 @@
 
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Paths/PathFormatting.h"
+#include "Core/Public/Paths/ProductUserStatePaths.h"
 
 #include <system_error>
 
@@ -28,7 +29,8 @@ namespace Paths::Private
 	{
 		const std::string sanitizedExecutableStem =
 		    PathFormatting::SanitizePathSegment(executableStem.empty() ? "Sparkle" : executableStem);
-		const std::filesystem::path logsRoot = Filesystem::ResolveLogsRootPath();
+		const Filesystem::ProductUserStatePaths& userState = Filesystem::GetProductUserStatePaths();
+		const std::filesystem::path& logsRoot = userState.LogsRoot;
 		std::filesystem::path logDirectory;
 		if (PathFormatting::EndsWithIgnoreCase(sanitizedExecutableStem, "Editor")
 		    || PathFormatting::EndsWithIgnoreCase(sanitizedExecutableStem, "Runtime"))

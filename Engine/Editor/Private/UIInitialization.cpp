@@ -4,6 +4,8 @@
 
 #include "EditorWorkspaceLayout.h"
 #include "Console/EditorConsoleSystem.h"
+#include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/ProductUserStatePaths.h"
 #include "Input/InputSystem.h"
 #include "Panels/MainMenuBarPanel.h"
 #include "Panels/SceneInspectorPanel.h"
@@ -41,6 +43,9 @@ void UI::InitializeImGuiContext()
 
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	const Filesystem::ProductUserStatePaths& userState = Filesystem::GetProductUserStatePaths();
+	m_imguiIniPath = (userState.SettingsRoot / "EditorLayout.ini").string();
+	io.IniFilename = m_imguiIniPath.c_str();
 	ImGuiRenderPacketBuilder::ConfigureProducerContext();
 
 	SparkleUiTheme::ConfigureTypography();

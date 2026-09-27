@@ -4,7 +4,7 @@
 
 #include "SparkleLauncher/CookOperations.h"
 #include "SparkleLauncher/LevelOperations.h"
-#include "SparkleLauncher/LauncherPaths.h"
+#include "LauncherStatePaths.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
 
 #include <algorithm>
@@ -100,18 +100,18 @@ namespace SparkleLauncher
 
 	void AppendLocalLauncherShellActivity(LauncherShellModel& model)
 	{
-		const LauncherStatePaths statePaths = GetLauncherStatePaths(model.Repository.RootPath);
-		if (std::filesystem::exists(statePaths.ActivityPath))
+		const LauncherStatePaths statePaths = ResolveLauncherStatePaths(model.Repository.RootPath);
+		if (std::filesystem::exists(statePaths.ActivityFile))
 		{
-			model.Activity.push_back({"local", "Activity file: " + statePaths.ActivityPath.string()});
+			model.Activity.push_back({"local", "Activity file: " + statePaths.ActivityFile.string()});
 		}
 		else
 		{
 			model.Activity.push_back({"local", "No launcher activity recorded yet."});
-			model.Activity.push_back({"local", "Launcher state: " + statePaths.RootDirectory.string()});
+			model.Activity.push_back({"local", "Launcher state: " + statePaths.Root.string()});
 		}
 
-		const std::optional<std::filesystem::path> latestLogPath = FindLatestLauncherShellLog(statePaths.LogsDirectory);
+		const std::optional<std::filesystem::path> latestLogPath = FindLatestLauncherShellLog(statePaths.LogsRoot);
 		model.Activity.push_back(
 		    {"local", latestLogPath.has_value() ? "Latest launcher log: " + latestLogPath->string() : "No launcher logs discovered yet."});
 	}

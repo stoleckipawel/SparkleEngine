@@ -1,7 +1,7 @@
 #include "CookOperationProcessRequests.h"
 
 #include "CMakeWorkflowProcessRequests.h"
-#include "SparkleLauncher/LauncherPaths.h"
+#include "LauncherStatePaths.h"
 #include "SparkleLauncher/ToolResolver.h"
 
 #include <algorithm>
@@ -41,7 +41,7 @@ namespace SparkleLauncher
 		ProcessRequest process;
 		process.ExecutablePath = ResolveSparkleToolPath(plan.RepositoryRoot, plan.ToolProfile, "AssetCooker");
 		process.WorkingDirectory = plan.RepositoryRoot;
-		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, logFileName);
+		process.LogPath = ResolveLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, logFileName);
 		process.Arguments = {
 		    std::string(command),
 		    plan.Request.ContentId,
@@ -58,7 +58,7 @@ namespace SparkleLauncher
 		ProcessRequest process;
 		process.ExecutablePath = ResolveSparkleToolPath(plan.RepositoryRoot, plan.ToolProfile, "ShaderCompiler");
 		process.WorkingDirectory = plan.RepositoryRoot / "Projects" / plan.Request.ContentId;
-		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "CookShaders.txt");
+		process.LogPath = ResolveLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "CookShaders.txt");
 		process.Arguments = {"cook"};
 		AppendCommonShaderCompilerArguments(plan, process.Arguments);
 		return process;

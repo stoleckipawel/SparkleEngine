@@ -15,7 +15,6 @@
 
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/CookOperations.h"
-#include "SparkleLauncher/LauncherPaths.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
 
 #include <QtCore/QRegularExpression>
@@ -382,8 +381,8 @@ namespace SparkleLauncher
 		        "Local state and caches"},
 		    {"Logs",
 		        "logs",
-		        "Remove repository, launcher, and content diagnostic logs; keep the current launcher log until exit.",
-		        "repository, launcher, and content logs",
+		        "Remove product and launcher logs from per-user state plus any legacy repository/content logs; keep the current launcher log until exit.",
+		        "product, launcher, and legacy logs",
 		        "Local state and caches"},
 		}};
 		const std::array<QString, 3> cleanGroups{{

@@ -41,6 +41,24 @@ Reuse valid incremental artifacts. A fresh configure or clean rebuild is justifi
 
 An unrun broad check that is not applicable is neither missing evidence nor a blocker. If an applicable check is unavailable or too costly to complete within the task, report the exact unsupported claim as `BLOCKED`; do not substitute a broader but less discriminating command or imply that availability equals evidence.
 
+### Generated Workspace Placement
+
+Use SparkleLauncher and its canonical `build/` workspace for ordinary configure,
+build, cook, and launch work. A focused check that genuinely requires a separate
+CMake configuration must use `build/variants/<name>` together with
+`-DSPARKLE_ARTIFACT_VARIANT=<name>`; remove both the temporary build tree and its
+`artifacts/<name>/` products after the check. Never create repository-root
+`build-*`, generator-named, tidy-named, or task-named build directories. The
+root CMake contract rejects those locations so direct commands, IDEs, scripts,
+and agent workflows cannot silently create a second output architecture.
+
+Runtime/editor checks must not write mutable state into the repository. Product
+settings, logs, captures, crashes, and caches belong under the typed per-user
+root documented by Build And Packaging. Shipped/source defaults are inputs and
+must never be used as persistence targets. Do not add path environment overrides
+that can escape these roots. Keep legacy output paths unignored so a regression
+is visible, and preserve then relocate any wanted evidence before cleanup.
+
 ## Logging
 
 Log one concise actionable failure, an important lifecycle transition needed by an existing workflow, or a bounded failure summary. Include enough stable identity and operation context to act.

@@ -1,6 +1,9 @@
 #include "MaintenanceOperationProcessRequests.h"
 
-#include "SparkleLauncher/LauncherPaths.h"
+#include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/ProductUserStatePaths.h"
+#include "LauncherStatePaths.h"
+#include "Core/Public/Paths/WorkspaceOutputPaths.h"
 
 #include <algorithm>
 #include <utility>
@@ -12,12 +15,14 @@ namespace SparkleLauncher
 	    std::string id,
 	    std::string displayName,
 	    std::filesystem::path path,
-	    MaintenanceCleanBehavior behavior)
+	    MaintenanceCleanBehavior behavior,
+	    std::filesystem::path preservedPath = {})
 	{
 		MaintenanceOperationProcessStep step;
 		step.Id = std::move(id);
 		step.DisplayName = std::move(displayName);
 		step.DestructivePath = std::move(path);
+		step.PreservedPath = std::move(preservedPath);
 		step.CleanBehavior = behavior;
 		step.DeletesGeneratedOutput = true;
 		steps.push_back(std::move(step));
@@ -77,7 +82,10 @@ namespace SparkleLauncher
 	static void AddCleanStepsForScope(
 	    std::vector<MaintenanceOperationProcessStep>& steps,
 	    const MaintenanceOperationPlan& plan,
-	    CleanScope scope)
+	    CleanScope scope,
+	    const Filesystem::ProductUserStatePaths& productUserState,
+	    const Filesystem::WorkspaceOutputPaths& outputs,
+	    const LauncherStatePaths& launcherState)
 	{
 		switch (scope)
 		{
@@ -86,7 +94,7 @@ namespace SparkleLauncher
 				    steps,
 				    "clean-cooked",
 				    "Clean cooked content",
-				    GetCookedProjectDirectory(plan.RepositoryRoot, plan.Request.ContentId),
+				    outputs.CookedProjectDirectory(plan.Request.ContentId),
 				    MaintenanceCleanBehavior::RemovePath);
 				return;
 			case CleanScope::BuildTree:
@@ -94,8 +102,9 @@ namespace SparkleLauncher
 				    steps,
 				    "clean-build-tree",
 				    "Clean build tree except dependency cache",
-				    GetBuildDirectory(plan.RepositoryRoot),
-				    MaintenanceCleanBehavior::RemoveBuildDirectoryContentsPreservingDependencies);
+				    outputs.BuildRoot,
+				    MaintenanceCleanBehavior::RemoveDirectoryContentsPreservingPath,
+				    outputs.DependencyCacheRoot);
 				AddCleanStep(
 				    steps,
 				    "clean-root-generated",
@@ -109,7 +118,7 @@ namespace SparkleLauncher
 				    steps,
 				    "clean-artifacts",
 				    "Clean generated artifacts",
-				    GetArtifactDirectory(plan.RepositoryRoot),
+				    outputs.ArtifactRoot,
 				    MaintenanceCleanBehavior::RemovePath);
 				return;
 			case CleanScope::WorkspaceState:
@@ -138,27 +147,39 @@ namespace SparkleLauncher
 				    plan.RepositoryRoot / "imgui.ini",
 				    MaintenanceCleanBehavior::RemovePath);
 				AddContentGeneratedCleanSteps(steps, plan, false, false, true);
+				AddCleanStep(
+				    steps,
+				    "clean-product-settings",
+				    "Clean product user settings",
+				    productUserState.SettingsRoot,
+				    MaintenanceCleanBehavior::RemovePath);
 				return;
 			case CleanScope::ThirdPartyDependencyCache:
 				AddCleanStep(
 				    steps,
 				    "clean-dependency-cache",
 				    "Clean source dependency cache",
-				    GetBuildDirectory(plan.RepositoryRoot) / "_deps",
+				    outputs.DependencyCacheRoot,
 				    MaintenanceCleanBehavior::RemovePath);
 				return;
 			case CleanScope::Logs:
 				AddCleanStep(
 				    steps,
 				    "clean-root-logs",
-				    "Clean repository logs",
+				    "Clean legacy repository logs",
 				    plan.RepositoryRoot / "logs",
+				    MaintenanceCleanBehavior::RemovePath);
+				AddCleanStep(
+				    steps,
+				    "clean-product-logs",
+				    "Clean product logs",
+				    productUserState.LogsRoot,
 				    MaintenanceCleanBehavior::RemovePath);
 				AddCleanStep(
 				    steps,
 				    "clean-launcher-logs",
 				    "Clean launcher logs",
-				    GetLauncherStatePaths(plan.RepositoryRoot).LogsDirectory,
+				    launcherState.LogsRoot,
 				    MaintenanceCleanBehavior::RemovePath);
 				AddContentGeneratedCleanSteps(steps, plan, false, true, false);
 				return;
@@ -167,13 +188,13 @@ namespace SparkleLauncher
 				    steps,
 				    "clean-build",
 				    "Clean build tree",
-				    GetBuildDirectory(plan.RepositoryRoot),
+				    outputs.BuildRoot,
 				    MaintenanceCleanBehavior::RemovePath);
 				AddCleanStep(
 				    steps,
 				    "clean-artifacts",
 				    "Clean development artifacts",
-				    GetArtifactDirectory(plan.RepositoryRoot),
+				    outputs.ArtifactRoot,
 				    MaintenanceCleanBehavior::RemovePath);
 				AddCleanStep(
 				    steps,
@@ -196,14 +217,20 @@ namespace SparkleLauncher
 				AddCleanStep(
 				    steps,
 				    "clean-logs",
-				    "Clean repository logs",
+				    "Clean legacy repository logs",
 				    plan.RepositoryRoot / "logs",
+				    MaintenanceCleanBehavior::RemovePath);
+				AddCleanStep(
+				    steps,
+				    "clean-product-state",
+				    "Clean product user state",
+				    productUserState.Root,
 				    MaintenanceCleanBehavior::RemovePath);
 				AddCleanStep(
 				    steps,
 				    "clean-launcher-state",
 				    "Clean launcher state",
-				    GetLauncherStatePaths(plan.RepositoryRoot).RootDirectory,
+				    launcherState.Root,
 				    MaintenanceCleanBehavior::RemovePath);
 				AddCleanStep(
 				    steps,
@@ -238,9 +265,13 @@ namespace SparkleLauncher
 			return;
 		}
 
+		const Filesystem::ProductUserStatePaths productUserState =
+		    Filesystem::ResolveDevelopmentProductUserStatePaths(plan.RepositoryRoot, plan.Request.ContentId);
+		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(plan.RepositoryRoot);
+		const LauncherStatePaths launcherState = ResolveLauncherStatePaths(plan.RepositoryRoot);
 		for (const CleanScope scope : ResolveRequestedCleanScopes(plan.Request))
 		{
-			AddCleanStepsForScope(steps, plan, scope);
+			AddCleanStepsForScope(steps, plan, scope, productUserState, outputs, launcherState);
 		}
 	}
 

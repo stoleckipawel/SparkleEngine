@@ -3,7 +3,7 @@
 #include "AssetPackSyncPlanner.h"
 
 #include "Core/Public/Projects/ProjectLevelCatalog.h"
-#include "SparkleLauncher/LauncherPaths.h"
+#include "LauncherStatePaths.h"
 
 #include <utility>
 
@@ -12,12 +12,13 @@ namespace SparkleLauncher
 	static ProcessRequest MakeAssetPackSyncRequest(const LevelOperationPlan& plan, const ProjectAssetPack& pack)
 	{
 		const std::filesystem::path projectRoot = plan.RepositoryRoot / "Projects" / plan.Request.ContentId;
-		const std::filesystem::path cacheRoot = GetLauncherStateDirectory(plan.RepositoryRoot) / "ContentArchives" / plan.Request.ContentId;
+		const LauncherStatePaths statePaths = ResolveLauncherStatePaths(plan.RepositoryRoot);
+		const std::filesystem::path cacheRoot = statePaths.ContentArchivesRoot / plan.Request.ContentId;
 		const std::filesystem::path rootRelativeToExtraction = pack.rootPath.lexically_relative(pack.extractionPath);
 
 		ProcessRequest process;
 		process.WorkingDirectory = plan.RepositoryRoot;
-		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "AssetPack-" + pack.id + ".txt");
+		process.LogPath = ResolveLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "AssetPack-" + pack.id + ".txt");
 		process.ExecutablePath = plan.CMakePath;
 		process.Arguments = {
 		    "-DSPARKLE_PACK_ID=" + pack.id,

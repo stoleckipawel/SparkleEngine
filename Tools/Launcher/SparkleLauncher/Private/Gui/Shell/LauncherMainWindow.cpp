@@ -22,7 +22,6 @@
 
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/CookOperations.h"
-#include "SparkleLauncher/LauncherPaths.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
 
 #include "Core/Public/Diagnostics/Error.h"

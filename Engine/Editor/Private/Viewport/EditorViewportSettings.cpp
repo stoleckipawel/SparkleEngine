@@ -3,6 +3,7 @@
 #include "Viewport/EditorViewportSettings.h"
 
 #include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/ProductUserStatePaths.h"
 #include "Core/Public/Strings/StringUtils.h"
 
 #include <algorithm>
@@ -118,7 +119,8 @@ EditorViewportSettings::EditorViewportSettings(std::filesystem::path path) :
 
 std::filesystem::path EditorViewportSettings::GetDefaultPath()
 {
-	return Filesystem::GetWorkspaceRootPath() / "Saved" / "Config" / "EditorViewport.ini";
+	const Filesystem::ProductUserStatePaths& userState = Filesystem::GetProductUserStatePaths();
+	return userState.SettingsRoot / "EditorViewport.ini";
 }
 
 void EditorViewportSettings::SanitizeExposure(ViewportExposureOverrides& exposure) noexcept

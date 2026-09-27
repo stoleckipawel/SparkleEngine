@@ -7,7 +7,7 @@
 #include "LauncherOperationRequestFactory.h"
 #include "LauncherSettings.h"
 
-#include "SparkleLauncher/LauncherPaths.h"
+#include "Core/Public/Paths/WorkspaceOutputPaths.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
 #include "SparkleLauncher/SourceDependencyState.h"
 
@@ -24,7 +24,8 @@ namespace SparkleLauncher
 {
 	void LauncherMainWindow::AddSyncDependencies(QVBoxLayout& layout, bool optional)
 	{
-		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
+		const Filesystem::WorkspaceOutputPaths workspaceOutputs = Filesystem::ResolveWorkspaceOutputPaths(m_repositoryRoot);
+		const std::filesystem::path dependencyCachePath = workspaceOutputs.DependencyCacheRoot;
 		for (const ThirdPartyDependencyUiEntry& dependency : GetTrackedThirdPartyDependencies())
 		{
 			if (dependency.Required == optional)
@@ -80,7 +81,8 @@ namespace SparkleLauncher
 	    QLabel& statusLabel,
 	    QPushButton& button)
 	{
-		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
+		const Filesystem::WorkspaceOutputPaths workspaceOutputs = Filesystem::ResolveWorkspaceOutputPaths(m_repositoryRoot);
+		const std::filesystem::path dependencyCachePath = workspaceOutputs.DependencyCacheRoot;
 		const ThirdPartyDependencyUiStatus status = BuildThirdPartyDependencyStatus(dependency, dependencyCachePath);
 		const QString runId = m_sourceDependencyRunIds.value(dependency.Id);
 		const bool cleaning = !runId.isEmpty() && m_cleaningSourceDependencyRunIds.contains(runId);
@@ -134,7 +136,8 @@ namespace SparkleLauncher
 		}
 
 		LauncherOperationRequest request = BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, "workspace.clean");
-		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
+		const Filesystem::WorkspaceOutputPaths workspaceOutputs = Filesystem::ResolveWorkspaceOutputPaths(m_repositoryRoot);
+		const std::filesystem::path dependencyCachePath = workspaceOutputs.DependencyCacheRoot;
 		for (const std::filesystem::path& path : GetSourceDependencyCachePaths(*sourceDependency, dependencyCachePath))
 		{
 			std::error_code errorCode;

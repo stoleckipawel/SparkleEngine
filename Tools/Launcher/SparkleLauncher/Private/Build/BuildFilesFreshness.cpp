@@ -5,7 +5,7 @@
 #include "BuildWorkspaceStateFiles.h"
 #include "Core/Public/Paths/PathUtils.h"
 #include "Core/Public/Strings/StringUtils.h"
-#include "SparkleLauncher/LauncherPaths.h"
+#include "Core/Public/Paths/WorkspaceOutputPaths.h"
 
 #include <algorithm>
 #include <fstream>
@@ -29,8 +29,9 @@ namespace SparkleLauncher
 
 	BuildFilesFreshnessStatus CheckBuildFilesFreshness(const std::filesystem::path& repositoryRoot, const BuildToolchainStatus& toolchain)
 	{
+		const Filesystem::WorkspaceOutputPaths workspaceOutputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
 		BuildFilesFreshnessStatus status;
-		status.BuildDirectory = GetBuildDirectory(repositoryRoot);
+		status.BuildDirectory = workspaceOutputs.BuildRoot;
 		status.CachePath = status.BuildDirectory / "CMakeCache.txt";
 		status.SolutionPath = GetBuildSolutionPath(repositoryRoot);
 		status.StampPath = status.BuildDirectory / "BuildFilesFreshness.json";
@@ -167,7 +168,8 @@ namespace SparkleLauncher
 
 		const WorkspaceFeatureSettings featureSettings = GetLauncherWorkspaceFeatureSettings();
 
-		const std::filesystem::path stampPath = GetBuildDirectory(repositoryRoot) / "BuildFilesFreshness.json";
+		const Filesystem::WorkspaceOutputPaths workspaceOutputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
+		const std::filesystem::path stampPath = workspaceOutputs.BuildRoot / "BuildFilesFreshness.json";
 		std::error_code errorCode;
 		std::filesystem::create_directories(stampPath.parent_path(), errorCode);
 		if (errorCode)

@@ -4,7 +4,9 @@
 
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
+#include "Core/Public/Paths/WorkspaceOutputPaths.h"
 #include "Paths/FileSystemDiscovery.h"
+#include "Paths/UserStatePaths.h"
 
 #include <array>
 #include <cstring>
@@ -39,9 +41,10 @@ namespace Filesystem::Private
 	{
 		const std::filesystem::path projectName =
 		    state.projectPath.empty() ? std::filesystem::path("Shared") : state.projectPath.filename();
+		const WorkspaceOutputPaths workspaceOutputs = ResolveWorkspaceOutputPaths(state.workspacePath);
 		state.cookedAssetRootPath = state.packageRuntimeRoot
 		    ? Paths::Normalize(state.workspacePath / "Projects" / projectName / "Cooked")
-		    : Paths::Normalize(state.workspacePath / "artifacts" / "dev" / "projects" / projectName / "cooked");
+		    : Paths::Normalize(workspaceOutputs.CookedProjectDirectory(projectName.string()));
 		state.cookedShaderRootPath = Paths::Normalize(state.cookedAssetRootPath / "Shaders");
 		state.globalShaderMapPath = Paths::Normalize(state.cookedShaderRootPath / "GlobalShaderMap.smap");
 		state.cookedShaderLibraryPath = Paths::Normalize(state.cookedShaderRootPath / "CookedShaderLibrary.slib");
@@ -53,14 +56,21 @@ namespace Filesystem::Private
 		state.cookedSkeletonRootPath = Paths::Normalize(state.cookedAssetRootPath / "Skeletons");
 		state.cookedAnimationRootPath = Paths::Normalize(state.cookedAssetRootPath / "Animations");
 		state.sceneAssetRegistryPath = Paths::Normalize(state.cookedAssetRootPath / "SceneAssetRegistry.sreg");
-		state.shaderSymbolsOutputPath = Paths::Normalize(state.buildOutputRootPath / "ShaderSymbols" / projectName);
+		state.shaderSymbolsOutputPath = state.packageRuntimeRoot
+		    ? Paths::Normalize(state.productUserStatePaths.CacheRoot / "ShaderSymbols" / projectName)
+		    : Paths::Normalize(workspaceOutputs.SymbolsRoot / "shaders" / projectName);
 	}
 
 	void MaterializeOutputDirectories(const AssetPathState& state)
 	{
+		if (state.packageRuntimeRoot)
+		{
+			std::error_code errorCode;
+			std::filesystem::create_directories(state.shaderSymbolsOutputPath, errorCode);
+			return;
+		}
+
 		const std::array outputDirectories = {
-		    &state.buildOutputRootPath,
-		    &state.logsRootPath,
 		    &state.cookedAssetRootPath,
 		    &state.cookedShaderRootPath,
 		    &state.cookedTextureRootPath,
@@ -118,8 +128,7 @@ namespace Filesystem::Private
 		ValidatePath(logger, "Working Directory", state.workingDirectory, true);
 		ValidatePath(logger, "Executable Directory", state.executableDirectory, true);
 		ValidatePath(logger, "Workspace", state.workspacePath, true);
-		ValidatePath(logger, "Build Output Root", state.buildOutputRootPath, true);
-		ValidatePath(logger, "Logs Root", state.logsRootPath, true);
+		ValidatePath(logger, "Logs Root", state.productUserStatePaths.LogsRoot, true);
 		ValidatePath(logger, "Cooked Asset Root", state.cookedAssetRootPath, true);
 		ValidatePath(logger, "Cooked Shader Root", state.cookedShaderRootPath, true);
 		ValidatePath(logger, "Cooked Skeleton Root", state.cookedSkeletonRootPath, true);
@@ -140,6 +149,7 @@ namespace Filesystem::Private
 		const std::optional<std::filesystem::path> packageRoot = DiscoverPackageRoot();
 		state.packageRuntimeRoot = packageRoot.has_value();
 		state.workspacePath = state.packageRuntimeRoot ? Paths::Normalize(*packageRoot) : Filesystem::ResolveWorkspaceRootPath();
+		state.productUserStatePaths = ResolveCurrentProductUserStatePaths();
 		if (!state.packageRuntimeRoot)
 		{
 			if (const auto engineRoot = Filesystem::DiscoverEngineRoot())
@@ -166,9 +176,6 @@ namespace Filesystem::Private
 		state.projectAssetsPath = Paths::Normalize(state.projectAssetsPath);
 		state.enginePath = Paths::Normalize(state.enginePath);
 		state.engineAssetsPath = Paths::Normalize(state.engineAssetsPath);
-		state.buildOutputRootPath =
-		    state.packageRuntimeRoot ? Paths::Normalize(state.workspacePath / "build") : Filesystem::ResolveBuildOutputRootPath();
-		state.logsRootPath = state.packageRuntimeRoot ? Paths::Normalize(state.workspacePath / "logs") : Filesystem::ResolveLogsRootPath();
 		RebuildProjectPaths(state);
 		return state;
 	}

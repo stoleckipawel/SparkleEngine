@@ -5,7 +5,7 @@
 #include "LauncherContentModel.h"
 #include "LauncherRepositoryContext.h"
 #include "LauncherSettings.h"
-#include "SparkleLauncher/LauncherPaths.h"
+#include "LauncherStatePaths.h"
 #include "SparkleLauncher/RepositoryLocator.h"
 
 #include <QtCore/QCoreApplication>
@@ -50,7 +50,8 @@ namespace SparkleLauncher
 	static bool TryStartShadowLauncher(const std::filesystem::path& repositoryRoot, QString& outError)
 	{
 		const std::filesystem::path currentDirectory = std::filesystem::path(QCoreApplication::applicationDirPath().toStdString());
-		const std::filesystem::path shadowRoot = GetLauncherStateDirectory(repositoryRoot) / "Live";
+		const LauncherStatePaths statePaths = ResolveLauncherStatePaths(repositoryRoot);
+		const std::filesystem::path shadowRoot = statePaths.LiveInstancesRoot;
 		const std::filesystem::path relativeToShadow = currentDirectory.lexically_relative(shadowRoot);
 		if (!relativeToShadow.empty() && *relativeToShadow.begin() != "..")
 		{

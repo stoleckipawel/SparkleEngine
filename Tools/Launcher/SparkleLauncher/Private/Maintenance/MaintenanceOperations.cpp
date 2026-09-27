@@ -1,7 +1,10 @@
 #include "SparkleLauncher/MaintenanceOperations.h"
 
+#include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/ProductUserStatePaths.h"
 #include "MaintenanceOperationProcessRequests.h"
-#include "SparkleLauncher/LauncherPaths.h"
+#include "LauncherStatePaths.h"
+#include "Core/Public/Paths/WorkspaceOutputPaths.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -97,7 +100,12 @@ namespace SparkleLauncher
 		}
 	}
 
-	static void PopulateCleanTargetsForScope(MaintenanceOperationPlan& plan, CleanScope scope)
+	static void PopulateCleanTargetsForScope(
+	    MaintenanceOperationPlan& plan,
+	    CleanScope scope,
+	    const Filesystem::ProductUserStatePaths& productUserState,
+	    const Filesystem::WorkspaceOutputPaths& outputs,
+	    const LauncherStatePaths& launcherState)
 	{
 		switch (scope)
 		{
@@ -105,14 +113,14 @@ namespace SparkleLauncher
 				AddCleanTarget(
 				    plan,
 				    "Cooked content",
-				    GetCookedProjectDirectory(plan.RepositoryRoot, plan.Request.ContentId),
+				    outputs.CookedProjectDirectory(plan.Request.ContentId),
 				    "Generated cooked assets for this workspace.");
 				return;
 			case CleanScope::BuildTree:
 				AddCleanTarget(
 				    plan,
 				    "Build tree contents",
-				    GetBuildDirectory(plan.RepositoryRoot),
+				    outputs.BuildRoot,
 				    "Contents are removed except build/_deps.");
 				AddCleanTarget(
 				    plan,
@@ -125,7 +133,7 @@ namespace SparkleLauncher
 				AddCleanTarget(
 				    plan,
 				    "Generated artifacts",
-				    GetArtifactDirectory(plan.RepositoryRoot),
+				    outputs.ArtifactRoot,
 				    "Generated runnable artifacts, diagnostics, libraries, symbols, and cooked outputs.");
 				return;
 			case CleanScope::WorkspaceState:
@@ -134,20 +142,30 @@ namespace SparkleLauncher
 				AddCleanTarget(plan, "Rider workspace state", plan.RepositoryRoot / ".idea", ".idea directory.");
 				AddCleanTarget(plan, "Root ImGui state", plan.RepositoryRoot / "imgui.ini", "Root imgui.ini.");
 				AddContentGeneratedTargets(plan, false, false, true);
+				AddCleanTarget(
+				    plan,
+				    "Product user settings",
+				    productUserState.SettingsRoot,
+				    "Per-repository editor and runtime settings stored outside the source tree.");
 				return;
 			case CleanScope::ThirdPartyDependencyCache:
 				AddCleanTarget(
 				    plan,
 				    "Third-party dependency cache",
-				    GetBuildDirectory(plan.RepositoryRoot) / "_deps",
+				    outputs.DependencyCacheRoot,
 				    "FetchContent dependency cache; configure will re-download dependencies.");
 				return;
 			case CleanScope::Logs:
-				AddCleanTarget(plan, "Repository logs", plan.RepositoryRoot / "logs", "Root structured logs.");
+				AddCleanTarget(plan, "Legacy repository logs", plan.RepositoryRoot / "logs", "Legacy root logs from older builds.");
+				AddCleanTarget(
+				    plan,
+				    "Product logs",
+				    productUserState.LogsRoot,
+				    "Per-repository editor and runtime logs stored outside the source tree.");
 				AddCleanTarget(
 				    plan,
 				    "Launcher logs",
-				    GetLauncherStatePaths(plan.RepositoryRoot).LogsDirectory,
+				    launcherState.LogsRoot,
 				    "Per-repository launcher logs stored in the user-local launcher state directory.");
 				AddContentGeneratedTargets(plan, false, true, false);
 				return;
@@ -155,21 +173,26 @@ namespace SparkleLauncher
 				AddCleanTarget(
 				    plan,
 				    "Build tree",
-				    GetBuildDirectory(plan.RepositoryRoot),
+				    outputs.BuildRoot,
 				    "Full build tree including dependency cache and private build-system outputs.");
 				AddCleanTarget(
 				    plan,
 				    "Development artifacts",
-				    GetArtifactDirectory(plan.RepositoryRoot),
+				    outputs.ArtifactRoot,
 				    "Generated runnable artifacts, diagnostics, libraries, symbols, and cooked outputs.");
 				AddCleanTarget(plan, "Visual Studio workspace state", plan.RepositoryRoot / ".vs", ".vs directory.");
 				AddCleanTarget(plan, "VS Code workspace state", plan.RepositoryRoot / ".vscode", ".vscode directory.");
 				AddCleanTarget(plan, "Rider workspace state", plan.RepositoryRoot / ".idea", ".idea directory.");
-				AddCleanTarget(plan, "Repository logs", plan.RepositoryRoot / "logs", "Root structured logs.");
+				AddCleanTarget(plan, "Legacy repository logs", plan.RepositoryRoot / "logs", "Legacy root logs from older builds.");
+				AddCleanTarget(
+				    plan,
+				    "Product user state",
+				    productUserState.Root,
+				    "Per-repository editor/runtime settings, logs, captures, crashes, and cache.");
 				AddCleanTarget(
 				    plan,
 				    "Launcher state",
-				    GetLauncherStatePaths(plan.RepositoryRoot).RootDirectory,
+				    launcherState.Root,
 				    "Per-repository launcher logs, activity history, and cached workflow state.");
 				AddCleanTarget(plan, "Root ImGui state", plan.RepositoryRoot / "imgui.ini", "Root imgui.ini.");
 				AddCleanTarget(
@@ -212,9 +235,13 @@ namespace SparkleLauncher
 			return;
 		}
 
+		const Filesystem::ProductUserStatePaths productUserState =
+		    Filesystem::ResolveDevelopmentProductUserStatePaths(plan.RepositoryRoot, plan.Request.ContentId);
+		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(plan.RepositoryRoot);
+		const LauncherStatePaths launcherState = ResolveLauncherStatePaths(plan.RepositoryRoot);
 		for (const CleanScope scope : ResolveRequestedCleanScopes(plan.Request))
 		{
-			PopulateCleanTargetsForScope(plan, scope);
+			PopulateCleanTargetsForScope(plan, scope, productUserState, outputs, launcherState);
 		}
 	}
 

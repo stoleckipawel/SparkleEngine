@@ -3,8 +3,9 @@
 #include "CookOperationProcessRequests.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "SparkleLauncher/BuildProfileCatalog.h"
-#include "SparkleLauncher/LauncherPaths.h"
+#include "LauncherStatePaths.h"
 #include "SparkleLauncher/ToolResolver.h"
+#include "Core/Public/Paths/WorkspaceOutputPaths.h"
 
 #include <algorithm>
 #include <optional>
@@ -454,7 +455,9 @@ namespace SparkleLauncher
 			}
 		}
 		plan.ToolProfile = ResolveCookToolProfile(request.RuntimeProfile);
-		plan.CookedOutputDirectory = GetCookedProjectDirectory(request.RepositoryRoot, request.ContentId);
+		const Filesystem::WorkspaceOutputPaths workspaceOutputs =
+		    Filesystem::ResolveWorkspaceOutputPaths(request.RepositoryRoot);
+		plan.CookedOutputDirectory = workspaceOutputs.CookedProjectDirectory(request.ContentId);
 		plan.Operation = MakeOperationRecord(definition->Id, definition->DisplayName);
 		plan.Operation.Inputs.push_back({"content", request.ContentId});
 		plan.Operation.Inputs.push_back({"runtimeProfile", request.RuntimeProfile});
@@ -477,7 +480,7 @@ namespace SparkleLauncher
 			}
 			plan.Operation.Inputs.push_back({"cookScopes", Strings::Join(scopeNameViews, ", ")});
 		}
-		plan.Operation.LogPath = GetLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
+		plan.Operation.LogPath = ResolveLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
 		if (request.Mode == CookMode::Force)
 		{
 			plan.Operation.DestructiveScope = OperationDestructiveScope::CookedOutputs;

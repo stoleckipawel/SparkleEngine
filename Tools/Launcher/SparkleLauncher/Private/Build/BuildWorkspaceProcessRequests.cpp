@@ -4,7 +4,6 @@
 #include "HostToolInstaller.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "SparkleLauncher/BuildProfileCatalog.h"
-#include "SparkleLauncher/LauncherPaths.h"
 
 #include <algorithm>
 #include <optional>

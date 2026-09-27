@@ -1,6 +1,6 @@
 #include "LevelRunOperationProcessRequests.h"
 
-#include "SparkleLauncher/LauncherPaths.h"
+#include "LauncherStatePaths.h"
 
 #include <utility>
 
@@ -18,7 +18,7 @@ namespace SparkleLauncher
 		request.ExecutablePath = plan.ExecutablePath;
 		request.WorkingDirectory = plan.WorkingDirectory;
 		request.Environment = plan.Environment;
-		request.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "RunLevel.txt");
+		request.LogPath = ResolveLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "RunLevel.txt");
 		request.Arguments = {"--graphics-api", plan.Request.GraphicsApi};
 
 		LevelRunOperationProcessStep step;

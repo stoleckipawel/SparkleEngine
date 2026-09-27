@@ -168,20 +168,21 @@ namespace SparkleLauncher
 		return true;
 	}
 
-	static bool RemoveBuildDirectoryContentsPreservingDependencies(
-	    const std::filesystem::path& buildDirectory,
+	static bool RemoveDirectoryContentsPreservingPath(
+	    const std::filesystem::path& directory,
+	    const std::filesystem::path& preservedPath,
 	    std::string& outErrorMessage)
 	{
 		std::error_code errorCode;
-		if (!std::filesystem::is_directory(buildDirectory, errorCode))
+		if (!std::filesystem::is_directory(directory, errorCode))
 		{
 			outErrorMessage.clear();
 			return true;
 		}
 
-		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(buildDirectory, errorCode))
+		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(directory, errorCode))
 		{
-			if (entry.path().filename() == "_deps")
+			if (PathsEqual(NormalizePathForCompare(entry.path()), NormalizePathForCompare(preservedPath)))
 			{
 				continue;
 			}
@@ -291,8 +292,8 @@ namespace SparkleLauncher
 			case MaintenanceCleanBehavior::RemovePath:
 				return preservedPaths.empty() ? RemovePath(step.DestructivePath, outErrorMessage)
 				                              : RemovePathPreservingChildren(step.DestructivePath, preservedPaths, outErrorMessage);
-			case MaintenanceCleanBehavior::RemoveBuildDirectoryContentsPreservingDependencies:
-				return RemoveBuildDirectoryContentsPreservingDependencies(step.DestructivePath, outErrorMessage);
+			case MaintenanceCleanBehavior::RemoveDirectoryContentsPreservingPath:
+				return RemoveDirectoryContentsPreservingPath(step.DestructivePath, step.PreservedPath, outErrorMessage);
 			case MaintenanceCleanBehavior::RemoveRootGeneratedFiles:
 				return RemoveRootGeneratedFiles(step.DestructivePath, outErrorMessage);
 		}

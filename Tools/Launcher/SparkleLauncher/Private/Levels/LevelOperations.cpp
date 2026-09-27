@@ -4,7 +4,7 @@
 
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Strings/StringUtils.h"
-#include "SparkleLauncher/LauncherPaths.h"
+#include "LauncherStatePaths.h"
 #include "SparkleLauncher/ToolResolver.h"
 
 #include <algorithm>
@@ -91,7 +91,7 @@ namespace SparkleLauncher
 			}
 			plan.Operation.Inputs.push_back({"levels", Strings::Join(levelIds, ", ")});
 		}
-		plan.Operation.LogPath = GetLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
+		plan.Operation.LogPath = ResolveLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
 
 		const ToolResolveResult cmake = ResolveKnownTool(KnownTool::CMake);
 		if (cmake.Found)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Public/Assets/AssetTypes.h"
+#include "Core/Public/Paths/ProductUserStatePaths.h"
 
 #include <cstddef>
 #include <array>
@@ -13,8 +14,7 @@ namespace Filesystem::Private
 		static constexpr std::size_t AssetTypeCount = static_cast<std::size_t>(AssetType::Count);
 
 		std::filesystem::path workspacePath;
-		std::filesystem::path buildOutputRootPath;
-		std::filesystem::path logsRootPath;
+		ProductUserStatePaths productUserStatePaths;
 		std::filesystem::path cookedAssetRootPath;
 		std::filesystem::path cookedShaderRootPath;
 		std::filesystem::path globalShaderMapPath;

@@ -1,7 +1,7 @@
 #include "HostToolInstaller.h"
 
 #include "Core/Public/Environment/EnvironmentVariables.h"
-#include "SparkleLauncher/LauncherPaths.h"
+#include "LauncherStatePaths.h"
 
 namespace SparkleLauncher
 {
@@ -69,7 +69,7 @@ namespace SparkleLauncher
 		request.ExecutablePath = ResolvePowerShellPath();
 		request.Arguments = {"-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script};
 		request.WorkingDirectory = repositoryRoot;
-		request.LogPath = GetLauncherOperationLogPath(repositoryRoot, operationId, "InstallHostTool.txt");
+		request.LogPath = ResolveLauncherOperationLogPath(repositoryRoot, operationId, "InstallHostTool.txt");
 		errorMessage.clear();
 		return request;
 	}

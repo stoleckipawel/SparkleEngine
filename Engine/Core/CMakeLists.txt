@@ -90,7 +90,7 @@ target_link_libraries(SparkleCore
 )
 
 if(WIN32)
-    target_link_libraries(SparkleCore PRIVATE bcrypt)
+    target_link_libraries(SparkleCore PRIVATE bcrypt ole32 shell32)
 endif()
 
 target_compile_definitions(SparkleCore

@@ -1,6 +1,6 @@
 #include "SparkleLauncher/ToolResolver.h"
 
-#include "SparkleLauncher/LauncherPaths.h"
+#include "Core/Public/Paths/WorkspaceOutputPaths.h"
 
 #include <algorithm>
 #include <cctype>
@@ -328,11 +328,6 @@ namespace SparkleLauncher
 		return std::nullopt;
 	}
 
-	static bool IsKnownDevelopmentTool(std::string_view executableName)
-	{
-		return executableName == "AssetCooker" || executableName == "TextureCooker" || executableName == "ShaderCompiler";
-	}
-
 	std::string ToString(KnownTool tool)
 	{
 		switch (tool)
@@ -426,6 +421,7 @@ namespace SparkleLauncher
 	    std::string_view profileName,
 	    std::string_view executableName)
 	{
+		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
 		std::filesystem::path fileName(executableName);
 #if defined(_WIN32)
 		if (fileName.extension().empty())
@@ -433,14 +429,9 @@ namespace SparkleLauncher
 			fileName += ".exe";
 		}
 #endif
-		if (executableName == "SparkleLauncher")
-		{
-			return GetLauncherArtifactDirectory(repositoryRoot, profileName) / fileName;
-		}
-		if (IsKnownDevelopmentTool(executableName))
-		{
-			return GetDevelopmentToolArtifactDirectory(repositoryRoot, executableName, profileName) / fileName;
-		}
-		return GetDevelopmentToolArtifactDirectory(repositoryRoot, executableName, profileName) / fileName;
+		const Filesystem::WorkspaceTargetOutputPaths targetOutputs = executableName == "SparkleLauncher"
+		    ? outputs.LauncherTargetOutputs(profileName)
+		    : outputs.ToolTargetOutputs(executableName, profileName);
+		return targetOutputs.BinaryDirectory / fileName;
 	}
 }

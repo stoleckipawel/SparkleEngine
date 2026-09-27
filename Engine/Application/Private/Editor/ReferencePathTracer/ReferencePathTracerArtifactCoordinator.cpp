@@ -3,6 +3,7 @@
 #include "Editor/ReferencePathTracer/ReferencePathTracerArtifactCoordinator.h"
 
 #include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/ProductUserStatePaths.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Identifiers/Uuid.h"
 #include "Editor/ReferencePathTracer/ReferencePathTracerArtifactWriter.h"
@@ -221,5 +222,6 @@ void ReferencePathTracerArtifactCoordinator::Fail(std::string message)
 
 std::filesystem::path ReferencePathTracerArtifactCoordinator::DefaultOutputRoot()
 {
-	return Filesystem::GetWorkspaceRootPath() / "Saved" / "ReferencePathTracer";
+	const Filesystem::ProductUserStatePaths& userState = Filesystem::GetProductUserStatePaths();
+	return userState.CapturesRoot / "ReferencePathTracer";
 }

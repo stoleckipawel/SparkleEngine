@@ -68,18 +68,13 @@ bool AssetCookerStageExecutor::PlanUsesStep(const AssetCookerProjectCookPlan& pl
 	return std::ranges::find(plan.steps, step) != plan.steps.end();
 }
 
-std::filesystem::path AssetCookerStageExecutor::ResolveToolPath(const AssetCookerProjectCookPlan& plan, std::string_view executableName)
-{
-	return plan.repositoryRoot / "artifacts" / "dev" / "tools" / executableName / plan.toolProfile / (std::string(executableName) + ".exe");
-}
-
 std::filesystem::path AssetCookerStageExecutor::MakeTemporaryPath(
     const AssetCookerProjectCookPlan& plan,
     std::string_view stem,
     std::string_view extension)
 {
 	const auto timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
-	return plan.repositoryRoot / "artifacts" / "dev" / "tools" / "AssetCooker" / "Temp"
+	return plan.temporaryRoot
 	    / (std::string(stem) + "-" + plan.projectName + "-" + std::to_string(timestamp) + std::string(extension));
 }
 
@@ -101,7 +96,7 @@ bool AssetCookerStageExecutor::ValidateCapabilities(const AssetCookerProjectCook
 	bool valid = true;
 	if (PlanUsesStep(plan, AssetCookerPlanStep::Shaders))
 	{
-		const std::filesystem::path compilerPath = ResolveToolPath(plan, "ShaderCompiler");
+		const std::filesystem::path& compilerPath = plan.shaderCompilerPath;
 		if (!FileExists(compilerPath))
 		{
 			diagnostics.AddError(AssetCookerCategory::Shaders, "ShaderCompiler executable was not found.", compilerPath);
@@ -110,7 +105,7 @@ bool AssetCookerStageExecutor::ValidateCapabilities(const AssetCookerProjectCook
 	}
 	if (PlanUsesStep(plan, AssetCookerPlanStep::Textures))
 	{
-		const std::filesystem::path cookerPath = ResolveToolPath(plan, "TextureCooker");
+		const std::filesystem::path& cookerPath = plan.textureCookerPath;
 		if (!FileExists(cookerPath))
 		{
 			diagnostics.AddError(AssetCookerCategory::Textures, "TextureCooker executable was not found.", cookerPath);
@@ -125,7 +120,7 @@ bool AssetCookerStageExecutor::RunShaders(
     AssetCookerDiagnostics& diagnostics,
     std::vector<AssetCookerOutputRecord>& outputs)
 {
-	if (AssetCookerToolProcess::Run(ResolveToolPath(plan, "ShaderCompiler"), {"cook"}, plan.projectRoot) != 0)
+	if (AssetCookerToolProcess::Run(plan.shaderCompilerPath, {"cook"}, plan.projectRoot) != 0)
 	{
 		diagnostics.AddError(AssetCookerCategory::Shaders, "Shader cooking failed.");
 		return false;
@@ -160,7 +155,7 @@ bool AssetCookerStageExecutor::RunTextures(
 	}
 
 	const int exitCode = AssetCookerToolProcess::Run(
-	    ResolveToolPath(plan, "TextureCooker"),
+	    plan.textureCookerPath,
 	    {"cook-request-file", requestFile.GetPath().string()},
 	    plan.projectRoot);
 	if (exitCode != 0)

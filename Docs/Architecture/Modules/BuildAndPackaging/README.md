@@ -61,9 +61,106 @@ The current build graph is useful engineering infrastructure, not yet a product-
 
 ## Artifact And Delivery Surface
 
+### Canonical Generated-Output Layout
+
+SparkleLauncher owns one canonical local workspace layout. Generated CMake,
+Visual Studio, Ninja, dependency, and intermediate files belong only in
+`build/`; developers should not search that private tree for runnable products.
+The products intended for direct use are published by owner and profile under
+`artifacts/`:
+
+```text
+<repository>/
+|-- build/                                   canonical private build-system state
+|   `-- variants/<name>/                    isolated, temporary validation trees
+`-- artifacts/
+    |-- dev/
+    |   |-- launcher/<Profile>/              SparkleLauncher and Qt runtime
+    |   |-- tools/<Tool>/<Profile>/          developer tools
+    |   |-- projects/<Project>/
+    |   |   |-- editor/<Profile>/            editor product
+    |   |   |-- runtime/<Profile>/           runtime product
+    |   |   `-- cooked/                      project-owned cooked content
+    |   `-- libraries/<Owner>/<Profile>/     import and development libraries
+    |-- diagnostics/                         generated diagnostic artifacts
+    `-- symbols/                             debug symbols, separated by owner
+```
+
+Launcher settings, activity, and operation logs are user-local state under
+`%LOCALAPPDATA%/SparkleEngine/LauncherState/<repository-id>/`; they are not
+build products. Editor and development-runtime mutable state is isolated per
+repository and product under
+`%LOCALAPPDATA%/SparkleEngine/Development/<repository-id>/<Product>/`; packaged
+`v0.1` runtime state uses `%LOCALAPPDATA%/SparkleEngine/<Product>/v0.1/`.
+`Settings/`, `Logs/`, `Captures/`, `Crashes/`, and `Cache/` are the only typed
+children of those product roots. Source defaults remain immutable.
+
+The directory layout is an explicit code contract rather than a convention
+that callers reproduce. Engine and product code includes
+`Core/Public/Paths/ProductUserStatePaths.h` and requests the complete
+`ProductUserStatePaths` value; only its private implementation may choose the
+OS root, package version, development repository key, or typed child names.
+Workspace producers and consumers include
+`Core/Public/Paths/WorkspaceOutputPaths.h` for build, dependency, artifact,
+product, tool, cooked, diagnostic, library, and symbol locations.
+Launcher-owned settings, activity, and operation logs use the separate private
+`LauncherStatePaths` contract inside `SparkleLauncherCore`. Consumers select a
+named field or owner-specific method from those values. They must not append
+`build`, `_deps`, `artifacts`, `Settings`, `Logs`, or similar root segments to
+reconstruct an ownership rule at the call site.
+
+Orchestrators resolve each contract once for the plan or operation stage and
+pass the resulting semantic path to the implementation that reads, writes, or
+removes it. A receiver may append only a leaf that it owns, such as a settings
+filename or one diagnostic record. When binary, library, and symbol locations
+describe one target, the receiver consumes one `WorkspaceTargetOutputPaths`
+value; it does not independently rebuild those correlated trees. Mechanics
+that need only a destination receive that destination, not a repository root
+plus enough policy to rediscover it.
+
+The same boundary applies to build configuration. Target files call the
+owner-specific `sparkle_configure_project_artifacts`,
+`sparkle_configure_launcher_artifacts`,
+`sparkle_configure_development_tool_artifacts`, or
+`sparkle_configure_runtime_support_artifacts` entry point. The internal target
+property writer is not a feature API; only the artifact-contract module may
+compose runtime, import-library, and symbol roots.
+
+The public headers expose stable location intent and returned paths. The
+private implementations own hashing, normalization, platform state discovery,
+release-version placement, and the concrete directory grammar. Core's
+`WorkspaceUserStatePaths` contract gives product and launcher state the same
+normalized, path-safe repository identity without exposing the hash or OS
+lookup as public APIs. A layout change therefore updates one resolver and its
+CMake/output contract,
+then migrates all consumers in the same clean break; parallel path helpers,
+compatibility aliases, and fallback directory grammars are not permitted.
+
+SparkleLauncher always configures the canonical `build/` tree. The root CMake
+contract rejects build trees outside `build/`, fixes the shared FetchContent
+cache at `build/_deps`, and rejects legacy repository-local `Saved/`,
+`imgui.ini`, project-local build/cook/log/UI-state paths, and root `build-*`
+trees. Repository-root `logs/` is unignored and produces a configure warning
+only so a launcher built before the logging cutover can bootstrap its
+replacement; Launcher cleanup removes that one transition path. These checks
+prevent direct CMake, IDE, script, and runtime paths from silently recreating
+the cluttered layout.
+
+A necessary alternate configure must use `build/variants/<name>` and pass a
+distinct validated `-DSPARKLE_ARTIFACT_VARIANT=<name>`. Its products then
+publish beneath `artifacts/<name>/` instead of overwriting canonical launcher
+products. Remove the temporary variant tree and artifact namespace after its
+validation task. Do not introduce environment overrides, presets, scripts, or
+manual commands that create another build or artifact root.
+
+`dist/` is reserved for future immutable staged packages and archives. Its name
+does not imply that release assembly exists: package manifests, signing,
+relocation, clean-machine verification, and the release workflow remain absent.
+
 | ID | Capability | State | Exact current coverage and limit | Evidence |
 | --- | --- | --- | --- | --- |
 | `BUILD-012` | Development artifact contract | Implemented path | Runnable outputs go to `artifacts/dev`: launcher, tools, projects, runtime-support, libraries; diagnostics and symbols have separate roots; optional validated artifact variant namespaces alternate build trees. | `S` |
+| `BUILD-012A` | Mutable-state isolation | Implemented path | Logs, settings, captures, ImGui layout, crashes, and caches resolve beneath typed per-user roots; engine defaults remain read-only. CMake rejects known legacy generated paths in the source tree, and ignored-path policy no longer hides them. | `S` |
 | `BUILD-013` | Product layout | Implemented path | Showcase products emit to `artifacts/dev/projects/Showcase/editor/<Profile>` or `artifacts/dev/projects/Showcase/runtime/<Profile>`; Windows manifest is attached; project working directory is set for VS debugging. | `S` |
 | `BUILD-014` | Runtime support staging | Implemented path | Shared Sparkle DLL owners and enabled NVIDIA Streamline DLLs copy beside project products; Launcher runs `windeployqt` and copies visual resources plus repository-root marker. | `S` |
 | `BUILD-015` | Tool bundles | Implemented path | Tool executables/libraries/symbols have target-owned locations and declared runtime DLL ownership; Launcher preflights required support files/directories before cooking. | `S` |

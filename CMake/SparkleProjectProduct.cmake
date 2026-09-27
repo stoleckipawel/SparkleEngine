@@ -8,10 +8,7 @@ function(sparkle_configure_project_product target_name project_name product_role
         message(FATAL_ERROR "Unknown Sparkle project product '${target_name}'")
     endif()
 
-    sparkle_set_product_artifact_directories(
-        ${target_name}
-        "${SPARKLE_DEV_PROJECTS_ROOT}/${project_name}/${product_role}"
-        "projects/${project_name}/${product_role}")
+    sparkle_configure_project_artifacts("${target_name}" "${project_name}" "${product_role}")
 
     if(WIN32)
         if(NOT EXISTS "${SPARKLE_WINDOWS_APPLICATION_MANIFEST}")

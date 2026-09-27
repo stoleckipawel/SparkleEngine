@@ -4,6 +4,7 @@
 #include "Core/Public/Console/CVar.h"
 #include "Core/Public/Console/CVarRegistry.h"
 #include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/ProductUserStatePaths.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 
@@ -16,9 +17,15 @@
 #include <utility>
 #include <vector>
 
-std::filesystem::path EngineRenderingSettingsPersistence::GetConfigPath()
+std::filesystem::path EngineRenderingSettingsPersistence::GetDefaultConfigPath()
 {
 	return Filesystem::GetWorkspaceRootPath() / "Config" / "DefaultEngine.ini";
+}
+
+std::filesystem::path EngineRenderingSettingsPersistence::GetUserConfigPath()
+{
+	const Filesystem::ProductUserStatePaths& userState = Filesystem::GetProductUserStatePaths();
+	return userState.SettingsRoot / "EngineRendering.ini";
 }
 
 std::span<const std::string_view> EngineRenderingSettingsPersistence::GetPersistedNames() noexcept
@@ -54,7 +61,13 @@ std::span<const std::string_view> EngineRenderingSettingsPersistence::GetPersist
 
 void EngineRenderingSettingsPersistence::Apply() noexcept
 {
-	std::ifstream input(GetConfigPath());
+	ApplyFile(GetDefaultConfigPath());
+	ApplyFile(GetUserConfigPath());
+}
+
+void EngineRenderingSettingsPersistence::ApplyFile(const std::filesystem::path& path) noexcept
+{
+	std::ifstream input(path);
 	if (!input.is_open())
 	{
 		return;
@@ -101,7 +114,7 @@ void EngineRenderingSettingsPersistence::Apply() noexcept
 
 void EngineRenderingSettingsPersistence::Write(const EngineRenderingSettingsState& state)
 {
-	const std::filesystem::path configPath = GetConfigPath();
+	const std::filesystem::path configPath = GetUserConfigPath();
 	std::error_code errorCode;
 	std::filesystem::create_directories(configPath.parent_path(), errorCode);
 

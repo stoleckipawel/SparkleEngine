@@ -1,5 +1,7 @@
 #include "AssetCookerDiscovery.h"
 
+#include "Core/Public/Paths/WorkspaceOutputPaths.h"
+
 #include "CatalogedLevelSceneReader.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/FileSystemUtils.h"
@@ -137,11 +139,14 @@ void AssetCookerDiscovery::InitializePlan(
 {
 	outPlan = {};
 	outPlan.projectName = std::string(projectName);
-	outPlan.configuration = std::string(configuration);
-	outPlan.toolProfile = std::string(toolProfile);
-	outPlan.repositoryRoot = repositoryRoot;
 	outPlan.projectRoot = repositoryRoot / "Projects" / outPlan.projectName;
-	outPlan.cookedRoot = repositoryRoot / "artifacts" / "dev" / "projects" / outPlan.projectName / "cooked";
+	const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
+	outPlan.cookedRoot = outputs.CookedProjectDirectory(outPlan.projectName);
+	outPlan.shaderCompilerPath =
+	    outputs.ToolTargetOutputs("ShaderCompiler", toolProfile).BinaryDirectory / "ShaderCompiler.exe";
+	outPlan.textureCookerPath =
+	    outputs.ToolTargetOutputs("TextureCooker", toolProfile).BinaryDirectory / "TextureCooker.exe";
+	outPlan.temporaryRoot = outputs.ToolScratchDirectory("AssetCooker", toolProfile);
 	AddPlanSteps(category, outPlan.steps);
 }
 

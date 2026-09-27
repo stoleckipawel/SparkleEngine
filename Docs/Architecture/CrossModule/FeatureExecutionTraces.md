@@ -180,7 +180,7 @@ The per-cache defaults and absence of global priority/LRU/pressure arbitration a
 | --- | --- | --- | --- |
 | startup restore | `Application` -> settings persistence -> CVar registry | allowlisted values from the owned INI section apply before command-line overrides | missing file is ignored; malformed parse diagnostics are discarded |
 | editor rendering-settings edit | Editor panel -> Editor-private `EngineRenderingSettingsSection` -> Application persistence/submit -> Renderer settings control | one setter mutates the 26-field snapshot; Application persists it and submits the Renderer-owned value | only its 26 owned names persist; per-viewport view mode is a separate `EditorViewportSession` concern |
-| save | section -> workspace `Config/DefaultEngine.ini` | first matching owned section is replaced; other loaded lines/sections are retained | truncate-and-rewrite returns no open/write/flush status and is not concurrency-safe/atomic |
+| save | section -> per-user `Settings/EngineRendering.ini` | immutable defaults are never rewritten; the first matching owned user section is replaced and other user-file lines/sections are retained | truncate-and-rewrite returns no open/write/flush status and is not concurrency-safe/atomic |
 | handoff | commit callback -> host -> `Renderer::SubmitRenderingSettings` | whole value snapshot crosses the public facade | no callback applies CVars directly; editor binds the host callback |
 | execution | coordinator -> CVar owners | serial applies directly; threaded mode queues `RenderSettingsChangedCommand` to render context | queue ordering/backpressure/shutdown equivalence is unproved |
 | resolution | CVar owners -> view/topology/provider/device | live values affect the next permitted frame; topology/history owners rebuild/reset; adapter/format report pending restart | requested/CVar/resolved/session-active states and reasons are not one unified result |
@@ -242,4 +242,3 @@ The exact names/domains remain in the [Feature Selector Catalog](../Modules/Engi
 ## Trace Closure Rule
 
 A vertical path is release-complete only when every stage has an owned producer, an owned consumer, a defined failure/fallback, and candidate-bound executable evidence. Source closure in this document earns only `S`; the corresponding `B`, `R`, `N`, `P`, and `A` work remains in the [Capability Evidence Plan](../Modules/CapabilityEvidencePlan.md).
-
