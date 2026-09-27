@@ -4,6 +4,7 @@
 #include "LauncherShellModel.h"
 #include "LauncherShellOperations.h"
 #include "LauncherShellPresentation.h"
+#include "LauncherShadowExecution.h"
 
 #include "SparkleLauncher/ContentDiscovery.h"
 #include "SparkleLauncher/RepositoryLocator.h"
@@ -39,6 +40,26 @@ namespace SparkleLauncher
 		{
 			error << errorMessage << '\n';
 			return 1;
+		}
+
+		if (!arguments.RunOperationId.empty())
+		{
+			std::vector<std::string> shadowArguments;
+			for (int index = 1; index < argc; ++index)
+			{
+				shadowArguments.emplace_back(argv[index]);
+			}
+			const LauncherShadowStartResult shadow =
+			    StartLauncherShadow(repository->RootPath, shadowArguments, true);
+			if (shadow.State == LauncherShadowStartState::Started)
+			{
+				return shadow.ExitCode;
+			}
+			if (shadow.State == LauncherShadowStartState::Failed)
+			{
+				error << shadow.ErrorMessage << '\n';
+				return 1;
+			}
 		}
 
 		std::optional<SparkleContent> content = DiscoverContentRoot(repository->RootPath, errorMessage);

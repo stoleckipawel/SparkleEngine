@@ -5,13 +5,12 @@
 #include "LauncherContentModel.h"
 #include "LauncherRepositoryContext.h"
 #include "LauncherSettings.h"
-#include "LauncherStatePaths.h"
+#include "LauncherShadowExecution.h"
 #include "SparkleLauncher/RepositoryLocator.h"
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 #include <QtCore/QObject>
-#include <QtCore/QProcess>
 #include <QtCore/QTimer>
 #include <QtGui/QWindow>
 #include <QtWidgets/QApplication>
@@ -20,6 +19,8 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <string_view>
+#include <vector>
 
 #if defined(_WIN32)
   #define NOMINMAX
@@ -47,61 +48,16 @@ namespace SparkleLauncher
 #endif
 	}
 
-	static bool TryStartShadowLauncher(const std::filesystem::path& repositoryRoot, QString& outError)
+	static std::filesystem::path FindRequestedRepositoryRoot(int argc, char** argv)
 	{
-		const std::filesystem::path currentDirectory = std::filesystem::path(QCoreApplication::applicationDirPath().toStdString());
-		const LauncherStatePaths statePaths = ResolveLauncherStatePaths(repositoryRoot);
-		const std::filesystem::path shadowRoot = statePaths.LiveInstancesRoot;
-		const std::filesystem::path relativeToShadow = currentDirectory.lexically_relative(shadowRoot);
-		if (!relativeToShadow.empty() && *relativeToShadow.begin() != "..")
+		for (int index = 1; index + 1 < argc; ++index)
 		{
-			return false;
-		}
-
-		const std::filesystem::path currentExecutable = std::filesystem::path(QCoreApplication::applicationFilePath().toStdString());
-		std::error_code errorCode;
-		const auto writeTime = std::filesystem::last_write_time(currentExecutable, errorCode);
-		if (errorCode)
-		{
-			outError = QStringLiteral("Launcher executable identity failed: %1").arg(QString::fromStdString(errorCode.message()));
-			return false;
-		}
-		const std::filesystem::path shadowDirectory = shadowRoot / ("Generation-" + std::to_string(writeTime.time_since_epoch().count()));
-		const std::filesystem::path shadowExecutable = shadowDirectory / currentExecutable.filename();
-
-		errorCode.clear();
-		if (!std::filesystem::exists(shadowExecutable, errorCode))
-		{
-			errorCode.clear();
-			std::filesystem::create_directories(shadowDirectory, errorCode);
-			if (!errorCode)
+			if (std::string_view(argv[index]) == "--root")
 			{
-				errorCode.clear();
-				std::filesystem::copy(
-				    currentDirectory,
-				    shadowDirectory,
-				    std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing,
-				    errorCode);
-			}
-			if (errorCode)
-			{
-				const std::string failure = errorCode.message();
-				errorCode.clear();
-				std::filesystem::remove_all(shadowDirectory, errorCode);
-				outError = QStringLiteral("Launcher shadow copy failed: %1").arg(QString::fromStdString(failure));
-				return false;
+				return argv[index + 1];
 			}
 		}
-		if (!QProcess::startDetached(
-		        QString::fromStdString(shadowExecutable.string()),
-		        {},
-		        QString::fromStdString(repositoryRoot.string())))
-		{
-			outError = QStringLiteral("Launcher shadow restart failed: %1").arg(QString::fromStdString(shadowExecutable.string()));
-			return false;
-		}
-
-		return true;
+		return {};
 	}
 
 	int RunLauncherGui(int argc, char** argv)
@@ -112,7 +68,10 @@ namespace SparkleLauncher
 
 		std::string repositoryError;
 		const std::optional<RepositoryRoot> repository =
-		    TryReadLauncherRepositoryContext(std::filesystem::path(QCoreApplication::applicationDirPath().toStdString()), repositoryError);
+		    TryResolveLauncherRepositoryContext(
+		        FindRequestedRepositoryRoot(argc, argv),
+		        std::filesystem::path(QCoreApplication::applicationDirPath().toStdString()),
+		        repositoryError);
 		if (!repository)
 		{
 			QMessageBox::critical(
@@ -135,14 +94,15 @@ namespace SparkleLauncher
 			return 1;
 		}
 
-		QString shadowError;
-		if (TryStartShadowLauncher(repositoryRoot, shadowError))
+		const LauncherShadowStartResult shadow =
+		    StartLauncherShadow(repositoryRoot, {"--root", repositoryRoot.string()}, false);
+		if (shadow.State == LauncherShadowStartState::Started)
 		{
-			return 0;
+			return shadow.ExitCode;
 		}
-		if (!shadowError.isEmpty())
+		if (shadow.State == LauncherShadowStartState::Failed)
 		{
-			QMessageBox::critical(nullptr, QStringLiteral("Sparkle Launcher"), shadowError);
+			QMessageBox::critical(nullptr, QStringLiteral("Sparkle Launcher"), QString::fromStdString(shadow.ErrorMessage));
 			return 1;
 		}
 

@@ -106,7 +106,7 @@ namespace SparkleLauncher
 			process.Arguments.pop_back();
 		}
 
-		const std::filesystem::path dependencySyncDirectory = outputs.BuildRoot / "_dependency-sync" / sourceDependencyId;
+		const std::filesystem::path dependencySyncDirectory = outputs.SourceDependencySyncDirectory(sourceDependencyId);
 		process.WorkingDirectory = repositoryRoot;
 		process.Arguments.push_back("-DSPARKLE_SYNC_SOURCE_DEPENDENCY=" + std::string(sourceDependencyId));
 		process.Arguments.push_back("-DFETCHCONTENT_BASE_DIR=" + outputs.DependencyCacheRoot.generic_string());

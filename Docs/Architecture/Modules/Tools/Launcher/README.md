@@ -49,14 +49,22 @@ Launcher is a capability planner and operation host. It is not a package manager
 
 | ID | Operation/capability | State | Exact current coverage and limit | Evidence |
 | --- | --- | --- | --- | --- |
-| `LAUNCH-006` | Repository/content discovery | Implemented path | Resolves repository markers, `RepositoryRoot.txt`, default Showcase content, project marker, catalog, and artifact paths; reports unreadable/missing state. | `S` |
+| `LAUNCH-006` | Repository/content discovery | Implemented path | Resolves an explicit `--root`, then the working directory, then Launcher-location ancestors against repository markers; no builder-machine path is embedded in the artifact. It also resolves default Showcase content, project markers, catalogs, and artifact paths and reports unreadable/missing state. | `S` |
 | `LAUNCH-007` | Toolchain detection | Implemented path | CMake, MSBuild/Ninja, Visual Studio/vswhere/installer, Rider, Git, MSVC or clang-cl, Qt/qmake, Windows SDK, shader SDK/runtime, Vulkan SDK, and Streamline/source state. Some entries are advisory; plan owns requiredness. | `S` |
-| `LAUNCH-008` | Source dependency sync | Capability-gated | `workspace.sync-code` can populate one or all enabled FetchContent caches and refresh configure state; dependency inventory checks required files and exposes per-dependency cleanup. Network/recovery behavior is not evidenced here. | `S` |
+| `LAUNCH-008` | Source dependency sync | Capability-gated | `workspace.sync-code` configures exact private state under `build/_dependency-sync/<Dependency>/`, populates one or all enabled entries in the shared `build/_deps` FetchContent cache, and exits before product generation. Dependency inventory checks required files and exposes per-dependency cleanup. Network/recovery behavior is not evidenced here. | `S` |
 | `LAUNCH-009` | Build-file generation | Implemented path | `workspace.generate-build-files` selects Visual Studio or Rider-oriented generator flow, x64, MSVC/clang-cl, Qt, and the feature set; it always owns canonical `build/` and writes a freshness stamp. Root CMake rejects output elsewhere, while isolated validation configurations must pair `build/variants/<name>` with `artifacts/<name>/`. | `S` |
 | `LAUNCH-010` | Freshness diagnosis | Implemented path | Detects missing build/cache/solution/stamp, generator mismatch, feature mismatch, source-list/input change, and unsupported state; build actions can configure first when stale. | `S` |
 | `LAUNCH-011` | Workspace build | Implemented path | `workspace.build` builds selected Editor, Runtime, CookTools, and Launcher scopes/targets; focused operations build launcher/editor/runtime/cook tools separately. | `S` |
-| `LAUNCH-012` | Launcher self-build | Implemented path | `launcher.build.self` builds the local launcher artifact. Replacing a currently running binary and relaunch handoff require runtime evidence. | `S` |
+| `LAUNCH-012` | Launcher self-build | Implemented path | GUI execution and every mutating shell operation hand off to a per-user shadow generation before work. `launcher.build.self` therefore builds the local deployed Launcher without locking its output; replacement and relaunch still require runtime evidence. | `S` |
 | `LAUNCH-013` | Host-tool install | Partial | `workspace.install-host-tool` delegates to a registered launcher-owned provider when a detected tool advertises install support. This is not a general package manager. | `S` |
+
+Launcher source construction has its own top-level `Tools/Launcher` CMake
+entry point. That graph owns only Core, Tasks, Launcher, Qt, spdlog, and the
+embedded icon asset, and writes CMake/compiler state beneath
+`build/private/tools/SparkleLauncher/`. The repository-root entry point owns
+the full workspace. This separation is structural: no bootstrap/product mode
+argument changes either graph, and optional SDKs or engine dependencies enrich
+Launcher capabilities only after runtime detection.
 
 ## Content, Cook, Run, And Maintenance Operations
 
@@ -100,6 +108,12 @@ not accept a repository root merely to reproduce shared build, artifact, or
 user-state grammar. Related target binary, library, and symbol directories
 travel together as `WorkspaceTargetOutputPaths` so the three destinations
 cannot drift through duplicated call-site logic.
+
+Launcher UI icons are embedded Qt resources. The built launcher therefore
+does not read its icon font from `build/_deps` at runtime; deleting private
+build state cannot remove navigation or activity icons from a rebuilt
+launcher artifact. Existing binaries retain their original resource contract
+until rebuilt and relaunched.
 
 Maintenance scope IDs are defined and parsed by the public maintenance
 contract. The private maintenance planner expands each scope into one typed

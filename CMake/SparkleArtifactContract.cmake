@@ -3,7 +3,12 @@
 # Generated build trees are private CMake/MSBuild state. Runnable development
 # products live under artifacts/.
 
-set(_sparkle_canonical_build_root "${CMAKE_SOURCE_DIR}/build")
+if(NOT DEFINED SPARKLE_REPOSITORY_ROOT)
+    set(SPARKLE_REPOSITORY_ROOT "${CMAKE_SOURCE_DIR}")
+endif()
+get_filename_component(SPARKLE_REPOSITORY_ROOT "${SPARKLE_REPOSITORY_ROOT}" ABSOLUTE)
+
+set(_sparkle_canonical_build_root "${SPARKLE_REPOSITORY_ROOT}/build")
 get_filename_component(_sparkle_canonical_build_root "${_sparkle_canonical_build_root}" ABSOLUTE)
 get_filename_component(_sparkle_configured_build_root "${CMAKE_BINARY_DIR}" ABSOLUTE)
 set(SPARKLE_ARTIFACT_VARIANT "" CACHE STRING "Artifact namespace for an isolated build/variants/<name> workspace.")
@@ -22,45 +27,45 @@ if(IS_ABSOLUTE "${_sparkle_build_root_relative_to_canonical}"
         "Rejected build tree: '${_sparkle_configured_build_root}'.")
 endif()
 
-set(_sparkle_artifact_root "${CMAKE_SOURCE_DIR}/artifacts")
+set(_sparkle_artifact_root "${SPARKLE_REPOSITORY_ROOT}/artifacts")
 set(FETCHCONTENT_BASE_DIR "${_sparkle_canonical_build_root}/_deps" CACHE PATH
     "Shared Sparkle source-dependency cache; fixed beneath the canonical build root." FORCE)
 
 set(_sparkle_legacy_generated_paths
-    "${CMAKE_SOURCE_DIR}/Saved"
-    "${CMAKE_SOURCE_DIR}/imgui.ini"
-    "${CMAKE_SOURCE_DIR}/CMakeCache.txt"
-    "${CMAKE_SOURCE_DIR}/CMakeFiles"
-    "${CMAKE_SOURCE_DIR}/bin"
-    "${CMAKE_SOURCE_DIR}/obj"
-    "${CMAKE_SOURCE_DIR}/bld"
-    "${CMAKE_SOURCE_DIR}/Debug"
-    "${CMAKE_SOURCE_DIR}/DebugPublic"
-    "${CMAKE_SOURCE_DIR}/Release"
-    "${CMAKE_SOURCE_DIR}/Releases"
-    "${CMAKE_SOURCE_DIR}/x64"
-    "${CMAKE_SOURCE_DIR}/x86"
-    "${CMAKE_SOURCE_DIR}/Intermediate"
-    "${CMAKE_SOURCE_DIR}/DerivedDataCache"
-    "${CMAKE_SOURCE_DIR}/Temp"
-    "${CMAKE_SOURCE_DIR}/Tmp"
-    "${CMAKE_SOURCE_DIR}/Scratch")
-file(GLOB _sparkle_legacy_build_roots LIST_DIRECTORIES TRUE "${CMAKE_SOURCE_DIR}/build-*")
+    "${SPARKLE_REPOSITORY_ROOT}/Saved"
+    "${SPARKLE_REPOSITORY_ROOT}/imgui.ini"
+    "${SPARKLE_REPOSITORY_ROOT}/CMakeCache.txt"
+    "${SPARKLE_REPOSITORY_ROOT}/CMakeFiles"
+    "${SPARKLE_REPOSITORY_ROOT}/bin"
+    "${SPARKLE_REPOSITORY_ROOT}/obj"
+    "${SPARKLE_REPOSITORY_ROOT}/bld"
+    "${SPARKLE_REPOSITORY_ROOT}/Debug"
+    "${SPARKLE_REPOSITORY_ROOT}/DebugPublic"
+    "${SPARKLE_REPOSITORY_ROOT}/Release"
+    "${SPARKLE_REPOSITORY_ROOT}/Releases"
+    "${SPARKLE_REPOSITORY_ROOT}/x64"
+    "${SPARKLE_REPOSITORY_ROOT}/x86"
+    "${SPARKLE_REPOSITORY_ROOT}/Intermediate"
+    "${SPARKLE_REPOSITORY_ROOT}/DerivedDataCache"
+    "${SPARKLE_REPOSITORY_ROOT}/Temp"
+    "${SPARKLE_REPOSITORY_ROOT}/Tmp"
+    "${SPARKLE_REPOSITORY_ROOT}/Scratch")
+file(GLOB _sparkle_legacy_build_roots LIST_DIRECTORIES TRUE "${SPARKLE_REPOSITORY_ROOT}/build-*")
 file(GLOB _sparkle_legacy_root_build_files LIST_DIRECTORIES FALSE
-    "${CMAKE_SOURCE_DIR}/*.sln"
-    "${CMAKE_SOURCE_DIR}/*.slnx"
-    "${CMAKE_SOURCE_DIR}/*.vcxproj"
-    "${CMAKE_SOURCE_DIR}/*.vcxproj.filters"
-    "${CMAKE_SOURCE_DIR}/*.vcxproj.user"
-    "${CMAKE_SOURCE_DIR}/cmake_install.cmake"
-    "${CMAKE_SOURCE_DIR}/Makefile")
+    "${SPARKLE_REPOSITORY_ROOT}/*.sln"
+    "${SPARKLE_REPOSITORY_ROOT}/*.slnx"
+    "${SPARKLE_REPOSITORY_ROOT}/*.vcxproj"
+    "${SPARKLE_REPOSITORY_ROOT}/*.vcxproj.filters"
+    "${SPARKLE_REPOSITORY_ROOT}/*.vcxproj.user"
+    "${SPARKLE_REPOSITORY_ROOT}/cmake_install.cmake"
+    "${SPARKLE_REPOSITORY_ROOT}/Makefile")
 file(GLOB _sparkle_legacy_project_outputs LIST_DIRECTORIES TRUE
-    "${CMAKE_SOURCE_DIR}/Projects/*/build"
-    "${CMAKE_SOURCE_DIR}/Projects/*/Cooked"
-    "${CMAKE_SOURCE_DIR}/Projects/*/cooked"
-    "${CMAKE_SOURCE_DIR}/Projects/*/logs"
-    "${CMAKE_SOURCE_DIR}/Projects/*/StreamlineLogs"
-    "${CMAKE_SOURCE_DIR}/Projects/*/imgui.ini")
+    "${SPARKLE_REPOSITORY_ROOT}/Projects/*/build"
+    "${SPARKLE_REPOSITORY_ROOT}/Projects/*/Cooked"
+    "${SPARKLE_REPOSITORY_ROOT}/Projects/*/cooked"
+    "${SPARKLE_REPOSITORY_ROOT}/Projects/*/logs"
+    "${SPARKLE_REPOSITORY_ROOT}/Projects/*/StreamlineLogs"
+    "${SPARKLE_REPOSITORY_ROOT}/Projects/*/imgui.ini")
 list(APPEND _sparkle_legacy_generated_paths
     ${_sparkle_legacy_build_roots}
     ${_sparkle_legacy_root_build_files}
@@ -83,9 +88,9 @@ endif()
 # A launcher built before the per-user logging cutover creates repository-root
 # logs while bootstrapping its replacement. Keep this path visible and warn, but
 # do not strand that one-way self-update route with a configure failure.
-if(EXISTS "${CMAKE_SOURCE_DIR}/logs")
+if(EXISTS "${SPARKLE_REPOSITORY_ROOT}/logs")
     message(WARNING
-        "Legacy repository logs exist at '${CMAKE_SOURCE_DIR}/logs'. The current launcher can finish its self-update, then "
+        "Legacy repository logs exist at '${SPARKLE_REPOSITORY_ROOT}/logs'. The current launcher can finish its self-update, then "
         "the Launcher Logs cleanup removes this transition output. Newly built processes write logs beneath the per-user state root.")
 endif()
 
@@ -93,7 +98,48 @@ if(SPARKLE_ARTIFACT_VARIANT AND NOT SPARKLE_ARTIFACT_VARIANT MATCHES "^[A-Za-z0-
     message(FATAL_ERROR "SPARKLE_ARTIFACT_VARIANT contains unsupported path characters: '${SPARKLE_ARTIFACT_VARIANT}'")
 endif()
 
-if(_sparkle_configured_build_root STREQUAL _sparkle_canonical_build_root)
+set(_sparkle_dependency_sync_build_tree FALSE)
+set(_sparkle_launcher_product_build_tree FALSE)
+get_filename_component(_sparkle_launcher_source_root "${SPARKLE_REPOSITORY_ROOT}/Tools/Launcher" ABSOLUTE)
+get_filename_component(_sparkle_configured_source_root "${CMAKE_SOURCE_DIR}" ABSOLUTE)
+if(_sparkle_configured_source_root STREQUAL _sparkle_launcher_source_root)
+    set(_sparkle_expected_launcher_build_tree "private/tools/SparkleLauncher")
+    if(NOT _sparkle_build_root_relative_to_canonical STREQUAL _sparkle_expected_launcher_build_tree)
+        message(FATAL_ERROR
+            "The Launcher product entry point must use exactly 'build/${_sparkle_expected_launcher_build_tree}'. "
+            "Rejected build tree: '${_sparkle_configured_build_root}'.")
+    endif()
+    if(SPARKLE_ARTIFACT_VARIANT)
+        message(FATAL_ERROR "The Launcher product entry point publishes the canonical Launcher artifact, not a variant.")
+    endif()
+    set(_sparkle_launcher_product_build_tree TRUE)
+endif()
+
+if(DEFINED SPARKLE_SYNC_SOURCE_DEPENDENCY AND NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
+    if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY MATCHES "^[A-Za-z0-9._-]+$")
+        message(FATAL_ERROR
+            "SPARKLE_SYNC_SOURCE_DEPENDENCY contains unsupported path characters: '${SPARKLE_SYNC_SOURCE_DEPENDENCY}'")
+    endif()
+
+    set(_sparkle_expected_dependency_sync_tree
+        "_dependency-sync/${SPARKLE_SYNC_SOURCE_DEPENDENCY}")
+    if(NOT _sparkle_build_root_relative_to_canonical STREQUAL _sparkle_expected_dependency_sync_tree)
+        message(FATAL_ERROR
+            "Source dependency sync must use exactly 'build/${_sparkle_expected_dependency_sync_tree}'. "
+            "Rejected build tree: '${_sparkle_configured_build_root}'.")
+    endif()
+    if(SPARKLE_ARTIFACT_VARIANT)
+        message(FATAL_ERROR "Source dependency sync does not publish an artifact variant.")
+    endif()
+    set(_sparkle_dependency_sync_build_tree TRUE)
+endif()
+
+if(_sparkle_dependency_sync_build_tree)
+    # Selective dependency sync exits before product targets are generated. Its
+    # CMake state remains private while fetched sources use build/_deps.
+elseif(_sparkle_launcher_product_build_tree)
+    # The Launcher has an owned product entry point and private build tree.
+elseif(_sparkle_configured_build_root STREQUAL _sparkle_canonical_build_root)
     if(SPARKLE_ARTIFACT_VARIANT)
         message(FATAL_ERROR
             "The canonical 'build/' tree must publish to canonical 'artifacts/'. "

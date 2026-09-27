@@ -9,22 +9,12 @@
 #include <QtGui/QPixmap>
 
 #include <algorithm>
-#include <filesystem>
-#include <system_error>
 
 namespace SparkleLauncher
 {
 	void LauncherIconLibrary::Load()
 	{
-#ifdef SPARKLE_FONT_AWESOME_SOLID_TTF
-		const char* fontPath = SPARKLE_FONT_AWESOME_SOLID_TTF;
-		std::error_code errorCode;
-		if (!std::filesystem::exists(fontPath, errorCode) || errorCode)
-		{
-			return;
-		}
-
-		const int fontId = QFontDatabase::addApplicationFont(QString::fromUtf8(fontPath));
+		const int fontId = QFontDatabase::addApplicationFont(":/SparkleLauncher/Fonts/fa-solid-900.ttf");
 		if (fontId < 0)
 		{
 			return;
@@ -35,7 +25,6 @@ namespace SparkleLauncher
 		{
 			m_iconFontFamily = families.front();
 		}
-#endif
 	}
 
 	QIcon LauncherIconLibrary::ApplicationIcon() const

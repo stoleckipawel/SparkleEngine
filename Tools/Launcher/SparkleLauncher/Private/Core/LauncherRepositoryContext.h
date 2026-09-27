@@ -8,7 +8,8 @@
 
 namespace SparkleLauncher
 {
-	std::optional<RepositoryRoot> TryReadLauncherRepositoryContext(
+	std::optional<RepositoryRoot> TryResolveLauncherRepositoryContext(
+	    const std::filesystem::path& requestedRoot,
 	    const std::filesystem::path& launcherDirectory,
 	    std::string& outErrorMessage);
 }

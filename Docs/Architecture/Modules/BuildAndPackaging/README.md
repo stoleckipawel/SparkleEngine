@@ -72,6 +72,10 @@ The products intended for direct use are published by owner and profile under
 ```text
 <repository>/
 |-- build/                                   canonical private build-system state
+|   |-- _deps/                              shared fetched-source cache
+|   |-- _dependency-sync/<Dependency>/      selective-sync CMake state
+|   |-- private/
+|   |   `-- tools/<Tool>/<Profile>/         tool scratch state
 |   `-- variants/<name>/                    isolated, temporary validation trees
 `-- artifacts/
     |-- dev/
@@ -145,9 +149,12 @@ CMake/output contract,
 then migrates all consumers in the same clean break; parallel path helpers,
 compatibility aliases, and fallback directory grammars are not permitted.
 
-SparkleLauncher always configures the canonical `build/` tree. The root CMake
-contract rejects build trees outside `build/`, fixes the shared FetchContent
-cache at `build/_deps`, and rejects legacy repository-local `Saved/`,
+SparkleLauncher configures ordinary work in the canonical `build/` tree.
+Selective source-dependency sync configures only its exact
+`build/_dependency-sync/<Dependency>/` tree and exits before product
+targets; tool scratch uses `build/private/tools/<Tool>/<Profile>/`. The root
+CMake contract rejects every other private build-tree spelling, fixes the
+shared FetchContent cache at `build/_deps`, and rejects legacy repository-local `Saved/`,
 `imgui.ini`, project-local build/cook/log/UI-state paths, and root `build-*`
 trees. Repository-root `logs/` is unignored and produces a configure warning
 only so a launcher built before the logging cutover can bootstrap its
@@ -162,6 +169,21 @@ products. Remove the temporary variant tree and artifact namespace after its
 validation task. Do not introduce environment overrides, presets, scripts, or
 manual commands that create another build or artifact root.
 
+The Launcher is also an independently buildable product, not an accidental
+mode of the full engine graph. Configuring the Launcher-owned
+`Tools/Launcher` CMake entry point into
+`build/private/tools/SparkleLauncher/` composes only Core, Tasks, Launcher,
+and its declared `spdlog` and icon-asset dependency closure. Configuring the
+repository root remains the one full workspace entry point; neither entry
+point accepts a mode flag that changes its responsibility. Both consume the
+same build-profile, artifact, host-tool, feature, and dependency mechanisms.
+The deployed Launcher embeds its
+icon font, carries its Qt runtime and visual assets, and discovers repository
+context from `--root`, the working directory, or executable ancestry; it does
+not carry a build-machine absolute path. Mutating shell operations and the GUI
+run from per-user shadow generations so the deployed bundle remains unlocked
+for self-update.
+
 `dist/` is reserved for future immutable staged packages and archives. Its name
 does not imply that release assembly exists: package manifests, signing,
 relocation, clean-machine verification, and the release workflow remain absent.
@@ -171,7 +193,8 @@ relocation, clean-machine verification, and the release workflow remain absent.
 | `BUILD-012` | Development artifact contract | Implemented path | Runnable outputs go to `artifacts/dev`: launcher, tools, projects, runtime-support, libraries; diagnostics and symbols have separate roots; optional validated artifact variant namespaces alternate build trees. | `S` |
 | `BUILD-012A` | Mutable-state isolation | Implemented path | Logs, settings, captures, ImGui layout, crashes, and caches resolve beneath typed per-user roots; engine defaults remain read-only. CMake rejects known legacy generated paths in the source tree, and ignored-path policy no longer hides them. | `S` |
 | `BUILD-013` | Product layout | Implemented path | Showcase products emit to `artifacts/dev/projects/Showcase/editor/<Profile>` or `artifacts/dev/projects/Showcase/runtime/<Profile>`; Windows manifest is attached; project working directory is set for VS debugging. | `S` |
-| `BUILD-014` | Runtime support staging | Implemented path | Shared Sparkle DLL owners and enabled NVIDIA Streamline DLLs copy beside project products; Launcher runs `windeployqt` and copies visual resources plus repository-root marker. | `S` |
+| `BUILD-014` | Runtime support staging | Implemented path | Shared Sparkle DLL owners and enabled NVIDIA Streamline DLLs copy beside project products; editor products stage their icon font; Launcher declares Core and Tasks runtime ownership, embeds its icon font, runs `windeployqt`, and copies visual resources. Existing development artifacts must be rebuilt to receive a changed bundle. | `S` |
+| `BUILD-014A` | Launcher product graph | Implemented path | The Launcher-owned top-level CMake entry point composes only Core, Tasks, Launcher, and its declared source dependencies in `build/private/tools/SparkleLauncher/`; the repository root independently owns the full workspace graph. Runtime repository discovery contains no build-machine path. | `S` |
 | `BUILD-015` | Tool bundles | Implemented path | Tool executables/libraries/symbols have target-owned locations and declared runtime DLL ownership; Launcher preflights required support files/directories before cooking. | `S` |
 | `BUILD-016` | Architecture check | Implemented path | `architecture_boundary_check` runs the repository CMake boundary script; required after Renderer/RHI boundary changes. | `S` |
 | `BUILD-017` | Code-style targets | Implemented path | `code_style_check` and `code_style_format` route through PowerShell and require clang-format/clang-tidy 22.1.3 policy. | `S` |

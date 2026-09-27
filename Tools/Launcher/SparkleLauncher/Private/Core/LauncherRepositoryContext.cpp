@@ -1,33 +1,34 @@
 #include "LauncherRepositoryContext.h"
 
-#include "Core/Public/Strings/StringUtils.h"
-
-#include <fstream>
-#include <sstream>
-
 namespace SparkleLauncher
 {
-	std::optional<RepositoryRoot> TryReadLauncherRepositoryContext(
+	std::optional<RepositoryRoot> TryResolveLauncherRepositoryContext(
+	    const std::filesystem::path& requestedRoot,
 	    const std::filesystem::path& launcherDirectory,
 	    std::string& outErrorMessage)
 	{
-		const std::filesystem::path contextPath = launcherDirectory / "RepositoryRoot.txt";
-		std::ifstream contextStream(contextPath);
-		if (!contextStream.is_open())
+		if (!requestedRoot.empty())
 		{
-			outErrorMessage = "Launcher repository context could not be read: " + contextPath.string();
-			return std::nullopt;
+			return TryOpenRepositoryRoot(requestedRoot, outErrorMessage);
 		}
 
-		std::ostringstream contextBuffer;
-		contextBuffer << contextStream.rdbuf();
-		const std::string repositoryPath = Strings::TrimCopy(contextBuffer.str());
-		if (repositoryPath.empty())
+		std::error_code errorCode;
+		const std::filesystem::path workingDirectory = std::filesystem::current_path(errorCode);
+		if (!errorCode)
 		{
-			outErrorMessage = "Launcher repository context is empty: " + contextPath.string();
-			return std::nullopt;
+			std::string workingDirectoryError;
+			if (const std::optional<RepositoryRoot> repository = TryFindRepositoryRoot(workingDirectory, workingDirectoryError))
+			{
+				return repository;
+			}
 		}
 
-		return TryOpenRepositoryRoot(repositoryPath, outErrorMessage);
+		if (const std::optional<RepositoryRoot> repository = TryFindRepositoryRoot(launcherDirectory, outErrorMessage))
+		{
+			return repository;
+		}
+
+		outErrorMessage = "Sparkle repository not found from the working directory or Launcher location. Start the Launcher from a Sparkle checkout or pass --root <repo-root>.";
+		return std::nullopt;
 	}
 }

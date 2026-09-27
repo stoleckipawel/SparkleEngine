@@ -1,15 +1,13 @@
 #include "PCH.h"
+#include "Core/Public/FileSystemUtils.h"
 #include "Style/SparkleUiPalette.h"
 #include "Style/SparkleUiTheme.h"
 
 #include <array>
 #include <filesystem>
+#include <string>
 
 #include <imgui.h>
-
-#ifndef SPARKLE_FONT_AWESOME_SOLID_TTF
-  #error "Sparkle editor icons require SPARKLE_FONT_AWESOME_SOLID_TTF."
-#endif
 
 namespace SparkleUiTheme
 {
@@ -17,9 +15,9 @@ namespace SparkleUiTheme
 	ImFont* g_headingFont = nullptr;
 	ImFont* g_monoFont = nullptr;
 
-	const char* GetFontAwesomeSolidPath() noexcept
+	static std::filesystem::path GetFontAwesomeSolidPath()
 	{
-		return SPARKLE_FONT_AWESOME_SOLID_TTF;
+		return Filesystem::GetExecutableDirectory() / "Fonts" / "fa-solid-900.ttf";
 	}
 
 	ImFont* LoadFirstAvailableFont(const std::array<const char*, 4>& fontPaths, float sizePixels)
@@ -50,7 +48,7 @@ namespace SparkleUiTheme
 
 	void MergeEditorIconsIntoLastFont(float baseSizePixels)
 	{
-		const char* fontPath = GetFontAwesomeSolidPath();
+		const std::filesystem::path fontPath = GetFontAwesomeSolidPath();
 		std::error_code errorCode;
 		if (!std::filesystem::exists(fontPath, errorCode) || errorCode)
 		{
@@ -65,7 +63,8 @@ namespace SparkleUiTheme
 		iconConfig.GlyphMinAdvanceX = baseSizePixels;
 
 		const float iconSize = baseSizePixels * 0.86f;
-		io.Fonts->AddFontFromFileTTF(fontPath, iconSize, &iconConfig, kFontAwesomeRanges);
+		const std::string fontPathString = fontPath.string();
+		io.Fonts->AddFontFromFileTTF(fontPathString.c_str(), iconSize, &iconConfig, kFontAwesomeRanges);
 	}
 
 	void ApplyEditorialDarkTheme()

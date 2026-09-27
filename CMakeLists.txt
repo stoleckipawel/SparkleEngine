@@ -2,91 +2,11 @@ cmake_minimum_required(VERSION 3.20)
 include(${CMAKE_CURRENT_LIST_DIR}/CMake/SparkleArtifactContract.cmake)
 project(Sparkle LANGUAGES C CXX)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 include(${CMAKE_SOURCE_DIR}/CMake/SparkleBuildProfiles.cmake)
 include(${CMAKE_SOURCE_DIR}/CMake/SparkleQtDiscovery.cmake)
 include(${CMAKE_SOURCE_DIR}/CMake/SparkleProjectProduct.cmake)
-
-# ---------------------------
-# Optional: sanitizer support
-# ---------------------------
-option(ENABLE_SANITIZERS "Enable sanitizer instrumentation (requires clang/clang++)" OFF)
-set(SANITIZER_TYPE "ASAN" CACHE STRING "Sanitizer to enable: ASAN, UBSAN, TSAN, MSAN, LSAN")
-
-if(ENABLE_SANITIZERS)
-    message(STATUS "Sanitizers enabled: ${SANITIZER_TYPE}")
-    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-        if(SANITIZER_TYPE STREQUAL "ASAN")
-            set(SAN_COMPILE_FLAGS "-fsanitize=address,leak -fno-omit-frame-pointer -g -O1")
-            set(SAN_LINK_FLAGS "-fsanitize=address,leak")
-        elseif(SANITIZER_TYPE STREQUAL "UBSAN")
-            set(SAN_COMPILE_FLAGS "-fsanitize=undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g -O1")
-            set(SAN_LINK_FLAGS "-fsanitize=undefined")
-        elseif(SANITIZER_TYPE STREQUAL "TSAN")
-            set(SAN_COMPILE_FLAGS "-fsanitize=thread -fno-omit-frame-pointer -g -O1")
-            set(SAN_LINK_FLAGS "-fsanitize=thread")
-        elseif(SANITIZER_TYPE STREQUAL "MSAN")
-            set(SAN_COMPILE_FLAGS "-fsanitize=memory -fno-omit-frame-pointer -g -O1")
-            set(SAN_LINK_FLAGS "-fsanitize=memory")
-        elseif(SANITIZER_TYPE STREQUAL "LSAN")
-            set(SAN_COMPILE_FLAGS "-fsanitize=leak -fno-omit-frame-pointer -g -O1")
-            set(SAN_LINK_FLAGS "-fsanitize=leak")
-        else()
-            message(FATAL_ERROR "Unknown SANITIZER_TYPE: ${SANITIZER_TYPE}")
-        endif()
-
-        add_compile_options(${SAN_COMPILE_FLAGS})
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${SAN_LINK_FLAGS}")
-        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${SAN_LINK_FLAGS}")
-    else()
-        message(WARNING "Sanitizers requested but compiler is not Clang/GNU. Behavior may be unsupported on this toolchain.")
-    endif()
-endif()
-
-# ---------------------------
-# Require C++20
-# ---------------------------
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-if(MSVC)
-    add_compile_options(/Zc:__cplusplus)
-endif()
-
-function(sparkle_target_precompile_headers target_name)
-    target_precompile_headers(${target_name} PRIVATE ${ARGN})
-
-    if(MSVC AND CMAKE_GENERATOR MATCHES "^Visual Studio ")
-        target_compile_options(${target_name}
-            PRIVATE
-                $<$<COMPILE_LANGUAGE:CXX>:/Fp${CMAKE_CURRENT_BINARY_DIR}/${target_name}.dir/$<CONFIG>/cmake_pch.pch>
-        )
-    endif()
-endfunction()
-
-# ---------------------------
-# Optional: strict warnings
-# ---------------------------
-option(ENABLE_STRICT_WARNINGS "Enable strict compiler warnings and treat warnings as errors" OFF)
-if(ENABLE_STRICT_WARNINGS)
-    message(STATUS "Strict warnings enabled: adding compiler warning flags and Werror")
-    if(MSVC)
-        add_compile_options(/W4 /WX)
-    elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-        add_compile_options(-Wall -Wextra -Wpedantic -Werror -Wconversion -Wsign-conversion -Wshadow -Wformat-security)
-    else()
-        message(WARNING "ENABLE_STRICT_WARNINGS requested but compiler is unsupported: ${CMAKE_CXX_COMPILER_ID}")
-    endif()
-endif()
-
-# ---------------------------
-# Optional workspace features
-# ---------------------------
-option(SPARKLE_ENABLE_CONTENT_PIPELINE "Build source import, conversion, and asset/texture cooking tools" ON)
-option(SPARKLE_ENABLE_SHADER_COMPILER "Build offline shader compiler tooling" ON)
-option(SPARKLE_ENABLE_KTX_SUPPORT "Fetch and build KTX tooling support for the content pipeline" OFF)
-option(SPARKLE_ENABLE_NVIDIA_STREAMLINE "Fetch and stage NVIDIA Streamline SDK runtime for DLSS providers" ON)
+include(${CMAKE_SOURCE_DIR}/CMake/SparkleWorkspaceFeatures.cmake)
+include(${CMAKE_SOURCE_DIR}/CMake/SparkleBuildFoundation.cmake)
 
 set(SPARKLE_SYNC_SOURCE_DEPENDENCY "" CACHE STRING "Populate exactly one source dependency cache and skip workspace generation")
 if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")

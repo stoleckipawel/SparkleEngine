@@ -64,6 +64,11 @@ namespace Filesystem
 		return BuildRoot / "private" / "tools" / std::string(toolName) / std::string(profileName);
 	}
 
+	std::filesystem::path WorkspaceOutputPaths::SourceDependencySyncDirectory(std::string_view dependencyId) const
+	{
+		return BuildRoot / "_dependency-sync" / std::string(dependencyId);
+	}
+
 	WorkspaceTargetOutputPaths WorkspaceOutputPaths::ProjectTargetOutputs(
 	    std::string_view projectName,
 	    std::string_view productRole,

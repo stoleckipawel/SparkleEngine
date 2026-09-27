@@ -188,6 +188,7 @@ set(SPARKLE_LAUNCHER_GUI_HEADERS
 
 set(SPARKLE_LAUNCHER_PRIVATE_SOURCES
     ${SPARKLE_LAUNCHER_GUI_SOURCES}
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/LauncherShadowExecution.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShellArguments.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShell.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShellModel.cpp
@@ -197,6 +198,7 @@ set(SPARKLE_LAUNCHER_PRIVATE_SOURCES
 
 set(SPARKLE_LAUNCHER_PRIVATE_HEADERS
     ${SPARKLE_LAUNCHER_GUI_HEADERS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core/LauncherShadowExecution.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShellArguments.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShell.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShellModel.h
@@ -256,6 +258,17 @@ qt_add_resources(SparkleLauncher SparkleLauncherUiResources
         ${CMAKE_CURRENT_SOURCE_DIR}/Assets/Ui/footer-chevron.xpm
 )
 
+if(NOT DEFINED SPARKLE_FONT_AWESOME_SOLID_TTF OR NOT EXISTS "${SPARKLE_FONT_AWESOME_SOLID_TTF}")
+    message(FATAL_ERROR "SparkleLauncher requires Font Awesome Free Solid. FetchDependencies.cmake should provide fa-solid-900.ttf.")
+endif()
+get_filename_component(SPARKLE_LAUNCHER_FONT_AWESOME_DIRECTORY "${SPARKLE_FONT_AWESOME_SOLID_TTF}" DIRECTORY)
+qt_add_resources(SparkleLauncher SparkleLauncherFontResources
+    PREFIX "/SparkleLauncher/Fonts"
+    BASE "${SPARKLE_LAUNCHER_FONT_AWESOME_DIRECTORY}"
+    FILES
+        "${SPARKLE_FONT_AWESOME_SOLID_TTF}"
+)
+
 target_include_directories(SparkleLauncher
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core
@@ -279,24 +292,11 @@ target_link_libraries(SparkleLauncher
 
 target_compile_features(SparkleLauncher PRIVATE cxx_std_20)
 
-if(DEFINED SPARKLE_FONT_AWESOME_SOLID_TTF AND EXISTS "${SPARKLE_FONT_AWESOME_SOLID_TTF}")
-    file(TO_CMAKE_PATH "${SPARKLE_FONT_AWESOME_SOLID_TTF}" SPARKLE_LAUNCHER_FONT_AWESOME_SOLID_TTF_NORMALIZED)
-    target_compile_definitions(SparkleLauncher PRIVATE
-        SPARKLE_FONT_AWESOME_SOLID_TTF="${SPARKLE_LAUNCHER_FONT_AWESOME_SOLID_TTF_NORMALIZED}"
-    )
-endif()
-
 set_target_properties(SparkleLauncher PROPERTIES
     AUTOMOC ON
 )
 sparkle_configure_launcher_artifacts(SparkleLauncher)
-sparkle_declare_runtime_dll_owner(SparkleLauncher SparkleCore)
-
-file(GENERATE
-    OUTPUT "$<TARGET_FILE_DIR:SparkleLauncher>/RepositoryRoot.txt"
-    CONTENT "${CMAKE_SOURCE_DIR}\n"
-    TARGET SparkleLauncher
-)
+sparkle_declare_runtime_dll_owner(SparkleLauncher SparkleCore SparkleTasks)
 
 add_custom_command(TARGET SparkleLauncher POST_BUILD
     COMMAND "${CMAKE_COMMAND}" -E copy_directory
