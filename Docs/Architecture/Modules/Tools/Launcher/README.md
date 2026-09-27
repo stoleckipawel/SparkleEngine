@@ -72,6 +72,12 @@ compiler, Git, Windows SDK, and Qt gate Launcher construction. Shader compiler
 and Vulkan/Streamline SDK state remains visible and gates only workspace
 operations whose selected feature set needs it.
 
+Host-tool installation uses the installed Visual Studio Installer only for its
+documented `modify` operation and component identifiers. The elevated
+PowerShell host owns process waiting and exit-code capture; bootstrapper-only
+arguments are not forwarded to `setup.exe`. Success is accepted only after a
+fresh toolchain scan finds both the compiler and its MSBuild toolset.
+
 ## Content, Cook, Run, And Maintenance Operations
 
 | ID | Operation | State | Exact current coverage and limit | Evidence |

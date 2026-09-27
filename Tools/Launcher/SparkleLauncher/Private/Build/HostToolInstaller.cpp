@@ -53,7 +53,7 @@ namespace SparkleLauncher
 
 		const std::string installerArguments = "modify --installPath \"" + toolchain.VisualStudioPath.string() + "\" --add "
 		    + std::string(kClangClVisualStudioCompilerComponent) + " --add " + std::string(kClangClVisualStudioToolsetComponent)
-		    + " --passive --norestart --wait";
+		    + " --passive --norestart";
 		const std::string script = "$ErrorActionPreference='Stop'; "
 		                           "Write-Output 'Requesting administrator approval for the Visual Studio clang-cl component...'; "
 		                           "$process = Start-Process -FilePath "

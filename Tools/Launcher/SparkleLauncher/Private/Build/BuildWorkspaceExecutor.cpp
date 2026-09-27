@@ -186,6 +186,16 @@ namespace SparkleLauncher
 		{
 			return "Visual Studio or MSBuild is running. Close active IDEs and builds, then retry.";
 		}
+		if (step.Id == "install-host-tool")
+		{
+			static constexpr std::string_view installerFailurePrefix = "Visual Studio Installer exited with code ";
+			const std::size_t failureStart = text.find(installerFailurePrefix);
+			if (failureStart != std::string::npos)
+			{
+				const std::size_t failureEnd = text.find_first_of("\r\n", failureStart);
+				return text.substr(failureStart, failureEnd - failureStart);
+			}
+		}
 		return {};
 	}
 

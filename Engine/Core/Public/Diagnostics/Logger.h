@@ -38,6 +38,6 @@ namespace Logging
 
 #define SPARKLE_DECLARE_LOG_CATEGORY(category_name) extern const ::Logging::LogCategory category_name
 #define SPARKLE_DEFINE_LOG_CATEGORY(category_name, logger_name) \
-	const ::Logging::LogCategory category_name(logger_name)
+	const ::Logging::LogCategory category_name{logger_name}
 #define SPARKLE_DEFINE_LOG_CATEGORY_STATIC(category_name, logger_name) \
-	static constexpr ::Logging::LogCategory category_name(logger_name)
+	static constexpr ::Logging::LogCategory category_name{logger_name}

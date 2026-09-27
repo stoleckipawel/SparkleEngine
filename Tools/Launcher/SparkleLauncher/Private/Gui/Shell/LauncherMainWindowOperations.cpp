@@ -224,9 +224,8 @@ namespace SparkleLauncher
 		{
 			return statusText.contains("Visual Studio or MSBuild is running", Qt::CaseInsensitive)
 			    ? "Close active Visual Studio, Rider build, MSBuild, and CMake processes, then retry Install."
-			    : "Close active IDE builds, then retry Install. The launcher reports success only after detecting both clang-cl and its "
-			      "Visual "
-			      "Studio toolset.";
+			    : "Review the Visual Studio Installer result and approve the administrator request, then retry Install. The launcher reports "
+			      "success only after detecting both clang-cl and its Visual Studio toolset.";
 		}
 		if ((operationId == "workspace.sync-code" || operationId == "workspace.generate-build-files")
 		    && (statusText.contains("dxcapi.h", Qt::CaseInsensitive) || statusText.contains("slang", Qt::CaseInsensitive)
