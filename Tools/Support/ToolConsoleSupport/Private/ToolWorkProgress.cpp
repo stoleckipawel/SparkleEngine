@@ -1,5 +1,6 @@
 #include "ToolWorkProgress.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <limits>
 #include <mutex>
@@ -12,6 +13,19 @@
 static constexpr std::string_view kWorkProgressPrefix = "[PROGRESS] ";
 static constexpr std::string_view kIndeterminateProgressPrefix = "? ";
 static constexpr std::size_t kDecimalRadix = 10;
+
+static std::string FormatProgressItem(std::string_view action, std::string_view item)
+{
+	std::string phase(action);
+	if (!item.empty())
+	{
+		phase += ": ";
+		phase += item;
+	}
+	std::replace(phase.begin(), phase.end(), '\r', ' ');
+	std::replace(phase.begin(), phase.end(), '\n', ' ');
+	return phase;
+}
 
 std::string ToolWorkProgressProtocol::Format(std::string_view phase, std::size_t completed, std::size_t total)
 {
@@ -117,4 +131,14 @@ void ToolWorkProgressWriter::Report(std::string_view phase, std::size_t complete
 	m_output << ToolWorkProgressProtocol::Format(phase, completed, total) << std::flush;
 	m_lastPhase = phase;
 	m_lastPercentage = percentage;
+}
+
+void ToolWorkProgressWriter::Report(const ToolWorkProgressEvent& progress)
+{
+	Report(progress.Action, progress.Item, progress.Completed, progress.Total);
+}
+
+void ToolWorkProgressWriter::Report(std::string_view action, std::string_view item, std::size_t completed, std::size_t total)
+{
+	Report(FormatProgressItem(action, item), completed, total);
 }

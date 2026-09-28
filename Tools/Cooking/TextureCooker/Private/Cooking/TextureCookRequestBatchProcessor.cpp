@@ -37,7 +37,8 @@ int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::pat
 	std::vector<TextureCookBatchItemResult> results = TextureCookBatchExecutor::Execute(
 	    requests,
 	    textureCookMemoryBudget,
-	    [&progress, totalWork](std::size_t completed) { progress.Report("Cooking textures", completed, totalWork); });
+	    [&progress, &requests, totalWork](std::size_t requestIndex, std::size_t completed)
+	    { progress.Report("Cooked texture", requests[requestIndex].sourcePath.filename().string(), completed, totalWork); });
 	if (ReportFailures(requests, results) != 0)
 	{
 		CleanupStagedOutputs(results);

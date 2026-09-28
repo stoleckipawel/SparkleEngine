@@ -37,11 +37,11 @@ namespace SparkleLauncher
 		error = registry.Register(
 		    {context.ProductCapabilityId(),
 		        {std::string(LauncherCapabilityId::BuildFiles)},
-		        [request, buildOperationId = context.ProductBuildOperationId()](bool)
+		        [request, buildOperationId = context.ProductBuildOperationId()](bool invalidated)
 		        {
 			        const LevelRunOperationPlan runPlan =
 			            PlanLevelRunOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::LevelRun(request));
-			        if (runPlan.Readiness.ExecutableReady)
+			        if (runPlan.Readiness.ExecutableReady && !invalidated)
 			        {
 				        return LauncherCapabilityEvaluation::Ready();
 			        }

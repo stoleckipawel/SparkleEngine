@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Cooking/ShaderCookContext.h"
-#include "Cooking/ShaderCookProgress.h"
+#include "ToolWorkProgressEvent.h"
 
 class ShaderBackendPool;
 struct ShaderCookSettings;
@@ -14,7 +14,7 @@ public:
 	static ShaderCookPipelinePlan Build(
 	    const ShaderCookSettings& settings,
 	    ShaderBackendPool& backendPool,
-	    const ShaderCookProgressCallback& progress);
+	    const ToolWorkProgressCallback& progress);
 
 private:
 	static void BuildDependencyManifest(ShaderCookPipelinePlan& plan);

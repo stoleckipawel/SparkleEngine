@@ -25,7 +25,7 @@ namespace SparkleLauncher
 		for (std::size_t stepIndex = 0; stepIndex < processSteps.size(); ++stepIndex)
 		{
 			LevelRunOperationProcessStep& step = processSteps[stepIndex];
-			ReportOperationProgress(outputCallback, step.DisplayName, stepIndex, processSteps.size());
+			ReportOperationProgress(outputCallback, step.DisplayName);
 			ProcessRequest request = step.Request;
 			AppendProcessOutputCallback(request, outputCallback);
 
@@ -37,7 +37,6 @@ namespace SparkleLauncher
 				MarkOperationFinished(operation, result.Canceled ? OperationStatus::Canceled : OperationStatus::Failed, result.ExitCode);
 				return operation;
 			}
-			ReportOperationProgress(outputCallback, step.DisplayName, stepIndex + 1, processSteps.size());
 		}
 
 		MarkOperationFinished(operation, OperationStatus::Succeeded, 0);

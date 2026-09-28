@@ -166,12 +166,15 @@ namespace SparkleLauncher
 		    this,
 		    [this, runId = std::move(runId), operationId = std::move(operationId), outputText = std::move(outputText)]
 		    {
-			    emit OperationOutputReceived(
-			        runId,
-			        operationId,
-			        QString::fromUtf8(outputText.data(), static_cast<qsizetype>(outputText.size())));
 			    m_progressDecoders[runId].Consume(
 			        outputText,
+			        [this, &runId, &operationId](std::string_view output)
+			        {
+				        emit OperationOutputReceived(
+				            runId,
+				            operationId,
+				            QString::fromUtf8(output.data(), static_cast<qsizetype>(output.size())));
+			        },
 			        [this, &runId, &operationId](const ToolWorkProgress& progress)
 			        {
 				        emit OperationProgressReceived(
@@ -200,7 +203,19 @@ namespace SparkleLauncher
 		        exitCode,
 		        processStartFailure]
 		    {
-			    m_progressDecoders.remove(runId);
+			    auto progressDecoder = m_progressDecoders.find(runId);
+			    if (progressDecoder != m_progressDecoders.end())
+			    {
+				    progressDecoder->Flush(
+				        [this, &runId, &operationId](std::string_view output)
+				        {
+					        emit OperationOutputReceived(
+					            runId,
+					            operationId,
+					            QString::fromUtf8(output.data(), static_cast<qsizetype>(output.size())));
+				        });
+				    m_progressDecoders.erase(progressDecoder);
+			    }
 			    emit OperationFinished(runId, operationId, title, status, exitCode, processStartFailure);
 		    },
 		    Qt::QueuedConnection);

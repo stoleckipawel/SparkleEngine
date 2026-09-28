@@ -217,6 +217,27 @@ function(sparkle_boundary_scan_file absolute_path)
 				"${_line}")
 		endif()
 
+		if(_line MATCHES "ToolWorkProgressProtocol" AND
+		   NOT _relative_path MATCHES "^Tools/Support/ToolConsoleSupport/(Private|Public)/ToolWorkProgress[.](cpp|h)$" AND
+		   NOT _relative_path MATCHES "^Tools/Launcher/SparkleLauncher/Private/(Core/LauncherOperationProgress|Gui/Operations/LauncherProgressStreamDecoder)[.]cpp$")
+			sparkle_boundary_append_failure(
+				"TOOL_PROGRESS_TRANSPORT_REMAINS_AT_PROCESS_BOUNDARY"
+				"${_relative_path}"
+				"${_line_number}"
+				"Tool producers publish semantic progress events; only shared progress support and Launcher process-boundary adapters may format or parse transport records."
+				"${_line}")
+		endif()
+
+		if(NOT _relative_path STREQUAL "Tools/Support/ToolConsoleSupport/Private/ToolWorkProgress.cpp" AND
+		   _line MATCHES "\\[PROGRESS\\]")
+			sparkle_boundary_append_failure(
+				"TOOL_PROGRESS_MARKER_HAS_ONE_OWNER"
+				"${_relative_path}"
+				"${_line_number}"
+				"The shared tool-progress implementation exclusively owns the transport marker."
+				"${_line}")
+		endif()
+
         if(_relative_path MATCHES "^Engine/RHI/Public/" AND _line MATCHES "FrameGraph")
             sparkle_boundary_append_failure(
                 "RHI_PUBLIC_NO_FRAME_GRAPH_POLICY"

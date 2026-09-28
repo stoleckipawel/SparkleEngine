@@ -43,7 +43,7 @@ Launcher is a capability planner and operation host. It is not a package manager
 | `LAUNCH-002` | Shell route | Implemented path | Same executable accepts root/profile/compiler/IDE/scope/target/level/API/cook/clean options plus `--dry-run` and `--run <operation-id>`. It exposes core operation planners without the GUI. | `S` |
 | `LAUNCH-003` | Immutable operation plan | Implemented path | Each action records inputs, readiness, steps, display command lines, log paths, planned effects, destructive scope/confirmation, timing, exit code, status, and failure summary before/after execution. | `S` |
 | `LAUNCH-004` | Quick Start dependency graph | Implemented path | Capability providers resolve host tool -> source dependencies -> workspace -> level content -> cooked products -> runnable level, returning the next unmet operation and invalidating downstream capabilities after changes. | `S` |
-| `LAUNCH-005` | Background operation service | Implemented path | Each GUI run has a unique ToolInvocation task scope, streams output, retains activity, prevents duplicate active run IDs, supports cancellation, and joins scopes on teardown. Tool-owned progress records drive the selected-run phase and progress bar; a determinate percentage is shown only when the tool publishes authoritative completed and total work, while unknown totals remain indeterminate. | `S` |
+| `LAUNCH-005` | Background operation service | Implemented path | Each GUI run has a unique ToolInvocation task scope, streams output, retains activity, prevents duplicate active run IDs, supports cancellation, and joins scopes on teardown. Tool-owned action/item/count progress records drive the selected-run phase and progress bar without appearing in the human-readable log; producers publish semantic identities while shared progress support owns formatting and transport. A determinate percentage is shown only when the tool publishes authoritative completed and total work, while unknown totals remain indeterminate. | `S` |
 
 ## Workspace And Toolchain Operations
 
@@ -86,31 +86,11 @@ fresh toolchain scan finds both the compiler and its MSBuild toolset.
 | `LAUNCH-015` | Cook workspace | Implemented path | `cook.workspace` runs selected shader/texture/scene scopes in one request after build/tool/runtime-bundle readiness checks. | `S` |
 | `LAUNCH-016` | Focused/full cooks | Implemented path | `cook.shaders`, `cook.textures`, `cook.assets`, and `cook.all`; incremental or confirmed Force mode; shader backend/debug/optimization/warnings/strip options. | `S` |
 | `LAUNCH-017` | Force recook safety | Implemented path | Force mode plans removal of the exact cooked output root and refuses execution without explicit confirmation. | `S` |
-| `LAUNCH-018` | Run level | Implemented path | `levels.run` resolves editor/game target and matching profile, checks executable plus cooked mesh/texture/shader readiness, sets level/API environment, uses the project directory, and launches the real product child process. | `S` |
+| `LAUNCH-018` | Run level | Implemented path | `levels.run` resolves the editor/game target and matching profile, incrementally builds that target once per requested run, checks the executable plus cooked mesh/texture/shader readiness, sets level/API environment, uses the project directory, and launches the real product child process. The long-lived product process remains indeterminate rather than presenting process exit as predictable percentage work. | `S` |
 | `LAUNCH-019` | Build profiles | Implemented path | All six Debug/Development/Shipping x Editor/Game profiles; focused target name is `<Project>Editor` or `<Project>Runtime`. | `S` |
 | `LAUNCH-020` | Graphics API choice | Implemented path | Run request carries `d3d12` or other accepted API text to product environment; actual compiled backend/device validation remains product evidence. | `S` |
 | `LAUNCH-021` | Clean workspace | Implemented path | `workspace.clean` supports confirmed cooked outputs, build tree, artifacts, IDE state, dependency cache, typed per-user development logs/settings, legacy outputs, or pristine generated workspace; previews exact targets/counts/bytes and supports preserved paths. | `S` |
 | `LAUNCH-022` | Logs/recovery | Implemented path | Per-step log paths, captured output, UTF-8 native launch errors, status/timing/exit code, typed child-process start failure, categorized recovery hints, copy-output UI, and history records. Windows application-control rejection is carried from Core as process state and produces trust-policy recovery for every build, cook, sync, and run workflow instead of being inferred from localized text or misreported as a feature-specific retry. Diagnostic usefulness still needs first-user evidence. | `S` |
-
-## Path API Boundary
-
-Launcher code consumes two deliberately separate contracts:
-
-- Core's `WorkspaceOutputPaths` owns repository-generated build and artifact
-  locations, including the dependency cache and owner/profile-specific
-  products. Build, cook, run, clean, capability, and GUI preview code all use
-  this contract.
-- The private `LauncherStatePaths` collaboration owns per-user launcher
-  settings, activity, archives, live instances, and operation logs. It never
-  exposes or derives workspace products.
-
-Core privately implements workspace-output and user-state directory grammar;
-`SparkleLauncherCore` privately implements Launcher leaf paths. Callers do not
-own repository hashing, platform-local state selection, or literal root
-segments. Product/editor mutable state is not a Launcher path variant: the
-Launcher uses Core's public `ProductUserStatePaths` contract when it must
-inspect or clean that state. This separation prevents a broad path utility
-from becoming a second layout authority.
 
 ## Path API Boundary
 
@@ -152,12 +132,6 @@ does not read its icon font from `build/_deps` at runtime; deleting private
 build state cannot remove navigation or activity icons from a rebuilt
 launcher artifact. Existing binaries retain their original resource contract
 until rebuilt and relaunched.
-
-Maintenance scope IDs are defined and parsed by the public maintenance
-contract. The private maintenance planner expands each scope into one typed
-clean-action list; both preview/counting and execution project that same list.
-Cleanup mechanics receive the exact destructive and preserved paths and do not
-infer special directories from filenames such as `_deps`.
 
 ## Vertical Quick-Start Trace
 

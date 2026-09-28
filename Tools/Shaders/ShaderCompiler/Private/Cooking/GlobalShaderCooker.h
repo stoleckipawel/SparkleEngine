@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Cooking/ShaderCookProgress.h"
+#include "ToolWorkProgressEvent.h"
 #include "Cooking/ShaderCookResult.h"
 #include "Cooking/ShaderCookSettings.h"
 
 class GlobalShaderCooker final
 {
 public:
-	ShaderCookResult CookAll(const ShaderCookSettings& settings = {}, const ShaderCookProgressCallback& progress = {}) const;
+	ShaderCookResult CookAll(const ShaderCookSettings& settings = {}, const ToolWorkProgressCallback& progress = {}) const;
 };

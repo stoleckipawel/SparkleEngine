@@ -22,5 +22,5 @@ public:
 	static std::vector<TextureCookBatchItemResult> Execute(
 	    const std::vector<TextureCookRequest>& requests,
 	    std::size_t memoryBudgetBytes,
-	    const std::function<void(std::size_t)>& progress = {});
+	    const std::function<void(std::size_t, std::size_t)>& progress = {});
 };

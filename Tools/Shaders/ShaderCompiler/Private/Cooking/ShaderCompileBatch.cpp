@@ -22,7 +22,7 @@ std::vector<ShaderCompileResult> ShaderCompileBatch::Execute(
     const ShaderCookSettings& settings,
     std::span<const ShaderCompileJob> jobs,
     std::size_t totalWork,
-    const ShaderCookProgressCallback& progress)
+    const ToolWorkProgressCallback& progress)
 {
 	if (jobs.empty())
 	{
@@ -72,7 +72,7 @@ std::vector<ShaderCompileResult> ShaderCompileBatch::CompileProducers(
     std::span<const ShaderCompileJob> jobs,
     const ProducerMap& producerMap,
     std::size_t totalWork,
-    const ShaderCookProgressCallback& progress)
+    const ToolWorkProgressCallback& progress)
 {
 	const std::span<const std::size_t> producerJobIndices = producerMap.ProducerJobIndices;
 	std::vector<std::size_t> consumerCountByProducer(producerJobIndices.size());
@@ -112,7 +112,11 @@ std::vector<ShaderCompileResult> ShaderCompileBatch::CompileProducers(
 				    {
 					    std::lock_guard lock(progressMutex);
 					    completedWork += consumerCountByProducer[producerIndex];
-					    progress({.Phase = "Compiling shaders", .Completed = completedWork, .Total = totalWork});
+					    progress(
+					        {.Action = "Compiled shader",
+					            .Item = jobs[jobIndex].Request.ShaderTypeName,
+					            .Completed = completedWork,
+					            .Total = totalWork});
 				    }
 				    return TaskResult::Success();
 			    }
@@ -172,7 +176,7 @@ void ShaderCompileBatch::FinalizeResults(
     std::span<const ShaderCompileJob> jobs,
     std::span<ShaderCompileResult> results,
     std::size_t totalWork,
-    const ShaderCookProgressCallback& progress)
+    const ToolWorkProgressCallback& progress)
 {
 	for (std::size_t jobIndex = 0; jobIndex < jobs.size(); ++jobIndex)
 	{
@@ -193,7 +197,11 @@ void ShaderCompileBatch::FinalizeResults(
 		}
 		if (progress)
 		{
-			progress({.Phase = "Verifying compiled shaders", .Completed = jobs.size() + jobIndex + 1, .Total = totalWork});
+			progress(
+			    {.Action = "Verified shader",
+			        .Item = job.Request.ShaderTypeName,
+			        .Completed = jobs.size() + jobIndex + 1,
+			        .Total = totalWork});
 		}
 	}
 }

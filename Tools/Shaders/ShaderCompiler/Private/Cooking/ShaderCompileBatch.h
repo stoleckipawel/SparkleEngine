@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Cooking/ShaderCompileJob.h"
-#include "Cooking/ShaderCookProgress.h"
+#include "ToolWorkProgressEvent.h"
 
 #include <cstddef>
 #include <span>
@@ -18,7 +18,7 @@ public:
 	    const ShaderCookSettings& settings,
 	    std::span<const ShaderCompileJob> jobs,
 	    std::size_t totalWork,
-	    const ShaderCookProgressCallback& progress);
+	    const ToolWorkProgressCallback& progress);
 
 private:
 	struct ProducerMap final
@@ -33,7 +33,7 @@ private:
 	    std::span<const ShaderCompileJob> jobs,
 	    const ProducerMap& producerMap,
 	    std::size_t totalWork,
-	    const ShaderCookProgressCallback& progress);
+	    const ToolWorkProgressCallback& progress);
 	static std::vector<ShaderCompileResult> FanOutResults(
 	    std::span<const ShaderCompileJob> jobs,
 	    std::span<const ShaderCompileResult> producerResults,
@@ -43,6 +43,6 @@ private:
 	    std::span<const ShaderCompileJob> jobs,
 	    std::span<ShaderCompileResult> results,
 	    std::size_t totalWork,
-	    const ShaderCookProgressCallback& progress);
+	    const ToolWorkProgressCallback& progress);
 	static bool HasSameCompilerInput(const ShaderCompileJob& lhs, const ShaderCompileJob& rhs) noexcept;
 };

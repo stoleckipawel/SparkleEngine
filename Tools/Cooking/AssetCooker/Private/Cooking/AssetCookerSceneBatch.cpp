@@ -18,12 +18,12 @@ struct AssetCookerSceneBatch::Item final
 bool AssetCookerSceneBatch::Execute(
     const std::vector<AssetCookerSceneEntry>& sceneEntries,
     AssetCookerDiagnostics& diagnostics,
-    const ProgressCallback& progress)
+    const ToolWorkProgressCallback& progress)
 {
 	const std::size_t totalWork = sceneEntries.size() + 1;
 	if (progress)
 	{
-		progress("Cooking scene assets", 0, totalWork);
+		progress({.Action = "Cooking scene assets", .Total = totalWork});
 	}
 	std::vector<Item> items(sceneEntries.size());
 	const bool built = BuildProducts(sceneEntries, items, progress, totalWork);
@@ -37,12 +37,12 @@ bool AssetCookerSceneBatch::Execute(
 
 	if (progress)
 	{
-		progress("Publishing cooked scene assets", sceneEntries.size(), totalWork);
+		progress({.Action = "Publishing cooked scene assets", .Completed = sceneEntries.size(), .Total = totalWork});
 	}
 	const bool published = PublishProducts(items, diagnostics);
 	if (published && progress)
 	{
-		progress("Cooked scene assets published", totalWork, totalWork);
+		progress({.Action = "Cooked scene assets published", .Completed = totalWork, .Total = totalWork});
 	}
 	return published;
 }
@@ -67,7 +67,7 @@ CompiledTaskGraph AssetCookerSceneBatch::BuildTaskGraph(
     const std::vector<AssetCookerSceneEntry>& sceneEntries,
     std::vector<Item>& items,
     std::uint32_t taskCapacity,
-    const std::function<void()>& itemCompleted)
+    const std::function<void(std::uint32_t)>& itemCompleted)
 {
 	TaskGraphBuilder builder(TaskGraphLimits{.MaximumTasks = taskCapacity, .MaximumEdges = 1u});
 
@@ -80,7 +80,7 @@ CompiledTaskGraph AssetCookerSceneBatch::BuildTaskGraph(
 			    TaskResult result = BuildProduct(sceneEntries, items, index, context);
 			    if (result.GetOutcome() == TaskOutcome::Succeeded)
 			    {
-				    itemCompleted();
+				    itemCompleted(index);
 			    }
 			    return result;
 		    });
@@ -115,18 +115,18 @@ TaskResult AssetCookerSceneBatch::BuildProduct(
 bool AssetCookerSceneBatch::BuildProducts(
     const std::vector<AssetCookerSceneEntry>& sceneEntries,
     std::vector<Item>& items,
-    const ProgressCallback& progress,
+    const ToolWorkProgressCallback& progress,
     std::size_t totalWork)
 {
 	const std::uint32_t taskCapacity = static_cast<std::uint32_t>(std::max<std::size_t>(sceneEntries.size(), 1u));
 	std::mutex progressMutex;
 	std::size_t completed = 0;
-	const auto itemCompleted = [&progress, &progressMutex, &completed, totalWork]()
+	const auto itemCompleted = [&sceneEntries, &progress, &progressMutex, &completed, totalWork](std::uint32_t index)
 	{
 		if (progress)
 		{
 			std::lock_guard lock(progressMutex);
-			progress("Cooking scene assets", ++completed, totalWork);
+			progress({.Action = "Cooked scene", .Item = sceneEntries[index].relativePath, .Completed = ++completed, .Total = totalWork});
 		}
 	};
 

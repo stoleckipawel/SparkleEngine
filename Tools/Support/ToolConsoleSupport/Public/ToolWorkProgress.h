@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ToolWorkProgressEvent.h"
+
 #include <cstddef>
 #include <iosfwd>
 #include <limits>
@@ -34,6 +36,8 @@ class ToolWorkProgressWriter final
 public:
 	explicit ToolWorkProgressWriter(std::ostream& output) noexcept;
 	void Report(std::string_view phase, std::size_t completed = 0, std::size_t total = 0);
+	void Report(std::string_view action, std::string_view item, std::size_t completed, std::size_t total);
+	void Report(const ToolWorkProgressEvent& progress);
 
 private:
 	std::ostream& m_output;

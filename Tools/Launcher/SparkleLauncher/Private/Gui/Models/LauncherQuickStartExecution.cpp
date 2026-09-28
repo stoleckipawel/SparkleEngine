@@ -1,5 +1,7 @@
 #include "LauncherQuickStartExecution.h"
 
+#include "LauncherCapabilityProviders.h"
+
 #include <utility>
 
 namespace SparkleLauncher
@@ -7,6 +9,13 @@ namespace SparkleLauncher
 	LauncherQuickStartExecution::LauncherQuickStartExecution(LauncherOperationRequest goalRequest) :
 	    m_goalRequest(std::move(goalRequest))
 	{
+		if (m_goalRequest.OperationId == QStringLiteral("levels.run"))
+		{
+			m_invalidatedCapabilityIds.insert(
+			    std::string(
+			        m_goalRequest.RunMode == QStringLiteral("game") ? LauncherCapabilityId::RuntimeProduct
+			                                                        : LauncherCapabilityId::EditorProduct));
+		}
 	}
 
 	const LauncherOperationRequest& LauncherQuickStartExecution::GoalRequest() const

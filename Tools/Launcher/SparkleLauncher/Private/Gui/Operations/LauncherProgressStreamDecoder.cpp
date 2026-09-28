@@ -11,7 +11,10 @@ namespace SparkleLauncher
 {
 	static constexpr std::size_t kMaximumProgressLineBytes = 4096;
 
-	void LauncherProgressStreamDecoder::Consume(std::string_view output, const ProgressCallback& progressCallback)
+	void LauncherProgressStreamDecoder::Consume(
+	    std::string_view output,
+	    const OutputCallback& outputCallback,
+	    const ProgressCallback& progressCallback)
 	{
 		m_pendingLine.append(output);
 		for (std::size_t newline = m_pendingLine.find('\n'); newline != std::string::npos; newline = m_pendingLine.find('\n'))
@@ -22,13 +25,30 @@ namespace SparkleLauncher
 			{
 				progressCallback(*progress);
 			}
+			else if (!progress && outputCallback)
+			{
+				outputCallback(std::string_view(m_pendingLine.data(), newline + 1));
+			}
 			m_pendingLine.erase(0, newline + 1);
 		}
 
 		if (m_pendingLine.size() > kMaximumProgressLineBytes)
 		{
+			if (outputCallback)
+			{
+				outputCallback(m_pendingLine);
+			}
 			m_pendingLine.clear();
 		}
+	}
+
+	void LauncherProgressStreamDecoder::Flush(const OutputCallback& outputCallback)
+	{
+		if (!m_pendingLine.empty() && outputCallback)
+		{
+			outputCallback(m_pendingLine);
+		}
+		m_pendingLine.clear();
 	}
 
 	bool LauncherProgressStreamDecoder::Accept(const ToolWorkProgress& progress)

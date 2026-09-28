@@ -19,7 +19,7 @@ namespace SparkleLauncher
 
 	std::string LauncherCapabilityContext::ProductCapabilityId() const
 	{
-		return UsesEditorProduct() ? "product.editor" : "product.runtime";
+		return std::string(UsesEditorProduct() ? LauncherCapabilityId::EditorProduct : LauncherCapabilityId::RuntimeProduct);
 	}
 
 	std::string LauncherCapabilityContext::ProjectCapabilityId() const

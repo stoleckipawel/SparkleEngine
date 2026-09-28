@@ -54,10 +54,8 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 	ToolWorkProgressWriter progressOutput(std::cout);
 	try
 	{
-		cookResult = cooker.CookAll(
-		    settings,
-		    [&progressOutput](const ShaderCookProgress& progress)
-		    { progressOutput.Report(progress.Phase, progress.Completed, progress.Total); });
+		cookResult =
+		    cooker.CookAll(settings, [&progressOutput](const ToolWorkProgressEvent& progress) { progressOutput.Report(progress); });
 	}
 	catch (const Diagnostics::Error& error)
 	{

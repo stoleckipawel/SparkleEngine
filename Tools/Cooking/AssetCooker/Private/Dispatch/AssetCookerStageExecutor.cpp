@@ -177,7 +177,7 @@ bool AssetCookerStageExecutor::RunSceneAssets(
 	if (!AssetCookerSceneBatch::Execute(
 	        plan.sceneEntries,
 	        diagnostics,
-	        [&progress](std::string_view phase, std::size_t completed, std::size_t total) { progress.Report(phase, completed, total); }))
+	        [&progress](const ToolWorkProgressEvent& event) { progress.Report(event); }))
 	{
 		return false;
 	}
