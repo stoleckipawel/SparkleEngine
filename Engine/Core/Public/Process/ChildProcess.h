@@ -30,11 +30,6 @@ namespace Process
 
 	using ChildProcessOutputCallback = std::function<void(std::string_view)>;
 
-	struct ChildProcessReadiness final
-	{
-		std::string ExpectedValue;
-	};
-
 	struct ChildProcessRequest final
 	{
 		std::filesystem::path ExecutablePath;
@@ -44,7 +39,7 @@ namespace Process
 		std::filesystem::path LogPath;
 		ChildProcessOutputCallback OutputCallback;
 		std::stop_token Cancellation;
-		std::optional<ChildProcessReadiness> Readiness;
+		std::optional<std::string> ReadinessValue;
 	};
 
 	struct ChildProcessResult final

@@ -301,7 +301,7 @@ static Process::ChildProcessResult RunWindowsChildProcessUntilReady(const Proces
 	std::vector<Process::EnvironmentOverride> environmentOverrides = request.Environment;
 	environmentOverrides.push_back(
 	    {Process::Detail::ReadinessEventEnvironmentVariable, ChildProcessWindowsImplementation::WideToUtf8(eventName)});
-	environmentOverrides.push_back({Process::Detail::ReadinessValueEnvironmentVariable, request.Readiness->ExpectedValue});
+	environmentOverrides.push_back({Process::Detail::ReadinessValueEnvironmentVariable, *request.ReadinessValue});
 	std::vector<wchar_t> environment = ChildProcessWindowsImplementation::BuildEnvironment(environmentOverrides);
 
 	STARTUPINFOW startup{};
@@ -364,8 +364,8 @@ static Process::ChildProcessResult RunWindowsChildProcessUntilReady(const Proces
 		const DWORD eventError = GetLastError();
 		TerminateJobObject(processJob.Get(), 1);
 		WaitForSingleObject(process.Get(), ChildProcessWindowsImplementation::ProcessTerminationTimeoutMilliseconds);
-		result.FailureReason = "Failed to create the child cancellation event: "
-		    + ChildProcessWindowsImplementation::FormatError(eventError);
+		result.FailureReason =
+		    "Failed to create the child cancellation event: " + ChildProcessWindowsImplementation::FormatError(eventError);
 		return result;
 	}
 	std::stop_callback cancellationWake(request.Cancellation, [event = cancelEvent.Get()] { SetEvent(event); });
@@ -392,7 +392,10 @@ static Process::ChildProcessResult RunWindowsChildProcessUntilReady(const Proces
 		{
 			JOBOBJECT_EXTENDED_LIMIT_INFORMATION releasedLimits{};
 			if (!SetInformationJobObject(
-			        processJob.Get(), JobObjectExtendedLimitInformation, &releasedLimits, static_cast<DWORD>(sizeof(releasedLimits))))
+			        processJob.Get(),
+			        JobObjectExtendedLimitInformation,
+			        &releasedLimits,
+			        static_cast<DWORD>(sizeof(releasedLimits))))
 			{
 				const DWORD releaseError = GetLastError();
 				TerminateJobObject(processJob.Get(), 1);
@@ -437,7 +440,7 @@ Process::ChildProcessResult Process::Detail::RunWindowsChildProcess(const ChildP
 		result.Cancelled = true;
 		return result;
 	}
-	if (request.Readiness.has_value())
+	if (request.ReadinessValue.has_value())
 	{
 		return RunWindowsChildProcessUntilReady(request);
 	}

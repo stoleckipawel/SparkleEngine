@@ -34,6 +34,6 @@ void Process::SignalParentReadiness(std::string_view value) noexcept
 	SetEvent(eventHandle);
 	CloseHandle(eventHandle);
 #else
-	(void)value;
+	(void) value;
 #endif
 }

@@ -24,7 +24,7 @@ namespace SparkleLauncher
 		std::filesystem::path LogPath;
 		ProcessOutputCallback OutputCallback;
 		std::stop_token Cancellation;
-		std::optional<Process::ChildProcessReadiness> Readiness;
+		std::optional<std::string> ReadinessValue;
 	};
 
 	struct ProcessResult
