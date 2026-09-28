@@ -21,4 +21,5 @@ include(${SPARKLE_REPOSITORY_ROOT}/CMake/Dependencies/FetchDependencies.cmake NO
 
 add_subdirectory(${SPARKLE_REPOSITORY_ROOT}/Engine/Core ${CMAKE_BINARY_DIR}/Engine/Core)
 add_subdirectory(${SPARKLE_REPOSITORY_ROOT}/Engine/Tasks ${CMAKE_BINARY_DIR}/Engine/Tasks)
+add_subdirectory(${SPARKLE_REPOSITORY_ROOT}/Tools/Support/ToolConsoleSupport ${CMAKE_BINARY_DIR}/Tools/Support/ToolConsoleSupport)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/SparkleLauncher ${CMAKE_BINARY_DIR}/SparkleLauncher)

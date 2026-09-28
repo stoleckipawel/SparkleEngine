@@ -15,7 +15,10 @@
 #include <format>
 #include <unordered_map>
 
-ShaderCookPipelinePlan ShaderCookPlanBuilder::Build(const ShaderCookSettings& settings, ShaderBackendPool& backendPool)
+ShaderCookPipelinePlan ShaderCookPlanBuilder::Build(
+    const ShaderCookSettings& settings,
+    ShaderBackendPool& backendPool,
+    const ShaderCookProgressCallback& progress)
 {
 	ShaderCookPipelinePlan plan;
 	if (settings.targets.empty())
@@ -62,12 +65,22 @@ ShaderCookPipelinePlan ShaderCookPlanBuilder::Build(const ShaderCookSettings& se
 	}
 	plan.shaders = ShaderCookPlanner::BuildShaders(settings, plan.dependencyManifest, catalog);
 	plan.shaderOutputs.resize(plan.shaders.size());
+	const std::size_t planningWork = plan.shaders.size() * settings.targets.size();
+	std::size_t completedPlanningWork = 0;
+	if (progress && planningWork != 0)
+	{
+		progress({.Phase = "Planning shader compile jobs", .Total = planningWork});
+	}
 	for (std::size_t shaderIndex = 0; shaderIndex < plan.shaders.size(); ++shaderIndex)
 	{
 		plan.shaderOutputs[shaderIndex].reserve(settings.targets.size());
 		for (const ShaderTarget target : settings.targets)
 		{
 			ShaderCompileJobBuilder::BuildAndAdd(settings, shaderIndex, target, backendPool, plan);
+			if (progress)
+			{
+				progress({.Phase = "Planning shader compile jobs", .Completed = ++completedPlanningWork, .Total = planningWork});
+			}
 		}
 	}
 	BuildDependencyManifest(plan);

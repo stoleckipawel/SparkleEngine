@@ -1,6 +1,7 @@
 #include "SparkleLauncher/CookOperations.h"
 
 #include "CookOperationProcessRequests.h"
+#include "LauncherOperationProgress.h"
 
 #include <optional>
 #include <system_error>
@@ -76,8 +77,11 @@ namespace SparkleLauncher
 			return operation;
 		}
 
-		for (CookOperationProcessStep& step : BuildCookProcessStepsForPlan(plan))
+		std::vector<CookOperationProcessStep> processSteps = BuildCookProcessStepsForPlan(plan);
+		for (std::size_t stepIndex = 0; stepIndex < processSteps.size(); ++stepIndex)
 		{
+			CookOperationProcessStep& step = processSteps[stepIndex];
+			ReportOperationProgress(outputCallback, step.DisplayName, stepIndex, processSteps.size());
 			if (step.DeletesCookedOutputs)
 			{
 				std::string errorMessage;
@@ -87,6 +91,7 @@ namespace SparkleLauncher
 					MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 					return operation;
 				}
+				ReportOperationProgress(outputCallback, step.DisplayName, stepIndex + 1, processSteps.size());
 				continue;
 			}
 
@@ -97,26 +102,17 @@ namespace SparkleLauncher
 				std::filesystem::create_directories(request.WorkingDirectory, errorCode);
 			}
 
-			const ProcessOutputCallback existingCallback = request.OutputCallback;
-			request.OutputCallback = [existingCallback, outputCallback](std::string_view output)
-			{
-				if (existingCallback)
-				{
-					existingCallback(output);
-				}
-				if (outputCallback)
-				{
-					outputCallback(output);
-				}
-			};
+			AppendProcessOutputCallback(request, outputCallback);
 
 			const ProcessResult result = processRunner.Run(request);
 			if (!result.Launched || result.Canceled || result.ExitCode != 0)
 			{
+				operation.ProcessStartFailure = result.StartFailure;
 				operation.FailureSummary = MakeCookFailureSummary(step, result);
 				MarkOperationFinished(operation, result.Canceled ? OperationStatus::Canceled : OperationStatus::Failed, result.ExitCode);
 				return operation;
 			}
+			ReportOperationProgress(outputCallback, step.DisplayName, stepIndex + 1, processSteps.size());
 		}
 
 		MarkOperationFinished(operation, OperationStatus::Succeeded, 0);

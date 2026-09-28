@@ -12,12 +12,16 @@
 
 #include <unordered_set>
 
-ShaderCookResult GlobalShaderCooker::CookAll(const ShaderCookSettings& settings) const
+ShaderCookResult GlobalShaderCooker::CookAll(const ShaderCookSettings& settings, const ShaderCookProgressCallback& progress) const
 {
 	ShaderCookResult result;
 	result.outputDirectory = Filesystem::GetCookedShaderRootPath();
+	if (progress)
+	{
+		progress({.Phase = "Planning shader cook"});
+	}
 	ShaderBackendPool backendPool;
-	ShaderCookPipelinePlan plan = ShaderCookPlanBuilder::Build(settings, backendPool);
+	ShaderCookPipelinePlan plan = ShaderCookPlanBuilder::Build(settings, backendPool, progress);
 	result.compileJobCount = plan.jobs.size();
 	std::unordered_set<ShaderTypeId> selectedShaderTypes;
 	for (const ShaderCompileJob& job : plan.jobs)
@@ -27,13 +31,26 @@ ShaderCookResult GlobalShaderCooker::CookAll(const ShaderCookSettings& settings)
 	result.selectedShaderCount = selectedShaderTypes.size();
 	if (plan.jobs.empty() && plan.removedShaderTypeCount == 0)
 	{
+		if (progress)
+		{
+			progress({.Phase = "Shader cook is up to date", .Completed = 1, .Total = 1});
+		}
 		return result;
+	}
+	const std::size_t totalWork = plan.jobs.size() * 2 + 1;
+	if (progress)
+	{
+		progress({.Phase = plan.jobs.empty() ? "Preparing shader publication" : "Compiling shaders", .Total = totalWork});
 	}
 
 	std::vector<ShaderCompileResult> compileResults;
 	if (!plan.jobs.empty())
 	{
-		compileResults = ShaderCompileBatch::Execute(settings, plan.jobs);
+		compileResults = ShaderCompileBatch::Execute(settings, plan.jobs, totalWork, progress);
+	}
+	if (progress)
+	{
+		progress({.Phase = "Preparing shader publication", .Completed = totalWork - 1, .Total = totalWork});
 	}
 	for (const ShaderCompileConsumer& consumer : plan.consumers)
 	{
@@ -56,7 +73,15 @@ ShaderCookResult GlobalShaderCooker::CookAll(const ShaderCookSettings& settings)
 	}
 
 	ShaderCookCancellation::ThrowIfRequested(settings.cancellationSignalPath);
+	if (progress)
+	{
+		progress({.Phase = "Publishing cooked shaders", .Completed = totalWork - 1, .Total = totalWork});
+	}
 	const bool replaceCompleteCatalog = settings.shaderId.empty() && settings.changedVirtualPaths.empty();
 	result.output = ShaderArtifactPublication::Publish(plan, result.outputDirectory, replaceCompleteCatalog);
+	if (progress)
+	{
+		progress({.Phase = "Cooked shaders published", .Completed = totalWork, .Total = totalWork});
+	}
 	return result;
 }

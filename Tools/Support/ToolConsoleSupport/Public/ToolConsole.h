@@ -54,7 +54,6 @@ public:
 	    std::size_t total,
 	    std::string_view name,
 	    std::initializer_list<ToolConsoleField> fields = {});
-
 	static void Summary(std::ostream& output, std::string_view title, std::initializer_list<ToolConsoleField> fields);
 
 	static void ListHeader(std::ostream& output, std::string_view title);

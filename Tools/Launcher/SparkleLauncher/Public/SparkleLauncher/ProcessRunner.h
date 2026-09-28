@@ -30,10 +30,11 @@ namespace SparkleLauncher
 		bool Launched = false;
 		bool Canceled = false;
 		int ExitCode = -1;
+		Process::ChildProcessStartFailure StartFailure = Process::ChildProcessStartFailure::None;
 		std::string CapturedOutput;
 		std::string FailureReason;
-		std::chrono::system_clock::time_point StartTime = {};
-		std::chrono::system_clock::time_point EndTime = {};
+		std::chrono::system_clock::time_point StartTime;
+		std::chrono::system_clock::time_point EndTime;
 	};
 
 	class IProcessRunner
@@ -57,5 +58,6 @@ namespace SparkleLauncher
 		ProcessResult Run(const ProcessRequest& request) override;
 	};
 
+	void AppendProcessOutputCallback(ProcessRequest& request, ProcessOutputCallback callback);
 	std::string BuildDisplayCommandLine(const std::filesystem::path& executablePath, const std::vector<std::string>& arguments);
 }

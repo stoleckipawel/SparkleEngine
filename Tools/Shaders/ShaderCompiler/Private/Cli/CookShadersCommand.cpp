@@ -9,6 +9,7 @@
 #include "Cooking/GlobalShaderCooker.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "ToolConsole.h"
+#include "ToolWorkProgress.h"
 
 #include <iostream>
 #include <ostream>
@@ -50,16 +51,20 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 
 	GlobalShaderCooker cooker;
 	ShaderCookResult cookResult;
+	ToolWorkProgressWriter progressOutput(std::cout);
 	try
 	{
-		cookResult = cooker.CookAll(settings);
+		cookResult = cooker.CookAll(
+		    settings,
+		    [&progressOutput](const ShaderCookProgress& progress)
+		    { progressOutput.Report(progress.Phase, progress.Completed, progress.Total); });
 	}
 	catch (const Diagnostics::Error& error)
 	{
 		ToolConsole::Message(
 		    std::cerr,
 		    ToolConsoleSeverity::Error,
-		    "Failed to publish cooked shaders",
+		    "Shader cook failed",
 		    {ToolConsole::QuotedField("reason", error.what())});
 		return kExitCodeCookFailure;
 	}

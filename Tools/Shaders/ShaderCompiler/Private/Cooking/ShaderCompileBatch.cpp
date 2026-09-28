@@ -14,10 +14,15 @@
 
 #include <algorithm>
 #include <exception>
+#include <mutex>
 #include <thread>
 #include <unordered_map>
 
-std::vector<ShaderCompileResult> ShaderCompileBatch::Execute(const ShaderCookSettings& settings, std::span<const ShaderCompileJob> jobs)
+std::vector<ShaderCompileResult> ShaderCompileBatch::Execute(
+    const ShaderCookSettings& settings,
+    std::span<const ShaderCompileJob> jobs,
+    std::size_t totalWork,
+    const ShaderCookProgressCallback& progress)
 {
 	if (jobs.empty())
 	{
@@ -26,9 +31,9 @@ std::vector<ShaderCompileResult> ShaderCompileBatch::Execute(const ShaderCookSet
 	ShaderCookCancellation::ThrowIfRequested(settings.cancellationSignalPath);
 
 	const ProducerMap producerMap = SelectProducers(jobs);
-	const std::vector<ShaderCompileResult> producerResults = CompileProducers(settings, jobs, producerMap.ProducerJobIndices);
+	const std::vector<ShaderCompileResult> producerResults = CompileProducers(settings, jobs, producerMap, totalWork, progress);
 	std::vector<ShaderCompileResult> results = FanOutResults(jobs, producerResults, producerMap.ProducerForJob);
-	FinalizeResults(settings, jobs, results);
+	FinalizeResults(settings, jobs, results, totalWork, progress);
 	return results;
 }
 
@@ -65,8 +70,18 @@ ShaderCompileBatch::ProducerMap ShaderCompileBatch::SelectProducers(std::span<co
 std::vector<ShaderCompileResult> ShaderCompileBatch::CompileProducers(
     const ShaderCookSettings& settings,
     std::span<const ShaderCompileJob> jobs,
-    std::span<const std::size_t> producerJobIndices)
+    const ProducerMap& producerMap,
+    std::size_t totalWork,
+    const ShaderCookProgressCallback& progress)
 {
+	const std::span<const std::size_t> producerJobIndices = producerMap.ProducerJobIndices;
+	std::vector<std::size_t> consumerCountByProducer(producerJobIndices.size());
+	for (const std::size_t producerIndex : producerMap.ProducerForJob)
+	{
+		++consumerCountByProducer[producerIndex];
+	}
+	std::mutex progressMutex;
+	std::size_t completedWork = 0;
 	const std::uint32_t hardwareThreads = std::max(1u, std::thread::hardware_concurrency());
 	const std::uint32_t compileWorkers = std::clamp(settings.maximumParallelCompiles, 1u, std::min(hardwareThreads, 8u));
 	TaskExecutor executor(
@@ -93,6 +108,12 @@ std::vector<ShaderCompileResult> ShaderCompileBatch::CompileProducers(
 			    try
 			    {
 				    results[producerIndex] = ShaderCompileJobExecutor::Execute(jobs[jobIndex]);
+				    if (progress)
+				    {
+					    std::lock_guard lock(progressMutex);
+					    completedWork += consumerCountByProducer[producerIndex];
+					    progress({.Phase = "Compiling shaders", .Completed = completedWork, .Total = totalWork});
+				    }
 				    return TaskResult::Success();
 			    }
 			    catch (const std::exception& error)
@@ -149,7 +170,9 @@ std::vector<ShaderCompileResult> ShaderCompileBatch::FanOutResults(
 void ShaderCompileBatch::FinalizeResults(
     const ShaderCookSettings& settings,
     std::span<const ShaderCompileJob> jobs,
-    std::span<ShaderCompileResult> results)
+    std::span<ShaderCompileResult> results,
+    std::size_t totalWork,
+    const ShaderCookProgressCallback& progress)
 {
 	for (std::size_t jobIndex = 0; jobIndex < jobs.size(); ++jobIndex)
 	{
@@ -167,6 +190,10 @@ void ShaderCompileBatch::FinalizeResults(
 		if (job.Request.CaptureDebugArtifacts)
 		{
 			ShaderDebugArtifactWriter::Write(settings.debugArtifactDirectory, job.Request, result.Output, result.DebugArtifacts);
+		}
+		if (progress)
+		{
+			progress({.Phase = "Verifying compiled shaders", .Completed = jobs.size() + jobIndex + 1, .Total = totalWork});
 		}
 	}
 }

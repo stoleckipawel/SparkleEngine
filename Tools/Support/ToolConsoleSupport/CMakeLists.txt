@@ -1,9 +1,11 @@
 set(TOOL_CONSOLE_SUPPORT_PUBLIC_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/ToolConsole.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Public/ToolWorkProgress.h
 )
 
 set(TOOL_CONSOLE_SUPPORT_PRIVATE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/ToolConsole.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/ToolWorkProgress.cpp
 )
 
 add_library(ToolConsoleSupport STATIC

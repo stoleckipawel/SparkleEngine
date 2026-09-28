@@ -1,6 +1,7 @@
 #include "AssetCookerDispatcher.h"
 
 #include "AssetCookerStageExecutor.h"
+#include "ToolWorkProgress.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "ToolConsole.h"
 
@@ -18,18 +19,21 @@ bool AssetCookerDispatcher::DispatchPlan(
 	}
 
 	Filesystem::ConfigureProjectRoot(plan.projectRoot);
+	ToolWorkProgressWriter progress(std::cout);
 
 	for (std::size_t stepIndex = 0; stepIndex < plan.steps.size(); ++stepIndex)
 	{
 		const AssetCookerPlanStep step = plan.steps[stepIndex];
 		const char* stepName = AssetCookerStageExecutor::GetStepName(step);
-		ToolConsole::Progress(std::cout, "Cooking", "stage", stepIndex + 1u, plan.steps.size(), stepName);
+		const std::string phase = "Asset cook stage: " + std::string(stepName);
+		progress.Report(phase, stepIndex, plan.steps.size());
 
 		const bool succeeded = AssetCookerStageExecutor::Execute(step, plan, diagnostics, outOutputs);
 		if (!succeeded)
 		{
 			return false;
 		}
+		progress.Report(phase, stepIndex + 1u, plan.steps.size());
 	}
 	return true;
 }

@@ -2,7 +2,7 @@
 
 **Status:** capability snapshot; not a successful cook, runtime-load record, or release approval
 
-**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; current shader contracts, Renderer registrations, compiler executable/CMake, DXC and Slang backends, cook/publication code, CLI validation script, editor recook, and Renderer runtime loading inspected; evidence `S` only
+**Snapshot:** 2026-09-28 at committed `master` revision `452c1f32`; current shader contracts, Renderer registrations, compiler executable/CMake, DXC and Slang backends, cook/publication/progress code, CLI validation script, editor recook, and Renderer runtime loading inspected; evidence `S` only
 
 **Scope:** authored-language and stage coverage, compiler targets/backends, typed registration, source dependency planning, reflection/ABI validation, cooked publication, diagnostics, recook, and runtime loading
 
@@ -150,6 +150,7 @@ This validates structural agreement in source/tool code. Only an executed cook a
 | `SHD-DIAG-06` | Used Shaders UI | Implemented path | Editor surface exposes recook-all and recook-selected workflows for observed shader use. | `S` | Pending |
 | `SHD-DIAG-07` | Runtime reload | Implemented path | Renderer opens map/library, validates complete target and parameter/pipeline closure, materializes the replacement generation, swaps only after success, and retires the prior generation after GPU submissions. | `S` | Pending |
 | `SHD-DIAG-08` | Shipping tool erasure | Partial | Recook implementation is excluded from the runtime Application target by CMake shape, but only a Shipping package manifest/binary/import inspection can prove compiler/source/debug routes are absent from shipped bytes. | `S` | Pending |
+| `SHD-DIAG-09` | Cook progress | Implemented path | The CLI flushes shared tool-console progress records during planning, compilation, ABI verification, and publication. Planning and post-plan work use their owning exact counts; phases without a known total remain indeterminate, and repeated updates are bounded to percentage or phase changes. | `S` | Pending |
 
 ## Existing Executable Validation Route
 

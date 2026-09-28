@@ -247,6 +247,11 @@ namespace SparkleLauncher
 		    "#ActivitySummary",
 		    "color: " + textSecondary + "; background: transparent; font-size: 8.25pt; font-weight: 600; padding: 0 0 2px 0;");
 		addRule(
+		    "#ActivityProgress",
+		    "background: #181b18; color: #ffffff; border: 1px solid " + borderSoft
+		        + "; border-radius: 3px; min-height: 16px; max-height: 16px; text-align: center; font-size: 7.75pt; font-weight: 700;");
+		addRule("#ActivityProgress::chunk", "background: " + accent + "; border-radius: 2px;");
+		addRule(
 		    "#WorkflowGroupButton",
 		    "background: transparent; color: " + textSecondary
 		        + "; border: none; border-left: 3px solid transparent; border-radius: 4px; margin: 2px 8px; padding: 0 14px; "

@@ -20,7 +20,12 @@ int AssetCookerToolProcess::Run(
 	        .ExecutablePath = executablePath,
 	        .Arguments = arguments,
 	        .WorkingDirectory = workingDirectory,
-	        .OutputCallback = [](std::string_view output) { std::cout.write(output.data(), static_cast<std::streamsize>(output.size())); },
+	        .OutputCallback =
+	            [](std::string_view output)
+	        {
+		        std::cout.write(output.data(), static_cast<std::streamsize>(output.size()));
+		        std::cout.flush();
+	        },
 	        .Cancellation = std::move(cancellation)});
 	if (!result.Launched)
 	{

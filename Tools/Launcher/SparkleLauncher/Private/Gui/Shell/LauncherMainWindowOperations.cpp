@@ -209,8 +209,25 @@ namespace SparkleLauncher
 		return false;
 	}
 
-	QString LauncherMainWindow::FailureRecoveryHint(const QString& operationId, const QString& statusText) const
+	QString LauncherMainWindow::FailureRecoveryHint(
+	    const QString& operationId,
+	    const QString& statusText,
+	    Process::ChildProcessStartFailure processStartFailure) const
 	{
+		if (processStartFailure == Process::ChildProcessStartFailure::BlockedByPolicy)
+		{
+			return "Windows application-control policy rejected this executable. Use a Sparkle tool bundle signed by a publisher trusted "
+			       "by this machine, or ask the policy administrator to authorize that publisher. Rebuilding or retrying the cook does not "
+			       "change the trust decision.";
+		}
+		if (processStartFailure == Process::ChildProcessStartFailure::AccessDenied)
+		{
+			return "Windows denied access to the executable. Check its file permissions and security-product quarantine, then retry.";
+		}
+		if (processStartFailure == Process::ChildProcessStartFailure::ExecutableNotFound)
+		{
+			return "The executable disappeared after this workflow was planned. Rebuild the owning target, then retry.";
+		}
 		if (OperationNeedsContent(operationId) && m_contentModel.ContentId().isEmpty())
 		{
 			return "Repository content is unavailable. Confirm this is a complete Sparkle workspace, then regenerate build files if "
@@ -224,7 +241,8 @@ namespace SparkleLauncher
 		{
 			return statusText.contains("Visual Studio or MSBuild is running", Qt::CaseInsensitive)
 			    ? "Close active Visual Studio, Rider build, MSBuild, and CMake processes, then retry Install."
-			    : "Review the Visual Studio Installer result and approve the administrator request, then retry Install. The launcher reports "
+			    : "Review the Visual Studio Installer result and approve the administrator request, then retry Install. The launcher "
+			      "reports "
 			      "success only after detecting both clang-cl and its Visual Studio toolset.";
 		}
 		if ((operationId == "workspace.sync-code" || operationId == "workspace.generate-build-files")
@@ -369,13 +387,11 @@ namespace SparkleLauncher
 			return;
 		}
 
-		const Filesystem::WorkspaceOutputPaths workspaceOutputs =
-		    Filesystem::ResolveWorkspaceOutputPaths(m_repositoryRoot);
+		const Filesystem::WorkspaceOutputPaths workspaceOutputs = Filesystem::ResolveWorkspaceOutputPaths(m_repositoryRoot);
 		const Filesystem::WorkspaceTargetOutputPaths launcherOutputs =
 		    workspaceOutputs.LauncherTargetOutputs(m_settings.EditorProfile().toStdString());
 		const std::filesystem::path relaunchedExecutablePath =
-		    launcherOutputs.BinaryDirectory
-		    / std::filesystem::path(QCoreApplication::applicationFilePath().toStdString()).filename();
+		    launcherOutputs.BinaryDirectory / std::filesystem::path(QCoreApplication::applicationFilePath().toStdString()).filename();
 		const QString executablePath = QString::fromStdString(relaunchedExecutablePath.string());
 		const bool started = QProcess::startDetached(executablePath, {});
 		if (!started)

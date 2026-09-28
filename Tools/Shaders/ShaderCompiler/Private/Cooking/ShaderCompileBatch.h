@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Cooking/ShaderCompileJob.h"
+#include "Cooking/ShaderCookProgress.h"
 
 #include <cstddef>
 #include <span>
@@ -13,7 +14,11 @@ class ShaderCompileBatch final
 public:
 	ShaderCompileBatch() = delete;
 
-	static std::vector<ShaderCompileResult> Execute(const ShaderCookSettings& settings, std::span<const ShaderCompileJob> jobs);
+	static std::vector<ShaderCompileResult> Execute(
+	    const ShaderCookSettings& settings,
+	    std::span<const ShaderCompileJob> jobs,
+	    std::size_t totalWork,
+	    const ShaderCookProgressCallback& progress);
 
 private:
 	struct ProducerMap final
@@ -26,7 +31,9 @@ private:
 	static std::vector<ShaderCompileResult> CompileProducers(
 	    const ShaderCookSettings& settings,
 	    std::span<const ShaderCompileJob> jobs,
-	    std::span<const std::size_t> producerJobIndices);
+	    const ProducerMap& producerMap,
+	    std::size_t totalWork,
+	    const ShaderCookProgressCallback& progress);
 	static std::vector<ShaderCompileResult> FanOutResults(
 	    std::span<const ShaderCompileJob> jobs,
 	    std::span<const ShaderCompileResult> producerResults,
@@ -34,6 +41,8 @@ private:
 	static void FinalizeResults(
 	    const ShaderCookSettings& settings,
 	    std::span<const ShaderCompileJob> jobs,
-	    std::span<ShaderCompileResult> results);
+	    std::span<ShaderCompileResult> results,
+	    std::size_t totalWork,
+	    const ShaderCookProgressCallback& progress);
 	static bool HasSameCompilerInput(const ShaderCompileJob& lhs, const ShaderCompileJob& rhs) noexcept;
 };

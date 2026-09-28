@@ -2,7 +2,7 @@
 
 **Status:** capability snapshot; current, but not deterministic-cook, package, or runtime evidence
 
-**Snapshot:** 2026-09-06 at committed `master` revision `8414b5dc`; AssetCooker, TextureCooker, MeshCooker, MaterialCooker, SceneCooker, source import, publication, and CMake membership inspected; evidence `S` only
+**Snapshot:** 2026-09-28 at committed `master` revision `452c1f32`; AssetCooker, TextureCooker, MeshCooker, MaterialCooker, SceneCooker, source import, progress, publication, and CMake membership inspected; evidence `S` only
 
 **Scope:** project/category orchestration, texture/mesh/material/scene/skeleton/animation products, identity, validation, concurrency, publication, and runtime handoff
 
@@ -43,8 +43,8 @@ Cooking is a product boundary, not a collection of file converters. A successful
 | `COOK-003` | Capability preflight | Implemented path | Required `ShaderCompiler` and `TextureCooker` executables are checked before their stages; diagnostics identify category and optional source path. | `S` |
 | `COOK-004` | Shader stage delegation | Implemented path | Runs `ShaderCompiler cook` in project context and records global map/library outputs. Exact shader capability lives in the shader inventory. | `S` |
 | `COOK-005` | Texture request planning | Implemented path | Re-imports selected scenes, gathers material texture requests, adds Engine default textures, deduplicates by stable 64-bit asset ID, and rejects conflicting definitions for one ID. | `S` |
-| `COOK-006` | Scene generation | Implemented path | Imports scenes and builds/publishes manifests, meshes, materials, skeletons, animations, and scene registry as one file set. | `S` |
-| `COOK-007` | Tool/output reporting | Implemented path | Category diagnostics, child tool output, nonzero exit propagation, and output records are exposed to CLI/Launcher. It does not produce a signed release manifest. | `S` |
+| `COOK-006` | Scene generation | Implemented path | Imports scenes and builds/publishes manifests, meshes, materials, skeletons, animations, and scene registry as one file set. Exact completed/total scene-build and publication progress is streamed while the generation runs. | `S` |
+| `COOK-007` | Tool/output reporting | Implemented path | Category diagnostics, child tool output, nonzero exit propagation, output records, and shared phase progress are exposed to CLI/Launcher. AssetCooker reports exact stages, nested shader/texture tools retain their finer progress, and unknown totals are not estimated. It does not produce a signed release manifest. | `S` |
 
 ## Texture Cooking
 
@@ -55,7 +55,7 @@ Cooking is a product boundary, not a collection of file converters. A successful
 | `COOK-010` | Mip policy | Implemented path | Generate, preserve existing, or no mips; filters Regular, Kaiser, NormalAware, and Angular. sRGB inputs can be linearized for filtering. | `S` |
 | `COOK-011` | Channel extraction | Implemented path | RGBA or R/G/B/A masks support packed AO/roughness/metallic source reuse and scalar products. | `S` |
 | `COOK-012` | Semantic format policy | Implemented path | Diffuse/emissive/subsurface color use BC1 when opaque or uncompressed when alpha is meaningful; normals BC5; scalar maps BC4 when greyscale; HDR BC6H; fallback uncompressed RGBA8 or RGBA32F. BC7 code exists but current automatic semantic policy does not select it. | `S` |
-| `COOK-013` | Parallel batch | Implemented path | Independent requests run on 1..4 background workers (hardware threads minus one, clamped) with one frame-critical worker and one execution. | `S` |
+| `COOK-013` | Parallel batch | Implemented path | Independent requests run on 1..4 background workers (hardware threads minus one, clamped) with one frame-critical worker and one execution. Completed texture requests update a serialized, percentage-bounded progress stream; publication is the final counted work unit. | `S` |
 | `COOK-014` | Memory bound | Implemented path | Working pixel data obtains leases from a 1 GiB batch memory limiter; an individual request exceeding the budget fails. This bounds leased decoded pixel data, not every decoder/compressor allocation or total tool RSS. | `S` |
 | `COOK-015` | Generation publication | Implemented path | Every texture cooks to `.cook-generation` staging; any item failure removes staged outputs; success publishes the requested file set through Core publication helpers. | `S` |
 | `COOK-016` | Request inspection | Implemented path | `TextureCooker inspect-request-file` and `cook-request-file` parse the text request list and return distinct usage/load/inspect/cook exit codes. | `S` |

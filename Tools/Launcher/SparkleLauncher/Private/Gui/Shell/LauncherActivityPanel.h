@@ -11,6 +11,7 @@
 class QLabel;
 class QListWidget;
 class QListWidgetItem;
+class QProgressBar;
 class QPushButton;
 class QTextEdit;
 class QWidget;
@@ -31,6 +32,7 @@ namespace SparkleLauncher
 		void RegisterRun(const QString& runId, const QString& title);
 		void DisplayOperationStarted(const QString& runId, const QString& title);
 		void AppendOperationOutput(const QString& runId, const QString& outputText);
+		void UpdateOperationProgress(const QString& runId, const QString& phase, quint64 completed, quint64 total);
 		QString DisplayOperationFinished(
 		    const QString& runId,
 		    const QString& title,
@@ -65,6 +67,10 @@ namespace SparkleLauncher
 			RunState State = RunState::Queued;
 			QString Title;
 			QString Output;
+			QString ProgressPhase;
+			quint64 ProgressCompleted = 0;
+			quint64 ProgressTotal = 0;
+			bool HasProgress = false;
 		};
 
 		RunWidgets CreateRunWidgets(const QString& title);
@@ -73,12 +79,14 @@ namespace SparkleLauncher
 		void CopySelectedRunOutput();
 		void ToggleExpanded();
 		void SetRunState(const QString& runId, RunState state, const QString& title);
+		void UpdateRunProgressPresentation(RunRecord& run);
 		void SetExpanded(bool expanded);
 		void UpdateRunSelectionVisuals();
 
 		QFrame* m_detailsPanel = nullptr;
 		QListWidget* m_runList = nullptr;
 		QLabel* m_selectedRunSummary = nullptr;
+		QProgressBar* m_progressBar = nullptr;
 		QTextEdit* m_operationOutput = nullptr;
 		QPushButton* m_toggleOutputButton = nullptr;
 		QPushButton* m_copyOutputButton = nullptr;

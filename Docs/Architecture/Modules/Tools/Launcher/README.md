@@ -2,7 +2,7 @@
 
 **Status:** capability snapshot; current, but not workflow success or distribution evidence
 
-**Snapshot:** 2026-09-08 at committed `master` revision `ffe60e3a`; Launcher public contracts, planners/executors, Qt GUI, shell path, capability graph, dependencies, level catalog, state paths, process handoff, clean containment, and CMake membership inspected; evidence `S` only
+**Snapshot:** 2026-09-28 at committed `master` revision `452c1f32`; Launcher public contracts, planners/executors, Qt GUI, shell path, capability graph, dependencies, level catalog, state paths, process handoff/progress decoding, clean containment, and CMake membership inspected; evidence `S` only
 
 **Scope:** repository discovery, toolchain/dependency readiness, configure/build, cooking, content acquisition, running products, cleaning, quick start, operation history, cancellation, and GUI/shell access
 
@@ -43,7 +43,7 @@ Launcher is a capability planner and operation host. It is not a package manager
 | `LAUNCH-002` | Shell route | Implemented path | Same executable accepts root/profile/compiler/IDE/scope/target/level/API/cook/clean options plus `--dry-run` and `--run <operation-id>`. It exposes core operation planners without the GUI. | `S` |
 | `LAUNCH-003` | Immutable operation plan | Implemented path | Each action records inputs, readiness, steps, display command lines, log paths, planned effects, destructive scope/confirmation, timing, exit code, status, and failure summary before/after execution. | `S` |
 | `LAUNCH-004` | Quick Start dependency graph | Implemented path | Capability providers resolve host tool -> source dependencies -> workspace -> level content -> cooked products -> runnable level, returning the next unmet operation and invalidating downstream capabilities after changes. | `S` |
-| `LAUNCH-005` | Background operation service | Implemented path | Each GUI run has a unique ToolInvocation task scope, streams output, retains activity, prevents duplicate active run IDs, supports cancellation, and joins scopes on teardown. | `S` |
+| `LAUNCH-005` | Background operation service | Implemented path | Each GUI run has a unique ToolInvocation task scope, streams output, retains activity, prevents duplicate active run IDs, supports cancellation, and joins scopes on teardown. Tool-owned progress records drive the selected-run phase and progress bar; a determinate percentage is shown only when the tool publishes authoritative completed and total work, while unknown totals remain indeterminate. | `S` |
 
 ## Workspace And Toolchain Operations
 
@@ -59,8 +59,8 @@ Launcher is a capability planner and operation host. It is not a package manager
 | `LAUNCH-013` | Host-tool install | Partial | `workspace.install-host-tool` delegates to a registered launcher-owned provider when a detected tool advertises install support. This is not a general package manager. | `S` |
 
 Launcher source construction has its own top-level `Tools/Launcher` CMake
-entry point. That graph owns only Core, Tasks, Launcher, Qt, spdlog, and the
-embedded icon asset, and writes CMake/compiler state beneath
+entry point. That graph owns only Core, Tasks, ToolConsoleSupport, Launcher,
+Qt, spdlog, and the embedded icon asset, and writes CMake/compiler state beneath
 `build/private/tools/SparkleLauncher/`. The repository-root entry point owns
 the full workspace. This separation is structural: no bootstrap/product mode
 argument changes either graph, and optional SDKs or engine dependencies enrich
@@ -90,7 +90,27 @@ fresh toolchain scan finds both the compiler and its MSBuild toolset.
 | `LAUNCH-019` | Build profiles | Implemented path | All six Debug/Development/Shipping x Editor/Game profiles; focused target name is `<Project>Editor` or `<Project>Runtime`. | `S` |
 | `LAUNCH-020` | Graphics API choice | Implemented path | Run request carries `d3d12` or other accepted API text to product environment; actual compiled backend/device validation remains product evidence. | `S` |
 | `LAUNCH-021` | Clean workspace | Implemented path | `workspace.clean` supports confirmed cooked outputs, build tree, artifacts, IDE state, dependency cache, typed per-user development logs/settings, legacy outputs, or pristine generated workspace; previews exact targets/counts/bytes and supports preserved paths. | `S` |
-| `LAUNCH-022` | Logs/recovery | Implemented path | Per-step log paths, captured output, status/timing/exit code, categorized recovery hints, copy-output UI, and history records. Diagnostic usefulness still needs first-user evidence. | `S` |
+| `LAUNCH-022` | Logs/recovery | Implemented path | Per-step log paths, captured output, UTF-8 native launch errors, status/timing/exit code, typed child-process start failure, categorized recovery hints, copy-output UI, and history records. Windows application-control rejection is carried from Core as process state and produces trust-policy recovery for every build, cook, sync, and run workflow instead of being inferred from localized text or misreported as a feature-specific retry. Diagnostic usefulness still needs first-user evidence. | `S` |
+
+## Path API Boundary
+
+Launcher code consumes two deliberately separate contracts:
+
+- Core's `WorkspaceOutputPaths` owns repository-generated build and artifact
+  locations, including the dependency cache and owner/profile-specific
+  products. Build, cook, run, clean, capability, and GUI preview code all use
+  this contract.
+- The private `LauncherStatePaths` collaboration owns per-user launcher
+  settings, activity, archives, live instances, and operation logs. It never
+  exposes or derives workspace products.
+
+Core privately implements workspace-output and user-state directory grammar;
+`SparkleLauncherCore` privately implements Launcher leaf paths. Callers do not
+own repository hashing, platform-local state selection, or literal root
+segments. Product/editor mutable state is not a Launcher path variant: the
+Launcher uses Core's public `ProductUserStatePaths` contract when it must
+inspect or clean that state. This separation prevents a broad path utility
+from becoming a second layout authority.
 
 ## Path API Boundary
 
@@ -121,6 +141,12 @@ user-state grammar. Related target binary, library, and symbol directories
 travel together as `WorkspaceTargetOutputPaths` so the three destinations
 cannot drift through duplicated call-site logic.
 
+Maintenance scope IDs are defined and parsed by the public maintenance
+contract. The private maintenance planner expands each scope into one typed
+clean-action list; both preview/counting and execution project that same list.
+Cleanup mechanics receive the exact destructive and preserved paths and do not
+infer special directories from filenames such as `_deps`.
+
 Launcher UI icons are embedded Qt resources. The built launcher therefore
 does not read its icon font from `build/_deps` at runtime; deleting private
 build state cannot remove navigation or activity icons from a rebuilt
@@ -135,7 +161,7 @@ infer special directories from filenames such as `_deps`.
 
 ## Vertical Quick-Start Trace
 
-Launcher discovers repository/content -> loads settings/catalog -> capability registry evaluates requested `levels.run` -> if host/dependency/workspace/content/cook prerequisite is missing it returns one concrete operation -> user executes it in a scoped background task -> planner revalidates inputs/readiness immediately before each destructive/process step -> child output and exit status update activity -> downstream capability IDs are invalidated -> resolution repeats until `levels.run` launches the editor/runtime child.
+Launcher discovers repository/content -> loads settings/catalog -> capability registry evaluates requested `levels.run` -> if host/dependency/workspace/content/cook prerequisite is missing it returns one concrete operation -> user executes it in a scoped background task -> planner revalidates inputs/readiness immediately before each destructive/process step -> child output, typed phase progress, typed process-start result, and exit status update activity -> downstream capability IDs are invalidated -> resolution repeats until `levels.run` launches the editor/runtime child. Progress is producer-owned evidence: the backend process boundary decodes the shared tool-console record into a typed signal, while the activity widget only renders phase/count state. Launcher never estimates work or infers percentages from elapsed time. Process recovery follows the same boundary: Core classifies native launch failures once, executors retain that category in the operation record, and the frontend presents one workflow-independent recovery without parsing localized operating-system prose.
 
 ## `FCR-PROD-03` Launcher Contract
 
@@ -170,5 +196,6 @@ Candidate results belong in `FCR-PROD-03`; source presence does not pass these c
 - No packaged product creation, installer, updater, release-channel client, account/cloud service, remote build, or artifact upload is present.
 - Level synchronization is catalog/CMake-script driven and Windows-workspace oriented; large downloads, resume, proxy, disk-full, hash failure, and interrupted extraction need evidence.
 - A successful initial Launcher process is not proof that a generated replacement or launched game/editor remained alive; handoff must follow the final child process and product log.
+- Source-built unsigned executables can be rejected by organization-managed Windows application-control policy. Launcher reports this trust failure accurately, but cannot create or authorize the organization-owned signing identity; a trusted signed tool publication path remains part of the absent packaging/signing capability.
 - “Install Host Tool” is provider-bound; only tools with an implemented provider and `CanInstall` are installable.
 - Destructive paths are planned and confirmed, but each scope still needs path-containment and preservation evidence on a disposable workspace.

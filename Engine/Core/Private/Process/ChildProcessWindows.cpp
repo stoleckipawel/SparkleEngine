@@ -7,7 +7,10 @@
 #include <cwchar>
 #include <cwctype>
 #include <fstream>
+#include <string>
+#include <string_view>
 #include <utility>
+#include <vector>
 
 #if defined(_WIN32)
   #define NOMINMAX
@@ -70,6 +73,22 @@ public:
 			return std::wstring(text.begin(), text.end());
 		std::wstring result(static_cast<std::size_t>(length), L'\0');
 		MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), result.data(), length);
+		return result;
+	}
+
+	static std::string WideToUtf8(std::wstring_view text)
+	{
+		if (text.empty())
+		{
+			return {};
+		}
+		const int length = WideCharToMultiByte(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), nullptr, 0, nullptr, nullptr);
+		if (length <= 0)
+		{
+			return "Unknown Windows error";
+		}
+		std::string result(static_cast<std::size_t>(length), '\0');
+		WideCharToMultiByte(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), result.data(), length, nullptr, nullptr);
 		return result;
 	}
 
@@ -153,19 +172,40 @@ public:
 
 	static std::string FormatError(DWORD code)
 	{
-		LPSTR raw = nullptr;
-		const DWORD length = FormatMessageA(
+		LPWSTR raw = nullptr;
+		const DWORD length = FormatMessageW(
 		    FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 		    nullptr,
 		    code,
 		    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		    reinterpret_cast<LPSTR>(&raw),
+		    reinterpret_cast<LPWSTR>(&raw),
 		    0,
 		    nullptr);
-		std::string message = length != 0 && raw != nullptr ? std::string(raw, length) : "Unknown Windows error";
+		std::string message = length != 0 && raw != nullptr ? WideToUtf8(std::wstring_view(raw, length)) : "Unknown Windows error";
 		if (raw != nullptr)
+		{
 			LocalFree(raw);
+		}
+		const std::size_t lastContent = message.find_last_not_of(" \t\r\n");
+		message.erase(lastContent == std::string::npos ? 0 : lastContent + 1);
 		return message;
+	}
+
+	static Process::ChildProcessStartFailure ClassifyStartFailure(DWORD code) noexcept
+	{
+		switch (code)
+		{
+			case ERROR_FILE_NOT_FOUND:
+			case ERROR_PATH_NOT_FOUND:
+				return Process::ChildProcessStartFailure::ExecutableNotFound;
+			case ERROR_ACCESS_DENIED:
+				return Process::ChildProcessStartFailure::AccessDenied;
+			case ERROR_ACCESS_DISABLED_BY_POLICY:
+			case ERROR_ACCESS_DISABLED_NO_SAFER_UI_BY_POLICY:
+				return Process::ChildProcessStartFailure::BlockedByPolicy;
+			default:
+				return Process::ChildProcessStartFailure::OperatingSystemError;
+		}
 	}
 
 	static void ConsumeOutput(
@@ -261,7 +301,9 @@ Process::ChildProcessResult Process::Detail::RunWindowsChildProcess(const ChildP
 	        &startup,
 	        &information))
 	{
-		result.FailureReason = "Failed to launch child process: " + ChildProcessWindowsImplementation::FormatError(GetLastError());
+		const DWORD startError = GetLastError();
+		result.StartFailure = ChildProcessWindowsImplementation::ClassifyStartFailure(startError);
+		result.FailureReason = "Failed to launch child process: " + ChildProcessWindowsImplementation::FormatError(startError);
 		return result;
 	}
 	result.Launched = true;

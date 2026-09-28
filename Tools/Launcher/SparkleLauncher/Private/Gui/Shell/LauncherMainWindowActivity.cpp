@@ -14,16 +14,31 @@ namespace SparkleLauncher
 		m_activityPanel->AppendOperationOutput(runId, outputText);
 	}
 
+	void LauncherMainWindow::UpdateOperationProgress(
+	    const QString& runId,
+	    const QString&,
+	    const QString& phase,
+	    quint64 completed,
+	    quint64 total)
+	{
+		m_activityPanel->UpdateOperationProgress(runId, phase, completed, total);
+	}
+
 	void LauncherMainWindow::DisplayOperationFinished(
 	    const QString& runId,
 	    const QString& operationId,
 	    const QString& title,
 	    const QString& statusText,
-	    int exitCode)
+	    int exitCode,
+	    Process::ChildProcessStartFailure processStartFailure)
 	{
 		const bool succeeded = exitCode == 0;
-		const QString effectiveTitle =
-		    m_activityPanel->DisplayOperationFinished(runId, title, statusText, exitCode, FailureRecoveryHint(operationId, statusText));
+		const QString effectiveTitle = m_activityPanel->DisplayOperationFinished(
+		    runId,
+		    title,
+		    statusText,
+		    exitCode,
+		    FailureRecoveryHint(operationId, statusText, processStartFailure));
 
 		bool refreshesSourceDependencyState = false;
 		for (auto dependencyRun = m_sourceDependencyRunIds.begin(); dependencyRun != m_sourceDependencyRunIds.end();)

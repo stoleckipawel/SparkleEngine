@@ -70,12 +70,19 @@ namespace SparkleLauncher
 		void CleanSelectedOperation();
 		void DisplayOperationStarted(const QString& runId, const QString& operationId, const QString& title);
 		void AppendOperationOutput(const QString& runId, const QString& operationId, const QString& outputText);
+		void UpdateOperationProgress(
+		    const QString& runId,
+		    const QString& operationId,
+		    const QString& phase,
+		    quint64 completed,
+		    quint64 total);
 		void DisplayOperationFinished(
 		    const QString& runId,
 		    const QString& operationId,
 		    const QString& title,
 		    const QString& statusText,
-		    int exitCode);
+		    int exitCode,
+		    Process::ChildProcessStartFailure processStartFailure);
 
 	private:
 		struct PendingLevelSelectionUpdate
@@ -200,7 +207,10 @@ namespace SparkleLauncher
 		QString DisplayNameForOperation(const QString& operationId) const;
 		bool OperationNeedsContent(const QString& operationId) const;
 		bool OperationNeedsConfirmation(const QString& operationId) const;
-		QString FailureRecoveryHint(const QString& operationId, const QString& statusText) const;
+		QString FailureRecoveryHint(
+		    const QString& operationId,
+		    const QString& statusText,
+		    Process::ChildProcessStartFailure processStartFailure) const;
 		bool ConfirmRunRequest(LauncherOperationRequest& request) const;
 		void PromptForLauncherRestart();
 		QString CreateRunId();

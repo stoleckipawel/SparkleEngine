@@ -150,8 +150,7 @@ namespace SparkleLauncher
 		    category,
 		    std::move(request),
 		    title.toStdString(),
-		    [this, runId, operationIdText](std::string_view output)
-		    { QueueOperationOutput(runId, operationIdText, QString::fromUtf8(output.data(), static_cast<qsizetype>(output.size()))); },
+		    [this, runId, operationIdText](std::string_view output) { QueueOperationOutput(runId, operationIdText, std::string(output)); },
 		    [this, runId, operationIdText, title](const OperationRecord& record)
 		    { QueueOperationFinished(runId, operationIdText, title, record); });
 	}
@@ -161,12 +160,28 @@ namespace SparkleLauncher
 		return !runId.isEmpty() && m_operationService->Cancel(runId.toStdString());
 	}
 
-	void LauncherBackend::QueueOperationOutput(QString runId, QString operationId, QString outputText)
+	void LauncherBackend::QueueOperationOutput(QString runId, QString operationId, std::string outputText)
 	{
 		QMetaObject::invokeMethod(
 		    this,
 		    [this, runId = std::move(runId), operationId = std::move(operationId), outputText = std::move(outputText)]
-		    { emit OperationOutputReceived(runId, operationId, outputText); },
+		    {
+			    emit OperationOutputReceived(
+			        runId,
+			        operationId,
+			        QString::fromUtf8(outputText.data(), static_cast<qsizetype>(outputText.size())));
+			    m_progressDecoders[runId].Consume(
+			        outputText,
+			        [this, &runId, &operationId](const ToolWorkProgress& progress)
+			        {
+				        emit OperationProgressReceived(
+				            runId,
+				            operationId,
+				            QString::fromUtf8(progress.phase.data(), static_cast<qsizetype>(progress.phase.size())),
+				            static_cast<quint64>(progress.completed),
+				            static_cast<quint64>(progress.total));
+			        });
+		    },
 		    Qt::QueuedConnection);
 	}
 
@@ -174,10 +189,20 @@ namespace SparkleLauncher
 	{
 		const QString status = FormatOperationCompletion(record);
 		const int exitCode = record.ExitCode.value_or(-1);
+		const Process::ChildProcessStartFailure processStartFailure = record.ProcessStartFailure;
 		QMetaObject::invokeMethod(
 		    this,
-		    [this, runId = std::move(runId), operationId = std::move(operationId), title = std::move(title), status, exitCode]
-		    { emit OperationFinished(runId, operationId, title, status, exitCode); },
+		    [this,
+		        runId = std::move(runId),
+		        operationId = std::move(operationId),
+		        title = std::move(title),
+		        status,
+		        exitCode,
+		        processStartFailure]
+		    {
+			    m_progressDecoders.remove(runId);
+			    emit OperationFinished(runId, operationId, title, status, exitCode, processStartFailure);
+		    },
 		    Qt::QueuedConnection);
 	}
 

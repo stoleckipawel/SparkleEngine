@@ -3,9 +3,12 @@
 #include "AssetCookerToolProcess.h"
 #include "Cooking/AssetCookerSceneBatch.h"
 #include "Cooking/TextureRequestPlanBuilder.h"
+#include "ToolConsole.h"
+#include "ToolWorkProgress.h"
 
 #include <algorithm>
 #include <chrono>
+#include <iostream>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -74,8 +77,7 @@ std::filesystem::path AssetCookerStageExecutor::MakeTemporaryPath(
     std::string_view extension)
 {
 	const auto timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
-	return plan.temporaryRoot
-	    / (std::string(stem) + "-" + plan.projectName + "-" + std::to_string(timestamp) + std::string(extension));
+	return plan.temporaryRoot / (std::string(stem) + "-" + plan.projectName + "-" + std::to_string(timestamp) + std::string(extension));
 }
 
 void AssetCookerStageExecutor::AppendOutput(
@@ -154,10 +156,8 @@ bool AssetCookerStageExecutor::RunTextures(
 		return false;
 	}
 
-	const int exitCode = AssetCookerToolProcess::Run(
-	    plan.textureCookerPath,
-	    {"cook-request-file", requestFile.GetPath().string()},
-	    plan.projectRoot);
+	const int exitCode =
+	    AssetCookerToolProcess::Run(plan.textureCookerPath, {"cook-request-file", requestFile.GetPath().string()}, plan.projectRoot);
 	if (exitCode != 0)
 	{
 		diagnostics.AddError(AssetCookerCategory::Textures, "Texture asset cooking failed.");
@@ -173,7 +173,11 @@ bool AssetCookerStageExecutor::RunSceneAssets(
     AssetCookerDiagnostics& diagnostics,
     std::vector<AssetCookerOutputRecord>& outputs)
 {
-	if (!AssetCookerSceneBatch::Execute(plan.sceneEntries, diagnostics))
+	ToolWorkProgressWriter progress(std::cout);
+	if (!AssetCookerSceneBatch::Execute(
+	        plan.sceneEntries,
+	        diagnostics,
+	        [&progress](std::string_view phase, std::size_t completed, std::size_t total) { progress.Report(phase, completed, total); }))
 	{
 		return false;
 	}

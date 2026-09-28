@@ -1,15 +1,18 @@
 #pragma once
 
 #include "LauncherOperationRequest.h"
+#include "LauncherProgressStreamDecoder.h"
 #include "SparkleLauncher/OperationModel.h"
 #include "SparkleLauncher/ProcessRunner.h"
 
+#include <QtCore/QHash>
 #include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/QVector>
 
 #include <functional>
 #include <memory>
+#include <string>
 
 namespace SparkleLauncher
 {
@@ -47,20 +50,28 @@ namespace SparkleLauncher
 		void OperationPreviewFailed(const QString& operationId, const QString& message);
 		void OperationStarted(const QString& runId, const QString& operationId, const QString& title);
 		void OperationOutputReceived(const QString& runId, const QString& operationId, const QString& outputText);
+		void OperationProgressReceived(
+		    const QString& runId,
+		    const QString& operationId,
+		    const QString& phase,
+		    quint64 completed,
+		    quint64 total);
 		void OperationFinished(
 		    const QString& runId,
 		    const QString& operationId,
 		    const QString& title,
 		    const QString& statusText,
-		    int exitCode);
+		    int exitCode,
+		    Process::ChildProcessStartFailure processStartFailure);
 
 	private:
 		void PopulateOperationCatalog();
-		void QueueOperationOutput(QString runId, QString operationId, QString outputText);
+		void QueueOperationOutput(QString runId, QString operationId, std::string outputText);
 		void QueueOperationFinished(QString runId, QString operationId, QString title, const OperationRecord& record);
 		const LauncherOperationDescriptor* FindOperation(const QString& operationId) const;
 
 		QVector<LauncherOperationDescriptor> m_operations;
+		QHash<QString, LauncherProgressStreamDecoder> m_progressDecoders;
 		std::unique_ptr<LauncherOperationService> m_operationService;
 	};
 }

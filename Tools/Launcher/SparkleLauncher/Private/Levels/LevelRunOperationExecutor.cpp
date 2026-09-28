@@ -1,6 +1,7 @@
 #include "SparkleLauncher/LevelRunOperations.h"
 
 #include "LevelRunOperationProcessRequests.h"
+#include "LauncherOperationProgress.h"
 
 #include <optional>
 
@@ -20,29 +21,23 @@ namespace SparkleLauncher
 			return operation;
 		}
 
-		for (LevelRunOperationProcessStep& step : BuildLevelRunProcessStepsForPlan(plan))
+		std::vector<LevelRunOperationProcessStep> processSteps = BuildLevelRunProcessStepsForPlan(plan);
+		for (std::size_t stepIndex = 0; stepIndex < processSteps.size(); ++stepIndex)
 		{
+			LevelRunOperationProcessStep& step = processSteps[stepIndex];
+			ReportOperationProgress(outputCallback, step.DisplayName, stepIndex, processSteps.size());
 			ProcessRequest request = step.Request;
-			const ProcessOutputCallback existingCallback = request.OutputCallback;
-			request.OutputCallback = [existingCallback, outputCallback](std::string_view output)
-			{
-				if (existingCallback)
-				{
-					existingCallback(output);
-				}
-				if (outputCallback)
-				{
-					outputCallback(output);
-				}
-			};
+			AppendProcessOutputCallback(request, outputCallback);
 
 			const ProcessResult result = processRunner.Run(request);
 			if (!result.Launched || result.Canceled || result.ExitCode != 0)
 			{
+				operation.ProcessStartFailure = result.StartFailure;
 				operation.FailureSummary = result.FailureReason.empty() ? step.DisplayName + " failed." : result.FailureReason;
 				MarkOperationFinished(operation, result.Canceled ? OperationStatus::Canceled : OperationStatus::Failed, result.ExitCode);
 				return operation;
 			}
+			ReportOperationProgress(outputCallback, step.DisplayName, stepIndex + 1, processSteps.size());
 		}
 
 		MarkOperationFinished(operation, OperationStatus::Succeeded, 0);

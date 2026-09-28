@@ -2,6 +2,7 @@
 
 #include "NativeBuildOutputReset.h"
 #include "BuildWorkspaceProcessRequests.h"
+#include "LauncherOperationProgress.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Paths/WorkspaceOutputPaths.h"
 #include "SparkleLauncher/SourceDependencyState.h"
@@ -469,8 +470,10 @@ namespace SparkleLauncher
 			return operation;
 		}
 
-		for (BuildWorkspaceProcessStep& step : processSteps)
+		for (std::size_t stepIndex = 0; stepIndex < processSteps.size(); ++stepIndex)
 		{
+			BuildWorkspaceProcessStep& step = processSteps[stepIndex];
+			ReportOperationProgress(outputCallback, step.DisplayName, stepIndex, processSteps.size());
 			ProcessRequest request = step.Request;
 			if (step.Id == "configure")
 			{
@@ -502,18 +505,7 @@ namespace SparkleLauncher
 				}
 			}
 
-			const ProcessOutputCallback existingCallback = request.OutputCallback;
-			request.OutputCallback = [existingCallback, outputCallback](std::string_view output)
-			{
-				if (existingCallback)
-				{
-					existingCallback(output);
-				}
-				if (outputCallback)
-				{
-					outputCallback(output);
-				}
-			};
+			AppendProcessOutputCallback(request, outputCallback);
 
 			ProcessResult result = processRunner.Run(request);
 			if (!result.Launched || result.Canceled || result.ExitCode != 0)
@@ -547,6 +539,7 @@ namespace SparkleLauncher
 
 				if (!result.Launched || result.Canceled || result.ExitCode != 0)
 				{
+					operation.ProcessStartFailure = result.StartFailure;
 					operation.FailureSummary = MakeBuildWorkspaceFailureSummary(step, result);
 					MarkOperationFinished(
 					    operation,
@@ -590,6 +583,7 @@ namespace SparkleLauncher
 					return operation;
 				}
 			}
+			ReportOperationProgress(outputCallback, step.DisplayName, stepIndex + 1, processSteps.size());
 		}
 
 		MarkOperationFinished(operation, OperationStatus::Succeeded, 0);

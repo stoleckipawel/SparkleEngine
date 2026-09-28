@@ -1,6 +1,14 @@
 #include "SparkleLauncher/ProcessRunner.h"
 
+#include "Core/Public/Process/ChildProcess.h"
+
+#include <chrono>
+#include <filesystem>
 #include <sstream>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace SparkleLauncher
 {
@@ -45,10 +53,31 @@ namespace SparkleLauncher
 		result.Launched = childResult.Launched;
 		result.Canceled = childResult.Cancelled;
 		result.ExitCode = childResult.ExitCode;
+		result.StartFailure = childResult.StartFailure;
 		result.CapturedOutput = std::move(childResult.CapturedOutput);
 		result.FailureReason = std::move(childResult.FailureReason);
 		result.EndTime = std::chrono::system_clock::now();
 		return result;
+	}
+
+	void AppendProcessOutputCallback(ProcessRequest& request, ProcessOutputCallback callback)
+	{
+		if (!callback)
+		{
+			return;
+		}
+		if (!request.OutputCallback)
+		{
+			request.OutputCallback = std::move(callback);
+			return;
+		}
+
+		ProcessOutputCallback existingCallback = std::move(request.OutputCallback);
+		request.OutputCallback = [existingCallback = std::move(existingCallback), callback = std::move(callback)](std::string_view output)
+		{
+			existingCallback(output);
+			callback(output);
+		};
 	}
 
 	std::string BuildDisplayCommandLine(const std::filesystem::path& executablePath, const std::vector<std::string>& arguments)

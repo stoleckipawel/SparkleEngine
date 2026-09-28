@@ -9,6 +9,7 @@
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "ToolConsole.h"
+#include "ToolWorkProgress.h"
 
 #include <iostream>
 
@@ -30,12 +31,19 @@ int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::pat
 	}
 
 	constexpr std::size_t textureCookMemoryBudget = 1024ull * 1024ull * 1024ull;
-	std::vector<TextureCookBatchItemResult> results = TextureCookBatchExecutor::Execute(requests, textureCookMemoryBudget);
+	const std::size_t totalWork = requests.size() + 1;
+	ToolWorkProgressWriter progress(std::cout);
+	progress.Report("Cooking textures", 0, totalWork);
+	std::vector<TextureCookBatchItemResult> results = TextureCookBatchExecutor::Execute(
+	    requests,
+	    textureCookMemoryBudget,
+	    [&progress, totalWork](std::size_t completed) { progress.Report("Cooking textures", completed, totalWork); });
 	if (ReportFailures(requests, results) != 0)
 	{
 		CleanupStagedOutputs(results);
 		return TextureCookerConstants::ExitCookFailed;
 	}
+	progress.Report("Publishing cooked textures", requests.size(), totalWork);
 
 	try
 	{
@@ -47,6 +55,7 @@ int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::pat
 		ToolConsole::Error("Failed to publish texture cook generation: " + std::string(error.what()));
 		return TextureCookerConstants::ExitCookFailed;
 	}
+	progress.Report("Cooked textures published", totalWork, totalWork);
 
 	ToolConsole::Message(
 	    std::cout,

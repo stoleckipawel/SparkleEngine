@@ -2,6 +2,7 @@
 
 #include "Core/Public/CoreAPI.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <stop_token>
@@ -11,6 +12,15 @@
 
 namespace Process
 {
+	enum class ChildProcessStartFailure : std::uint8_t
+	{
+		None,
+		ExecutableNotFound,
+		AccessDenied,
+		BlockedByPolicy,
+		OperatingSystemError
+	};
+
 	struct EnvironmentOverride final
 	{
 		std::string Name;
@@ -35,6 +45,7 @@ namespace Process
 		bool Launched = false;
 		bool Cancelled = false;
 		int ExitCode = -1;
+		ChildProcessStartFailure StartFailure = ChildProcessStartFailure::None;
 		std::string CapturedOutput;
 		std::string FailureReason;
 

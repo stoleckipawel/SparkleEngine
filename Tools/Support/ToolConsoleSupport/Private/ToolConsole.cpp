@@ -5,6 +5,7 @@
 #include <initializer_list>
 #include <iostream>
 #include <ostream>
+#include <string>
 #include <string_view>
 
 ToolConsoleField ToolConsole::Field(std::string_view name, std::string_view value)

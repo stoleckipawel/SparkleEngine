@@ -12,15 +12,27 @@
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QListWidget>
 #include <QtWidgets/QListWidgetItem>
+#include <QtWidgets/QProgressBar>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QStyle>
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
+#include <algorithm>
+
 namespace SparkleLauncher
 {
 	static constexpr int kMaxOperationOutputCharacters = 1000000;
+	static int ProgressPercentage(quint64 completed, quint64 total)
+	{
+		if (total == 0)
+		{
+			return 0;
+		}
+		const quint64 boundedCompleted = std::min(completed, total);
+		return static_cast<int>(static_cast<long double>(boundedCompleted) * 100.0L / static_cast<long double>(total));
+	}
 
 	LauncherActivityPanel::LauncherActivityPanel(
 	    const LauncherIconLibrary& icons,
@@ -129,6 +141,13 @@ namespace SparkleLauncher
 		m_selectedRunSummary->setWordWrap(true);
 		outputLayout->addWidget(m_selectedRunSummary);
 
+		m_progressBar = new QProgressBar(outputPane);
+		m_progressBar->setObjectName("ActivityProgress");
+		m_progressBar->setAccessibleName("Selected activity progress");
+		m_progressBar->setTextVisible(true);
+		m_progressBar->setVisible(false);
+		outputLayout->addWidget(m_progressBar);
+
 		m_operationOutput = new QTextEdit(outputPane);
 		m_operationOutput->setObjectName("OperationOutput");
 		m_operationOutput->setReadOnly(true);
@@ -181,6 +200,28 @@ namespace SparkleLauncher
 		if (m_activeRunId == runId)
 		{
 			ShowRunOutput(runId);
+		}
+	}
+
+	void LauncherActivityPanel::UpdateOperationProgress(const QString& runId, const QString& phase, quint64 completed, quint64 total)
+	{
+		auto run = m_runs.find(runId);
+		if (run == m_runs.end() || run->State != RunState::Running)
+		{
+			return;
+		}
+
+		run->HasProgress = true;
+		run->ProgressPhase = phase;
+		run->ProgressCompleted = completed;
+		run->ProgressTotal = total;
+		if (m_activeRunId == runId)
+		{
+			ShowRunOutput(runId);
+		}
+		else
+		{
+			UpdateRunProgressPresentation(*run);
 		}
 	}
 
@@ -243,6 +284,25 @@ namespace SparkleLauncher
 		}
 	}
 
+	void LauncherActivityPanel::UpdateRunProgressPresentation(RunRecord& run)
+	{
+		if (run.State != RunState::Running || run.Widgets.StateLabel == nullptr)
+		{
+			return;
+		}
+
+		QString stateText = "Running";
+		if (run.ProgressTotal != 0)
+		{
+			stateText += QStringLiteral(" · %1%").arg(ProgressPercentage(run.ProgressCompleted, run.ProgressTotal));
+		}
+		run.Widgets.StateLabel->setText(stateText);
+		if (run.Item != nullptr)
+		{
+			run.Item->setData(Qt::AccessibleTextRole, stateText + ": " + run.Title);
+		}
+	}
+
 	void LauncherActivityPanel::ShowRunOutput(const QString& runId)
 	{
 		const auto run = m_runs.constFind(runId);
@@ -261,7 +321,22 @@ namespace SparkleLauncher
 				m_selectedRunSummary->setText("Queued: " + title + ". Waiting to start.");
 				break;
 			case RunState::Running:
-				m_selectedRunSummary->setText("Running: " + title + ". Output is updating below.");
+				if (run->HasProgress)
+				{
+					QString progressText = run->ProgressPhase;
+					if (run->ProgressTotal != 0)
+					{
+						progressText += QStringLiteral(" — %1/%2 (%3%)")
+						                    .arg(static_cast<qulonglong>(run->ProgressCompleted))
+						                    .arg(static_cast<qulonglong>(run->ProgressTotal))
+						                    .arg(ProgressPercentage(run->ProgressCompleted, run->ProgressTotal));
+					}
+					m_selectedRunSummary->setText("Running: " + title + ". " + progressText + ".");
+				}
+				else
+				{
+					m_selectedRunSummary->setText("Running: " + title + ". Waiting for progress from the active tool.");
+				}
 				break;
 			case RunState::Done:
 				m_selectedRunSummary->setText("Done: " + title + ". Output is available below.");
@@ -269,6 +344,24 @@ namespace SparkleLauncher
 			case RunState::Failed:
 				m_selectedRunSummary->setText("Failed: " + title + ". Review the summary and raw output below.");
 				break;
+		}
+
+		const bool showProgress = state == RunState::Running && run->HasProgress;
+		m_progressBar->setVisible(showProgress);
+		if (showProgress)
+		{
+			if (run->ProgressTotal == 0)
+			{
+				m_progressBar->setRange(0, 0);
+				m_progressBar->setFormat(run->ProgressPhase);
+			}
+			else
+			{
+				m_progressBar->setRange(0, 100);
+				m_progressBar->setValue(ProgressPercentage(run->ProgressCompleted, run->ProgressTotal));
+				m_progressBar->setFormat(run->ProgressPhase + QStringLiteral(" — %p%"));
+			}
+			m_progressBar->setAccessibleDescription(m_selectedRunSummary->text());
 		}
 
 		const bool compactOutput = state == RunState::Done;

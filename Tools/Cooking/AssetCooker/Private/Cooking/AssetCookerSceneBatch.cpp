@@ -6,6 +6,7 @@
 #include "TaskExecutor.h"
 
 #include <algorithm>
+#include <mutex>
 #include <thread>
 
 struct AssetCookerSceneBatch::Item final
@@ -14,10 +15,18 @@ struct AssetCookerSceneBatch::Item final
 	AssetCookerDiagnostics Diagnostics;
 };
 
-bool AssetCookerSceneBatch::Execute(const std::vector<AssetCookerSceneEntry>& sceneEntries, AssetCookerDiagnostics& diagnostics)
+bool AssetCookerSceneBatch::Execute(
+    const std::vector<AssetCookerSceneEntry>& sceneEntries,
+    AssetCookerDiagnostics& diagnostics,
+    const ProgressCallback& progress)
 {
+	const std::size_t totalWork = sceneEntries.size() + 1;
+	if (progress)
+	{
+		progress("Cooking scene assets", 0, totalWork);
+	}
 	std::vector<Item> items(sceneEntries.size());
-	const bool built = BuildProducts(sceneEntries, items);
+	const bool built = BuildProducts(sceneEntries, items, progress, totalWork);
 
 	MergeDiagnostics(items, diagnostics);
 	if (!built)
@@ -26,7 +35,16 @@ bool AssetCookerSceneBatch::Execute(const std::vector<AssetCookerSceneEntry>& sc
 		return false;
 	}
 
-	return PublishProducts(items, diagnostics);
+	if (progress)
+	{
+		progress("Publishing cooked scene assets", sceneEntries.size(), totalWork);
+	}
+	const bool published = PublishProducts(items, diagnostics);
+	if (published && progress)
+	{
+		progress("Cooked scene assets published", totalWork, totalWork);
+	}
+	return published;
 }
 
 std::uint32_t AssetCookerSceneBatch::ResolveWorkerCount() noexcept
@@ -48,7 +66,8 @@ TaskExecutorConfig AssetCookerSceneBatch::BuildExecutorConfig(std::uint32_t task
 CompiledTaskGraph AssetCookerSceneBatch::BuildTaskGraph(
     const std::vector<AssetCookerSceneEntry>& sceneEntries,
     std::vector<Item>& items,
-    std::uint32_t taskCapacity)
+    std::uint32_t taskCapacity,
+    const std::function<void()>& itemCompleted)
 {
 	TaskGraphBuilder builder(TaskGraphLimits{.MaximumTasks = taskCapacity, .MaximumEdges = 1u});
 
@@ -56,7 +75,15 @@ CompiledTaskGraph AssetCookerSceneBatch::BuildTaskGraph(
 	{
 		builder.Add(
 		    TaskDesc{.Name = TaskName("Build cataloged scene"), .Lane = TaskLane::Background},
-		    [&sceneEntries, &items, index](TaskExecutionContext& context) { return BuildProduct(sceneEntries, items, index, context); });
+		    [&sceneEntries, &items, &itemCompleted, index](TaskExecutionContext& context)
+		    {
+			    TaskResult result = BuildProduct(sceneEntries, items, index, context);
+			    if (result.GetOutcome() == TaskOutcome::Succeeded)
+			    {
+				    itemCompleted();
+			    }
+			    return result;
+		    });
 	}
 
 	return builder.Compile();
@@ -85,13 +112,27 @@ TaskResult AssetCookerSceneBatch::BuildProduct(
 	}
 }
 
-bool AssetCookerSceneBatch::BuildProducts(const std::vector<AssetCookerSceneEntry>& sceneEntries, std::vector<Item>& items)
+bool AssetCookerSceneBatch::BuildProducts(
+    const std::vector<AssetCookerSceneEntry>& sceneEntries,
+    std::vector<Item>& items,
+    const ProgressCallback& progress,
+    std::size_t totalWork)
 {
 	const std::uint32_t taskCapacity = static_cast<std::uint32_t>(std::max<std::size_t>(sceneEntries.size(), 1u));
+	std::mutex progressMutex;
+	std::size_t completed = 0;
+	const auto itemCompleted = [&progress, &progressMutex, &completed, totalWork]()
+	{
+		if (progress)
+		{
+			std::lock_guard lock(progressMutex);
+			progress("Cooking scene assets", ++completed, totalWork);
+		}
+	};
 
 	TaskExecutor executor(BuildExecutorConfig(taskCapacity));
 	TaskExecutionContext context;
-	const TaskExecution execution = executor.Submit(BuildTaskGraph(sceneEntries, items, taskCapacity), context);
+	const TaskExecution execution = executor.Submit(BuildTaskGraph(sceneEntries, items, taskCapacity, itemCompleted), context);
 	return execution.GetStatus() == TaskExecutionStatus::Succeeded;
 }
 

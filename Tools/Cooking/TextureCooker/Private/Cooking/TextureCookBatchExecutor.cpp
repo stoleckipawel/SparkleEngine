@@ -19,6 +19,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
+#include <mutex>
 #include <objbase.h>
 #include <optional>
 #include <thread>
@@ -46,7 +48,10 @@ private:
 class TextureCookBatchRun final
 {
 public:
-	TextureCookBatchRun(const std::vector<TextureCookRequest>& requests, std::size_t memoryBudgetBytes);
+	TextureCookBatchRun(
+	    const std::vector<TextureCookRequest>& requests,
+	    std::size_t memoryBudgetBytes,
+	    std::function<void(std::size_t)> progress);
 
 	std::vector<TextureCookBatchItemResult> Execute();
 
@@ -61,6 +66,9 @@ private:
 
 	const std::vector<TextureCookRequest>& m_requests;
 	TextureCookMemoryLimiter m_memoryLimiter;
+	std::function<void(std::size_t)> m_progress;
+	std::mutex m_progressMutex;
+	std::size_t m_completedRequests = 0;
 	std::vector<TextureCookBatchItemResult> m_items;
 };
 
@@ -81,9 +89,13 @@ void TextureSourceComApartment::Initialize()
 	}
 }
 
-TextureCookBatchRun::TextureCookBatchRun(const std::vector<TextureCookRequest>& requests, std::size_t memoryBudgetBytes) :
+TextureCookBatchRun::TextureCookBatchRun(
+    const std::vector<TextureCookRequest>& requests,
+    std::size_t memoryBudgetBytes,
+    std::function<void(std::size_t)> progress) :
     m_requests(requests),
-    m_memoryLimiter(memoryBudgetBytes)
+    m_memoryLimiter(memoryBudgetBytes),
+    m_progress(std::move(progress))
 {
 }
 
@@ -156,6 +168,11 @@ TaskResult TextureCookBatchRun::CookRequest(std::uint32_t index)
 
 	TextureAssetCooker cooker;
 	cooker.Cook(stagedRequest, m_memoryLimiter);
+	if (m_progress)
+	{
+		std::lock_guard lock(m_progressMutex);
+		m_progress(++m_completedRequests);
+	}
 	return TaskResult::Success();
 }
 
@@ -172,7 +189,8 @@ std::filesystem::path TextureCookBatchRun::BuildStagedOutputPath(const std::file
 
 std::vector<TextureCookBatchItemResult> TextureCookBatchExecutor::Execute(
     const std::vector<TextureCookRequest>& requests,
-    std::size_t memoryBudgetBytes)
+    std::size_t memoryBudgetBytes,
+    const std::function<void(std::size_t)>& progress)
 {
-	return TextureCookBatchRun(requests, memoryBudgetBytes).Execute();
+	return TextureCookBatchRun(requests, memoryBudgetBytes, progress).Execute();
 }

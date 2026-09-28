@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Core/Public/Process/ChildProcess.h"
+
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
@@ -53,9 +55,10 @@ namespace SparkleLauncher
 		std::vector<OperationInput> Inputs;
 		OperationStatus Status = OperationStatus::Pending;
 		std::filesystem::path LogPath;
-		std::chrono::system_clock::time_point StartTime = {};
-		std::chrono::system_clock::time_point EndTime = {};
+		std::chrono::system_clock::time_point StartTime;
+		std::chrono::system_clock::time_point EndTime;
 		std::optional<int> ExitCode;
+		Process::ChildProcessStartFailure ProcessStartFailure = Process::ChildProcessStartFailure::None;
 		std::string DryRunText;
 		OperationDestructiveScope DestructiveScope = OperationDestructiveScope::None;
 		bool RequiresConfirmation = false;
