@@ -30,7 +30,7 @@ namespace SparkleLauncher
 			AppendProcessOutputCallback(request, outputCallback);
 
 			const ProcessResult result = processRunner.Run(request);
-			if (!result.Launched || result.Canceled || result.ExitCode != 0)
+			if (!result.Launched || result.Canceled || !result.Ready)
 			{
 				operation.ProcessStartFailure = result.StartFailure;
 				operation.FailureSummary = result.FailureReason.empty() ? step.DisplayName + " failed." : result.FailureReason;

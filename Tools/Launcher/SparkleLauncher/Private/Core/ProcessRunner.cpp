@@ -49,8 +49,10 @@ namespace SparkleLauncher
 		        .Environment = request.Environment,
 		        .LogPath = request.LogPath,
 		        .OutputCallback = request.OutputCallback,
-		        .Cancellation = request.Cancellation});
+		        .Cancellation = request.Cancellation,
+		        .Readiness = request.Readiness});
 		result.Launched = childResult.Launched;
+		result.Ready = childResult.Ready;
 		result.Canceled = childResult.Cancelled;
 		result.ExitCode = childResult.ExitCode;
 		result.StartFailure = childResult.StartFailure;

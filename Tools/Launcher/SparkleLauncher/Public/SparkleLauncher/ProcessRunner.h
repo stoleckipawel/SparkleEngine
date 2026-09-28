@@ -6,6 +6,7 @@
 #include <chrono>
 #include <filesystem>
 #include <functional>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -23,11 +24,13 @@ namespace SparkleLauncher
 		std::filesystem::path LogPath;
 		ProcessOutputCallback OutputCallback;
 		std::stop_token Cancellation;
+		std::optional<Process::ChildProcessReadiness> Readiness;
 	};
 
 	struct ProcessResult
 	{
 		bool Launched = false;
+		bool Ready = false;
 		bool Canceled = false;
 		int ExitCode = -1;
 		Process::ChildProcessStartFailure StartFailure = Process::ChildProcessStartFailure::None;

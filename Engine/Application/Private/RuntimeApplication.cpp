@@ -3,6 +3,7 @@
 
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/Verify.h"
+#include "Core/Public/Process/ProcessReadiness.h"
 #include "Window/Window.h"
 #include "Renderer.h"
 #include "RuntimeConsole/RuntimeConsoleHost.h"
@@ -118,6 +119,8 @@ void RuntimeApplication::InitializeGameRuntime()
 	m_cameraInputIntentCollector = std::make_unique<CameraInputIntentCollector>(*m_inputSystem, *m_window);
 
 	m_levelSession = std::make_unique<LevelSession>(*m_gameWorld, m_taskRuntime->GetExecutor(), m_taskRuntime->GetApplicationScope());
+	m_levelSession->GetLevelChangeEvents().OnLevelChanged.Add(
+	    [](const LevelChangedEventArgs& event) noexcept { Process::SignalParentReadiness(event.activeLevelName); });
 }
 
 void RuntimeApplication::InitializeRenderer()

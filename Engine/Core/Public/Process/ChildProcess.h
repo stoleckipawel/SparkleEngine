@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <optional>
 #include <stop_token>
 #include <string>
 #include <string_view>
@@ -29,6 +30,11 @@ namespace Process
 
 	using ChildProcessOutputCallback = std::function<void(std::string_view)>;
 
+	struct ChildProcessReadiness final
+	{
+		std::string ExpectedValue;
+	};
+
 	struct ChildProcessRequest final
 	{
 		std::filesystem::path ExecutablePath;
@@ -38,18 +44,20 @@ namespace Process
 		std::filesystem::path LogPath;
 		ChildProcessOutputCallback OutputCallback;
 		std::stop_token Cancellation;
+		std::optional<ChildProcessReadiness> Readiness;
 	};
 
 	struct ChildProcessResult final
 	{
 		bool Launched = false;
+		bool Ready = false;
 		bool Cancelled = false;
 		int ExitCode = -1;
 		ChildProcessStartFailure StartFailure = ChildProcessStartFailure::None;
 		std::string CapturedOutput;
 		std::string FailureReason;
 
-		bool Succeeded() const noexcept { return Launched && !Cancelled && ExitCode == 0 && FailureReason.empty(); }
+		bool Succeeded() const noexcept { return Launched && !Cancelled && (Ready || ExitCode == 0) && FailureReason.empty(); }
 	};
 
 	class SPARKLE_CORE_API ChildProcess final
