@@ -187,6 +187,36 @@ function(sparkle_boundary_scan_file absolute_path)
 				"${_line}")
 		endif()
 
+		if(_relative_path STREQUAL "Engine/Core/Private/Diagnostics/Logger.cpp" AND
+		   _line MATCHES "AssetPathState|Core/Public/(FileSystemUtils|Paths/DirectoryPaths)|GetProductUserStatePaths|Paths::LogFile")
+			sparkle_boundary_append_failure(
+				"LOGGING_BOOTSTRAP_USES_STATELESS_PATH_POLICY"
+				"${_relative_path}"
+				"${_line_number}"
+				"Logger bootstrap depends only on the private stateless log-path policy; aggregate path state can emit diagnostics while it initializes."
+				"${_line}")
+		endif()
+
+		if(_relative_path MATCHES "^Engine/Core/Private/Paths/LogPathPolicy[.](cpp|h)$" AND
+		   _line MATCHES "Diagnostics/|Logger[.]h|AssetPathState|GetProductUserStatePaths|Core/Public/FileSystemUtils")
+			sparkle_boundary_append_failure(
+				"LOG_PATH_POLICY_REMAINS_BOOTSTRAP_SAFE"
+				"${_relative_path}"
+				"${_line_number}"
+				"The log-path policy may use only stateless user-state and filesystem discovery and must not call logging or aggregate path state."
+				"${_line}")
+		endif()
+
+		if(_relative_path MATCHES "^Engine/Core/Private/Paths/(FileSystemDiscovery|UserStatePaths)[.](cpp|h)$" AND
+		   _line MATCHES "Diagnostics/|Logger[.]h|Get(AssetPathState|ProductUserStatePaths)|Paths::LogFile")
+			sparkle_boundary_append_failure(
+				"BOOTSTRAP_PATH_DISCOVERY_REMAINS_STATELESS"
+				"${_relative_path}"
+				"${_line_number}"
+				"Bootstrap filesystem and user-state discovery must not call logging or aggregate path state."
+				"${_line}")
+		endif()
+
         if(_relative_path MATCHES "^Engine/RHI/Public/" AND _line MATCHES "FrameGraph")
             sparkle_boundary_append_failure(
                 "RHI_PUBLIC_NO_FRAME_GRAPH_POLICY"

@@ -2,7 +2,7 @@
 #include "Logger.h"
 
 #include "Core/Public/Environment/EnvironmentVariables.h"
-#include "Core/Public/Paths/DirectoryPaths.h"
+#include "Paths/LogPathPolicy.h"
 
 #include <atomic>
 #include <filesystem>
@@ -136,7 +136,8 @@ namespace Logging
 		{
 			std::string configuredFile;
 			Environment::TryGetVariable("SPARKLE_LOG_FILE", configuredFile);
-			const std::filesystem::path logPath = Paths::LogFile(configuredFile);
+			const std::filesystem::path logPath =
+			    Paths::Private::ResolveBootstrapLogFile(configuredFile, Paths::Private::LogParentDirectoryPolicy::EnsureExists);
 
 			auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logPath.string(), true);
 			fileSink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] %s:%# %v");

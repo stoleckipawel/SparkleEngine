@@ -4,40 +4,21 @@
 
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Formatting/HexFormat.h"
-#include "Core/Public/Paths/PathFormatting.h"
-#include "Core/Public/Paths/PathUtils.h"
 #include "Core/Public/Paths/ProductUserStatePaths.h"
 #include "Paths/LogPathPolicy.h"
 
-#include <system_error>
+#include <cstdint>
+#include <filesystem>
+#include <string>
+#include <string_view>
 
 namespace Paths
 {
 	std::filesystem::path LogFile(std::string_view configuredFile, bool ensureParentExists)
 	{
-		std::filesystem::path configuredPath{std::string(configuredFile)};
-		if (!configuredFile.empty() && !configuredPath.empty())
-		{
-			const Filesystem::ProductUserStatePaths& userState = Filesystem::GetProductUserStatePaths();
-			const std::filesystem::path& logsRoot = userState.LogsRoot;
-			if (!configuredPath.is_absolute())
-			{
-				configuredPath = Paths::Normalize(logsRoot / configuredPath);
-			}
-			if (Paths::IsUnderRoot(configuredPath, logsRoot))
-			{
-				if (ensureParentExists)
-				{
-					std::error_code errorCode;
-					std::filesystem::create_directories(configuredPath.parent_path(), errorCode);
-				}
-				return configuredPath;
-			}
-		}
-
-		const std::string executableStem = PathFormatting::SanitizePathSegment(Filesystem::GetExecutablePath().stem().string());
-		return Private::DefaultLogDirectory(ensureParentExists, executableStem)
-		    / PathFormatting::TimestampedFileName(executableStem, ".log");
+		const Private::LogParentDirectoryPolicy parentDirectoryPolicy =
+		    ensureParentExists ? Private::LogParentDirectoryPolicy::EnsureExists : Private::LogParentDirectoryPolicy::Preserve;
+		return Private::ResolveBootstrapLogFile(configuredFile, parentDirectoryPolicy);
 	}
 
 	std::filesystem::path CookedSceneManifest(std::string_view sceneAssetId)

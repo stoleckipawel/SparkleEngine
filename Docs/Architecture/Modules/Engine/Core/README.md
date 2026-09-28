@@ -69,6 +69,11 @@ through that category and do not cache `shared_ptr<spdlog::logger>` instances or
 create registry entries. `SparkleCore` alone owns lazy category resolution,
 registry synchronization, sinks, levels, and logger lifetime. This keeps the
 frontend declarative while preserving one backend policy and one creation path.
+Logger bootstrap follows `Logger -> LogPathPolicy -> stateless user-state and
+filesystem discovery`. The policy must not call logging or aggregate path
+getters; the public `Paths::LogFile` function delegates to the same policy. This
+allows aggregate path initialization to report diagnostics without re-entering
+itself. `architecture_boundary_check` rejects dependency reversals.
 
 ### Workspace-derived paths
 
