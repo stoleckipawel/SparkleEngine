@@ -8,10 +8,7 @@
 #include "Scene/Preparation/PreparedRenderScene.h"
 #include "View/RenderView.h"
 
-void AddSkyPass(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources)
+void AddSkyPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
 	auto& parameters = builder.AllocParameters<SkyCS>();
 	parameters->SceneColor = builder.CreateUAV(resources.Transient.Scene.SceneColor);

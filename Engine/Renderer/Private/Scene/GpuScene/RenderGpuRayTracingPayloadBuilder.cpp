@@ -89,29 +89,30 @@ void RenderGpuRayTracingPayloadBuilder::AppendMaterials(const PreparedRenderScen
 	for (const MaterialData& material : preparedScene.materials)
 	{
 		RayTracingHitMaterial rayTracingMaterial{
-		        .BaseColor = material.baseColor,
-		        .EmissiveColor = material.emissiveColor,
-		        .Metallic = material.metallic,
-		        .Roughness = material.roughness,
-		        .F0 = material.f0,
-		        .AlphaCutoff = material.alphaCutoff,
-		        .AlphaMode = material.alphaMode,
-		        .TextureFlags = material.textureFlags,
-		        .SubsurfaceColor = material.subsurfaceColor,
-		        .SubsurfaceStrength = material.subsurfaceStrength,
-		        .Flags = BuildMaterialFlags(material),
-		        .TextureIndices0 =
-		            DirectX::XMUINT4{
-		                material.materialTextureIndices[MaterialTextureSlots::BaseColor],
-		                material.materialTextureIndices[MaterialTextureSlots::Normal],
-		                material.materialTextureIndices[MaterialTextureSlots::Roughness],
-		                material.materialTextureIndices[MaterialTextureSlots::Metallic]},
-		        .TextureIndices1 = DirectX::XMUINT4{
+		    .BaseColor = material.baseColor,
+		    .EmissiveColor = material.emissiveColor,
+		    .Metallic = material.metallic,
+		    .Roughness = material.roughness,
+		    .F0 = material.f0,
+		    .AlphaCutoff = material.alphaCutoff,
+		    .AlphaMode = material.alphaMode,
+		    .TextureFlags = material.textureFlags,
+		    .SubsurfaceColor = material.subsurfaceColor,
+		    .SubsurfaceStrength = material.subsurfaceStrength,
+		    .Flags = BuildMaterialFlags(material),
+		    .TextureIndices0 =
+		        DirectX::XMUINT4{
+		            material.materialTextureIndices[MaterialTextureSlots::BaseColor],
+		            material.materialTextureIndices[MaterialTextureSlots::Normal],
+		            material.materialTextureIndices[MaterialTextureSlots::Roughness],
+		            material.materialTextureIndices[MaterialTextureSlots::Metallic]},
+		    .TextureIndices1 =
+		        DirectX::XMUINT4{
 		            material.materialTextureIndices[MaterialTextureSlots::Occlusion],
 		            material.materialTextureIndices[MaterialTextureSlots::Emissive],
 		            material.materialTextureIndices[MaterialTextureSlots::SubsurfaceColor],
 		            material.materialTextureIndices[MaterialTextureSlots::SubsurfaceStrength]},
-		        .TextureMappings = material.materialTextureMappings};
+		    .TextureMappings = material.materialTextureMappings};
 		payloads.Materials.push_back(rayTracingMaterial);
 	}
 }
@@ -254,8 +255,7 @@ std::uint32_t RenderGpuRayTracingPayloadBuilder::BuildMaterialFlags(const Materi
 	{
 		flags |= RayTracingHitData::MaterialFlag_Textured;
 	}
-	if (material.emissiveColor.x > 0.0f || material.emissiveColor.y > 0.0f
-	    || material.emissiveColor.z > 0.0f)
+	if (material.emissiveColor.x > 0.0f || material.emissiveColor.y > 0.0f || material.emissiveColor.z > 0.0f)
 	{
 		flags |= RayTracingHitData::MaterialFlag_Emissive;
 	}

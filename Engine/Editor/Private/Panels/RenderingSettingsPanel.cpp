@@ -58,23 +58,23 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 	}
 
 	ImGui::BeginDisabled(disableInteraction);
-	using namespace RenderingSettingsPanelUi;
-	static constexpr ComboOption<GBufferAlgorithm> gBufferAlgorithmOptions[] = {
+	static constexpr RenderingSettingsPanelUi::ComboOption<GBufferAlgorithm> gBufferAlgorithmOptions[] = {
 	    {"Rasterized", GBufferAlgorithm::Rasterized},
 	    {"Ray tracing", GBufferAlgorithm::RayTracing}};
 	DrawDisplaySettingsSection(*m_settings, settings, filterText);
 
-	if (MatchesFilter(filterText, "Geometry", "geometry mesh auto batching") && BeginSettingsCategory("Geometry"))
+	if (RenderingSettingsPanelUi::MatchesFilter(filterText, "Geometry", "geometry mesh auto batching")
+	    && RenderingSettingsPanelUi::BeginSettingsCategory("Geometry"))
 	{
-		if (BeginSettingsTable("##RenderingGeometrySettings"))
+		if (RenderingSettingsPanelUi::BeginSettingsTable("##RenderingGeometrySettings"))
 		{
-			DrawComboOptionRow(
+			RenderingSettingsPanelUi::DrawComboOptionRow(
 			    "##GBufferAlgorithm",
 			    "GBuffer algorithm",
 			    settings.SelectedGBufferAlgorithm,
 			    gBufferAlgorithmOptions,
 			    [this](GBufferAlgorithm value) { m_settings->SetGBufferAlgorithm(value); });
-			DrawBooleanRow(
+			RenderingSettingsPanelUi::DrawBooleanRow(
 			    "##MeshAutoBatching",
 			    "Mesh auto batching",
 			    settings.MeshAutoBatching,

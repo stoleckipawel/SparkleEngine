@@ -65,7 +65,6 @@ public:
 		        ResourceStateToString(barrier.before),
 		        ResourceStateToString(barrier.after)));
 	}
-
 };
 
 void FrameGraph::EmitCompiledBarriers(RenderCommandContext& commandContext, const std::vector<FrameGraphBarrier>& barriers) const noexcept

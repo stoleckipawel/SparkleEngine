@@ -10,10 +10,5 @@ void AddNvidiaDlssUpscalePass(
     RendererImageProviderStack& imageProviders,
     const UpscalerPassResources& inputs)
 {
-	AddUpscalerPass(
-	    builder,
-	    *imageProviders.GetUpscalerProvider(),
-	    renderExtent,
-	    outputExtent,
-	    inputs);
+	AddUpscalerPass(builder, *imageProviders.GetUpscalerProvider(), renderExtent, outputExtent, inputs);
 }

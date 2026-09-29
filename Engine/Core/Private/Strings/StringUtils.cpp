@@ -2,15 +2,11 @@
 
 #include "Core/Public/Strings/StringUtils.h"
 
-#include <DirectXMath.h>
-
 #include <algorithm>
-#include <array>
 #include <cctype>
 #include <cstddef>
 #include <filesystem>
 #include <span>
-#include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -354,53 +350,6 @@ namespace Strings
 			output += values[index];
 		}
 		return output;
-	}
-
-	bool TryParseFloat(std::string_view str, float& outValue)
-	{
-		const std::string trimmed = TrimCopy(str);
-		if (trimmed.empty())
-		{
-			return false;
-		}
-
-		try
-		{
-			std::size_t parsedLength = 0;
-			const float parsedValue = std::stof(trimmed, &parsedLength);
-			if (parsedLength != trimmed.size())
-			{
-				return false;
-			}
-			outValue = parsedValue;
-			return true;
-		}
-		catch (...)
-		{
-			return false;
-		}
-	}
-
-	bool TryParseFloat3(std::string_view str, DirectX::XMFLOAT3& outValue)
-	{
-		constexpr std::size_t componentCount = 3;
-		std::stringstream stream{std::string(str)};
-		std::string segment;
-		std::array<float, componentCount> values{};
-		for (float& value : values)
-		{
-			if (!std::getline(stream, segment, ',') || !TryParseFloat(segment, value))
-			{
-				return false;
-			}
-		}
-		if (std::getline(stream, segment, ','))
-		{
-			return false;
-		}
-
-		outValue = {values.front(), values[1], values.back()};
-		return true;
 	}
 
 	std::wstring ToWide(std::string_view str)

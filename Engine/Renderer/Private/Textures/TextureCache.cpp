@@ -35,8 +35,7 @@ TextureCache::TextureCache(
     m_textureFactory(resourceService, descriptorService, uploadService),
     m_submissions(submissions),
     m_taskExecutor(taskExecutor),
-    m_taskScope(
-        std::make_unique<TaskScope>(TaskScopeDesc{TaskScopeKind::AssetGeneration, "Renderer texture generations"}, &parentScope))
+    m_taskScope(std::make_unique<TaskScope>(TaskScopeDesc{TaskScopeKind::AssetGeneration, "Renderer texture generations"}, &parentScope))
 {
 }
 

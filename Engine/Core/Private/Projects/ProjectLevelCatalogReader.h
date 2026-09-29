@@ -35,10 +35,7 @@ private:
 	bool ParseBool(std::string_view value) const;
 	std::uintmax_t ParseByteCount(std::string_view value) const;
 	void ValidateCurrentSection() const;
-	void ValidateCatalog() const;
 	std::filesystem::path ResolveProjectPath(std::string_view value) const;
-	static bool IsSafeIdentifier(std::string_view value) noexcept;
-	static bool IsSha256(std::string_view value) noexcept;
 
 	const std::filesystem::path& m_projectRoot;
 	ProjectLevelCatalog m_catalog;

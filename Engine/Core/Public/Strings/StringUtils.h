@@ -3,8 +3,6 @@
 #include "Core/Public/CoreAPI.h"
 
 #include <cstddef>
-#include <DirectXMath.h>
-
 #include <charconv>
 #include <cstdint>
 #include <filesystem>
@@ -61,8 +59,6 @@ namespace Strings
 		return result.ec == std::errc{} && result.ptr == end;
 	}
 
-	SPARKLE_CORE_API bool TryParseFloat(std::string_view str, float& outValue);
-	SPARKLE_CORE_API bool TryParseFloat3(std::string_view str, DirectX::XMFLOAT3& outValue);
 	SPARKLE_CORE_API std::wstring ToWide(std::string_view str);
 	SPARKLE_CORE_API std::wstring ToWide(const std::filesystem::path& path);
 	SPARKLE_CORE_API std::string ToNarrow(std::wstring_view str);

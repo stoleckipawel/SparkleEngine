@@ -15,8 +15,6 @@
 #include <algorithm>
 #include <cstdint>
 
-using namespace DirectX;
-
 static RhiViewport BuildViewport(RenderViewportExtent extent) noexcept
 {
 	return RhiViewport{
@@ -55,15 +53,15 @@ void BuildRenderView(RenderView& output, RenderViewState& state, const RenderVie
 	const float projectionHeight = static_cast<float>((std::max) (projectionExtent.Height, 1u));
 	output.camera.AspectRatio = projectionWidth / projectionHeight;
 
-	const XMVECTOR position = XMLoadFloat3(&output.camera.Position);
-	const XMVECTOR direction = XMLoadFloat3(&output.camera.Direction);
-	const XMVECTOR target = XMVectorAdd(position, direction);
-	const XMVECTOR worldUp = XMVectorSet(WorldCoordinates::kUpX, WorldCoordinates::kUpY, WorldCoordinates::kUpZ, 0.0f);
-	const XMMATRIX worldToView = XMMatrixLookAtLH(position, target, worldUp);
+	const DirectX::XMVECTOR position = DirectX::XMLoadFloat3(&output.camera.Position);
+	const DirectX::XMVECTOR direction = DirectX::XMLoadFloat3(&output.camera.Direction);
+	const DirectX::XMVECTOR target = DirectX::XMVectorAdd(position, direction);
+	const DirectX::XMVECTOR worldUp = DirectX::XMVectorSet(WorldCoordinates::kUpX, WorldCoordinates::kUpY, WorldCoordinates::kUpZ, 0.0f);
+	const DirectX::XMMATRIX worldToView = DirectX::XMMatrixLookAtLH(position, target, worldUp);
 
 	const float nearZ = output.camera.NearZ;
 	const float farZ = output.camera.FarZ;
-	XMMATRIX viewToClip;
+	DirectX::XMMATRIX viewToClip;
 	if (output.camera.ProjectionKind == CameraProjectionKind::Orthographic)
 	{
 		const float height = (std::max) (output.camera.OrthographicHeightMeters, 0.001f);
@@ -73,16 +71,19 @@ void BuildRenderView(RenderView& output, RenderViewState& state, const RenderVie
 	}
 	else
 	{
-		viewToClip =
-		    DepthConvention::CreatePerspectiveFovLH(XMConvertToRadians(output.camera.FovYDegrees), output.camera.AspectRatio, nearZ, farZ);
+		viewToClip = DepthConvention::CreatePerspectiveFovLH(
+		    DirectX::XMConvertToRadians(output.camera.FovYDegrees),
+		    output.camera.AspectRatio,
+		    nearZ,
+		    farZ);
 	}
 
-	const XMMATRIX worldToClip = XMMatrixMultiply(worldToView, viewToClip);
-	XMStoreFloat4x4(&output.cameraUniform.ViewMTX, worldToView);
-	XMStoreFloat4x4(&output.cameraUniform.ProjectionMTX, viewToClip);
-	XMStoreFloat4x4(&output.cameraUniform.ViewProjMTX, worldToClip);
-	XMStoreFloat4x4(&output.cameraUniform.InvViewMTX, XMMatrixInverse(nullptr, worldToView));
-	XMStoreFloat4x4(&output.cameraUniform.InvProjectionMTX, XMMatrixInverse(nullptr, viewToClip));
+	const DirectX::XMMATRIX worldToClip = DirectX::XMMatrixMultiply(worldToView, viewToClip);
+	DirectX::XMStoreFloat4x4(&output.cameraUniform.ViewMTX, worldToView);
+	DirectX::XMStoreFloat4x4(&output.cameraUniform.ProjectionMTX, viewToClip);
+	DirectX::XMStoreFloat4x4(&output.cameraUniform.ViewProjMTX, worldToClip);
+	DirectX::XMStoreFloat4x4(&output.cameraUniform.InvViewMTX, DirectX::XMMatrixInverse(nullptr, worldToView));
+	DirectX::XMStoreFloat4x4(&output.cameraUniform.InvProjectionMTX, DirectX::XMMatrixInverse(nullptr, viewToClip));
 	output.cameraUniform.Position = output.camera.Position;
 	output.cameraUniform.NearZ = nearZ;
 	output.cameraUniform.FarZ = farZ;

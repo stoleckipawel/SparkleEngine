@@ -8,6 +8,7 @@
 #include "Util/UiUtil.h"
 
 #include <algorithm>
+#include <array>
 #include <string>
 #include <utility>
 
@@ -295,6 +296,27 @@ void UsedMeshesPanel::DrawPreview(const MeshDiagnosticsRow& row) const
 	const bool drawWire = m_previewModeIndex == 0 || m_previewModeIndex == 2;
 	const std::size_t triangleCount = m_previewGeometry.Indices.size() / 3;
 	const std::size_t previewTriangleCount = (std::min) (triangleCount, MeshDiagnosticsPresentation::MaxPreviewTriangles);
+	const auto forEachProjectedTriangle = [&](const auto& callback)
+	{
+		for (std::size_t triangleIndex = 0; triangleIndex < previewTriangleCount; ++triangleIndex)
+		{
+			const std::uint32_t index0 = m_previewGeometry.Indices[(triangleIndex * 3) + 0];
+			const std::uint32_t index1 = m_previewGeometry.Indices[(triangleIndex * 3) + 1];
+			const std::uint32_t index2 = m_previewGeometry.Indices[(triangleIndex * 3) + 2];
+			if (index0 >= m_previewGeometry.Vertices.size() || index1 >= m_previewGeometry.Vertices.size()
+			    || index2 >= m_previewGeometry.Vertices.size())
+			{
+				continue;
+			}
+
+			callback(
+			    std::array{
+			        projectVertex(m_previewGeometry.Vertices[index0]),
+			        projectVertex(m_previewGeometry.Vertices[index1]),
+			        projectVertex(m_previewGeometry.Vertices[index2])});
+		}
+	};
+
 	if (drawSolid)
 	{
 		const ImDrawListFlags previousDrawListFlags = drawList->Flags;
@@ -305,47 +327,21 @@ void UsedMeshesPanel::DrawPreview(const MeshDiagnosticsRow& row) const
 
 		const ImU32 solidColor = row.GpuResident ? (drawWire ? IM_COL32(89, 142, 199, 84) : IM_COL32(89, 142, 199, 230))
 		                                         : (drawWire ? IM_COL32(128, 128, 128, 72) : IM_COL32(128, 128, 128, 220));
-		for (std::size_t triangleIndex = 0; triangleIndex < previewTriangleCount; ++triangleIndex)
-		{
-			const std::uint32_t index0 = m_previewGeometry.Indices[(triangleIndex * 3) + 0];
-			const std::uint32_t index1 = m_previewGeometry.Indices[(triangleIndex * 3) + 1];
-			const std::uint32_t index2 = m_previewGeometry.Indices[(triangleIndex * 3) + 2];
-			if (index0 >= m_previewGeometry.Vertices.size() || index1 >= m_previewGeometry.Vertices.size()
-			    || index2 >= m_previewGeometry.Vertices.size())
-			{
-				continue;
-			}
-
-			drawList->AddTriangleFilled(
-			    projectVertex(m_previewGeometry.Vertices[index0]),
-			    projectVertex(m_previewGeometry.Vertices[index1]),
-			    projectVertex(m_previewGeometry.Vertices[index2]),
-			    solidColor);
-		}
+		forEachProjectedTriangle(
+		    [&](const std::array<ImVec2, 3>& triangle) { drawList->AddTriangleFilled(triangle[0], triangle[1], triangle[2], solidColor); });
 		drawList->Flags = previousDrawListFlags;
 	}
 
 	if (drawWire)
 	{
 		const ImU32 wireColor = row.GpuResident ? IM_COL32(176, 212, 255, 220) : IM_COL32(184, 184, 184, 210);
-		for (std::size_t triangleIndex = 0; triangleIndex < previewTriangleCount; ++triangleIndex)
-		{
-			const std::uint32_t index0 = m_previewGeometry.Indices[(triangleIndex * 3) + 0];
-			const std::uint32_t index1 = m_previewGeometry.Indices[(triangleIndex * 3) + 1];
-			const std::uint32_t index2 = m_previewGeometry.Indices[(triangleIndex * 3) + 2];
-			if (index0 >= m_previewGeometry.Vertices.size() || index1 >= m_previewGeometry.Vertices.size()
-			    || index2 >= m_previewGeometry.Vertices.size())
-			{
-				continue;
-			}
-
-			const ImVec2 point0 = projectVertex(m_previewGeometry.Vertices[index0]);
-			const ImVec2 point1 = projectVertex(m_previewGeometry.Vertices[index1]);
-			const ImVec2 point2 = projectVertex(m_previewGeometry.Vertices[index2]);
-			drawList->AddLine(point0, point1, wireColor, 1.0f);
-			drawList->AddLine(point1, point2, wireColor, 1.0f);
-			drawList->AddLine(point2, point0, wireColor, 1.0f);
-		}
+		forEachProjectedTriangle(
+		    [&](const std::array<ImVec2, 3>& triangle)
+		    {
+			    drawList->AddLine(triangle[0], triangle[1], wireColor, 1.0f);
+			    drawList->AddLine(triangle[1], triangle[2], wireColor, 1.0f);
+			    drawList->AddLine(triangle[2], triangle[0], wireColor, 1.0f);
+		    });
 	}
 
 	if (triangleCount > previewTriangleCount)

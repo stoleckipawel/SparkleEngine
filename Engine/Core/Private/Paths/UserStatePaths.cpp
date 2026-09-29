@@ -124,9 +124,7 @@ namespace Filesystem
 		    .LauncherRoot = root / "LauncherState" / workspaceKey};
 	}
 
-	ProductUserStatePaths ResolveDevelopmentProductUserStatePaths(
-	    const std::filesystem::path& workspaceRoot,
-	    std::string_view productName)
+	ProductUserStatePaths ResolveDevelopmentProductUserStatePaths(const std::filesystem::path& workspaceRoot, std::string_view productName)
 	{
 		std::string safeProductName = Paths::MakeSafePathComponent(productName);
 		if (safeProductName.empty())
@@ -143,8 +141,7 @@ namespace Filesystem
 		{
 			const auto projectRoot = Private::DiscoverPackageProjectRoot(*packageRoot);
 			return Private::BuildProductUserStatePaths(
-			    Private::ResolveSparkleUserStateRoot()
-			    / Private::ResolveProductName(projectRoot.value_or(std::filesystem::path{}))
+			    Private::ResolveSparkleUserStateRoot() / Private::ResolveProductName(projectRoot.value_or(std::filesystem::path{}))
 			    / Private::FirstReleaseStateVersion);
 		}
 

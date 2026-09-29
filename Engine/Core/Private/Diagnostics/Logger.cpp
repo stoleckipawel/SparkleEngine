@@ -45,43 +45,23 @@ namespace Logging
 
 	using LoggerMap = std::unordered_map<std::string, std::shared_ptr<spdlog::logger>>;
 
-	std::mutex& GetRegistryMutex() noexcept
+	struct LoggerRegistry final
 	{
-		static std::mutex registryMutex;
-		return registryMutex;
+		std::mutex Mutex;
+		LoggerMap NamedLoggers;
+		std::vector<spdlog::sink_ptr> SharedSinks;
+		std::atomic<int> Level{static_cast<int>(spdlog::level::info)};
+		std::atomic<bool> Initialized{false};
+		std::optional<std::filesystem::path> ActiveLogFilePath;
+	};
+
+	static LoggerRegistry& GetLoggerRegistry() noexcept
+	{
+		static LoggerRegistry registry;
+		return registry;
 	}
 
-	LoggerMap& GetNamedLoggers() noexcept
-	{
-		static LoggerMap namedLoggers;
-		return namedLoggers;
-	}
-
-	std::vector<spdlog::sink_ptr>& GetSharedSinks() noexcept
-	{
-		static std::vector<spdlog::sink_ptr> sharedSinks;
-		return sharedSinks;
-	}
-
-	std::atomic<int>& GetLevelStorage() noexcept
-	{
-		static std::atomic<int> level{static_cast<int>(spdlog::level::info)};
-		return level;
-	}
-
-	std::atomic<bool>& GetInitializedFlag() noexcept
-	{
-		static std::atomic<bool> initialized{false};
-		return initialized;
-	}
-
-	std::optional<std::filesystem::path>& GetActiveLogFilePathStorage() noexcept
-	{
-		static std::optional<std::filesystem::path> activeLogFilePath;
-		return activeLogFilePath;
-	}
-
-	spdlog::level::level_enum ReadConfiguredSpdlogLevel() noexcept
+	static spdlog::level::level_enum ReadConfiguredSpdlogLevel() noexcept
 	{
 		std::string configuredLevel;
 		if (!Environment::TryGetVariable("SPARKLE_LOG_LEVEL", configuredLevel))
@@ -117,10 +97,11 @@ namespace Logging
 	};
 #endif
 
-	std::vector<spdlog::sink_ptr> CreateDefaultSinks()
+	static std::vector<spdlog::sink_ptr> CreateDefaultSinks()
 	{
+		LoggerRegistry& registry = GetLoggerRegistry();
 		std::vector<spdlog::sink_ptr> sinks;
-		GetActiveLogFilePathStorage().reset();
+		registry.ActiveLogFilePath.reset();
 
 		auto stderrSink = std::make_shared<spdlog::sinks::stderr_sink_mt>();
 		stderrSink->set_pattern("[%n] [%l] %s:%# %v");
@@ -142,7 +123,7 @@ namespace Logging
 			auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logPath.string(), true);
 			fileSink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] %s:%# %v");
 			sinks.push_back(fileSink);
-			GetActiveLogFilePathStorage() = logPath;
+			registry.ActiveLogFilePath = logPath;
 		}
 		catch (...)
 		{
@@ -152,44 +133,46 @@ namespace Logging
 		return sinks;
 	}
 
-	void ApplyLoggerSettings(const std::shared_ptr<spdlog::logger>& logger) noexcept
+	static void ApplyLoggerSettings(const std::shared_ptr<spdlog::logger>& logger) noexcept
 	{
 		if (!logger)
 		{
 			return;
 		}
 
-		logger->set_level(static_cast<spdlog::level::level_enum>(GetLevelStorage().load(std::memory_order_relaxed)));
+		logger->set_level(static_cast<spdlog::level::level_enum>(GetLoggerRegistry().Level.load(std::memory_order_relaxed)));
 		logger->flush_on(spdlog::level::err);
 	}
 
-	std::shared_ptr<spdlog::logger> CreateLogger(std::string_view name)
+	static std::shared_ptr<spdlog::logger> CreateLogger(std::string_view name)
 	{
-		auto logger = std::make_shared<spdlog::logger>(std::string(name), GetSharedSinks().begin(), GetSharedSinks().end());
+		const std::vector<spdlog::sink_ptr>& sharedSinks = GetLoggerRegistry().SharedSinks;
+		auto logger = std::make_shared<spdlog::logger>(std::string(name), sharedSinks.begin(), sharedSinks.end());
 		ApplyLoggerSettings(logger);
 		return logger;
 	}
 
-	void EnsureInitializedLocked()
+	static void EnsureInitializedLocked()
 	{
-		if (GetInitializedFlag().load(std::memory_order_acquire))
+		LoggerRegistry& registry = GetLoggerRegistry();
+		if (registry.Initialized.load(std::memory_order_acquire))
 		{
 			return;
 		}
 
-		GetSharedSinks() = CreateDefaultSinks();
-		GetLevelStorage().store(static_cast<int>(ReadConfiguredSpdlogLevel()), std::memory_order_relaxed);
+		registry.SharedSinks = CreateDefaultSinks();
+		registry.Level.store(static_cast<int>(ReadConfiguredSpdlogLevel()), std::memory_order_relaxed);
 		auto coreLogger = CreateLogger(kCoreLoggerName);
-		GetNamedLoggers().emplace(std::string(kCoreLoggerName), coreLogger);
+		registry.NamedLoggers.emplace(std::string(kCoreLoggerName), coreLogger);
 		spdlog::set_default_logger(coreLogger);
-		GetInitializedFlag().store(true, std::memory_order_release);
+		registry.Initialized.store(true, std::memory_order_release);
 	}
 
 	void Initialize() noexcept
 	{
 		try
 		{
-			std::lock_guard<std::mutex> lock(GetRegistryMutex());
+			std::lock_guard<std::mutex> lock(GetLoggerRegistry().Mutex);
 			EnsureInitializedLocked();
 		}
 		catch (...)
@@ -200,7 +183,7 @@ namespace Logging
 
 	bool IsInitialized() noexcept
 	{
-		return GetInitializedFlag().load(std::memory_order_acquire);
+		return GetLoggerRegistry().Initialized.load(std::memory_order_acquire);
 	}
 
 	std::optional<std::filesystem::path> GetActiveLogFilePath() noexcept
@@ -209,8 +192,9 @@ namespace Logging
 
 		try
 		{
-			std::lock_guard<std::mutex> lock(GetRegistryMutex());
-			return GetActiveLogFilePathStorage();
+			LoggerRegistry& registry = GetLoggerRegistry();
+			std::lock_guard<std::mutex> lock(registry.Mutex);
+			return registry.ActiveLogFilePath;
 		}
 		catch (...)
 		{
@@ -227,8 +211,9 @@ namespace Logging
 	{
 		Initialize();
 
-		std::lock_guard<std::mutex> lock(GetRegistryMutex());
-		auto& namedLoggers = GetNamedLoggers();
+		LoggerRegistry& registry = GetLoggerRegistry();
+		std::lock_guard<std::mutex> lock(registry.Mutex);
+		auto& namedLoggers = registry.NamedLoggers;
 		const auto it = namedLoggers.find(std::string(name));
 		return it != namedLoggers.end() ? it->second : nullptr;
 	}
@@ -238,8 +223,9 @@ namespace Logging
 		Initialize();
 
 		{
-			std::lock_guard<std::mutex> lock(GetRegistryMutex());
-			auto& namedLoggers = GetNamedLoggers();
+			LoggerRegistry& registry = GetLoggerRegistry();
+			std::lock_guard<std::mutex> lock(registry.Mutex);
+			auto& namedLoggers = registry.NamedLoggers;
 			const auto it = namedLoggers.find(std::string(name));
 			if (it != namedLoggers.end())
 			{
@@ -257,8 +243,9 @@ namespace Logging
 			logger = spdlog::default_logger();
 		}
 
-		std::lock_guard<std::mutex> lock(GetRegistryMutex());
-		auto& namedLoggers = GetNamedLoggers();
+		LoggerRegistry& registry = GetLoggerRegistry();
+		std::lock_guard<std::mutex> lock(registry.Mutex);
+		auto& namedLoggers = registry.NamedLoggers;
 		const auto [it, inserted] = namedLoggers.emplace(std::string(name), logger);
 		if (!inserted)
 		{
@@ -281,7 +268,8 @@ namespace Logging
 
 	void SetLevel(spdlog::level::level_enum level) noexcept
 	{
-		GetLevelStorage().store(static_cast<int>(level), std::memory_order_relaxed);
+		LoggerRegistry& registry = GetLoggerRegistry();
+		registry.Level.store(static_cast<int>(level), std::memory_order_relaxed);
 
 		if (!IsInitialized())
 		{
@@ -290,9 +278,9 @@ namespace Logging
 
 		std::vector<std::shared_ptr<spdlog::logger>> loggers;
 		{
-			std::lock_guard<std::mutex> lock(GetRegistryMutex());
-			loggers.reserve(GetNamedLoggers().size());
-			for (const auto& [name, logger] : GetNamedLoggers())
+			std::lock_guard<std::mutex> lock(registry.Mutex);
+			loggers.reserve(registry.NamedLoggers.size());
+			for (const auto& [name, logger] : registry.NamedLoggers)
 			{
 				(void) name;
 				if (logger)
@@ -310,6 +298,6 @@ namespace Logging
 
 	spdlog::level::level_enum GetLevel() noexcept
 	{
-		return static_cast<spdlog::level::level_enum>(GetLevelStorage().load(std::memory_order_relaxed));
+		return static_cast<spdlog::level::level_enum>(GetLoggerRegistry().Level.load(std::memory_order_relaxed));
 	}
 }

@@ -24,7 +24,7 @@ GpuMeshCache::GpuMeshCache(
     m_renderHardwareInterface(&renderHardwareInterface),
     m_submissions(&submissions),
     m_taskExecutor(&taskExecutor),
-	    m_taskScope(std::make_unique<TaskScope>(TaskScopeDesc{TaskScopeKind::AssetGeneration, "Renderer mesh generations"}, &parentScope))
+    m_taskScope(std::make_unique<TaskScope>(TaskScopeDesc{TaskScopeKind::AssetGeneration, "Renderer mesh generations"}, &parentScope))
 {
 }
 

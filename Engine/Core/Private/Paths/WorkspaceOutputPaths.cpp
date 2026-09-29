@@ -45,9 +45,7 @@ namespace Filesystem
 		    .SymbolDirectory = SymbolsRoot / "launcher" / profile};
 	}
 
-	WorkspaceTargetOutputPaths WorkspaceOutputPaths::ToolTargetOutputs(
-	    std::string_view toolName,
-	    std::string_view profileName) const
+	WorkspaceTargetOutputPaths WorkspaceOutputPaths::ToolTargetOutputs(std::string_view toolName, std::string_view profileName) const
 	{
 		const std::string tool(toolName);
 		const std::string profile(profileName);
@@ -57,9 +55,7 @@ namespace Filesystem
 		    .SymbolDirectory = SymbolsRoot / "tools" / tool / profile};
 	}
 
-	std::filesystem::path WorkspaceOutputPaths::ToolScratchDirectory(
-	    std::string_view toolName,
-	    std::string_view profileName) const
+	std::filesystem::path WorkspaceOutputPaths::ToolScratchDirectory(std::string_view toolName, std::string_view profileName) const
 	{
 		return BuildRoot / "private" / "tools" / std::string(toolName) / std::string(profileName);
 	}

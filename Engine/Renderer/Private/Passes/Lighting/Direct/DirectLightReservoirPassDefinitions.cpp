@@ -10,10 +10,7 @@
 #include "ShaderData/SceneShaderParameters.h"
 
 template <typename Parameters>
-static void BindDirectLightReservoirSurface(
-    FrameGraphBuilder& builder,
-    Parameters& parameters,
-    const RenderFrameGraphResources& resources)
+static void BindDirectLightReservoirSurface(FrameGraphBuilder& builder, Parameters& parameters, const RenderFrameGraphResources& resources)
 {
 	const GBufferRenderTargets& gbuffer = resources.Transient.GBuffer;
 	parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);

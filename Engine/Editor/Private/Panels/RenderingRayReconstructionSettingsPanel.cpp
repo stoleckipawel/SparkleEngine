@@ -13,22 +13,20 @@ void DrawRayReconstructionSettingsSection(
     const EngineRenderingSettingsState& settings,
     const char* filterText)
 {
-	using namespace RenderingSettingsPanelUi;
-
-	static constexpr ComboOption<EngineRayReconstructionMode> rayReconstructionModeOptions[] = {
+	static constexpr RenderingSettingsPanelUi::ComboOption<EngineRayReconstructionMode> rayReconstructionModeOptions[] = {
 	    {"Off", EngineRayReconstructionMode::Off},
 	    {"NVIDIA DLSS Ray Reconstruction", EngineRayReconstructionMode::NvidiaDlssRayReconstruction},
 	};
 
-	if (!MatchesFilter(filterText, "Ray Reconstruction", "dlss ray reconstruction indirect specular diffuse")
-	    || !BeginSettingsCategory("Ray Reconstruction"))
+	if (!RenderingSettingsPanelUi::MatchesFilter(filterText, "Ray Reconstruction", "dlss ray reconstruction indirect specular diffuse")
+	    || !RenderingSettingsPanelUi::BeginSettingsCategory("Ray Reconstruction"))
 	{
 		return;
 	}
 
-	if (BeginSettingsTable("##RenderingRayReconstructionSettings"))
+	if (RenderingSettingsPanelUi::BeginSettingsTable("##RenderingRayReconstructionSettings"))
 	{
-		DrawComboOptionRow(
+		RenderingSettingsPanelUi::DrawComboOptionRow(
 		    "##RayReconstructionMode",
 		    "Mode",
 		    settings.RayReconstructionMode,

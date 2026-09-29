@@ -7,6 +7,5 @@
 
 RestirIndirectLightingSettings BuildRestirIndirectLightingSettings() noexcept
 {
-	return RestirIndirectLightingSettings{
-	    .BounceCount = std::clamp(CVarRestirIndirectLightingBounceCount.Get(), 1u, 8u)};
+	return RestirIndirectLightingSettings{.BounceCount = std::clamp(CVarRestirIndirectLightingBounceCount.Get(), 1u, 8u)};
 }

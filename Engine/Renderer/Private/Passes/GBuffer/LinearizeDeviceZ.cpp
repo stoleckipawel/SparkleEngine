@@ -7,10 +7,7 @@
 #include "Passes/GBuffer/SceneDepthShader.h"
 #include "View/RenderView.h"
 
-void AddLinearizeDeviceZPass(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources)
+void AddLinearizeDeviceZPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
 	auto& parameters = builder.AllocParameters<SceneDepthCS>();
 	parameters->GBufferDeviceZ = builder.CreateSRV(resources.Transient.GBuffer.DeviceZ);

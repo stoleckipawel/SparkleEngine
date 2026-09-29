@@ -28,18 +28,12 @@ namespace Filesystem
 		    std::string_view targetName,
 		    std::string_view profileName) const;
 		SPARKLE_CORE_API WorkspaceTargetOutputPaths LauncherTargetOutputs(std::string_view profileName) const;
-		SPARKLE_CORE_API WorkspaceTargetOutputPaths ToolTargetOutputs(
-		    std::string_view toolName,
-		    std::string_view profileName) const;
-		SPARKLE_CORE_API std::filesystem::path ToolScratchDirectory(
-		    std::string_view toolName,
-		    std::string_view profileName) const;
+		SPARKLE_CORE_API WorkspaceTargetOutputPaths ToolTargetOutputs(std::string_view toolName, std::string_view profileName) const;
+		SPARKLE_CORE_API std::filesystem::path ToolScratchDirectory(std::string_view toolName, std::string_view profileName) const;
 		SPARKLE_CORE_API std::filesystem::path LauncherBuildDirectory() const;
 		SPARKLE_CORE_API std::filesystem::path SourceDependencySyncDirectory(std::string_view dependencyId) const;
-		SPARKLE_CORE_API WorkspaceTargetOutputPaths ProjectTargetOutputs(
-		    std::string_view projectName,
-		    std::string_view productRole,
-		    std::string_view profileName) const;
+		SPARKLE_CORE_API WorkspaceTargetOutputPaths
+		ProjectTargetOutputs(std::string_view projectName, std::string_view productRole, std::string_view profileName) const;
 		SPARKLE_CORE_API std::filesystem::path CookedProjectDirectory(std::string_view projectName) const;
 		SPARKLE_CORE_API std::filesystem::path SharedCookedProjectDirectory() const;
 	};

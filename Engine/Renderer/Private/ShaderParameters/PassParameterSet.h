@@ -156,10 +156,6 @@ private:
 	    PassParameterDescriptorTableBindingData binding,
 	    ShaderParameterSemanticKind textureKind,
 	    ShaderParameterSemanticKind bufferKind);
-	static bool ValidateArrayCount(const PassParameterDesc& parameter, std::size_t actualCount) noexcept;
-	static bool ValidateTextureBinding(const std::vector<FrameGraphTextureHandle>& handles, const PassParameterDesc& parameter) noexcept;
-	static bool ValidateBufferBinding(const std::vector<FrameGraphBufferHandle>& handles, const PassParameterDesc& parameter) noexcept;
-
 	const PassParameterLayout* m_layout = nullptr;
 	std::vector<PassParameterBinding> m_bindings;
 	std::vector<bool> m_graphResourceParameters;

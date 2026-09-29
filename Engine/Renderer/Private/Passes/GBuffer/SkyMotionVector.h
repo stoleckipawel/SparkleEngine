@@ -5,7 +5,4 @@
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
 
-void AddSkyMotionVectorPass(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources);
+void AddSkyMotionVectorPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources);

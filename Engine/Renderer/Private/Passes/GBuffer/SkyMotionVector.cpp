@@ -7,10 +7,7 @@
 #include "Passes/GBuffer/SkyMotionVectorShader.h"
 #include "View/RenderView.h"
 
-void AddSkyMotionVectorPass(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources)
+void AddSkyMotionVectorPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
 	const GBufferRenderTargets& targets = resources.Transient.GBuffer;
 

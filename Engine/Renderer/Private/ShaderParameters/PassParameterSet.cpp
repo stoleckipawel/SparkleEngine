@@ -2,8 +2,20 @@
 
 #include "ShaderParameters/PassParameterSet.h"
 
+#include <algorithm>
 #include <cassert>
 #include <utility>
+
+template <typename THandle>
+static bool ValidateResourceBinding(const std::vector<THandle>& handles, const PassParameterDesc& parameter) noexcept
+{
+	if (parameter.ArrayCount != static_cast<std::uint32_t>(handles.size()))
+	{
+		return false;
+	}
+
+	return std::ranges::all_of(handles, [](const THandle& handle) { return handle.IsValid(); });
+}
 
 PassParameterValueKind PassParameterBinding::GetKind() const noexcept
 {
@@ -122,7 +134,7 @@ bool PassParameterSet::SetTextureArray(const char* name, const std::vector<Frame
 		return false;
 	}
 
-	if (!ValidateTextureBinding(handles, *parameter))
+	if (!ValidateResourceBinding(handles, *parameter))
 	{
 		return false;
 	}
@@ -160,7 +172,7 @@ bool PassParameterSet::SetBufferArray(const char* name, const std::vector<FrameG
 		return false;
 	}
 
-	if (!ValidateBufferBinding(handles, *parameter))
+	if (!ValidateResourceBinding(handles, *parameter))
 	{
 		return false;
 	}
@@ -343,50 +355,5 @@ bool PassParameterSet::SetDescriptorTable(
 	}
 
 	m_bindings[index].SetValue(binding);
-	return true;
-}
-
-bool PassParameterSet::ValidateArrayCount(const PassParameterDesc& parameter, std::size_t actualCount) noexcept
-{
-	return parameter.ArrayCount == static_cast<std::uint32_t>(actualCount);
-}
-
-bool PassParameterSet::ValidateTextureBinding(
-    const std::vector<FrameGraphTextureHandle>& handles,
-    const PassParameterDesc& parameter) noexcept
-{
-	if (!ValidateArrayCount(parameter, handles.size()))
-	{
-		return false;
-	}
-
-	for (const FrameGraphTextureHandle& handle : handles)
-	{
-		if (!handle.IsValid())
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
-bool PassParameterSet::ValidateBufferBinding(
-    const std::vector<FrameGraphBufferHandle>& handles,
-    const PassParameterDesc& parameter) noexcept
-{
-	if (!ValidateArrayCount(parameter, handles.size()))
-	{
-		return false;
-	}
-
-	for (const FrameGraphBufferHandle& handle : handles)
-	{
-		if (!handle.IsValid())
-		{
-			return false;
-		}
-	}
-
 	return true;
 }

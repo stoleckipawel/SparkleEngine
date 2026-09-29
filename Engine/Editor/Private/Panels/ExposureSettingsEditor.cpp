@@ -126,31 +126,29 @@ private:
 
 void ExposureSettingsEditor::DrawSettings(EngineRenderingSettingsSection& settingsSection, const EngineRenderingSettingsState& settings)
 {
-	using namespace RenderingSettingsPanelUi;
-
-	static constexpr ComboOption<EngineExposureMode> exposureModeOptions[] = {
+	static constexpr RenderingSettingsPanelUi::ComboOption<EngineExposureMode> exposureModeOptions[] = {
 	    {"Manual", EngineExposureMode::Manual},
 	    {"Automatic", EngineExposureMode::Automatic},
 	};
-	static constexpr ComboOption<EngineExposureMeteringMethod> exposureMeteringMethodOptions[] = {
+	static constexpr RenderingSettingsPanelUi::ComboOption<EngineExposureMeteringMethod> exposureMeteringMethodOptions[] = {
 	    {"Parallel reduction", EngineExposureMeteringMethod::ParallelReduction},
 	    {"Downsample pyramid", EngineExposureMeteringMethod::DownsamplePyramid},
 	};
 
-	DrawComboOptionRow(
+	RenderingSettingsPanelUi::DrawComboOptionRow(
 	    "##ExposureMode",
 	    "Exposure mode",
 	    settings.ExposureMode,
 	    exposureModeOptions,
 	    [&settingsSection](EngineExposureMode value) { settingsSection.SetExposureMode(value); });
-	DrawComboOptionRow(
+	RenderingSettingsPanelUi::DrawComboOptionRow(
 	    "##ExposureMeteringMethod",
 	    "Exposure metering",
 	    settings.ExposureMeteringMethod,
 	    exposureMeteringMethodOptions,
 	    [&settingsSection](EngineExposureMeteringMethod value) { settingsSection.SetExposureMeteringMethod(value); });
 	ImGui::BeginDisabled(settings.ExposureMode != EngineExposureMode::Manual);
-	DrawFloatInputRow(
+	RenderingSettingsPanelUi::DrawFloatInputRow(
 	    "##ManualExposure",
 	    "Manual exposure",
 	    settings.ManualExposure,
@@ -159,7 +157,7 @@ void ExposureSettingsEditor::DrawSettings(EngineRenderingSettingsSection& settin
 	    1.0f,
 	    "%.4f");
 	ImGui::EndDisabled();
-	DrawFloatInputRow(
+	RenderingSettingsPanelUi::DrawFloatInputRow(
 	    "##ExposureCompensation",
 	    "Exposure compensation EV",
 	    settings.ExposureCompensation,
@@ -167,7 +165,7 @@ void ExposureSettingsEditor::DrawSettings(EngineRenderingSettingsSection& settin
 	    0.1f,
 	    1.0f,
 	    "%.2f");
-	DrawFloatInputRow(
+	RenderingSettingsPanelUi::DrawFloatInputRow(
 	    "##ExposureTargetLuminance",
 	    "Target luminance",
 	    settings.ExposureTargetLuminance,
@@ -175,7 +173,7 @@ void ExposureSettingsEditor::DrawSettings(EngineRenderingSettingsSection& settin
 	    0.01f,
 	    0.1f,
 	    "%.4f");
-	DrawFloatInputRow(
+	RenderingSettingsPanelUi::DrawFloatInputRow(
 	    "##ExposureMin",
 	    "Min exposure",
 	    settings.ExposureMin,
@@ -183,7 +181,7 @@ void ExposureSettingsEditor::DrawSettings(EngineRenderingSettingsSection& settin
 	    0.0001f,
 	    0.01f,
 	    "%.6f");
-	DrawFloatInputRow(
+	RenderingSettingsPanelUi::DrawFloatInputRow(
 	    "##ExposureMax",
 	    "Max exposure",
 	    settings.ExposureMax,
@@ -191,7 +189,7 @@ void ExposureSettingsEditor::DrawSettings(EngineRenderingSettingsSection& settin
 	    1.0f,
 	    64.0f,
 	    "%.3f");
-	DrawFloatInputRow(
+	RenderingSettingsPanelUi::DrawFloatInputRow(
 	    "##ExposureAdaptationSpeedUp",
 	    "Adapt speed up",
 	    settings.ExposureAdaptationSpeedUp,
@@ -199,7 +197,7 @@ void ExposureSettingsEditor::DrawSettings(EngineRenderingSettingsSection& settin
 	    0.1f,
 	    1.0f,
 	    "%.3f");
-	DrawFloatInputRow(
+	RenderingSettingsPanelUi::DrawFloatInputRow(
 	    "##ExposureAdaptationSpeedDown",
 	    "Adapt speed down",
 	    settings.ExposureAdaptationSpeedDown,

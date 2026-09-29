@@ -13,34 +13,35 @@ void DrawUpscalingSettingsSection(
     const EngineRenderingSettingsState& settings,
     const char* filterText)
 {
-	using namespace RenderingSettingsPanelUi;
-
-	static constexpr ComboOption<EUpscalerProviderKind> upscalerProviderOptions[] = {
+	static constexpr RenderingSettingsPanelUi::ComboOption<EUpscalerProviderKind> upscalerProviderOptions[] = {
 	    {"Linear", EUpscalerProviderKind::Linear},
 	    {"NVIDIA DLSS", EUpscalerProviderKind::NvidiaDlss},
 	};
-	static constexpr ComboOption<EUpscalerQualityMode> upscalerQualityOptions[] = {
+	static constexpr RenderingSettingsPanelUi::ComboOption<EUpscalerQualityMode> upscalerQualityOptions[] = {
 	    {"Native AA", EUpscalerQualityMode::NativeAA},
 	    {"Quality", EUpscalerQualityMode::Quality},
 	    {"Balanced", EUpscalerQualityMode::Balanced},
 	    {"Performance", EUpscalerQualityMode::Performance},
 	    {"Ultra performance", EUpscalerQualityMode::UltraPerformance},
 	};
-	if (!MatchesFilter(filterText, "Upscaling", "upscaler upscaling linear bilinear dlss quality native aa balanced performance")
-	    || !BeginSettingsCategory("Upscaling"))
+	if (!RenderingSettingsPanelUi::MatchesFilter(
+	        filterText,
+	        "Upscaling",
+	        "upscaler upscaling linear bilinear dlss quality native aa balanced performance")
+	    || !RenderingSettingsPanelUi::BeginSettingsCategory("Upscaling"))
 	{
 		return;
 	}
 
-	if (BeginSettingsTable("##RenderingUpscalingSettings"))
+	if (RenderingSettingsPanelUi::BeginSettingsTable("##RenderingUpscalingSettings"))
 	{
-		DrawComboOptionRow(
+		RenderingSettingsPanelUi::DrawComboOptionRow(
 		    "##UpscalerProvider",
 		    "Provider",
 		    settings.UpscalerProvider,
 		    upscalerProviderOptions,
 		    [&settingsSection](EUpscalerProviderKind value) { settingsSection.SetUpscalerProvider(value); });
-		DrawComboOptionRow(
+		RenderingSettingsPanelUi::DrawComboOptionRow(
 		    "##UpscalerQualityMode",
 		    "Quality mode",
 		    settings.UpscalerQualityMode,

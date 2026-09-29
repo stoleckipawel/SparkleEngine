@@ -6,10 +6,7 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Lighting/LightingCompositeShader.h"
 
-void AddLightingCompositePass(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources)
+void AddLightingCompositePass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
 	const LightingRenderTargets& lighting = resources.Transient.Lighting;
 	const GBufferRenderTargets& gbuffer = resources.Transient.GBuffer;

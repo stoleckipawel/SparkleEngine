@@ -5,7 +5,4 @@
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
 
-void CreateRestirLightingResources(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    RenderFrameGraphResources& resources);
+void CreateRestirLightingResources(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, RenderFrameGraphResources& resources);

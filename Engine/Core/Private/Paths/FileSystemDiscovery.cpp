@@ -27,13 +27,12 @@ namespace Filesystem::Private
 
 	std::string InferProjectNameFromExecutableStem(std::string executableStem)
 	{
-		if (executableStem.size() > std::string_view("Editor").size()
-		    && PathFormatting::EndsWithIgnoreCase(executableStem, "Editor"))
+		if (executableStem.size() > std::string_view("Editor").size() && PathFormatting::EndsWithIgnoreCase(executableStem, "Editor"))
 		{
 			executableStem.resize(executableStem.size() - std::string_view("Editor").size());
 		}
 		else if (executableStem.size() > std::string_view("Runtime").size()
-		         && PathFormatting::EndsWithIgnoreCase(executableStem, "Runtime"))
+		    && PathFormatting::EndsWithIgnoreCase(executableStem, "Runtime"))
 		{
 			executableStem.resize(executableStem.size() - std::string_view("Runtime").size());
 		}
