@@ -2,7 +2,7 @@
 
 **Status:** implementation plan; not proof of implementation or shipment
 
-**Last code and document reconciliation:** 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
+**Last code and document reconciliation:** 2026-09-29 against the working tree based on committed revision `d1d26dbb`; capture-specific paths were inspected, while unrelated local Renderer changes are outside this reconciliation
 
 **Scope:** staged, feature-selectable delivery of the performance diagnostics product defined by [Performance Diagnostics Architecture](README.md)
 
@@ -93,7 +93,7 @@ Every candidate receives exactly one disposition:
 
 ### Known candidates and mandatory disposition
 
-This is the reconciled 2026-08-28 starting inventory. Revalidate it rather than treating it as permanent truth.
+This is the reconciled 2026-09-29 starting inventory. Revalidate it rather than treating it as permanent truth.
 
 | Concept | Current overlap/candidate | Required outcome |
 | --- | --- | --- |
@@ -364,7 +364,7 @@ Feature selection primarily controls what code is implemented and retained. Do n
 
 - Fixed stat groups retained in profiling-capable Debug/Development builds are entries in one bounded catalog and use typed runtime demand.
 - The existing Debug/Development-versus-Shipping profile is the single product eligibility boundary. Additional build switches exist only for a real optional dependency inside eligible builds, such as a selected vendor adapter; do not add one switch per metric/group/package.
-- Launch options such as `-Pix`, `-RenderDoc`, and `-Nsight` express immutable process-start intent only in an eligible build; they do not make unbuilt providers appear available and have no diagnostic handler in stripped Shipping.
+- One typed provider set expresses immutable process-start intent in an eligible build. The Launcher owns the selection UI and level-run request; the repeatable direct-CLI adapter is `--capture-provider <id>`. Neither path makes an unbuilt provider appear available, and stripped Shipping has no capture-option parser or handler.
 - Deferred packages leave no compatibility layer, placeholder menu item, empty source file, or reserved public API.
 - A prototype that fails its acceptance test is removed in the same package unless an explicitly selected follow-up consumes it.
 
@@ -462,7 +462,7 @@ In every example, the phase gates are still reviewed and closed in order. A pack
 The [architecture](README.md) defines the product decomposition; this plan owns its required dependency order. After the baseline, external capture is the first implementation slice and later internal features remain selectable.
 
 1. Freeze metric names, units, validity, `FrameId` join behavior, and a source-backed baseline trace using existing thread/ETW/GPU markers.
-2. Prove the attached external frame-capture product end to end: bounded process-wide provider-set selection before device creation; PIX D3D12, RenderDoc D3D12/Vulkan, and Nsight Graphics D3D12/Vulkan private adapters; marker-only correlation; one conditional far-right icon per capable provider in each viewport; stable target binding; global exclusive request arbitration; pairwise/multi-provider compatibility evidence; native artifact handoff; absent-tool, failure, observer-cost, and Shipping-erasure evidence. Nsight remains explicitly experimental until its current SDK/tool matrix passes, but its accept-or-evidence-backed-reject decision is completed here rather than deferred behind internal work.
+2. Prove the attached external frame-capture product end to end: bounded process-wide provider-set selection before device creation; PIX D3D12, RenderDoc D3D12/Vulkan, and Nsight Graphics D3D12/Vulkan private adapters; marker-only correlation; one conditional icon per capable provider in each viewport's right-control cluster; stable target binding; global exclusive request arbitration; pairwise/multi-provider compatibility evidence; native artifact handoff; absent-tool, failure, observer-cost, and Shipping-erasure evidence. Nsight remains explicitly experimental until its current SDK/tool matrix passes, but its accept-or-evidence-backed-reject decision is completed here rather than deferred behind internal work.
 3. Add the bounded Application session, host phases, process RAM, Renderer CPU stages, frame-queue waits, and one top-level GPU queue span needed by `MAP-00`, composing the accepted external-capture projection without changing its owners.
 4. Register the fixed expert `Stat` command through the existing Editor/DevelopmentGame console composition; publish `Fps`, `Unit`, and `UnitGraph` from the same model; expose the task-first `Quick Check` viewport path; and prove basic-mode observer cost and keyboard completion.
 5. Complete the workload-owned `MAP-00` vertical slice: fixed resolution/readiness, explicit benchmark export and manifest integration, capture naming, and Sponza calibration.
@@ -581,10 +581,10 @@ Use Sponza for the first capture, then exercise every provider on each declared 
 | ID | User action | Expected criteria | Required reading task |
 | --- | --- | --- | --- |
 | `EXT-00` | Launch with no provider, every provider alone, each pair, and the combined requested set; inspect all renderable viewports and click a second icon while one capture is active. | Per-provider capability/state is independent; only requested or detected capable icons appear; clicked provider/viewport identity survives; compatibility conflicts and global `Busy` are explicit; no native handle/provider API reaches Editor. | Classify every provider/backend/version/combination as supported, unavailable, experimental, or evidence-backed rejected before the gate closes. |
-| `EXT-01` | Launch `DevelopmentEditor` D3D12 with `-Pix`, then click the PIX mini icon in the intended viewport. | Correct pre-device setup, device/swapchain/present target, next valid frame, stable Sparkle marker tree/bookmark, artifact/native handoff, absent-tool behavior, and exactly-once failure/shutdown. | Open the artifact, identify the Sparkle frame/marker path, and state whether capture target and marker correlation are trustworthy. |
-| `EXT-02` | Launch `DevelopmentEditor` D3D12 with `-RenderDoc`, then click its icon. | Correct supported bootstrap/injection route and D3D12 present target; next-frame capture opens with stable markers and validation-clean state; absent tool remains honest. | Inspect one known pass/resource/pipeline state and record what RenderDoc proves that icon visibility alone does not. |
-| `EXT-03` | Launch `DevelopmentEditor` Vulkan with `-RenderDoc`, then click its icon. | Vulkan layer/bootstrap order, device/swapchain selection, next-frame artifact, marker parity, and Vulkan validation pass; D3D12 and Vulkan expose the same neutral state meanings. | Compare D3D12/Vulkan marker and target identity and explain any backend-specific capture limitation. |
-| `EXT-04` | Build the currently eligible Nsight Graphics D3D12 adapter, launch with `-Nsight`, then click its icon. | Installed SDK/tool matrix is revalidated; next-frame target, marker correlation, failure/timeout/shutdown, pairwise compatibility, and experimental status are honest. | Open the capture and decide whether the current matrix supports production use, remains experimental, or must be rejected with evidence. |
+| `EXT-01` | Select provider `pix` in the Launcher, launch `DevelopmentEditor` D3D12, then click the PIX mini icon in the intended viewport. Repeat once through direct CLI to prove both adapters produce the same typed intent. | Correct request serialization and pre-device setup, device/swapchain/present target, next valid frame, stable Sparkle marker tree/bookmark, artifact/native handoff, absent-tool behavior, and exactly-once failure/shutdown. | Open the artifact, identify the Sparkle frame/marker path, and state whether capture target and marker correlation are trustworthy. |
+| `EXT-02` | Select provider `renderdoc` in the Launcher, launch `DevelopmentEditor` D3D12, then click its icon. | Correct request serialization, supported bootstrap/injection route, and D3D12 present target; next-frame capture opens with stable markers and validation-clean state; absent tool remains honest. | Inspect one known pass/resource/pipeline state and record what RenderDoc proves that icon visibility alone does not. |
+| `EXT-03` | Select provider `renderdoc` in the Launcher, launch `DevelopmentEditor` Vulkan, then click its icon. | Vulkan layer/bootstrap order, device/swapchain selection, next-frame artifact, marker parity, and Vulkan validation pass; D3D12 and Vulkan expose the same neutral state meanings. | Compare D3D12/Vulkan marker and target identity and explain any backend-specific capture limitation. |
+| `EXT-04` | Build the currently eligible Nsight Graphics D3D12 adapter, select provider `nsight-graphics`, launch from the Launcher, then click its icon. | Installed SDK/tool matrix is revalidated; next-frame target, marker correlation, failure/timeout/shutdown, pairwise compatibility, and experimental status are honest. | Open the capture and decide whether the current matrix supports production use, remains experimental, or must be rejected with evidence. |
 | `EXT-05` | Repeat `EXT-04` on Vulkan. | Required layer/extension/device path and provider compatibility pass, or the adapter is evidence-backed rejected rather than emulated or retained as a stub. | Compare with D3D12 or state the exact current limitation and removal/retest condition. |
 
 For every provider and eligible combination, capture Sponza first and then one artifact per supported map/backend. Confirm all capable icons coexist in stable order, click each in turn, and verify non-active icons report global `Busy` instead of capturing simultaneously. A provider is not accepted from startup, icon visibility, marker emission, or one lucky frame.

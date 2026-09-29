@@ -36,8 +36,7 @@ namespace RayReconstructionGuides
 
 	float3 ComputeSpecularAlbedo(GBufferData gBuffer, float3 viewDirWorld)
 	{
-		const float3 normalWorld = normalize(gBuffer.NormalWorld);
-		const float NoV = dot(normalWorld, normalize(viewDirWorld));
+		const float NoV = dot(gBuffer.NormalWorld, normalize(viewDirWorld));
 		const float alpha = gBuffer.Roughness * gBuffer.Roughness;
 		const float3 f0 = SurfaceLighting::BuildF0(gBuffer.BaseColor, gBuffer.Metallic, gBuffer.DielectricF0);
 		return EnvBRDFApprox2(f0, alpha, NoV);

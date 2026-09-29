@@ -3,6 +3,7 @@
 #include "Cooking/Dependencies/ShaderDependencyManifest.h"
 
 #include "Core/Public/Diagnostics/Error.h"
+#include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Files/FileUtils.h"
 
 #include <algorithm>
@@ -17,7 +18,7 @@ static constexpr std::string_view kShaderDependencyManifestHeader = "SparkleShad
 
 std::filesystem::path ShaderDependencyManifest::GetPath(const std::filesystem::path& cookedShaderRoot)
 {
-	return cookedShaderRoot / "ShaderDependencies.sdep";
+	return Filesystem::BuildShaderDependencyManifestPath(cookedShaderRoot);
 }
 
 ShaderDependencyManifest ShaderDependencyManifest::Read(const std::filesystem::path& path)

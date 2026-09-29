@@ -110,6 +110,21 @@ namespace Filesystem
 		return Private::GetAssetPathState().shaderRecookSignalPath;
 	}
 
+	std::filesystem::path BuildGlobalShaderMapPath(const std::filesystem::path& cookedShaderRootPath)
+	{
+		return Paths::Normalize(cookedShaderRootPath / "GlobalShaderMap.smap");
+	}
+
+	std::filesystem::path BuildCookedShaderLibraryPath(const std::filesystem::path& cookedShaderRootPath)
+	{
+		return Paths::Normalize(cookedShaderRootPath / "CookedShaderLibrary.slib");
+	}
+
+	std::filesystem::path BuildShaderDependencyManifestPath(const std::filesystem::path& cookedShaderRootPath)
+	{
+		return Paths::Normalize(cookedShaderRootPath / "ShaderDependencies.sdep");
+	}
+
 	std::filesystem::path BuildShaderRecookSignalPath(const std::filesystem::path& cookedShaderRootPath)
 	{
 		return Paths::Normalize(cookedShaderRootPath / "recook.signal");

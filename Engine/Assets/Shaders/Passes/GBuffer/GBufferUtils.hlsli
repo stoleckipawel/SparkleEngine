@@ -39,12 +39,6 @@ bool IsSkyPixel(float sceneDepth)
 	return SceneDepthUtils::IsSkyDepth(sceneDepth, FarZ);
 }
 
-float3 DecodeGBufferNormal(float3 normalWorld)
-{
-	const float lengthSquared = dot(normalWorld, normalWorld);
-	return lengthSquared > 0.0f ? normalWorld * rsqrt(lengthSquared) : float3(0.0f, 0.0f, 1.0f);
-}
-
 float DecodeGBufferDielectricF0(float storedDielectricF0)
 {
 	return saturate(storedDielectricF0);
@@ -67,7 +61,7 @@ GBufferData LoadGBuffer(uint2 pixelCoord)
 	GBufferData gBuffer;
 	gBuffer.BaseColor = saturate(baseColorSample.rgb);
 	gBuffer.Alpha = baseColorSample.a;
-	gBuffer.NormalWorld = DecodeGBufferNormal(normalSample.xyz);
+	gBuffer.NormalWorld = GBufferPacking::DecodeWorldNormal(normalSample.xyz);
 	gBuffer.SceneDepth = LoadSceneDepth(pixelCoord);
 	gBuffer.Metallic = saturate(materialSample.r);
 	gBuffer.Roughness = saturate(materialSample.g);

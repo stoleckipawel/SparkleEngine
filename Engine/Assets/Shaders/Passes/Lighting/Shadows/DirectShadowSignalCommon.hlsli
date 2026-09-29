@@ -41,7 +41,7 @@ bool PrepareDirectShadowSignal(uint2 pixelCoord,
 	}
 
 	const float3 positionWorld = ReconstructGBufferWorldPosition(pixelCoord, sceneDepth, InvViewMTX, InvProjectionMTX);
-	const float3 normalWorld = DecodeGBufferNormal(GBufferNormal.Load(int3(pixelCoord, 0)).xyz);
+	const float3 normalWorld = GBufferPacking::DecodeWorldNormal(GBufferNormal.Load(int3(pixelCoord, 0)).xyz);
 	const DirectLightReservoir::Reservoir reservoir =
 	    DirectLightReservoir::UnpackReservoir(CurrentReservoirSample.Load(int3(pixelCoord, 0)),
 	                                          CurrentReservoirWeight.Load(int3(pixelCoord, 0)));

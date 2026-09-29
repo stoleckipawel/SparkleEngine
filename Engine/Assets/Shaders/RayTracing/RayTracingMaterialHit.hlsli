@@ -36,8 +36,8 @@ RayTracingMaterialSample EvaluateRayTracingHitMaterial(RayTracingHitMaterial mat
 		const MaterialTextureMappingData mapping = material.TextureMappings[MaterialTextureTableSampling::TextureSlotNormal];
 
 		result.NormalTangent =
-		    UnpackMaterialNormal(SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotNormal, uv).rgb,
-		                         mapping.Strength);
+		    DecodeBc5TangentNormal(SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotNormal, uv).rg,
+		                           mapping.Strength);
 	}
 
 	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotBaseColor))

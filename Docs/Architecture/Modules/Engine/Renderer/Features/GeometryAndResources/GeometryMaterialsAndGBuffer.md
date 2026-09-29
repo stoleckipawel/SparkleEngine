@@ -44,7 +44,7 @@ This promise currently covers opaque and alpha-tested static, instanced, skinned
 | Component | Current authored/GPU meaning | Raster and ray coverage |
 | --- | --- | --- |
 | Base color | factor plus texture | shared |
-| Normal | tangent-space normal texture | shared |
+| Normal | tangent-space normal texture cooked as linear BC5; shaders decode stored XY, reconstruct the positive tangent-space Z hemisphere, apply authored strength to XY, normalize, and transform through the canonical tangent frame | shared raster/ray decoder |
 | Roughness | factor plus texture | shared |
 | Metallic | factor plus texture | shared |
 | Ambient occlusion | factor plus texture | shared |
@@ -63,13 +63,17 @@ Raster GBuffer uses a bindful per-material layout for eight texture roles: base 
 | Product | Format | Default/clear meaning | Downstream role |
 | --- | --- | --- | --- |
 | Base color | `R8G8B8A8_UNorm` | black, alpha 1 | diffuse/albedo and debug |
-| Normal | `R16G16B16A16_Float` | +Z default | shading and reconstruction guide |
+| Normal | `R16G16B16A16_Float` | +Z default | signed normalized WorldSpace shading normal; consumers normalize through the shared GBuffer decoder, and the debug view maps `[-1, 1]` to display-linear `[0, 1]` |
 | Material | `R8G8B8A8_UNorm` | metallic 0, roughness 1, AO 1, F0 0.04 | PBR parameters and debug |
 | Emissive | `R16G16B16A16_Float` | zero | lighting composite |
 | Subsurface | `R8G8B8A8_UNorm` | zero | direct subsurface term |
 | Motion vector | `R16G16_Float` | zero | temporal reuse, accumulation, providers; sky motion is written separately |
 | Device Z | raster `D32_Float`; ray `R32_Float` | far/background by frontend convention | visibility depth and provider input |
 | Scene depth | `R32_Float` | derived from Device Z | lighting, sky, debug/capture product |
+
+The Normal product is not display encoded and no consumer changes its axes. Lighting and shadow shaders use the shared
+WorldSpace decoder, the Normal debug mode performs only the signed-to-display-linear mapping, and DLSS Ray Reconstruction
+tags the raw texture as unpacked normals together with the world/view transforms required to interpret WorldSpace input.
 
 The different Device Z storage types are an implementation distinction, not permission for different depth semantics. `AddLinearizeDeviceZPass` is the common downstream boundary.
 
@@ -160,5 +164,3 @@ This contract is **defined but unproved**. Completion requires raw-product evide
 - [`RenderViewPreparation.cpp`](../../../../../../../Engine/Renderer/Private/View/RenderViewPreparation.cpp)
 - [`RenderGpuScene.cpp`](../../../../../../../Engine/Renderer/Private/Scene/GpuScene/RenderGpuScene.cpp)
 - [`MaterialTextureTableCapability.h`](../../../../../../../Engine/Renderer/Private/Scene/Materials/MaterialTextureTableCapability.h)
-
-

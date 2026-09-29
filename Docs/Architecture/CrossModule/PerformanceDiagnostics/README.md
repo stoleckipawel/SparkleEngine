@@ -2,7 +2,7 @@
 
 **Status:** feature dossier; target architecture, not proof of current implementation
 
-**Last source reconciliation:** 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
+**Last source reconciliation:** 2026-09-29 against the working tree based on committed revision `d1d26dbb`; the capture-specific paths named below were inspected, while unrelated local Renderer changes are outside this reconciliation
 
 **Scope:** editor and game frame timing, CPU owner/thread attribution, GPU queue/pass timing, process RAM, GPU memory, bounded live presentation, attached external frame capture, external-profiler correlation, authoring isolation, and Shipping erasure
 
@@ -13,6 +13,8 @@
 | Current source surface | Target product | Deliberate boundary |
 | --- | --- | --- |
 | host frame clock, thread names, task ETW events, GPU markers/timestamps, allocator facts, memory polling, and editor FPS text | one bounded orientation model shared by DevelopmentGame and Editor, focused GPU capture, reproducible benchmark export, and external-profiler handoff | not an in-engine universal trace viewer, allocation tracker, hardware-counter oracle, or Shipping dependency |
+
+Current capture status is explicit: Sparkle emits D3D12 PIX marker events when the marker runtime is available, but it has no PIX, RenderDoc, or Nsight Graphics capture provider, no capture launch selection in `LevelRunOperationRequest`, no attached-provider model, and no viewport capture action. `RendererExternalRuntime` is the existing pre-device process-integration owner, `RendererBackendConfiguration` currently carries only backend selection and Streamline interposer hooks, and `ViewportTopPanel::BuildRightControls` currently owns the camera control plus ImGui-derived FPS/delta text. The design below extends those seams; it does not describe already shipped behavior.
 
 ```mermaid
 flowchart LR
@@ -764,21 +766,23 @@ This workflow is distinct from `ProfileGpu`. `ProfileGpu` creates a bounded Spar
 
 #### Launch And Provider Selection
 
-The Editor accepts three case-insensitive, process-wide launch intents. They may be combined so a developer can keep multiple provider actions visible in the same Editor session:
+Provider selection is one typed, process-start contract, not three independent booleans or CVars. The Launcher owns the user-facing selection and carries a provider set in its level-run request; direct command-line launches use the repeatable `--capture-provider <id>` adapter. Both normalize to the same immutable `ExternalGpuCaptureLaunchIntent` before `RendererExternalRuntime` initializes any backend or creates a device. The initial stable provider IDs are `pix`, `renderdoc`, and `nsight-graphics`; they may be repeated or combined.
 
-| Launch intent | Selected activity | Backend/capability gate | Initial delivery tier |
+The Launcher does not load vendor libraries, predict runtime readiness, or duplicate the compatibility matrix. It presents optional selections, serializes the typed request, and lets the launched process publish the authoritative result. Direct CLI parsing is an Application startup concern separate from the generic `--cvar` adapter. Unknown or duplicate provider IDs fail validation with an actionable message; they never silently select a provider.
+
+| Provider ID | Selected activity | Backend/capability gate | Initial delivery tier |
 | --- | --- | --- | --- |
-| `-Pix` | PIX GPU Capture for the next targeted viewport frame. | Windows D3D12 only; the PIX GPU capturer must be loaded or injected before D3D12 device creation and its runtime attachment/capture query must pass. | Supported target after D3D12 smoke, artifact-open, and observer-cost gates pass. |
-| `-RenderDoc` | RenderDoc frame capture for the next targeted viewport frame. | D3D12 or Vulkan only when the dynamically discovered RenderDoc in-application API and selected device/window path pass. Sparkle does not link RenderDoc statically. | Supported target after paired-backend capture/replay and shutdown gates pass. |
-| `-Nsight` | Nsight Graphics **Graphics Capture** for the next targeted viewport frame. It does not mean Nsight Systems or GPU Trace. | Supported NVIDIA D3D12/Vulkan path only; the current NGFX Graphics Capture initialization/request API and activity must pass. | Experimental until the beta SDK/API, driver matrix, artifact finalization, and observer cost are accepted. |
+| `pix` | PIX GPU Capture for the next targeted viewport frame. | Windows D3D12 only; the PIX GPU capturer must be loaded or injected before D3D12 device creation and its runtime attachment/capture query must pass. | Supported target after D3D12 smoke, artifact-open, and observer-cost gates pass. |
+| `renderdoc` | RenderDoc frame capture for the next targeted viewport frame. | D3D12 or Vulkan only when the dynamically discovered RenderDoc in-application API and selected device/window path pass. Sparkle does not link RenderDoc statically. | Supported target after paired-backend capture/replay and shutdown gates pass. |
+| `nsight-graphics` | Nsight Graphics **Graphics Capture** for the next targeted viewport frame. It does not mean Nsight Systems or GPU Trace. | Supported NVIDIA D3D12/Vulkan path only; the current NGFX Graphics Capture initialization/request API and activity must pass. | Experimental until the beta SDK/API, driver matrix, artifact finalization, and observer cost are accepted. |
 
-The flags normalize into a bounded internal `ExternalGpuCaptureProviderSet` before RHI device creation; they are not CVars, and provider membership cannot change after the device exists. The bootstrap evaluates every requested pair/combination against a versioned, measured compatibility matrix before loading capture layers. Compatible providers initialize independently and each publish their own state and icon. An untested or conflicting combination does not use provider precedence: the affected providers remain visibly `Unavailable(Conflict)` unless the adapter can prove a safe subset without hiding what was rejected. Sparkle never silently changes the graphics API. A requested provider that cannot initialize may leave the Editor running only after its adapter proves clean rollback; a partially initialized or process-unsafe capture layer fails launch.
+The intent normalizes into a bounded internal provider set before RHI device creation; provider membership cannot change after the device exists. The bootstrap evaluates every requested pair/combination against a versioned, measured compatibility matrix before loading capture layers. Compatible providers initialize independently and each publish their own state and icon. An untested or conflicting combination does not use provider precedence: the affected providers remain visibly `Unavailable(Conflict)` unless the adapter can prove a safe subset without hiding what was rejected. Sparkle never silently changes the graphics API. A requested provider that cannot initialize may leave the Editor running only after its adapter proves clean rollback; a partially initialized or process-unsafe capture layer fails launch.
 
-Launching or attaching through provider-native UIs may activate the same paths without Sparkle flags. Every detected capture API is represented independently, then checked against the same backend and multi-provider compatibility matrix. Passive detection never causes Sparkle to inject another library, and a marker-only runtime such as WinPixEventRuntime is not sufficient evidence that PIX GPU capture is attached.
+Launching or attaching through provider-native UIs may activate the same paths without a Sparkle provider selection. Every detected capture API is represented independently, then checked against the same backend and multi-provider compatibility matrix. Passive detection never causes Sparkle to inject another library, and a marker-only runtime such as WinPixEventRuntime is not sufficient evidence that PIX GPU capture is attached.
 
 #### Viewport Icon And Interaction
 
-- The Editor places a compact group of 16-20 px provider-branded capture icons at the far right of each renderable viewport header: one icon per requested or detected provider. The group uses a stable order and may contain PIX, RenderDoc, and Nsight simultaneously. With no requested/detected provider, the group does not exist; Sparkle does not show inert vendor buttons.
+- The Editor places a compact group of 16-20 px provider-branded capture icons in the viewport header's existing right-control cluster, immediately before camera/status controls: one icon per requested or detected provider. `ViewportTopPanel` owns layout only; a dedicated capture presenter consumes an immutable model and emits one typed request, so provider state and vendor logic do not accumulate in the panel. The group uses a stable order and may contain PIX, RenderDoc, and Nsight simultaneously. With no requested/detected provider, the group does not exist; Sparkle does not show inert vendor buttons.
 - Every icon has an independent accessible name and tooltip led by `Capture next frame with <provider>` and includes provider activity, backend, target viewport, readiness, observer warning, compatibility state, and output behavior. The icon alone never carries meaning.
 - A requested but unavailable provider keeps a disabled warning form of its own icon so the user can see why that provider failed or conflicts and open setup guidance. Ready, armed, capturing/finalizing, completed, and failed states are per provider and have distinct text/tooltips; animation is optional reinforcement.
 - Clicking submits an `ExternalCaptureRequestId`, provider ID, and stable viewport target token. Renderer resolves that token to the native present surface at a safe boundary; Editor never chooses an `HWND`, swapchain, device, queue, or command buffer.
@@ -793,7 +797,7 @@ Each provider entry follows the same state machine independently; the global req
 
 ```text
 NotRequested
-    | provider launch flag or passive detection
+    | provider launch intent or passive detection
     v
 Initializing ---> Unavailable(reason/setup)
     |
@@ -1214,7 +1218,7 @@ For attached frame-capture providers, every viewport icon is only a trigger and 
 - An invalid parent, parent cycle, child outside parent, significant sibling overlap, or queue mismatch invalidates the affected GPU subtree and its exclusive values. The independent top-level queue result remains usable where valid.
 - Draw, dispatch, resource, and barrier annotations without owned timestamp pairs remain marker-only. The visualizer never invents duration for them.
 - A second `ProfileGpu` while one is armed/resolving returns `Busy`; cancellation, shutdown, device loss, clear, and late completion settle one capture ID exactly once.
-- Unsupported provider combinations, provider/backend mismatch, conflicting injected layers, or a second active external request are explicit typed failures. Combined provider flags are valid input, but no provider or viewport is selected by hidden precedence.
+- Unsupported provider combinations, provider/backend mismatch, conflicting injected layers, or a second active external request are explicit typed failures. Combined provider selections are valid input, but no provider or viewport is selected by hidden precedence.
 - A requested external provider that is absent or unsupported remains visibly unavailable. If initialization cannot roll back cleanly before device creation, the launch fails rather than continuing with partially installed hooks.
 - A viewport external capture targets the next valid present for the clicked viewport. Minimize, zero extent, resize, timeout, shutdown, and device loss settle the request once and never redirect capture to another Editor window.
 - Provider artifact finalization is asynchronous and bounded. Missing artifact-path reporting remains a completed native-UI handoff, not an invented Sparkle path; callback overflow or late completion is a visible failure.
@@ -1248,7 +1252,7 @@ For attached frame-capture providers, every viewport icon is only a trigger and 
 | GPU hierarchy | Stable scope token + explicit capture-local parent; inclusive from ticks and exclusive from direct-child interval union per queue. | Completion-order/depth reconstruction, nested-duration sums, or cross-queue subtraction. |
 | GPU capture topology | Preassigned per-chunk query/record slices preserve normal parallel recording and submission topology. | Silently serializing command recording to simplify profiling. |
 | Attached external frame capture | A bounded provider set selected before device creation; one conditional icon per requested/detected provider in each renderable viewport; one globally serialized next-valid-frame request naming the clicked icon's provider and viewport. | Permanent unrequested vendor buttons, assuming icon coexistence makes simultaneous capture safe, late capture-layer injection after device creation, hidden provider precedence, native handles in Editor, or silently capturing whichever window presents first. |
-| External capture delivery | PIX D3D12 and RenderDoc D3D12/Vulkan are the first supported targets; Nsight Graphics Capture is planned behind an explicit experimental gate while its SDK remains beta. | Calling all three providers equivalent, treating `-Nsight` as Nsight Systems/GPU Trace, or making a beta vendor SDK a mandatory engine dependency. |
+| External capture delivery | PIX D3D12 and RenderDoc D3D12/Vulkan are the first supported targets; Nsight Graphics Capture is planned behind an explicit experimental gate while its SDK remains beta. | Calling all three providers equivalent, treating `nsight-graphics` as Nsight Systems/GPU Trace, or making a beta vendor SDK a mandatory engine dependency. |
 | Memory | Working/private RAM and tracked/block/local/non-local/retirement GPU facts. | One ambiguous "RAM" and one combined "VRAM" number. |
 | Memory peaks | OS process-lifetime peaks, Sparkle session sampled high-water, and benchmark-run sampled high-water remain distinct. | Claiming `Stat Reset` resets OS peaks or calling a sampled peak exact. |
 | Publication | Delayed nonblocking join by `FrameId`. | Waiting for RenderThread/GPU so the newest UI row is complete. |

@@ -46,17 +46,6 @@ float4 TangentLocalToWorld(float4 tangentLocal)
 	return float4(worldTangent, tangentLocal.w);
 }
 
-float3 ComputeBitangent(float3 normalWorld, float4 tangentWorld)
-{
-	return tangentWorld.w * normalize(cross(normalWorld, tangentWorld.xyz));
-}
-
-float3 TransformNormalToWorld(float3 normalTangent, float3 vertexNormalWorld, float3 vertexTangentWorld, float3 vertexBitangentWorld)
-{
-	const float3x3 TBN = float3x3(vertexTangentWorld, vertexBitangentWorld, vertexNormalWorld);
-	return mul(normalTangent, TBN);
-}
-
 float3 Rotate(float3 v, float3 axis, float angle)
 {
 	const float c = cos(angle);

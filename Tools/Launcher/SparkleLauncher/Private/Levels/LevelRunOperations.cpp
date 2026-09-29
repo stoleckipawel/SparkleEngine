@@ -1,5 +1,6 @@
 #include "SparkleLauncher/LevelRunOperations.h"
 
+#include "CookedContentReadiness.h"
 #include "LevelRunOperationProcessRequests.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "LauncherStatePaths.h"
@@ -30,44 +31,6 @@ namespace SparkleLauncher
 		overrideValue.Name = std::move(name);
 		overrideValue.Value = std::move(value);
 		plan.Environment.push_back(std::move(overrideValue));
-	}
-
-	static bool DirectoryHasRegularFiles(const std::filesystem::path& directory)
-	{
-		std::error_code errorCode;
-		if (!std::filesystem::is_directory(directory, errorCode))
-		{
-			return false;
-		}
-
-		std::filesystem::recursive_directory_iterator iterator(
-		    directory,
-		    std::filesystem::directory_options::skip_permission_denied,
-		    errorCode);
-		const std::filesystem::recursive_directory_iterator end;
-		while (iterator != end)
-		{
-			const std::filesystem::directory_entry entry = *iterator;
-			if (entry.is_regular_file(errorCode))
-			{
-				return true;
-			}
-			errorCode.clear();
-			iterator.increment(errorCode);
-			errorCode.clear();
-		}
-		return false;
-	}
-
-	static bool CookedAssetScopeHasFiles(
-	    const std::filesystem::path& repositoryRoot,
-	    std::string_view projectId,
-	    std::string_view relativeDirectory)
-	{
-		const std::string relativeScope(relativeDirectory);
-		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
-		return DirectoryHasRegularFiles(outputs.CookedProjectDirectory(projectId) / relativeScope)
-		    || DirectoryHasRegularFiles(outputs.SharedCookedProjectDirectory() / relativeScope);
 	}
 
 	static std::filesystem::path FirstExistingOrPreferred(const std::vector<std::filesystem::path>& candidates)
@@ -204,9 +167,11 @@ namespace SparkleLauncher
 		errorCode.clear();
 		plan.Readiness.ContentDirectoryReady =
 		    std::filesystem::exists(plan.WorkingDirectory / std::string(Filesystem::kProjectMarker), errorCode);
-		plan.Readiness.CookedMeshesReady = CookedAssetScopeHasFiles(plan.Request.RepositoryRoot, plan.Request.ContentId, "Meshes");
-		plan.Readiness.CookedTexturesReady = CookedAssetScopeHasFiles(plan.Request.RepositoryRoot, plan.Request.ContentId, "Textures");
-		plan.Readiness.CookedShadersReady = CookedAssetScopeHasFiles(plan.Request.RepositoryRoot, plan.Request.ContentId, "Shaders");
+		const CookedContentReadiness cookedContent =
+		    InspectCookedContentReadiness(plan.Request.RepositoryRoot, plan.Request.ContentId);
+		plan.Readiness.CookedMeshesReady = cookedContent.MeshesReady;
+		plan.Readiness.CookedTexturesReady = cookedContent.TexturesReady;
+		plan.Readiness.CookedShadersReady = cookedContent.Shaders == CookedOutputState::Ready;
 
 		AddReadiness(
 		    plan,
@@ -220,7 +185,18 @@ namespace SparkleLauncher
 		    plan,
 		    plan.Readiness.CookedMeshesReady ? "Cooked scenes and meshes are ready." : "Cooked scenes and meshes are missing.");
 		AddReadiness(plan, plan.Readiness.CookedTexturesReady ? "Cooked textures are ready." : "Cooked textures are missing.");
-		AddReadiness(plan, plan.Readiness.CookedShadersReady ? "Cooked shaders are ready." : "Cooked shaders are missing.");
+		switch (cookedContent.Shaders)
+		{
+			case CookedOutputState::Ready:
+				AddReadiness(plan, "Cooked shaders are ready.");
+				break;
+			case CookedOutputState::Stale:
+				AddReadiness(plan, "Cooked shaders are stale; cook shaders from the current source generation.");
+				break;
+			case CookedOutputState::Missing:
+				AddReadiness(plan, "The complete cooked shader generation is missing.");
+				break;
+		}
 		AddPlannedEffect(
 		    plan,
 		    "Run level " + plan.Request.LevelId + " in " + plan.ExecutablePath.string() + " from " + plan.WorkingDirectory.string() + ".");

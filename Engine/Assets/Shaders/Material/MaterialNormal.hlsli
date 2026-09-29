@@ -1,7 +1,13 @@
 #pragma once
 
-float3 UnpackMaterialNormal(float3 encodedNormal, float normalScale)
+#include "/Engine/Common/Math.hlsli"
+
+float3 DecodeBc5TangentNormal(float2 encodedNormalXY, float normalScale)
 {
-	const float3 decoded = encodedNormal * 2.0f - 1.0f;
-	return normalize(float3(decoded.xy * normalScale, decoded.z));
+	// Normal textures are cooked as BC5. Reconstruct the positive tangent-space
+	// hemisphere from the two stored channels instead of interpreting the absent
+	// blue channel as tangent-space -Z.
+	const float2 decodedNormalXY = encodedNormalXY * 2.0f - 1.0f;
+	const float normalZ = sqrt(saturate(1.0f - dot(decodedNormalXY, decodedNormalXY)));
+	return SafeNormalize(float3(decodedNormalXY * normalScale, normalZ));
 }

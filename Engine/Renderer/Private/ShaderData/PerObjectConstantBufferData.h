@@ -33,7 +33,8 @@ struct alignas(256) PerObjectPSConstantBufferData
 	DirectX::XMFLOAT3 SubsurfaceColor = {0.0f, 0.0f, 0.0f};
 
 	float SubsurfaceStrength = 0.0f;
-	DirectX::XMFLOAT3 _padPerObjectPS0 = {0.0f, 0.0f, 0.0f};
+	float NormalScale = 1.0f;
+	DirectX::XMFLOAT2 _padPerObjectPS0 = {0.0f, 0.0f};
 };
 static_assert(std::is_standard_layout_v<PerObjectPSConstantBufferData>);
 static_assert(std::is_trivially_copyable_v<PerObjectPSConstantBufferData>);
@@ -58,3 +59,4 @@ static_assert(
 static_assert(
     offsetof(PerObjectPSConstantBufferData, SubsurfaceStrength) == 64,
     "PerObjectPSConstantBufferData::SubsurfaceStrength must start at c4.x");
+static_assert(offsetof(PerObjectPSConstantBufferData, NormalScale) == 68, "PerObjectPSConstantBufferData::NormalScale must use c4.y");

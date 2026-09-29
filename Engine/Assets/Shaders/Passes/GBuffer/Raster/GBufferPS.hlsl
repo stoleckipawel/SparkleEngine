@@ -23,7 +23,7 @@ void main(in PS::Input Input, out GBufferOutput Output)
 	MatProps.BaseColor = InstanceView::ApplyInstanceVisualization(MatProps.BaseColor, Input.GpuSceneSlot);
 
 	Output.BaseColor = GBufferPacking::PackBaseColor(MatProps.BaseColor, MatProps.Alpha, MatProps.AlphaMode, Material::AlphaModeBlend);
-	Output.Normal = GBufferPacking::PackNormal(MatProps.NormalWorld);
+	Output.Normal = GBufferPacking::PackWorldNormal(MatProps.NormalWorld);
 	Output.Material = GBufferPacking::PackMaterial(MatProps.Metallic, MatProps.Roughness, MatProps.AmbientOcclusion, MatProps.DielectricF0);
 	Output.Emissive = GBufferPacking::PackEmissive(MatProps.Emissive);
 	Output.Subsurface = GBufferPacking::PackSubsurface(MatProps.SubsurfaceColor, MatProps.SubsurfaceStrength);

@@ -2,7 +2,7 @@
 
 **Status:** research; target-product visual design, not proof of current implementation or measured performance
 
-**Last reconciled with the target architecture:** 2026-08-16
+**Last reconciled with the target architecture and current viewport:** 2026-09-29 at revision `d1d26dbb`
 
 **Scope:** graphical product mockups, a system-scope map, and implementation-oriented ASCII layouts for the user-facing diagnostic tools defined by [Performance Diagnostics Architecture](README.md)
 
@@ -12,7 +12,7 @@
 
 This document shows how each proposed Sparkle diagnostics surface could look. It is the single visual-design owner for graphical mockups, the system-scope map, and plain-text tool layouts. It is a reading aid for product review and implementation planning. The owning architecture defines metric meaning, ownership, bounds, collection modes, validity, and acceptance rules. If a mockup or wireframe conflicts with that architecture, the architecture wins.
 
-The values below are illustrative and deliberately reused across views. They are not Sponza measurements, benchmark evidence, or proof that a surface is implemented. Numeric capacities shown in the layouts are the architecture's initial sizing candidates and must be calibrated before they become implementation constants. The source-backed starting point remains the existing viewport FPS/delta display; the layouts below describe the target product.
+The values below are illustrative and deliberately reused across views. They are not Sponza measurements, benchmark evidence, or proof that a surface is implemented. Numeric capacities shown in the layouts are the architecture's initial sizing candidates and must be calibrated before they become implementation constants. The source-backed viewport header currently contains level/view-mode controls, a camera control, and ImGui-derived FPS/delta text; it has no Performance menu or provider capture icon. The layouts below describe the target product.
 
 The graphical mockups communicate the overall experience and information hierarchy. The later ASCII boxes own current control labels and placement; if a raster mockup still shows an older toolbar/menu label, the intent-first ASCII contract wins until the image is deliberately regenerated. The boxes also keep individual tools readable in terminals, source reviews, and plain-text exports.
 
@@ -120,32 +120,32 @@ Color may reinforce categories in the real UI, but text, icons, patterns, and to
 
 ### Attached Profiler Capture Icons
 
-The real control is a compact group containing each requested or detected provider's recognizable 16-20 px icon at the far right of every renderable viewport header. ASCII abbreviations are used here only so state remains legible in text:
+The real control is a compact group containing each requested or detected provider's recognizable 16-20 px icon in the viewport's right-control cluster, immediately before the existing camera/status controls. ASCII abbreviations are used here only so state remains legible in text:
 
 ```text
 No provider requested or detected
-+ Viewport ---------------------------------------------- [Performance v] +
++ Viewport ------------------------------- [Performance v] [Camera] [FPS] +
 
-PIX ready after -Pix
-+ Viewport ----------------------------------------- [Performance v] [PX] +
+PIX ready after selecting provider `pix`
++ Viewport -------------------------- [Performance v] [PX] [Camera] [FPS] +
   Tooltip: Capture next frame with PIX | D3D12 | this viewport | Ready
 
 RenderDoc requested but unavailable
-+ Viewport ---------------------------------------- [Performance v] [RD!] +
++ Viewport ---------------------- [Performance v] [RD!] [Camera] [FPS] +
   Disabled: RenderDoc API unavailable | Open setup guidance
 
-Nsight Graphics capture armed after -Nsight
-+ Viewport -------------------------------------- [Performance v] [NG...] +
+Nsight Graphics capture armed after selecting provider `nsight-graphics`
++ Viewport ----------------------- [Performance v] [NG...] [Camera] [FPS] +
   Status: Armed for next valid present | Graphics Capture | Experimental
 
 PIX and RenderDoc ready; Nsight requested but conflicting
-+ Viewport --------------------------------- [Performance v] [PX] [RD] [NG!] +
++ Viewport ----------- [Performance v] [PX] [RD] [NG!] [Camera] [FPS] +
   PX Tooltip: Capture next frame with PIX | D3D12 | this viewport | Ready
   RD Tooltip: Capture next frame with RenderDoc | D3D12 | this viewport | Ready
   NG Disabled: incompatible provider combination | Relaunch/setup guidance
 ```
 
-`-Pix`, `-RenderDoc`, and `-Nsight` are case-insensitive and may be combined. `-Nsight` means Nsight Graphics Capture, not Nsight Systems or GPU Trace. Compatible providers expose independent icons and states. Untested or unsafe capture-layer combinations remain visibly unavailable instead of silently choosing a winner. Clicking a ready icon submits one typed request naming that provider and the next valid frame of that viewport. It never builds a command string, calls a vendor API from Editor, changes the selected Performance frame, or chooses whichever Editor window presents first.
+The Launcher provider selection and repeatable direct-CLI `--capture-provider <id>` adapter both produce the same immutable provider set. `nsight-graphics` means Nsight Graphics Capture, not Nsight Systems or GPU Trace. Compatible providers expose independent icons and states. Untested or unsafe capture-layer combinations remain visibly unavailable instead of silently choosing a winner. Clicking a ready icon submits one typed request naming that provider and the next valid frame of that viewport. The panel only lays out a capture presenter; it never builds a command string, stores provider state, calls a vendor API, changes the selected Performance frame, or chooses whichever Editor window presents first.
 
 Each icon has its own `Unavailable`, `Ready`, `Armed`, `Capturing`, `Finalizing`, `Completed`, and `Failed` state. Initially, only one provider may be armed/capturing/finalizing globally; other ready icons temporarily expose `Busy with <provider>`. Accessible name, tooltip, status notification, and focus styling carry the full meaning; provider color or animation is reinforcement only. Completion offers `Open in <provider>` or `Show in folder` only when that provider returns a usable artifact path.
 

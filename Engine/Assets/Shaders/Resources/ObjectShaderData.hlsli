@@ -22,5 +22,6 @@ cbuffer PerObjectPS
 	float3 SubsurfaceColor;
 
 	float SubsurfaceStrength;
-	float3 _padPerObjectPS0;
+	float NormalScale;
+	float2 _padPerObjectPS0;
 };

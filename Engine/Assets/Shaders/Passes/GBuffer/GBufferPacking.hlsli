@@ -1,6 +1,8 @@
 #ifndef SPARKLE_GBUFFER_PACKING_HLSLI
 #define SPARKLE_GBUFFER_PACKING_HLSLI
 
+#include "/Engine/Common/Math.hlsli"
+
 namespace GBufferPacking
 {
 	float PackOutputAlpha(float alpha, uint alphaMode, uint blendedAlphaMode)
@@ -13,9 +15,14 @@ namespace GBufferPacking
 		return float4(baseColor, PackOutputAlpha(alpha, alphaMode, blendedAlphaMode));
 	}
 
-	float4 PackNormal(float3 normalWorld)
+	float4 PackWorldNormal(float3 normalWorld)
 	{
-		return float4(normalize(normalWorld), 0.0f);
+		return float4(SafeNormalize(normalWorld), 0.0f);
+	}
+
+	float3 DecodeWorldNormal(float3 packedNormalWorld)
+	{
+		return SafeNormalize(packedNormalWorld);
 	}
 
 	float4 PackMaterial(float metallic, float roughness, float ambientOcclusion, float dielectricF0)

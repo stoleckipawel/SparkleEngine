@@ -83,12 +83,14 @@ set(SPARKLE_LAUNCHER_CORE_LEVEL_HEADERS
 )
 
 set(SPARKLE_LAUNCHER_CORE_COOK_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cook/CookedContentReadiness.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cook/CookOperationExecutor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cook/CookOperationProcessRequests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cook/CookOperations.cpp
 )
 
 set(SPARKLE_LAUNCHER_CORE_COOK_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cook/CookedContentReadiness.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cook/CookOperationProcessRequests.h
 )
 

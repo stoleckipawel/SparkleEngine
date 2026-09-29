@@ -2,7 +2,7 @@
 
 **Status:** capability snapshot; dated, and not architecture, release approval, or executable evidence
 
-**Snapshot:** 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration were unchanged from implementation revision `99af6d5b`; refresh against the live tree before relying on an implementation claim
+**Snapshot:** 2026-09-29 against the working tree based on committed revision `d1d26dbb`; capture-specific source paths and launch composition were inspected, while unrelated local Renderer changes are outside this snapshot
 
 **Scope:** current timing, marker, memory, editor, benchmark-export, and attached-capture surfaces relevant to the target diagnostics system
 
@@ -31,7 +31,7 @@ The key architectural gap is not the absence of all instrumentation. It is the a
 
 ## Source-Backed Snapshot
 
-The following is a static observation reconciled with committed source on 2026-08-28, not a completion claim:
+The following is a static observation reconciled with the current checkout on 2026-09-29, not a completion claim:
 
 | Surface | Current behavior | Consequence for the target |
 | --- | --- | --- |
@@ -51,7 +51,10 @@ The following is a static observation reconciled with committed source on 2026-0
 | Memory polling identity | `FramePipeline` passes its monotonic submission `FrameId` to `RendererMemoryMonitor`; the monitor uses checked frame-distance polling and retains the last sampled frame. | The earlier frame-slot wrap defect is closed in source. Poll cadence, unavailable-budget behavior, and long-run presentation still require executable validation. |
 | RAM | No production process-memory sampler exists in the engine. | Working set and private committed bytes are required; engine CPU allocation categories are a later measured need, not an initial fiction. |
 | Editor memory route | A renderer memory provider reaches `UI`, but no current editor panel consumes it. | The target should replace this broad/synchronous presentation route with one immutable diagnostics model published by Application. |
-| Attached external capture | D3D12 emits PIX events when `WinPixEventRuntime.dll` is available, but Sparkle has no `-Pix`/`-RenderDoc`/`-Nsight` launch intent, capture-layer bootstrap, attached-provider state, or viewport capture action. | Add a bounded capability-gated provider-set path; the current marker runtime alone does not prove that PIX frame capture is available. |
+| Launcher capture selection | `LevelRunOperationRequest` currently carries run mode, profile, level, and graphics API; `BuildLevelRunProcessStepsForPlan` serializes only `--graphics-api` for runtime selection. | Add one typed provider set to the run request and serialize it through the same process-request owner. Do not add vendor-specific launch branches to level cards or GUI widgets. |
+| Application startup parsing | The existing generic command-line adapter applies only `--cvar`/`--set-cvar` assignments. | Parse the repeatable external-capture option in a dedicated typed startup-options owner; do not disguise immutable pre-device intent as a CVar. |
+| Attached external capture | D3D12 emits PIX events when `WinPixEventRuntime.dll` is available, but Sparkle has no capture-provider launch intent, capture-layer bootstrap, attached-provider state, or viewport capture action. | Add a bounded capability-gated provider-set path; the current marker runtime alone does not prove that PIX frame capture is available. |
+| Pre-device integration | `RendererExternalRuntime` resolves the backend and initializes shared Streamline interposer hooks before `RenderCoordinator` creates the backend; `RendererBackendConfiguration` contains only backend API and interposer hooks. | Extend this owner with immutable capture launch intent and neutral bootstrap output. Do not create a second startup integration manager or expose vendor types in the configuration. |
 
 Primary code landmarks for revalidation:
 
@@ -73,7 +76,7 @@ Primary code landmarks for revalidation:
 
 ## Reconciliation Gaps
 
-Revalidate this table with `rg` before implementation work and reconcile it into the mandatory authority/candidate ledger above. It records the 2026-08-28 route to extend, not permanent file-name policy.
+Revalidate this table with `rg` before implementation work and reconcile it into the mandatory authority/candidate ledger above. It records the 2026-09-29 route to extend, not permanent file-name policy.
 
 | Responsibility | Current owner/path | Delivery decision |
 | --- | --- | --- |

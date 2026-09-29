@@ -46,8 +46,8 @@ namespace Filesystem::Private
 		    ? Paths::Normalize(state.workspacePath / "Projects" / projectName / "Cooked")
 		    : Paths::Normalize(workspaceOutputs.CookedProjectDirectory(projectName.string()));
 		state.cookedShaderRootPath = Paths::Normalize(state.cookedAssetRootPath / "Shaders");
-		state.globalShaderMapPath = Paths::Normalize(state.cookedShaderRootPath / "GlobalShaderMap.smap");
-		state.cookedShaderLibraryPath = Paths::Normalize(state.cookedShaderRootPath / "CookedShaderLibrary.slib");
+		state.globalShaderMapPath = Filesystem::BuildGlobalShaderMapPath(state.cookedShaderRootPath);
+		state.cookedShaderLibraryPath = Filesystem::BuildCookedShaderLibraryPath(state.cookedShaderRootPath);
 		state.shaderRecookSignalPath = Filesystem::BuildShaderRecookSignalPath(state.cookedShaderRootPath);
 		state.cookedTextureRootPath = Paths::Normalize(state.cookedAssetRootPath / "Textures");
 		state.cookedSceneManifestRootPath = Paths::Normalize(state.cookedAssetRootPath / "SceneManifests");

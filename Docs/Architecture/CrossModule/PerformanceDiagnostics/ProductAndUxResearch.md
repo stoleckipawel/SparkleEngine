@@ -2,9 +2,9 @@
 
 **Status:** research; external precedent and option analysis, not proof of current implementation
 
-**Research reconciliation:** 2026-08-16
+**Research reconciliation:** 2026-09-29 for the Unreal viewport-capture precedent and PIX, RenderDoc, and Nsight Graphics capture APIs; broader diagnostics-product research retains its original dated evidence and revalidation rules
 
-**Last local source reconciliation:** 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
+**Last local source reconciliation:** 2026-09-29 against the working tree based on committed revision `d1d26dbb`; capture-specific paths were inspected, while unrelated local Renderer changes are outside this reconciliation
 
 **Scope:** the visual and functional design of performance diagnostics for SparkleEngine, with emphasis on Epic Games, NVIDIA, and AMD products; data acquisition and implementation sequencing are intentionally secondary
 
@@ -350,9 +350,11 @@ The UX alone cannot prevent instrumentation clutter. The selected functionality 
 
 ## Current Sparkle UX Reconciliation
 
-The 2026-08-28 local source reconciliation at `20814381` shows useful foundations but no joined performance product:
+The 2026-09-29 local source reconciliation at `d1d26dbb` shows useful foundations but no joined performance product:
 
-- `ViewportTopPanel::BuildRightControls` displays ImGui's smoothed FPS and delta time only.
+- `ViewportTopPanel::BuildRightControls` owns the right-aligned camera control and ImGui's smoothed FPS/delta text; it has no Performance or external-capture presenter.
+- The Launcher's typed level-run request carries run mode, profile, level, and graphics API, but no external-capture provider selection; its run process currently serializes only `--graphics-api`.
+- `RendererExternalRuntime` is the existing pre-device process-integration owner and currently supplies backend selection plus shared Streamline interposer hooks. It is the seam to extend rather than a reason to add another bootstrap manager.
 - `MainMenuBarPanel` opens Settings, Shaders, Meshes, and Textures utility windows and has an explicit viewport-capture action, but no Performance workspace.
 - `UIWorkspace` has a clear fixed outliner/viewport/inspector composition and builds the current utility panels separately.
 - `UI.h` publicly includes renderer diagnostic snapshot types and stores mesh, texture, and memory provider callbacks. This is evidence to avoid extending that callback pattern for CPU/GPU performance.

@@ -1,6 +1,7 @@
 #include "/Engine/Resources/ViewUniformData.hlsli"
 
 #include "/Engine/Resources/RenderViewModeConstants.hlsli"
+#include "/Engine/Passes/GBuffer/GBufferPacking.hlsli"
 
 RWTexture2D<float4> SceneColor;
 Texture2D GBufferBaseColor;
@@ -14,9 +15,9 @@ float3 VisualizeScalar(float value)
 	return saturate(value).xxx;
 }
 
-float3 VisualizeNormal(float3 normalWorld)
+float3 VisualizeWorldNormal(float3 packedNormalWorld)
 {
-	return normalize(normalWorld) * 0.5f + 0.5f;
+	return GBufferPacking::DecodeWorldNormal(packedNormalWorld) * 0.5f + 0.5f;
 }
 
 [numthreads(8, 8, 1)]
@@ -41,7 +42,7 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 			outputColor = saturate(baseColor.rgb);
 			break;
 		case RenderViewMode::GBufferNormal:
-			outputColor = VisualizeNormal(GBufferNormal.Load(pixel).xyz);
+			outputColor = VisualizeWorldNormal(GBufferNormal.Load(pixel).xyz);
 			break;
 		case RenderViewMode::GBufferRoughness:
 			outputColor = VisualizeScalar(GBufferMaterial.Load(pixel).g);

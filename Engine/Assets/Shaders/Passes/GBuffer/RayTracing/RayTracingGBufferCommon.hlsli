@@ -77,7 +77,7 @@ namespace RayTracingGBuffer
 		const float3 baseColor = InstanceView::ApplyInstanceVisualization(surface.BaseColor, surface.GpuSceneSlot);
 		GBufferBaseColor[pixelCoord] =
 		    GBufferPacking::PackBaseColor(baseColor, surface.Alpha, surface.AlphaMode, RayTracingHitSurface::AlphaModeBlended);
-		GBufferNormal[pixelCoord] = GBufferPacking::PackNormal(surface.NormalWorld);
+		GBufferNormal[pixelCoord] = GBufferPacking::PackWorldNormal(surface.NormalWorld);
 		GBufferMaterial[pixelCoord] =
 		    GBufferPacking::PackMaterial(surface.Metallic, surface.Roughness, surface.AmbientOcclusion, surface.DielectricF0);
 		GBufferEmissive[pixelCoord] = GBufferPacking::PackEmissive(surface.EmissiveColor);

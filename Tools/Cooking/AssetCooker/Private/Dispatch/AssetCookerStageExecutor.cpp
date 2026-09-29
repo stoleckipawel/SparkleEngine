@@ -3,6 +3,7 @@
 #include "AssetCookerToolProcess.h"
 #include "Cooking/AssetCookerSceneBatch.h"
 #include "Cooking/TextureRequestPlanBuilder.h"
+#include "Core/Public/FileSystemUtils.h"
 #include "ToolConsole.h"
 #include "ToolWorkProgress.h"
 
@@ -128,8 +129,13 @@ bool AssetCookerStageExecutor::RunShaders(
 		return false;
 	}
 
-	AppendOutput(outputs, AssetCookerCategory::Shaders, "global-shader-map", plan.cookedRoot / "Shaders" / "GlobalShaderMap.smap");
-	AppendOutput(outputs, AssetCookerCategory::Shaders, "cooked-shader-library", plan.cookedRoot / "Shaders" / "CookedShaderLibrary.slib");
+	const std::filesystem::path cookedShaderRoot = plan.cookedRoot / "Shaders";
+	AppendOutput(outputs, AssetCookerCategory::Shaders, "global-shader-map", Filesystem::BuildGlobalShaderMapPath(cookedShaderRoot));
+	AppendOutput(
+	    outputs,
+	    AssetCookerCategory::Shaders,
+	    "cooked-shader-library",
+	    Filesystem::BuildCookedShaderLibraryPath(cookedShaderRoot));
 	return true;
 }
 

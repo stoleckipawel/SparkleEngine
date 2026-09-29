@@ -31,7 +31,7 @@ The debug resolve is partitioned into GBuffer, lighting, and GPU-scene families.
 | Capability | Modes | Current producer |
 | --- | --- | --- |
 | `REN-DBG-01` final/material | Lit, Wireframe | Ordinary frame; Wireframe changes raster fill |
-| `REN-DBG-02` GBuffer | Diffuse, Normal, Roughness, Metallic, Emissive, Ambient Occlusion, Subsurface Color, Subsurface Strength | `GBufferVisualizationCS` reads only GBuffer products |
+| `REN-DBG-02` GBuffer | Diffuse, Normal, Roughness, Metallic, Emissive, Ambient Occlusion, Subsurface Color, Subsurface Strength | `GBufferVisualizationCS` reads only GBuffer products; Normal uses the shared signed WorldSpace decoder and maps `[-1, 1]` to display-linear `[0, 1]` without changing axes or orientation |
 | `REN-DBG-03` lighting | Direct Diffuse, Direct Specular, Direct Subsurface, Indirect Diffuse, Indirect Specular | `LightingVisualizationCS` reads lighting lobes plus GBuffer alpha |
 | `REN-DBG-04` scene | GPU Scene Instances | instance identity generation plus `GpuSceneVisualizationCS` |
 | `REN-LGT-04` reference | Reference Path Tracer | private Reference middle/session with Editor menu and operational overlay; source-present, not executable-proved |
