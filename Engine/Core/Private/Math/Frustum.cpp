@@ -47,3 +47,4 @@ void Frustum::ExtractFromViewProjection(const DirectX::XMFLOAT4X4& viewProj) noe
 		}
 	}
 }
+
