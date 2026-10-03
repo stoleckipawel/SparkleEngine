@@ -3,7 +3,7 @@
 **Status:** **IMPLEMENTED / VALIDATION DEFERRED** against source input `d1108d44de49d90313abb43a66f924f89d6c6bb2` plus the scoped responsibility/naming-refinement and manual-only clean-break working tree on 2026-09-19. The focused C++ build recorded below predates the final clean break; no post-removal build was run. This remains source evidence, not an evidence-candidate `PASS`, accepted Reference authority, shader-cook proof, GPU proof, artifact proof, backend parity, or Stage-10 authorization.
 
 > [!CAUTION]
-> This is the immutable Stage-9 source handoff, not the current candidate status. The [feature dossier](README.md#current-completion-snapshot---2026-09-26) and [current recovery route](Plan.md#current-recovery-and-completion-route---2026-09-26) record later D3D12 execution, the repaired selection-time failures, and the unresolved black-lighting blocker at revision `abe538470fe4e3a3cc5b454f1c5aa54bbd888b60`.
+> This is the immutable Stage-9 source handoff, not the current candidate status. The [feature dossier](../README.md#current-completion-snapshot---2026-09-26) and [current recovery route](../Plan.md#current-recovery-and-completion-route---2026-09-26) record later D3D12 execution, the repaired selection-time failures, and the unresolved black-lighting blocker at revision `abe538470fe4e3a3cc5b454f1c5aa54bbd888b60`.
 
 ## Delivered Source Route
 

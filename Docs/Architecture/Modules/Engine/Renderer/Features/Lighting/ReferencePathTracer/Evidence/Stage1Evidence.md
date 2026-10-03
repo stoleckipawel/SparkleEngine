@@ -2,7 +2,7 @@
 
 **Status:** **`PTD-01-R2 PASS` historical evidence, superseded architecture shape**. Accepted on 2026-09-10, then superseded by the 2026-09-13 clean break that moved view-mode identity entirely into Editor and replaced Renderer request/View transport with direct feature and visualization CVars. The file paths and claims below remain immutable evidence for that earlier candidate; they are not the current source contract.
 
-**Scope:** exact production-file ledger, focused command record, generated-product identities, and independent-review disposition for [Plan Stage 1](Plan.md#stage-1---establish-one-ordinary-view-mode-and-a-feature-local-owner)
+**Scope:** exact production-file ledger, focused command record, generated-product identities, and independent-review disposition for [Plan Stage 1](../Plan.md#stage-1---historical-clean-break-and-feature-owner)
 
 **Input identity:** branch `master`; committed base `ca55e7d8aced5579a12b7058bc06788af9d333e8`; Git blob identity of `git diff --binary -- Engine Config/DefaultEngine.ini` is `567b7f170afaaebf4ce4d76b7ec38aaefa66a780`. Documentation and ignored generated products are identified separately below.
 

@@ -13,6 +13,7 @@ Use this documentation to understand what SparkleEngine currently contains, how 
 | --- | --- | --- |
 | Understand the whole engine | [Engine At A Glance](Architecture/EngineAtAGlance.md) | [Whole Repository Map](Architecture/WholeRepositoryMap.md) |
 | Understand how a frame is rendered | [Renderer](Architecture/Modules/Engine/Renderer/README.md) | [Rendering A Sparkle Frame](Architecture/Modules/Engine/Renderer/RenderingASparkleFrame.md) |
+| Compare Lit with the progressive Reference Path Tracer | [Reference Path Tracer dossier](Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md#what-to-do-next) | Use its current recovery route before treating a viewport image as reference evidence |
 | Understand D3D12/Vulkan and GPU services | [RHI](Architecture/Modules/Engine/RHI/README.md) | [RHI Feature Guide](Architecture/Modules/Engine/RHI/Features/README.md) |
 | See exactly what exists or is missing | [Module Capability Inventory](Architecture/Modules/README.md) | [Capability Evidence Plan](Architecture/Modules/CapabilityEvidencePlan.md) |
 | Compare current feature readiness | [Current Feature Readiness](Acceptance/CurrentReadiness.md) | Open the linked Architecture dossier for the implementation and missing-work detail |
