@@ -8,16 +8,18 @@
 
 **Prepared:** mathematical decisions frozen 2026-09-10 and source correspondence subsequently extended through Stage 6; current runtime disposition reconciled 2026-09-26 against committed revision `abe538470fe4e3a3cc5b454f1c5aa54bbd888b60`
 
+**Targeted source inspection:** invalid-result propagation and GPU prefix commit were rechecked 2026-10-03 at `9c66a1f316b16e37bc21d6223b5aab8b0796e25f`; this is not a repeat of independent mathematical review or GPU validation
+
 **Naming reconciliation:** the 2026-09-09 working-tree clean break makes `ReferencePathTracer` the sole feature name; no mathematical decision or claim is thereby accepted.
 
 **Precision amendment:** the production Reference Path Tracer shader uses ordinary IEEE-754 binary32 throughout camera, transport, BSDF, PDF, MIS, roulette, ray-endpoint, radiance, and accumulation work. It does not declare or emulate shader float64. Hand-worked higher-precision values and external tools may define comparison tolerances, while the generic RHI/backend float64 capability remains available to unrelated future shaders; neither creates another Sparkle transport implementation or Reference Path Tracer dependency. This replaces the earlier binary64 shader/accumulator choice and requires the normal GPU/numeric evidence before final acceptance.
 
 **Non-claims:** this specification does not prove that the current or future implementation is unbiased, energy conserving, numerically robust, converged, backend-equivalent, or usable as an oracle
 
-**Current runtime reconciliation:** D3D12 now reaches the Reference kernel and advances progress, but the observed frame contains sky with effectively black scene geometry. Lit is also effectively black while GBuffer diffuse remains populated. This does not identify the estimator as the root cause, and it provides no positive evidence for any `MATH-*` row. The shared lighting/presentation failure must be localized first; then every formula-changing row still requires the frozen analytic, injected-fault, higher-precision, statistical, and paired-backend checks.
+**Current runtime reconciliation:** D3D12 reached the Reference kernel and advanced progress on the last observed candidate, but its frame contained sky with effectively black scene geometry. Lit was also effectively black while GBuffer diffuse remained populated. This does not identify the estimator or a shared subsystem as the root cause, and it provides no positive evidence for any `MATH-*` row. Locate the first incorrect raw/presentation product on each route; then every formula-changing row still requires the frozen analytic, injected-fault, higher-precision, statistical, and paired-backend checks. Source review additionally identifies an [invalid-sample/valid-prefix gap](#current-invalid-sample-and-claim-gap).
 
 > [!IMPORTANT]
-> An implementer may not select a missing constant, BRDF variant, normal treatment, PDF measure, invalid-sample rule, or threshold while writing code. `PTD-00` must first fill every decision slot below, record the reviewing experts, and bind the result to one immutable report revision.
+> `PTD-00-R1` froze the mathematical decisions for development. An implementer may not invent a missing constant, BRDF variant, normal treatment, PDF measure, invalid-sample rule, or threshold while writing code. If the accepted contract does not settle a newly exposed case, return it to discovery rather than silently deciding it in the shader.
 
 ## Claim Boundary
 
@@ -511,6 +513,18 @@ This audit covers committed estimator slice `5e6badf03df44133eb75db54875417821a9
 | Epic mirrored instances | `REF-UE-PT-MIRROR` independently identifies negatively scaled instance normals as a production path-tracing failure class. The current correction uses object-space orientation transformed by inverse transpose so traversal facing and geometric-normal sidedness do not diverge under a negative determinant. | Matching the documented failure class is not proof. Mirror/sidedness/emission/endpoint cases remain part of the unrun Stage-5/8 GPU matrix. |
 
 ## Common Mathematical Failure Points
+
+### Current Invalid-Sample And Claim Gap
+
+The frozen estimator distinguishes a valid zero contribution from an invalid transport event. The current shader expresses some invalid events as a quiet NaN (`PathTracer.hlsli::InvalidRadiance`), including failed hit reconstruction and the `SurfaceTransportReference` 4096-vertex safety ceiling in `ReferencePathTracerTransport.hlsli`. The kernel then passes the returned RGB to `PathAccumulation::AddSample`, which updates binary32 mean and M2 without classifying it. The Renderer session commits the next prefix on GPU submission completion, and the viewport can report `Complete` at the target SPP. The later `ImageEncoding::DecodeLinearRgb` rejects non-finite RGB for manual output, but that rejection is **not** equivalent to preventing an invalid viewport prefix or terminal completion.
+
+| Distinct event | Mathematical meaning | Current source behavior | Required acceptance observation |
+| --- | --- | --- | --- |
+| A valid black sample | Its measured contribution is exactly zero; it participates in mean/M2 and increments the prefix. | Zero is ordinary sample data. | Black/occluded analytic fixture reaches the declared finite mean and count without a failure label. |
+| Invalid surface or safety-ceiling sample | No valid estimator value exists for that ordinal. Replacing it with zero would bias the mean; including NaN corrupts the raw statistic. | NaN reaches the same accumulation operation as valid RGB; no per-session invalid verdict is produced before committed-count advancement. | Controlled invalid-hit and 4097th-vertex cases fail the session/result, do not publish `Complete`, and cannot yield a valid raw artifact. The failure path preserves the last separately verified prefix without claiming it includes the bad ordinal. |
+| Numerically invalid BSDF/light/throughput contribution | A non-finite or non-representable result cannot be accepted as reference radiance. | The inspected accumulation path has no finite-result gate; source inspection alone cannot enumerate every upstream producer of invalid values. | Fault-injected non-finite contribution is detected before an accepted prefix/result; recovery and artifact behavior follow `FM-RPT-*`, not a plausible black or sanitized value. |
+
+Do not "fix" these cases by clamping, dropping an ordinal, substituting zero, or re-labeling the preview. The design question is where the production GPU result communicates the **minimal** invalid status to the existing session owner without introducing a debug dashboard or general telemetry framework. The [current recovery plan](Plan.md#current-recovery-and-completion-route---2026-09-26) must close that production contract and falsify it with the declared controlled failures. This source finding does not establish that NaN is the cause of the observed black Lit/Reference frames; raw-product inspection must answer that separately.
 
 | Symptom | Likely defect | Required first check |
 | --- | --- | --- |

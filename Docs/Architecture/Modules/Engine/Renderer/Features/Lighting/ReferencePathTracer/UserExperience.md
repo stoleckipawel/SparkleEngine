@@ -8,6 +8,8 @@
 
 **Prepared:** source and owner-run first-use state reconciled 2026-09-26 against committed `master` revision `abe538470fe4e3a3cc5b454f1c5aa54bbd888b60`; current D3D12 observations are manual and do not substitute for retained interaction, artifact, accessibility, package, or clean-machine evidence
 
+**Targeted source inspection:** first-use route, overlay labels/actions, and invalid-prefix limits were rechecked 2026-10-03 at `9c66a1f316b16e37bc21d6223b5aab8b0796e25f`; the new manual walk is a review route, not a passed first-use test
+
 **Naming reconciliation:** the 2026-09-09 working-tree clean break makes `ReferencePathTracer` the sole feature name; no UX capability or acceptance result is thereby implied.
 
 **Priority reconciliation:** 2026-09-10 makes the live viewport comparison loop the first usable milestone and moves polished manual save/checkpoint workflow behind it; the 2026-09-19 clean break removes command-line and hidden-render execution from the feature.
@@ -330,7 +332,20 @@ This remains primarily source evidence. A D3D12 DevelopmentEditor owner run reac
 | Save raw output/checkpoint | Buttons and source workflow exist. No exact-prefix EXR/checkpoint round trip or failure recovery has passed. | **Unproved and secondary to the viewport blocker.** |
 | Use Game/runtime and Vulkan | The same request semantic exists in source. | **Not executed for the current candidate.** |
 
-The next UX evidence run begins only after the shared lighting result is visibly nontrivial and finite. It then exercises the full happy path and each state/action on the same immutable candidate; reopening the menu or watching progress advance is not sufficient.
+The next UX evidence run begins only after both lighting routes produce visibly nontrivial, finite scene results. It then exercises the full happy path and each state/action on the same immutable candidate; reopening the menu or watching progress advance is not sufficient.
+
+### Reader's first-use and evidence walk
+
+The normal user action remains small: open a supported level, select **Reference Path Tracer** immediately after Lit, move the camera, stop, and watch the current view refine. The observation to retain is larger than a screenshot because target progress and an attractive preview are not radiance validity.
+
+1. Record the exact executable/cooked-content identity, backend, level, viewport extent, and camera. If cooking or launch is blocked by Windows application control, stop at that host prerequisite; do not call it a Renderer failure or report a GPU result.
+2. Compare **GBuffer Diffuse**, **GBuffer Normal**, one direct-light lobe, **Lit**, and **Reference Path Tracer** at that unchanged camera. If a GBuffer view looks correct while all scene-linear lighting views are dark, record the distinction; do not infer that the Reference estimator itself is broken or correct. The [recovery decision table](Plan.md#current-recovery-and-completion-route---2026-09-26) assigns the next product boundary to inspect.
+3. In Reference, require a finite, nontrivial surface image **as well as** an increasing `committed / target SPP` value. A sky-only image, rising counter, or `Complete` label is not first-use success. The current [invalid-sample gap](TransportAndEstimator.md#current-invalid-sample-and-claim-gap) makes this distinction especially important.
+4. Translate and rotate the camera, then stop. Record whether the displayed prefix is discarded before the new view commits and whether the reset reason matches the effective camera change. Repeat a scene/material/light edit and a presentation-only exposure edit: the former must reset transport; the latter must not.
+5. Switch Reference -> Lit -> Reference without changing inputs. Record either a disclosed exact-identity retained prefix or an explicit retention release and restart at zero. Exercise Pause, Resume, Restart, resize, second-view capacity, and close on the same candidate. A completed target is not statistical convergence.
+6. Only after the live loop works, save a current or completed **raw radiance** prefix through the existing manual Evidence/Output action. Check finite float channels, sample identity/count, and artifact round trip separately from `FinalColorLdr`. Do not treat a save button, a file's existence, or an encoded screenshot as the oracle result.
+
+This is a manual review sequence, not new automation or an extra renderer UI. The frozen [state/action contract](#view-session-state-and-dominant-action) remains the authority for labels and actions; the [feature acceptance contract](README.md#acceptance-criteria) owns the pass/fail criteria.
 
 ## Professional Defaults And Guardrails
 
@@ -361,7 +376,7 @@ Sparkle deliberately tightens or differs from the Epic behavior where reference 
 - Unreal documents emitter and sky-representation combinations that can double-count lighting. Sparkle exposes the actual analytic, emissive, and environment semantics in preflight/equivalence evidence and does not guess whether intentionally colocated emitters are duplicates.
 - Unreal may hide the progress bar after completion; Sparkle retains an unobtrusive exact completed-prefix state so switching to Lit and back never obscures whether the retained result is current.
 
-This correspondence is a Stage-6/7 delivery contract. It does not claim that the current source already has accumulation, invalidation, progress UI, runtime selection, or denoising.
+This correspondence originally guided Stages 6/7. The current source contains accumulation, invalidation, a progress UI, and a host-independent request semantic, but their complete interactive behavior remains unproved; the last observed first-use image failed. Denoising remains deliberately outside raw Reference radiance.
 
 ## Common Experience Failure Points
 
