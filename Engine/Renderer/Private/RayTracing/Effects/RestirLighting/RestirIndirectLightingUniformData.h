@@ -6,7 +6,9 @@
 struct RestirIndirectLightingUniformData
 {
 	std::uint32_t BounceCount = 1u;
-	std::uint32_t Padding[3] = {};
+	std::uint32_t TemporalReuse = 1u;
+	std::uint32_t SpatialReuse = 1u;
+	std::uint32_t Padding = 0u;
 };
 
 static_assert(std::is_standard_layout_v<RestirIndirectLightingUniformData>);

@@ -4,7 +4,9 @@
 cbuffer RestirIndirectConstants
 {
 	uint RestirIndirectBounceCount;
-	uint3 RestirIndirectPadding;
+	uint RestirIndirectTemporalReuse;
+	uint RestirIndirectSpatialReuse;
+	uint RestirIndirectPadding;
 };
 
 #endif

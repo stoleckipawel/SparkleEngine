@@ -86,7 +86,11 @@ Candidate results belong in `FCR-REN-11`. Source inspection does not prove build
 | `CHK-DVP-11` | Cook affected direct/indirect/shadow/composite shader variants and run the focused CHK-DVP-10 matrix on each advertised D3D12/Vulkan path, including selected reconstruction providers and all-off guide contracts. Retain candidate/configuration, hardware/driver, commands, decoded products, topology/retirement and invalidation observations, native validation, and cleanup. Never infer an unrun backend/provider row. | `AC-DVP-14`, `AC-DVP-15`, `AC-DVP-20`, `AC-DVP-21`, `AC-DVP-24`, `AC-DVP-27`, `AC-DVP-28`; `FM-DVP-10`, `FM-DVP-12`, `FM-DVP-13` |
 | `CHK-DVP-12` | Capture the same scene/path/backend/resolution/provider settings for all-on, each-off and group-off, after declared warm-up and outside graph-rebuild transients. Inspect pass/dispatch lists, selected shader branch/variant, exclusive lobe writes, and visibility versus continuation traces. Disclose shared/initialization work and reset/rebuild costs. A negative control that computes the disabled effect and masks its result must fail. Repeat GPU timings with declared measurement method/sample count/variation before claiming saved time; record execution omission independently of timing magnitude. | `AC-DVP-21`, `AC-DVP-27`, `AC-DVP-28`; `FM-DVP-10`, `FM-DVP-12`, `FM-DVP-14` |
 
-Manual, build, shader-cook, runtime, GPU, and paired-backend checks may be deferred, but they are never recorded as passed merely because the source shape is coherent.
+### Automated Delivery Scope
+
+No criterion requires a person to open the Editor or perform manual clicking, screenshot inspection, keyboard/focus or narrow-layout checks. Such manual-only observations are optional follow-up work, outside automated stage admission and completion; they are never recorded as passed without execution. Navigation and layout remain implementation design obligations and receive scoped source review, not a mandatory manual sign-off.
+
+`CHK-DVP-02` and `CHK-DVP-09` use agent-run viewport-request and control/menu-state probes. They must retain the same mode-isolation, shared-authority, requested/applied, parent/reset and no-partial-frame oracles; checking source alone does not replace an executable ordering or state oracle. Native rendering fixtures may run without opening the Editor. Required build, shader-cook, runtime, GPU and backend checks remain required at their owning exit gates; unrun checks are never promoted to passes.
 
 ### Direct CVar Access And Client Boundary Check Extension
 

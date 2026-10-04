@@ -30,7 +30,7 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 	RestirIndirectReservoir::Reservoir reservoir =
 	    RestirIndirectReservoir::BuildInitialReservoir(surface, pixelCoord, SkyTexture, SamplerLinearClamp);
 
-	if (surface.Valid && HistoryValid != 0u)
+	if (surface.Valid && RestirIndirectTemporalReuse != 0u && HistoryValid != 0u)
 	{
 		const float2 motionPixels = GBufferMotionVector.Load(int3(pixelCoord, 0)).xy;
 		const float2 previousPixel = MotionVectors::ReprojectToPreviousPixelCenter(pixelCoord, motionPixels, float2(width, height));

@@ -18,6 +18,8 @@
 
 **Feature acceptance:** [Acceptance](Acceptance.md)
 
+**Execution-policy iteration:** 2026-10-04 at `d29d2351614a98f101537e028267da2dc99ee9ec`; preserve the two pre-existing Discovery edits. This documentation slice applies autonomous prerequisite repair/resumption to all 13 copy-ready prompts and removes manual Editor-opening/interaction gates through the Acceptance owner. No production/API/copy/hook/variant delta or new implementation verdict; retained automated AC/FM/CHK oracles are unchanged.
+
 ## Delivery At A Glance
 
 | Stage | Outcome | Evidence still separate |
@@ -102,17 +104,19 @@ The critical path is the table order. A selected stage can be split into smaller
 
 Every copy-ready prompt below incorporates this section and its selected stage's objective, prerequisites, work, non-goals, exit and stop rules.
 
-**Queued execution policy:** carry out user-queued stages in dependency order without asking about routine implementation choices or repairable defects. A blocking gate pauses the dependent production work, not the effort to resolve its cause: return to the named decision/evidence owner, perform the scoped discovery or authorized prerequisite repair, update its candidate-bound disposition, and resume only after its required proof passes. Do not treat a later queued prompt as permission to skip a failed predecessor, enlarge transport/product scope, add a fallback, or invent acceptance evidence. An isolated stage prompt remains scoped to that stage; queue orchestration may advance to the next user-queued stage after its prerequisite gate passes. If an expected prompt is absent, reconcile the entire sequence and continue the already authorized queued work rather than assuming delivery is complete. Before final closure, audit every stage exit and AC/FM/CHK row against retained candidate evidence; report incomplete or unavailable cells truthfully, never declare the queue complete from code presence alone.
+**Autonomous execution policy (all stages and copy-ready prompts):** execute the user-queued stages in dependency order without routine approval questions or a gate-only handoff. A failed prerequisite or stop condition stops unsafe dependent edits, not prerequisite work. Diagnose the cause, return to the named Architecture/Discovery/Acceptance owner, record the smallest coherent prerequisite repair and its file/API/hook/copy budget, implement it in the existing production path, run the required positive and negative checks, invalidate affected evidence, and resume after the gate passes. The user's queue authorizes necessary in-scope prerequisite repairs; discovery's no-production-edit restriction applies to discovery itself, not to a separately recorded owning repair. Update owning decisions before changing accepted semantics; do not silently expand transport/product scope, introduce a fallback, replay unaffected stages or weaken an oracle after observation. Keep working while safe in-scope repairs, checks or independent queued work remain. Only an exhausted dependency requiring new external authority, unavailable hardware/access or a material user-only product choice warrants an actionable handoff. Record evidence truthfully; autonomy never converts an unrun check into a pass. Advance automatically after accepted exits when stages are user-queued; an explicitly isolated request retains its scope.
+
+**Automated verification policy:** no stage requires a person to open the Editor, inspect screenshots, click widgets or perform manual keyboard/focus/layout checks. Use agent-run native fixtures, control-route probes, source/ABI checks and scoped builds/cooks for retained correctness obligations. Manual-only interaction/appearance checks are optional follow-up observations, not admission or completion gates; record them as outside this automated delivery scope, never as passed. Preserve the automated menu/console intent, batch, mode-isolation, product, GPU-execution, history and backend obligations in [Acceptance](Acceptance.md).
 
 1. Read `AGENTS.md`, `Docs/README.md`, [Change Integration](../../../../../../Engineering/Workflow/ChangeIntegration.md), [Change Lifecycle](../../../../../../Engineering/Workflow/ChangeLifecycle.md), the [Engineering task map](../../../../../../Engineering/README.md#choose-by-task), and the exact Show/Discovery/Acceptance and prior-stage artifacts. Select Renderer, Editor, ownership/copy/naming/style/concurrency/validation rules according to the changed responsibility; do not copy their standards into implementation.
 2. Record a small iteration control record in the existing change/report owner: stage ID, candidate revision and dirty boundary, prerequisite revisions, mapped AC/FM/CHK/RISK rows, intended outcome and permitted files/hooks. Preserve unrelated and concurrently appearing changes.
 3. Before editing, audit current owners, producers, consumers, lifetime, public APIs, CMake/shader-cook/generated membership and the frozen execution ledger. Source paths below are inspection starting points, not permission for every listed file to change.
-4. Execute only one selected stage. No new public type, state holder, helper, copy, configuration, variant or outside-feature hook without a current consumer, lifetime reason and accepted check. Register a feature CVar only in the stage delivering its real execution consumer.
+4. Work on one coherent selected stage or its recorded owning prerequisite repair at a time; apply the autonomous execution policy before handing off a failed gate. No new public type, state holder, helper, copy, configuration, variant or outside-feature hook without a current consumer, lifetime reason and accepted check. Register a feature CVar only in the stage delivering its real execution consumer.
 5. Reuse existing owners; apply a clean break to replaced owned paths and reconcile all direct consumers immediately. Generic orchestration names semantic operations; feature admission, resources, shader bindings, estimator policy and failures stay at their narrow owners.
 6. Every stage runs the applicable `CHK-DVP-08` architecture-fitness audit: changed public surface, state/copy inventory, dependency direction, definition-to-use placement, repeated CVar/predicate searches, every outside-feature occurrence with hook role, and bounded-removal reasoning. No permanent architecture-test framework or disposable submitted fixture is required. Run `architecture_boundary_check` when Renderer/RHI boundaries change.
 7. Predeclare the cheapest claim-falsifying check, exact candidate/configuration/backend, oracle, tolerances/samples, artifact and escalation trigger. Use scoped formatting/source/compile/shader checks first; escalate only to the stage's required runtime/GPU cells. Do not replace an oracle with a full workspace build/cook.
 8. Finish each batch with responsibility refinement and a scoped diff review. Keep functions/files cohesive; split genuinely independent policy/mechanism, not into forwarding-only wrappers or numbered fragments. Delete dead interim masks/holders/includes, not merely hide them.
-9. Every prompt's `NON-NEGOTIABLE` paragraph is an exit gate. Quote each item in the handoff with source or executable proof at the level it requires, or report `BLOCKED`. Failed/unavailable mandatory checks cannot be carried as an authorized next-stage prerequisite.
+9. Every prompt's `NON-NEGOTIABLE` paragraph is an exit gate. Quote each item with proof at its required level. Repair failed prerequisites through their owners and repeat affected checks before resuming; never use a failed or unavailable mandatory check as next-stage authorization. A repairable gate is a work item, not a terminal handoff.
 10. Handoff records exact commands/results/artifacts, changed/deleted files by responsibility, public/API/copy/hook deltas, performance classification, cleanup, remaining risks, prerequisite validity and whether the named next stage is authorized. Stage results belong in the issue/candidate-bound `FCR-REN-11` owner, not an implementation diary in this plan.
 
 #### Cross-Stage Invariants And Drift Stops
@@ -192,15 +196,17 @@ Do not pre-create any proposed control/settings/activation file. Reuse the cohes
 **Ready-to-use discovery prompt:**
 
 ```text
+AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+
 Execute only DVP-4A-0 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md. Apply its Universal Execution Contract. Make no production-code changes. Execute Discovery probes P01–P05 against the exact candidate and freeze the seven-leaf ownership/execution/product/history ledger, sequenced CVar mutation/query/batch route, graph lifetime, branch/variant selection, shared-estimator semantics, and predeclared numeric/GPU oracles. Reconcile the current mode baseline without replaying obsolete migrations. Update Discovery and directly affected target/check facts only.
 
 NON-NEGOTIABLE: No unresolved correctness/architecture/UX/evidence decision may be delegated to a production prompt. AUTHORIZE only the bounded prerequisite repair when publication is not yet proved; lighting work stays BLOCKED. Quote each gate with exact source/probe evidence, open decisions, and permitted next stage.
 
-Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+Do not bypass predecessor gates or silently expand the accepted hook/API/copy/variant budget. Apply non-goals and stop rules to dependent work; repair missing, stale or contradicted prerequisites at their owners, prove the repair and resume instead of choosing an unaccepted alternative.
 
 Validate: Run scoped links/anchors, placeholder/ID/hook checks, UTF-8, and git diff --check; use only bounded local discovery probes required by a named decision. No broad build/cook or runtime acceptance claim. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
 
-Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-1 is permitted; do not continue automatically into it.
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-1 is permitted; continue automatically when it is user-queued and its prerequisites pass; otherwise retain isolated-stage scope.
 ```
 
 ### DVP-4A-1 - Prove Sequenced CVar Delivery
@@ -227,15 +233,17 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 **Ready-to-use implementation prompt:**
 
 ```text
+AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+
 Implement or verify only DVP-4A-1 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after verifying DVP-4A-0 and Discovery's exact prerequisite authorization. Apply the Universal Execution Contract. Use the accepted existing Core console and Renderer control route to establish sequenced edits, safe query/acknowledgment, and validated bulk application before frame admission. Exercise an existing live Renderer CVar; add no dormant lighting registrations. Delete superseded scoped direct-write paths.
 
 NON-NEGOTIABLE: One CVar authority, no partial failed batch, safe serial/threaded query and shutdown, and no lighting vocabulary in generic control owners. Do not invent a callback registry, Application translator, or settings mirror. Quote proof for each requirement and obtain Discovery's explicit lighting authorization before declaring DVP-4A-2 permitted.
 
-Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+Do not bypass predecessor gates or silently expand the accepted hook/API/copy/variant budget. Apply non-goals and stop rules to dependent work; repair missing, stale or contradicted prerequisites at their owners, prove the repair and resume instead of choosing an unaccepted alternative.
 
 Validate: Run CHK-DVP-08/09's bounded publication probes and the smallest affected compile target; scope invalid-input/batch/shutdown controls to this route. Run architecture_boundary_check when a Renderer/RHI boundary actually changes, formatting and git diff --check. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
 
-Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-2 is permitted; do not continue automatically into it.
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-2 is permitted; continue automatically when it is user-queued and its prerequisites pass; otherwise retain isolated-stage scope.
 ```
 
 ### DVP-4A-2 - Deliver Direct Subsurface As The First Vertical Slice
@@ -262,15 +270,17 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 **Ready-to-use implementation prompt:**
 
 ```text
+AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+
 Implement only DVP-4A-2 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after explicit Discovery AUTHORIZED and stage 1 proof. Apply the Universal Execution Contract and freeze ledger. Deliver r.Lighting.Direct.Subsurface, feature-local IsEnabled/IsActive, and the accepted early shader/variant route through actual direct evaluation, product binding/composition, affected guides/histories, and diagnostic unavailability. Register no later leaf.
 
-NON-NEGOTIABLE: Skip exclusive subsurface evaluation/publication before the finished result; preserve active diffuse/specular semantics and valid downstream reads. No Renderer Show state, frame/host admission branch, dummy enabled product, stale output, or masked-only intermediate path. Quote candidate-bound pixel and work-removal proof or report BLOCKED.
+NON-NEGOTIABLE: Skip exclusive subsurface evaluation/publication before the finished result; preserve active diffuse/specular semantics and valid downstream reads. No Renderer Show state, frame/host admission branch, dummy enabled product, stale output, or masked-only intermediate path. Quote candidate-bound pixel and work-removal proof ; repair missing proof or falsified prerequisites before resuming.
 
-Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+Do not bypass predecessor gates or silently expand the accepted hook/API/copy/variant budget. Apply non-goals and stop rules to dependent work; repair missing, stale or contradicted prerequisites at their owners, prove the repair and resume instead of choosing an unaccepted alternative.
 
 Validate: Use CHK-DVP-08/10/12's single-lobe fixture and negative mask-only control, focused direct/composite shader cook, smallest affected C++ compile, selected runtime row, scoped formatting and git diff --check. Preserve evidence limits for unrun rows. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
 
-Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-3 is permitted; do not continue automatically into it.
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-3 is permitted; continue automatically when it is user-queued and its prerequisites pass; otherwise retain isolated-stage scope.
 ```
 
 ### DVP-4A-3 - Complete Direct Lobes And All-Off Admission
@@ -297,15 +307,17 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 **Ready-to-use implementation prompt:**
 
 ```text
+AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+
 Implement only DVP-4A-3 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after stage 2 passes. Apply the Universal Execution Contract. Extend the existing direct control owner with Diffuse and Specular, then implement derived family admission and all-direct-off omission using the frozen consumer/estimator/product/graph/history route. Reconcile resources, clear, shader bindings, composition, diagnostics and guides together; delete superseded unconditional paths.
 
-NON-NEGOTIABLE: Admission stays inside the direct feature entry point, parent intent is not stored, and no exclusive family work runs with all direct lobes inactive. Active indirect and mandatory-guide contracts stay valid; every remaining read has an admitted producer. No composite hiding, speculative manager, or frame/host feature branches. Quote per-lobe and group-off pixel/work/lifetime evidence or report BLOCKED.
+NON-NEGOTIABLE: Admission stays inside the direct feature entry point, parent intent is not stored, and no exclusive family work runs with all direct lobes inactive. Active indirect and mandatory-guide contracts stay valid; every remaining read has an admitted producer. No composite hiding, speculative manager, or frame/host feature branches. Quote per-lobe and group-off pixel/work/lifetime evidence ; repair missing proof or falsified prerequisites before resuming.
 
-Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+Do not bypass predecessor gates or silently expand the accepted hook/API/copy/variant budget. Apply non-goals and stop rules to dependent work; repair missing, stale or contradicted prerequisites at their owners, prove the repair and resume instead of choosing an unaccepted alternative.
 
 Validate: Execute direct rows of CHK-DVP-08/10/12, focused changed shader/C++ checks and native resource validation. Exercise all-off/re-enable and in-flight topology retirement on the selected row; unrun backend/provider cells remain unproved. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
 
-Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-4 is permitted; do not continue automatically into it.
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-4 is permitted; continue automatically when it is user-queued and its prerequisites pass; otherwise retain isolated-stage scope.
 ```
 
 ### DVP-4A-4 - Remove Exclusive Direct Shadow Work
@@ -332,15 +344,17 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 **Ready-to-use implementation prompt:**
 
 ```text
+AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+
 Implement only DVP-4A-4 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after stage 3 and the frozen primary visibility/estimator ledger. Apply the Universal Execution Contract. Deliver the Direct Shadows CVar and feature-local activation, omit exclusive visibility production when inactive, and use the accepted fully visible primary evaluation without an absent-resource read. Reconcile sampling/reservoir implications, bindings, graph lifetime, diagnostics and histories.
 
-NON-NEGOTIABLE: The control affects only primary direct visibility, disabled signal work is genuinely absent unless a frozen real shared consumer requires it, and enabled missing visibility remains a failure. Retain shadow intent across direct-family inactivity. Do not alter indirect visibility, AO, continuation intersections or Reference. Quote occluder and dispatch/trace/reset evidence or report BLOCKED.
+NON-NEGOTIABLE: The control affects only primary direct visibility, disabled signal work is genuinely absent unless a frozen real shared consumer requires it, and enabled missing visibility remains a failure. Retain shadow intent across direct-family inactivity. Do not alter indirect visibility, AO, continuation intersections or Reference. Quote occluder and dispatch/trace/reset evidence ; repair missing proof or falsified prerequisites before resuming.
 
-Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+Do not bypass predecessor gates or silently expand the accepted hook/API/copy/variant budget. Apply non-goals and stop rules to dependent work; repair missing, stale or contradicted prerequisites at their owners, prove the repair and resume instead of choosing an unaccepted alternative.
 
 Validate: Use primary-shadow rows of CHK-DVP-08/10/12, focused shadow/direct/reservoir shader cook, affected compile checks and native validation, including re-enable and missing-required-signal negative controls. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
 
-Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-5 is permitted; do not continue automatically into it.
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-5 is permitted; continue automatically when it is user-queued and its prerequisites pass; otherwise retain isolated-stage scope.
 ```
 
 ### DVP-4A-5 - Deliver Indirect Lobes And Shared-Estimator Admission
@@ -367,15 +381,17 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 **Ready-to-use implementation prompt:**
 
 ```text
+AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+
 Implement only DVP-4A-5 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after stage 4 and the accepted Indirect Lighting semantic/guide/reset ledger. Apply the Universal Execution Contract. Deliver both real indirect feature CVars and local activation through candidate generation, reservoir reuse, resolve, active products/composition and guide consumers. Remove exclusive inactive lobe work and omit the family with no active consumers through its own entry point; update graph lifetime and dependent histories coherently.
 
-NON-NEGOTIABLE: Preserve the frozen path classification, sampling probabilities, PDFs, reservoir targets/weights, active-path emission/environment and mandatory guides. A disabled primary specular contribution does not disable all specular continuation events. No fabricated guides, provider fallback, missing/stale reads, mask-only implementation, Reference coupling, or premature Indirect Subsurface. Quote estimator, pixel, omission and reset proof or report BLOCKED.
+NON-NEGOTIABLE: Preserve the frozen path classification, sampling probabilities, PDFs, reservoir targets/weights, active-path emission/environment and mandatory guides. A disabled primary specular contribution does not disable all specular continuation events. No fabricated guides, provider fallback, missing/stale reads, mask-only implementation, Reference coupling, or premature Indirect Subsurface. Quote estimator, pixel, omission and reset proof ; repair missing proof or falsified prerequisites before resuming.
 
-Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+Do not bypass predecessor gates or silently expand the accepted hook/API/copy/variant budget. Apply non-goals and stop rules to dependent work; repair missing, stale or contradicted prerequisites at their owners, prove the repair and resume instead of choosing an unaccepted alternative.
 
 Validate: Use indirect rows of CHK-DVP-08/10/11/12 with predeclared seeds/sample counts/tolerances; cook affected indirect/shared/composite variants and compile the smallest affected owner. Exercise selected reconstruction provider and all-off negative-guide cases; do not infer unrun cells. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
 
-Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-6 is permitted; do not continue automatically into it.
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-6 is permitted; continue automatically when it is user-queued and its prerequisites pass; otherwise retain isolated-stage scope.
 ```
 
 ### DVP-4A-6 - Bypass Secondary-Hit Shadow Visibility
@@ -402,15 +418,17 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 **Ready-to-use implementation prompt:**
 
 ```text
+AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+
 Implement only DVP-4A-6 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after stage 5 and P04's accepted caller/ABI/reset ledger. Apply the Universal Execution Contract. Deliver Indirect Shadows intent/activation in the Lit feature, carry its narrow policy to secondary-hit direct-light evaluation, bypass disabled visibility tracing before it runs, and reset dependent histories. Keep Reference's required visibility argument unchanged.
 
-NON-NEGOTIABLE: No CVar reads or Lit policy authority in shared tracing helpers; no continuation-intersection bypass, Reference behavior change, missing enabled products or stale reservoir/reconstruction state. Shadow intent remains enabled independently of whether indirect consumers are active. Quote secondary lighting, trace-category, continuation, Reference and reset oracles or report BLOCKED.
+NON-NEGOTIABLE: No CVar reads or Lit policy authority in shared tracing helpers; no continuation-intersection bypass, Reference behavior change, missing enabled products or stale reservoir/reconstruction state. Shadow intent remains enabled independently of whether indirect consumers are active. Quote secondary lighting, trace-category, continuation, Reference and reset oracles ; repair missing proof or falsified prerequisites before resuming.
 
-Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+Do not bypass predecessor gates or silently expand the accepted hook/API/copy/variant budget. Apply non-goals and stop rules to dependent work; repair missing, stale or contradicted prerequisites at their owners, prove the repair and resume instead of choosing an unaccepted alternative.
 
 Validate: Run secondary-shadow rows of CHK-DVP-08/10/11/12, focused Lit/shared/Reference shader ABI/cook checks and the selected runtime/native-validation row. A bypass omitted or leaked into Reference must fail the negative controls. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
 
-Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-7 is permitted; do not continue automatically into it.
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-7 is permitted; continue automatically when it is user-queued and its prerequisites pass; otherwise retain isolated-stage scope.
 ```
 
 ### DVP-4A-7 - Add The CVar-Driven Editor Show Menu
@@ -424,11 +442,11 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 1. Extend ViewportTopPanel presentation using the existing Core console/control surface. Place Direct Lighting, Indirect Lighting and Shadows groups beside Viewmode, with only their real children.
 2. Derive checks and mixed parents from CVar intent; parent/reset mutations use one ordered batch. Reflect console edits without retaining an EditorViewportSession selection or changing viewport request generation.
 3. Expose shared scope and mode limitations; make missing registrations visible as defects, not unchecked leaf defaults. Keep pending/applied state truthful and disabled raw diagnostics unavailable.
-4. Exercise leaf/group/reset/console/keyboard/focus behavior across multiple viewports and modes. Update the runtime CVar catalog and user-facing navigation without duplicating feature semantics.
+4. Exercise leaf/group/reset/console behavior through agent-run probes across multiple viewport requests and modes. Manual interaction, keyboard/focus and appearance checks are optional follow-up observations, not prerequisites. Update the runtime CVar catalog and user-facing navigation without duplicating feature semantics.
 
 **Non-goals:** Viewport-local overrides, persistent Editor mirror, parent CVars, private Renderer includes, a feature registry, menu-to-Application translation or Indirect Subsurface advertising.
 
-**Exit gate:** AC-DVP-17/19/22/23/25 via CHK-DVP-08/09: all seven leaves and parent/reset semantics, global UI/console parity, no partial applied frame, mode intent retention and discoverable keyboard access.
+**Exit gate:** AC-DVP-17/19/22/23/25 via CHK-DVP-08/09: all seven leaves and parent/reset semantics, global UI/console parity, no partial applied frame, mode intent retention. Keyboard-accessible presentation remains a design obligation; manual interaction is not an exit gate.
 
 **Stop conditions:** Menu check state becomes another mutable authority, bulk updates race frame admission, the UI claims requested work is already applied, or a Renderer-private symbol is imported. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
 
@@ -437,15 +455,17 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 **Ready-to-use implementation prompt:**
 
 ```text
+AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+
 Implement only DVP-4A-7 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after all seven execution consumers and control delivery are proved. Apply the Universal Execution Contract. Add the Show hierarchy in ViewportTopPanel, querying the existing CVar authority and submitting validated leaf/parent/reset edits through its sequenced batch route. Reflect console edits and global scope; preserve mode-driven CVar intent and truthful pending/unavailable states. Update directly affected user/CVar documentation.
 
-NON-NEGOTIABLE: Editor owns labels and widgets only; no Renderer Show types, private CVar headers, session mirror, viewport-generation transport, stored parent state or premature leaf. One batch changes each parent/reset, all applicable viewports share the result, and checks cannot imply unsupported work is active. Quote menu/console/mode/batch/accessibility proof or report BLOCKED.
+NON-NEGOTIABLE: Editor owns labels and widgets only; no Renderer Show types, private CVar headers, session mirror, viewport-generation transport, stored parent state or premature leaf. One batch changes each parent/reset, all applicable viewports share the result, and checks cannot imply unsupported work is active. Quote menu/console/mode/batch/accessibility proof ; repair missing proof or falsified prerequisites before resuming.
 
-Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+Do not bypass predecessor gates or silently expand the accepted hook/API/copy/variant budget. Apply non-goals and stop rules to dependent work; repair missing, stale or contradicted prerequisites at their owners, prove the repair and resume instead of choosing an unaccepted alternative.
 
-Validate: Execute CHK-DVP-08/09 with serial/threaded controls and multiple viewport requests, a missing-registration negative probe, keyboard/focus and narrow-layout checks, smallest affected Editor compile, scoped formatting/links and git diff --check. No full engine build as a speculative UI check. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
+Validate: Execute CHK-DVP-08/09 with serial/threaded controls and multiple viewport requests, a missing-registration negative probe, automated menu-state/batch checks and source review of navigation/layout, smallest affected Editor compile, scoped formatting/links and git diff --check. No full engine build as a speculative UI check. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
 
-Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-8 is permitted; do not continue automatically into it.
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-8 is permitted; continue automatically when it is user-queued and its prerequisites pass; otherwise retain isolated-stage scope.
 ```
 
 ### DVP-4A-8 - Close Backend, Provider And Execution Evidence
@@ -472,15 +492,17 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 **Ready-to-use validation prompt:**
 
 ```text
+AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+
 Execute only DVP-4A-8 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after stages 2–7 and the frozen evidence protocol. Apply the Universal Execution Contract. Run CHK-DVP-10/11/12 on the advertised D3D12/Vulkan, provider and mode cells with native validation. Retain exact candidate, commands, hardware/driver, decoded outputs, graph/history observations, pass/branch/write/trace evidence, repeated timings and cleanup. Route falsified defects back to their owning stage and repeat affected evidence.
 
-NON-NEGOTIABLE: No threshold/sample/matrix change after candidate observation, masked pixels as performance proof, inferred unrun backend/provider support, fabricated guides or provider fallback. Distinguish exclusive omission, remaining shared cost, initialization and graph/reset transients from measured steady-state savings. Quote independent cell evidence or report BLOCKED.
+NON-NEGOTIABLE: No threshold/sample/matrix change after candidate observation, masked pixels as performance proof, inferred unrun backend/provider support, fabricated guides or provider fallback. Distinguish exclusive omission, remaining shared cost, initialization and graph/reset transients from measured steady-state savings. Quote independent cell evidence ; repair missing proof or falsified prerequisites before resuming.
 
-Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+Do not bypass predecessor gates or silently expand the accepted hook/API/copy/variant budget. Apply non-goals and stop rules to dependent work; repair missing, stale or contradicted prerequisites at their owners, prove the repair and resume instead of choosing an unaccepted alternative.
 
 Validate: Run only the frozen focused cooks/workloads/captures needed by CHK-DVP-10/11/12 and architecture_boundary_check if affected boundaries changed. Use existing per-user evidence locations; do not submit temporary harnesses/probes. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
 
-Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-9 is permitted; do not continue automatically into it.
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-9 is permitted; continue automatically when it is user-queued and its prerequisites pass; otherwise retain isolated-stage scope.
 ```
 
 ### DVP-4A-9 - Adopt The Controls And Close The Slice
@@ -507,15 +529,17 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 **Ready-to-use closure prompt:**
 
 ```text
+AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+
 Close only DVP-4A-9 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after stage 8's complete evidence. Apply the Universal Execution Contract. Audit enclosure, outside hooks, public APIs, copies, ownership, build/cook membership and all active-product consumers. Delete obsolete masks/state/paths/includes and temporary probes in one clean break, regenerate scoped products, reconcile affected documentation, and record candidate results in the FCR-REN-11 owner.
 
 NON-NEGOTIABLE: No old/new dispatcher, compatibility alias, Show transport, deferred cleanup, dormant feature scaffolding or evidence-level upgrade from source alone. Every included criterion needs current proof; any missing mandatory proof blocks completion. Indirect Subsurface is not pulled into this slice. Quote closure evidence and report the exact remaining limitations/next permitted work.
 
-Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+Do not bypass predecessor gates or silently expand the accepted hook/API/copy/variant budget. Apply non-goals and stop rules to dependent work; repair missing, stale or contradicted prerequisites at their owners, prove the repair and resume instead of choosing an unaccepted alternative.
 
 Validate: Run CHK-DVP-08 enclosure and no-stale-reference audit, directly affected documentation/ID checks, formatting, architecture_boundary_check when applicable, and git diff --check. Reuse valid evidence; do not run broad builds/cooks to replace an absent oracle. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
 
-Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A closure; DVP-4B remains separately gated is permitted; do not continue automatically into it.
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A closure; DVP-4B remains separately gated is permitted; continue automatically when it is user-queued and its prerequisites pass; otherwise retain isolated-stage scope.
 ```
 
 ### DVP-4B - Indirect Subsurface
@@ -541,11 +565,13 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 **Ready-to-use discovery prompt:**
 
 ```text
+AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+
 Execute only DVP-4B-0 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after DVP-4A closure. Apply its Universal Execution Contract. Make no production-code changes. Work through the owning Indirect Lighting discovery/plan to close IND-D0-02 and freeze the real Indirect Subsurface producer, path classification, energy/PDF/target, product/guide/history, activation and non-zero/disabled-work proof. Record the exact transport-stage and control-integration prerequisites without duplicating that plan here.
 
-NON-NEGOTIABLE: no CVar, Editor leaf, resource, fabricated zero or relabeled diffuse contribution is admitted before the owning transport/product decision. A Show request and prior seven-leaf completion do not authorize transport. Quote the accepted owner decisions and proof contracts or report BLOCKED.
+NON-NEGOTIABLE: no CVar, Editor leaf, resource, fabricated zero or relabeled diffuse contribution is admitted before the owning transport/product decision. A Show request and prior seven-leaf completion do not authorize transport. Quote the accepted owner decisions and proof contracts ; repair missing proof or falsified prerequisites before resuming.
 
-Validate documentation links/anchors, IDs, ownership/hook budget, UTF-8 and git diff --check. Report executable checks as unrun unless a bounded named discovery probe ran. Handoff the exact owning transport stage and whether DVP-4B-1 is permitted; do not implement it.
+Validate documentation links/anchors, IDs, ownership/hook budget, UTF-8 and git diff --check. Report executable checks as unrun unless a bounded named discovery probe ran. Handoff the exact owning transport stage and whether DVP-4B-1 is permitted; continue only after its owning transport gate passes and it is user-queued.
 ```
 
 #### DVP-4B-1 - Integrate The Authorized Real Contribution
@@ -561,14 +587,18 @@ Validate documentation links/anchors, IDs, ownership/hook budget, UTF-8 and git 
 **Ready-to-use implementation prompt:**
 
 ```text
+AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+
 Implement only DVP-4B-1 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md within the exact Indirect Lighting-authorized transport/product stage recorded by DVP-4B-0. Apply the Universal Execution Contract. Reuse existing indirect feature controls and sequenced publication. Integrate the real Indirect Subsurface producer and activation/disabled-work path through estimator/resolve, composite, guides, history and diagnostics; add its feature CVar and one real Editor child in the same coherent slice.
 
-NON-NEGOTIABLE: the owning transport rules and non-zero oracle are prerequisites, not implementation choices. No diffuse relabeling, fabricated product, UI-only registration, stale reads, masked-only output, duplicate settings/Show state, compatibility path or unledgered hook. Quote AC-DVP-26 and applicable execution/product/history/enclosure evidence or report BLOCKED.
+NON-NEGOTIABLE: the owning transport rules and non-zero oracle are prerequisites, not implementation choices. No diffuse relabeling, fabricated product, UI-only registration, stale reads, masked-only output, duplicate settings/Show state, compatibility path or unledgered hook. Quote AC-DVP-26 and applicable execution/product/history/enclosure evidence ; repair missing proof or falsified prerequisites before resuming.
 
 Validate the owning transport checks plus applicable CHK-DVP-08 through CHK-DVP-12, bounded shader/C++ checks, advertised-backend/native rows, affected documentation and git diff --check. Handoff exact prerequisite/candidate identity, files/deletions/copies/hooks, commands/artifacts, unrun checks and the owning report's closure disposition. Do not broaden transport or claim unrun performance proof.
 ```
 
 ## DVP-5 - Prove The Contract
+
+Apply the autonomous execution and automated verification policies above. Reconcile every retained AC/FM/CHK row with exact candidate evidence, repair failed automated checks at their owners, repeat invalidated checks and continue through closure without routine approval. Manual Editor-opening checks are not prerequisites. Move the plan to done only when every retained required criterion passes; never infer completion from source presence or unavailable evidence.
 
 Exercise enum/HLSL parity, every consumer, two-viewport mode isolation, shared feature-CVar UI/console parity, Lit/Reference/Lit topology, exact/HDR numeric presentation, extent changes, output encoding, and advertised D3D12/Vulkan rows. DVP-4A-8/9 own the lighting-control execution/evidence handoff; this family-wide closure does not repeat it or infer a missing row. Record only checks actually run in the owning completion report.
 
@@ -577,5 +607,7 @@ Exercise enum/HLSL parity, every consumer, two-viewport mode isolation, shared f
 This is a mode-baseline reconciliation prompt, not a DVP-4 implementation instruction. Use it only when the live mode audit identifies a directly scoped defect; do not replay historical migration or add feature controls through it.
 
 ```text
+AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+
 Reconcile the live Debug Views and Reference Path Tracer source to Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Controls/ViewModes.md. Keep RenderViewMode as the sole host-independent per-view rendering choice on ViewportRenderRequest and immutable RenderView. Keep Editor labels/icons/menu layout local while using the same enum directly. Consume the value only at the owning frame-composition, raster, debug-resolve, and feature-lifecycle decisions. Delete parallel Editor enums, preset translators, visualization targets, mode-shaped show flags, selection CVars, command bridges, graph/feature settings copies, compatibility aliases, and RHI fields. Preserve ReferencePathTracer = 1 and contiguous values. Keep the Reference implementation private and the shared frame shell unchanged. Add no diagnostics, registry, generic settings bag, recipe hierarchy, or speculative controls. Run focused source checks, architecture_boundary_check, documentation link/anchor checks, and git diff --check; report builds and runtime checks as deferred unless actually run.
 ```

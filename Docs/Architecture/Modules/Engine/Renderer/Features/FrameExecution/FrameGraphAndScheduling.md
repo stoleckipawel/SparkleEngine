@@ -54,6 +54,8 @@ Declaration order in [`BuildRenderFrameGraph`](../../../../../../../Engine/Rende
 
 Queue existence does not prove useful overlap. When any non-graphics queue is used, the executor first submits graphics initialization, then applies explicit producer-batch waits. `r.FrameGraph.ParallelRecording` controls recording concurrency, not dependency semantics or GPU execution order.
 
+**Cached-frame queue boundary:** final queue release is independent of declared final-state restoration. Every resource whose last access is on a non-graphics queue is released to `Common` on that queue before graphics frame-begin work can use it again; resources already in `Common` or acceleration-structure state need no such transition. This includes non-restored transients. The compiler updates the tracked state to match the release, then separately decides whether a declared final state must be restored. Otherwise a compute-only native shader-read state can survive into a graphics barrier whose neutral shader-read state lowers differently. The bounded 2026-10-04 DVP prerequisite fixture exercises this boundary over 66 cached frames on D3D12 and Vulkan; it does not close the full scheduling/lifetime contract or establish useful overlap.
+
 ## Resource Ownership
 
 | Resource class | Meaning | Lifetime rule |

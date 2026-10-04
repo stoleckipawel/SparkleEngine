@@ -172,11 +172,6 @@ void FrameGraphCompiler::BuildFinalResourceBarriers(const LastResourceAccessTabl
 {
 	for (FrameGraphResourceNode& compiledResource : m_plan.resources)
 	{
-		if (!ShouldRestoreFinalState(compiledResource))
-		{
-			continue;
-		}
-
 		const FrameGraphResourceMetadata& entry = m_resourceRegistry.GetMetadata(compiledResource.handle);
 		const LastResourceAccess& lastAccess = lastResourceAccesses[compiledResource.index];
 		if (lastAccess.Pass != INVALID_FRAME_GRAPH_PASS_INDEX && lastAccess.Queue != ERhiQueueType::Graphics
@@ -191,6 +186,14 @@ void FrameGraphCompiler::BuildFinalResourceBarriers(const LastResourceAccessTabl
 			        .after = ResourceState::Common,
 			        .label = "FinalQueueRelease"});
 			compiledResource.currentState = ResourceState::Common;
+			m_resourceStateTracker.UpdateCurrentState(compiledResource.handle, ResourceState::Common);
+		}
+
+		// Cached transient resources also cross the frame boundary. Release their
+		// last non-graphics use before a graphics frame-begin transition can run.
+		if (!ShouldRestoreFinalState(compiledResource))
+		{
+			continue;
 		}
 
 		if (compiledResource.currentState == compiledResource.finalState)

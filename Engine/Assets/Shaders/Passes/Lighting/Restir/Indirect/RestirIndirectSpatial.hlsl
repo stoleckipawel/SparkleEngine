@@ -30,7 +30,7 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 	    RestirIndirectReservoir::UnpackReservoir(TemporalReservoirSampleTexture.Load(int3(pixelCoord, 0)),
 	                                             TemporalReservoirWeightTexture.Load(int3(pixelCoord, 0)));
 
-	if (surface.Valid)
+	if (surface.Valid && RestirIndirectSpatialReuse != 0u)
 	{
 		uint rng = RestirReservoirCommon::BuildSeed(pixelCoord, 0x5A71A1u);
 		const uint offsetStart = uint(CommonRandom::Random01(rng) * 8.0f) & 7u;

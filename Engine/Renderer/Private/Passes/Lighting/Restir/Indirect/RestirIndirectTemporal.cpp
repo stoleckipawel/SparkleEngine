@@ -5,6 +5,7 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Lighting/Restir/Indirect/RestirIndirectTemporalShader.h"
 #include "RayTracing/Effects/RestirLighting/RestirIndirectLightingSettings.h"
+#include "RayTracing/Effects/RestirLighting/RestirIndirectLightingCVars.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowPassData.h"
 #include "ShaderData/SceneShaderParameters.h"
 
@@ -48,7 +49,8 @@ void AddRestirIndirectTemporalPass(
 	    [](auto& fields)
 	    {
 		    const RestirIndirectLightingSettings settings = BuildRestirIndirectLightingSettings();
-		    fields.RestirIndirectConstants = RestirIndirectLightingUniformData{.BounceCount = settings.BounceCount};
+		    fields.RestirIndirectConstants = RestirIndirectLightingUniformData{
+		        .BounceCount = settings.BounceCount, .TemporalReuse = CVarRestirIndirectTemporalReuse.Get() ? 1u : 0u};
 	    });
 
 	builder.Dispatch<RestirIndirectTemporalCS>(
