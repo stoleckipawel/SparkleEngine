@@ -111,7 +111,7 @@ namespace RestirIndirectReservoir
 
 	float EvaluateTarget(RayTracingPathLighting::Result path)
 	{
-		return max(CommonColor::LuminanceRec709(max(path.FinalContribution, 0.0f.xxx)), 0.0f);
+		return max(CommonColor::LuminanceRec709(max(path.DiffuseContribution + path.SpecularContribution, 0.0f.xxx)), 0.0f);
 	}
 
 	bool StreamCandidate(inout Reservoir reservoir, Candidate candidate, float target, float random)
@@ -180,8 +180,7 @@ namespace RestirIndirectReservoir
 			return reservoir;
 		}
 		uint rng = RestirReservoirCommon::BuildSeed(pixelCoord, 0x1D1EEC7u);
-		[unroll]
-		for (uint candidateIndex = 0u; candidateIndex < RestirReservoirCommon::InitialCandidateCount; ++candidateIndex)
+		[unroll] for (uint candidateIndex = 0u; candidateIndex < RestirReservoirCommon::InitialCandidateCount; ++candidateIndex)
 		{
 			Candidate candidate;
 			candidate.RandomPixel = pixelCoord;

@@ -2,7 +2,6 @@
 
 namespace RayTracingPathSample
 {
-	static const uint LobeNone = 0u;
 	static const uint LobeDiffuse = 1u;
 	static const uint LobeSpecular = 2u;
 
@@ -10,8 +9,8 @@ namespace RayTracingPathSample
 	{
 		float3 DirectionWorld;
 		float PdfW;
-		float3 Throughput;
-		uint Lobe;
+		float3 DiffuseThroughput;
+		float3 SpecularThroughput;
 		bool Delta;
 		bool HasSupport;
 	};

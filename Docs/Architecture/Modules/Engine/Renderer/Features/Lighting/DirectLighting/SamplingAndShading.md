@@ -81,7 +81,16 @@ diffuseWeight + subsurfaceApproxWeight <= baseBudget
 specular uses dielectric F0 blended to baseColor by metallic
 ```
 
-This is a policy constraint, not a final formula. The current implementation must be audited rather than grandfathered.
+The bounded material-budget prerequisite selects the following allocation, independently of a feature's evaluation intent:
+
+```text
+s = saturate(authoredSubsurfaceStrength)
+baseBudget = (1 - Fresnel) * (1 - metallic)
+f_diffuse = BurleyDiffuse * baseBudget * (1 - s)
+f_subsurface_approx = SubsurfaceApproximation * baseBudget * s
+```
+
+For the current wrap approximation, `s` also supplies the authored wrap width; it is not an additional transport model. An explicit caller evaluation boolean skips subsurface math but never changes `s` or the diffuse allocation. Specular evaluation remains unchanged. This fixes base-budget allocation, not full Burley/GGX furnace conformance, BSSRDF support, or the remaining `DIR-D0-03` decisions. The shared evaluator returns one cohesive three-lobe response; no feature CVar or GBuffer dependency belongs in it.
 
 ### Specular
 

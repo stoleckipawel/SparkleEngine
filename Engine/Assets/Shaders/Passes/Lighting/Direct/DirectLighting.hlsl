@@ -49,8 +49,7 @@ void AddDirectLightSample(GBufferData gBuffer,
 	directSubsurface += lightSubsurface * sampleWeight;
 }
 
-[numthreads(8, 8, 1)]
-void main(uint3 dispatchThreadId : SV_DispatchThreadID)
+[numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
 	uint width = 0;
 	uint height = 0;
@@ -81,7 +80,7 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 	                                          CurrentReservoirWeight.Load(int3(dispatchThreadId.xy, 0)));
 	const ShadowVisibilitySample shadowSignal =
 	    RayTracedShadowSignalPacking::UnpackShadowSignal(ShadowVisibilitySignal.Load(int3(dispatchThreadId.xy, 0)));
-	const bool evaluateSubsurface = any(gBuffer.SubsurfaceColor > 0.0f.xxx) && gBuffer.SubsurfaceStrength > 0.0f;
+	const bool evaluateSubsurface = HasSubsurface(gBuffer);
 	if (DirectLightReservoir::IsValid(reservoir))
 	{
 		const LightSampling::DirectLightSample lightSample = DirectLightReservoir::ReplayLightSample(reservoir, positionWorld);

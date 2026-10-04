@@ -9,8 +9,7 @@ SamplerState SamplerLinearClamp;
 #include "/Engine/Lighting/IndirectLightingOutputs.hlsli"
 #include "/Engine/Lighting/RayReconstructionGuides.hlsli"
 
-[numthreads(8, 8, 1)]
-void main(uint3 dispatchThreadId : SV_DispatchThreadID)
+[numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
 	uint width = 0u;
 	uint height = 0u;
@@ -55,15 +54,15 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 
 	RayTracingPathLighting::Result path =
 	    RestirIndirectReservoir::EvaluateCandidate(surface, reservoir.Selected, SkyTexture, SamplerLinearClamp);
-	path.FinalContribution *= RestirIndirectReservoir::GetFinalWeight(reservoir);
-	const bool diffuseSelected = path.PrimaryLobe == RayTracingPathSample::LobeDiffuse;
-	const bool specularSelected = path.PrimaryLobe == RayTracingPathSample::LobeSpecular;
-	const float3 diffuse = diffuseSelected ? path.FinalContribution : 0.0f.xxx;
-	const float3 specular = specularSelected ? path.FinalContribution : 0.0f.xxx;
-	IndirectDiffuse[pixelCoord] = float4(diffuse, diffuseSelected ? 1.0f : 0.0f);
-	IndirectSpecular[pixelCoord] = float4(specular, specularSelected ? 1.0f : 0.0f);
+	const float reservoirWeight = RestirIndirectReservoir::GetFinalWeight(reservoir);
+	const float3 diffuse = path.DiffuseContribution * reservoirWeight;
+	const float3 specular = path.SpecularContribution * reservoirWeight;
+	const bool hasDiffuse = any(diffuse > 0.0f);
+	const bool hasSpecular = any(specular > 0.0f);
+	IndirectDiffuse[pixelCoord] = float4(diffuse, hasDiffuse ? 1.0f : 0.0f);
+	IndirectSpecular[pixelCoord] = float4(specular, hasSpecular ? 1.0f : 0.0f);
 	if (writeRayReconstructionGuides)
 	{
-		RayReconstructionGuides::WriteSpecularHitDistance(pixelCoord, path, surface.PathSurface.PositionWorld, specularSelected);
+		RayReconstructionGuides::WriteSpecularHitDistance(pixelCoord, path, surface.PathSurface.PositionWorld, hasSpecular);
 	}
 }

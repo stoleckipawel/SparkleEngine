@@ -207,6 +207,8 @@ DEVELOPMENT RELOAD
 
 ### The Separation That Prevents Bloat
 
+The dependency manifest reader decodes the text writer's LF/CRLF line terminator before validating the exact header. A line terminator is not part of the header identity. Missing/invalid headers, orphan records and inconsistent forward/reverse dependencies still fail; newline decoding does not select a legacy format or permit a global-cook fallback in changed-source selection.
+
 The lean design is not "compile every file automatically." It is automatic generation from small, explicit declarations:
 
 - source files provide implementation text and includes;
@@ -899,5 +901,4 @@ Rejected as a default because Sparkle already runs the cooker out of process and
 - [Shader System Delivery Plan](Plan.md) owns phase order, change boundaries, validation sequencing, and phase exits.
 - [Shader System Migration Baseline](MigrationBaseline.md) preserves the frozen pre-migration inventory and deletion ledger.
 - [Ray-Tracing Execution Architecture](../../Modules/Engine/Renderer/Features/RayTracing/ExecutionArchitecture.md) owns enduring dual-execution and shader-table semantics.
-
 

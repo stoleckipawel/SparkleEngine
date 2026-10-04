@@ -78,6 +78,10 @@ Initial candidates store enough facts to recompute their vector contribution `f(
 
 `IndirectDiffuse` and `IndirectSpecular` classification is frozen at the first indirect scattering event or another explicit rule selected by `IND-D0-02`. The same physical path cannot contribute fully to both outputs. Roughness thresholds affect technique selection and reconstruction only after the material sampling domain is fixed.
 
+The attribution prerequisite uses the evaluated physical BSDF at the first scattering vertex, independently of the proposal used to sample it. For the sampled direction with unchanged mixture density `q`, initialize two throughputs `betaDiffuse = fDiffuse * cosine / q` and `betaSpecular = fSpecular * cosine / q`. Each later vertex multiplies both by the same complete continuation response; both use the same roulette decision and survival compensation. Publish the two separately accumulated radiances and form the reservoir target from their sum. Thus a path's response is partitioned, not counted twice or assigned entirely to the proposal's name. A delta-specular event starts with only the specular channel. Reference continues to consume the sum and retains its own sampling/MIS policy.
+
+Specular hit distance now follows actual physical specular support on the sampled path and its real first hit, not the proposal tag. This does not admit a missing or fabricated hit-distance guide when specular transport is disabled; provider/all-off requirements still need their independent decision. Seed replay, reuse/GRIS conformance and full raw-GPU/Reference equivalence remain unproved.
+
 ## Environment And Emission Accounting
 
 One immutable `EnvironmentGeneration` owns mapping, rotation, radiance basis, dimensions/content hash, and importance PDF.

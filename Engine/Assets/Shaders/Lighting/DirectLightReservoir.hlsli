@@ -53,7 +53,7 @@ namespace DirectLightReservoir
 		const float3 cameraToSurface = surface.PositionWorld - Position;
 		surface.ViewDistance = length(cameraToSurface);
 		surface.ViewDirWorld = surface.ViewDistance > 1.0e-5f ? -cameraToSurface / surface.ViewDistance : 0.0f.xxx;
-		surface.EvaluateSubsurface = any(surface.GBuffer.SubsurfaceColor > 0.0f.xxx) && surface.GBuffer.SubsurfaceStrength > 0.0f;
+		surface.EvaluateSubsurface = HasSubsurface(surface.GBuffer);
 		surface.Valid = true;
 		return surface;
 	}
@@ -269,8 +269,7 @@ namespace DirectLightReservoir
 
 		Reservoir reservoir = EmptyReservoir();
 		uint rng = RestirReservoirCommon::BuildSeed(pixelCoord, 0xC0FFEEu);
-		[unroll]
-		for (uint candidateIndex = 0u; candidateIndex < RestirReservoirCommon::InitialCandidateCount; ++candidateIndex)
+		[unroll] for (uint candidateIndex = 0u; candidateIndex < RestirReservoirCommon::InitialCandidateCount; ++candidateIndex)
 		{
 			const DirectLightSampling::LightCandidate candidate =
 			    DirectLightSampling::SampleUniformLightCandidate(CommonRandom::Random01(rng));

@@ -13,8 +13,8 @@ namespace RayTracingPathLighting
 {
 	struct Result
 	{
-		uint PrimaryLobe;
-		float3 FinalContribution;
+		float3 DiffuseContribution;
+		float3 SpecularContribution;
 		RayTracingPathSample::LightingResult FirstLighting;
 	};
 
@@ -58,33 +58,48 @@ namespace RayTracingPathLighting
 	                                       uint randomFrameIndex)
 	{
 		Result result = (Result)0;
-		result.PrimaryLobe = RayTracingPathSample::LobeNone;
 
 		RayTracingPathSurface surface = primarySurface;
 		PathTracer::PathState path = (PathTracer::PathState)0;
 		path.Throughput = 1.0f.xxx;
+		float3 diffuseThroughput = 0.0f.xxx;
+		float3 specularThroughput = 0.0f.xxx;
 		const uint sanitizedBounceCount = max(bounceCount, 1u);
 
-		[loop]
-		for (uint bounceIndex = 0u; bounceIndex < sanitizedBounceCount; ++bounceIndex)
+		[loop] for (uint bounceIndex = 0u; bounceIndex < sanitizedBounceCount; ++bounceIndex)
 		{
 			const RayTracingPathSampling::RandomSamples randomSamples =
 			    RayTracingPathSampling::GenerateRandomSamples(pixelCoord, bounceIndex, sampleIndex, randomFrameIndex);
 			const RayTracingPathSample::DirectionSample sample =
 			    RayTracingPathSampling::SampleBSDF(surface, specularSampleMode, randomSamples);
-			if (bounceIndex == 0u)
-			{
-				result.PrimaryLobe = sample.Lobe;
-			}
 			if (!sample.HasSupport)
 			{
 				break;
 			}
 
 			PathTracer::ApplyDirectionSample(path, sample);
-			if (!RayTracingPathSampling::SurvivesRussianRoulette(path.Throughput, randomSamples.Roulette, bounceIndex))
+			if (bounceIndex == 0u)
+			{
+				diffuseThroughput = sample.DiffuseThroughput;
+				specularThroughput = sample.SpecularThroughput;
+			}
+			else
+			{
+				const float3 continuationThroughput = sample.DiffuseThroughput + sample.SpecularThroughput;
+				diffuseThroughput *= continuationThroughput;
+				specularThroughput *= continuationThroughput;
+			}
+
+			const float survivalProbability = RayTracingPathSampling::RussianRouletteSurvivalProbability(path.Throughput, bounceIndex);
+			if (survivalProbability <= 0.0f || randomSamples.Roulette > survivalProbability)
 			{
 				break;
+			}
+			if (survivalProbability < 1.0f)
+			{
+				PathTracer::ApplySurvivalCompensation(path.Throughput, survivalProbability);
+				PathTracer::ApplySurvivalCompensation(diffuseThroughput, survivalProbability);
+				PathTracer::ApplySurvivalCompensation(specularThroughput, survivalProbability);
 			}
 
 			float3 rayOriginWorld = 0.0f.xxx;
@@ -99,7 +114,8 @@ namespace RayTracingPathLighting
 			                                                                bounceIndex,
 			                                                                randomFrameIndex,
 			                                                                hitSurface);
-			PathTracer::AddRadiance(result.FinalContribution, path.Throughput, lighting.IncidentRadiance);
+			PathTracer::AddRadiance(result.DiffuseContribution, diffuseThroughput, lighting.IncidentRadiance);
+			PathTracer::AddRadiance(result.SpecularContribution, specularThroughput, lighting.IncidentRadiance);
 
 			if (bounceIndex == 0u)
 			{

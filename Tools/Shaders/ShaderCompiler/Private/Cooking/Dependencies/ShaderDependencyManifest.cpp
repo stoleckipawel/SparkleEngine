@@ -34,6 +34,10 @@ ShaderDependencyManifest ShaderDependencyManifest::Read(const std::filesystem::p
 	std::istringstream input{std::string(reinterpret_cast<const char*>(bytes.data()), bytes.size())};
 	std::string header;
 	std::getline(input, header);
+	if (header.ends_with('\r'))
+	{
+		header.pop_back();
+	}
 	if (header != kShaderDependencyManifestHeader)
 	{
 		throw Diagnostics::Error("Shader dependency metadata is invalid. Run RecompileShaders Global to rebuild all shaders.");

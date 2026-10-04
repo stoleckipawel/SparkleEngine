@@ -6,7 +6,6 @@
 #include "/Engine/Common/Random.hlsli"
 #include "/Engine/Lighting/SurfaceLighting.hlsli"
 #include "/Engine/RayTracing/PathBsdf.hlsli"
-#include "/Engine/RayTracing/PathTracer.hlsli"
 #include "/Engine/RayTracing/PathSurface.hlsli"
 #include "/Engine/RayTracing/RayTracingPathSample.hlsli"
 
@@ -51,10 +50,9 @@ namespace RayTracingPathSampling
 		return totalWeight > 0.0f ? saturate(diffuseWeight / totalWeight) : 0.5f;
 	}
 
-	RayTracingPathSample::DirectionSample InvalidSample(uint lobe)
+	RayTracingPathSample::DirectionSample InvalidSample()
 	{
 		RayTracingPathSample::DirectionSample result = (RayTracingPathSample::DirectionSample)0;
-		result.Lobe = lobe;
 		return result;
 	}
 
@@ -62,7 +60,7 @@ namespace RayTracingPathSampling
 	{
 		if (!surface.Valid)
 		{
-			return InvalidSample(RayTracingPathSample::LobeNone);
+			return InvalidSample();
 		}
 
 		const float3 f0 = SurfaceLighting::BuildF0(surface.BaseColor, surface.Metallic, surface.DielectricF0);
@@ -74,7 +72,7 @@ namespace RayTracingPathSampling
 		masses.SpecularDelta = surface.Roughness == 0.0f;
 		if (specularSampleMode != SpecularSampleModeStochasticGGX && !masses.SpecularDelta)
 		{
-			return InvalidSample(RayTracingPathSample::LobeSpecular);
+			return InvalidSample();
 		}
 		uint selectedLobe = RayTracingPathSample::LobeSpecular;
 		if (randomSamples.Lobe < diffuseMass)
@@ -85,21 +83,14 @@ namespace RayTracingPathSampling
 		return PathBsdf::Sample(surface, masses, selectedLobe, randomSamples.Direction);
 	}
 
-	bool SurvivesRussianRoulette(inout float3 throughput, float randomValue, uint bounceIndex)
+	float RussianRouletteSurvivalProbability(float3 throughput, uint bounceIndex)
 	{
 		if (bounceIndex < 2u)
 		{
-			return true;
+			return 1.0f;
 		}
 
-		const float survivalProbability = saturate(max(max(throughput.r, throughput.g), throughput.b));
-		if (survivalProbability <= 0.0f || randomValue > survivalProbability)
-		{
-			return false;
-		}
-
-		PathTracer::ApplySurvivalCompensation(throughput, survivalProbability);
-		return true;
+		return saturate(max(max(throughput.r, throughput.g), throughput.b));
 	}
 }
 

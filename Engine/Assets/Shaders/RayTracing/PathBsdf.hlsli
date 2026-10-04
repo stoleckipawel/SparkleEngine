@@ -18,7 +18,8 @@ namespace PathBsdf
 
 	struct Evaluation
 	{
-		float3 F;
+		float3 Diffuse;
+		float3 Specular;
 		float PdfW;
 		float Cosine;
 		bool HasSupport;
@@ -118,10 +119,11 @@ namespace PathBsdf
 		}
 
 		const float correction = ShadingNormalCorrection(surface, directionWorld);
-		result.F = (diffuse + specular) * correction;
+		result.Diffuse = diffuse * correction;
+		result.Specular = specular * correction;
 		result.PdfW = masses.Diffuse * noL * INV_PI + masses.Specular * specularPdfW;
 		result.Cosine = ngL;
-		result.HasSupport = result.PdfW > 0.0f && any(result.F > 0.0f);
+		result.HasSupport = result.PdfW > 0.0f && any(result.Diffuse + result.Specular > 0.0f);
 		return result;
 	}
 
@@ -158,7 +160,6 @@ namespace PathBsdf
 	RayTracingPathSample::DirectionSample Sample(RayTracingPathSurface surface, LobeMasses masses, uint selectedLobe, float2 sample)
 	{
 		RayTracingPathSample::DirectionSample result = (RayTracingPathSample::DirectionSample)0;
-		result.Lobe = selectedLobe;
 
 		if (selectedLobe == RayTracingPathSample::LobeDiffuse)
 		{
@@ -175,10 +176,9 @@ namespace PathBsdf
 				const float cosine = abs(dot(surface.ViewDirWorld, surface.NormalWorld));
 				const float correction = ShadingNormalCorrection(surface, result.DirectionWorld);
 
-				result.Throughput = FresnelSchlick(cosine, f0) * correction / masses.Specular;
-				result.Lobe = RayTracingPathSample::LobeSpecular;
+				result.SpecularThroughput = FresnelSchlick(cosine, f0) * correction / masses.Specular;
 				result.Delta = true;
-				result.HasSupport = any(result.Throughput > 0.0f);
+				result.HasSupport = any(result.SpecularThroughput > 0.0f);
 				return result;
 			}
 			const float3 halfVector = SampleVisibleGGXHalfVector(surface, sample);
@@ -187,7 +187,12 @@ namespace PathBsdf
 
 		const Evaluation evaluation = EvaluateContinuous(surface, result.DirectionWorld, masses);
 		result.PdfW = evaluation.PdfW;
-		result.Throughput = evaluation.HasSupport ? evaluation.F * evaluation.Cosine / evaluation.PdfW : 0.0f.xxx;
+		if (evaluation.HasSupport)
+		{
+			const float sampleWeight = evaluation.Cosine / evaluation.PdfW;
+			result.DiffuseThroughput = evaluation.Diffuse * sampleWeight;
+			result.SpecularThroughput = evaluation.Specular * sampleWeight;
+		}
 		result.Delta = false;
 		result.HasSupport = evaluation.HasSupport;
 		return result;

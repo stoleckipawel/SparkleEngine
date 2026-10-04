@@ -30,6 +30,11 @@ namespace BRDF
 
 		float3 EvaluateDirect(float3 albedo, float3 subsurfaceColor, float roughness, float subsurfaceStrength, ShadingData sd)
 		{
+			if (subsurfaceStrength <= 0.0f)
+			{
+				return float3(0.0f, 0.0f, 0.0f);
+			}
+
 #if BRDF_SUBSURFACE_MODEL == BRDF_SUBSURFACE_NONE
 			return float3(0.0f, 0.0f, 0.0f);
 #elif BRDF_SUBSURFACE_MODEL == BRDF_SUBSURFACE_WRAP

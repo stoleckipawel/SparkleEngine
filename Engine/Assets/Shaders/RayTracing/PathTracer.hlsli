@@ -47,7 +47,7 @@ namespace PathTracer
 
 	void ApplyDirectionSample(inout PathState path, RayTracingPathSample::DirectionSample sample)
 	{
-		path.Throughput *= sample.Throughput;
+		path.Throughput *= sample.DiffuseThroughput + sample.SpecularThroughput;
 		path.DirectionWorld = sample.DirectionWorld;
 		++path.SurfaceDepth;
 	}

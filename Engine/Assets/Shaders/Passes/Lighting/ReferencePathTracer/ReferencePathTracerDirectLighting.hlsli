@@ -66,7 +66,7 @@ namespace ReferencePathTracer
 
 		const float lightProbability = light.LightSelectionPdf * (light.Delta ? 1.0f : light.PdfW);
 		const float misWeight = light.Delta ? 1.0f : PathTracer::PowerHeuristic(lightProbability, bsdf.PdfW);
-		return bsdf.F * light.IncidentRadiance * bsdf.Cosine * misWeight / lightProbability;
+		return (bsdf.Diffuse + bsdf.Specular) * light.IncidentRadiance * bsdf.Cosine * misWeight / lightProbability;
 	}
 }
 
