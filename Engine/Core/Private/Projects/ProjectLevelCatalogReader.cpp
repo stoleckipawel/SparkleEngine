@@ -241,6 +241,10 @@ void ProjectLevelCatalogReader::ParseAssetPackField(std::string_view key, std::s
 	{
 		m_currentPack->sourcePageUrl = Strings::UnquoteCopy(value);
 	}
+	else if (key == "SourceFiles")
+	{
+		m_currentPack->sourceFilesManifestPath = ResolveProjectPath(value);
+	}
 	else if (key == "Archive")
 	{
 		m_currentPack->archiveName = Strings::UnquoteCopy(value);

@@ -5,10 +5,10 @@
 #include "Fbx/FbxAnimationImporter.h"
 #include "Fbx/FbxCameraImporter.h"
 #include "Fbx/FbxEmbeddedTextureImporter.h"
-#include "Fbx/FbxGeometryImporter.h"
+#include "Assimp/AssimpGeometryImporter.h"
 #include "Fbx/FbxLightImporter.h"
-#include "Fbx/FbxMaterialImporter.h"
-#include "Fbx/FbxSceneReader.h"
+#include "Assimp/AssimpMaterialImporter.h"
+#include "Assimp/AssimpSceneReader.h"
 #include "Core/Public/Diagnostics/Error.h"
 
 #include <assimp/Importer.hpp>
@@ -33,18 +33,18 @@ SourceImportOutput FbxImporter::Import(const std::filesystem::path& filePath) co
 	output.provenance.importerId = std::string(GetImporterId());
 
 	Assimp::Importer importer;
-	const aiScene& scene = FbxSceneReader::LoadScene(filePath, importer);
-	const float sourceMetersPerUnit = FbxSceneReader::GetMetersPerSourceUnit(importer);
+	const aiScene& scene = AssimpSceneReader::LoadScene(filePath, importer);
+	const float sourceMetersPerUnit = AssimpSceneReader::GetFbxMetersPerSourceUnit(importer);
 	output.provenance.sourceMetersPerUnit = sourceMetersPerUnit;
 	output.scene.materials.reserve(scene.mNumMaterials);
-	const std::size_t importedMeshInstanceCount = FbxGeometryImporter::CountImportedMeshInstances(*scene.mRootNode);
+	const std::size_t importedMeshInstanceCount = AssimpGeometryImporter::CountImportedMeshInstances(*scene.mRootNode);
 	output.ReserveMeshPrimitives(scene.mNumMeshes);
 	output.ReserveMeshInstances(importedMeshInstanceCount);
 
 	const std::vector<std::filesystem::path> embeddedTexturePaths = FbxEmbeddedTextureImporter::ExtractTextures(scene);
-	FbxMaterialImporter::ImportMaterials(scene, filePath.parent_path(), embeddedTexturePaths, output);
+	AssimpMaterialImporter::ImportMaterials(scene, filePath.parent_path(), embeddedTexturePaths, output);
 
-	FbxGeometryImporter::ImportGeometry(scene, output);
+	AssimpGeometryImporter::ImportGeometry(scene, output);
 	FbxCameraImporter::ImportCameras(scene, sourceMetersPerUnit, output);
 	FbxLightImporter::ImportLights(scene, sourceMetersPerUnit, output);
 	FbxAnimationImporter::ImportAnimations(scene, output);

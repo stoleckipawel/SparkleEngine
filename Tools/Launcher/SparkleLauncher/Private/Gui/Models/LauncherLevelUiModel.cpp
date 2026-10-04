@@ -70,7 +70,7 @@ namespace SparkleLauncher
 			    .Detail = BuildLevelDetail(level, assetPack),
 			    .SourcePageUrl = QString::fromStdString(
 			        level.sourcePageUrl.empty() && assetPack != nullptr ? assetPack->sourcePageUrl : level.sourcePageUrl),
-			    .UnsupportedReason = ResolveUnavailableReason(level, assetPack, levelSourceReady, canSelect),
+			    .UnsupportedReason = ResolveUnavailableReason(level, assetPack, levelSourceReady, packSourceReady, canSelect),
 			    .Selected = level.selected,
 			    .SourceReady = sourceReady,
 			    .RuntimeSupported = runtimeSupported,
@@ -88,6 +88,7 @@ namespace SparkleLauncher
 		    const ProjectLevelCatalogEntry& level,
 		    const ProjectAssetPack* pack,
 		    bool levelSourceReady,
+		    bool packSourceReady,
 		    bool canSelect) const
 		{
 			if (canSelect)
@@ -101,6 +102,11 @@ namespace SparkleLauncher
 			if (pack == nullptr)
 			{
 				return QStringLiteral("This repository map has no available source content.");
+			}
+			if (!packSourceReady && !pack->downloadSupported)
+			{
+				return QString::fromStdString(pack->downloadBlocker)
+				    + (pack->runtimeSupported ? QString() : QStringLiteral("\n\n") + QString::fromStdString(pack->runtimeBlocker));
 			}
 			if (!pack->runtimeSupported)
 			{
@@ -165,8 +171,7 @@ namespace SparkleLauncher
 		{
 			if (!level.RuntimeSupported)
 			{
-				return level.SourceReady ? QStringLiteral("Source ready")
-				                         : (level.CanSync ? QStringLiteral("Available to sync") : QStringLiteral("Future"));
+				return QStringLiteral("Runtime unsupported");
 			}
 			if (!level.CanSelect)
 			{

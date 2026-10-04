@@ -2,7 +2,7 @@
 
 **Status:** capability snapshot; current product/catalog view, not evidence that every level is downloaded, cooked, runnable, or releasable
 
-**Snapshot:** 2026-09-08 at committed `master` revision `ffe60e3a`; Showcase marker/CMake/entry points, level catalog, authored level files, tracked source content, Launcher use, runtime startup/fallback, and product membership inspected; evidence `S` only
+**Snapshot:** 2026-10-04 working tree at base revision `9f1eff12`; catalog, level files, Launcher sync/readiness, source import and cooking inspected; evidence `S` and local tool execution only
 
 **Scope:** shipped project products, startup/selection behavior, cataloged workloads, content provenance/readiness, and their role as capability evidence
 
@@ -17,9 +17,9 @@
 | Product concern | Current state | Evidence boundary |
 | --- | --- | --- |
 | project products | separate minimal ShowcaseEditor and ShowcaseRuntime targets | source/build membership, not a successful or packaged launch |
-| selection | environment/Launcher selects only registered ready catalog levels; unknown falls back to Empty with warning | fallback can hide missing content unless diagnostics are reviewed |
+| selection | environment/Launcher selects only registered ready catalog levels; an explicit unknown startup ID reports an error and activates no level | a valid catalog ID and actual first frame still require runtime proof |
 | content ladder | compact tracked scenes plus larger downloadable Modern Sponza, Bistro, LPS Head, and Cornell Box routes | selection/download support is not cook/runtime/readiness evidence |
-| future workloads | Jungle Ruins and San Miguel catalog targets remain runtime unsupported | catalog vocabulary does not establish USD/OBJ conversion or out-of-core features |
+| material previews | Stanford Bunny/Dragon, Anisotropy Barn Lamp, and Sheen Cloth are selected generic-shading previews | launchability does not establish subsurface, anisotropy, clearcoat, transmission, volume, or sheen fidelity |
 | acceptance role | levels exercise import, world, Renderer/RHI, diagnostics, performance, and product journeys | one visible level cannot approve the whole feature matrix |
 
 The project should stay thin: it selects content and composes engine/application products, while engine modules and tools retain feature ownership. Scene-specific fixes belong in the owning importer, world, Renderer, or RHI contract unless the behavior is intentionally authored content.
@@ -32,17 +32,17 @@ The project should stay thin: it selects content and composes engine/application
 | `SHOW-002` | Editor product | Implemented path | `ShowcaseEditor` is a minimal `main` over `RunEditorApplication`, links ApplicationEditor/GameFramework, stages declared runtime owners and Streamline, and outputs under the editor artifact root. | `S` |
 | `SHOW-003` | Runtime product | Implemented path | `ShowcaseRuntime` is a minimal `main` over `RunRuntimeApplication`, does not link Editor/ApplicationEditor, and outputs under the runtime artifact root. | `S` |
 | `SHOW-004` | Six-profile build naming | Implemented path | Both products participate in Debug/Development/Shipping profile convention; Launcher resolves the matching target/profile and project working directory. | `S` |
-| `SHOW-005` | Startup level selection | Implemented path | `SPARKLE_STARTUP_LEVEL` requests a registered name; absent or unknown value selects/warns and falls back to `Empty`. Only catalog entries marked Selected and currently ready register. | `S` |
+| `SHOW-005` | Startup level selection | Implemented path | `SPARKLE_STARTUP_LEVEL` requests a registered name; an absent value selects `Empty`, while an unknown explicit ID reports an error and activates no level. Only catalog entries marked Selected and currently ready register. | `S` |
 | `SHOW-006` | Runtime level switching | Implemented path | Editor menu/Launcher can choose registered catalog levels; LevelSession cancels an in-flight load when a new request arrives and rejects stale generation results. | `S` |
 | `SHOW-007` | Authored level save | Implemented path | Editor Save All writes the active `.level` document through GameFramework. External source assets/cooked products are not authored by this operation. | `S` |
 
 ## Level Catalog
 
-The catalog has 16 level records: 13 Selected and 3 not selected. Selection is intent, not readiness; external packs and cooked products still gate registration and launch.
+The catalog has 20 level records: 17 Selected and 3 not selected. Selection is intent, not readiness; external packs and cooked products still gate registration and launch.
 
 | Level(s) | Selected | Source/readiness class | Intended evidence surface | Important limitation |
 | --- | --- | --- | --- | --- |
-| `Empty` | Yes | Built-in/authored level; no scene asset | Host startup, window/input/UI, scene reset, no-content baseline | Silent fallback can hide failed content unless logs/UX are checked. |
+| `Empty` | Yes | Built-in/authored level; no scene asset | Host startup, window/input/UI, scene reset, no-content baseline | Used by default only when no startup level was explicitly requested. |
 | `Sponza` | Yes | Tracked glTF/project textures | General static geometry, textures, PBR lighting | Runtime/cook evidence not produced here. |
 | `ABeautifulGame` | Yes | Tracked glTF/project textures | Material variety, composition, static PBR | Exact extension/alpha coverage must be checked. |
 | `DamagedHelmet` | Yes | Tracked glTF/project textures | Compact metallic-roughness, normal/AO/emissive material | One asset cannot prove broad material coverage. |
@@ -54,13 +54,16 @@ The catalog has 16 level records: 13 Selected and 3 not selected. Selection is i
 | `CornellBox` | Yes | External pack marked download/runtime supported; conversion helper tracked | Indirect lighting, Reference Path Tracer, and convergence | Conversion and reference oracle must be recorded. |
 | `JungleRuins` | No | Download supported, runtime unsupported | Future dense USD/out-of-core scene | USD composition and virtualized/out-of-core geometry absent. |
 | `SanMiguelHigh`, `SanMiguelLow` | No | Download supported, runtime unsupported | Future large-scene tiers | Deterministic OBJ/MTL/PNG-to-glTF conversion absent. |
+| `StanfordBunnySubsurface`, `StanfordDragonSubsurface` | Yes | Publisher PLY archives download and cook as generic triangle geometry | Future subsurface material and lighting references | No authored subsurface parameters or lobe; Dragon carries publisher noncommercial-use constraints. |
+| `AnisotropyBarnLamp` | Yes | Pinned publisher loose glTF files download and cook as generic metallic-roughness | Future anisotropic brushed-metal reference | Optional anisotropy, clearcoat, transmission, and volume data are explicitly omitted; core textures and emissive strength remain. |
+| `SheenCloth` | Yes | Pinned publisher loose glTF files download and cook as generic metallic-roughness | Future cloth-sheen reference | Core texture transforms are translated, but optional sheen data is explicitly omitted and grazing-angle sheen fidelity remains unsupported. |
 
 ## Asset-Pack Catalog
 
-The 13 asset-pack records encode root/extraction/required path, parent relation, source URL/page, archive name/size/hash when known, version, license, and explicit download/runtime flags/blockers.
+The 17 asset-pack records encode root/extraction/required path, parent relation, source URL/page, an archive digest or a tracked per-file acquisition manifest, version, license, and explicit download/runtime flags/blockers. Loose-file packs verify every pinned byte count and SHA-256 before transactional publication of an acquisition receipt.
 
-- 9 packs are marked DownloadSupported; 7 are also RuntimeSupported.
-- Unsupported families are explicit: Modern Sponza Ivy (density/residency/scaling), Trees (alpha foliage/transparency), Flood (Alembic/water/sequence), Explosion (OpenVDB/volume/streaming), Jungle Ruins (USD/out-of-core), and San Miguel runtime conversion.
+- 13 packs are marked DownloadSupported; 11 are also RuntimeSupported. The four new packs are runtime-supported only for generic-shading preview, not their named specialty materials.
+- Unsupported families are explicit: Modern Sponza Ivy (density/residency/scaling), Trees (alpha foliage/transparency), Flood (Alembic/water/sequence), Explosion (OpenVDB/volume/streaming), Jungle Ruins (USD/out-of-core), and San Miguel runtime conversion. Stanford subsurface, Barn Lamp advanced lobes, and Sheen Cloth sheen are tracked as unsupported shading even though their generic previews are selectable.
 - External archive license strings are metadata, not proof that redistribution rights and notices are complete.
 
 ## Workload-To-Capability Coverage
@@ -75,10 +78,13 @@ The 13 asset-pack records encode root/extraction/required path, parent relation,
 | Indirect/reference | CornellBox | controlled convergence and ReSTIR/reference comparison |
 | Large scene | Bistro / ModernSponza | bounded import/cook/load/residency, stable switch/reload/exit |
 | Unsupported-content honesty | Plant, Jungle, San Miguel, future add-ons | blocked/unselected presentation and absence of misleading success |
+| Subsurface references | Stanford Bunny / Stanford Dragon | generic PLY geometry cook exists; authored material parameters, direct/indirect component response, and reference captures remain |
+| Anisotropy reference | Anisotropy Barn Lamp | generic core-material cook exists; extension import, tangent/material preservation, directional highlight response, and enabled/disabled reference captures remain |
+| Cloth sheen reference | Sheen Cloth | generic core-material cook and UV0 texture-transform translation exist; sheen extension import, grazing-angle lobe response, and enabled/disabled reference captures remain |
 
 ## Vertical Launch Trace
 
-Launcher loads `Levels.catalog` -> selected level/pack readiness is evaluated -> missing supported packs sync -> AssetCooker cooks the selected project -> Launcher verifies executable and cooked mesh/texture/shader roots -> `levels.run` sets project/level/API environment and starts ShowcaseEditor or ShowcaseRuntime in the project directory -> GameFramework registers only selected/ready levels -> requested level loads or explicit warning falls back to Empty -> Renderer consumes the scene.
+Launcher loads `Levels.catalog` -> selected level/pack readiness is evaluated -> missing supported packs sync -> AssetCooker cooks the selected project -> Launcher verifies executable and cooked mesh/texture/shader roots -> `levels.run` sets project/level/API environment and starts ShowcaseEditor or ShowcaseRuntime in the project directory -> GameFramework registers only selected/ready levels -> requested level loads or an explicit error leaves no level active -> Renderer consumes the scene.
 
 ## `FCR-PROD-01` Runtime Consumer Contract
 
@@ -112,5 +118,6 @@ Every criterion and failure above maps to at least one check. Candidate results 
 
 - Showcase is an evidence application, not a general game: no game rules, audio, physics, networking, save data, installer, or end-user onboarding loop exists.
 - A catalog description is product intent, not implementation proof. In particular, “Diffuse Transmission” and future volume/water/foliage descriptions exceed current Renderer capability.
+- Stanford, Barn Lamp, and Sheen Cloth are selectable generic previews. Their source/texture cooks passed locally in this working tree, but no first-frame, GBuffer capture, specialty-lobe, or release proof is recorded here.
 - Catalog Selected does not guarantee source pack presence, successful cook, registered runtime level, or release disposition.
-- No level in this pass was built, cooked, launched, captured, timed, or tested from packaged bytes.
+- This pass locally built SourceImporters, AssetCooker, ShowcaseEditor, and SparkleLauncher and cooked Showcase source scenes and textures. All 20 authored level names now match their catalog IDs. A local editor smoke launch still exits with Windows `0xC0000409` for both `Empty` and a new Stanford map on D3D12, and for the Stanford map on Vulkan; therefore no first-frame, GBuffer, timing, or packaged-byte claim is established. This common startup failure must be diagnosed before Open is called runtime-verified.

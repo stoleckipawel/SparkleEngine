@@ -113,8 +113,10 @@ namespace SparkleLauncher
 		}
 
 		plan.PlannedEffects.push_back(
-		    "Acquire asset packs referenced by selected maps into gitignored content roots; unselected and disabled packs remain "
-		    "untouched.");
+		    request.RequestedLevelIds.empty()
+		        ? "Acquire asset packs referenced by selected maps into gitignored content roots; unselected packs remain untouched."
+		        : "Acquire asset packs referenced by the requested maps into gitignored content roots; map selection and runtime support "
+		          "remain unchanged.");
 		if (cmake.Found && !request.ContentId.empty())
 		{
 			try

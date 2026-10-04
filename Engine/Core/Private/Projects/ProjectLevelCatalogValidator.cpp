@@ -80,17 +80,31 @@ static void ValidateAssetPackMetadata(const ProjectLevelCatalog& catalog, std::s
 	{
 		throw Diagnostics::Error(std::format("Downloadable asset pack '{}' must be declared external.", pack.id));
 	}
+	const bool filesPayload = !pack.sourceFilesManifestPath.empty();
 	if (pack.downloadSupported
-	    && (pack.sourceUrl.empty() || pack.archiveName.empty() || pack.archiveBytes == 0 || pack.archiveSha256.empty()
-	        || pack.extractionPath.empty()))
+	    && (pack.sourceUrl.empty() || pack.extractionPath.empty()
+	        || (!filesPayload && (pack.archiveName.empty() || pack.archiveBytes == 0 || pack.archiveSha256.empty()))))
 	{
 		throw Diagnostics::Error(std::format("Downloadable asset pack '{}' has incomplete acquisition metadata.", pack.id));
+	}
+	if (filesPayload && (!pack.downloadSupported || !pack.archiveName.empty() || pack.archiveBytes != 0 || !pack.archiveSha256.empty()))
+	{
+		throw Diagnostics::Error(std::format("Asset pack '{}' must choose either a file manifest or an archive payload.", pack.id));
+	}
+	if (filesPayload && !std::filesystem::is_regular_file(pack.sourceFilesManifestPath))
+	{
+		throw Diagnostics::Error(std::format("Asset pack '{}' has no readable source files manifest.", pack.id));
+	}
+	if (filesPayload && (!pack.sourceUrl.ends_with('/') || pack.requiredRelativePath != ".sparkle-acquisition.txt"))
+	{
+		throw Diagnostics::Error(
+		    std::format("Loose-file asset pack '{}' needs a source directory URL and acquisition receipt.", pack.id));
 	}
 	if (pack.downloadSupported && !pack.sourceUrl.starts_with("https://"))
 	{
 		throw Diagnostics::Error(std::format("Downloadable asset pack '{}' must use an HTTPS source URL.", pack.id));
 	}
-	if (pack.downloadSupported && !IsSha256(pack.archiveSha256))
+	if (pack.downloadSupported && !filesPayload && !IsSha256(pack.archiveSha256))
 	{
 		throw Diagnostics::Error(std::format("Downloadable asset pack '{}' has an invalid SHA-256 digest.", pack.id));
 	}
@@ -123,7 +137,7 @@ static void ValidateAssetPackMetadata(const ProjectLevelCatalog& catalog, std::s
 		throw Diagnostics::Error(std::format("Asset pack '{}' root must remain within its extraction root.", pack.id));
 	}
 	const std::filesystem::path archiveNamePath(pack.archiveName);
-	if (pack.downloadSupported
+	if (pack.downloadSupported && !filesPayload
 	    && (archiveNamePath == "." || archiveNamePath == ".." || archiveNamePath.has_root_name() || archiveNamePath.has_root_directory()
 	        || archiveNamePath.filename() != archiveNamePath))
 	{
@@ -194,7 +208,7 @@ void ValidateProjectLevelCatalog(const ProjectLevelCatalog& catalog)
 	for (const auto& [packId, pack] : catalog.assetPacks)
 	{
 		ValidateAssetPackMetadata(catalog, packId, pack);
-		if (pack.downloadSupported && !archiveNames.insert(pack.archiveName).second)
+		if (pack.downloadSupported && !pack.archiveName.empty() && !archiveNames.insert(pack.archiveName).second)
 		{
 			throw Diagnostics::Error(std::format("Downloadable asset pack archive name '{}' is duplicated.", pack.archiveName));
 		}

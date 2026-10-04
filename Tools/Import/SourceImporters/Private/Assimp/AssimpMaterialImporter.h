@@ -11,7 +11,7 @@
 #include <span>
 #include <string_view>
 
-class FbxMaterialImporter final
+class AssimpMaterialImporter final
 {
 public:
 	static void ImportMaterials(
@@ -65,3 +65,4 @@ private:
 	    const TextureResolutionContext& textureContext);
 	static void ValidateTextureMappings(const aiMaterial& material, ImportedMaterialIndex materialIndex);
 };
+

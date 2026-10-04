@@ -34,6 +34,7 @@ struct SPARKLE_CORE_API ProjectAssetPack final
 	std::string contentKind = "Scene";
 	std::string sourceUrl;
 	std::string sourcePageUrl;
+	std::filesystem::path sourceFilesManifestPath;
 	std::string archiveName;
 	std::string archiveSha256;
 	std::string version;

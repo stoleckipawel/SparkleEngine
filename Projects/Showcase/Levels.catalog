@@ -164,6 +164,54 @@ Thumbnail = Launcher/Thumbnails/CesiumMan.jpg
 SourcePage = https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan
 Selected = true
 
+[Level]
+Id = StanfordBunnySubsurface
+DisplayName = Stanford Bunny: Subsurface
+Description = Stanford Bunny geometry preview with generic shading; subsurface authoring and lighting are pending.
+Source = Levels/StanfordBunnySubsurface.level
+Thumbnail = Launcher/Thumbnails/StanfordBunnySubsurface.jpg
+SourcePage = https://graphics.stanford.edu/data/3Dscanrep/#bunny
+AssetPack = StanfordBunny
+Family = Subsurface
+VariantKind = Base
+Selected = true
+
+[Level]
+Id = StanfordDragonSubsurface
+DisplayName = Stanford Dragon: Subsurface
+Description = Stanford Dragon geometry preview with generic shading; subsurface authoring and lighting are pending.
+Source = Levels/StanfordDragonSubsurface.level
+Thumbnail = Launcher/Thumbnails/StanfordDragonSubsurface.jpg
+SourcePage = https://graphics.stanford.edu/data/3Dscanrep/#dragon
+AssetPack = StanfordDragon
+Family = Subsurface
+VariantKind = Base
+Selected = true
+
+[Level]
+Id = AnisotropyBarnLamp
+DisplayName = Anisotropy Barn Lamp
+Description = Khronos barn lamp with generic shading; anisotropy, clearcoat, transmission, and volume are pending.
+Source = Levels/AnisotropyBarnLamp.level
+Thumbnail = Launcher/Thumbnails/AnisotropyBarnLamp.jpg
+SourcePage = https://github.com/KhronosGroup/glTF-Sample-Assets/tree/edc7c9e67c639d230715049ee31f9a96a6babbbe/Models/AnisotropyBarnLamp
+AssetPack = AnisotropyBarnLamp
+Family = Material Reference
+VariantKind = Base
+Selected = true
+
+[Level]
+Id = SheenCloth
+DisplayName = Sheen Cloth
+Description = Microsoft's cloth model with generic shading; the sheen lighting lobe is pending.
+Source = Levels/SheenCloth.level
+Thumbnail = Launcher/Thumbnails/SheenCloth.jpg
+SourcePage = https://github.com/KhronosGroup/glTF-Sample-Assets/tree/edc7c9e67c639d230715049ee31f9a96a6babbbe/Models/SheenCloth
+AssetPack = SheenCloth
+Family = Material Reference
+VariantKind = Base
+Selected = true
+
 [AssetPack]
 Id = Bistro
 DisplayName = Bistro
@@ -178,6 +226,74 @@ ArchiveBytes = 894377473
 ArchiveSha256 = 0d50e3c724c6c5da19f8eb99ad3f53e36fec37ffa2df9621f9ccf0603f3934e1
 Version = v5.2
 License = CC BY 4.0
+External = true
+DownloadSupported = true
+RuntimeSupported = true
+
+[AssetPack]
+Id = StanfordBunny
+DisplayName = Stanford Bunny
+Root = Assets/Meshes/StanfordBunny/Publisher/bunny
+ExtractRoot = Assets/Meshes/StanfordBunny/Publisher
+Required = reconstruction/bun_zipper.ply
+Kind = Scene
+SourceUrl = https://graphics.stanford.edu/pub/3Dscanrep/bunny.tar.gz
+SourcePage = https://graphics.stanford.edu/data/3Dscanrep/#bunny
+Archive = stanford-bunny-1998-12-05.tar.gz
+ArchiveBytes = 4894286
+ArchiveSha256 = a5720bd96d158df403d153381b8411a727a1d73cff2f33dc9b212d6f75455b84
+Version = Archive revision 1998-12-05
+License = Stanford Bunny terms permit use and redistribution; credit Stanford Computer Graphics Laboratory
+External = true
+DownloadSupported = true
+RuntimeSupported = true
+
+[AssetPack]
+Id = StanfordDragon
+DisplayName = Stanford Dragon
+Root = Assets/Meshes/StanfordDragon/Publisher/dragon_recon
+ExtractRoot = Assets/Meshes/StanfordDragon/Publisher
+Required = dragon_vrip.ply
+Kind = Scene
+SourceUrl = https://graphics.stanford.edu/pub/3Dscanrep/dragon/dragon_recon.tar.gz
+SourcePage = https://graphics.stanford.edu/data/3Dscanrep/#dragon
+Archive = stanford-dragon-reconstruction-1996-08-15.tar.gz
+ArchiveBytes = 11197764
+ArchiveSha256 = 74ac1d90989c9b1732edee82d57e9ce71452144cf4355f108d8c9c616d28d02f
+Version = Archive revision 1996-08-15
+License = Stanford research-use and redistribution terms; noncommercial restriction applies; credit Stanford Computer Graphics Laboratory
+External = true
+DownloadSupported = true
+RuntimeSupported = true
+
+[AssetPack]
+Id = AnisotropyBarnLamp
+DisplayName = Anisotropy Barn Lamp
+Root = Assets/Meshes/AnisotropyBarnLamp/Publisher
+ExtractRoot = Assets/Meshes/AnisotropyBarnLamp/Publisher
+Required = .sparkle-acquisition.txt
+Kind = Scene
+SourceUrl = https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/edc7c9e67c639d230715049ee31f9a96a6babbbe/Models/AnisotropyBarnLamp/glTF/
+SourcePage = https://github.com/KhronosGroup/glTF-Sample-Assets/tree/edc7c9e67c639d230715049ee31f9a96a6babbbe/Models/AnisotropyBarnLamp
+SourceFiles = Assets/Meshes/AnisotropyBarnLamp/SourceFiles.txt
+Version = glTF-Sample-Assets edc7c9e67c639d230715049ee31f9a96a6babbbe
+License = CC BY 4.0; copyright 2023 Wayfair LLC; model and textures by Eric Chadwick
+External = true
+DownloadSupported = true
+RuntimeSupported = true
+
+[AssetPack]
+Id = SheenCloth
+DisplayName = Sheen Cloth
+Root = Assets/Meshes/SheenCloth/Publisher
+ExtractRoot = Assets/Meshes/SheenCloth/Publisher
+Required = .sparkle-acquisition.txt
+Kind = Scene
+SourceUrl = https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/edc7c9e67c639d230715049ee31f9a96a6babbbe/Models/SheenCloth/glTF/
+SourcePage = https://github.com/KhronosGroup/glTF-Sample-Assets/tree/edc7c9e67c639d230715049ee31f9a96a6babbbe/Models/SheenCloth
+SourceFiles = Assets/Meshes/SheenCloth/SourceFiles.txt
+Version = glTF-Sample-Assets edc7c9e67c639d230715049ee31f9a96a6babbbe
+License = CC0 1.0; donated by Microsoft for glTF testing
 External = true
 DownloadSupported = true
 RuntimeSupported = true

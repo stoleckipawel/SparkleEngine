@@ -1,8 +1,8 @@
 [Level]
-Name = LPSHead
+Name = AnisotropyBarnLamp
 
 [Camera]
-Position = 0.0, -0.095, 0.85
+Position = 0.0, 0.0, 2.5
 YawRadians = 3.14159265
 PitchRadians = 0.0
 FovYDegrees = 45.0
@@ -12,9 +12,9 @@ DirectionalLight0Direction = 0.42, -0.82, 0.39
 DirectionalLight0IlluminanceLux = 2.35
 DirectionalLight0Color = 1.0, 0.93, 0.82
 DirectionalLight1Direction = -0.24, -0.66, -0.71
-DirectionalLight1IlluminanceLux = 0.2
+DirectionalLight1IlluminanceLux = 0.25
 DirectionalLight1Color = 0.42, 0.5, 0.72
 DirectionalLight1CastShadow = false
 
 [SceneAssets]
-Asset = LPSHead/LPSHead
+Asset = AnisotropyBarnLamp/Publisher/AnisotropyBarnLamp

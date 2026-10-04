@@ -319,7 +319,7 @@ bool AssetCookerDiscovery::ResolveSceneSource(
 		return true;
 	}
 
-	const std::array<std::wstring_view, 3> extensions = {L".gltf", L".glb", L".fbx"};
+	const std::array<std::wstring_view, 4> extensions = {L".gltf", L".glb", L".fbx", L".ply"};
 	for (std::wstring_view extension : extensions)
 	{
 		std::filesystem::path candidate = exactCandidate;

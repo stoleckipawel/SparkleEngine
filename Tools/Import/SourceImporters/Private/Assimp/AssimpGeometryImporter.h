@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <string>
 
-class FbxGeometryImporter final
+class AssimpGeometryImporter final
 {
 public:
 	static std::size_t CountImportedMeshInstances(const aiNode& node) noexcept;
@@ -42,3 +42,4 @@ private:
 	static std::string GetNodeName(const aiNode& node);
 	static std::string GetMeshName(const aiMesh& mesh);
 };
+

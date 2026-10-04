@@ -29,12 +29,11 @@ void LevelSession::InitializeStartupLevel() noexcept
 	LevelAsset* startupLevel = m_levelRegistry->FindLevel(startupName);
 	if (!startupLevel && !requestedName.empty())
 	{
-		SPDLOG_LOGGER_WARN(
+		SPDLOG_LOGGER_ERROR(
 		    g_levelSessionLogger,
-		    "Requested startup level '{}' is not registered; using '{}'.",
-		    requestedName,
-		    std::string(m_levelRegistry->GetDefaultLevelName()));
-		startupLevel = m_levelRegistry->FindLevel(m_levelRegistry->GetDefaultLevelName());
+		    "Requested startup level '{}' is not registered; no level will be activated.",
+		    requestedName);
+		return;
 	}
 	if (!startupLevel)
 	{

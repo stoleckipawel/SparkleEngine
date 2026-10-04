@@ -37,6 +37,12 @@ namespace SparkleLauncher
 		    "-P",
 		    (plan.RepositoryRoot / "Tools" / "Launcher" / "SparkleLauncher" / "Scripts" / "SyncAssetPack.cmake").generic_string(),
 		};
+		if (!pack.sourceFilesManifestPath.empty())
+		{
+			process.Arguments.insert(
+			    process.Arguments.end() - 2,
+			    "-DSPARKLE_PACK_FILES_MANIFEST=" + pack.sourceFilesManifestPath.generic_string());
+		}
 		return process;
 	}
 

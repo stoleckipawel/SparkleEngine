@@ -1,6 +1,7 @@
 #include "LauncherMainWindow.h"
 
 #include "LauncherActionWidgets.h"
+#include "LauncherActivityPanel.h"
 #include "LauncherArtworkWidgets.h"
 #include "LauncherLayoutWidgets.h"
 #include "LauncherLevelUiModel.h"
@@ -11,6 +12,7 @@
 
 #include "Core/Public/Projects/ProjectLevelCatalog.h"
 #include <QtCore/QFileInfo>
+#include <QtCore/QStringList>
 #include <QtCore/QUrl>
 #include <QtGui/QDesktopServices>
 #include <QtGui/QLinearGradient>
@@ -228,6 +230,17 @@ namespace SparkleLauncher
 			    {
 				    StartQuickStartLevel(content, level);
 			    }
+			    else if (actionIntent == QStringLiteral("sync"))
+			    {
+				    LauncherOperationRequest request =
+				        BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, QStringLiteral("levels.sync"));
+				    request.RequestedLevelIds = level.Id;
+				    StartOperation(std::move(request), QStringLiteral("Sync %1").arg(level.DisplayName));
+			    }
+			    else if (actionIntent == QStringLiteral("details"))
+			    {
+				    QMessageBox::information(this, level.DisplayName, actionButton->toolTip());
+			    }
 		    });
 		actions->addWidget(actionButton);
 		bodyLayout->addLayout(actions);
@@ -243,18 +256,31 @@ namespace SparkleLauncher
 		    && m_quickStartExecution->GoalRequest().RequestedLevelIds.section(',', 0, 0).trimmed() == level.Id;
 		button.setObjectName("MapCardActionButton");
 		button.setFixedSize(LauncherUi::Row::StatusActionWidth, LauncherUi::Row::StatusActionHeight);
-		button.setProperty("ActionIntent", preparing ? QStringLiteral("none") : QStringLiteral("run"));
+		const bool syncAvailable = !level.SourceReady && level.CanSync && level.RuntimeSupported;
+		const bool explainBlocker = !level.RuntimeSupported || !level.CanSelect;
+		button.setProperty(
+		    "ActionIntent",
+		    preparing ? QStringLiteral("none")
+		              : syncAvailable ? QStringLiteral("sync") : explainBlocker ? QStringLiteral("details") : QStringLiteral("run"));
 		const bool editorMode = m_settings.RunMode() != QStringLiteral("game");
 		const QString actionName = editorMode ? QStringLiteral("Open") : QStringLiteral("Run");
-		button.setText(preparing ? QStringLiteral("Preparing...") : actionName);
+		button.setText(preparing ? QStringLiteral("Preparing...")
+		                         : syncAvailable ? QStringLiteral("Sync") : explainBlocker ? QStringLiteral("Details") : actionName);
 		button.setAccessibleName(
-		    preparing ? QStringLiteral("Preparing ") + level.DisplayName : actionName + QStringLiteral(" ") + level.DisplayName);
-		button.setEnabled(!m_quickStartExecution.has_value() && level.RuntimeSupported && level.CanSelect);
+		    preparing ? QStringLiteral("Preparing ") + level.DisplayName
+		              : syncAvailable ? QStringLiteral("Sync ") + level.DisplayName
+		              : explainBlocker ? QStringLiteral("Why ") + level.DisplayName + QStringLiteral(" is unavailable")
+		                               : actionName + QStringLiteral(" ") + level.DisplayName);
+		button.setEnabled(!m_quickStartExecution.has_value());
 		if (preparing)
 		{
 			button.setToolTip(QStringLiteral("Quick Start is preparing this level's prerequisites."));
 		}
-		else if (!level.RuntimeSupported || !level.CanSelect)
+		else if (syncAvailable)
+		{
+			button.setToolTip(QStringLiteral("Download and verify this level's source assets."));
+		}
+		else if (explainBlocker)
 		{
 			button.setToolTip(level.UnsupportedReason);
 		}
@@ -416,22 +442,31 @@ namespace SparkleLauncher
 		}
 
 		const LauncherLevelUiModel model = LauncherLevelUiModel::Build(*content);
-		std::vector<std::string> levelIds;
+		std::vector<std::string> levelIdsToSelect;
+		QStringList levelIdsToSync;
 		for (const LauncherLevelUiEntry& level : model.Levels)
 		{
-			if (level.Id != "Empty" && level.CanSelect)
+			if (level.Id == "Empty")
 			{
-				levelIds.push_back(level.Id.toStdString());
+				continue;
+			}
+			if (level.CanSelect)
+			{
+				levelIdsToSelect.push_back(level.Id.toStdString());
+				levelIdsToSync.push_back(level.Id);
 			}
 		}
-		if (!SetLevelsSelected(content->RootPath, levelIds, true, QStringLiteral("Sync All")))
+		if (levelIdsToSync.isEmpty())
 		{
+			m_activityPanel->ShowMessage(QStringLiteral("No levels have a supported synchronization path."));
 			return;
 		}
 
 		LauncherOperationRequest request =
 		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, QStringLiteral("levels.sync"));
-		StartOperation(std::move(request), QStringLiteral("Sync All Levels"));
+		request.RequestedLevelIds = levelIdsToSync.join(',');
+		const QString runId = StartOperation(std::move(request), QStringLiteral("Sync Available Levels"));
+		m_pendingLevelSelectionUpdates.insert(runId, {content->RootPath, std::move(levelIdsToSelect), true});
 	}
 
 	void LauncherMainWindow::CleanAllLevels()

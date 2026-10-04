@@ -5,14 +5,13 @@
 
 #include <filesystem>
 
-class FbxSceneReader final
+class AssimpSceneReader final
 {
 public:
 	static const aiScene& LoadScene(const std::filesystem::path& filePath, Assimp::Importer& importer);
-	static float GetMetersPerSourceUnit(const Assimp::Importer& importer);
+	static float GetFbxMetersPerSourceUnit(const Assimp::Importer& importer);
 
 private:
 	static constexpr unsigned int GetPostProcessFlags() noexcept;
-	static void ConfigureImporter(Assimp::Importer& importer);
 	static void ValidateInputPath(const std::filesystem::path& filePath);
 };

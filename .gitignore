@@ -19,6 +19,10 @@
 /Projects/Showcase/Assets/Meshes/JungleRuins/
 /Projects/Showcase/Assets/Meshes/LPSHead/Publisher/
 /Projects/Showcase/Assets/Meshes/CornellBox/Publisher/
+/Projects/Showcase/Assets/Meshes/StanfordBunny/Publisher/
+/Projects/Showcase/Assets/Meshes/StanfordDragon/Publisher/
+/Projects/Showcase/Assets/Meshes/AnisotropyBarnLamp/Publisher/
+/Projects/Showcase/Assets/Meshes/SheenCloth/Publisher/
 
 # Keep shader debug include files tracked.
 !Engine/Assets/Shaders/Debug/

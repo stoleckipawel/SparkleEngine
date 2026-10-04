@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "Fbx/FbxMaterialImporter.h"
+#include "Assimp/AssimpMaterialImporter.h"
 
 #include "Core/Public/Diagnostics/Error.h"
 #include "SourceTexturePathResolver.h"
@@ -8,7 +8,7 @@
 #include <array>
 #include <format>
 
-struct FbxMaterialTextureMapping final
+struct AssimpMaterialTextureMapping final
 {
 	TextureGroup Group = TextureGroup::Default;
 	aiTextureType PreferredType = aiTextureType_NONE;
@@ -18,44 +18,44 @@ struct FbxMaterialTextureMapping final
 	TextureChannelMask ChannelMask = TextureChannelMask::Rgba;
 };
 
-static constexpr std::array<FbxMaterialTextureMapping, 6> g_fbxMaterialTextureMappings = {
-    FbxMaterialTextureMapping{
+static constexpr std::array<AssimpMaterialTextureMapping, 6> g_assimpMaterialTextureMappings = {
+    AssimpMaterialTextureMapping{
         .Group = TextureGroup::Diffuse,
         .PreferredType = aiTextureType_BASE_COLOR,
         .PreferredName = "base-color",
         .AlternateType = aiTextureType_DIFFUSE,
         .AlternateName = "diffuse"},
-    FbxMaterialTextureMapping{
+    AssimpMaterialTextureMapping{
         .Group = TextureGroup::NormalMap,
         .PreferredType = aiTextureType_NORMALS,
         .PreferredName = "normal",
         .AlternateType = aiTextureType_HEIGHT,
         .AlternateName = "height"},
-    FbxMaterialTextureMapping{
+    AssimpMaterialTextureMapping{
         .Group = TextureGroup::Roughness,
         .PreferredType = aiTextureType_DIFFUSE_ROUGHNESS,
         .PreferredName = "roughness",
         .ChannelMask = TextureChannelMask::Red},
-    FbxMaterialTextureMapping{
+    AssimpMaterialTextureMapping{
         .Group = TextureGroup::Metallic,
         .PreferredType = aiTextureType_METALNESS,
         .PreferredName = "metallic",
         .ChannelMask = TextureChannelMask::Red},
-    FbxMaterialTextureMapping{
+    AssimpMaterialTextureMapping{
         .Group = TextureGroup::AmbientOcclusion,
         .PreferredType = aiTextureType_AMBIENT_OCCLUSION,
         .PreferredName = "occlusion",
         .AlternateType = aiTextureType_LIGHTMAP,
         .AlternateName = "light-map",
         .ChannelMask = TextureChannelMask::Red},
-    FbxMaterialTextureMapping{
+    AssimpMaterialTextureMapping{
         .Group = TextureGroup::Emissive,
         .PreferredType = aiTextureType_EMISSION_COLOR,
         .PreferredName = "emission-color",
         .AlternateType = aiTextureType_EMISSIVE,
         .AlternateName = "emissive"}};
 
-class FbxMaterialTextureReferenceReader final
+class AssimpMaterialTextureReferenceReader final
 {
 public:
 	static std::optional<std::string> Read(
@@ -71,7 +71,7 @@ public:
 		}
 		if (textureCount > 1)
 		{
-			throw Diagnostics::Error(std::format("FBX material {} has multiple {} textures.", materialIndex, slotName));
+			throw Diagnostics::Error(std::format("Assimp material {} has multiple {} textures.", materialIndex, slotName));
 		}
 
 		aiString texturePath;
@@ -81,23 +81,23 @@ public:
 		aiTextureOp operation = aiTextureOp_Multiply;
 		if (material.GetTexture(textureType, 0, &texturePath, &mapping, &uvIndex, &blend, &operation) != AI_SUCCESS)
 		{
-			throw Diagnostics::Error(std::format("Cannot read the {} texture reference for FBX material {}.", slotName, materialIndex));
+			throw Diagnostics::Error(std::format("Cannot read the {} texture reference for Assimp material {}.", slotName, materialIndex));
 		}
 		if (mapping != aiTextureMapping_UV || uvIndex != 0 || blend != 1.0f || operation != aiTextureOp_Multiply)
 		{
-			throw Diagnostics::Error(std::format("FBX material {} uses an unsupported {} texture mapping.", materialIndex, slotName));
+			throw Diagnostics::Error(std::format("Assimp material {} uses an unsupported {} texture mapping.", materialIndex, slotName));
 		}
 
 		std::string authoredPath = texturePath.C_Str();
 		if (authoredPath.empty())
 		{
-			throw Diagnostics::Error(std::format("FBX material {} has an empty {} texture path.", materialIndex, slotName));
+			throw Diagnostics::Error(std::format("Assimp material {} has an empty {} texture path.", materialIndex, slotName));
 		}
 		return authoredPath;
 	}
 };
 
-void FbxMaterialImporter::ImportMaterials(
+void AssimpMaterialImporter::ImportMaterials(
     const aiScene& scene,
     const std::filesystem::path& sourceDirectory,
     std::span<const std::filesystem::path> embeddedTexturePaths,
@@ -108,7 +108,7 @@ void FbxMaterialImporter::ImportMaterials(
 	{
 		if (scene.mMaterials[materialIndex] == nullptr)
 		{
-			throw Diagnostics::Error(std::format("FBX material {} is null.", materialIndex));
+			throw Diagnostics::Error(std::format("Assimp material {} is null.", materialIndex));
 		}
 
 		ImportedMaterial importedMaterial = ExtractMaterial(*scene.mMaterials[materialIndex], materialIndex, textureContext);
@@ -116,7 +116,7 @@ void FbxMaterialImporter::ImportMaterials(
 	}
 }
 
-ImportedMaterial FbxMaterialImporter::ExtractMaterial(
+ImportedMaterial AssimpMaterialImporter::ExtractMaterial(
     const aiMaterial& material,
     ImportedMaterialIndex materialIndex,
     const TextureResolutionContext& textureContext)
@@ -128,7 +128,7 @@ ImportedMaterial FbxMaterialImporter::ExtractMaterial(
 	return importedMaterial;
 }
 
-void FbxMaterialImporter::ValidateShadingModel(const aiMaterial& material, ImportedMaterialIndex materialIndex)
+void AssimpMaterialImporter::ValidateShadingModel(const aiMaterial& material, ImportedMaterialIndex materialIndex)
 {
 	int shadingModel = 0;
 	if (material.Get(AI_MATKEY_SHADING_MODEL, shadingModel) != AI_SUCCESS)
@@ -144,10 +144,10 @@ void FbxMaterialImporter::ValidateShadingModel(const aiMaterial& material, Impor
 		return;
 	}
 
-	throw Diagnostics::Error(std::format("FBX material {} uses unsupported shading model {}.", materialIndex, shadingModel));
+	throw Diagnostics::Error(std::format("Assimp material {} uses unsupported shading model {}.", materialIndex, shadingModel));
 }
 
-void FbxMaterialImporter::ApplyMaterialProperties(const aiMaterial& material, ImportedMaterial& importedMaterial)
+void AssimpMaterialImporter::ApplyMaterialProperties(const aiMaterial& material, ImportedMaterial& importedMaterial)
 {
 	aiString name;
 	if (material.Get(AI_MATKEY_NAME, name) == AI_SUCCESS)
@@ -159,7 +159,7 @@ void FbxMaterialImporter::ApplyMaterialProperties(const aiMaterial& material, Im
 	ApplyMaterialFactors(material, importedMaterial);
 }
 
-void FbxMaterialImporter::ApplyMaterialColors(const aiMaterial& material, ImportedMaterial& importedMaterial)
+void AssimpMaterialImporter::ApplyMaterialColors(const aiMaterial& material, ImportedMaterial& importedMaterial)
 {
 	aiColor4D baseColor;
 	if (aiGetMaterialColor(&material, AI_MATKEY_BASE_COLOR, &baseColor) == AI_SUCCESS
@@ -175,7 +175,7 @@ void FbxMaterialImporter::ApplyMaterialColors(const aiMaterial& material, Import
 	}
 }
 
-void FbxMaterialImporter::ApplyMaterialFactors(const aiMaterial& material, ImportedMaterial& importedMaterial)
+void AssimpMaterialImporter::ApplyMaterialFactors(const aiMaterial& material, ImportedMaterial& importedMaterial)
 {
 	ai_real opacity = 1.0f;
 	if (material.Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS)
@@ -206,7 +206,7 @@ void FbxMaterialImporter::ApplyMaterialFactors(const aiMaterial& material, Impor
 	}
 }
 
-void FbxMaterialImporter::ApplyTextureMappings(
+void AssimpMaterialImporter::ApplyTextureMappings(
     const aiMaterial& material,
     ImportedMaterialIndex materialIndex,
     const TextureResolutionContext& textureContext,
@@ -214,7 +214,7 @@ void FbxMaterialImporter::ApplyTextureMappings(
 {
 	ValidateTextureMappings(material, materialIndex);
 
-	for (const FbxMaterialTextureMapping& mapping : g_fbxMaterialTextureMappings)
+	for (const AssimpMaterialTextureMapping& mapping : g_assimpMaterialTextureMappings)
 	{
 		const std::optional<std::filesystem::path> texturePath = mapping.AlternateType != aiTextureType_NONE
 		    ? ResolvePreferredTexturePath(
@@ -238,7 +238,7 @@ void FbxMaterialImporter::ApplyTextureMappings(
 	}
 }
 
-std::optional<std::filesystem::path> FbxMaterialImporter::ResolvePreferredTexturePath(
+std::optional<std::filesystem::path> AssimpMaterialImporter::ResolvePreferredTexturePath(
     const aiMaterial& material,
     ImportedMaterialIndex materialIndex,
     const TextureResolutionContext& textureContext,
@@ -259,7 +259,7 @@ std::optional<std::filesystem::path> FbxMaterialImporter::ResolvePreferredTextur
 		{
 			throw Diagnostics::Error(
 			    std::format(
-			        "FBX material {} assigns conflicting {} and {} textures.",
+			        "Assimp material {} assigns conflicting {} and {} textures.",
 			        materialIndex,
 			        preferredSlotName,
 			        alternateSlotName));
@@ -273,7 +273,7 @@ std::optional<std::filesystem::path> FbxMaterialImporter::ResolvePreferredTextur
 	return hasAlternate ? ResolveTexturePath(material, materialIndex, textureContext, alternateType, alternateSlotName) : std::nullopt;
 }
 
-void FbxMaterialImporter::SetTextureSource(
+void AssimpMaterialImporter::SetTextureSource(
     ImportedMaterial& importedMaterial,
     TextureGroup textureGroup,
     const std::optional<std::filesystem::path>& texturePath,
@@ -287,14 +287,14 @@ void FbxMaterialImporter::SetTextureSource(
 	importedMaterial.textureSources.push_back({textureGroup, *texturePath, channelMask});
 }
 
-std::optional<std::filesystem::path> FbxMaterialImporter::ResolveTexturePath(
+std::optional<std::filesystem::path> AssimpMaterialImporter::ResolveTexturePath(
     const aiMaterial& material,
     ImportedMaterialIndex materialIndex,
     const TextureResolutionContext& textureContext,
     aiTextureType textureType,
     std::string_view slotName)
 {
-	const std::optional<std::string> texturePath = FbxMaterialTextureReferenceReader::Read(material, materialIndex, textureType, slotName);
+	const std::optional<std::string> texturePath = AssimpMaterialTextureReferenceReader::Read(material, materialIndex, textureType, slotName);
 	if (!texturePath)
 	{
 		return std::nullopt;
@@ -307,7 +307,7 @@ std::optional<std::filesystem::path> FbxMaterialImporter::ResolveTexturePath(
 		    || textureContext.embeddedTexturePaths[static_cast<std::size_t>(embeddedTextureIndex)].empty())
 		{
 			throw Diagnostics::Error(
-			    std::format("FBX material {} has unresolved embedded {} texture '{}'.", materialIndex, slotName, *texturePath));
+			    std::format("Assimp material {} has unresolved embedded {} texture '{}'.", materialIndex, slotName, *texturePath));
 		}
 
 		return textureContext.embeddedTexturePaths[static_cast<std::size_t>(embeddedTextureIndex)];
@@ -316,20 +316,20 @@ std::optional<std::filesystem::path> FbxMaterialImporter::ResolveTexturePath(
 	if (texturePath->front() == '*')
 	{
 		throw Diagnostics::Error(
-		    std::format("FBX material {} refers to missing embedded {} texture '{}'.", materialIndex, slotName, *texturePath));
+		    std::format("Assimp material {} refers to missing embedded {} texture '{}'.", materialIndex, slotName, *texturePath));
 	}
 
 	return ResolveExternalTexturePath(*texturePath, textureContext);
 }
 
-std::optional<std::filesystem::path> FbxMaterialImporter::ResolveExternalTexturePath(
+std::optional<std::filesystem::path> AssimpMaterialImporter::ResolveExternalTexturePath(
     std::string_view texturePath,
     const TextureResolutionContext& textureContext)
 {
 	return SourceTexturePathResolver::ResolveExistingFile(textureContext.sourceDirectory, texturePath);
 }
 
-void FbxMaterialImporter::ValidateTextureMappings(const aiMaterial& material, ImportedMaterialIndex materialIndex)
+void AssimpMaterialImporter::ValidateTextureMappings(const aiMaterial& material, ImportedMaterialIndex materialIndex)
 {
 	for (int textureTypeValue = static_cast<int>(aiTextureType_DIFFUSE); textureTypeValue <= static_cast<int>(AI_TEXTURE_TYPE_MAX);
 	    ++textureTypeValue)
@@ -363,7 +363,7 @@ void FbxMaterialImporter::ValidateTextureMappings(const aiMaterial& material, Im
 		{
 			throw Diagnostics::Error(
 			    std::format(
-			        "FBX material {} uses unsupported texture resource type {}.",
+			        "Assimp material {} uses unsupported texture resource type {}.",
 			        materialIndex,
 			        aiTextureTypeToString(textureType)));
 		}

@@ -82,7 +82,7 @@ fresh toolchain scan finds both the compiler and its MSBuild toolset.
 
 | ID | Operation | State | Exact current coverage and limit | Evidence |
 | --- | --- | --- | --- | --- |
-| `LAUNCH-014` | Level sync | Capability-gated | `levels.sync` resolves explicitly requested or selected catalog levels, includes parent asset packs, checks runtime/download support, downloads verified archives through CMake script, and extracts to declared roots. | `S` |
+| `LAUNCH-014` | Level sync | Capability-gated | `levels.sync` resolves explicitly requested or selected catalog levels, includes parent asset packs, and acquires archive or tracked loose-file payloads into declared roots. Pinned sizes and SHA-256 digests are verified before transactional publication. Sync All requests the runtime-supported levels and selects them only after successful acquisition; individual missing supported maps show Sync, while runtime-unsupported maps show their blocker. Explicit source sync can acquire unsupported maps without making them runnable. | `S` |
 | `LAUNCH-015` | Cook workspace | Implemented path | `cook.workspace` runs selected shader/texture/scene scopes in one request after build/tool/runtime-bundle readiness checks. | `S` |
 | `LAUNCH-016` | Focused/full cooks | Implemented path | `cook.shaders`, `cook.textures`, `cook.assets`, and `cook.all`; incremental or confirmed Force mode; shader backend/debug/optimization/warnings/strip options. | `S` |
 | `LAUNCH-017` | Force recook safety | Implemented path | Force mode plans removal of the exact cooked output root and refuses execution without explicit confirmation. | `S` |
