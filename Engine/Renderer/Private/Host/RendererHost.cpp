@@ -10,7 +10,7 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Window/Window.h"
 
-RendererHost::RendererHost(Window& window, const RendererBackendConfiguration& backendConfiguration) noexcept :
+RendererHost::RendererHost(Window& window, const RendererBackendConfiguration& backendConfiguration) :
     m_window(window)
 {
 	m_backendOwner = std::make_unique<RendererBackendOwner>(m_window, backendConfiguration);
@@ -46,7 +46,7 @@ void RendererHost::SettleForShutdown() noexcept
 std::unique_ptr<FramePipeline> RendererHost::CreateFramePipeline(
     TaskExecutor& taskExecutor,
     TaskScope& assetTaskParentScope,
-    bool enableUiRenderPackets) noexcept
+    bool enableUiRenderPackets)
 {
 	RenderDeviceServices& deviceServices = m_backendOwner->GetDeviceServices();
 	return std::unique_ptr<FramePipeline>(new FramePipeline(

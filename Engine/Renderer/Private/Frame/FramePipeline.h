@@ -65,7 +65,7 @@ private:
 	    RendererMemoryMonitor& memoryMonitor,
 	    TaskExecutor& taskExecutor,
 	    TaskScope& assetTaskParentScope,
-	    bool enableUiRenderPackets) noexcept;
+	    bool enableUiRenderPackets);
 
 	void SubmitViewportRenderRequest(ViewportRenderRequest request) noexcept { m_viewportRenderRequest = std::move(request); }
 	void RequestResize(RenderViewportExtent extent, bool minimized) noexcept;

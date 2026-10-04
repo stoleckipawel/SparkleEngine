@@ -12,7 +12,7 @@ class Window;
 class RendererBackendOwner final
 {
 public:
-	RendererBackendOwner(Window& window, const RendererBackendConfiguration& configuration) noexcept;
+	RendererBackendOwner(Window& window, const RendererBackendConfiguration& configuration);
 	~RendererBackendOwner() noexcept;
 
 	RendererBackendOwner(const RendererBackendOwner&) = delete;

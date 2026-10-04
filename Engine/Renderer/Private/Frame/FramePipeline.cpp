@@ -37,7 +37,7 @@ FramePipeline::FramePipeline(
     RendererMemoryMonitor& memoryMonitor,
     TaskExecutor& taskExecutor,
     TaskScope& assetTaskParentScope,
-    bool enableUiRenderPackets) noexcept :
+    bool enableUiRenderPackets) :
     m_window(window),
     m_deviceServices(deviceServices),
     m_renderPassRuntimeCache(renderPassRuntimeCache),

@@ -97,6 +97,7 @@ void RenderPassRuntimeCache::ValidateGenerationContracts(const ShaderRuntimeGene
 		}
 
 		const PassParameterLayout parameterLayout = BuildShaderParameterLayout(registration);
+		const std::uint64_t expectedParameterSignature = BuildShaderParameterSignature(parameterLayout);
 		if (generation.Map.ResolveString(entry->ShaderName) != registration.ShaderName
 		    || generation.Map.ResolveString(entry->EntryPoint) != registration.EntryPoint || entry->Stage != registration.Stage
 		    || entry->Features != registration.Features || entry->RayPayloadSizeInBytes != registration.RayTracing.PayloadSizeInBytes
@@ -104,9 +105,13 @@ void RenderPassRuntimeCache::ValidateGenerationContracts(const ShaderRuntimeGene
 		    || entry->MinimumRayRecursionDepth != registration.RayTracing.MinimumRecursionDepth
 		    || entry->LocalRecordSizeInBytes != registration.RayTracing.LocalRecordSizeInBytes
 		    || entry->LocalRecordSignature != registration.RayTracing.LocalRecordSignature
-		    || entry->ParameterSignature != BuildShaderParameterSignature(parameterLayout))
+		    || entry->ParameterSignature != expectedParameterSignature)
 		{
-			throw Diagnostics::Error(std::format("Shader '{}' map entry does not match its registered contract.", registration.ShaderName));
+			throw Diagnostics::Error(std::format(
+			    "Shader '{}' map entry does not match its registered contract (parameter signature map={:016X}, runtime={:016X}).",
+			    registration.ShaderName,
+			    entry->ParameterSignature,
+			    expectedParameterSignature));
 		}
 	}
 }

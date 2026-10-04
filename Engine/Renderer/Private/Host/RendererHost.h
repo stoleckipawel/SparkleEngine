@@ -17,7 +17,7 @@ struct RendererBackendConfiguration;
 class RendererHost final
 {
 public:
-	RendererHost(Window& window, const RendererBackendConfiguration& backendConfiguration) noexcept;
+	RendererHost(Window& window, const RendererBackendConfiguration& backendConfiguration);
 	~RendererHost() noexcept;
 
 	RendererHost(const RendererHost&) = delete;
@@ -31,7 +31,7 @@ private:
 	std::unique_ptr<FramePipeline> CreateFramePipeline(
 	    TaskExecutor& taskExecutor,
 	    TaskScope& assetTaskParentScope,
-	    bool enableUiRenderPackets) noexcept;
+	    bool enableUiRenderPackets);
 	void ReloadShaders();
 	std::uint64_t GetShaderGeneration() const noexcept;
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;

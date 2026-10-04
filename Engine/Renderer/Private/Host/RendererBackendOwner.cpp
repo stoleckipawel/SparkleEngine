@@ -3,7 +3,7 @@
 
 #include "RHI/Public/Device/RenderDeviceServices.h"
 
-RendererBackendOwner::RendererBackendOwner(Window& window, const RendererBackendConfiguration& configuration) noexcept
+RendererBackendOwner::RendererBackendOwner(Window& window, const RendererBackendConfiguration& configuration)
 {
 	m_deviceServices = RenderDeviceServices::Create(window, configuration.BackendApi, configuration.InterposerHooks);
 }
