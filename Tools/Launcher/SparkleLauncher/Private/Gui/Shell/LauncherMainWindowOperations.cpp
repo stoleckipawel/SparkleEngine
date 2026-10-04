@@ -41,6 +41,13 @@ namespace SparkleLauncher
 			m_activityPanel->ShowMessage(message);
 			return;
 		}
+		const QString cleanScopeError =
+		    m_selectedOperationId == "workspace.clean" ? CleanScopeSelectionError(m_settings.CleanScope()) : QString();
+		if (!cleanScopeError.isEmpty())
+		{
+			m_activityPanel->ShowMessage(cleanScopeError);
+			return;
+		}
 
 		if (m_selectedOperationId == "levels.sync")
 		{
@@ -48,8 +55,14 @@ namespace SparkleLauncher
 			return;
 		}
 
-		LauncherOperationRequest request =
-		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, m_selectedOperationId);
+		LauncherOperationRequest request = m_selectedOperationId == "workspace.clean"
+		    ? BuildScopedCleanOperationRequest(
+		          m_repositoryRoot,
+		          m_contentModel,
+		          m_settings,
+		          m_settings.CleanScope(),
+		          std::filesystem::path(QCoreApplication::applicationFilePath().toStdString()))
+		    : BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, m_selectedOperationId);
 		if (!ConfirmRunRequest(request))
 		{
 			return;
@@ -68,23 +81,6 @@ namespace SparkleLauncher
 		if (m_selectedOperationId == LauncherHomeOperationId())
 		{
 			CleanAllLevels();
-			return;
-		}
-
-		if (m_selectedOperationId == "workspace.clean")
-		{
-			LauncherOperationRequest request = BuildScopedCleanOperationRequest(
-			    m_repositoryRoot,
-			    m_contentModel,
-			    m_settings,
-			    "clean-all",
-			    std::filesystem::path(QCoreApplication::applicationFilePath().toStdString()));
-			if (!ConfirmRunRequest(request))
-			{
-				return;
-			}
-
-			StartOperation(std::move(request), "Clean All");
 			return;
 		}
 
@@ -183,7 +179,7 @@ namespace SparkleLauncher
 	{
 		if (operationId == "workspace.clean")
 		{
-			return m_settings.CleanScope().contains("cooked");
+			return CleanScopeSelectionRequiresContent(m_settings.CleanScope());
 		}
 
 		if (operationId == "workspace.build")
@@ -193,122 +189,6 @@ namespace SparkleLauncher
 
 		return operationId == LauncherHomeOperationId() || operationId == "levels.sync" || operationId == "levels.run"
 		    || operationId.startsWith("workspace.build.") || operationId.startsWith("cook.");
-	}
-
-	bool LauncherMainWindow::OperationNeedsConfirmation(const QString& operationId) const
-	{
-		if (operationId.startsWith("cook."))
-		{
-			return m_settings.ForceRecook() && !m_settings.ConfirmForceRecook();
-		}
-		if (operationId == "workspace.clean")
-		{
-			return false;
-		}
-
-		return false;
-	}
-
-	QString LauncherMainWindow::FailureRecoveryHint(
-	    const QString& operationId,
-	    const QString& statusText,
-	    Process::ChildProcessStartFailure processStartFailure) const
-	{
-		if (processStartFailure == Process::ChildProcessStartFailure::BlockedByPolicy)
-		{
-			return "Windows application-control policy rejected this executable. Use a Sparkle tool bundle signed by a publisher trusted "
-			       "by this machine, or ask the policy administrator to authorize that publisher. Rebuilding or retrying the cook does not "
-			       "change the trust decision.";
-		}
-		if (processStartFailure == Process::ChildProcessStartFailure::AccessDenied)
-		{
-			return "Windows denied access to the executable. Check its file permissions and security-product quarantine, then retry.";
-		}
-		if (processStartFailure == Process::ChildProcessStartFailure::ExecutableNotFound)
-		{
-			return "The executable disappeared after this workflow was planned. Rebuild the owning target, then retry.";
-		}
-		if (OperationNeedsContent(operationId) && m_contentModel.ContentId().isEmpty())
-		{
-			return "Repository content is unavailable. Confirm this is a complete Sparkle workspace, then regenerate build files if "
-			       "rebuilding from source.";
-		}
-		if (operationId.startsWith("cook.") && OperationNeedsConfirmation(operationId))
-		{
-			return "Enable Confirm clean cook, then retry.";
-		}
-		if (operationId == "workspace.install-host-tool")
-		{
-			return statusText.contains("Visual Studio or MSBuild is running", Qt::CaseInsensitive)
-			    ? "Close active Visual Studio, Rider build, MSBuild, and CMake processes, then retry Install."
-			    : "Review the Visual Studio Installer result and approve the administrator request, then retry Install. The launcher "
-			      "reports "
-			      "success only after detecting both clang-cl and its Visual Studio toolset.";
-		}
-		if ((operationId == "workspace.sync-code" || operationId == "workspace.generate-build-files")
-		    && (statusText.contains("dxcapi.h", Qt::CaseInsensitive) || statusText.contains("slang", Qt::CaseInsensitive)
-		        || statusText.contains("dxcompiler.dll", Qt::CaseInsensitive)
-		        || statusText.contains("slang-compiler.dll", Qt::CaseInsensitive) || statusText.contains("VULKAN_SDK", Qt::CaseInsensitive)
-		        || statusText.contains("ShaderCompiler", Qt::CaseInsensitive)))
-		{
-			return "Install or expose the Vulkan SDK so Vulkan-backed editor/runtime builds and the enabled shader compiler feature can "
-			       "resolve DXC, Slang, Vulkan headers, and the required DXC/Slang runtime support bundle, then open Sync and retry.";
-		}
-		if ((operationId == "workspace.sync-code" || operationId == "workspace.generate-build-files")
-		    && (statusText.contains("NVIDIA Streamline SDK", Qt::CaseInsensitive)
-		        || statusText.contains("sl.interposer.lib", Qt::CaseInsensitive) || statusText.contains("sl.dlss.dll", Qt::CaseInsensitive)
-		        || statusText.contains("sl.dlss_d.dll", Qt::CaseInsensitive) || statusText.contains("nvngx_dlss.dll", Qt::CaseInsensitive)
-		        || statusText.contains("nvngx_dlssd.dll", Qt::CaseInsensitive)))
-		{
-			return "Sync fetches the NVIDIA Streamline SDK automatically. If this still fails after retry, verify network access to GitHub "
-			       "releases, then clean the source dependency cache and run Sync Code again.";
-		}
-		if ((operationId == "workspace.sync-code" || operationId == "workspace.generate-build-files")
-		    && (statusText.contains("NVAPI", Qt::CaseInsensitive) || statusText.contains("nvapi.h", Qt::CaseInsensitive)
-		        || statusText.contains("nvapi64.lib", Qt::CaseInsensitive)))
-		{
-			return "Sync fetches NVAPI automatically. If this still fails after retry, clean the source dependency cache and rerun Sync "
-			       "Code so the launcher can re-download a clean NVIDIA SDK checkout.";
-		}
-		if ((operationId == "workspace.sync-code" || operationId == "workspace.generate-build-files")
-		    && (statusText.contains("FetchContent", Qt::CaseInsensitive) || statusText.contains("not a git repository", Qt::CaseInsensitive)
-		        || statusText.contains("source directory is missing", Qt::CaseInsensitive)
-		        || statusText.contains("nvapi.h", Qt::CaseInsensitive)))
-		{
-			return "Run Clean Source Dependency Cache, then retry Sync Code. The launcher will repopulate stale dependency checkouts "
-			       "automatically.";
-		}
-		if (operationId.startsWith("workspace.build") || statusText.contains("cmake", Qt::CaseInsensitive)
-		    || statusText.contains("MSBuild", Qt::CaseInsensitive) || statusText.contains("tool", Qt::CaseInsensitive))
-		{
-			return "Open Sync, review the missing machine prerequisites, then retry this workflow.";
-		}
-		if (statusText.contains("Rider", Qt::CaseInsensitive))
-		{
-			return "Install Rider or switch the IDE selector back to Visual Studio, then retry.";
-		}
-		if (statusText.contains("disabled in this workspace configuration", Qt::CaseInsensitive)
-		    || statusText.contains("No cook features are enabled", Qt::CaseInsensitive))
-		{
-			return "This workflow is disabled by the current workspace features. Enable the required feature, then sync and build again.";
-		}
-		if (statusText.contains("dxcompiler.dll", Qt::CaseInsensitive) || statusText.contains("slang-compiler.dll", Qt::CaseInsensitive)
-		    || statusText.contains("runtime dll is missing", Qt::CaseInsensitive)
-		    || statusText.contains("runtime dependency is missing", Qt::CaseInsensitive)
-		    || statusText.contains("runtime support bundle is incomplete", Qt::CaseInsensitive))
-		{
-			return "Run Build > Build Cooking Tools after Sync shows the Vulkan SDK and shader compiler bundle as ready, then retry this "
-			       "workflow.";
-		}
-		if (statusText.contains("shader", Qt::CaseInsensitive))
-		{
-			return "Run Cook > Cook Shaders, then retry this workflow.";
-		}
-		if (operationId.startsWith("cook."))
-		{
-			return "Review the output below. If tools or cooked inputs are missing, run Build Cooking Tools before retrying.";
-		}
-		return "Review the output below, adjust the selected options, then retry.";
 	}
 
 	bool LauncherMainWindow::ConfirmRunRequest(LauncherOperationRequest& request) const

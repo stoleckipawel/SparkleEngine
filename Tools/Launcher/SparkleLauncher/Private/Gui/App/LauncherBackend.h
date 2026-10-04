@@ -2,6 +2,7 @@
 
 #include "LauncherOperationRequest.h"
 #include "LauncherProgressStreamDecoder.h"
+#include "Models/LauncherOperationResult.h"
 #include "SparkleLauncher/OperationModel.h"
 #include "SparkleLauncher/ProcessRunner.h"
 
@@ -60,9 +61,7 @@ namespace SparkleLauncher
 		    const QString& runId,
 		    const QString& operationId,
 		    const QString& title,
-		    const QString& statusText,
-		    int exitCode,
-		    Process::ChildProcessStartFailure processStartFailure);
+		    const LauncherOperationResult& result);
 
 	private:
 		void PopulateOperationCatalog();

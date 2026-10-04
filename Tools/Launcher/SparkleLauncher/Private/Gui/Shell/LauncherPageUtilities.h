@@ -17,5 +17,5 @@ namespace SparkleLauncher
 	bool PathExists(const std::filesystem::path& path);
 	bool ReadinessContains(const std::vector<std::string>& messages, const QString& needle);
 	QString CombineStatusDetail(const QString& first, const QString& second);
-	QString BuildFilesRecoveryHint(const BuildFilesFreshnessStatus& freshness);
+	QString BuildFilesExpectedAction(const BuildFilesFreshnessStatus& freshness);
 }

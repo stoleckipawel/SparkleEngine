@@ -14,7 +14,7 @@ static void BindDirectLightReservoirSurface(FrameGraphBuilder& builder, Paramete
 {
 	const GBufferRenderTargets& gbuffer = resources.Transient.GBuffer;
 	parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
-	parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
+	parameters->GBufferWorldNormal = builder.CreateSRV(gbuffer.WorldNormal);
 	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
 	parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
 	parameters->SceneDepth = builder.CreateSRV(resources.Transient.Scene.SceneDepth);

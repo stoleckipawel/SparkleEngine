@@ -17,7 +17,8 @@ static auto& BuildRayTracingGBufferParameters(FrameGraphBuilder& builder, const 
 
 	auto& parameters = builder.AllocParameters<TShader>();
 	parameters->GBufferBaseColor = builder.CreateUAV(targets.BaseColor);
-	parameters->GBufferNormal = builder.CreateUAV(targets.Normal);
+	parameters->GBufferWorldNormal = builder.CreateUAV(targets.WorldNormal);
+	parameters->GBufferWorldTangent = builder.CreateUAV(targets.WorldTangent);
 	parameters->GBufferMaterial = builder.CreateUAV(targets.Material);
 	parameters->GBufferEmissive = builder.CreateUAV(targets.Emissive);
 	parameters->GBufferSubsurface = builder.CreateUAV(targets.Subsurface);

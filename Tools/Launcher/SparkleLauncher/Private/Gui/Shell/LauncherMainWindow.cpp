@@ -406,8 +406,7 @@ namespace SparkleLauncher
 
 		m_runButton->setVisible(true);
 		const bool isLevelCatalog = m_selectedOperationId == LauncherHomeOperationId();
-		m_cleanButton->setVisible(
-		    isLevelCatalog || m_selectedOperationId == "workspace.clean" || SupportsActionSpecificClean(m_selectedOperationId));
+		m_cleanButton->setVisible(isLevelCatalog || SupportsActionSpecificClean(m_selectedOperationId));
 
 		if (OperationNeedsContent(m_selectedOperationId) && m_contentModel.ContentId().isEmpty())
 		{
@@ -431,6 +430,14 @@ namespace SparkleLauncher
 		          m_selectedOperationId))
 		    : QVector<LauncherCleanTarget>();
 		const bool cleanWorkspaceSelected = m_selectedOperationId == "workspace.clean";
+		const QString cleanScopeError = cleanWorkspaceSelected ? CleanScopeSelectionError(m_settings.CleanScope()) : QString();
+		if (!cleanScopeError.isEmpty())
+		{
+			m_runButton->setEnabled(false);
+			m_runButton->setToolTip(cleanScopeError);
+			m_runButton->setAccessibleDescription(cleanScopeError);
+			return;
+		}
 		bool canSyncLevel = false;
 		bool hasSelectedLevels = false;
 		bool hasExtractedLevelContent = false;
@@ -460,14 +467,12 @@ namespace SparkleLauncher
 				}
 			}
 		}
-		const bool canClean = cleanWorkspaceSelected || hasSelectedLevels || hasExtractedLevelContent || !cleanTargets.isEmpty();
+		const bool canClean = hasSelectedLevels || hasExtractedLevelContent || !cleanTargets.isEmpty();
 		m_cleanButton->setEnabled(canClean);
 		m_cleanButton->setToolTip(
 		    isLevelCatalog
 		        ? (canClean ? "Disable all selected levels and clean extracted external level content. Cached archives are preserved."
 		                    : "No selected levels are available to clean.")
-		        : cleanWorkspaceSelected
-		        ? "Clean all generated repository state."
 		        : (canClean ? "Clean only the generated outputs tied to " + DisplayNameForOperation(m_selectedOperationId) + "."
 		                    : "Clean is not available for this workflow."));
 		m_cleanButton->setAccessibleDescription(m_cleanButton->toolTip());
@@ -548,24 +553,22 @@ namespace SparkleLauncher
 			m_runButton->setIcon(m_icons.Icon(actionIcon, QColor(destructive ? "#ffffff" : "#071006")));
 			m_runButton->setText(
 			    operationId == LauncherHomeOperationId() ? "Sync All"
-			        : operationId == "workspace.clean"   ? "Clean Selected"
+			        : operationId == "workspace.clean"   ? "Clean"
 			                                             : PrimaryActionLabelForOperationId(operationId));
 			m_runButton->setAccessibleName(
 			    operationId == LauncherHomeOperationId() ? "Sync all available levels"
-			        : operationId == "workspace.clean"   ? "Clean selected generated repository state"
+			        : operationId == "workspace.clean"   ? "Clean generated repository state"
 			                                             : "Run selected workflow");
 			m_runButton->style()->unpolish(m_runButton);
 			m_runButton->style()->polish(m_runButton);
 		}
 		if (m_cleanButton != nullptr)
 		{
-			const bool cleanAll = operationId == "workspace.clean" || operationId == LauncherHomeOperationId();
+			const bool cleanAllLevels = operationId == LauncherHomeOperationId();
 			m_cleanButton->setProperty("ActionTone", "destructive");
-			m_cleanButton->setText(cleanAll ? "Clean All" : "Clean");
+			m_cleanButton->setText(cleanAllLevels ? "Clean All" : "Clean");
 			m_cleanButton->setAccessibleName(
-			    operationId == LauncherHomeOperationId() ? "Clean all selected levels"
-			        : operationId == "workspace.clean"   ? "Clean all generated repository state"
-			                                             : "Clean selected workflow outputs");
+			    operationId == LauncherHomeOperationId() ? "Clean all selected levels" : "Clean selected workflow outputs");
 			m_cleanButton->style()->unpolish(m_cleanButton);
 			m_cleanButton->style()->polish(m_cleanButton);
 		}

@@ -71,8 +71,12 @@ namespace SparkleLauncher
 		if (!definition.has_value())
 		{
 			plan.Operation = MakeOperationRecord(std::string(operationId), "Unknown level operation");
-			plan.Operation.FailureSummary = "Unknown level operation id.";
-			AddReadiness(plan, plan.Operation.FailureSummary);
+			SetOperationFailure(
+			    plan.Operation,
+			    OperationProblemKind::Planning,
+			    "Unknown level operation id.",
+			    "Choose a registered level Sync operation, then retry.");
+			AddReadiness(plan, plan.Operation.Failure->Summary);
 			return plan;
 		}
 

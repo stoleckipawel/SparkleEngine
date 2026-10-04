@@ -2,6 +2,7 @@
 
 #include "LauncherIconLibrary.h"
 #include "LauncherUiDesign.h"
+#include "Models/LauncherOperationResult.h"
 
 #include <QtGui/QClipboard>
 #include <QtGui/QColor>
@@ -42,6 +43,7 @@ namespace SparkleLauncher
 	    m_queuedIcon(icons.Icon(LauncherIcon::Queued, QColor(LauncherUi::Color::StateQueued))),
 	    m_runningIcon(icons.Icon(LauncherIcon::Running, QColor(LauncherUi::Color::StateRunning))),
 	    m_doneIcon(icons.Icon(LauncherIcon::Done, QColor(LauncherUi::Color::StateSuccess))),
+	    m_canceledIcon(icons.Icon(LauncherIcon::Failed, QColor(LauncherUi::Color::StateWarning))),
 	    m_failedIcon(icons.Icon(LauncherIcon::Failed, QColor(LauncherUi::Color::StateDestructive)))
 	{
 		setObjectName("ActivityBottomPanel");
@@ -228,18 +230,19 @@ namespace SparkleLauncher
 	QString LauncherActivityPanel::DisplayOperationFinished(
 	    const QString& runId,
 	    const QString& title,
-	    const QString& statusText,
-	    int exitCode,
-	    const QString& recoveryHint)
+	    const LauncherOperationResult& result)
 	{
-		const bool succeeded = exitCode == 0;
 		auto run = m_runs.find(runId);
 		const QString effectiveTitle = run == m_runs.end() ? title : run->Title;
-		SetRunState(runId, succeeded ? RunState::Done : RunState::Failed, effectiveTitle);
+		const RunState terminalState = result.Succeeded ? RunState::Done
+		    : result.Skipped                            ? RunState::Blocked
+		    : result.Canceled                           ? RunState::Canceled
+		                                                : RunState::Failed;
+		SetRunState(runId, terminalState, effectiveTitle);
 
-		if (succeeded)
+		if (result.Succeeded)
 		{
-			AppendRunOutput(runId, "\n" + effectiveTitle + " finished: " + statusText + "\n");
+			AppendRunOutput(runId, "\nResult: " + result.Status + "\n");
 		}
 		else
 		{
@@ -248,10 +251,19 @@ namespace SparkleLauncher
 			{
 				return effectiveTitle;
 			}
-			const QString existingOutput = run->Output;
-			const QString recoveryText = recoveryHint.isEmpty() ? QString() : QStringLiteral("Recovery: %1\n\n").arg(recoveryHint);
-			run->Output = QStringLiteral("Failed: %1 (exit code %2)\n").arg(statusText).arg(exitCode) + recoveryText + "\n" + existingOutput
-			    + "\n" + effectiveTitle + " finished: " + statusText + "\n";
+			QString diagnosis = "Result: " + result.Status + "\n";
+			diagnosis += "Problem type: " + result.ProblemKind + "\n";
+			diagnosis += "What failed: " + result.Problem + "\n";
+			diagnosis += "Next action: " + result.ExpectedAction + "\n";
+			if (result.HasExitCode)
+			{
+				diagnosis += QStringLiteral("Exit code: %1\n").arg(result.ExitCode);
+			}
+			if (!result.LogPath.isEmpty())
+			{
+				diagnosis += "Log: " + result.LogPath + "\n";
+			}
+			run->Output = diagnosis + "\nProcess output:\n" + run->Output;
 		}
 
 		ShowRunOutput(runId);
@@ -262,8 +274,13 @@ namespace SparkleLauncher
 	void LauncherActivityPanel::DisplayBlockedOperation(const QString& runId, const QString& title, const QString& message)
 	{
 		RegisterRun(runId, title);
-		SetRunState(runId, RunState::Failed, title);
-		AppendRunOutput(runId, QStringLiteral("Quick Start is blocked.\n\n%1\n").arg(message));
+		SetRunState(runId, RunState::Blocked, title);
+		AppendRunOutput(
+		    runId,
+		    QStringLiteral(
+		        "Result: Blocked\nProblem type: Prerequisite\nWhat failed: %1\nNext action: Resolve the reported prerequisite, then retry "
+		        "Quick Start.\n")
+		        .arg(message));
 		ShowRunOutput(runId);
 		SetExpanded(true);
 	}
@@ -315,12 +332,15 @@ namespace SparkleLauncher
 		UpdateRunSelectionVisuals();
 		const RunState state = run->State;
 		const QString& title = run->Title;
+		QString stateName;
 		switch (state)
 		{
 			case RunState::Queued:
+				stateName = "queued";
 				m_selectedRunSummary->setText("Queued: " + title + ". Waiting to start.");
 				break;
 			case RunState::Running:
+				stateName = "running";
 				if (run->HasProgress)
 				{
 					QString progressText = run->ProgressPhase;
@@ -339,12 +359,25 @@ namespace SparkleLauncher
 				}
 				break;
 			case RunState::Done:
+				stateName = "done";
 				m_selectedRunSummary->setText("Done: " + title + ". Output is available below.");
 				break;
+			case RunState::Blocked:
+				stateName = "blocked";
+				m_selectedRunSummary->setText("Blocked: " + title + ". Follow the next action below.");
+				break;
+			case RunState::Canceled:
+				stateName = "canceled";
+				m_selectedRunSummary->setText("Canceled: " + title + ". Run it again when ready.");
+				break;
 			case RunState::Failed:
-				m_selectedRunSummary->setText("Failed: " + title + ". Review the summary and raw output below.");
+				stateName = "failed";
+				m_selectedRunSummary->setText("Failed: " + title + ". Follow the next action below.");
 				break;
 		}
+		m_selectedRunSummary->setProperty("RunState", stateName);
+		m_selectedRunSummary->style()->unpolish(m_selectedRunSummary);
+		m_selectedRunSummary->style()->polish(m_selectedRunSummary);
 
 		const bool showProgress = state == RunState::Running && run->HasProgress;
 		m_progressBar->setVisible(showProgress);
@@ -424,6 +457,10 @@ namespace SparkleLauncher
 				return m_runningIcon;
 			case RunState::Done:
 				return m_doneIcon;
+			case RunState::Blocked:
+				return m_canceledIcon;
+			case RunState::Canceled:
+				return m_canceledIcon;
 			case RunState::Failed:
 				return m_failedIcon;
 		}
@@ -442,7 +479,7 @@ namespace SparkleLauncher
 		ShowRunOutput(runId);
 		const auto run = m_runs.constFind(runId);
 		const RunState state = run == m_runs.constEnd() ? RunState::Done : run->State;
-		if (state == RunState::Running || state == RunState::Failed)
+		if (state == RunState::Running || state == RunState::Blocked || state == RunState::Canceled || state == RunState::Failed)
 		{
 			SetExpanded(true);
 		}
@@ -484,6 +521,12 @@ namespace SparkleLauncher
 				break;
 			case RunState::Done:
 				stateText = "Done";
+				break;
+			case RunState::Blocked:
+				stateText = "Blocked";
+				break;
+			case RunState::Canceled:
+				stateText = "Canceled";
 				break;
 			case RunState::Failed:
 				stateText = "Failed";

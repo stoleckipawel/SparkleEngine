@@ -4,7 +4,11 @@
 
 **Scope:** Unreal Engine, NVIDIA RTXPT/Donut, and AMD Cauldron precedent for view-mode ownership, exposure, tone curves, exact diagnostic presentation, and output conversion
 
-**Local decision owners:** [Render View Modes](ViewModes.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
+**Local decision owners:** [Viewport Rendering Controls](Controls/README.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
+
+**Reviewed:** 2026-10-04; Epic current documentation was reviewed at the published Unreal Engine 5.8 route, while repository sources below remain commit-pinned.
+
+**Local source snapshot:** revision `26803f97` plus the inspected dirty working tree; research does not upgrade source presence or target design into implementation evidence.
 
 **Reference-set context:** [External Renderer Repository Comparison](../../RendererRepositoriesResearch.md)
 
@@ -25,7 +29,9 @@ Transferable lessons:
 - exposure and the tone curve are separate decisions;
 - show flags are not scalability or backend-capability policy.
 
-Sparkle adopts the high-level layer now: one `RenderViewMode` shared by Editor and runtime viewport owners. It deliberately defers lower-level show controls until a real orthogonal consumer exists. It should not copy Unreal's full ViewFamily, category surface, visualization registry, dynamic custom flags, or string mutation path.
+Sparkle retains one `RenderViewMode` shared by Editor and runtime viewport owners. Direct/indirect lighting-lobe visibility and the source-present direct/indirect shadow-evaluation seams now supply the first real orthogonal consumers for the lower-level [show-flag target](Controls/ShowFlags.md). Epic's separate Show Flags menu supports the choice to keep those controls outside the mutually exclusive View Mode list, and its lighting-component presentation supports a browsable lighting category.
+
+Sparkle does **not** infer its CVar design from Unreal. Epic explicitly distinguishes show flags from scalability CVars. Sparkle's requested CVars are instead feature-named global developer gates such as `r.Lighting.Shadows.Direct`, composed with a per-viewport typed set at each narrow lighting consumer; they do not use an `r.ShowFlags` namespace, replace per-view state, or become the Editor transport. Sparkle also does not copy Unreal's full ViewFamily, category surface, visualization registry, dynamic custom flags, string mutation path, or shipping-policy machinery.
 
 Primary sources:
 
@@ -33,6 +39,7 @@ Primary sources:
 - Epic, [`EViewModeIndex`](https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/Engine/Engine/EViewModeIndex?application_version=5.5)
 - Epic, [`UGameViewportClient`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/UGameViewportClient)
 - Epic, [Viewport Toolbar: View Mode and Show Flag Options](https://dev.epicgames.com/documentation/en-us/unreal-engine/viewport-toolbar#viewporttoolbarviewmodeandshowflagoptions)
+- Epic, [Viewport Show Flags](https://dev.epicgames.com/documentation/en-us/unreal-engine/viewport-show-flags-in-unreal-engine)
 - Epic, [Viewport Modes](https://dev.epicgames.com/documentation/en-us/unreal-engine/viewport-modes-in-unreal-engine)
 
 ## NVIDIA RTXPT And Donut

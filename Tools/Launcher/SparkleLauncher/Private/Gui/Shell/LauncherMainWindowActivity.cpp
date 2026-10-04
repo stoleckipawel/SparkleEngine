@@ -1,6 +1,7 @@
 #include "LauncherMainWindow.h"
 
 #include "LauncherActivityPanel.h"
+#include "Models/LauncherOperationResult.h"
 
 namespace SparkleLauncher
 {
@@ -28,17 +29,10 @@ namespace SparkleLauncher
 	    const QString& runId,
 	    const QString& operationId,
 	    const QString& title,
-	    const QString& statusText,
-	    int exitCode,
-	    Process::ChildProcessStartFailure processStartFailure)
+	    const LauncherOperationResult& result)
 	{
-		const bool succeeded = exitCode == 0;
-		const QString effectiveTitle = m_activityPanel->DisplayOperationFinished(
-		    runId,
-		    title,
-		    statusText,
-		    exitCode,
-		    FailureRecoveryHint(operationId, statusText, processStartFailure));
+		const bool succeeded = result.Succeeded;
+		const QString effectiveTitle = m_activityPanel->DisplayOperationFinished(runId, title, result);
 
 		bool refreshesSourceDependencyState = false;
 		for (auto dependencyRun = m_sourceDependencyRunIds.begin(); dependencyRun != m_sourceDependencyRunIds.end();)
@@ -85,6 +79,6 @@ namespace SparkleLauncher
 			PromptForLauncherRestart();
 		}
 
-		HandleQuickStartOperationFinished(runId, operationId, succeeded, statusText);
+		HandleQuickStartOperationFinished(runId, operationId, succeeded, succeeded ? result.Status : result.Problem);
 	}
 }

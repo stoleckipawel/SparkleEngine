@@ -42,6 +42,26 @@ namespace SparkleLauncher
 		PristineGeneratedWorkspace
 	};
 
+	enum class OperationProblemKind : std::uint8_t
+	{
+		None,
+		Prerequisite,
+		Planning,
+		ProcessStart,
+		ToolExecution,
+		OutputValidation,
+		Filesystem,
+		Internal,
+		Cancellation
+	};
+
+	struct OperationFailure final
+	{
+		OperationProblemKind Kind = OperationProblemKind::None;
+		std::string Summary;
+		std::string ExpectedAction;
+	};
+
 	struct OperationInput
 	{
 		std::string Name;
@@ -58,16 +78,22 @@ namespace SparkleLauncher
 		std::chrono::system_clock::time_point StartTime;
 		std::chrono::system_clock::time_point EndTime;
 		std::optional<int> ExitCode;
-		Process::ChildProcessStartFailure ProcessStartFailure = Process::ChildProcessStartFailure::None;
 		std::string DryRunText;
 		OperationDestructiveScope DestructiveScope = OperationDestructiveScope::None;
 		bool RequiresConfirmation = false;
-		std::string FailureSummary;
+		std::optional<OperationFailure> Failure;
 	};
 
 	OperationRecord MakeOperationRecord(std::string id, std::string displayName);
 	void MarkOperationStarted(OperationRecord& operation, std::filesystem::path logPath = {});
 	void MarkOperationFinished(OperationRecord& operation, OperationStatus status, std::optional<int> exitCode = std::nullopt);
+	void SetOperationFailure(OperationRecord& operation, OperationProblemKind kind, std::string summary, std::string expectedAction);
+	void SetProcessOperationFailure(
+	    OperationRecord& operation,
+	    Process::ChildProcessStartFailure startFailure,
+	    std::string summary,
+	    std::string retryAction);
 	std::string ToString(OperationStatus status);
 	std::string ToString(OperationDestructiveScope scope);
+	std::string ToString(OperationProblemKind kind);
 }

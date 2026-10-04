@@ -11,12 +11,13 @@ struct SceneRenderTargets
 struct GBufferRenderTargets
 {
 	FrameGraphTextureHandle BaseColor = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle Normal = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle WorldNormal = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle WorldTangent = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle Material = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle Emissive = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle Subsurface = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle DeviceZ = FrameGraphTextureHandle::Invalid();
 	FrameGraphTextureHandle MotionVector = FrameGraphTextureHandle::Invalid();
+	FrameGraphTextureHandle DeviceZ = FrameGraphTextureHandle::Invalid();
 };
 
 struct LightingRenderTargets

@@ -161,7 +161,8 @@ namespace SparkleLauncher
 		request.CleanScope = cleanScope;
 		request.CleanTargets.clear();
 		request.PreservedPaths.clear();
-		if (cleanScope == "clean-all" && !runningLauncherPath.empty())
+		const QStringList selectedScopes = cleanScope.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts);
+		if ((selectedScopes.contains("artifacts") || selectedScopes.contains("clean-all")) && !runningLauncherPath.empty())
 		{
 			std::error_code errorCode;
 			const std::filesystem::path absoluteRunningPath = std::filesystem::absolute(runningLauncherPath, errorCode);

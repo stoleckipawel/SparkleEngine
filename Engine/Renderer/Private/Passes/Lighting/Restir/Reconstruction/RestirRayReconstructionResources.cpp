@@ -24,7 +24,7 @@ RayReconstructionPassResources CreateRestirRayReconstructionResources(
 	    .Depth = resources.Transient.GBuffer.DeviceZ,
 	    .MotionVectors = resources.Transient.GBuffer.MotionVector,
 	    .Exposure = resources.Transient.Exposure,
-	    .Normals = resources.Transient.GBuffer.Normal,
+	    .Normals = resources.Transient.GBuffer.WorldNormal,
 	    .Roughness = resources.Transient.Lighting.ReconstructionGuides.Roughness,
 	    .DiffuseAlbedo = resources.Transient.Lighting.ReconstructionGuides.DiffuseAlbedo,
 	    .SpecularAlbedo = resources.Transient.Lighting.ReconstructionGuides.SpecularAlbedo,

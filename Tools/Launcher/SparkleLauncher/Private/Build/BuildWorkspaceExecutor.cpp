@@ -202,25 +202,41 @@ namespace SparkleLauncher
 
 	static std::string MakeBuildWorkspaceFailureSummary(const BuildWorkspaceProcessStep& step, const ProcessResult& result)
 	{
-		const std::string logSuffix = step.Request.LogPath.empty() ? std::string() : " Log: " + step.Request.LogPath.string();
 		if (!result.FailureReason.empty())
 		{
-			return result.FailureReason + logSuffix;
+			return result.FailureReason;
 		}
 		const std::string detail = ExtractFailureDetail(step, result);
 		if (step.Id == "configure")
 		{
-			return detail.empty() ? "Generate build files failed." + logSuffix : "Generate build files failed: " + detail + logSuffix;
+			return detail.empty() ? "Generate build files failed." : "Generate build files failed: " + detail;
 		}
 		if (step.Id == "build")
 		{
-			return detail.empty() ? "Build targets failed." + logSuffix : "Build targets failed: " + detail + logSuffix;
+			return detail.empty() ? "Build targets failed." : "Build targets failed: " + detail;
 		}
 		if (step.Id == "install-host-tool")
 		{
-			return detail.empty() ? "Host tool installation failed." + logSuffix : "Host tool installation failed: " + detail + logSuffix;
+			return detail.empty() ? "Host tool installation failed." : "Host tool installation failed: " + detail;
 		}
-		return detail.empty() ? step.DisplayName + " failed." + logSuffix : step.DisplayName + " failed: " + detail + logSuffix;
+		return detail.empty() ? step.DisplayName + " failed." : step.DisplayName + " failed: " + detail;
+	}
+
+	static std::string BuildWorkspaceRecoveryAction(const BuildWorkspaceProcessStep& step)
+	{
+		if (step.Id == "install-host-tool")
+		{
+			return "Close active Visual Studio builds, correct the first installer error in the named log, then retry Install.";
+		}
+		if (step.Id == "configure")
+		{
+			return "Correct the first configure or dependency error in the named log, then retry Generate Build Files.";
+		}
+		if (step.Id == "build")
+		{
+			return "Correct the first compiler, linker, or tool error in the named log, then retry this build.";
+		}
+		return "Correct the first tool error in the named log, then retry this operation.";
 	}
 
 	static std::optional<std::string> ValidateEnabledSourceDependenciesAfterConfigure(const BuildWorkspaceOperationPlan& plan)
@@ -447,7 +463,11 @@ namespace SparkleLauncher
 
 		if (!plan.CanRun)
 		{
-			operation.FailureSummary = plan.ReadinessMessages.empty() ? "Operation is not ready to run." : plan.ReadinessMessages.back();
+			SetOperationFailure(
+			    operation,
+			    OperationProblemKind::Prerequisite,
+			    plan.ReadinessMessages.empty() ? "Operation is not ready to run." : plan.ReadinessMessages.back(),
+			    "Open Sync, resolve the reported prerequisite, then retry this workflow.");
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
 		}
@@ -459,13 +479,21 @@ namespace SparkleLauncher
 		}
 		catch (const Diagnostics::Error& error)
 		{
-			operation.FailureSummary = std::string("Operation planning failed: ") + error.what();
+			SetOperationFailure(
+			    operation,
+			    OperationProblemKind::Planning,
+			    std::string("Operation planning failed: ") + error.what(),
+			    "Refresh the workflow, review its preview, then retry.");
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
 		}
 		if (!BuildWorkspaceExecutionPlanMatches(plan, processSteps))
 		{
-			operation.FailureSummary = "Operation inputs changed after planning. Refresh the workflow and run it again.";
+			SetOperationFailure(
+			    operation,
+			    OperationProblemKind::Planning,
+			    "Operation inputs changed after planning.",
+			    "Refresh the workflow, review its updated preview, then retry.");
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
 		}
@@ -481,8 +509,12 @@ namespace SparkleLauncher
 				std::filesystem::create_directories(request.WorkingDirectory, errorCode);
 				if (errorCode)
 				{
-					operation.FailureSummary = "Failed to prepare the configure working directory: " + request.WorkingDirectory.string()
-					    + ": " + errorCode.message();
+					SetOperationFailure(
+					    operation,
+					    OperationProblemKind::Filesystem,
+					    "Failed to prepare the configure working directory: " + request.WorkingDirectory.string() + ": "
+					        + errorCode.message(),
+					    "Verify that the build directory is writable and not locked, then retry Generate Build Files.");
 					MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 					return operation;
 				}
@@ -498,7 +530,11 @@ namespace SparkleLauncher
 					std::string cleanupError;
 					if (!ResetNativeBuildOutputs(plan.RepositoryRoot, plan.Freshness.BuildDirectory, cleanupError))
 					{
-						operation.FailureSummary = cleanupError;
+						SetOperationFailure(
+						    operation,
+						    OperationProblemKind::Filesystem,
+						    std::move(cleanupError),
+						    "Close processes using generated build outputs, verify path permissions, then retry.");
 						MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 						return operation;
 					}
@@ -522,7 +558,11 @@ namespace SparkleLauncher
 					std::string cleanupError;
 					if (!ClearStaleConfigureState(plan, cleanupError) || !ClearSourceDependencyCache(plan, cleanupError))
 					{
-						operation.FailureSummary = cleanupError;
+						SetOperationFailure(
+						    operation,
+						    OperationProblemKind::Filesystem,
+						    std::move(cleanupError),
+						    "Close processes using the dependency cache, verify path permissions, then retry Sync.");
 						MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 						return operation;
 					}
@@ -539,8 +579,22 @@ namespace SparkleLauncher
 
 				if (!result.Launched || result.Canceled || result.ExitCode != 0)
 				{
-					operation.ProcessStartFailure = result.StartFailure;
-					operation.FailureSummary = MakeBuildWorkspaceFailureSummary(step, result);
+					if (result.Canceled)
+					{
+						SetOperationFailure(
+						    operation,
+						    OperationProblemKind::Cancellation,
+						    step.DisplayName + " was canceled.",
+						    "Run the operation again when ready.");
+					}
+					else
+					{
+						SetProcessOperationFailure(
+						    operation,
+						    result.StartFailure,
+						    MakeBuildWorkspaceFailureSummary(step, result),
+						    BuildWorkspaceRecoveryAction(step));
+					}
 					MarkOperationFinished(
 					    operation,
 					    result.Canceled ? OperationStatus::Canceled : OperationStatus::Failed,
@@ -551,16 +605,23 @@ namespace SparkleLauncher
 
 			if (const std::optional<std::string> hostToolValidationFailure = ValidateRequestedHostToolAfterInstall(plan))
 			{
-				operation.FailureSummary =
-				    *hostToolValidationFailure + (step.Request.LogPath.empty() ? std::string() : " Log: " + step.Request.LogPath.string());
+				SetOperationFailure(
+				    operation,
+				    OperationProblemKind::OutputValidation,
+				    *hostToolValidationFailure,
+				    "Review the installer result, ensure the requested compiler and Visual Studio toolset are selected, then retry "
+				    "Install.");
 				MarkOperationFinished(operation, OperationStatus::Failed, 0);
 				return operation;
 			}
 
 			if (const std::optional<std::string> dependencyValidationFailure = ValidateRequestedSourceDependencyAfterConfigure(plan))
 			{
-				operation.FailureSummary = *dependencyValidationFailure
-				    + (step.Request.LogPath.empty() ? std::string() : " Log: " + step.Request.LogPath.string());
+				SetOperationFailure(
+				    operation,
+				    OperationProblemKind::OutputValidation,
+				    *dependencyValidationFailure,
+				    "Correct the first dependency sync error in the named log, then retry this dependency Sync.");
 				MarkOperationFinished(operation, OperationStatus::Failed, 0);
 				return operation;
 			}
@@ -569,8 +630,11 @@ namespace SparkleLauncher
 			{
 				if (const std::optional<std::string> dependencyValidationFailure = ValidateEnabledSourceDependenciesAfterConfigure(plan))
 				{
-					operation.FailureSummary = *dependencyValidationFailure
-					    + (step.Request.LogPath.empty() ? std::string() : " Log: " + step.Request.LogPath.string());
+					SetOperationFailure(
+					    operation,
+					    OperationProblemKind::OutputValidation,
+					    *dependencyValidationFailure,
+					    "Correct the first dependency configure error in the named log, then retry Sync Code.");
 					MarkOperationFinished(operation, OperationStatus::Failed, 0);
 					return operation;
 				}
@@ -578,7 +642,11 @@ namespace SparkleLauncher
 				std::string errorMessage;
 				if (!UpdateBuildFilesFreshnessStamp(plan.RepositoryRoot, plan.Toolchain, errorMessage))
 				{
-					operation.FailureSummary = errorMessage;
+					SetOperationFailure(
+					    operation,
+					    OperationProblemKind::Filesystem,
+					    std::move(errorMessage),
+					    "Verify write permission for the launcher state directory, then retry Generate Build Files.");
 					MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 					return operation;
 				}

@@ -18,12 +18,11 @@ namespace SparkleLauncher
 
 	static std::string MakeLevelOperationFailureSummary(const LevelOperationProcessStep& step, const ProcessResult& result)
 	{
-		const std::string logSuffix = step.Request.LogPath.empty() ? std::string() : " Log: " + step.Request.LogPath.string();
 		if (!result.FailureReason.empty())
 		{
-			return result.FailureReason + logSuffix;
+			return result.FailureReason;
 		}
-		return "Asset pack acquisition failed." + logSuffix;
+		return "Asset pack acquisition failed.";
 	}
 
 	bool LevelOperationExecutionPlanMatches(const LevelOperationPlan& plan, const std::vector<LevelOperationProcessStep>& processSteps)
@@ -47,8 +46,11 @@ namespace SparkleLauncher
 
 		if (!plan.CanRun)
 		{
-			operation.FailureSummary =
-			    plan.ReadinessMessages.empty() ? "Level operation is not ready to run." : plan.ReadinessMessages.back();
+			SetOperationFailure(
+			    operation,
+			    OperationProblemKind::Prerequisite,
+			    plan.ReadinessMessages.empty() ? "Level operation is not ready to run." : plan.ReadinessMessages.back(),
+			    "Resolve the reported source or content prerequisite, then retry Sync.");
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
 		}
@@ -60,13 +62,21 @@ namespace SparkleLauncher
 		}
 		catch (const Diagnostics::Error& error)
 		{
-			operation.FailureSummary = std::string("Level operation planning failed: ") + error.what();
+			SetOperationFailure(
+			    operation,
+			    OperationProblemKind::Planning,
+			    std::string("Level operation planning failed: ") + error.what(),
+			    "Refresh the level workflow, review its preview, then retry.");
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
 		}
 		if (!LevelOperationExecutionPlanMatches(plan, processSteps))
 		{
-			operation.FailureSummary = "Level operation inputs changed after planning. Refresh the workflow and run it again.";
+			SetOperationFailure(
+			    operation,
+			    OperationProblemKind::Planning,
+			    "Level operation inputs changed after planning.",
+			    "Refresh the level workflow, review its updated preview, then retry.");
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
 		}
@@ -81,8 +91,22 @@ namespace SparkleLauncher
 			const ProcessResult result = processRunner.Run(request);
 			if (!result.Launched || result.Canceled || result.ExitCode != 0)
 			{
-				operation.ProcessStartFailure = result.StartFailure;
-				operation.FailureSummary = MakeLevelOperationFailureSummary(step, result);
+				if (result.Canceled)
+				{
+					SetOperationFailure(
+					    operation,
+					    OperationProblemKind::Cancellation,
+					    step.DisplayName + " was canceled.",
+					    "Run Sync again when ready.");
+				}
+				else
+				{
+					SetProcessOperationFailure(
+					    operation,
+					    result.StartFailure,
+					    MakeLevelOperationFailureSummary(step, result),
+					    "Correct the first asset acquisition error in the named log, then retry Sync.");
+				}
 				MarkOperationFinished(operation, result.Canceled ? OperationStatus::Canceled : OperationStatus::Failed, result.ExitCode);
 				return operation;
 			}

@@ -16,7 +16,8 @@ void AddGBufferVisualizationPass(
 	switch (viewMode)
 	{
 		case RenderViewMode::GBufferDiffuse:
-		case RenderViewMode::GBufferNormal:
+		case RenderViewMode::GBufferWorldNormal:
+		case RenderViewMode::GBufferWorldTangent:
 		case RenderViewMode::GBufferRoughness:
 		case RenderViewMode::GBufferMetallic:
 		case RenderViewMode::GBufferEmissive:
@@ -33,7 +34,8 @@ void AddGBufferVisualizationPass(
 	auto& parameters = builder.AllocParameters<GBufferVisualizationCS>();
 	parameters->SceneColor = builder.CreateUAV(resources.Transient.Scene.SceneColor);
 	parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
-	parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
+	parameters->GBufferWorldNormal = builder.CreateSRV(gbuffer.WorldNormal);
+	parameters->GBufferWorldTangent = builder.CreateSRV(gbuffer.WorldTangent);
 	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
 	parameters->GBufferEmissive = builder.CreateSRV(gbuffer.Emissive);
 	parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);

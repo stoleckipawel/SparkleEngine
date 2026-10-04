@@ -189,14 +189,20 @@ namespace SparkleLauncher
 
 	int ReportLauncherShellOperationResult(const OperationRecord& operation, std::ostream& output, std::ostream& error)
 	{
-		output << "Operation " << operation.DisplayName << " finished with status " << ToString(operation.Status) << ".\n";
+		output << "Result: " << ToString(operation.Status) << "\nOperation: " << operation.DisplayName << '\n';
+		if (operation.Failure.has_value())
+		{
+			error << "Problem type: " << ToString(operation.Failure->Kind) << '\n';
+			error << "What failed: " << operation.Failure->Summary << '\n';
+			error << "Next action: " << operation.Failure->ExpectedAction << '\n';
+		}
+		if (operation.ExitCode.has_value())
+		{
+			(operation.Failure.has_value() ? error : output) << "Exit code: " << *operation.ExitCode << '\n';
+		}
 		if (!operation.LogPath.empty())
 		{
-			output << "Latest log: " << operation.LogPath.string() << '\n';
-		}
-		if (!operation.FailureSummary.empty())
-		{
-			error << operation.FailureSummary << '\n';
+			(operation.Failure.has_value() ? error : output) << "Log: " << operation.LogPath.string() << '\n';
 		}
 		return operation.Status == OperationStatus::Succeeded ? 0 : 1;
 	}
@@ -243,7 +249,10 @@ namespace SparkleLauncher
 			return ReportLauncherShellOperationResult(operation, output, error);
 		}
 
-		error << "SparkleLauncher: unknown --run operation: " << arguments.RunOperationId << '\n';
+		error << "Result: Failed\n";
+		error << "Problem type: Planning\n";
+		error << "What failed: Unknown --run operation: " << arguments.RunOperationId << "\n";
+		error << "Next action: Run SparkleLauncher --help, choose a registered operation id, then retry.\n";
 		return 1;
 	}
 }

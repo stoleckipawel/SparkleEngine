@@ -276,7 +276,9 @@ namespace SparkleLauncher
 			case BuildWorkspaceOperationKind::CompileLauncher:
 				AddConfigureStep(plan);
 				AddBuildStep(plan, request.EditorProfile, {"SparkleLauncher"});
-				AddPlannedEffect(plan, "Configure the Launcher-owned product graph, then rebuild its executable and deployed runtime files.");
+				AddPlannedEffect(
+				    plan,
+				    "Configure the Launcher-owned product graph, then rebuild its executable and deployed runtime files.");
 				plan.CanRun = true;
 				return;
 			case BuildWorkspaceOperationKind::CompileEditor:
@@ -427,8 +429,12 @@ namespace SparkleLauncher
 		if (!definition.has_value())
 		{
 			plan.Operation = MakeOperationRecord(std::string(operationId), "Unknown build operation");
-			plan.Operation.FailureSummary = "Unknown build/workspace operation id.";
-			AddReadiness(plan, plan.Operation.FailureSummary);
+			SetOperationFailure(
+			    plan.Operation,
+			    OperationProblemKind::Planning,
+			    "Unknown build/workspace operation id.",
+			    "Choose a registered Build or Sync operation, then retry.");
+			AddReadiness(plan, plan.Operation.Failure->Summary);
 			return plan;
 		}
 

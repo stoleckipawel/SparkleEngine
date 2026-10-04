@@ -38,7 +38,7 @@ public:
 	SHADER_PARAMETER_CBUFFER(RayTracedShadowUniformData, RayTracedShadowConstants)
 	SHADER_PARAMETER_CBUFFER(SkyUniformData, Sky)
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, GBufferBaseColor)
-	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, GBufferNormal)
+	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, GBufferWorldNormal)
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, GBufferMaterial)
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, SceneDepth)
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, SkyTexture)

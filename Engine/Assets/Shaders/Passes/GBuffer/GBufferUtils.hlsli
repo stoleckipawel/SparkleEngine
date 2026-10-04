@@ -8,7 +8,7 @@
 #include "/Engine/Geometry/ScreenSpace.hlsli"
 
 Texture2D GBufferBaseColor;
-Texture2D GBufferNormal;
+Texture2D GBufferWorldNormal;
 Texture2D GBufferMaterial;
 Texture2D GBufferEmissive;
 Texture2D GBufferSubsurface;
@@ -53,7 +53,7 @@ GBufferData LoadGBuffer(uint2 pixelCoord)
 {
 	const int3 pixel = int3(pixelCoord, 0);
 	const float4 baseColorSample = GBufferBaseColor.Load(pixel);
-	const float4 normalSample = GBufferNormal.Load(pixel);
+	const float4 normalSample = GBufferWorldNormal.Load(pixel);
 	const float4 materialSample = GBufferMaterial.Load(pixel);
 	const float4 emissiveSample = GBufferEmissive.Load(pixel);
 	const float4 subsurfaceSample = GBufferSubsurface.Load(pixel);

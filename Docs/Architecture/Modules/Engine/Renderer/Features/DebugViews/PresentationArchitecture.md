@@ -53,7 +53,8 @@ The presentation resolver is Renderer-private and exhaustive over `RenderViewMod
 | Reference Path Tracer | Scene-referred HDR | Reference display derivative from raw accumulation |
 | Wireframe | Scene-referred HDR | current Lit shading with raster wireframe fill |
 | GBufferDiffuse | Display-linear exact | saturated linear base color |
-| GBufferNormal | Display-linear exact | normalized normal mapped from `[-1, 1]` to `[0, 1]` |
+| GBufferWorldNormal | Display-linear exact | normalized normal mapped from `[-1, 1]` to `[0, 1]` |
+| GBufferWorldTangent | Display-linear exact | world-space tangent mapped from `[-1, 1]` to `[0, 1]` |
 | GBufferRoughness | Display-linear exact | bounded scalar replicated to RGB |
 | GBufferMetallic | Display-linear exact | bounded scalar replicated to RGB |
 | GBufferEmissive | Scene-referred HDR | raw non-negative emissive value; no local preview curve |
@@ -93,4 +94,3 @@ Renderer/RHI capture transport remains neutral. A higher-level evidence record m
 ## Evidence Boundary
 
 The source route implements this architecture. Numeric fixed-value checks, extent cases, dual-viewport isolation, output encoding, shader cook, D3D12/Vulkan execution, and captured pixels remain required evidence under [Acceptance](Acceptance.md).
-

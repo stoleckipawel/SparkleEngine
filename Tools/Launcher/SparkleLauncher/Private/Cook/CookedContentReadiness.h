@@ -6,10 +6,10 @@
 
 namespace SparkleLauncher
 {
-	enum class CookedOutputState : std::uint8_t
+	enum class CookedShaderPublicationState : std::uint8_t
 	{
 		Missing,
-		Stale,
+		Invalid,
 		Ready
 	};
 
@@ -17,10 +17,8 @@ namespace SparkleLauncher
 	{
 		bool MeshesReady = false;
 		bool TexturesReady = false;
-		CookedOutputState Shaders = CookedOutputState::Missing;
+		CookedShaderPublicationState Shaders = CookedShaderPublicationState::Missing;
 	};
 
-	CookedContentReadiness InspectCookedContentReadiness(
-	    const std::filesystem::path& repositoryRoot,
-	    std::string_view projectId);
+	CookedContentReadiness InspectCookedContentReadiness(const std::filesystem::path& repositoryRoot, std::string_view projectId);
 }

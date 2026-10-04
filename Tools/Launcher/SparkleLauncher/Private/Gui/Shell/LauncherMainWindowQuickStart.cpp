@@ -61,8 +61,7 @@ namespace SparkleLauncher
 
 		LauncherQuickStartExecution& execution = *m_quickStartExecution;
 		const LauncherLevelUiModel levelModel = BuildLevelUiModel();
-		LauncherCapabilityResolution resolution =
-		    PlanLauncherQuickStartStep(execution.GoalRequest(), levelModel, execution.InvalidatedCapabilityIds());
+		LauncherCapabilityResolution resolution = PlanLauncherQuickStartStep(execution.GoalRequest(), levelModel);
 		if (resolution.Result == LauncherCapabilityResolution::Kind::Blocked)
 		{
 			ReportQuickStartBlocked(QString::fromStdString(resolution.StatusMessage));
@@ -96,12 +95,6 @@ namespace SparkleLauncher
 		{
 			dependencyPath.push_back(QString::fromStdString(capabilityId));
 		}
-		QStringList invalidatedCapabilities;
-		for (const std::string& capabilityId : resolution.InvalidatedCapabilityIds)
-		{
-			invalidatedCapabilities.push_back(QString::fromStdString(capabilityId));
-		}
-
 		const QString runId = CreateRunId();
 		resolution.OperationRequest->RunId = runId;
 		const std::string beginError = execution.BeginOperation(runId, resolution);
@@ -116,12 +109,6 @@ namespace SparkleLauncher
 		    runId,
 		    QStringLiteral("Quick Start is preparing every registered prerequisite needed to run %1.\nCapability path: %2\nOperation: %3\n")
 		        .arg(goalName, dependencyPath.join(" -> "), operationId));
-		if (!invalidatedCapabilities.isEmpty())
-		{
-			m_activityPanel->AppendRunOutput(
-			    runId,
-			    QStringLiteral("Invalidates after success: %1\n").arg(invalidatedCapabilities.join(", ")));
-		}
 		m_activityPanel->ShowRunOutput(runId);
 	}
 

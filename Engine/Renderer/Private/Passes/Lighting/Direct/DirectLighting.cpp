@@ -24,7 +24,7 @@ void AddDirectLightingPass(
 	parameters->CurrentReservoirSample = builder.CreateSRV(shadowSignals.ReservoirHistory.Sample.Current);
 	parameters->CurrentReservoirWeight = builder.CreateSRV(shadowSignals.ReservoirHistory.Weight.Current);
 	parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
-	parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
+	parameters->GBufferWorldNormal = builder.CreateSRV(gbuffer.WorldNormal);
 	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
 	parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
 	parameters->SceneDepth = builder.CreateSRV(resources.Transient.Scene.SceneDepth);

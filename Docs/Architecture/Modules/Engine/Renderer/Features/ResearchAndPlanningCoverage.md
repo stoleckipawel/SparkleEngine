@@ -123,7 +123,7 @@ Promote a feature to a larger class when active work introduces an unresolved eq
 | `FCR-REN-08` | Reference Path Tracer | [full feature package](Lighting/ReferencePathTracer/README.md), `PTD-00`, `LGT-3` | `A`; precedent; production remains blocked by its own discovery |
 | `FCR-REN-09` | exposure | [Exposure](PostProcessing/DisplayPipeline/Exposure.md), `DSP-2` | `C`; separate Semantics if metering/adaptation equations change |
 | `FCR-REN-10` | reconstruction/providers | [Image Reconstruction And Upscaling](PostProcessing/ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md), `DSP-3` | `C/B`; provider/version/product admission change requires discovery/research refresh |
-| `FCR-REN-11` | debug views and capture | [Debug Views package](DebugViews/README.md), `RD-3` | `B`; add one Discovery file when implementation starts; folder budget permits one |
+| `FCR-REN-11` | debug views and capture | [Debug Views package](DebugViews/README.md), [Discovery gate](DebugViews/Discovery.md), `RD-3` | `B`; Discovery now blocks show-flag implementation on live CVar publication, indirect-shadow scope/invalidation, bounded fixtures, and Indirect Subsurface semantics; per-view controls live under a durable subfolder to preserve the sibling budget |
 | `FCR-REN-12` | TLAS and ray scene | [Ray Tracing](RayTracing/README.md), [Execution Architecture](RayTracing/ExecutionArchitecture.md), `GR-3` | `B`; share the future ray-tracing discovery/research package, not a second TLAS plan |
 | `FCR-REN-13` | UI/viewport composition | [UI And Viewport Composition](ViewportAndDiagnostics/UiAndViewportComposition.md), `RD-4` | `C`; add UX only if the product-facing interaction expands |
 | `FCR-REN-14` | tone mapping | [Tone Mapping](PostProcessing/DisplayPipeline/ToneMapping.md), `DSP-4` | `C`; semantic contract required before changing operators/color domain |
@@ -162,7 +162,7 @@ Choose exactly one when implementation priority is known:
 
 1. **Ray Tracing** — add revision-pinned Unreal/vendor/API source research, a discovery gate spanning inline/native pipeline and SBT/effect parity, and one staged plan shared by `FCR-REN-05/12`.
 2. **Deferred Decals** — add a discovery gate that freezes receiver/material/blend/ray-hit/authoring/evidence decisions before existing Phase 1.
-3. **Debug Views** — add a discovery gate that freezes signal-domain classification, unavailable state, per-view UX, capture sidecars, and observer-cost budgets before its existing plan.
+3. **Debug Views** — close the existing discovery decisions for signal-domain classification, unavailable state, per-view UX, capture sidecars, observer cost, live CVar publication, indirect-shadow scope/invalidation, and Indirect Subsurface semantics before executing affected plan stages.
 
 Do not open all three packages speculatively. Their existing architecture remains useful, and active-source drift should be resolved when one becomes the next implementation slice.
 

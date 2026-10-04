@@ -16,7 +16,11 @@ namespace SparkleLauncher
 		MarkOperationStarted(operation, operation.LogPath);
 		if (!plan.CanRun)
 		{
-			operation.FailureSummary = plan.ReadinessMessages.empty() ? "Level run is not ready." : plan.ReadinessMessages.front();
+			SetOperationFailure(
+			    operation,
+			    OperationProblemKind::Prerequisite,
+			    plan.ReadinessMessages.empty() ? "Level run is not ready." : plan.ReadinessMessages.front(),
+			    "Create the missing executable or cooked output named above, then retry Open.");
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
 		}
@@ -32,8 +36,22 @@ namespace SparkleLauncher
 			const ProcessResult result = processRunner.Run(request);
 			if (!result.Launched || result.Canceled || !result.Ready)
 			{
-				operation.ProcessStartFailure = result.StartFailure;
-				operation.FailureSummary = result.FailureReason.empty() ? step.DisplayName + " failed." : result.FailureReason;
+				if (result.Canceled)
+				{
+					SetOperationFailure(
+					    operation,
+					    OperationProblemKind::Cancellation,
+					    step.DisplayName + " was canceled.",
+					    "Open the level again when ready.");
+				}
+				else
+				{
+					SetProcessOperationFailure(
+					    operation,
+					    result.StartFailure,
+					    result.FailureReason.empty() ? step.DisplayName + " failed." : result.FailureReason,
+					    "Review the application startup log, correct the first startup or readiness failure, then retry this level.");
+				}
 				MarkOperationFinished(operation, result.Canceled ? OperationStatus::Canceled : OperationStatus::Failed, result.ExitCode);
 				return operation;
 			}

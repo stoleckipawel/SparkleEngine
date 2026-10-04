@@ -21,7 +21,7 @@ namespace SparkleLauncher
 		std::string error = registry.Register(
 		    {context.ProjectCapabilityId(),
 		        {},
-		        [request](bool)
+		        [request]()
 		        {
 			        const LevelRunOperationPlan plan =
 			            PlanLevelRunOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::LevelRun(request));
@@ -37,11 +37,11 @@ namespace SparkleLauncher
 		error = registry.Register(
 		    {context.ProductCapabilityId(),
 		        {std::string(LauncherCapabilityId::BuildFiles)},
-		        [request, buildOperationId = context.ProductBuildOperationId()](bool invalidated)
+		        [request, buildOperationId = context.ProductBuildOperationId()]()
 		        {
 			        const LevelRunOperationPlan runPlan =
 			            PlanLevelRunOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::LevelRun(request));
-			        if (runPlan.Readiness.ExecutableReady && !invalidated)
+			        if (runPlan.Readiness.ExecutableReady)
 			        {
 				        return LauncherCapabilityEvaluation::Ready();
 			        }
@@ -64,7 +64,7 @@ namespace SparkleLauncher
 		            std::string(LauncherCapabilityId::SelectedLevels),
 		            context.ProductCapabilityId(),
 		            std::string(LauncherCapabilityId::CookedContent)},
-		        [request](bool)
+		        [request]()
 		        {
 			        const LevelRunOperationPlan plan =
 			            PlanLevelRunOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::LevelRun(request));

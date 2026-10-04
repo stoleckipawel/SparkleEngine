@@ -77,6 +77,14 @@ namespace SparkleLauncher
 				uniqueScopes.push_back(scope);
 			}
 		}
+		if (std::find(uniqueScopes.begin(), uniqueScopes.end(), CleanScope::PristineGeneratedWorkspace) != uniqueScopes.end())
+		{
+			return {CleanScope::PristineGeneratedWorkspace};
+		}
+		if (std::find(uniqueScopes.begin(), uniqueScopes.end(), CleanScope::ArtifactOutputs) != uniqueScopes.end())
+		{
+			std::erase(uniqueScopes, CleanScope::CookedOutputs);
+		}
 		return uniqueScopes;
 	}
 
@@ -185,12 +193,7 @@ namespace SparkleLauncher
 				AddContentGeneratedCleanSteps(steps, plan, false, true, false);
 				return;
 			case CleanScope::PristineGeneratedWorkspace:
-				AddCleanStep(
-				    steps,
-				    "clean-build",
-				    "Clean build tree",
-				    outputs.BuildRoot,
-				    MaintenanceCleanBehavior::RemovePath);
+				AddCleanStep(steps, "clean-build", "Clean build tree", outputs.BuildRoot, MaintenanceCleanBehavior::RemovePath);
 				AddCleanStep(
 				    steps,
 				    "clean-artifacts",

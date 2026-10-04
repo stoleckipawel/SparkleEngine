@@ -205,9 +205,27 @@ namespace SparkleLauncher
 		return "unknown";
 	}
 
+	bool CleanScopeRequiresContent(CleanScope scope) noexcept
+	{
+		switch (scope)
+		{
+			case CleanScope::CookedOutputs:
+			case CleanScope::BuildTree:
+			case CleanScope::WorkspaceState:
+			case CleanScope::Logs:
+			case CleanScope::PristineGeneratedWorkspace:
+				return true;
+			case CleanScope::ArtifactOutputs:
+			case CleanScope::ThirdPartyDependencyCache:
+				return false;
+		}
+		return false;
+	}
+
 	bool TryParseCleanScope(std::string_view text, CleanScope& outScope) noexcept
 	{
-		static constexpr CleanScope scopes[] = {CleanScope::CookedOutputs,
+		static constexpr CleanScope scopes[] = {
+		    CleanScope::CookedOutputs,
 		    CleanScope::BuildTree,
 		    CleanScope::ArtifactOutputs,
 		    CleanScope::WorkspaceState,
@@ -254,8 +272,12 @@ namespace SparkleLauncher
 		if (!definition.has_value())
 		{
 			plan.Operation = MakeOperationRecord(std::string(operationId), "Unknown maintenance operation");
-			plan.Operation.FailureSummary = "Unknown maintenance operation id.";
-			AddReadiness(plan, plan.Operation.FailureSummary);
+			SetOperationFailure(
+			    plan.Operation,
+			    OperationProblemKind::Planning,
+			    "Unknown maintenance operation id.",
+			    "Choose a registered Clean operation, then retry.");
+			AddReadiness(plan, plan.Operation.Failure->Summary);
 			return plan;
 		}
 
@@ -281,6 +303,19 @@ namespace SparkleLauncher
 			case MaintenanceOperationKind::CleanWorkspace:
 			{
 				const std::vector<CleanScope> requestedCleanScopes = ResolveRequestedCleanScopes(request);
+				const bool missingContent = request.ContentId.empty() && request.RequestedCleanTargets.empty()
+				    && std::any_of(requestedCleanScopes.begin(), requestedCleanScopes.end(), CleanScopeRequiresContent);
+				if (missingContent)
+				{
+					SetOperationFailure(
+					    plan.Operation,
+					    OperationProblemKind::Prerequisite,
+					    "The selected clean scope requires a content project.",
+					    "Select a content project or remove project-owned outputs from the clean request, then retry.");
+					AddReadiness(plan, plan.Operation.Failure->Summary);
+					break;
+				}
+
 				PopulateCleanTargets(plan);
 				plan.Operation.DestructiveScope = request.RequestedCleanTargets.empty() && requestedCleanScopes.size() == 1
 				    ? ToOperationDestructiveScope(requestedCleanScopes.front())

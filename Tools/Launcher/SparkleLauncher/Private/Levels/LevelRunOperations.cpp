@@ -102,8 +102,12 @@ namespace SparkleLauncher
 		if (!definition.has_value())
 		{
 			plan.Operation = MakeOperationRecord(std::string(operationId), "Unknown level run operation");
-			plan.Operation.FailureSummary = "Unknown level run operation id.";
-			AddReadiness(plan, plan.Operation.FailureSummary);
+			SetOperationFailure(
+			    plan.Operation,
+			    OperationProblemKind::Planning,
+			    "Unknown level run operation id.",
+			    "Choose the registered Run Level operation, then retry.");
+			AddReadiness(plan, plan.Operation.Failure->Summary);
 			return plan;
 		}
 
@@ -116,8 +120,7 @@ namespace SparkleLauncher
 		    {"profile", plan.Request.ProductProfile},
 		    {"level", plan.Request.LevelId},
 		    {"graphicsApi", plan.Request.GraphicsApi}};
-		plan.Operation.LogPath =
-		    ResolveLauncherOperationLogPath(plan.Request.RepositoryRoot, definition->Id, "Latest.txt");
+		plan.Operation.LogPath = ResolveLauncherOperationLogPath(plan.Request.RepositoryRoot, definition->Id, "Latest.txt");
 		if (plan.Request.LevelId.empty())
 		{
 			AddReadiness(plan, "A catalog level id is required.");
@@ -152,10 +155,10 @@ namespace SparkleLauncher
 		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(plan.Request.RepositoryRoot);
 		plan.ExecutablePath = FirstExistingOrPreferred({
 		    outputs.ProjectTargetOutputs(
-		        plan.Request.ContentId,
-		        plan.Request.RunMode == LevelRunMode::Editor ? "editor" : "runtime",
-		        plan.Request.ProductProfile)
-		        .BinaryDirectory
+		               plan.Request.ContentId,
+		               plan.Request.RunMode == LevelRunMode::Editor ? "editor" : "runtime",
+		               plan.Request.ProductProfile)
+		            .BinaryDirectory
 		        / fileName,
 		    ResolveSparkleToolPath(plan.Request.RepositoryRoot, plan.Request.ProductProfile, plan.TargetName),
 		});
@@ -167,11 +170,10 @@ namespace SparkleLauncher
 		errorCode.clear();
 		plan.Readiness.ContentDirectoryReady =
 		    std::filesystem::exists(plan.WorkingDirectory / std::string(Filesystem::kProjectMarker), errorCode);
-		const CookedContentReadiness cookedContent =
-		    InspectCookedContentReadiness(plan.Request.RepositoryRoot, plan.Request.ContentId);
+		const CookedContentReadiness cookedContent = InspectCookedContentReadiness(plan.Request.RepositoryRoot, plan.Request.ContentId);
 		plan.Readiness.CookedMeshesReady = cookedContent.MeshesReady;
 		plan.Readiness.CookedTexturesReady = cookedContent.TexturesReady;
-		plan.Readiness.CookedShadersReady = cookedContent.Shaders == CookedOutputState::Ready;
+		plan.Readiness.CookedShadersReady = cookedContent.Shaders == CookedShaderPublicationState::Ready;
 
 		AddReadiness(
 		    plan,
@@ -187,13 +189,13 @@ namespace SparkleLauncher
 		AddReadiness(plan, plan.Readiness.CookedTexturesReady ? "Cooked textures are ready." : "Cooked textures are missing.");
 		switch (cookedContent.Shaders)
 		{
-			case CookedOutputState::Ready:
+			case CookedShaderPublicationState::Ready:
 				AddReadiness(plan, "Cooked shaders are ready.");
 				break;
-			case CookedOutputState::Stale:
-				AddReadiness(plan, "Cooked shaders are stale; cook shaders from the current source generation.");
+			case CookedShaderPublicationState::Invalid:
+				AddReadiness(plan, "Cooked shader publication is incomplete or internally inconsistent.");
 				break;
-			case CookedOutputState::Missing:
+			case CookedShaderPublicationState::Missing:
 				AddReadiness(plan, "The complete cooked shader generation is missing.");
 				break;
 		}

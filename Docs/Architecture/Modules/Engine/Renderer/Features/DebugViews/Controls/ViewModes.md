@@ -4,7 +4,11 @@
 
 **Date:** 2026-09-15
 
+**Current readiness:** see the [Debug Views dossier](../README.md); this page defines architecture and does not own a separate delivery score
+
 **Responsibility:** the single per-view rendering-mode contract, its ownership path, and the boundary between rendering semantics and frontend presentation
+
+**Verified:** 2026-10-04 against revision `26803f97` with unrelated work present in the dirty tree
 
 ## Decision
 
@@ -23,12 +27,12 @@ The values are contiguous and stable within the current source contract:
 | `0` | `Lit` | ordinary Lit middle and presentation |
 | `1` | `ReferencePathTracer` | Lit-versus-Reference composition and feature lifecycle |
 | `2` | `Wireframe` | raster GBuffer fill state |
-| `3`-`10` | GBuffer views | GBuffer visualization family |
-| `11`-`15` | direct/indirect lighting views | lighting visualization family |
-| `16` | `GpuSceneInstances` | GPU-scene visualization family |
-| `17` | `Count` | sentinel only; never submitted |
+| `3`-`11` | GBuffer views, including world normal and its immediately following world tangent | GBuffer visualization family |
+| `12`-`16` | direct/indirect lighting views | lighting visualization family |
+| `17` | `GpuSceneInstances` | GPU-scene visualization family |
+| `18` | `Count` | sentinel only; never submitted |
 
-The C++ authority is [`RenderViewMode.h`](../../../../../../../Engine/Renderer/Public/Viewport/RenderViewMode.h). [`RenderViewModeConstants.hlsli`](../../../../../../../Engine/Assets/Shaders/Resources/RenderViewModeConstants.hlsli) mirrors only shader-consumed numeric values and must remain exactly aligned.
+The C++ authority is [`RenderViewMode.h`](../../../../../../../../Engine/Renderer/Public/Viewport/RenderViewMode.h). [`RenderViewModeConstants.hlsli`](../../../../../../../../Engine/Assets/Shaders/Resources/RenderViewModeConstants.hlsli) mirrors only shader-consumed numeric values and must remain exactly aligned.
 
 ## Ownership Path
 
@@ -76,11 +80,11 @@ Editor uses `RenderViewMode` directly. `EditorViewportSession` owns the selected
 
 RHI has no view-mode type or field. It receives only neutral GPU resources, commands, synchronization, capabilities, presentation, and readback work.
 
-## View Mode Versus Future Show Controls
+## View Mode Versus Show Controls
 
-Unreal exposes both a high-level runtime `EViewModeIndex` and lower-level `FEngineShowFlags`; the latter live with view-family state and may be manipulated by a mode. Sparkle currently needs only the higher-level mode contract. Copying both layers before users can independently control a contribution would create speculative state and duplicate selection authority.
+Unreal exposes both a high-level runtime `EViewModeIndex` and lower-level `FEngineShowFlags`; the latter live with view-family state and may be manipulated by a mode. Sparkle first adopted only the higher-level mode contract because no independent lower-level consumer existed. The requested direct/indirect lighting-lobe controls now provide that use case, and [Renderer Show Flags](ShowFlags.md) owns their target contract.
 
-A future per-view visibility or presentation control may be added only when all of these are true:
+A per-view visibility or presentation control may be added only when all of these are true:
 
 1. it has a real independent user or runtime use case;
 2. it has a named production consumer and deterministic disabled behavior;
@@ -88,7 +92,7 @@ A future per-view visibility or presentation control may be added only when all 
 4. it is resolved below the mode-selection boundary and does not replace or compete with `ViewMode`;
 5. it lands with its consumer, UX, and defect-detecting check in one change.
 
-Examples could include independently hiding gizmos or a debug overlay. `Wireframe`, a GBuffer view, and Reference Path Tracer are not such controls: each is already a complete mutually exclusive view mode.
+The target first slice independently suppresses the five current direct-diffuse/specular/subsurface and indirect-diffuse/specular products in Lit composition and exposes focused Direct/Indirect Shadows evaluation controls. Indirect Subsurface joins only after its owning transport/product gate passes. `Wireframe`, a GBuffer view, a lighting-lobe diagnostic view, and Reference Path Tracer are not show controls: each remains a complete mutually exclusive view mode.
 
 ## Invariants
 
@@ -106,7 +110,7 @@ Examples could include independently hiding gizmos or a debug overlay. `Wirefram
 The following replaced paths are deleted rather than retained as aliases:
 
 - `Visualization`, `VisualizationIndex`, and their global CVar/command selection route;
-- the proposed `VisualizationTarget` and `RenderShowFlagSet` split;
+- the proposed decomposition of one rendering-mode choice into `VisualizationTarget` plus mode-shaped show flags; independently selectable lighting contributions remain governed by [Renderer Show Flags](ShowFlags.md);
 - `EditorViewportViewMode` and `EditorViewportViewModePreset`;
 - `CVarReferencePathTracer` and `r.ReferencePathTracer`;
 - duplicate shader visualization helpers.

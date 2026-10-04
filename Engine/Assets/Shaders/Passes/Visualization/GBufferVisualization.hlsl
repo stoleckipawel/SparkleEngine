@@ -1,11 +1,12 @@
 #include "/Engine/Resources/ViewUniformData.hlsli"
 
 #include "/Engine/Resources/RenderViewModeConstants.hlsli"
-#include "/Engine/Passes/GBuffer/GBufferPacking.hlsli"
+#include "/Engine/Common/Math.hlsli"
 
 RWTexture2D<float4> SceneColor;
 Texture2D GBufferBaseColor;
-Texture2D GBufferNormal;
+Texture2D GBufferWorldNormal;
+Texture2D GBufferWorldTangent;
 Texture2D GBufferMaterial;
 Texture2D GBufferEmissive;
 Texture2D GBufferSubsurface;
@@ -15,9 +16,9 @@ float3 VisualizeScalar(float value)
 	return saturate(value).xxx;
 }
 
-float3 VisualizeWorldNormal(float3 packedNormalWorld)
+float3 VisualizeWorldDirection(float3 directionWorld)
 {
-	return GBufferPacking::DecodeWorldNormal(packedNormalWorld) * 0.5f + 0.5f;
+	return SafeNormalize(directionWorld) * 0.5f + 0.5f;
 }
 
 [numthreads(8, 8, 1)]
@@ -41,9 +42,15 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 		case RenderViewMode::GBufferDiffuse:
 			outputColor = saturate(baseColor.rgb);
 			break;
-		case RenderViewMode::GBufferNormal:
-			outputColor = VisualizeWorldNormal(GBufferNormal.Load(pixel).xyz);
+		case RenderViewMode::GBufferWorldNormal:
+			outputColor = VisualizeWorldDirection(GBufferWorldNormal.Load(pixel).xyz);
 			break;
+		case RenderViewMode::GBufferWorldTangent:
+		{
+			const float4 tangent = GBufferWorldTangent.Load(pixel);
+			outputColor = tangent.w > 0.0f ? VisualizeWorldDirection(tangent.xyz) : 0.0f.xxx;
+			break;
+		}
 		case RenderViewMode::GBufferRoughness:
 			outputColor = VisualizeScalar(GBufferMaterial.Load(pixel).g);
 			break;

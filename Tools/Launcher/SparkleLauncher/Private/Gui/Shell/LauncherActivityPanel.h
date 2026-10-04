@@ -19,6 +19,7 @@ class QWidget;
 namespace SparkleLauncher
 {
 	class LauncherIconLibrary;
+	struct LauncherOperationResult;
 
 	class LauncherActivityPanel final : public QFrame
 	{
@@ -33,12 +34,7 @@ namespace SparkleLauncher
 		void DisplayOperationStarted(const QString& runId, const QString& title);
 		void AppendOperationOutput(const QString& runId, const QString& outputText);
 		void UpdateOperationProgress(const QString& runId, const QString& phase, quint64 completed, quint64 total);
-		QString DisplayOperationFinished(
-		    const QString& runId,
-		    const QString& title,
-		    const QString& statusText,
-		    int exitCode,
-		    const QString& recoveryHint);
+		QString DisplayOperationFinished(const QString& runId, const QString& title, const LauncherOperationResult& result);
 		void DisplayBlockedOperation(const QString& runId, const QString& title, const QString& message);
 		void AppendRunOutput(const QString& runId, const QString& text);
 		void ShowRunOutput(const QString& runId);
@@ -49,6 +45,8 @@ namespace SparkleLauncher
 			Queued,
 			Running,
 			Done,
+			Blocked,
+			Canceled,
 			Failed,
 		};
 
@@ -94,6 +92,7 @@ namespace SparkleLauncher
 		QIcon m_queuedIcon;
 		QIcon m_runningIcon;
 		QIcon m_doneIcon;
+		QIcon m_canceledIcon;
 		QIcon m_failedIcon;
 		QString m_activeRunId;
 		bool m_expanded = false;

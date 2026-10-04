@@ -230,6 +230,10 @@ namespace SparkleLauncher
 		addRule("#StatusActionButton[ActionState=\"warning\"]", "background: " + accent + "; color: #071006; border: 1px solid #92d83a;");
 		addRule("#StatusActionButton[ActionState=\"warning\"]:hover", "background: " + accentHover + "; border-color: #a8ed4f;");
 		addRule(
+		    "#StatusActionButton[ActionState=\"neutral\"]",
+		    "background: #2b2f2a; color: " + textBody + "; border: 1px solid " + borderSoft + ";");
+		addRule("#StatusActionButton[ActionState=\"neutral\"]:hover", "background: " + panelHover + "; color: " + textPrimary + ";");
+		addRule(
 		    "#StatusActionButton[ActionState=\"ok\"]",
 		    "background: transparent; color: " + textSecondary + "; border: 1px solid #515950;");
 		addRule("#StatusActionButton[ActionState=\"ok\"]:hover", "background: #30362e; color: " + textBody + "; border-color: #71806c;");
@@ -246,6 +250,11 @@ namespace SparkleLauncher
 		addRule(
 		    "#ActivitySummary",
 		    "color: " + textSecondary + "; background: transparent; font-size: 8.25pt; font-weight: 600; padding: 0 0 2px 0;");
+		addRule("#ActivitySummary[RunState=\"running\"]", "color: " + textPrimary + ";");
+		addRule("#ActivitySummary[RunState=\"done\"]", "color: " + UiColor(LauncherUi::Color::StateSuccess) + ";");
+		addRule("#ActivitySummary[RunState=\"blocked\"]", "color: " + warning + ";");
+		addRule("#ActivitySummary[RunState=\"canceled\"]", "color: " + warning + ";");
+		addRule("#ActivitySummary[RunState=\"failed\"]", "color: " + destructive + ";");
 		addRule(
 		    "#ActivityProgress",
 		    "background: #181b18; color: #ffffff; border: 1px solid " + borderSoft
@@ -330,6 +339,8 @@ namespace SparkleLauncher
 		addRule("#ActivityRunIndicator[RunState=\"queued\"]", "background: " + UiColor(LauncherUi::Color::StateQueued) + ";");
 		addRule("#ActivityRunIndicator[RunState=\"running\"]", "background: " + UiColor(LauncherUi::Color::StateRunning) + ";");
 		addRule("#ActivityRunIndicator[RunState=\"done\"]", "background: " + UiColor(LauncherUi::Color::StateSuccess) + ";");
+		addRule("#ActivityRunIndicator[RunState=\"blocked\"]", "background: " + warning + ";");
+		addRule("#ActivityRunIndicator[RunState=\"canceled\"]", "background: " + warning + ";");
 		addRule("#ActivityRunIndicator[RunState=\"failed\"]", "background: " + UiColor(LauncherUi::Color::StateDestructive) + ";");
 		addRule("#ActivityRunTitle", "color: " + textBody + "; font-size: 8.25pt; font-weight: 650; padding: 0; margin: 0;");
 		addRule("#ActivityRunState", "color: " + textMuted + "; font-size: 7.75pt; font-weight: 700; padding: 0; margin: 0;");

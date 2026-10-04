@@ -17,7 +17,8 @@ class RayTracingGBufferRGS final : public GlobalShader<RayTracingGBufferRGS>
 public:
 	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, )
 	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, GBufferBaseColor)
-	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, GBufferNormal)
+	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, GBufferWorldNormal)
+	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, GBufferWorldTangent)
 	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, GBufferMaterial)
 	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, GBufferEmissive)
 	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, GBufferSubsurface)

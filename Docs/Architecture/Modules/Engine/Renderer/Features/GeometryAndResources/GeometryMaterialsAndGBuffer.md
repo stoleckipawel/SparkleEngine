@@ -63,7 +63,8 @@ Raster GBuffer uses a bindful per-material layout for eight texture roles: base 
 | Product | Format | Default/clear meaning | Downstream role |
 | --- | --- | --- | --- |
 | Base color | `R8G8B8A8_UNorm` | black, alpha 1 | diffuse/albedo and debug |
-| Normal | `R16G16B16A16_Float` | +Z default | signed normalized WorldSpace shading normal; consumers normalize through the shared GBuffer decoder, and the debug view maps `[-1, 1]` to display-linear `[0, 1]` |
+| World normal | `R16G16B16A16_Float` | +Z default | signed normalized world-space shading normal in RGB (X, Y, Z); consumers normalize through the shared GBuffer decoder, and the debug view maps `[-1, 1]` to display-linear `[0, 1]` |
+| World tangent | `R16G16B16A16_Float` | zero means no surface tangent | signed world-space shading tangent in RGB (X, Y, Z) from the raster or ray-hit tangent frame; alpha distinguishes a surface from sky, and the debug view maps a surface tangent from `[-1, 1]` to display-linear `[0, 1]` |
 | Material | `R8G8B8A8_UNorm` | metallic 0, roughness 1, AO 1, F0 0.04 | PBR parameters and debug |
 | Emissive | `R16G16B16A16_Float` | zero | lighting composite |
 | Subsurface | `R8G8B8A8_UNorm` | zero | direct subsurface term |
@@ -71,9 +72,17 @@ Raster GBuffer uses a bindful per-material layout for eight texture roles: base 
 | Device Z | raster `D32_Float`; ray `R32_Float` | far/background by frontend convention | visibility depth and provider input |
 | Scene depth | `R32_Float` | derived from Device Z | lighting, sky, debug/capture product |
 
-The Normal product is not display encoded and no consumer changes its axes. Lighting and shadow shaders use the shared
-WorldSpace decoder, the Normal debug mode performs only the signed-to-display-linear mapping, and DLSS Ray Reconstruction
-tags the raw texture as unpacked normals together with the world/view transforms required to interpret WorldSpace input.
+Raster color attachments are ordered BaseColor, WorldNormal, WorldTangent, Material, Emissive, Subsurface, MotionVector;
+the pixel-shader `SV_Target0` through `SV_Target6` semantics and C++ attachment bindings follow that same order.
+Material channels remain metallic (R), roughness (G), ambient occlusion (B), and dielectric F0 (A).
+
+The world-normal product is not display encoded and no consumer changes its axes. Lighting and shadow shaders use the shared
+world-space decoder, the World Normal debug mode performs only the signed-to-display-linear mapping, and DLSS Ray Reconstruction
+tags the raw texture as unpacked normals together with the world/view transforms required to interpret world-space input.
+
+World tangent is a separate GBuffer product; the diagnostic never overwrites the normal used by lighting. The extra
+`R16G16B16A16_Float` render target adds eight bytes per render-resolution pixel to the Lit GBuffer path, including when
+the tangent view is not selected. This is a source-level cost classification, not measured GPU memory or timing evidence.
 
 The different Device Z storage types are an implementation distinction, not permission for different depth semantics. `AddLinearizeDeviceZPass` is the common downstream boundary.
 

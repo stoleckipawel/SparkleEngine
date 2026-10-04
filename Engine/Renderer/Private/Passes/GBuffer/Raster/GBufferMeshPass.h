@@ -41,7 +41,8 @@ struct GBufferShaderParameters final
 struct GBufferGraphParameters final
 {
 	ShaderRenderTarget BaseColor;
-	ShaderRenderTarget Normal;
+	ShaderRenderTarget WorldNormal;
+	ShaderRenderTarget WorldTangent;
 	ShaderRenderTarget Material;
 	ShaderRenderTarget Emissive;
 	ShaderRenderTarget Subsurface;

@@ -20,6 +20,11 @@ namespace GBufferPacking
 		return float4(SafeNormalize(normalWorld), 0.0f);
 	}
 
+	float4 PackWorldTangent(float3 tangentWorld)
+	{
+		return float4(SafeNormalize(tangentWorld), 1.0f);
+	}
+
 	float3 DecodeWorldNormal(float3 packedNormalWorld)
 	{
 		return SafeNormalize(packedNormalWorld);
@@ -50,9 +55,14 @@ namespace GBufferPacking
 		return float4(0.0f.xxx, 1.0f);
 	}
 
-	float4 PackSkyNormal()
+	float4 PackSkyWorldNormal()
 	{
 		return float4(0.0f, 0.0f, 1.0f, 0.0f);
+	}
+
+	float4 PackSkyWorldTangent()
+	{
+		return 0.0f.xxxx;
 	}
 
 	float4 PackSkyMaterial()

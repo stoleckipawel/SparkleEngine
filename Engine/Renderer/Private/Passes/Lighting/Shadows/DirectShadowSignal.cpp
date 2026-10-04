@@ -21,7 +21,7 @@ template <typename TShader> static auto& BuildDirectShadowSignalParameters(
 	parameters->CurrentReservoirSample = builder.CreateSRV(shadowSignals.ReservoirHistory.Sample.Current);
 	parameters->CurrentReservoirWeight = builder.CreateSRV(shadowSignals.ReservoirHistory.Weight.Current);
 	parameters->SceneDepth = builder.CreateSRV(resources.Transient.Scene.SceneDepth);
-	parameters->GBufferNormal = builder.CreateSRV(resources.Transient.GBuffer.Normal);
+	parameters->GBufferWorldNormal = builder.CreateSRV(resources.Transient.GBuffer.WorldNormal);
 
 	BindSceneShaderParameters(builder, parameters, resources);
 	BindRayTracedShadowParameters(builder, parameters);

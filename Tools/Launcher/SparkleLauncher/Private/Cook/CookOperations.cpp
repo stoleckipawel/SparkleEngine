@@ -435,8 +435,12 @@ namespace SparkleLauncher
 		if (!definition.has_value())
 		{
 			plan.Operation = MakeOperationRecord(std::string(operationId), "Unknown cook operation");
-			plan.Operation.FailureSummary = "Unknown cook operation id.";
-			AddReadiness(plan, plan.Operation.FailureSummary);
+			SetOperationFailure(
+			    plan.Operation,
+			    OperationProblemKind::Planning,
+			    "Unknown cook operation id.",
+			    "Choose a registered Cook operation, then retry.");
+			AddReadiness(plan, plan.Operation.Failure->Summary);
 			return plan;
 		}
 
@@ -455,8 +459,7 @@ namespace SparkleLauncher
 			}
 		}
 		plan.ToolProfile = ResolveCookToolProfile(request.RuntimeProfile);
-		const Filesystem::WorkspaceOutputPaths workspaceOutputs =
-		    Filesystem::ResolveWorkspaceOutputPaths(request.RepositoryRoot);
+		const Filesystem::WorkspaceOutputPaths workspaceOutputs = Filesystem::ResolveWorkspaceOutputPaths(request.RepositoryRoot);
 		plan.CookedOutputDirectory = workspaceOutputs.CookedProjectDirectory(request.ContentId);
 		plan.Operation = MakeOperationRecord(definition->Id, definition->DisplayName);
 		plan.Operation.Inputs.push_back({"content", request.ContentId});

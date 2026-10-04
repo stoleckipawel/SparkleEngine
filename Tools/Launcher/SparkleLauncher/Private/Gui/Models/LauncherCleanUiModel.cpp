@@ -6,6 +6,11 @@
 #include "SparkleLauncher/MaintenanceOperations.h"
 
 #include <QtCore/QRegularExpression>
+#include <QtCore/QStringList>
+
+#include <algorithm>
+#include <optional>
+#include <vector>
 
 namespace SparkleLauncher
 {
@@ -68,6 +73,46 @@ namespace SparkleLauncher
 		return scopeValue;
 	}
 
+	static std::optional<std::vector<CleanScope>> ParseCleanScopeSelection(const QString& scopeSelection)
+	{
+		const QStringList selectedScopes = scopeSelection.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts);
+		if (selectedScopes.empty())
+		{
+			return std::nullopt;
+		}
+
+		std::vector<CleanScope> scopes;
+		for (const QString& selectedScope : selectedScopes)
+		{
+			CleanScope scope = CleanScope::CookedOutputs;
+			if (!TryParseCleanScope(selectedScope.trimmed().toStdString(), scope))
+			{
+				return std::nullopt;
+			}
+			scopes.push_back(scope);
+		}
+		return scopes;
+	}
+
+	QString CleanScopeSelectionError(const QString& scopeSelection)
+	{
+		if (scopeSelection.trimmed().isEmpty())
+		{
+			return "Select at least one generated-data category to clean.";
+		}
+		if (!ParseCleanScopeSelection(scopeSelection).has_value())
+		{
+			return "The saved clean selection is invalid. Select the generated-data categories again.";
+		}
+		return {};
+	}
+
+	bool CleanScopeSelectionRequiresContent(const QString& scopeSelection)
+	{
+		const std::optional<std::vector<CleanScope>> scopes = ParseCleanScopeSelection(scopeSelection);
+		return scopes.has_value() && std::any_of(scopes->begin(), scopes->end(), CleanScopeRequiresContent);
+	}
+
 	bool SupportsActionSpecificClean(const QString& operationId)
 	{
 		return operationId == "launcher.build.self" || operationId.startsWith("workspace.build") || operationId == "cook.tools.prepare"
@@ -88,25 +133,13 @@ namespace SparkleLauncher
 		targets.push_back(std::move(target));
 	}
 
-	void AddTargetArtifactOutputs(
+	static void AddTargetOutputFiles(
 	    QVector<LauncherCleanTarget>& targets,
-	    const std::filesystem::path& repositoryRoot,
-	    const QString& profileName,
+	    const Filesystem::WorkspaceTargetOutputPaths& targetOutputs,
 	    const QString& targetName,
 	    const QString& detail,
-	    const std::filesystem::path& preservedPath)
+	    const std::filesystem::path& preservedPath = {})
 	{
-		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
-		Filesystem::WorkspaceTargetOutputPaths targetOutputs =
-		    outputs.RuntimeSupportTargetOutputs(targetName.toStdString(), profileName.toStdString());
-		if (targetName == "SparkleLauncher")
-		{
-			targetOutputs = outputs.LauncherTargetOutputs(profileName.toStdString());
-		}
-		else if (targetName == "AssetCooker" || targetName == "TextureCooker" || targetName == "ShaderCompiler")
-		{
-			targetOutputs = outputs.ToolTargetOutputs(targetName.toStdString(), profileName.toStdString());
-		}
 		const std::filesystem::path executablePath = targetOutputs.BinaryDirectory / (targetName.toStdString() + ".exe");
 		if (preservedPath.empty() || executablePath != preservedPath)
 		{
@@ -129,6 +162,28 @@ namespace SparkleLauncher
 		    detail);
 	}
 
+	void AddTargetArtifactOutputs(
+	    QVector<LauncherCleanTarget>& targets,
+	    const std::filesystem::path& repositoryRoot,
+	    const QString& profileName,
+	    const QString& targetName,
+	    const QString& detail,
+	    const std::filesystem::path& preservedPath)
+	{
+		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
+		Filesystem::WorkspaceTargetOutputPaths targetOutputs =
+		    outputs.RuntimeSupportTargetOutputs(targetName.toStdString(), profileName.toStdString());
+		if (targetName == "SparkleLauncher")
+		{
+			targetOutputs = outputs.LauncherTargetOutputs(profileName.toStdString());
+		}
+		else if (targetName == "AssetCooker" || targetName == "TextureCooker" || targetName == "ShaderCompiler")
+		{
+			targetOutputs = outputs.ToolTargetOutputs(targetName.toStdString(), profileName.toStdString());
+		}
+		AddTargetOutputFiles(targets, targetOutputs, targetName, detail, preservedPath);
+	}
+
 	void AddProjectTargetArtifactOutputs(
 	    QVector<LauncherCleanTarget>& targets,
 	    const std::filesystem::path& repositoryRoot,
@@ -139,27 +194,9 @@ namespace SparkleLauncher
 	    const QString& detail)
 	{
 		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
-		const Filesystem::WorkspaceTargetOutputPaths targetOutputs = outputs.ProjectTargetOutputs(
-		    projectName.toStdString(),
-		    productRole.toStdString(),
-		    profileName.toStdString());
-		const std::filesystem::path executablePath = targetOutputs.BinaryDirectory / (targetName.toStdString() + ".exe");
-		AddExplicitCleanTarget(targets, targetName + " executable", executablePath, detail);
-		AddExplicitCleanTarget(
-		    targets,
-		    targetName + " program database",
-		    targetOutputs.SymbolDirectory / (targetName.toStdString() + ".pdb"),
-		    detail);
-		AddExplicitCleanTarget(
-		    targets,
-		    targetName + " import library",
-		    targetOutputs.LibraryDirectory / (targetName.toStdString() + ".lib"),
-		    detail);
-		AddExplicitCleanTarget(
-		    targets,
-		    targetName + " compile database",
-		    targetOutputs.SymbolDirectory / "obj" / (targetName.toStdString() + ".pdb"),
-		    detail);
+		const Filesystem::WorkspaceTargetOutputPaths targetOutputs =
+		    outputs.ProjectTargetOutputs(projectName.toStdString(), productRole.toStdString(), profileName.toStdString());
+		AddTargetOutputFiles(targets, targetOutputs, targetName, detail);
 	}
 
 	QVector<LauncherCleanTarget> BuildActionSpecificCleanTargets(const ActionCleanTargetContext& context)

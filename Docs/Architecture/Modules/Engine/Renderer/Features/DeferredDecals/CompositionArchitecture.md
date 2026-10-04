@@ -90,7 +90,7 @@ The projector points along local `+Z`. A receiver faces the projector when its o
 
 `Material` resolves through the ordinary material table. The sampled base-color alpha, including its material factor, supplies texture coverage. Existing PBR constants and texture slots supply every enabled channel. `AlphaMode` does not choose a decal render path and must not create a second material type.
 
-One receiver bit, `ReceivesDecals`, is added to mesh-instance data and defaults to true. The raster GBuffer writes it into the currently unused `GBufferNormal.w`; the ray hit instance carries the equivalent flag. Sky and invalid pixels store false. No layer-mask taxonomy is added until a real scene needs more than receive/ignore.
+One receiver bit, `ReceivesDecals`, is added to mesh-instance data and defaults to true. The raster GBuffer writes it into the currently unused `GBufferWorldNormal.w`; the ray hit instance carries the equivalent flag. Sky and invalid pixels store false. No layer-mask taxonomy is added until a real scene needs more than receive/ignore.
 
 ### Runtime Identity And Lifetime
 

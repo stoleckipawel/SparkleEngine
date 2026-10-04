@@ -4,9 +4,13 @@
 
 **Current readiness:** **40/100**. The single per-view source route is present in the current changelist, but build, runtime, visual, backend, and release evidence is not claimed.
 
-**Architecture:** [Render View Modes](ViewModes.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
+**Responsibility:** feature-local navigation and current evidence posture for Renderer debug-view controls, presentation, delivery, and acceptance
 
-**Delivery:** [Plan](Plan.md) and [Acceptance](Acceptance.md)
+**Verified:** 2026-10-04 against revision `26803f97` with unrelated work present in the dirty tree
+
+**Architecture:** [Viewport Rendering Controls](Controls/README.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
+
+**Delivery:** [Discovery gate](Discovery.md), [Plan](Plan.md), and [Acceptance](Acceptance.md)
 
 ## Current Source Shape
 
@@ -15,8 +19,8 @@ Sparkle has one host-independent `RenderViewMode` contract:
 - Lit is value `0`;
 - Reference Path Tracer is value `1`;
 - Wireframe is value `2`;
-- GBuffer, lighting, and GPU-scene inspection modes occupy contiguous values `3` through `16`;
-- `Count` is `17`.
+- GBuffer, lighting, and GPU-scene inspection modes occupy contiguous values `3` through `17`;
+- `Count` is `18`.
 
 The ordinary `ViewportRenderRequest` carries one selected mode. `RenderViewBuilder` freezes it into `RenderView`; frame composition, raster GBuffer, and debug resolve consume that same value at their owning decisions. The HLSL constant contract mirrors the C++ values for shader consumers.
 
@@ -31,7 +35,7 @@ The debug resolve is partitioned into GBuffer, lighting, and GPU-scene families.
 | Capability | Modes | Current producer |
 | --- | --- | --- |
 | `REN-DBG-01` final/material | Lit, Wireframe | Ordinary frame; Wireframe changes raster fill |
-| `REN-DBG-02` GBuffer | Diffuse, Normal, Roughness, Metallic, Emissive, Ambient Occlusion, Subsurface Color, Subsurface Strength | `GBufferVisualizationCS` reads only GBuffer products; Normal uses the shared signed WorldSpace decoder and maps `[-1, 1]` to display-linear `[0, 1]` without changing axes or orientation |
+| `REN-DBG-02` GBuffer | Diffuse, World Normal, World Tangent, Roughness, Metallic, Emissive, Ambient Occlusion, Subsurface Color, Subsurface Strength | `GBufferVisualizationCS` reads only GBuffer products; World Normal and World Tangent map signed world-space XYZ to display-linear RGB in `[0, 1]` without changing axes or orientation |
 | `REN-DBG-03` lighting | Direct Diffuse, Direct Specular, Direct Subsurface, Indirect Diffuse, Indirect Specular | `LightingVisualizationCS` reads lighting lobes plus GBuffer alpha |
 | `REN-DBG-04` scene | GPU Scene Instances | instance identity generation plus `GpuSceneVisualizationCS` |
 | `REN-LGT-04` reference | Reference Path Tracer | private Reference middle/session with Editor menu and operational overlay; source-present, not executable-proved |
@@ -51,3 +55,5 @@ This is source presence, not pixel proof. The acceptance route must still exerci
 - RHI owns no mode or feature identity.
 
 Any new mode must have a real production consumer. Any future independently selectable show control must be orthogonal to the selected mode and land with that consumer; it cannot recreate the removed parallel taxonomy.
+
+The first such independent-control contract is now frozen in [Renderer Show Flags](Controls/ShowFlags.md): five current lighting-product leaves, Direct/Indirect Shadows leaves, an eighth Indirect Subsurface target gated by its owning transport decision, per-viewport Editor selection, feature-named global CVar gates, and derived Direct Lighting, Indirect Lighting, and Shadows bulk controls. It remains target architecture until its typed request/View path, sequenced CVar boundary, focused lighting consumers, indirect-shadow invalidation, UI, and executable evidence land.

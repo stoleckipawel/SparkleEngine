@@ -97,6 +97,7 @@ namespace SparkleLauncher
 	std::string ToString(MaintenanceOperationKind kind);
 	std::string ToString(CleanScope scope);
 	std::string_view CleanScopeId(CleanScope scope) noexcept;
+	bool CleanScopeRequiresContent(CleanScope scope) noexcept;
 	bool TryParseCleanScope(std::string_view text, CleanScope& outScope) noexcept;
 	const std::vector<MaintenanceOperationDefinition>& GetMaintenanceOperationDefinitions();
 	std::optional<MaintenanceOperationDefinition> FindMaintenanceOperationDefinition(std::string_view operationId);

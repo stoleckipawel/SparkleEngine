@@ -57,7 +57,10 @@ void CreateGBufferRenderTargets(
 
 	targets.BaseColor = CreateGBufferColor(builder, "GBufferBaseColor", sceneExtent, GBufferFormats::BaseColor, {0.0f, 0.0f, 0.0f, 1.0f});
 
-	targets.Normal = CreateGBufferColor(builder, "GBufferNormal", sceneExtent, GBufferFormats::Normal, {0.0f, 0.0f, 1.0f, 0.0f});
+	targets.WorldNormal =
+	    CreateGBufferColor(builder, "GBufferWorldNormal", sceneExtent, GBufferFormats::WorldNormal, {0.0f, 0.0f, 1.0f, 0.0f});
+	targets.WorldTangent =
+	    CreateGBufferColor(builder, "GBufferWorldTangent", sceneExtent, GBufferFormats::WorldTangent, {0.0f, 0.0f, 0.0f, 0.0f});
 
 	targets.Material = CreateGBufferColor(builder, "GBufferMaterial", sceneExtent, GBufferFormats::Material, {0.0f, 1.0f, 1.0f, 0.04f});
 
@@ -71,5 +74,5 @@ void CreateGBufferRenderTargets(
 
 	targets.DeviceZ = CreateGBufferDeviceZ(builder, sceneExtent, algorithm);
 
-	resources.ViewportProducts.Normals = targets.Normal;
+	resources.ViewportProducts.Normals = targets.WorldNormal;
 }

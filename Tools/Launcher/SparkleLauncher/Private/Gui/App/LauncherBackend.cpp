@@ -69,18 +69,29 @@ namespace SparkleLauncher
 		return QString::fromStdString(output.str());
 	}
 
-	static QString FormatOperationCompletion(const OperationRecord& operation)
+	static LauncherOperationResult BuildOperationResult(const OperationRecord& operation)
 	{
-		QString text = QString::fromStdString(ToString(operation.Status));
+		LauncherOperationResult result;
+		result.Status = QString::fromStdString(ToString(operation.Status));
+		result.Succeeded = operation.Status == OperationStatus::Succeeded;
+		result.Skipped = operation.Status == OperationStatus::Skipped;
+		result.Canceled = operation.Status == OperationStatus::Canceled;
 		if (operation.ExitCode.has_value())
 		{
-			text += QStringLiteral(" (exit code %1)").arg(*operation.ExitCode);
+			result.ExitCode = *operation.ExitCode;
+			result.HasExitCode = true;
 		}
-		if (!operation.FailureSummary.empty())
+		if (!operation.LogPath.empty())
 		{
-			text += QString::fromStdString(" - " + operation.FailureSummary);
+			result.LogPath = QString::fromStdString(operation.LogPath.string());
 		}
-		return text;
+		if (operation.Failure.has_value())
+		{
+			result.ProblemKind = QString::fromStdString(ToString(operation.Failure->Kind));
+			result.Problem = QString::fromStdString(operation.Failure->Summary);
+			result.ExpectedAction = QString::fromStdString(operation.Failure->ExpectedAction);
+		}
+		return result;
 	}
 
 	LauncherBackend::LauncherBackend(QObject* parent) :
@@ -91,6 +102,7 @@ namespace SparkleLauncher
 	LauncherBackend::LauncherBackend(ProcessRunnerFactory processRunnerFactory, QObject* parent) :
 	    QObject(parent)
 	{
+		qRegisterMetaType<LauncherOperationResult>();
 		if (!processRunnerFactory)
 		{
 			processRunnerFactory = []()
@@ -190,18 +202,10 @@ namespace SparkleLauncher
 
 	void LauncherBackend::QueueOperationFinished(QString runId, QString operationId, QString title, const OperationRecord& record)
 	{
-		const QString status = FormatOperationCompletion(record);
-		const int exitCode = record.ExitCode.value_or(-1);
-		const Process::ChildProcessStartFailure processStartFailure = record.ProcessStartFailure;
+		const LauncherOperationResult result = BuildOperationResult(record);
 		QMetaObject::invokeMethod(
 		    this,
-		    [this,
-		        runId = std::move(runId),
-		        operationId = std::move(operationId),
-		        title = std::move(title),
-		        status,
-		        exitCode,
-		        processStartFailure]
+		    [this, runId = std::move(runId), operationId = std::move(operationId), title = std::move(title), result]
 		    {
 			    auto progressDecoder = m_progressDecoders.find(runId);
 			    if (progressDecoder != m_progressDecoders.end())
@@ -216,7 +220,7 @@ namespace SparkleLauncher
 				        });
 				    m_progressDecoders.erase(progressDecoder);
 			    }
-			    emit OperationFinished(runId, operationId, title, status, exitCode, processStartFailure);
+			    emit OperationFinished(runId, operationId, title, result);
 		    },
 		    Qt::QueuedConnection);
 	}

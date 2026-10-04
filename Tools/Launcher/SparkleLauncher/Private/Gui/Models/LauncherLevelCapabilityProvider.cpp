@@ -24,7 +24,7 @@ namespace SparkleLauncher
 		return registry.Register(
 		    {std::string(LauncherCapabilityId::SelectedLevels),
 		        {},
-		        [request, &levelModel](bool)
+		        [request, &levelModel]()
 		        {
 			        if (!levelModel.Loaded)
 			        {

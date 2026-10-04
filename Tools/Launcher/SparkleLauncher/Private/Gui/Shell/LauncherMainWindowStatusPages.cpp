@@ -179,7 +179,7 @@ namespace SparkleLauncher
 				    *machineLayout,
 				    "Build files",
 				    plan.Freshness.Current ? "Ready" : "Needs refresh",
-				    CombineStatusDetail(QString::fromStdString(plan.Freshness.Summary), BuildFilesRecoveryHint(plan.Freshness)),
+				    CombineStatusDetail(QString::fromStdString(plan.Freshness.Summary), BuildFilesExpectedAction(plan.Freshness)),
 				    plan.Freshness.Current ? "ok" : "warning");
 			}
 
@@ -285,7 +285,7 @@ namespace SparkleLauncher
 			    *buildLayout,
 			    "Build files",
 			    plan.Freshness.Current ? "Ready" : "Needs refresh",
-			    CombineStatusDetail(QString::fromStdString(plan.Freshness.Summary), BuildFilesRecoveryHint(plan.Freshness)),
+			    CombineStatusDetail(QString::fromStdString(plan.Freshness.Summary), BuildFilesExpectedAction(plan.Freshness)),
 			    plan.Freshness.Current ? "ok" : "warning",
 			    plan.Freshness.Current ? nullptr
 			                           : CreateStatusActionButton("workspace.generate-build-files", "Generate", "Generate Build Files"));
@@ -345,7 +345,7 @@ namespace SparkleLauncher
 				    *ensureIssueLayout(),
 				    "Build files",
 				    "Needs refresh",
-				    CombineStatusDetail(QString::fromStdString(cookPlan.Freshness.Summary), BuildFilesRecoveryHint(cookPlan.Freshness)),
+				    CombineStatusDetail(QString::fromStdString(cookPlan.Freshness.Summary), BuildFilesExpectedAction(cookPlan.Freshness)),
 				    "warning",
 				    CreateStatusActionButton("workspace.generate-build-files", "Generate", "Generate Build Files"));
 			}

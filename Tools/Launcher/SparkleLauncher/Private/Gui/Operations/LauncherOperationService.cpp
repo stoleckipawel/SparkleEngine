@@ -97,8 +97,12 @@ namespace SparkleLauncher
 				    if (!processRunner)
 				    {
 					    OperationRecord record = MakeOperationRecord(operationId, title);
-					    record.Status = OperationStatus::Failed;
-					    record.FailureSummary = "No process runner is available for this launcher operation.";
+					    SetOperationFailure(
+					        record,
+					        OperationProblemKind::Internal,
+					        "No process runner is available for this launcher operation.",
+					        "Restart Sparkle Launcher and retry; if the problem repeats, report this as a Launcher defect.");
+					    MarkOperationFinished(record, OperationStatus::Failed, std::nullopt);
 					    completionCallback(std::move(record));
 					    return TaskResult::Failure("No process runner is available.");
 				    }

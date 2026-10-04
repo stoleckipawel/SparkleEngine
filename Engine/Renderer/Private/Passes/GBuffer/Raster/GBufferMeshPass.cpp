@@ -22,7 +22,8 @@ void GBufferShaderParameters::Describe(ShaderParameterStructBuilder<GBufferShade
 void GBufferGraphParameters::Describe(ShaderParameterStructBuilder<GBufferGraphParameters>& builder)
 {
 	builder.RenderTarget("BaseColor", &GBufferGraphParameters::BaseColor, ShaderStageVisibility::AllGraphics);
-	builder.RenderTarget("Normal", &GBufferGraphParameters::Normal, ShaderStageVisibility::AllGraphics);
+	builder.RenderTarget("WorldNormal", &GBufferGraphParameters::WorldNormal, ShaderStageVisibility::AllGraphics);
+	builder.RenderTarget("WorldTangent", &GBufferGraphParameters::WorldTangent, ShaderStageVisibility::AllGraphics);
 	builder.RenderTarget("Material", &GBufferGraphParameters::Material, ShaderStageVisibility::AllGraphics);
 	builder.RenderTarget("Emissive", &GBufferGraphParameters::Emissive, ShaderStageVisibility::AllGraphics);
 	builder.RenderTarget("Subsurface", &GBufferGraphParameters::Subsurface, ShaderStageVisibility::AllGraphics);

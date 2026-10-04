@@ -39,7 +39,7 @@ namespace SparkleLauncher
 			error = registry.Register(
 			    {capabilityId,
 			        {std::string(LauncherCapabilityId::HostTools)},
-			        [request, dependency, dependencyCacheRoot](bool)
+			        [request, dependency, dependencyCacheRoot]()
 			        {
 				        if (ValidateSourceDependency(dependency, dependencyCacheRoot).Ready)
 				        {
@@ -64,7 +64,7 @@ namespace SparkleLauncher
 		return registry.Register(
 		    {std::string(LauncherCapabilityId::SourceDependencies),
 		        std::move(dependencyCapabilityIds),
-		        [dependencyCacheRoot](bool)
+		        [dependencyCacheRoot]()
 		        {
 			        const SourceDependencyInventoryStatus status = InspectSourceDependencyCache(dependencyCacheRoot);
 			        return status.AllEnabledDependenciesReady

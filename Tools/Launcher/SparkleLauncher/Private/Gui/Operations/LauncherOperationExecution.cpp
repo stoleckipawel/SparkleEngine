@@ -69,9 +69,15 @@ namespace SparkleLauncher
 			    if (!typedPlan.CanRun)
 			    {
 				    OperationRecord record = std::move(typedPlan.Operation);
-				    record.FailureSummary =
-				        typedPlan.ReadinessMessages.empty() ? "Operation readiness failed." : typedPlan.ReadinessMessages.back();
-				    record.Status = OperationStatus::Skipped;
+				    if (!record.Failure.has_value())
+				    {
+					    SetOperationFailure(
+					        record,
+					        OperationProblemKind::Prerequisite,
+					        typedPlan.ReadinessMessages.empty() ? "Operation readiness failed." : typedPlan.ReadinessMessages.back(),
+					        "Resolve the reported prerequisite, refresh the workflow, then retry.");
+				    }
+				    MarkOperationFinished(record, OperationStatus::Skipped, std::nullopt);
 				    return record;
 			    }
 

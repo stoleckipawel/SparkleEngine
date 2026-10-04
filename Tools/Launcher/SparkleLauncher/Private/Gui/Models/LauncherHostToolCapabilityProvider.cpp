@@ -37,7 +37,7 @@ namespace SparkleLauncher
 			error = registry.Register(
 			    {capabilityId,
 			        {},
-			        [request, item](bool)
+			        [request, item]()
 			        {
 				        if (item.State == ToolchainItemState::Found)
 				        {
@@ -68,7 +68,7 @@ namespace SparkleLauncher
 		return registry.Register(
 		    {std::string(LauncherCapabilityId::HostTools),
 		        std::move(requiredCapabilityIds),
-		        [toolchain](bool)
+		        [toolchain]()
 		        {
 			        return toolchain.RequiredToolsAvailable && toolchain.ConfigurePrerequisitesAvailable
 			            ? LauncherCapabilityEvaluation::Ready()

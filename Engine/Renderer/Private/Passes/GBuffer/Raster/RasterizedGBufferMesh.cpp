@@ -23,8 +23,10 @@ void AddRasterizedGBufferMeshPass(FrameGraphBuilder& builder, GpuMeshCache& gpuM
 	auto& parameters = builder.AllocGraphParameters<GBufferGraphParameters>("GBuffer");
 	parameters->BaseColor =
 	    builder.CreateRenderTarget(targets.BaseColor, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
-	parameters->Normal =
-	    builder.CreateRenderTarget(targets.Normal, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
+	parameters->WorldNormal =
+	    builder.CreateRenderTarget(targets.WorldNormal, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
+	parameters->WorldTangent =
+	    builder.CreateRenderTarget(targets.WorldTangent, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
 	parameters->Material =
 	    builder.CreateRenderTarget(targets.Material, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
 	parameters->Emissive =

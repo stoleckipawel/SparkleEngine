@@ -18,7 +18,8 @@ RenderViewPresentationDomain ResolveRenderViewPresentationDomain(RenderViewMode 
 		case RenderViewMode::IndirectSpecular:
 			return RenderViewPresentationDomain::SceneReferredHdr;
 		case RenderViewMode::GBufferDiffuse:
-		case RenderViewMode::GBufferNormal:
+		case RenderViewMode::GBufferWorldNormal:
+		case RenderViewMode::GBufferWorldTangent:
 		case RenderViewMode::GBufferRoughness:
 		case RenderViewMode::GBufferMetallic:
 		case RenderViewMode::GBufferAmbientOcclusion:

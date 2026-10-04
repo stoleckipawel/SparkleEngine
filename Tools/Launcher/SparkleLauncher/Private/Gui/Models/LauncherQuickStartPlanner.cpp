@@ -15,8 +15,7 @@ namespace SparkleLauncher
 
 	LauncherCapabilityResolution PlanLauncherQuickStartStep(
 	    const LauncherOperationRequest& launchRequest,
-	    const LauncherLevelUiModel& levelModel,
-	    const std::set<std::string>& invalidatedCapabilityIds)
+	    const LauncherLevelUiModel& levelModel)
 	{
 		LauncherCapabilityRegistry registry;
 		const LauncherCapabilityContext context{BuildQuickStartOperationRequest(launchRequest, launchRequest.OperationId), levelModel};
@@ -31,6 +30,6 @@ namespace SparkleLauncher
 			}
 		}
 
-		return registry.Resolve(context.Request.OperationId.toStdString(), invalidatedCapabilityIds);
+		return registry.Resolve(context.Request.OperationId.toStdString());
 	}
 }

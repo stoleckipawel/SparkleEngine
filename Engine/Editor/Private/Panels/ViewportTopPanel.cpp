@@ -34,8 +34,10 @@ static ViewModePresentation DescribeViewMode(RenderViewMode viewMode) noexcept
 			return {UiUtil::EditorIcon::ViewMode, "Wireframe"};
 		case RenderViewMode::GBufferDiffuse:
 			return {UiUtil::EditorIcon::ViewDiffuse, "GBuffer Diffuse"};
-		case RenderViewMode::GBufferNormal:
-			return {UiUtil::EditorIcon::ViewNormal, "GBuffer Normal"};
+		case RenderViewMode::GBufferWorldNormal:
+			return {UiUtil::EditorIcon::ViewNormal, "GBuffer World Normal"};
+		case RenderViewMode::GBufferWorldTangent:
+			return {UiUtil::EditorIcon::ViewNormal, "GBuffer World Tangent"};
 		case RenderViewMode::GBufferRoughness:
 			return {UiUtil::EditorIcon::ViewRoughness, "GBuffer Roughness"};
 		case RenderViewMode::GBufferMetallic:
@@ -172,7 +174,8 @@ void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction, bool compact)
 		DrawViewModeCategory("GBuffer");
 		ImGui::Indent(8.0f);
 		DrawViewModeOption(m_viewportSession, RenderViewMode::GBufferDiffuse, currentViewMode);
-		DrawViewModeOption(m_viewportSession, RenderViewMode::GBufferNormal, currentViewMode);
+		DrawViewModeOption(m_viewportSession, RenderViewMode::GBufferWorldNormal, currentViewMode);
+		DrawViewModeOption(m_viewportSession, RenderViewMode::GBufferWorldTangent, currentViewMode);
 		DrawViewModeOption(m_viewportSession, RenderViewMode::GBufferRoughness, currentViewMode);
 		DrawViewModeOption(m_viewportSession, RenderViewMode::GBufferMetallic, currentViewMode);
 		DrawViewModeOption(m_viewportSession, RenderViewMode::GBufferEmissive, currentViewMode);

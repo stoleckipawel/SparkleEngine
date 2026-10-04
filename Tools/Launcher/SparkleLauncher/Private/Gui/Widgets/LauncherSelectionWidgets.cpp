@@ -2,6 +2,7 @@
 
 #include "LauncherUiDesign.h"
 
+#include <QtCore/QObject>
 #include <QtCore/QSignalBlocker>
 #include <QtCore/Qt>
 #include <QtGui/QBrush>
@@ -10,12 +11,121 @@
 #include <QtGui/QStandardItem>
 #include <QtGui/QStandardItemModel>
 #include <QtWidgets/QAbstractItemView>
+#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QStyle>
 
 #include <algorithm>
 
 namespace SparkleLauncher
 {
+	static void SetScopeBoxChecked(QCheckBox* scopeBox, bool checked)
+	{
+		if (scopeBox == nullptr || !scopeBox->isEnabled())
+		{
+			return;
+		}
+
+		const QSignalBlocker blocker(scopeBox);
+		scopeBox->setChecked(checked);
+		if (QWidget* scopeRow = scopeBox->parentWidget())
+		{
+			scopeRow->setProperty("Selected", checked);
+			scopeRow->style()->unpolish(scopeRow);
+			scopeRow->style()->polish(scopeRow);
+		}
+	}
+
+	static void SetAllScopeBoxesChecked(const QVector<QCheckBox*>& scopeBoxes, bool checked)
+	{
+		for (QCheckBox* scopeBox : scopeBoxes)
+		{
+			SetScopeBoxChecked(scopeBox, checked);
+		}
+	}
+
+	static bool AreAllAvailableScopesChecked(const QVector<QCheckBox*>& scopeBoxes)
+	{
+		bool hasAvailableScope = false;
+		for (const QCheckBox* scopeBox : scopeBoxes)
+		{
+			if (scopeBox == nullptr || !scopeBox->isEnabled())
+			{
+				continue;
+			}
+
+			hasAvailableScope = true;
+			if (!scopeBox->isChecked())
+			{
+				return false;
+			}
+		}
+		return hasAvailableScope;
+	}
+
+	static void UpdateSelectAllBox(QCheckBox* selectAllBox, const QVector<QCheckBox*>& scopeBoxes)
+	{
+		SetScopeBoxChecked(selectAllBox, AreAllAvailableScopesChecked(scopeBoxes));
+	}
+
+	void ConnectSelectAllScopeBox(
+	    QCheckBox* selectAllBox,
+	    const QVector<QCheckBox*>& scopeBoxes,
+	    QObject* context,
+	    std::function<void(bool)> commitSelection)
+	{
+		for (QCheckBox* scopeBox : scopeBoxes)
+		{
+			QObject::connect(
+			    scopeBox,
+			    &QCheckBox::toggled,
+			    context,
+			    [scopeBoxes, selectAllBox, commitSelection]()
+			    {
+				    commitSelection(false);
+				    UpdateSelectAllBox(selectAllBox, scopeBoxes);
+			    });
+		}
+		QObject::connect(
+		    selectAllBox,
+		    &QCheckBox::toggled,
+		    context,
+		    [scopeBoxes, selectAllBox, commitSelection](bool selected)
+		    {
+			    SetAllScopeBoxesChecked(scopeBoxes, selected);
+			    commitSelection(selected);
+			    UpdateSelectAllBox(selectAllBox, scopeBoxes);
+		    });
+		UpdateSelectAllBox(selectAllBox, scopeBoxes);
+	}
+
+	QStringList CollectSelectedScopeValues(const QVector<QCheckBox*>& scopeBoxes)
+	{
+		QStringList selectedValues;
+		for (const QCheckBox* scopeBox : scopeBoxes)
+		{
+			if (scopeBox != nullptr && scopeBox->isEnabled() && scopeBox->isChecked())
+			{
+				selectedValues.push_back(scopeBox->property("ScopeValue").toString());
+			}
+		}
+		return selectedValues;
+	}
+
+	void UpdateScopeSelectionSummary(QLabel* selectionSummary, bool hasSelection, const QString& emptyMessage)
+	{
+		if (selectionSummary == nullptr)
+		{
+			return;
+		}
+		selectionSummary->setText(emptyMessage);
+		selectionSummary->setProperty("State", hasSelection ? "ok" : "warning");
+		selectionSummary->setVisible(!hasSelection);
+		selectionSummary->style()->unpolish(selectionSummary);
+		selectionSummary->style()->polish(selectionSummary);
+	}
+
 	static QStandardItem* ComboItem(QComboBox& combo, int row)
 	{
 		QStandardItemModel* model = qobject_cast<QStandardItemModel*>(combo.model());

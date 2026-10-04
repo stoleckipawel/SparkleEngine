@@ -98,13 +98,13 @@ namespace SparkleLauncher
 		return first + " | " + second;
 	}
 
-	QString BuildFilesRecoveryHint(const BuildFilesFreshnessStatus& freshness)
+	QString BuildFilesExpectedAction(const BuildFilesFreshnessStatus& freshness)
 	{
 		switch (freshness.State)
 		{
 			case BuildFilesFreshnessState::GeneratorMismatch:
 			case BuildFilesFreshnessState::FeatureSetMismatch:
-				return "Recovery: clean Build Outputs or choose a different build directory before running Generate Build Files again.";
+				return "Next action: clean Build Outputs or choose a different build directory, then run Generate Build Files again.";
 			case BuildFilesFreshnessState::BuildDirectoryMissing:
 			case BuildFilesFreshnessState::CMakeCacheMissing:
 			case BuildFilesFreshnessState::SolutionMissing:
@@ -112,7 +112,7 @@ namespace SparkleLauncher
 			case BuildFilesFreshnessState::FreshnessStampMismatch:
 			case BuildFilesFreshnessState::SourceListChanged:
 			case BuildFilesFreshnessState::BuildInputChanged:
-				return "Recovery: run Generate Build Files to refresh generated CMake and IDE state.";
+				return "Next action: run Generate Build Files to refresh generated CMake and IDE state.";
 			case BuildFilesFreshnessState::Current:
 			case BuildFilesFreshnessState::Unsupported:
 				return {};

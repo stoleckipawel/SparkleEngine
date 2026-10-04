@@ -80,9 +80,7 @@ namespace SparkleLauncher
 		    const QString& runId,
 		    const QString& operationId,
 		    const QString& title,
-		    const QString& statusText,
-		    int exitCode,
-		    Process::ChildProcessStartFailure processStartFailure);
+		    const LauncherOperationResult& result);
 
 	private:
 		struct PendingLevelSelectionUpdate
@@ -132,7 +130,7 @@ namespace SparkleLauncher
 		    const QStringList& selectedScopes,
 		    QVector<QCheckBox*>& scopeBoxes);
 		void AddWorkflowAutomationNote(QVBoxLayout& layout, const QString& detail);
-		void UpdateBuildScopeSetting(const QVector<QCheckBox*>& scopeBoxes, QLabel* selectionSummary);
+		void UpdateBuildScopeSetting(const QVector<QCheckBox*>& scopeBoxes);
 		void UpdateCookScopeSetting(const QVector<QCheckBox*>& scopeBoxes, QLabel* selectionSummary);
 		void AddCleanOptions(QVBoxLayout& layout, const QString& operationId);
 		void AddCleanScopeRow(
@@ -141,7 +139,7 @@ namespace SparkleLauncher
 		    const QString& activeContentId,
 		    const QStringList& selectedScopes,
 		    QVector<QCheckBox*>& scopeBoxes);
-		void UpdateCleanScopeSetting(const QVector<QCheckBox*>& scopeBoxes, QLabel* selectionSummary, QCheckBox* changedScope = nullptr);
+		void UpdateCleanScopeSetting(const QVector<QCheckBox*>& scopeBoxes, bool cleanAllRequested);
 		QWidget* AddOptionField(QVBoxLayout& layout, const QString& label, QWidget* control);
 		QVBoxLayout* AddOptionGroup(QVBoxLayout& layout, const QString& title, const QString& detail);
 		QLabel* AddStatusRow(
@@ -206,11 +204,6 @@ namespace SparkleLauncher
 		const LauncherOperationDescriptor* FindOperationDescriptor(const QString& operationId) const;
 		QString DisplayNameForOperation(const QString& operationId) const;
 		bool OperationNeedsContent(const QString& operationId) const;
-		bool OperationNeedsConfirmation(const QString& operationId) const;
-		QString FailureRecoveryHint(
-		    const QString& operationId,
-		    const QString& statusText,
-		    Process::ChildProcessStartFailure processStartFailure) const;
 		bool ConfirmRunRequest(LauncherOperationRequest& request) const;
 		void PromptForLauncherRestart();
 		QString CreateRunId();

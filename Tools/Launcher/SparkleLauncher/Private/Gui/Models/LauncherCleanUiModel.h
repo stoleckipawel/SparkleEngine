@@ -38,6 +38,8 @@ namespace SparkleLauncher
 	    const QString& scope);
 
 	QString CleanScopeDisplayName(const QString& scopeValue);
+	QString CleanScopeSelectionError(const QString& scopeSelection);
+	bool CleanScopeSelectionRequiresContent(const QString& scopeSelection);
 
 	bool SupportsActionSpecificClean(const QString& operationId);
 

@@ -15,7 +15,7 @@ namespace SparkleLauncher
 		std::string error = registry.Register(
 		    {std::string(LauncherCapabilityId::BuildFiles),
 		        {std::string(LauncherCapabilityId::SourceDependencies)},
-		        [request](bool)
+		        [request]()
 		        {
 			        const BuildWorkspaceOperationRequest workspaceRequest = LauncherOperationRequestMapping::BuildWorkspace(request);
 			        const BuildWorkspaceOperationPlan generatePlan =

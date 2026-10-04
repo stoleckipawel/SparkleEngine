@@ -15,7 +15,8 @@
 #include "/Engine/RayTracing/RayTracingSceneTrace.hlsli"
 
 RWTexture2D<float4> GBufferBaseColor;
-RWTexture2D<float4> GBufferNormal;
+RWTexture2D<float4> GBufferWorldNormal;
+RWTexture2D<float4> GBufferWorldTangent;
 RWTexture2D<float4> GBufferMaterial;
 RWTexture2D<float4> GBufferEmissive;
 RWTexture2D<float4> GBufferSubsurface;
@@ -64,7 +65,8 @@ namespace RayTracingGBuffer
 	void StoreMiss(uint2 pixelCoord)
 	{
 		GBufferBaseColor[pixelCoord] = GBufferPacking::PackSkyBaseColor();
-		GBufferNormal[pixelCoord] = GBufferPacking::PackSkyNormal();
+		GBufferWorldNormal[pixelCoord] = GBufferPacking::PackSkyWorldNormal();
+		GBufferWorldTangent[pixelCoord] = GBufferPacking::PackSkyWorldTangent();
 		GBufferMaterial[pixelCoord] = GBufferPacking::PackSkyMaterial();
 		GBufferEmissive[pixelCoord] = GBufferPacking::PackSkyEmissive();
 		GBufferSubsurface[pixelCoord] = GBufferPacking::PackSkySubsurface();
@@ -77,7 +79,8 @@ namespace RayTracingGBuffer
 		const float3 baseColor = InstanceView::ApplyInstanceVisualization(surface.BaseColor, surface.GpuSceneSlot);
 		GBufferBaseColor[pixelCoord] =
 		    GBufferPacking::PackBaseColor(baseColor, surface.Alpha, surface.AlphaMode, RayTracingHitSurface::AlphaModeBlended);
-		GBufferNormal[pixelCoord] = GBufferPacking::PackWorldNormal(surface.NormalWorld);
+		GBufferWorldNormal[pixelCoord] = GBufferPacking::PackWorldNormal(surface.NormalWorld);
+		GBufferWorldTangent[pixelCoord] = GBufferPacking::PackWorldTangent(surface.TangentWorld);
 		GBufferMaterial[pixelCoord] =
 		    GBufferPacking::PackMaterial(surface.Metallic, surface.Roughness, surface.AmbientOcclusion, surface.DielectricF0);
 		GBufferEmissive[pixelCoord] = GBufferPacking::PackEmissive(surface.EmissiveColor);

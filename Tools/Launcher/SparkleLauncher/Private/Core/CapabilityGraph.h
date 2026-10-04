@@ -60,7 +60,7 @@ namespace SparkleLauncher
 	{
 		std::string Id;
 		std::vector<std::string> DependencyIds;
-		std::function<CapabilityEvaluation<RequestT>(bool invalidated)> Evaluate;
+		std::function<CapabilityEvaluation<RequestT>()> Evaluate;
 	};
 
 	template <typename RequestT> struct CapabilityResolution
@@ -76,8 +76,6 @@ namespace SparkleLauncher
 		std::string CapabilityId;
 		std::vector<std::string> DependencyPath;
 		std::optional<RequestT> OperationRequest;
-		std::set<std::string> InvalidatedCapabilityIds;
-		std::set<std::string> RevalidatedCapabilityIds;
 		std::string StatusMessage;
 		bool CompletesGoal = false;
 	};
@@ -118,9 +116,7 @@ namespace SparkleLauncher
 			return {};
 		}
 
-		CapabilityResolution<RequestT> Resolve(
-		    const std::string& goalCapabilityId,
-		    const std::set<std::string>& invalidatedCapabilityIds = {}) const
+		CapabilityResolution<RequestT> Resolve(const std::string& goalCapabilityId) const
 		{
 			if (!m_definitions.contains(goalCapabilityId))
 			{
@@ -137,15 +133,7 @@ namespace SparkleLauncher
 			}
 
 			std::set<std::string> resolved;
-			std::set<std::string> revalidated;
-			CapabilityResolution<RequestT> resolution =
-			    ResolveCapability(goalCapabilityId, goalCapabilityId, invalidatedCapabilityIds, resolved, revalidated, {});
-			resolution.RevalidatedCapabilityIds = std::move(revalidated);
-			if (resolution.Result == CapabilityResolution<RequestT>::Kind::RunOperation)
-			{
-				CollectDirectDependentIds(resolution.CapabilityId, resolution.InvalidatedCapabilityIds);
-			}
-			return resolution;
+			return ResolveCapability(goalCapabilityId, goalCapabilityId, resolved, {});
 		}
 
 		std::string Validate() const
@@ -186,21 +174,6 @@ namespace SparkleLauncher
 			return resolution;
 		}
 
-		void CollectDirectDependentIds(const std::string& capabilityId, std::set<std::string>& dependentIds) const
-		{
-			for (const auto& [candidateId, definition] : m_definitions)
-			{
-				for (const std::string& dependencyId : definition.DependencyIds)
-				{
-					if (dependencyId == capabilityId)
-					{
-						dependentIds.insert(candidateId);
-						break;
-					}
-				}
-			}
-		}
-
 		std::string ValidateCapability(
 		    const std::string& capabilityId,
 		    std::set<std::string>& visiting,
@@ -239,9 +212,7 @@ namespace SparkleLauncher
 		CapabilityResolution<RequestT> ResolveCapability(
 		    const std::string& capabilityId,
 		    const std::string& goalCapabilityId,
-		    const std::set<std::string>& invalidatedCapabilityIds,
 		    std::set<std::string>& resolved,
-		    std::set<std::string>& revalidated,
 		    std::vector<std::string> dependencyPath) const
 		{
 			dependencyPath.push_back(capabilityId);
@@ -250,13 +221,9 @@ namespace SparkleLauncher
 				return ReadyResolution(capabilityId, std::move(dependencyPath));
 			}
 			const CapabilityDefinition<RequestT>& definition = m_definitions.at(capabilityId);
-			CapabilityEvaluation<RequestT> evaluation = definition.Evaluate(invalidatedCapabilityIds.contains(capabilityId));
+			CapabilityEvaluation<RequestT> evaluation = definition.Evaluate();
 			if (evaluation.State == CapabilityState::Ready)
 			{
-				if (invalidatedCapabilityIds.contains(capabilityId))
-				{
-					revalidated.insert(capabilityId);
-				}
 				resolved.insert(capabilityId);
 				return ReadyResolution(capabilityId, std::move(dependencyPath));
 			}
@@ -267,21 +234,16 @@ namespace SparkleLauncher
 
 			for (const std::string& dependencyId : definition.DependencyIds)
 			{
-				CapabilityResolution<RequestT> dependency =
-				    ResolveCapability(dependencyId, goalCapabilityId, invalidatedCapabilityIds, resolved, revalidated, dependencyPath);
+				CapabilityResolution<RequestT> dependency = ResolveCapability(dependencyId, goalCapabilityId, resolved, dependencyPath);
 				if (dependency.Result != CapabilityResolution<RequestT>::Kind::Ready)
 				{
 					return dependency;
 				}
 			}
 
-			evaluation = definition.Evaluate(invalidatedCapabilityIds.contains(capabilityId));
+			evaluation = definition.Evaluate();
 			if (evaluation.State == CapabilityState::Ready)
 			{
-				if (invalidatedCapabilityIds.contains(capabilityId))
-				{
-					revalidated.insert(capabilityId);
-				}
 				resolved.insert(capabilityId);
 				return ReadyResolution(capabilityId, std::move(dependencyPath));
 			}

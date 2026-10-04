@@ -325,8 +325,11 @@ namespace SparkleLauncher
 
 		if (!plan.CanRun)
 		{
-			operation.FailureSummary =
-			    plan.ReadinessMessages.empty() ? "Clean operation is not ready to run." : plan.ReadinessMessages.front();
+			SetOperationFailure(
+			    operation,
+			    OperationProblemKind::Prerequisite,
+			    plan.ReadinessMessages.empty() ? "Clean operation is not ready to run." : plan.ReadinessMessages.front(),
+			    "Adjust the selected clean scope or resolve the reported path prerequisite, then retry.");
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
 		}
@@ -341,7 +344,11 @@ namespace SparkleLauncher
 			std::string errorMessage;
 			if (!RunCleanStep(step, preservedPaths, errorMessage))
 			{
-				operation.FailureSummary = MakeCleanFailureSummary(step, operation, errorMessage);
+				SetOperationFailure(
+				    operation,
+				    OperationProblemKind::Filesystem,
+				    MakeCleanFailureSummary(step, operation, errorMessage),
+				    "Close processes using this scope, verify path permissions, then retry Clean.");
 				MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 				return operation;
 			}

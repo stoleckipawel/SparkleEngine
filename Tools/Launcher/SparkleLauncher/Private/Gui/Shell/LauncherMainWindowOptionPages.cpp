@@ -6,6 +6,7 @@
 #include "LauncherLayoutWidgets.h"
 #include "LauncherOperationRequestFactory.h"
 #include "LauncherPageUtilities.h"
+#include "LauncherSelectionWidgets.h"
 #include "LauncherContentModel.h"
 #include "LauncherSettings.h"
 #include "LauncherToolchainUiModel.h"
@@ -18,7 +19,6 @@
 #include "SparkleLauncher/MaintenanceOperations.h"
 
 #include <QtCore/QRegularExpression>
-#include <QtCore/QSignalBlocker>
 #include <QtCore/QStringList>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
@@ -93,10 +93,6 @@ namespace SparkleLauncher
 		QVBoxLayout* buildLayout =
 		    AddOptionGroup(layout, "Choose products", "Select the products to build. CMake resolves their shared dependencies.");
 
-		QLabel* selectionSummary = new QLabel(buildLayout->parentWidget());
-		selectionSummary->setObjectName("WorkflowSelectionSummary");
-		buildLayout->addWidget(selectionSummary);
-
 		QFrame* selectionPanel = new QFrame(buildLayout->parentWidget());
 		selectionPanel->setObjectName("WorkflowSelectionPanel");
 		selectionPanel->setMinimumWidth(LauncherUi::ScopeSelection::ContentMinWidth);
@@ -104,6 +100,17 @@ namespace SparkleLauncher
 		QVBoxLayout* selectionLayout = new QVBoxLayout(selectionPanel);
 		selectionLayout->setContentsMargins(0, 0, 0, 0);
 		selectionLayout->setSpacing(0);
+		QVector<QCheckBox*> selectAllBoxes;
+		AddWorkflowScopeRow(
+		    *selectionLayout,
+		    "All",
+		    QString(),
+		    "Select every available product.",
+		    QString(),
+		    true,
+		    QStringList(),
+		    selectAllBoxes);
+		QCheckBox* selectAllBox = selectAllBoxes.front();
 
 		AddWorkflowScopeRow(
 		    *selectionLayout,
@@ -146,15 +153,8 @@ namespace SparkleLauncher
 
 		AddWorkflowAutomationNote(*buildLayout, "CMake refreshes stale build files and skips current targets.");
 
-		for (QCheckBox* scopeBox : scopeBoxes)
-		{
-			connect(
-			    scopeBox,
-			    &QCheckBox::toggled,
-			    this,
-			    [this, scopeBoxes, selectionSummary]() { UpdateBuildScopeSetting(scopeBoxes, selectionSummary); });
-		}
-		UpdateBuildScopeSetting(scopeBoxes, selectionSummary);
+		ConnectSelectAllScopeBox(selectAllBox, scopeBoxes, this, [this, scopeBoxes](bool) { UpdateBuildScopeSetting(scopeBoxes); });
+		UpdateBuildScopeSetting(scopeBoxes);
 		AddBuildEnvironmentStatus(layout, "workspace.build");
 	}
 
@@ -180,7 +180,6 @@ namespace SparkleLauncher
 		QCheckBox* scopeBox = new QCheckBox(label, scopeRow);
 		scopeBox->setObjectName("WorkflowScopeCheckBox");
 		scopeBox->setProperty("ScopeValue", value);
-		scopeBox->setProperty("ScopeLabel", label);
 		scopeBox->setToolTip(detail);
 		scopeBox->setChecked(available && selectedScopes.contains(value));
 		scopeBox->setEnabled(available);
@@ -233,27 +232,9 @@ namespace SparkleLauncher
 		layout.addWidget(automationNote);
 	}
 
-	void LauncherMainWindow::UpdateBuildScopeSetting(const QVector<QCheckBox*>& scopeBoxes, QLabel* selectionSummary)
+	void LauncherMainWindow::UpdateBuildScopeSetting(const QVector<QCheckBox*>& scopeBoxes)
 	{
-		QStringList selectedValues;
-		QStringList selectedLabels;
-		for (QCheckBox* scopeBox : scopeBoxes)
-		{
-			if (scopeBox != nullptr && scopeBox->isEnabled() && scopeBox->isChecked())
-			{
-				selectedValues.push_back(scopeBox->property("ScopeValue").toString());
-				selectedLabels.push_back(scopeBox->property("ScopeLabel").toString());
-			}
-		}
-
-		if (selectionSummary != nullptr)
-		{
-			selectionSummary->setText(QStringLiteral("Select at least one product to build."));
-			selectionSummary->setProperty("State", selectedLabels.empty() ? "warning" : "ok");
-			selectionSummary->setVisible(selectedLabels.empty());
-			selectionSummary->style()->unpolish(selectionSummary);
-			selectionSummary->style()->polish(selectionSummary);
-		}
+		const QStringList selectedValues = CollectSelectedScopeValues(scopeBoxes);
 		m_settings.SetBuildScopes(selectedValues.join(';'));
 		UpdateRunAvailability();
 	}
@@ -277,6 +258,17 @@ namespace SparkleLauncher
 		QVBoxLayout* selectionLayout = new QVBoxLayout(selectionPanel);
 		selectionLayout->setContentsMargins(0, 0, 0, 0);
 		selectionLayout->setSpacing(0);
+		QVector<QCheckBox*> selectAllBoxes;
+		AddWorkflowScopeRow(
+		    *selectionLayout,
+		    "All",
+		    QString(),
+		    "Select every available output.",
+		    QString(),
+		    true,
+		    QStringList(),
+		    selectAllBoxes);
+		QCheckBox* selectAllBox = selectAllBoxes.front();
 
 		AddWorkflowScopeRow(
 		    *selectionLayout,
@@ -317,14 +309,11 @@ namespace SparkleLauncher
 		              "ShaderCompiler discovers typed shaders and canonical targets. Incremental cooking preserves unaffected map entries.")
 		        : QStringLiteral("Incremental cooking reuses current outputs."));
 
-		for (QCheckBox* scopeBox : scopeBoxes)
-		{
-			connect(
-			    scopeBox,
-			    &QCheckBox::toggled,
-			    this,
-			    [this, scopeBoxes, selectionSummary]() { UpdateCookScopeSetting(scopeBoxes, selectionSummary); });
-		}
+		ConnectSelectAllScopeBox(
+		    selectAllBox,
+		    scopeBoxes,
+		    this,
+		    [this, scopeBoxes, selectionSummary](bool) { UpdateCookScopeSetting(scopeBoxes, selectionSummary); });
 		UpdateCookScopeSetting(scopeBoxes, selectionSummary);
 
 		AddBuildEnvironmentStatus(layout, "cook.workspace");
@@ -332,25 +321,8 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::UpdateCookScopeSetting(const QVector<QCheckBox*>& scopeBoxes, QLabel* selectionSummary)
 	{
-		QStringList selectedValues;
-		QStringList selectedLabels;
-		for (QCheckBox* scopeBox : scopeBoxes)
-		{
-			if (scopeBox != nullptr && scopeBox->isEnabled() && scopeBox->isChecked())
-			{
-				selectedValues.push_back(scopeBox->property("ScopeValue").toString());
-				selectedLabels.push_back(scopeBox->property("ScopeLabel").toString());
-			}
-		}
-
-		if (selectionSummary != nullptr)
-		{
-			selectionSummary->setText(QStringLiteral("Select at least one output to cook."));
-			selectionSummary->setProperty("State", selectedLabels.empty() ? "warning" : "ok");
-			selectionSummary->setVisible(selectedLabels.empty());
-			selectionSummary->style()->unpolish(selectionSummary);
-			selectionSummary->style()->polish(selectionSummary);
-		}
+		const QStringList selectedValues = CollectSelectedScopeValues(scopeBoxes);
+		UpdateScopeSelectionSummary(selectionSummary, !selectedValues.empty(), "Select at least one output to cook.");
 		m_settings.SetCookScopes(selectedValues.join(';'));
 		UpdateRunAvailability();
 	}
@@ -381,7 +353,8 @@ namespace SparkleLauncher
 		        "Local state and caches"},
 		    {"Logs",
 		        "logs",
-		        "Remove product and launcher logs from per-user state plus any legacy repository/content logs; keep the current launcher log until exit.",
+		        "Remove product and launcher logs from per-user state plus any legacy repository/content logs; keep the current launcher "
+		        "log until exit.",
 		        "product, launcher, and legacy logs",
 		        "Local state and caches"},
 		}};
@@ -400,8 +373,6 @@ namespace SparkleLauncher
 		    "Select only what should be regenerated. Project source files and synced levels are preserved. You will confirm before "
 		    "cleaning.");
 
-		QLabel* selectionSummary = nullptr;
-
 		QFrame* selectionPanel = new QFrame(cleanLayout->parentWidget());
 		selectionPanel->setObjectName("CleanSelectionPanel");
 		selectionPanel->setMinimumWidth(LauncherUi::ScopeSelection::ContentMinWidth);
@@ -409,6 +380,19 @@ namespace SparkleLauncher
 		QVBoxLayout* selectionLayout = new QVBoxLayout(selectionPanel);
 		selectionLayout->setContentsMargins(0, 0, 0, 0);
 		selectionLayout->setSpacing(0);
+		QVector<QCheckBox*> selectAllBoxes;
+		AddCleanScopeRow(
+		    *selectionLayout,
+		    {"All",
+		        "clean-all",
+		        "Remove build and cooked outputs, dependency caches, logs, and product user state including settings and captures. "
+		        "Confirmation is required.",
+		        "All generated data",
+		        QString()},
+		    contentId,
+		    selectedScopes,
+		    selectAllBoxes);
+		QCheckBox* selectAllBox = selectAllBoxes.front();
 
 		for (const QString& cleanGroup : cleanGroups)
 		{
@@ -427,16 +411,12 @@ namespace SparkleLauncher
 		}
 		cleanLayout->addWidget(selectionPanel);
 
-		for (QCheckBox* scopeBox : scopeBoxes)
-		{
-			connect(
-			    scopeBox,
-			    &QCheckBox::toggled,
-			    this,
-			    [this, scopeBoxes, selectionSummary, scopeBox]() { UpdateCleanScopeSetting(scopeBoxes, selectionSummary, scopeBox); });
-		}
-
-		UpdateCleanScopeSetting(scopeBoxes, selectionSummary);
+		ConnectSelectAllScopeBox(
+		    selectAllBox,
+		    scopeBoxes,
+		    this,
+		    [this, scopeBoxes](bool cleanAllRequested) { UpdateCleanScopeSetting(scopeBoxes, cleanAllRequested); });
+		UpdateCleanScopeSetting(scopeBoxes, selectedScopes.contains("clean-all"));
 	}
 
 	void LauncherMainWindow::AddCleanScopeRow(
@@ -459,9 +439,8 @@ namespace SparkleLauncher
 		QCheckBox* scopeBox = new QCheckBox(scope.Label, scopeRow);
 		scopeBox->setObjectName("CleanScopeCheckBox");
 		scopeBox->setToolTip(scope.Detail);
-		scopeBox->setProperty("CleanScope", scope.Value);
-		scopeBox->setProperty("CleanLabel", scope.Label);
-		scopeBox->setChecked(selectedScopes.contains(scope.Value) || (selectedScopes.empty() && scope.Value == "build-tree"));
+		scopeBox->setProperty("ScopeValue", scope.Value);
+		scopeBox->setChecked(selectedScopes.contains("clean-all") || selectedScopes.contains(scope.Value));
 		RegisterFocusable(scopeBox);
 		descriptionLayout->addWidget(scopeBox);
 
@@ -498,92 +477,10 @@ namespace SparkleLauncher
 		scopeBoxes.push_back(scopeBox);
 	}
 
-	void LauncherMainWindow::UpdateCleanScopeSetting(
-	    const QVector<QCheckBox*>& scopeBoxes,
-	    QLabel* selectionSummary,
-	    QCheckBox* changedScope)
+	void LauncherMainWindow::UpdateCleanScopeSetting(const QVector<QCheckBox*>& scopeBoxes, bool cleanAllRequested)
 	{
-		const auto findScopeBox = [&scopeBoxes](const QString& scopeValue) -> QCheckBox*
-		{
-			for (QCheckBox* scopeBox : scopeBoxes)
-			{
-				if (scopeBox != nullptr && scopeBox->property("CleanScope").toString() == scopeValue)
-				{
-					return scopeBox;
-				}
-			}
-			return nullptr;
-		};
-		const auto clearScope = [&findScopeBox](const QString& scopeValue)
-		{
-			if (QCheckBox* scopeBox = findScopeBox(scopeValue))
-			{
-				const QSignalBlocker blocker(scopeBox);
-				scopeBox->setChecked(false);
-				if (QWidget* scopeRow = scopeBox->parentWidget())
-				{
-					scopeRow->setProperty("Selected", false);
-					scopeRow->style()->unpolish(scopeRow);
-					scopeRow->style()->polish(scopeRow);
-				}
-			}
-		};
-
-		if (changedScope != nullptr && changedScope->isChecked())
-		{
-			const QString changedValue = changedScope->property("CleanScope").toString();
-			if (changedValue == "artifacts")
-			{
-				clearScope("cooked");
-			}
-			else if (changedValue == "cooked")
-			{
-				clearScope("artifacts");
-			}
-		}
-		else if (changedScope == nullptr)
-		{
-			if (QCheckBox* artifacts = findScopeBox("artifacts"); artifacts != nullptr && artifacts->isChecked())
-			{
-				clearScope("cooked");
-			}
-		}
-
-		QStringList selectedValues;
-		QStringList selectedLabels;
-		for (QCheckBox* scopeBox : scopeBoxes)
-		{
-			if (scopeBox != nullptr && scopeBox->isChecked())
-			{
-				selectedValues.push_back(scopeBox->property("CleanScope").toString());
-				selectedLabels.push_back(scopeBox->property("CleanLabel").toString());
-			}
-		}
-
-		if (selectedValues.empty())
-		{
-			if (QCheckBox* buildWorkspace = findScopeBox("build-tree"))
-			{
-				const QSignalBlocker blocker(buildWorkspace);
-				buildWorkspace->setChecked(true);
-				if (QWidget* scopeRow = buildWorkspace->parentWidget())
-				{
-					scopeRow->setProperty("Selected", true);
-					scopeRow->style()->unpolish(scopeRow);
-					scopeRow->style()->polish(scopeRow);
-				}
-			}
-			selectedValues.push_back("build-tree");
-			selectedLabels.push_back("Build workspace");
-		}
-
-		if (selectionSummary != nullptr)
-		{
-			selectionSummary->setText(
-			    selectedLabels.size() == 1 ? QStringLiteral("Selected: %1").arg(selectedLabels.front())
-			                               : QStringLiteral("%1 categories selected").arg(selectedLabels.size()));
-		}
-		m_settings.SetCleanScope(selectedValues.join(';'));
+		const QStringList selectedValues = CollectSelectedScopeValues(scopeBoxes);
+		m_settings.SetCleanScope(cleanAllRequested ? QStringLiteral("clean-all") : selectedValues.join(';'));
 		UpdateRunAvailability();
 	}
 
