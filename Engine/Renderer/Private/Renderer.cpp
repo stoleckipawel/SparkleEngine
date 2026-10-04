@@ -4,7 +4,6 @@
 #include "Concurrency/Coordinator/RenderCoordinator.h"
 #include "GameFramework/Public/Rendering/RenderFrameSubmission.h"
 #include "Integrations/RendererExternalRuntime.h"
-#include "Settings/EngineRenderingSettingsRuntime.h"
 
 class RendererFacadeState final
 {
@@ -42,7 +41,12 @@ UiTextureHandle Renderer::GetViewportPresentationTexture() const
 
 EngineRenderingSettingsState Renderer::CaptureRenderingSettings() const noexcept
 {
-	return EngineRenderingSettingsRuntime::Capture();
+	return m_state->Coordinator.CaptureRenderingSettings();
+}
+
+CVarControlResult Renderer::ExecuteConsoleVariables(CVarControlRequest request)
+{
+	return m_state->Coordinator.ExecuteConsoleVariables(std::move(request));
 }
 
 void Renderer::ReloadShaders()

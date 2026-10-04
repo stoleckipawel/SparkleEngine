@@ -12,22 +12,19 @@ RenderThreadCommandQueue::RenderThreadCommandQueue(std::size_t capacity) :
 	}
 }
 
-void RenderThreadCommandQueue::WaitPush(RenderThreadCommand command)
+bool RenderThreadCommandQueue::WaitPush(RenderThreadCommand command)
 {
 	{
 		std::unique_lock lock(m_mutex);
 		m_notFull.wait(lock, [this] { return m_closed || m_commands.size() < m_capacity; });
 		if (m_closed)
 		{
-			Diagnostics::Fatal(
-			    g_renderThreadCommandQueueLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Render-thread command queue closed while the producer was submitting a command.");
+			return false;
 		}
 		m_commands.push_back(std::move(command));
 	}
 	m_notEmpty.notify_one();
+	return true;
 }
 
 std::optional<RenderThreadCommand> RenderThreadCommandQueue::WaitPop()

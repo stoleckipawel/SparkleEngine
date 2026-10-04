@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EditorAPI.h"
+#include "Core/Public/Console/CVarControl.h"
 
 #include <cstdint>
 #include <memory>
@@ -14,7 +15,7 @@ struct ConsoleOutputRecord;
 class SPARKLE_EDITOR_API EditorConsoleSystem final
 {
 public:
-	EditorConsoleSystem();
+	explicit EditorConsoleSystem(CVarControlExecutor executor);
 	~EditorConsoleSystem() noexcept;
 
 	EditorConsoleSystem(const EditorConsoleSystem&) = delete;

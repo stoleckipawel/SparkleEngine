@@ -1,9 +1,11 @@
 #pragma once
 
-#include <functional>
-#include <memory>
+#include "Core/Public/Console/CVarControl.h"
+#include "Renderer/Public/UI/UiRenderPacket.h"
 
-class Renderer;
+#include <memory>
+#include <optional>
+
 class RuntimeConsoleOverlay;
 class Timer;
 class Window;
@@ -11,9 +13,7 @@ class Window;
 class RuntimeConsoleHost final
 {
 public:
-	using RuntimeUpdate = std::function<void()>;
-
-	RuntimeConsoleHost(Timer& timer, Window& window);
+	RuntimeConsoleHost(Timer& timer, Window& window, CVarControlExecutor executor);
 	~RuntimeConsoleHost() noexcept;
 
 	RuntimeConsoleHost(const RuntimeConsoleHost&) = delete;
@@ -21,7 +21,7 @@ public:
 	RuntimeConsoleHost(RuntimeConsoleHost&&) = delete;
 	RuntimeConsoleHost& operator=(RuntimeConsoleHost&&) = delete;
 
-	void TickFrame(Renderer& renderer, const RuntimeUpdate& updateRuntime);
+	std::optional<UiRenderPacket> Update();
 
 private:
 	std::unique_ptr<RuntimeConsoleOverlay> m_overlay;

@@ -3,6 +3,7 @@
 
 #include "Concurrency/FrameQueue/RenderExecutionRequest.h"
 #include "Core/Public/Diagnostics/Error.h"
+#include "Core/Public/Console/CVarRegistry.h"
 #include "Frame/FramePipeline.h"
 #include "Host/RendererBackendConfiguration.h"
 #include "Host/RendererHost.h"
@@ -64,6 +65,10 @@ void RendererExecutionContext::ExecuteControl(RendererExecutionControl control) 
 			    (void) m_pipeline->BeginViewportCapture(command.Id, command.Request);
 		    else if constexpr (std::is_same_v<TCommand, RenderSettingsChangedCommand>)
 			    EngineRenderingSettingsRuntime::Apply(command.Settings);
+		    else if constexpr (std::is_same_v<TCommand, RenderCVarCommand>)
+			    command.Completion->Complete(ExecuteCVarControl(ConsoleVariableRegistry::Get(), std::move(command.Request)));
+		    else if constexpr (std::is_same_v<TCommand, RenderSettingsCaptureCommand>)
+			    command.Completion->Complete(EngineRenderingSettingsRuntime::Capture());
 		    else if constexpr (std::is_same_v<TCommand, RenderShutdownCommand>)
 			    SettleRendererBeforeDestruction();
 	    },

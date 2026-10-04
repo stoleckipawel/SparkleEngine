@@ -16,11 +16,11 @@
 
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-RuntimeConsoleOverlay::RuntimeConsoleOverlay(Timer& timer, Window& window) :
+RuntimeConsoleOverlay::RuntimeConsoleOverlay(Timer& timer, Window& window, CVarControlExecutor executor) :
     m_timer(&timer),
     m_window(&window)
 {
-	ConsoleBuiltinCommands::Register(m_commandRegistry);
+	ConsoleBuiltinCommands::Register(m_commandRegistry, std::move(executor));
 	m_consoleSession = std::make_unique<ConsoleSession>(m_commandRegistry, ConsoleCommandScope::Runtime);
 	m_renderPacketBuilder = std::make_unique<ImGuiRenderPacketBuilder>();
 	m_consoleSession->AddOutput(ConsoleCommandSeverity::Info, "Runtime console ready. Press tilde to close.");

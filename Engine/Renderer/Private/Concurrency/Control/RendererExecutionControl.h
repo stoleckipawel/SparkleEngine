@@ -54,6 +54,17 @@ struct RenderShutdownCommand final
 {
 };
 
+struct RenderCVarCommand final
+{
+	CVarControlRequest Request;
+	std::shared_ptr<RenderControlCompletion> Completion;
+};
+
+struct RenderSettingsCaptureCommand final
+{
+	std::shared_ptr<RenderControlCompletion> Completion;
+};
+
 using RendererExecutionControl = std::variant<
     RenderResizeCommand,
     RenderViewportCommand,
@@ -61,4 +72,6 @@ using RendererExecutionControl = std::variant<
     RenderDiagnosticsCommand,
     RenderCaptureCommand,
     RenderSettingsChangedCommand,
-    RenderShutdownCommand>;
+    RenderShutdownCommand,
+    RenderCVarCommand,
+    RenderSettingsCaptureCommand>;

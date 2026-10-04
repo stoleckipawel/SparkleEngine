@@ -142,11 +142,51 @@ void RenderCoordinator::DispatchControl(RendererExecutionControl control)
 	}
 }
 
+CVarControlResult RenderCoordinator::ExecuteConsoleVariables(CVarControlRequest request)
+{
+	m_producerOwner.AssertAccess();
+	RenderControlResult result =
+	    ExecuteSynchronousControl(RenderCVarCommand{std::move(request), std::make_shared<RenderControlCompletion>()});
+	if (auto* error = std::get_if<RenderControlError>(&result))
+		return {.Error = std::move(error->Message)};
+	return std::get<CVarControlResult>(std::move(result));
+}
+
+EngineRenderingSettingsState RenderCoordinator::CaptureRenderingSettings()
+{
+	m_producerOwner.AssertAccess();
+	return ExtractControlResult<EngineRenderingSettingsState>(
+	    ExecuteSynchronousControl(RenderSettingsCaptureCommand{std::make_shared<RenderControlCompletion>()}));
+}
+
 void RenderCoordinator::SubmitThreadCommand(RenderThreadCommandPayload payload)
 {
 	m_producerOwner.AssertAccess();
 	const std::uint64_t sequenceNumber = IssueThreadCommandSequence();
-	m_threadCommandQueue->WaitPush(RenderThreadCommand{sequenceNumber, std::move(payload)});
+	std::shared_ptr<RenderControlCompletion> completion;
+	bool shutdown = false;
+	if (const auto* control = std::get_if<RendererExecutionControl>(&payload))
+	{
+		shutdown = std::holds_alternative<RenderShutdownCommand>(*control);
+		std::visit(
+		    [&completion](const auto& command)
+		    {
+			    if constexpr (requires { command.Completion; })
+				    completion = command.Completion;
+		    },
+		    *control);
+	}
+	if (!m_threadCommandQueue->WaitPush(RenderThreadCommand{sequenceNumber, std::move(payload)}))
+	{
+		if (completion)
+			completion->Cancel();
+		else if (!shutdown)
+			Diagnostics::Fatal(
+			    g_renderCoordinatorLogger,
+			    __FILE__,
+			    __LINE__,
+			    "Render-thread command queue rejected submission after closing.");
+	}
 }
 
 template <typename TCommand> RenderControlResult RenderCoordinator::ExecuteSynchronousControl(TCommand command)

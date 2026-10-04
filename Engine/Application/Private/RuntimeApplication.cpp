@@ -151,7 +151,10 @@ void RuntimeApplication::InitializeRuntimeConsole()
 {
 	if (m_options.EnableRuntimeConsole)
 	{
-		m_runtimeConsoleHost = std::make_unique<RuntimeConsoleHost>(*m_timer, *m_window);
+		m_runtimeConsoleHost = std::make_unique<RuntimeConsoleHost>(
+		    *m_timer,
+		    *m_window,
+		    [this](CVarControlRequest request) { return m_renderer->ExecuteConsoleVariables(std::move(request)); });
 	}
 }
 
@@ -261,15 +264,15 @@ bool RuntimeApplication::Tick()
 			break;
 	}
 
+	UpdateRuntime();
 	if (m_runtimeConsoleHost != nullptr)
 	{
-		m_runtimeConsoleHost->TickFrame(*m_renderer, [this]() { UpdateRuntime(); });
+		if (auto packet = m_runtimeConsoleHost->Update())
+		{
+			m_renderer->SubmitUiRenderPacket(std::move(*packet));
+		}
 	}
-	else
-	{
-		UpdateRuntime();
-		m_renderer->OnRender();
-	}
+	m_renderer->OnRender();
 	return true;
 }
 

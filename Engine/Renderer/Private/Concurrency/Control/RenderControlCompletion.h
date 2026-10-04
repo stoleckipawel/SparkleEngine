@@ -5,6 +5,8 @@
 #include "Meshes/MeshDiagnostics.h"
 #include "Resources/Textures/TextureDiagnostics.h"
 #include "Viewport/ViewportContracts.h"
+#include "Core/Public/Console/CVarControl.h"
+#include "Renderer/Public/Settings/EngineRenderingSettings.h"
 
 #include <condition_variable>
 #include <mutex>
@@ -22,7 +24,9 @@ using RenderControlResult = std::variant<
     MeshDiagnosticsSnapshot,
     MeshPreviewGeometry,
     TextureDiagnosticsSnapshot,
-    RendererMemoryDiagnosticsSnapshot>;
+    RendererMemoryDiagnosticsSnapshot,
+    CVarControlResult,
+    EngineRenderingSettingsState>;
 
 class RenderControlCompletion final
 {

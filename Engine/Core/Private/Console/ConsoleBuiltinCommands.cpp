@@ -7,8 +7,9 @@
 #include "Core/Public/Console/CVarRegistry.h"
 #include "Core/Public/Strings/StringUtils.h"
 
-void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry, ConsoleVariableRegistry& cvarRegistry)
+void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry, CVarControlExecutor executor)
 {
+	auto& cvarRegistry = ConsoleVariableRegistry::Get();
 	commandRegistry.Register(
 	    ConsoleCommandDescriptor{
 	        .Name = "Help",
@@ -25,8 +26,8 @@ void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry, C
 	        .Help = "Lists registered console variables.",
 	        .ArgumentSyntax = "[filter]",
 	        .Scope = ConsoleCommandScope::Runtime,
-	        .Execute = [&cvarRegistry](ConsoleCommandScope, std::span<const std::string_view> arguments)
-	        { return ExecuteListCVars(cvarRegistry, arguments); },
+	        .Execute = [executor](ConsoleCommandScope, std::span<const std::string_view> arguments)
+	        { return ExecuteListCVars(executor, arguments); },
 	        .Complete = [&cvarRegistry](ConsoleCommandScope, const ConsoleAutocompleteRequest& request)
 	        { return CompleteCVarName(cvarRegistry, request.CurrentToken); },
 	    });
@@ -37,8 +38,8 @@ void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry, C
 	        .Help = "Prints a console variable value.",
 	        .ArgumentSyntax = "<name>",
 	        .Scope = ConsoleCommandScope::Runtime,
-	        .Execute = [&cvarRegistry](ConsoleCommandScope, std::span<const std::string_view> arguments)
-	        { return ExecuteGetCVar(cvarRegistry, arguments); },
+	        .Execute = [executor](ConsoleCommandScope, std::span<const std::string_view> arguments)
+	        { return ExecuteGetCVar(executor, arguments); },
 	        .Complete = [&cvarRegistry](ConsoleCommandScope, const ConsoleAutocompleteRequest& request)
 	        { return CompleteCVarName(cvarRegistry, request.CurrentToken); },
 	    });
@@ -49,16 +50,11 @@ void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry, C
 	        .Help = "Sets a console variable value.",
 	        .ArgumentSyntax = "<name> <value>",
 	        .Scope = ConsoleCommandScope::Runtime,
-	        .Execute = [&cvarRegistry](ConsoleCommandScope, std::span<const std::string_view> arguments)
-	        { return ExecuteSetCVar(cvarRegistry, arguments); },
+	        .Execute = [executor](ConsoleCommandScope, std::span<const std::string_view> arguments)
+	        { return ExecuteSetCVar(executor, arguments); },
 	        .Complete = [&cvarRegistry](ConsoleCommandScope, const ConsoleAutocompleteRequest& request)
 	        { return CompleteCVarName(cvarRegistry, request.CurrentToken); },
 	    });
-}
-
-void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry)
-{
-	Register(commandRegistry, ConsoleVariableRegistry::Get());
 }
 
 ConsoleCommandResult ConsoleBuiltinCommands::ExecuteHelp(
@@ -96,39 +92,17 @@ ConsoleCommandResult ConsoleBuiltinCommands::ExecuteHelp(
 }
 
 ConsoleCommandResult ConsoleBuiltinCommands::ExecuteListCVars(
-    const ConsoleVariableRegistry& cvarRegistry,
+    const CVarControlExecutor& executor,
     std::span<const std::string_view> arguments)
 {
-	const std::string_view filter = arguments.empty() ? std::string_view{} : arguments.front();
-	std::string output;
-	for (const ConsoleVariableBase* variable : cvarRegistry.GetVariables())
-	{
-		if (variable == nullptr)
-		{
-			continue;
-		}
-		if (!filter.empty() && !Strings::ContainsIgnoreCase(variable->GetName(), filter)
-		    && !Strings::ContainsIgnoreCase(variable->GetDescription(), filter))
-		{
-			continue;
-		}
-
-		if (!output.empty())
-		{
-			output += '\n';
-		}
-		output += FormatCVar(*variable);
-	}
-
-	if (output.empty())
-	{
-		return ConsoleCommandResult::Warning("no CVars matched");
-	}
-	return ConsoleCommandResult::Success(output);
+	if (!executor)
+		return ConsoleCommandResult::Error("CVar control owner is unavailable.");
+	return FormatControlResult(
+	    executor({.Operation = CVarControlOperation::List, .Filter = arguments.empty() ? std::string{} : std::string(arguments.front())}));
 }
 
 ConsoleCommandResult ConsoleBuiltinCommands::ExecuteGetCVar(
-    const ConsoleVariableRegistry& cvarRegistry,
+    const CVarControlExecutor& executor,
     std::span<const std::string_view> arguments)
 {
 	if (arguments.size() != 1)
@@ -136,17 +110,13 @@ ConsoleCommandResult ConsoleBuiltinCommands::ExecuteGetCVar(
 		return ConsoleCommandResult::Error("usage: GetCVar <name>");
 	}
 
-	const ConsoleVariableBase* variable = cvarRegistry.Find(arguments.front());
-	if (variable == nullptr)
-	{
-		return ConsoleCommandResult::Error("unknown CVar: " + std::string(arguments.front()));
-	}
-
-	return ConsoleCommandResult::Success(FormatCVar(*variable));
+	if (!executor)
+		return ConsoleCommandResult::Error("CVar control owner is unavailable.");
+	return FormatControlResult(executor({.Operation = CVarControlOperation::Query, .Entries = {{std::string(arguments.front()), {}}}}));
 }
 
 ConsoleCommandResult ConsoleBuiltinCommands::ExecuteSetCVar(
-    ConsoleVariableRegistry& cvarRegistry,
+    const CVarControlExecutor& executor,
     std::span<const std::string_view> arguments)
 {
 	if (arguments.size() < 2)
@@ -154,20 +124,24 @@ ConsoleCommandResult ConsoleBuiltinCommands::ExecuteSetCVar(
 		return ConsoleCommandResult::Error("usage: SetCVar <name> <value>");
 	}
 
-	ConsoleVariableBase* variable = cvarRegistry.Find(arguments.front());
-	if (variable == nullptr)
-	{
-		return ConsoleCommandResult::Error("unknown CVar: " + std::string(arguments.front()));
-	}
+	if (!executor)
+		return ConsoleCommandResult::Error("CVar control owner is unavailable.");
+	return FormatControlResult(executor(
+	    {.Operation = CVarControlOperation::Set, .Entries = {{std::string(arguments.front()), Strings::Join(arguments, " ", 1)}}}));
+}
 
-	const std::string value = Strings::Join(arguments, " ", 1);
-	std::string errorMessage;
-	if (!variable->TrySetValueFromString(value, errorMessage))
+ConsoleCommandResult ConsoleBuiltinCommands::FormatControlResult(CVarControlResult result)
+{
+	if (!result.Error.empty())
+		return ConsoleCommandResult::Error(std::move(result.Error));
+	std::string output;
+	for (const CVarControlValue& value : result.Values)
 	{
-		return ConsoleCommandResult::Error("failed to set " + std::string(variable->GetName()) + ": " + errorMessage);
+		if (!output.empty())
+			output += '\n';
+		output += FormatCVar(value);
 	}
-
-	return ConsoleCommandResult::Success(FormatCVar(*variable));
+	return output.empty() ? ConsoleCommandResult::Warning("no CVars matched") : ConsoleCommandResult::Success(std::move(output));
 }
 
 std::vector<std::string> ConsoleBuiltinCommands::CompleteCVarName(const ConsoleVariableRegistry& cvarRegistry, std::string_view prefix)
@@ -199,18 +173,18 @@ std::string ConsoleBuiltinCommands::FormatCommandHelp(std::string_view name, std
 	return output;
 }
 
-std::string ConsoleBuiltinCommands::FormatCVar(const ConsoleVariableBase& variable)
+std::string ConsoleBuiltinCommands::FormatCVar(const CVarControlValue& variable)
 {
-	std::string output(variable.GetName());
+	std::string output(variable.Name);
 	output += " = ";
-	output += variable.GetValueAsString();
+	output += variable.Value;
 	output += " (";
-	output += variable.GetValueTypeName();
+	output += variable.Type;
 	output += ')';
-	if (!variable.GetDescription().empty())
+	if (!variable.Description.empty())
 	{
 		output += " - ";
-		output += variable.GetDescription();
+		output += variable.Description;
 	}
 	return output;
 }

@@ -3,30 +3,22 @@
 #include "RuntimeConsole/RuntimeConsoleHost.h"
 
 #include "RuntimeConsole/RuntimeConsoleOverlay.h"
-#include "Renderer.h"
 
-RuntimeConsoleHost::RuntimeConsoleHost(Timer& timer, Window& window)
+#include <utility>
+
+RuntimeConsoleHost::RuntimeConsoleHost(Timer& timer, Window& window, CVarControlExecutor executor)
 {
-	m_overlay = std::make_unique<RuntimeConsoleOverlay>(timer, window);
+	m_overlay = std::make_unique<RuntimeConsoleOverlay>(timer, window, std::move(executor));
 }
 
 RuntimeConsoleHost::~RuntimeConsoleHost() noexcept = default;
 
-void RuntimeConsoleHost::TickFrame(Renderer& renderer, const RuntimeUpdate& updateRuntime)
+std::optional<UiRenderPacket> RuntimeConsoleHost::Update()
 {
-	if (updateRuntime)
+	m_overlay->Update();
+	if (m_overlay->IsVisible())
 	{
-		updateRuntime();
+		return m_overlay->ConsumeRenderPacket();
 	}
-
-	if (m_overlay != nullptr)
-	{
-		m_overlay->Update();
-		if (m_overlay->IsVisible())
-		{
-			renderer.SubmitUiRenderPacket(m_overlay->ConsumeRenderPacket());
-		}
-	}
-
-	renderer.OnRender();
+	return std::nullopt;
 }

@@ -36,6 +36,8 @@ public:
 	void StageFrameSubmission(RenderFrameSubmission submission);
 	void StageUiRenderPacket(UiRenderPacket packet);
 	void SubmitRenderingSettings(EngineRenderingSettingsState settings);
+	EngineRenderingSettingsState CaptureRenderingSettings();
+	CVarControlResult ExecuteConsoleVariables(CVarControlRequest request);
 	void SubmitViewportRequest(ViewportRenderRequest request);
 	void RenderFrame();
 

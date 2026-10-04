@@ -14,7 +14,7 @@ class RenderThreadCommandQueue final
 public:
 	explicit RenderThreadCommandQueue(std::size_t capacity);
 
-	void WaitPush(RenderThreadCommand command);
+	bool WaitPush(RenderThreadCommand command);
 	std::optional<RenderThreadCommand> WaitPop();
 	std::vector<RenderThreadCommand> Drain();
 	void Close() noexcept;

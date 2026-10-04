@@ -43,6 +43,7 @@ Every integration MUST:
 - keep one mutable authority and explicit lifetime/publication boundaries;
 - prefer a complete vertical slice over a broad unfinished framework;
 - keep public APIs smaller and more stable than their private implementations;
+- enforce [System Core And Client Separation](../Foundations/ModuleOwnership.md#system-core-and-client-separation) as an acceptance-blocking boundary: clients consume focused system contracts and composition binds implementations, without core dependence on usage concerns;
 - introduce only complexity required by current behavior, with a named owner, consumer, lifetime, and deletion or falsification condition;
 - remove the path, adapter, flag, representation, or compatibility spelling it replaces;
 - classify performance impact and eliminate unnecessary work, movement, allocation, synchronization, and instrumentation before adding machinery to make them faster;

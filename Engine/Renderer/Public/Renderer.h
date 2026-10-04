@@ -10,6 +10,7 @@
 #include "UI/UiRenderPacket.h"
 #include "UI/UiTextureHandle.h"
 #include "Settings/EngineRenderingSettings.h"
+#include "Core/Public/Console/CVarControl.h"
 
 #include <cstdint>
 #include <memory>
@@ -40,6 +41,7 @@ public:
 	ViewportRenderProducts GetViewportRenderProducts() const;
 	UiTextureHandle GetViewportPresentationTexture() const;
 	EngineRenderingSettingsState CaptureRenderingSettings() const noexcept;
+	CVarControlResult ExecuteConsoleVariables(CVarControlRequest request);
 
 	void ReloadShaders();
 	std::uint64_t GetShaderGeneration() const noexcept;

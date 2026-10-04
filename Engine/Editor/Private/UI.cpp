@@ -155,6 +155,7 @@ UI::UI(EditorHostServices hostServices) :
 	    std::move(hostServices.RenderingSettings),
 	    std::move(hostServices.SubmitRenderingSettings),
 	    std::move(hostServices.CaptureRenderingSettings));
+	m_editorConsoleSystem = std::make_unique<EditorConsoleSystem>(std::move(hostServices.ConsoleVariables));
 
 	InitializeImGuiContext();
 	ApplyDpiScale(m_window->GetDpiScale());

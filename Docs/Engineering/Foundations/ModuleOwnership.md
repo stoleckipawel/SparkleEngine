@@ -6,6 +6,24 @@
 
 This standard owns implementation guardrails for architecture changes. The [repository map](../../Architecture/WholeRepositoryMap.md) describes a dated current-state snapshot and routes focused documents that own accepted and target system designs. Link those designs here; do not restate them as general rules.
 
+## System Core And Client Separation
+
+**Binding, acceptance-blocking architecture rule:** a system's core implementation MUST be independent of its clients' usage concerns. Clients depend on the system's focused semantic contracts; the system MUST NOT require a particular Application, Editor panel, console, Launcher workflow or other client to implement or interpret its core behavior. This is a driving design and review criterion, not an optional cleanup preference.
+
+The separation has three responsibilities:
+
+- **System core:** owns its algorithms, state, invariants, execution mechanics, validation, cancellation, publication and resource lifetime. It declares required external capabilities explicitly and never reaches outward into a client to obtain hidden implementation behavior.
+- **Client:** expresses intent, invokes supported operations and consumes documented results. Presentation, interaction and product-specific usage remain with the client, not in the reusable core. A client does not reach into private storage, queues, workers, caches or backend implementation, or receive a broad implementation owner merely to use one unrelated operation.
+- **Composition owner:** selects and binds actual implementations, provides required capabilities and sequences independent systems through their contracts. It owns callback/service lifetimes at that boundary; it does not duplicate either system's mechanism. A system may orchestrate its own internal capabilities, but must not orchestrate unrelated client workflows.
+
+The system's API MUST expose the operations its actual consumers need: registration/configuration where extension or setup is real, execution/submission, lifecycle/cancellation where stateful, and retrieval/publication of necessary results. Specify input/output ownership, valid call ordering, thread affinity, completion, failure and lifetime on those contracts. Do not expose implementation records as an API or force callers to reconstruct the system's algorithm from low-level steps. Conversely, do not add unused registration hooks or lifecycle for a stateless operation.
+
+Prefer an existing narrow public API, direct function, stable product, or bounded semantic callable. A concrete public facade is valid when its cohesive operations are exactly what the consumer needs; an abstract base, extra forwarding facade, universal context/settings bag, service locator, callback registry or plugin framework is not required to prove separation. Do not replace direct usage with layers whose only purpose is hiding a concrete name. No private-header dependency or retained owner escape hatch may bypass the admitted contract.
+
+**Shareability test:** within declared domain dependencies, the core must be usable by another host without importing the original client's implementation, changing core behavior or copying core state/policy. Replacing a client changes its presentation and composition bindings, not the system's algorithm; changing private core mechanics preserves consumer source where the semantic contract is unchanged. This test guides current boundaries; it does not authorize speculative packaging, ABI/versioning, dependency-free systems or hypothetical extension APIs.
+
+**Required review evidence:** classify each touched constructor, include/dependency, callback capture and material call as core contract, core implementation, client usage or composition. Trace a real client from input through the contract to execution and result, including shutdown. Reject outward client dependencies, implementation-shaped public types, broad owner injection into narrow clients, client-owned copies of core policy, or client orchestration embedded in the core. Record the smallest consumer compile/contract probe and the removal of the replaced coupling. Source-shape checks do not prove runtime behavior; a successful build does not excuse a violated boundary. Apply this gate to the complete touched path and fail acceptance until any violation is repaired, following the existing clean-break policy.
+
 ## Repository Shape
 
 Repository structure should read as:

@@ -5,6 +5,9 @@
 #include "Core/Public/Strings/StringUtils.h"
 
 #include <string>
+#include <atomic>
+#include <mutex>
+#include <variant>
 #include <string_view>
 #include <type_traits>
 #include <typeindex>
@@ -32,6 +35,7 @@ public:
 	virtual std::string GetValueAsString() const = 0;
 	virtual std::string GetValueTypeName() const = 0;
 	virtual bool TrySetValueFromString(std::string_view value, std::string& errorMessage) = 0;
+	virtual bool ValidateValueFromString(std::string_view value, std::string& errorMessage) const = 0;
 
 private:
 	std::string_view m_name;
@@ -56,11 +60,29 @@ public:
 	ConsoleVariable(ConsoleVariable&&) = delete;
 	ConsoleVariable& operator=(ConsoleVariable&&) = delete;
 
-	T Get() const noexcept { return m_value; }
+	T Get() const noexcept
+	{
+		if constexpr (std::is_trivially_copyable_v<T>)
+			return m_value.load();
+		else
+		{
+			std::lock_guard lock(m_valueMutex);
+			return m_value;
+		}
+	}
 
-	void Set(const T& value) noexcept { m_value = value; }
+	void Set(T value) noexcept
+	{
+		if constexpr (std::is_trivially_copyable_v<T>)
+			m_value.store(value);
+		else
+		{
+			std::lock_guard lock(m_valueMutex);
+			m_value = std::move(value);
+		}
+	}
 
-	std::string GetValueAsString() const override { return FormatValue(m_value); }
+	std::string GetValueAsString() const override { return FormatValue(Get()); }
 
 	std::string GetValueTypeName() const override { return ResolveValueTypeName(); }
 
@@ -72,8 +94,14 @@ public:
 			return false;
 		}
 
-		Set(parsedValue);
+		Set(std::move(parsedValue));
 		return true;
+	}
+
+	bool ValidateValueFromString(std::string_view value, std::string& errorMessage) const override
+	{
+		T typedValue{};
+		return ParseValue(value, typedValue, errorMessage);
 	}
 
 private:
@@ -187,5 +215,7 @@ private:
 		}
 	}
 
-	T m_value;
+	// Value synchronization protects incidental readers; frame-consistent batches still require the execution owner.
+	std::conditional_t<std::is_trivially_copyable_v<T>, std::atomic<T>, T> m_value;
+	[[no_unique_address]] mutable std::conditional_t<std::is_trivially_copyable_v<T>, std::monostate, std::mutex> m_valueMutex;
 };

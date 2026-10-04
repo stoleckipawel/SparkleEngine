@@ -61,6 +61,13 @@ duplicate. Verify that orchestrators own intent/order while capability owners co
 mechanics, and that callers do not repeat policy, transforms, validation, state, caches,
 fallbacks, or backend decisions. Search semantic equivalents, not only matching names.
 
+Apply ModuleOwnership.md's acceptance-blocking System Core And Client Separation rule.
+Trace constructors, includes, captures and calls across core contracts, implementation,
+clients and composition. Reject core dependence on client workflows, private-state access,
+broad implementation-owner injection into narrow clients and client policy copied into
+the core. Require focused APIs and explicit binding/lifetime; do not demand speculative
+interfaces, registries or packaging merely to claim shareability.
+
 Apply the single-truth and copy budget to every new holder and material data copy. Prefer
 references, views, handles, and moves. Accept a copied snapshot only for a named lifetime,
 thread, publication, edit/commit, serialization, or ABI boundary; require one producer,
@@ -142,6 +149,8 @@ For each changed capability, policy, transform, validation rule, and mutable fac
 10. reject a helper that consumes only another owner's vocabulary unless the containing subsystem contributes a real local/native invariant; after moving authority, require exact searches to prove that mirrored types, redundant derived fields, duplicate converters, and old call paths are gone.
 
 Report a placement defect when the same behavior or fact has more than one production authority, when logic lives in a caller because it was convenient rather than owned, or when feature work scatters knowledge across unrelated modules. Do not consolidate code whose semantics, lifetimes, failure contracts, or cost models are genuinely different merely because its syntax looks similar.
+
+Apply [System Core And Client Separation](../Foundations/ModuleOwnership.md#system-core-and-client-separation) as a mandatory gate on this placement audit. Retain the core/contract/client/composition classification for changed constructors, public types, includes, captures and calls; trace one real input-to-result path and shutdown. A client cannot bypass the contract or inject usage into the core. The existing public API or narrow capability should support another host within declared dependencies without importing the original client. An applicable violation is an acceptance-blocking architecture finding, not an optional style suggestion; compile success cannot waive it. Require only the smallest current contract, not hypothetical plugin/ABI infrastructure.
 
 ### 5. Review Outcome and Correctness
 
@@ -258,6 +267,7 @@ Before `PASS`, answer yes to every applicable question:
 - Does every material copy or new holder have a real boundary reason, one producer, an exact lifetime, and no path to become stale mutable truth?
 - Can every new concept and changed file justify its current consumer and reason to exist?
 - Are orchestration and capability mechanics separated without wrapper ceremony?
+- Are system core, public contract, clients and composition separated under the binding [client-separation gate](../Foundations/ModuleOwnership.md#system-core-and-client-separation), with no private access, broad implementation-owner injection or outward core dependence on client usage?
 - Does every shared invariant live with its neutral/domain owner, with sibling backends/providers containing only their genuinely native or capability-specific mechanics?
 - Did the changelist remove the complete replaced path and directly exposed duplicate authority?
 - Did it preserve exactly one current Sparkle-owned representation, with no internal versioning or legacy/migration/compatibility path and with disposable artifacts regenerated?

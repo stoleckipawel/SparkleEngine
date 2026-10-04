@@ -155,14 +155,13 @@ void RenderCoordinator::SettleAbandonedWork() noexcept
 		{
 			continue;
 		}
-		if (auto* reloadShaders = std::get_if<RenderReloadShadersCommand>(control))
-		{
-			reloadShaders->Completion->Cancel();
-		}
-		else if (auto* diagnostics = std::get_if<RenderDiagnosticsCommand>(control))
-		{
-			diagnostics->Completion->Cancel();
-		}
+		std::visit(
+		    [](auto& pending)
+		    {
+			    if constexpr (requires { pending.Completion; })
+				    pending.Completion->Cancel();
+		    },
+		    *control);
 	}
 	m_frameQueue->SettleAll();
 }

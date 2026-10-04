@@ -1,4 +1,5 @@
 #pragma once
+#include "Core/Public/Console/CVarControl.h"
 
 #include "EditorAPI.h"
 #include "Renderer/Public/Diagnostics/MeshPreviewGeometry.h"
@@ -53,6 +54,7 @@ struct EditorHostServices final
 	EngineRenderingSettingsState RenderingSettings;
 	std::function<void(EngineRenderingSettingsState)> SubmitRenderingSettings;
 	std::function<EngineRenderingSettingsState()> CaptureRenderingSettings;
+	CVarControlExecutor ConsoleVariables;
 	Window& HostWindow;
 	InputSystem& Input;
 };

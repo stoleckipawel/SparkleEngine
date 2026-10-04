@@ -24,7 +24,7 @@ Do not read every engineering document by default. The change surface determines
 | harden a capability inventory or prepare its evidence map | [Capability Documentation Review](Workflow/CapabilityReview.md) | owns the developer/reviewer questions, dossier fields, and horizontal/vertical audit workflow |
 | add, split, move, or retire documentation | [Documentation Organization](Workflow/DocumentationOrganization.md) | owns knowledge placement, granularity, naming, and navigation |
 | research, architect, and stage a substantial new feature | [Feature Delivery Documentation Package](Workflow/Templates/FeatureDeliveryPackage.md) | supplies the reusable dossier, discovery, research, semantics, architecture, UX, acceptance, and implementation-prompt scaffold |
-| change a module boundary, dependency, API, owner, or lifetime | [Module Ownership](Foundations/ModuleOwnership.md) | owns structural and dependency rules |
+| change a module boundary, dependency, API, owner, lifetime, or client integration | [Module Ownership](Foundations/ModuleOwnership.md), especially [System Core And Client Separation](Foundations/ModuleOwnership.md#system-core-and-client-separation) | owns structural/dependency rules and the mandatory client/core/composition acceptance gate |
 | name a type, file, field, API, or concept | [Naming](Foundations/Naming.md) | owns vocabulary and naming rules |
 | add or change data storage, copies, snapshots, or allocation | [Data And Memory](Foundations/DataAndMemory.md) | owns data-oriented design and the single-truth/copy budget |
 | apply C++ source formatting and language conventions | [Code Style](Foundations/CodeStyle.md) | owns source-level coding rules; executable configuration remains authoritative |

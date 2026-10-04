@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Public/Console/ConsoleCommandRegistry.h"
+#include "Core/Public/Console/CVarControl.h"
 #include "Core/Public/Events/ScopedEventHandle.h"
 #include "Renderer/Public/UI/UiRenderPacket.h"
 
@@ -22,7 +23,7 @@ struct WindowMessageEvent;
 class RuntimeConsoleOverlay final
 {
 public:
-	RuntimeConsoleOverlay(Timer& timer, Window& window);
+	RuntimeConsoleOverlay(Timer& timer, Window& window, CVarControlExecutor executor);
 	~RuntimeConsoleOverlay() noexcept;
 
 	RuntimeConsoleOverlay(const RuntimeConsoleOverlay&) = delete;

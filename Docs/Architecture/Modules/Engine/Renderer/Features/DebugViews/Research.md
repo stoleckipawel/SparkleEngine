@@ -2,7 +2,7 @@
 
 **Status:** research; external-source comparison, not Sparkle architecture or acceptance authority
 
-**Scope:** Unreal Engine, NVIDIA RTXPT/Donut, and AMD Cauldron precedent for view-mode ownership, exposure, tone curves, exact diagnostic presentation, and output conversion
+**Scope:** Unreal Engine, NVIDIA RTXPT/Donut, and AMD Cauldron precedent for view-mode ownership, CVar access/thread delivery, exposure, tone curves, exact diagnostic presentation, and output conversion
 
 **Local decision owners:** [Viewport Rendering Controls](Controls/README.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
 
@@ -31,7 +31,7 @@ Transferable lessons:
 
 Sparkle retains one `RenderViewMode` shared by Editor and runtime viewport owners. Direct/indirect lighting-lobe visibility and the source-present direct/indirect shadow-evaluation seams now supply the first real orthogonal consumers for the lower-level [show-flag target](Controls/ShowFlags.md). Epic's separate Show Flags menu supports the choice to keep those controls outside the mutually exclusive View Mode list, and its lighting-component presentation supports a browsable lighting category.
 
-Sparkle does **not** infer its CVar design from Unreal. Epic explicitly distinguishes show flags from scalability CVars. The revised local [Show-menu target](Controls/ShowFlags.md) chooses an Editor frontend for feature-named global CVars such as `r.Lighting.Shadows.Direct`, with feature-owned activation and disabled-work removal. It does not adopt a per-viewport typed Show set or an `r.ShowFlags` namespace. This is a Sparkle design choice, not a claim that Unreal uses the same execution/CVar mechanism. Sparkle also does not copy Unreal's full ViewFamily, category surface, visualization registry, dynamic custom flags, string mutation path, or shipping-policy machinery.
+Sparkle does **not** infer its Show-to-CVar mapping from Unreal. Epic explicitly distinguishes show flags from scalability CVars. The revised local [Show-menu target](Controls/ShowFlags.md) chooses an Editor frontend for feature-named global CVars such as `r.Lighting.Shadows.Direct`, with feature-owned activation and disabled-work removal. It does not adopt a per-viewport typed Show set or an `r.ShowFlags` namespace. This is a Sparkle design choice, not a claim that Unreal uses the same execution/CVar mechanism. Sparkle also does not copy Unreal's full ViewFamily, category surface, visualization registry, dynamic custom flags, string mutation path, or shipping-policy machinery.
 
 Primary sources:
 
@@ -41,6 +41,14 @@ Primary sources:
 - Epic, [Viewport Toolbar: View Mode and Show Flag Options](https://dev.epicgames.com/documentation/en-us/unreal-engine/viewport-toolbar#viewporttoolbarviewmodeandshowflagoptions)
 - Epic, [Viewport Show Flags](https://dev.epicgames.com/documentation/en-us/unreal-engine/viewport-show-flags-in-unreal-engine)
 - Epic, [Viewport Modes](https://dev.epicgames.com/documentation/en-us/unreal-engine/viewport-modes-in-unreal-engine)
+
+### CVar Access And Thread Delivery
+
+Epic's [C++ console guide](https://dev.epicgames.com/documentation/unreal-engine/console-variables-cplusplus-in-unreal-engine) demonstrates direct typed reads and distinguishes user intent from supported system state. It describes per-frame change detection, sinks and callbacks; callbacks carry cycle/deadlock and initialization-order risks. Retaining a CVar reference avoids repeated lookup without retaining its value.
+
+Epic's [TConsoleVariableData API](https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/Core/TConsoleVariableData) exposes GetValueOnGameThread, GetValueOnRenderThread and GetValueOnAnyThread. These are not merely naming aliases: the documented storage has separate main/render shadow values, and the accessors select the appropriate storage with different access costs. Unreal therefore is not evidence for a no-shadow implementation.
+
+**Local adoption boundary (2026-10-04):** adopt direct typed feature reads, retained user intent and explicit delivery ownership, not Unreal's shadow-value machinery. Sparkle keeps one authoritative value; Core Get/Set handles storage synchronization, and the existing execution owner admits frontend edits/queries between frame tickets. Atomic access alone cannot make multiple scalar writes one frame boundary. No value cache, sink, activation settings body or thread-named getter alias is justified. Feature-local IsEnabled/IsActive reads the actual CVar; generic frame composition does not implement thread selection or pass leaf values around. Client code receives the narrow generic control capability; Application binds its implementation. See the [accepted prerequisite route](Discovery.md#dvp-4a-1-bounded-prerequisite-route) and [AC-DVP-29/30](Acceptance.md#completion-criteria); these owners, not external precedent, decide local delivery and acceptance.
 
 ## NVIDIA RTXPT And Donut
 

@@ -105,12 +105,14 @@ void EditorApplication::InitializeUi()
 	    .SubmitWorldEdit = [&world](WorldEditCommand command, std::uint64_t generation)
 	    { return world.SubmitEdit(std::move(command), generation); },
 	    .RenderingSettings = renderer.CaptureRenderingSettings(),
-	    .SubmitRenderingSettings = [&renderer](EngineRenderingSettingsState settings)
+	    .SubmitRenderingSettings =
+	        [&renderer](EngineRenderingSettingsState settings)
 	    {
 		    SaveRenderingSettings(settings);
 		    renderer.SubmitRenderingSettings(std::move(settings));
 	    },
 	    .CaptureRenderingSettings = [&renderer]() { return renderer.CaptureRenderingSettings(); },
+	    .ConsoleVariables = [&renderer](CVarControlRequest request) { return renderer.ExecuteConsoleVariables(std::move(request)); },
 	    .HostWindow = m_state->Runtime->GetWindow(),
 	    .Input = m_state->Runtime->GetInputSystem()});
 

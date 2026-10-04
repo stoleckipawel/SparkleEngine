@@ -84,6 +84,8 @@ Apply parent/reset edits as one ordered batch before a frame's feature admission
 
 Feature folders own their CVars and activation helpers. Extend an existing cohesive feature control/settings file when possible; add a focused activation file only when that responsibility needs an independent owner. Do not put a collection of lighting predicates in `FramePipeline`, `RendererHost`, the generic frame graph, Application, Editor, or RHI.
 
+**Direct access, no value cache:** feature code uses ordinary `cvar.Get()` and `cvar.Set()` against one authoritative value. Read the CVar at the feature's frame boundary; do not introduce a resolved-feature settings body, persistent read model, render-thread shadow value, sink-maintained copy or cached activation boolean. Ordered live edits execute between frames, so feature admission and parameter setup can read that same accepted value directly. Temporary edit text, control replies and required GPU parameters are boundary data, not retained CVar authority. A previous topology/history identity may detect a change, but must never supply the current feature value or bypass its `Get()`.
+
 The required distinction is:
 
 ```text
@@ -128,6 +130,8 @@ Show — shared feature controls
 ```
 
 `ViewportTopPanel` owns labels, hierarchy, interaction, keyboard navigation, and a concise shared-scope tooltip. It reads leaf checks from CVar requested state, including console changes. It does not put selection into `EditorViewportSession` or advance viewport-request generation for a CVar edit; the existing control publication invalidates the affected rendering work.
+
+Console and menu clients receive only the generic control request/result capability, not Renderer or execution-control implementation objects. Application binds that capability and owns simulation/UI-packet/render sequencing. The console host owns its overlay lifetime and returns presentation data; it never submits or renders frames. Client callbacks are destroyed before their implementation owner. This is the [AC-DVP-30](../Acceptance.md#completion-criteria) boundary, not a new service or forwarding layer.
 
 Parent checked/mixed/unchecked state is derived from all/any/none of its implemented children being enabled. Clicking a checked or mixed parent disables all those children; clicking an unchecked parent enables all. Reset enables all implemented leaves in one batch. There is no saved mixed-selection restore, parent state, or persisted Editor mirror. Toggling Shadows does not change lighting-lobe CVars, and toggling a lighting group does not change retained shadow intent.
 

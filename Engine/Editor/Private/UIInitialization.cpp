@@ -76,7 +76,6 @@ void UI::InitializeCorePanels()
 {
 	m_mainMenuBar = std::make_unique<MainMenuBarPanel>(m_levelSession, m_window);
 	ConfigureMainMenuBarWindowActions();
-	m_editorConsoleSystem = std::make_unique<EditorConsoleSystem>();
 	m_restartService = std::make_unique<EditorRestartService>();
 	m_settingsPanel = std::make_unique<SettingsPanel>();
 	m_settingsPanel->SetRenderingSettings(m_renderingSettings.get());
