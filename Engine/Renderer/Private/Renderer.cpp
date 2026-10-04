@@ -39,7 +39,7 @@ UiTextureHandle Renderer::GetViewportPresentationTexture() const
 	return m_state->Coordinator.GetViewportPresentationTexture();
 }
 
-EngineRenderingSettingsState Renderer::CaptureRenderingSettings() const noexcept
+EngineRenderingSettingsState Renderer::CaptureRenderingSettings() const
 {
 	return m_state->Coordinator.CaptureRenderingSettings();
 }

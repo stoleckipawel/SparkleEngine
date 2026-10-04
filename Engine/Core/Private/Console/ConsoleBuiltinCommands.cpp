@@ -7,6 +7,8 @@
 #include "Core/Public/Console/CVarRegistry.h"
 #include "Core/Public/Strings/StringUtils.h"
 
+#include <utility>
+
 void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry, CVarControlExecutor executor)
 {
 	auto& cvarRegistry = ConsoleVariableRegistry::Get();
@@ -62,13 +64,13 @@ ConsoleCommandResult ConsoleBuiltinCommands::ExecuteHelp(
     ConsoleCommandScope scope,
     std::span<const std::string_view> arguments)
 {
+	if (arguments.size() > 1)
+		return ConsoleCommandResult::Error("usage: Help [filter]");
 	const std::string_view filter = arguments.empty() ? std::string_view{} : arguments.front();
 	std::string output;
 	for (const ConsoleCommandDescriptor& command : commandRegistry.GetCommands())
 	{
-		const bool scopeAllowed = command.Scope == ConsoleCommandScope::Runtime || scope == ConsoleCommandScope::Developer
-		    || (command.Scope == ConsoleCommandScope::Editor && scope == ConsoleCommandScope::Editor);
-		if (!scopeAllowed)
+		if (!ConsoleCommandRegistry::IsScopeAllowed(command.Scope, scope))
 		{
 			continue;
 		}
@@ -95,6 +97,8 @@ ConsoleCommandResult ConsoleBuiltinCommands::ExecuteListCVars(
     const CVarControlExecutor& executor,
     std::span<const std::string_view> arguments)
 {
+	if (arguments.size() > 1)
+		return ConsoleCommandResult::Error("usage: ListCVars [filter]");
 	if (!executor)
 		return ConsoleCommandResult::Error("CVar control owner is unavailable.");
 	return FormatControlResult(

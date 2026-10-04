@@ -73,7 +73,7 @@ The [Lighting Show Menu And Feature Execution Controls](Controls/ShowFlags.md) t
 
 **Plan identity:** `DVP-SF-IP-01`; staged refinement of the accepted [Show-menu design](Controls/ShowFlags.md), using the repository [staged-plan template](../../../../../../Engineering/Workflow/Templates/FeatureDeliveryPackage.md#scaffold-planmd--staged-delivery-and-copy-ready-prompts).
 
-**Current permission:** [Discovery's bounded prerequisite route](Discovery.md#dvp-4a-1-bounded-prerequisite-route) admits only DVP-4A-1. Lighting production stages are not authorized by this document; `DVP-4A-2` and later require explicit DVP-4A authorization and their own predecessor exit evidence.
+**Current permission:** [Discovery's bounded prerequisite evidence](Discovery.md#bounded-delivery-evidence) closes DVP-4A-1 for its exact candidate. Resume scoped DVP-4A-0 discovery at D07/D08/D09; lighting production stages remain unauthorized. `DVP-4A-2` and later require explicit DVP-4A authorization and their own predecessor exit evidence. The delivery result is not permission to replay historical mode migrations or replace the proved CVar route.
 
 The [2026-10-04 candidate audit](Discovery.md#dvp-4a-0-candidate-and-probe-record) stopped at the DVP-4A-0 blocking prerequisites. The subsequent bounded route admits delivery repair only. Do not interpret the source dependency ledger as frozen lighting execution architecture or replay DVP-0 through DVP-3.
 

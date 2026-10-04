@@ -40,7 +40,7 @@ public:
 
 	ViewportRenderProducts GetViewportRenderProducts() const;
 	UiTextureHandle GetViewportPresentationTexture() const;
-	EngineRenderingSettingsState CaptureRenderingSettings() const noexcept;
+	EngineRenderingSettingsState CaptureRenderingSettings() const;
 	CVarControlResult ExecuteConsoleVariables(CVarControlRequest request);
 
 	void ReloadShaders();

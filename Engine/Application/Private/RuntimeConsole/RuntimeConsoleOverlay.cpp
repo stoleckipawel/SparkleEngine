@@ -3,6 +3,7 @@
 
 #include "Core/Public/Console/ConsoleBuiltinCommands.h"
 #include "Core/Public/Console/ConsoleSession.h"
+#include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "Renderer/Public/UI/ImGuiRenderPacketBuilder.h"
 #include "Time/Timer.h"
@@ -13,38 +14,46 @@
 
 #include <algorithm>
 #include <optional>
+#include <utility>
 
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 RuntimeConsoleOverlay::RuntimeConsoleOverlay(Timer& timer, Window& window, CVarControlExecutor executor) :
-    m_timer(&timer),
-    m_window(&window)
+    m_timer(timer),
+    m_window(window)
 {
+	if (!m_window.GetHWND())
+		throw Diagnostics::Error("Runtime console requires a valid host window.");
 	ConsoleBuiltinCommands::Register(m_commandRegistry, std::move(executor));
 	m_consoleSession = std::make_unique<ConsoleSession>(m_commandRegistry, ConsoleCommandScope::Runtime);
 	m_renderPacketBuilder = std::make_unique<ImGuiRenderPacketBuilder>();
 	m_consoleSession->AddOutput(ConsoleCommandSeverity::Info, "Runtime console ready. Press tilde to close.");
 
-	if (!InitializeImGuiContext())
+	try
 	{
-		return;
+		InitializeImGuiContext();
+		ApplyDpiScale(m_window.GetDpiScale());
+		InitializeWin32Backend();
+
+		auto handle = window.OnWindowMessage.Add([this](WindowMessageEvent& event) { HandleWindowMessage(event); });
+		m_windowMessageHandle = ScopedEventHandle(window.OnWindowMessage, handle);
+
+		auto dpiScaleHandle = window.OnDpiScaleChanged.Add([this](float dpiScale) { ApplyDpiScale(dpiScale); });
+		m_windowDpiScaleHandle = ScopedEventHandle(window.OnDpiScaleChanged, dpiScaleHandle);
 	}
-
-	ApplyDpiScale(m_window->GetDpiScale());
-
-	if (!InitializeWin32Backend())
+	catch (...)
 	{
-		return;
+		ShutdownImGui();
+		throw;
 	}
-
-	auto handle = window.OnWindowMessage.Add([this](WindowMessageEvent& event) { HandleWindowMessage(event); });
-	m_windowMessageHandle = ScopedEventHandle(window.OnWindowMessage, handle);
-
-	auto dpiScaleHandle = window.OnDpiScaleChanged.Add([this](float dpiScale) { ApplyDpiScale(dpiScale); });
-	m_windowDpiScaleHandle = ScopedEventHandle(window.OnDpiScaleChanged, dpiScaleHandle);
 }
 
 RuntimeConsoleOverlay::~RuntimeConsoleOverlay() noexcept
+{
+	ShutdownImGui();
+}
+
+void RuntimeConsoleOverlay::ShutdownImGui() noexcept
 {
 	m_windowDpiScaleHandle.Reset();
 	m_windowMessageHandle.Reset();
@@ -72,11 +81,6 @@ void RuntimeConsoleOverlay::HandleWindowMessage(WindowMessageEvent& event) noexc
 
 bool RuntimeConsoleOverlay::ProcessWindowMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 {
-	if (!m_isWin32BackendInitialized)
-	{
-		return false;
-	}
-
 	if (msg == WM_KEYDOWN && wParam == VK_OEM_3)
 	{
 		const bool isRepeat = (lParam & (1 << 30)) != 0;
@@ -95,7 +99,7 @@ bool RuntimeConsoleOverlay::ProcessWindowMessage(HWND hWnd, UINT msg, WPARAM wPa
 	return ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam) != 0;
 }
 
-bool RuntimeConsoleOverlay::InitializeImGuiContext()
+void RuntimeConsoleOverlay::InitializeImGuiContext()
 {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -105,19 +109,13 @@ bool RuntimeConsoleOverlay::InitializeImGuiContext()
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 	io.IniFilename = nullptr;
 	ImGuiRenderPacketBuilder::ConfigureProducerContext();
-	return true;
 }
 
-bool RuntimeConsoleOverlay::InitializeWin32Backend()
+void RuntimeConsoleOverlay::InitializeWin32Backend()
 {
-	if (m_window == nullptr || !m_window->GetHWND())
-	{
-		return false;
-	}
-
-	ImGui_ImplWin32_Init(m_window->GetHWND());
+	if (!ImGui_ImplWin32_Init(m_window.GetHWND()))
+		throw Diagnostics::Error("Runtime console failed to initialize the Win32 ImGui backend.");
 	m_isWin32BackendInitialized = true;
-	return true;
 }
 
 void RuntimeConsoleOverlay::ApplyDpiScale(float dpiScale) noexcept
@@ -129,11 +127,6 @@ void RuntimeConsoleOverlay::ApplyDpiScale(float dpiScale) noexcept
 	style.ScaleAllSizes(dpiScale);
 }
 
-bool RuntimeConsoleOverlay::IsReady() const noexcept
-{
-	return m_isImGuiContextInitialized && m_isWin32BackendInitialized && m_consoleSession != nullptr && m_renderPacketBuilder != nullptr;
-}
-
 void RuntimeConsoleOverlay::ToggleVisibility() noexcept
 {
 	m_isVisible = !m_isVisible;
@@ -142,13 +135,8 @@ void RuntimeConsoleOverlay::ToggleVisibility() noexcept
 
 void RuntimeConsoleOverlay::Update()
 {
-	if (!IsReady())
-	{
-		return;
-	}
-
 	ImGuiIO& io = ImGui::GetIO();
-	io.DeltaTime = m_timer != nullptr ? static_cast<float>(m_timer->GetDelta(TimeDomain::Unscaled, TimeUnit::Seconds)) : (1.0f / 60.0f);
+	io.DeltaTime = static_cast<float>(m_timer.GetDelta(TimeDomain::Unscaled, TimeUnit::Seconds));
 
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
@@ -302,7 +290,7 @@ void RuntimeConsoleOverlay::SubmitInput()
 
 std::vector<std::string> RuntimeConsoleOverlay::GetCurrentCompletions() const
 {
-	if (m_consoleSession == nullptr || m_inputBuffer[0] == '\0')
+	if (m_inputBuffer[0] == '\0')
 	{
 		return {};
 	}

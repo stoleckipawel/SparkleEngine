@@ -38,10 +38,10 @@ public:
 private:
 	void HandleWindowMessage(WindowMessageEvent& event) noexcept;
 	bool ProcessWindowMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
-	bool InitializeImGuiContext();
-	bool InitializeWin32Backend();
+	void InitializeImGuiContext();
+	void InitializeWin32Backend();
+	void ShutdownImGui() noexcept;
 	void ApplyDpiScale(float dpiScale) noexcept;
-	bool IsReady() const noexcept;
 	void ToggleVisibility() noexcept;
 
 	void BuildUI();
@@ -60,8 +60,8 @@ private:
 	static std::size_t FindCompletionTokenStart(const std::string& input) noexcept;
 	static void ReplaceInputText(ImGuiInputTextCallbackData& data, const std::string& text);
 
-	Timer* m_timer = nullptr;
-	Window* m_window = nullptr;
+	Timer& m_timer;
+	Window& m_window;
 	ScopedEventHandle m_windowMessageHandle;
 	ScopedEventHandle m_windowDpiScaleHandle;
 	ConsoleCommandRegistry m_commandRegistry;

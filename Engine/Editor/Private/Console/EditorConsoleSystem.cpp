@@ -12,6 +12,7 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <utility>
 
 class EditorConsoleSystemConstants final
 {
@@ -39,18 +40,12 @@ ConsoleCommandRegistry& EditorConsoleSystem::GetCommandRegistry() noexcept
 
 void EditorConsoleSystem::SubmitLine(std::string_view line)
 {
-	if (m_session)
-	{
-		m_session->SubmitLine(line);
-	}
+	m_session->SubmitLine(line);
 }
 
 void EditorConsoleSystem::AppendOutput(ConsoleOutputRecord record)
 {
-	if (m_session)
-	{
-		m_session->Append(std::move(record));
-	}
+	m_session->Append(std::move(record));
 }
 
 void EditorConsoleSystem::RequestConsoleFocus() noexcept
@@ -60,11 +55,8 @@ void EditorConsoleSystem::RequestConsoleFocus() noexcept
 
 void EditorConsoleSystem::OpenConsole() noexcept
 {
-	if (m_consolePanel)
-	{
-		m_consolePanel->SetOpen(true);
-		m_consolePanel->RequestFocus();
-	}
+	m_consolePanel->SetOpen(true);
+	m_consolePanel->RequestFocus();
 }
 
 bool EditorConsoleSystem::HandleShortcut(std::uint32_t message, std::uintptr_t key, bool wantsTextInput) noexcept
@@ -80,10 +72,7 @@ bool EditorConsoleSystem::HandleShortcut(std::uint32_t message, std::uintptr_t k
 
 void EditorConsoleSystem::BuildUI(bool disableInteraction)
 {
-	if (m_consolePanel)
-	{
-		m_consolePanel->BuildUI(disableInteraction);
-	}
+	m_consolePanel->BuildUI(disableInteraction);
 }
 
 float EditorConsoleSystem::GetDockHeight(float availableHeight) noexcept
@@ -130,10 +119,7 @@ void EditorConsoleSystem::BuildDockedUI(float left, float bottom, float width, f
 		return;
 	}
 
-	if (m_consolePanel)
-	{
-		m_consolePanel->BuildContent(disableInteraction);
-	}
+	m_consolePanel->BuildContent(disableInteraction);
 	m_dockHeight = ImGui::GetWindowHeight();
 	GetDockHeight(availableHeight);
 

@@ -66,9 +66,9 @@ public:
 
 	ConsoleCommandResult ExecuteLine(std::string_view input, ConsoleCommandScope scope) const;
 	std::vector<std::string> CompleteLine(std::string_view input, ConsoleCommandScope scope) const;
+	static bool IsScopeAllowed(ConsoleCommandScope commandScope, ConsoleCommandScope contextScope) noexcept;
 
 private:
-	static bool IsScopeAllowed(ConsoleCommandScope commandScope, ConsoleCommandScope contextScope) noexcept;
 	static std::vector<std::string_view> BuildArgumentViews(const std::vector<std::string>& arguments);
 
 	std::vector<ConsoleCommandDescriptor> m_commands;
