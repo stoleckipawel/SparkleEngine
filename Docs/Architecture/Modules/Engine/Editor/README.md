@@ -33,6 +33,17 @@ flowchart LR
 
 The Editor should expose owner commands and read models, not mutate Renderer/RHI/native state directly. That makes undo, concurrency, and failure tractable at the cost of explicit command/result plumbing.
 
+### Rendering Settings Ownership
+
+The settings UI separates window orchestration, category presentation, and edit state:
+
+- `SettingsPanel` owns the settings window, search, and restart action. `RenderingSettingsPanel` orders rendering categories and presents the rendering-wide interaction/restart state; it does not draw setting rows.
+- `Rendering*SettingsSection` files implement their named categories. Geometry owns the GBuffer and mesh-batching controls. Ray Tracing Scene owns general TLAS controls and composes the independently implemented PTLAS subgroup; PTLAS owns its enable-dependent controls.
+- `RenderingSettingsUi` owns shared category/table/row widgets. `ExposureSettingsEditor` shares exposure controls between engine defaults and viewport overrides; category implementations do not duplicate those rows.
+- `EngineRenderingSettingsController` owns the mutable interaction state, semantic setters, commit/refresh callbacks, and restart comparison. Application persistence and Renderer-owned value/active-state policy remain outside these UI implementations.
+
+This source separation was reconciled on 2026-10-04; it does not establish runtime or usability acceptance.
+
 ## Workspace And Level Surface
 
 | ID | Capability | State | Exact current coverage and limit | Evidence |

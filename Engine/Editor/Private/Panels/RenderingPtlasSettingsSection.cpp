@@ -8,9 +8,7 @@
 
 #include <imgui.h>
 
-void DrawPtlasSettingsSection(
-    EngineRenderingSettingsController& settingsController,
-    const EngineRenderingSettingsState& settings)
+void DrawPtlasSettingsSection(EngineRenderingSettingsController& settingsController, const EngineRenderingSettingsState& settings)
 {
 	static constexpr RenderingSettingsUi::ComboOption<RayTracingPtlasPartitionUpdateMode> partitionUpdateModeOptions[] = {
 	    {"Always update partition", RayTracingPtlasPartitionUpdateMode::AlwaysUpdatePartition},
@@ -18,7 +16,6 @@ void DrawPtlasSettingsSection(
 	    {"Update partition nearby, move to global otherwise",
 	        RayTracingPtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise},
 	};
-
 
 	if (ImGui::TreeNodeEx("PTLAS", ImGuiTreeNodeFlags_DefaultOpen))
 	{
@@ -43,7 +40,8 @@ void DrawPtlasSettingsSection(
 				    "Partition update mode",
 				    settings.PtlasPartitionUpdateMode,
 				    partitionUpdateModeOptions,
-				    [&settingsController](RayTracingPtlasPartitionUpdateMode value) { settingsController.SetPtlasPartitionUpdateMode(value); });
+				    [&settingsController](RayTracingPtlasPartitionUpdateMode value)
+				    { settingsController.SetPtlasPartitionUpdateMode(value); });
 				RenderingSettingsUi::DrawBooleanRow(
 				    "##PtlasMarkAllDynamicInPartition",
 				    "Mark all dynamic in partition",

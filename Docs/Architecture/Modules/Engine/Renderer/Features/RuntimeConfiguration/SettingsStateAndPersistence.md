@@ -22,7 +22,7 @@ The aggregate exists to make an editor commit coherent, not to centralize featur
 
 ## Feature Contract
 
-The settings route coordinates three owners without merging them. Renderer publicly owns only `EngineRenderingSettingsState`, captures/applies that rendering state, and accepts it through its sequenced control boundary. Editor privately owns `EngineRenderingSettingsSection`, the mutable interaction model and restart message. Application owns `EngineRenderingSettingsPersistence`, startup restore order, filesystem location, and save-before-submit policy. Serial execution applies CVars directly, while threaded execution queues a `RenderSettingsChangedCommand` for the render execution context.
+The settings route coordinates three owners without merging them. Renderer publicly owns only `EngineRenderingSettingsState`, captures/applies that rendering state, and accepts it through its sequenced control boundary. Editor privately owns `EngineRenderingSettingsController`, the mutable interaction model and restart message. Application owns `EngineRenderingSettingsPersistence`, startup restore order, filesystem location, and save-before-submit policy. Serial execution applies CVars directly, while threaded execution queues a `RenderSettingsChangedCommand` for the render execution context.
 
 ```text
 application startup
@@ -112,7 +112,7 @@ This contract is **defined but unproved**. The current implementation does not y
 ## Primary Source Routes
 
 - [`EngineRenderingSettings.h`](../../../../../../../Engine/Renderer/Public/Settings/EngineRenderingSettings.h)
-- [`EngineRenderingSettingsSection.cpp`](../../../../../../../Engine/Editor/Private/Settings/EngineRenderingSettingsSection.cpp)
+- [`EngineRenderingSettingsController.cpp`](../../../../../../../Engine/Editor/Private/Settings/EngineRenderingSettingsController.cpp)
 - [`EngineRenderingSettingsPersistence.cpp`](../../../../../../../Engine/Application/Private/RenderingSettings/EngineRenderingSettingsPersistence.cpp)
 - [`EngineRenderingSettingsRuntime.cpp`](../../../../../../../Engine/Renderer/Private/Settings/EngineRenderingSettingsRuntime.cpp)
 - [`RenderCoordinator.cpp`](../../../../../../../Engine/Renderer/Private/Concurrency/Coordinator/RenderCoordinator.cpp) and [`RendererExecutionContext.cpp`](../../../../../../../Engine/Renderer/Private/Concurrency/Coordinator/RendererExecutionContext.cpp)

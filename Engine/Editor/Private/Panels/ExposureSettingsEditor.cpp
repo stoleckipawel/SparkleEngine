@@ -124,7 +124,9 @@ private:
 	}
 };
 
-void ExposureSettingsEditor::DrawSettings(EngineRenderingSettingsController& settingsController, const EngineRenderingSettingsState& settings)
+void ExposureSettingsEditor::DrawSettings(
+    EngineRenderingSettingsController& settingsController,
+    const EngineRenderingSettingsState& settings)
 {
 	static constexpr RenderingSettingsUi::ComboOption<EngineExposureMode> exposureModeOptions[] = {
 	    {"Manual", EngineExposureMode::Manual},
