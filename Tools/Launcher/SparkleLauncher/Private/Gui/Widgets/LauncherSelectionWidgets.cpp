@@ -13,7 +13,6 @@
 #include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
-#include <QtWidgets/QLabel>
 #include <QtWidgets/QStyle>
 
 #include <algorithm>
@@ -111,19 +110,6 @@ namespace SparkleLauncher
 			}
 		}
 		return selectedValues;
-	}
-
-	void UpdateScopeSelectionSummary(QLabel* selectionSummary, bool hasSelection, const QString& emptyMessage)
-	{
-		if (selectionSummary == nullptr)
-		{
-			return;
-		}
-		selectionSummary->setText(emptyMessage);
-		selectionSummary->setProperty("State", hasSelection ? "ok" : "warning");
-		selectionSummary->setVisible(!hasSelection);
-		selectionSummary->style()->unpolish(selectionSummary);
-		selectionSummary->style()->polish(selectionSummary);
 	}
 
 	static QStandardItem* ComboItem(QComboBox& combo, int row)

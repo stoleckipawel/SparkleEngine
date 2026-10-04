@@ -82,7 +82,7 @@ RHI has no view-mode type or field. It receives only neutral GPU resources, comm
 
 ## View Mode Versus Show Controls
 
-Unreal exposes both a high-level runtime `EViewModeIndex` and lower-level `FEngineShowFlags`; the latter live with view-family state and may be manipulated by a mode. Sparkle first adopted only the higher-level mode contract because no independent lower-level consumer existed. The requested direct/indirect lighting-lobe controls now provide that use case, and [Renderer Show Flags](ShowFlags.md) owns their target contract.
+Unreal exposes both a high-level runtime `EViewModeIndex` and lower-level `FEngineShowFlags`; the latter live with view-family state and may be manipulated by a mode. Sparkle adopts only the higher-level per-view mode contract. Its independently selectable lighting controls instead use the [Lighting Show Menu And Feature Execution Controls](ShowFlags.md) target: an Editor frontend driving global feature CVars and feature-owned execution, not lower-level Renderer show state.
 
 A per-view visibility or presentation control may be added only when all of these are true:
 
@@ -110,7 +110,7 @@ The target first slice independently suppresses the five current direct-diffuse/
 The following replaced paths are deleted rather than retained as aliases:
 
 - `Visualization`, `VisualizationIndex`, and their global CVar/command selection route;
-- the proposed decomposition of one rendering-mode choice into `VisualizationTarget` plus mode-shaped show flags; independently selectable lighting contributions remain governed by [Renderer Show Flags](ShowFlags.md);
+- the proposed decomposition of one rendering-mode choice into `VisualizationTarget` plus mode-shaped show flags; independent lighting-feature execution remains governed by [Lighting Show Menu And Feature Execution Controls](ShowFlags.md);
 - `EditorViewportViewMode` and `EditorViewportViewModePreset`;
 - `CVarReferencePathTracer` and `r.ReferencePathTracer`;
 - duplicate shader visualization helpers.

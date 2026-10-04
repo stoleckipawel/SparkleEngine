@@ -1,137 +1,116 @@
-# Renderer Show Flags
+# Lighting Show Menu And Feature Execution Controls
 
 **Status:** target architecture; not implemented
 
-**Current readiness:** **0/100 — target only** for the show-flag slice. The existing Debug Views feature remains tracked separately by the [Renderer readiness row](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **0/100 — target only** for this control slice. Existing Debug Views progress remains owned by the [Renderer readiness row](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
-**Responsibility:** define the enduring semantics, ownership, lifetime, CVar interaction, Editor hierarchy, and narrow Renderer consumers of independently selectable per-view lighting contributions and shadow evaluation.
+**Responsibility:** define how the Editor Show menu drives feature CVars and how feature-owned activation removes lighting and shadow work without introducing Renderer show-flag state.
 
-**Authority boundary:** [Plan](../Plan.md#dvp-4---add-lighting-show-flags) owns delivery order and integration ledgers; [Acceptance](../Acceptance.md) owns criteria, failures, and checks; [Research](../Research.md#unreal-engine) owns external precedent; the [Lighting family](../../Lighting/README.md) owns lobe and transport semantics.
+**Authority boundary:** [Plan](../Plan.md#dvp-4---add-lighting-show-flags) owns delivery order; [Discovery](../Discovery.md) owns implementation authorization; [Acceptance](../Acceptance.md) owns proof contracts; the [Lighting family](../../Lighting/README.md) owns transport and lobe semantics. [Research](../Research.md#unreal-engine) is precedent, not authority for this CVar design.
 
-**Verified:** 2026-10-04 against revision `26803f97` and the inspected dirty working tree. Current code and build configuration remain the implementation authority.
+**Verified:** 2026-10-04 against revision `bbb9f7ed` and the inspected dirty working tree. Code and build configuration remain the implementation authority.
 
-**Non-claims:** this page does not prove compilation, shader cooking, runtime reachability, pixels, D3D12/Vulkan behavior, performance, or release acceptance.
+**Non-claims:** this design does not prove compilation, shader cooking, runtime behavior, pixels, backend parity, saved GPU time, or release acceptance.
 
-## Purpose And Current Gap
+The Editor's **Show** menu is a convenient frontend for turning Renderer features on and off. Turning a lighting component off should stop its exclusive evaluation, tracing, output writes, and dependent work wherever the selected rendering path permits—not calculate the effect and multiply its finished result by zero.
 
-Show flags let an artist or developer hide one lighting contribution or bypass one class of shadow evaluation in a Lit viewport without changing the selected `RenderViewMode`. The Editor presents a compact hierarchical **Show** menu, while Renderer retains the rendering meaning and consumes immutable per-view state.
+## Current Gap And Delivery Scope
 
-The current Lit route already produces five independently composited scene-linear products. The requested sixth product, indirect subsurface, does not exist and is not yet admitted by the Indirect Lighting transport contract.
+The current Lit route produces five separate lighting products, but its direct shader evaluates multiple lobes in one dispatch and its indirect estimator shares path/reservoir work. `LightingComposite` reads all five products. `LightingTargetClear` initializes their targets. None of this source presence proves that disabling a leaf currently removes its cost.
 
-| Group | Leaf | Current consumer | Target control |
-| --- | --- | --- | --- |
-| Direct Lighting | Diffuse | `LightingComposite` reads `DirectDiffuse` | first delivery slice |
-| Direct Lighting | Specular | `LightingComposite` reads `DirectSpecular` | first delivery slice |
-| Direct Lighting | Subsurface | `LightingComposite` reads `DirectSubsurface` | first delivery slice |
-| Indirect Lighting | Diffuse | `LightingComposite` reads `IndirectDiffuse` | first delivery slice |
-| Indirect Lighting | Specular | `LightingComposite` reads `IndirectSpecular` | first delivery slice |
-| Indirect Lighting | Subsurface | no product or consumer found | blocked on `IND-D0-02` and a real product |
-| Shadows | Direct Shadows | primary-surface direct lighting consumes `ShadowVisibilitySignal` | first delivery slice after invalidation/parameter probe |
-| Shadows | Indirect Shadows | Lit indirect path lighting traces direct-light visibility from secondary hits | first delivery slice after invalidation/parameter probe |
+The current non-Reference diagnostic modes still enter the real-time Lit middle before visualization. A future GBuffer-only path is not claimed here: discovery must map admission and downstream dependencies for the actual selected route rather than assume the mode label already prunes lighting.
 
-The first delivery slice therefore targets seven real controls: five contribution leaves plus Direct Shadows and Indirect Shadows. It does not add an `IndirectSubsurface` enum value, CVar, UI row, resource, or zero-producing placeholder. The final eight-leaf target becomes valid only after the owning [lobe-classification decision](../../Lighting/IndirectLighting/TransportAndEstimator.md#lobe-classification) defines and produces that contribution.
+| Editor leaf | Existing production seam | Target execution owner |
+| --- | --- | --- |
+| Direct / Diffuse | `DirectDiffuse` | direct-lighting evaluation and its exclusive work |
+| Direct / Specular | `DirectSpecular` | direct-lighting evaluation and its exclusive work |
+| Direct / Subsurface | `DirectSubsurface` | direct subsurface evaluation and its exclusive work |
+| Indirect / Diffuse | `IndirectDiffuse` | Lit indirect estimator, resolve, and dependent state |
+| Indirect / Specular | `IndirectSpecular` | Lit indirect estimator, resolve, and dependent state |
+| Indirect / Subsurface | no admitted product or consumer | blocked on `IND-D0-02` and a real product |
+| Shadows / Direct Shadows | `ShadowVisibilitySignal` and primary direct-light evaluation | direct shadow-signal production and visibility consumer |
+| Shadows / Indirect Shadows | secondary-hit direct-light visibility in Lit indirect transport | indirect estimator's visibility evaluation |
 
-The shadow leaves do not mean “skip all rays.” **Direct Shadows** changes only the visibility applied to primary-surface direct lighting. **Indirect Shadows** changes only direct-light visibility evaluated while shading secondary hits in the Lit indirect estimator. Continuation rays still intersect scene geometry because those intersections define the indirect path itself; treating them as optional shadow rays would change the transport domain rather than expose a show flag.
+The initial scope is seven real leaves. Do not add an Indirect Subsurface CVar, UI row, resource, or zero-producing placeholder before the owning [lobe-classification decision](../../Lighting/IndirectLighting/TransportAndEstimator.md#lobe-classification) admits the product. This is a design update only; [Discovery](../Discovery.md) remains blocked until execution, publication, and invalidation probes pass.
 
-The current generic console path also mutates registered CVar storage directly. The inspected source does not prove that a live `SetCVar` write and Renderer-thread read form a sequenced, race-free publication boundary. The implementation plan treats that as a prerequisite audit and blocks live feature CVars rather than copying mutable CVar values through viewport state as a workaround.
+## One Control Authority
 
-## How The Control Fits
-
-The important distinction is scope: the Editor selection is per viewport; each CVar is a process-global developer gate. They meet only at the narrow Renderer consumer for the selected leaf and are not copied into a second resolved settings object.
+The menu edits the same feature CVars as the console. It does not maintain a viewport-local bit set or a second gate combined with those CVars. These CVars are process-global: a Show edit affects every viewport using the relevant Lit path. Independent per-viewport feature controls are not provided by this design.
 
 ```mermaid
 flowchart LR
-    UI[Editor Show menu<br/>per-viewport selection] --> Request[ViewportRenderRequest<br/>RenderShowFlagSet]
-    Request --> View[Immutable RenderView<br/>one frame]
-    CVar[Renderer feature CVars<br/>global developer gates] --> Effective[Effective leaf<br/>derived at narrow owner]
-    View --> Effective
-    Effective --> Direct[Primary direct-light<br/>shadow evaluation]
-    Effective --> Indirect[Lit indirect secondary-hit<br/>shadow evaluation]
-    Effective --> Composite[LightingComposite<br/>contribution visibility]
-    Direct --> Products[Scene-linear lighting products]
-    Indirect --> Products
-    Products --> Composite
-    Composite --> SceneColor[Lit SceneColor]
+    UI[Editor Show menu] --> Control[Existing sequenced CVar control boundary]
+    Console[Console or runtime developer command] --> Control
+    Control --> CVar[Feature-owned CVars]
+    CVar --> Feature[Feature IsEnabled / IsActive]
+    View[Render mode, capabilities, real inputs] --> Feature
+    Feature --> Work[Pass admission and shader evaluation]
+    Work --> Products[Active lighting products]
+    Products --> Composite[Lighting composition]
 ```
 
-The diagram shows two intentional inputs with different scopes, not two authorities for the same state. Editor owns what its viewport requests. Each feature CVar owns a global developer gate. The named Renderer consumer derives the effective value without retaining another mutable copy:
+The important boundary is from control mutation to feature execution. Renderer knows its feature CVars and prerequisites, not Editor labels, menu groups, or show flags. `RenderViewMode` still travels through the ordinary viewport request and immutable View; this slice adds no `RenderShowFlag`, `RenderShowFlagSet`, `ViewportRenderRequest::ShowFlags`, or `RenderView::showFlags`.
 
-```text
-effective leaf = per-view flag enabled AND global feature CVar enabled
-```
+### Feature CVars
 
-## Typed Per-View Contract
+Each implemented leaf has one feature-owned boolean CVar, defaulting to enabled:
 
-Renderer Public owns a fixed enum and compact value type because Editor and Game/runtime viewport owners submit the same rendering semantic:
-
-```cpp
-enum class RenderShowFlag : std::uint8_t
-{
-	DirectDiffuse = 0,
-	DirectSpecular,
-	DirectSubsurface,
-	IndirectDiffuse,
-	IndirectSpecular,
-	DirectShadows,
-	IndirectShadows,
-	Count,
-};
-
-class RenderShowFlagSet final
-{
-public:
-	static RenderShowFlagSet AllEnabled() noexcept;
-
-	bool IsEnabled(RenderShowFlag flag) const noexcept;
-	void SetEnabled(RenderShowFlag flag, bool enabled) noexcept;
-	bool operator==(const RenderShowFlagSet&) const noexcept = default;
-
-private:
-	std::uint8_t m_bits = 0;
-};
-```
-
-`IndirectSubsurface` is inserted only with its real product and consumer. No persisted or shader-visible numeric contract may depend on the interim ordering.
-
-`ViewportRenderRequest::ShowFlags` carries the final per-viewport selection and defaults to `AllEnabled()`. `RenderViewBuilder` copies it into `RenderView::showFlags` at the existing immutable frame-publication boundary. This copy is justified by request/thread lifetime isolation; it is resolved once per frame and never written back.
-
-The type exposes only the operations required by viewport editing, equality, View freezing, and focused lighting consumption. Do not add reflection, string lookup, a dynamic registry, serialization, a metadata table, a generic settings bag, or an RHI representation.
-
-## Global CVar Gates
-
-Each implemented leaf has one Renderer-private boolean CVar, defaulting to enabled. The existing console parser accepts `1/0` as well as `true/false`; examples use the compact `1/0` developer form:
-
-| CVar | Feature behavior gated when `false` |
+| CVar | Work requested when enabled |
 | --- | --- |
-| `r.Lighting.Direct.Diffuse` | composite direct diffuse |
-| `r.Lighting.Direct.Specular` | composite direct specular |
-| `r.Lighting.Direct.Subsurface` | composite direct subsurface |
-| `r.Lighting.Indirect.Diffuse` | composite indirect diffuse |
-| `r.Lighting.Indirect.Specular` | composite indirect specular |
+| `r.Lighting.Direct.Diffuse` | primary direct diffuse contribution |
+| `r.Lighting.Direct.Specular` | primary direct specular contribution |
+| `r.Lighting.Direct.Subsurface` | primary direct subsurface contribution |
+| `r.Lighting.Indirect.Diffuse` | Lit indirect diffuse contribution |
+| `r.Lighting.Indirect.Specular` | Lit indirect specular contribution |
 | `r.Lighting.Shadows.Direct` | primary-surface direct-light shadow visibility |
-| `r.Lighting.Shadows.Indirect` | direct-light shadow visibility inside Lit indirect transport |
+| `r.Lighting.Shadows.Indirect` | direct-light shadow visibility at secondary hits in Lit indirect transport |
 
-`r.Lighting.Indirect.Subsurface` is registered only when the corresponding product lands.
-
-The CVars are feature-owned live developer policy, not show-flag storage, per-view transport, scalability settings, or persisted Editor rendering settings. Their names describe the Renderer feature they gate and therefore contain no `ShowFlags` namespace. A global CVar mutation must reach Renderer through a proved sequenced owner-thread boundary. Each contribution gate is read at `LightingComposite` parameter preparation; each shadow gate is read at the corresponding direct- or indirect-light parameter-preparation owner. The owner combines it with `RenderView::showFlags`. No CVar value or resolved effective mask is copied through `ViewportRenderRequest`, `RenderView`, graph settings, Application, Editor settings, or RHI merely to reach a pass.
-
-There is no parent Direct Lighting, Indirect Lighting, or Shadows CVar. A stored parent gate would create ambiguous parent-off/child-on state. Console users set the feature CVars explicitly, for example:
+`r.Lighting.Indirect.Subsurface` is added only with its real product. Parent rows are bulk actions over leaves, not parent CVars or another enablement authority. Example developer commands use the existing console syntax:
 
 ```text
 SetCVar r.Lighting.Direct.Specular 0
-SetCVar r.Lighting.Shadows.Direct 0
+SetCVar r.Lighting.Shadows.Indirect 0
 ```
 
-The console's existing CVar query is the observable state for global developer gates. The Editor menu presents only its viewport-local selection and does not claim to mirror global CVar state.
+Editor resolves and queries registered CVars through the existing Core console/control interface; it must not include Renderer-private CVar headers or add an Application feature-translation chain. No custom feature registry or Renderer Show-menu API is required. A missing expected registration is a configuration defect, not an unchecked or fabricated-disabled leaf.
 
-## Editor Show Menu
+### Publication And Observation
 
-Editor adds a dedicated **Show** dropdown beside **Viewmode**. View Mode remains the mutually exclusive rendered view; Show contains independent contribution visibility and shadow evaluation.
+Live mutation must use a proved sequenced owner boundary before Renderer reads feature CVars. The inspected plain CVar storage/direct setter is not evidence of thread safety. Discover and repair the existing CVar delivery owner if needed; do not hide a race behind request/View copies or a parallel settings bag.
 
-The final hierarchy is:
+Apply parent/reset edits as one ordered batch before a frame's feature admission, not as separate frames with partially changed children. Feature admission, shader parameters, graph identity, and history invalidation for that frame must observe the same accepted values. Do not reread mutable policy independently partway through a frame. If application is delayed, distinguish requested from applied state through the existing control acknowledgment; do not show requested state as already executing. Console changes refresh the menu through that same authority, not through an independently retained Editor selection.
+
+## IsEnabled And IsActive
+
+Feature folders own their CVars and activation helpers. Extend an existing cohesive feature control/settings file when possible; add a focused activation file only when that responsibility needs an independent owner. Do not put a collection of lighting predicates in `FramePipeline`, `RendererHost`, the generic frame graph, Application, Editor, or RHI.
+
+The required distinction is:
 
 ```text
-Show
+IsEnabled = the accepted feature CVar requests this work
+IsActive  = IsEnabled AND this path supports the work
+                      AND its real execution prerequisites are satisfied
+```
+
+`IsEnabled()` does not include capabilities or current mode. `IsActive(context)` is side-effect-free and adds the owning path/mode, backend/implementation support, active consumers, and actual prerequisite products. Both belong to the feature; the context contains only existing canonical inputs required for that decision, not a generic settings snapshot. Helper names may include the feature/lobe name where necessary to make the call unambiguous.
+
+| Requested state | Prerequisites | Required behavior |
+| --- | --- | --- |
+| disabled | irrelevant | inactive by intent; omit exclusive work |
+| enabled | applicable path and prerequisites satisfied | active; schedule the real producer |
+| enabled | unrelated path, such as GBuffer-only inspection or Reference | inactive for that path; no claim that the feature executes there |
+| enabled | required implementation/input missing on an applicable path | explicitly unavailable or broken through the existing failure owner; never success with a zero/stale/replacement product |
+
+An activation early return is not permission to conceal a broken required producer. The admission owner must distinguish inapplicability/user disablement from a requested-but-unavailable feature. Use existing feature/capability and product failure paths; do not add a diagnostic manager for this distinction.
+
+Optional feature entry points call their own `IsActive` and return before declaring exclusive resources or passes. High-level scene/frame composition keeps ordinary `Add...Passes` calls; it does not acquire one activation branch per leaf. Shared-work admission stays with the closest existing family owner. Its aggregate predicate is derived from actual active consumers, never stored as a parent feature gate.
+
+## Editor Interaction
+
+Editor adds **Show** beside **Viewmode**. It presents feature intent, not a guarantee that the chosen path can execute it:
+
+```text
+Show — shared feature controls
 └─ Lighting
    ├─ [x/-] Direct Lighting
    │  ├─ [x] Diffuse
@@ -140,113 +119,81 @@ Show
    ├─ [x/-] Indirect Lighting
    │  ├─ [x] Diffuse
    │  ├─ [x] Specular
-   │  └─ [x] Subsurface
+   │  └─ [x] Subsurface   (only after its product lands)
    └─ [x/-] Shadows
       ├─ [x] Direct Shadows
       └─ [x] Indirect Shadows
 
-   Reset Lighting Show Flags
+   Reset Lighting Features
 ```
 
-The first delivery shows the three Direct Lighting rows, the two implemented Indirect Lighting rows, and both Shadows rows. It does not advertise the blocked Indirect Subsurface row.
+`ViewportTopPanel` owns labels, hierarchy, interaction, keyboard navigation, and a concise shared-scope tooltip. It reads leaf checks from CVar requested state, including console changes. It does not put selection into `EditorViewportSession` or advance viewport-request generation for a CVar edit; the existing control publication invalidates the affected rendering work.
 
-`EditorViewportSession` owns the mutable viewport-local `RenderShowFlagSet`. `ViewportTopPanel` owns labels, indentation, checkbox state, tooltips, keyboard navigation, and the parent actions. `ViewportPanel` remains the only publisher of `ViewportRenderRequest`; one leaf or parent action updates the session and advances the request generation exactly once when the submitted set changes.
+Parent checked/mixed/unchecked state is derived from all/any/none of its implemented children being enabled. Clicking a checked or mixed parent disables all those children; clicking an unchecked parent enables all. Reset enables all implemented leaves in one batch. There is no saved mixed-selection restore, parent state, or persisted Editor mirror. Toggling Shadows does not change lighting-lobe CVars, and toggling a lighting group does not change retained shadow intent.
 
-### Parent behavior
+Lit and Lit-shaded Wireframe use these controls. In GBuffer/GPU-scene-only diagnostics or Reference, disable the inapplicable group with a mode explanation; never mutate CVars just because the mode changes. A lighting-lobe diagnostic observes the current execution product: if its feature is disabled, report it unavailable rather than secretly activating it, displaying stale data, or asserting that unchanged raw lighting remains available. Users can explicitly re-enable the feature to inspect it.
 
-Parent state is derived from its available children:
+## Execution And Product Contract
 
-| Children enabled | Parent state |
-| --- | --- |
-| none | unchecked |
-| some | mixed/indeterminate |
-| all | checked |
+The old `Show(component) * completedComponent` composition is rejected. Composition consumes only products admitted by the selected feature path. Removing a lobe takes effect before its exclusive evaluation and publication, not after producing it.
 
-Clicking a parent when any child is enabled disables all available children. Clicking it when none are enabled enables all available children. This makes **Direct Lighting**, **Indirect Lighting**, and **Shadows** reliable one-click hide/show actions without storing parent flags. A bulk action publishes one changed set, not one request per child.
+| Production shape | Disabled behavior | Cost that can remain |
+| --- | --- | --- |
+| dedicated pass/family | skip its producer and exclusive dependent passes/resources | work required by other active consumers |
+| lobes share one dispatch | uniform branch before disabled lobe evaluation and writes, or a bounded cooked permutation | shared GBuffer loads, sampling, and dispatch overhead |
+| transport/reservoir work is shared | omit exclusive lobe work; remove the shared chain only when no active consumer needs it | valid sampling, traversal, reservoir work needed by remaining lobes |
 
-### Leaf and reset behavior
+Use runtime-uniform branches for live values unless a feature has a justified, bounded permutation set. A define changes code only through a selected cooked variant; changing a CVar cannot change a compiled define. Variant membership, bindings, shader cook, and selection belong to the same feature and cover supported combinations. Do not create exponential per-flag variants, runtime shader compilation, or unrelated shader branches in the frame shell.
 
-Clicking a leaf changes only that viewport's corresponding bit. **Reset Lighting Show Flags** enables every implemented per-view leaf; it does not mutate global CVars. Changing `RenderViewMode` retains the viewport selection.
+### Direct And Indirect Lighting
 
-The menu remains visible for discoverability, but lighting rows are interactive only when the selected mode consumes Lit lighting composition:
+- Disabling a direct lobe bypasses its response math and exclusive output writes. When every direct lobe is inactive, omit direct-light evaluation and reservoir/shadow work exclusively needed by it. Preserve shared work another active consumer actually requires.
+- Disabling an indirect lobe affects the estimator, resolve, dependent reconstruction work, and histories—not merely the resolve output. Primary-lobe classification, sampling probabilities, PDFs, reservoir target/weights, and reconstruction-guide meaning must remain valid for active contributions. An indirect specular leaf is not permission to remove every specular bounce on a diffuse-classified path; the [Indirect Lighting](../../Lighting/IndirectLighting/README.md) owner decides which transport work belongs exclusively to that contribution.
+- When every indirect lobe is inactive, omit the Lit indirect trace/reservoir/resolve chain and its exclusive dependent work. Preserve guide production or other work only where a separately active consumer genuinely needs it; missing mandatory guides make that selected consumer unavailable, not an invitation to silently change denoiser/provider.
+- The menu does not disable GBuffer generation, emissive surface evaluation, sky, exposure, tone mapping, or presentation. Their owners retain separate contracts. Never misclassify emission/sky required by an active indirect path as an optional disabled lobe.
 
-- `Lit` and the current Lit-shaded `Wireframe` mode consume the flags;
-- GBuffer and GPU-scene diagnostic modes retain and ignore them; lighting-lobe diagnostics retain contribution-visibility bits but show the lighting products generated under the active shadow-evaluation bits;
-- Reference Path Tracer retains and ignores them until it owns an explicitly separable contribution contract.
+### Shadows
 
-When flags do not apply, Editor disables the group and states the mode limitation. It does not alter the stored selection or imply that a diagnostic product was suppressed.
+- **Direct Shadows off:** omit primary direct-light shadow visibility production when no other active consumer requires it, and evaluate primary direct lighting as fully visible (`visibility = 1`) without sampling an absent signal. If a shared estimator requires shadow data, discovery must prove the narrowed route before claiming removal; do not keep unnecessary tracing solely to preserve a diagnostic.
+- **Indirect Shadows off:** bypass the shadow visibility trace for direct-light samples at secondary hits in the Lit estimator and use visibility `1`. Preserve continuation intersections, hit reconstruction, emitter hits, environment termination, and the active path's material transport. These intersections define the indirect path; they are not optional shadow rays.
+- **Shadows parent off:** applies both leaf changes in one batch. It does not disable ambient occlusion, GBuffer occlusion data, transport intersections, or the Reference estimator.
+- A shadow CVar can remain enabled while its lighting owner is inactive. `IsEnabled` preserves intent; `IsActive` is false without a relevant active lighting consumer. Re-enabling lighting activates shadows only if the shadow CVar and prerequisites allow it.
 
-## Renderer Consumption Semantics
+Reference Path Tracer ignores these Lit execution CVars until its owner accepts a separate contribution/visibility contract. Do not alter shared tracing helpers so Lit indirect-shadow policy leaks into Reference. The policy argument belongs to the Lit caller; the Reference caller retains its required transport.
 
-`LightingComposite` is the only consumer of the five contribution-visibility leaves because it is the existing point where the independent scene-linear products meet. For each contribution, it supplies the shader with the effective boolean derived from the immutable View bit and the matching global feature CVar.
+### No Stale Or Missing Reads
 
-The final target composition is:
+Prefer omitting inactive resources, UAV writes, SRV reads, and shader bindings through the feature's explicit active-product contract. Composition sums active contributions and separately owned emissive; it does not read missing resources and multiply them by zero.
 
-```text
-Lit =
-    Show(DirectDiffuse) * DirectDiffuse +
-    Show(DirectSpecular) * DirectSpecular +
-    Show(DirectSubsurface) * DirectSubsurface +
-    Show(IndirectDiffuse) * IndirectDiffuse +
-    Show(IndirectSpecular) * IndirectSpecular +
-    Show(IndirectSubsurface) * IndirectSubsurface +
-    Emissive
-```
+If a selected fixed-output ABI genuinely requires retained targets, the feature must explicitly define an intentional disabled-zero output and initialize it for the current frame. Account for initialization/allocation cost and invalidate histories that could repopulate it. Such initialization represents a user-disabled contribution, never a replacement for an enabled feature's missing producer. It may not fabricate reconstruction guides or satisfy a raw diagnostic as if the feature ran. Simply skipping a UAV write while a later consumer reads the previous frame is invalid.
 
-The first delivery omits the nonexistent final term. Emissive, sky, exposure, tone mapping, denoisers, reconstruction quality, algorithm selection, and backend capability remain outside the contribution-visibility vocabulary.
+Every read still has one real scheduled producer or an explicitly declared intentional disabled-output producer. The [required-product standard](../../../../../../../Engineering/Modules/Renderer.md#required-render-products) continues to reject dummy resources, clear-as-success fixes, null-binding fallbacks, and stale-history reuse for requested features.
 
-Lighting producers and histories continue running when a contribution is hidden. Composition suppression therefore preserves raw lighting diagnostics, reconstruction inputs, temporal continuity, and immediate re-enable behavior. Skipping producer work would change topology and history semantics and requires a separately measured design; it is not part of this target.
+## Graph Lifetime And Histories
 
-The shadow leaves have different consumers because they alter lighting evaluation rather than hide completed products:
+The current frame graph is cached, so per-frame parameter updates alone cannot remove an already scheduled dispatch. Each feature must prove the narrow mechanism appropriate to its path: an execution admission facility preserving declared dependencies, or a topology rebuild through the existing graph generation/retirement owner. Lobe-only uniform shader branches may use pass parameters when topology is unchanged.
 
-- when Direct Shadows is disabled, primary-surface direct lighting uses visibility `1` instead of the sampled `ShadowVisibilitySignal`; the signal pass remains scheduled and its raw diagnostic product remains unchanged;
-- when Indirect Shadows is disabled, direct-light samples evaluated at secondary hits in the Lit indirect estimator use visibility `1`; path-continuation traces, emitter hits, environment termination, material response, and lobe classification remain unchanged;
-- Reference Path Tracer always supplies enabled shadow evaluation and ignores the viewport show-flag bits until it owns a separately accepted control contract;
-- any temporal reservoir, reconstruction, accumulation, or confidence state whose estimator input changes with Indirect Shadows must reset through its existing per-view invalidation owner. Stale shadowed and unshadowed histories may not mix.
+Retain accepted CVar-derived values only when required by graph topology identity, a frame/pass ABI, or temporal invalidation. Such a value is a feature-owned lifecycle fact, not another editable authority. Do not add a global resolved show mask or route feature values through viewport requests/settings to trigger rebuilding. Rebuilding finishes before execution of the affected frame; old in-flight GPU resources/graphs retire through their existing fence-based lifetime.
 
-Shadow toggles preserve graph topology in the first delivery. They do not justify pruning the direct shadow-signal pass or indirect trace work, and they are debugging controls rather than a performance claim.
+Enabling, disabling, or changing an active lobe/shadow evaluation invalidates every dependent reservoir, reconstruction, accumulation, confidence, and guide history before reuse. Discovery names exact owners and reset scope for each control; reset only affected state unless a shared estimator requires a family reset. Do not keep disabled producers running to keep history warm. Re-enable starts with valid fresh inputs and a reset generation, never stale shadowed/unshadowed or different-lobe samples.
 
-## Owner, Producer, Consumer, And Lifetime
+## Costs, Evidence, And Rejected Shapes
 
-| Fact | Authority | Producer / mutation | Consumer | Lifetime |
-| --- | --- | --- | --- | --- |
-| flag vocabulary and bit semantics | Renderer Public viewport contract | compile-time definition | viewport owners, View builder, focused lighting consumers | executable generation |
-| viewport-local selection | `EditorViewportSession` or equivalent runtime viewport owner | user/runtime action | `ViewportPanel` request publication | viewport session |
-| submitted selection | `ViewportRenderRequest::ShowFlags` | viewport request owner | `RenderViewBuilder` | request generation |
-| immutable frame selection | `RenderView::showFlags` | `RenderViewBuilder` | lighting composite and direct/indirect shadow-evaluation owners | one prepared frame/frame slot |
-| global developer gate | Renderer-private feature CVar beside its consumer | sequenced console/settings control | corresponding parameter-preparation owner | process / current CVar value |
-| effective contribution visibility | `LightingComposite` | derived during parameter preparation | lighting-composite shader | one pass preparation/dispatch |
-| effective direct-shadow evaluation | direct-lighting owner | derived during parameter preparation | primary-surface direct-light shader | one pass preparation/dispatch |
-| effective indirect-shadow evaluation | Lit indirect-lighting owner | derived during parameter preparation | secondary-hit direct-light evaluation | one indirect frame evaluation; invalidates dependent history when changed |
+The target removes exclusive work and permits topology changes; it does not promise proportional GPU-time savings from shared estimators. Prove pass/dispatch omission, absent lobe evaluation/writes, shadow-ray bypass, and valid active outputs separately. Only a repeatable GPU capture/timing comparison at the same scene, path, resolution, backend, and provider configuration supports a saved-cost claim. Disclose remaining shared work and disabled-output initialization costs.
 
-The request-to-View value copy is the only added state projection across the rendering path. Parent states, effective gates, and UI labels are derived and are not stored as parallel truth.
+Rejected shapes include:
 
-## Design Decisions And Costs
-
-- **Fixed leaves instead of a registry:** keeps ownership and removal bounded, at the cost of editing the enum and Editor presentation when a real contribution is added.
-- **Derived parent actions:** avoid contradictory group state, at the cost of not preserving a previous mixed selection after a group is re-enabled.
-- **Per-view selection plus global CVar gates:** supports viewport-local investigation and console-wide developer isolation, at the cost of two intentionally visible scopes; neither pretends to mirror the other.
-- **Composite suppression instead of producer pruning:** preserves diagnostics and histories, at the cost of continuing GPU work for hidden contributions.
-- **Feature-named CVars instead of show-flag-named CVars:** keeps global policy with the feature it controls and allows console-only diagnosis, at the cost of documenting that CVar and viewport scopes intentionally differ.
-- **Shadow bypass at the visibility consumer:** retains graph topology and the raw direct-shadow signal, at the cost of continuing visibility work and requiring explicit indirect-history invalidation.
-- **No early Indirect Subsurface placeholder:** keeps the UI and API truthful, at the cost of adding that lighting row only after its transport semantics exist.
-
-## Boundaries And Rejected Shapes
-
-The following remain prohibited:
-
-- parent flags or parent CVars;
-- Editor writes to process-global CVars for ordinary Show-menu actions;
-- CVar values copied through request/View/settings records;
-- `r.ShowFlags.*` CVars or another global mirror of the per-view set;
-- direct CVar reads outside the narrow feature consumer, visualization passes, or RHI;
-- show flags used as `RenderViewMode`, algorithm, quality, provider, capability, or requested-product selectors;
-- a dynamic flag registry, string API, generic feature manager, or shader-global settings buffer;
-- producer or trace pruning in the first delivery;
-- treating indirect continuation intersections as optional “shadow” tests;
-- sharing the Lit indirect-shadow toggle with Reference Path Tracer by accident;
-- a no-op or fabricated-zero `IndirectSubsurface` path.
+- Renderer show-flag enums/sets, request/View show state, or any `r.ShowFlags.*` namespace;
+- per-viewport checkbox truth ANDed with global feature CVars;
+- parent CVars, a generic feature manager, dynamic registry, or settings bag;
+- activation branches duplicated in `FramePipeline`, host, Application, or RHI;
+- finished lighting multiplied by a visibility flag as the disable mechanism;
+- disabled producers kept alive for raw diagnostics or warm histories;
+- skipping writes without removing reads or explicitly initializing intentional disabled outputs;
+- unsupported enabled work presented as successful zero output or silently selecting another implementation/provider;
+- conflating indirect continuation rays with shadow visibility or leaking Lit policy into Reference;
+- premature Indirect Subsurface controls or unproved performance claims.
 
 ## Implementation And Evidence Route
 
-Use [DVP-4 in the delivery plan](../Plan.md#dvp-4---add-lighting-show-flags) for prerequisites, change maps, integration-hook and copy ledgers, stages, stop conditions, and non-goals. Use the [feature-local acceptance contract](../Acceptance.md) for the binary criteria, controlled failures, oracles, backend matrix, and evidence boundary. External precedent and its permitted/non-permitted transfers remain in [Research](../Research.md#unreal-engine).
+[DVP-4](../Plan.md#dvp-4---add-lighting-show-flags) orders feature-owned execution slices. [Discovery](../Discovery.md) must first authorize sequenced CVar edits, frame/graph consistency, shared-estimator semantics, product admission, and history invalidation. [Acceptance](../Acceptance.md) defines negative checks, pixel oracles, advertised-backend runs, and performance evidence. No production implementation or acceptance result is added by this document.

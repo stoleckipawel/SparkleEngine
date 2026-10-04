@@ -8,6 +8,8 @@
 
 **Verified baseline:** 2026-10-04 at revision `26803f97` with an inspected dirty working tree; every implementation stage must re-audit its candidate.
 
+**DVP-4 design revision:** 2026-10-04 at `bbb9f7ed`; CVar-driven feature execution replaces the former per-view Show set/composite masking. This adds no executable evidence for DVP-0 through DVP-5.
+
 **Architecture authority:** [Viewport Rendering Controls](Controls/README.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
 
 **Implementation authorization:** [Discovery](Discovery.md)
@@ -22,7 +24,7 @@
 | `DVP-1` | Migrate all existing modes to `RenderViewMode` and delete global selection | build/runtime/pixels |
 | `DVP-2` | Add Reference Path Tracer as value `1` and delete its selector CVar | viewport UX and GPU correctness |
 | `DVP-3` | Correct scene-referred HDR versus display-linear exact presentation | optional independent controls |
-| `DVP-4` | Add only proved orthogonal per-view controls with their consumers | broad visual/backend proof |
+| `DVP-4` | Add the Editor CVar frontend and feature-owned lighting/shadow execution controls | executable omission, pixels, GPU cost, and backend proof |
 | `DVP-5` | Retain the acceptance evidence | release acceptance until its report passes |
 
 ## DVP-0 - Freeze One Authority
@@ -63,80 +65,82 @@ This source shape is present in the current changelist. The Editor row remains u
 
 ## DVP-4 - Add Lighting Show Flags
 
-The [Renderer Show Flags](Controls/ShowFlags.md) target is delivered through two vertical slices. This plan orders work; it does not redefine the flag semantics or UI behavior owned there.
+The [Lighting Show Menu And Feature Execution Controls](Controls/ShowFlags.md) target is delivered through feature-owned execution slices. This plan orders work; it does not redefine the activation, global scope, or UI semantics owned there.
 
 ### DVP-4A - Existing Lighting And Shadow Controls
 
-**Objective:** expose the five current direct/indirect lighting products plus Direct Shadows and Indirect Shadows through one per-viewport Show menu and one feature-owned global developer CVar gate per leaf, without changing graph topology or misrepresenting indirect-path visibility.
+**Objective:** make the hierarchical Editor Show menu edit the seven real feature CVars and remove disabled features' exclusive execution cost. Renderer sees only feature intent and prerequisites, never a Show bit set.
 
 **Prerequisites:**
 
-1. [Discovery](Discovery.md) records DVP-4A as **AUTHORIZED**. Its current decision is **BLOCKED**; implementation must not begin from this plan alone.
-2. Re-audit the live five-product lighting composite, primary direct-shadow visibility signal, secondary-hit direct-light visibility in the Lit indirect estimator, viewport request/View publication, Editor session/panel route, CVar mutation thread, and Renderer control queue at the candidate revision.
-3. Prove that live `SetCVar` writes reach Renderer through a sequenced owner-thread boundary. If the current generic CVar path cannot prove that, stop and repair the existing CVar delivery owner before adding feature CVars. Do not copy CVar values through viewport requests or graph settings as a workaround.
-4. Confirm each selected shader-parameter representation can change every frame without graph reconstruction or a second mutable mask, and identify every indirect temporal state invalidated by an Indirect Shadows change.
+1. [Discovery](Discovery.md) records DVP-4A as **AUTHORIZED**. Its decision remains **BLOCKED**; this design revision does not authorize production edits.
+2. Re-audit the five lighting products, shared direct/indirect estimators, direct shadow signal, secondary-hit visibility, CVar mutation/query route, cached graph lifecycle, reconstruction guides, and all dependent history owners at the candidate revision.
+3. Prove sequenced console and Editor CVar mutation, including one parent/reset batch before frame admission and requested/applied observation. Repair the existing delivery owner if necessary; no private-header coupling, Application feature translator, request/View copy, or parallel settings authority is accepted.
+4. Freeze a path-by-leaf execution ledger: exact feature-local `IsEnabled`/`IsActive` owner, exclusive/shared passes and math, supported runtime branch or cooked variant, active products/bindings, topology change mechanism, dependent invalidation, unavailable-state behavior, and remaining shared cost.
+5. Supply independent non-zero lobe fixtures, primary/secondary occluder fixtures, required-product failure challenges, and negative controls that detect work still executing behind a hidden result.
 
-**Work:**
+**Delivery order:**
 
-1. Add `Renderer/Public/Viewport/RenderShowFlags.h` with the seven-leaf fixed enum/set and no reflection, registry, string API, serialization, or metadata table.
-2. Add `ViewportRenderRequest::ShowFlags`, freeze it once into `RenderView::showFlags`, and restore all-enabled state in the existing reuse/reset path.
-3. Register seven Renderer-private feature CVars: `r.Lighting.Direct.{Diffuse,Specular,Subsurface}`, `r.Lighting.Indirect.{Diffuse,Specular}`, and `r.Lighting.Shadows.{Direct,Indirect}`. Keep each beside its feature consumer; do not create an `r.ShowFlags` namespace.
-4. Extend `EditorViewportSession` with the viewport-local set and one change notification. Let `ViewportPanel` remain the sole request-generation owner.
-5. Add the separate hierarchical **Show** dropdown to `ViewportTopPanel`. Direct Lighting owns three children, Indirect Lighting owns two, and Shadows owns Direct Shadows and Indirect Shadows. Parent state is derived; one bulk action mutates the set and advances the request generation once.
-6. Mask the five completed contributions only in `LightingComposite`. Preserve their producers, histories, reconstruction inputs, and raw lobe visualization.
-7. Apply Direct Shadows only where primary direct lighting consumes the shadow visibility signal; substitute fully visible evaluation when disabled while preserving the raw signal and graph topology.
-8. Apply Indirect Shadows only to direct-light visibility evaluated at secondary hits in the Lit indirect estimator. Preserve continuation intersections and Reference behavior, and route a semantic toggle through the existing per-view invalidation owner for every dependent temporal state.
-9. Reconcile the Runtime Configuration catalog, Debug Views dossier, and directly affected source navigation. Add no disabled Indirect Subsurface control.
+1. **Control publication:** register the seven feature-named CVars beside their existing owners. Establish the authorized sequenced mutation/query and batch route, with no Renderer show-flag API or request/View fields.
+2. **Feature activation and lifecycle:** put `IsEnabled`/`IsActive` in the owning feature files; return at optional family entry points before exclusive resource/pass creation. Extend existing graph identity/retirement and affected-history invalidation only where topology or estimator semantics require it.
+3. **Direct lighting:** bypass disabled lobe math/writes in the shared shader or select a bounded cooked variant. Omit the direct family and exclusive reservoir/shadow work when none of its lobes is active. Reconcile active-product bindings and reconstruction consumers in the same slice.
+4. **Lit indirect lighting:** apply lobe intent before exclusive estimation/resolve, preserving valid sampling/PDF/target semantics for active lobes. Omit the indirect family when no active consumer requires it; prove guide ownership and resets. Do not infer that disabling primary specular output permits deleting specular continuation events.
+5. **Shadows:** remove direct visibility production when no active consumer needs it and bypass secondary-hit direct-light shadow traces when Indirect Shadows is disabled. Preserve continuation intersections and Reference policy. Reset every dependent temporal state.
+6. **Composition and diagnostics:** consume only active products; use intentional disabled-output initialization only for a justified fixed-output ABI. Remove masked finished-result suppression. A disabled raw diagnostic is unavailable, not secretly produced, stale, or zero-as-success.
+7. **Editor frontend:** add the hierarchical Show dropdown using existing CVar query/mutation. Derive leaf and parent checks from CVar intent, reflect console edits, and submit one batch for parent/reset actions. Explain shared scope; add no session selection mirror or viewport-generation transport.
+8. **Reconcile:** update affected runtime-CVar catalog, feature documentation, shaders/cooked membership, and navigation alongside implementation. Do not expose Indirect Subsurface prematurely.
+
+Steps 3–5 are bounded vertical slices, each including product admission, parameters/shaders, history, and focused validation before moving on. Do not land a temporary composite-mask path as an intermediate implementation.
 
 **Data/copy budget:**
 
-| Value | Authority | Copy and boundary reason | Lifetime / invalidation |
+| Value | Authority | Boundary / retained reason | Lifetime |
 | --- | --- | --- | --- |
-| Editor selection | `EditorViewportSession` | copied into the ordinary viewport request for module/thread publication | viewport session; replaced by the next accepted edit |
-| submitted selection | `ViewportRenderRequest::ShowFlags` | copied once into immutable `RenderView` because request and prepared-frame lifetimes differ | request generation to one prepared frame/frame slot |
-| global CVar gate | Renderer-private feature owner | no request/View/settings copy; read at its narrow parameter-preparation consumer | current sequenced Renderer CVar value |
-| effective shader booleans | lighting composite or direct/indirect lighting owner | derived pass parameters required by CPU/GPU ABI | one pass preparation/dispatch |
-| indirect-shadow semantic generation | existing per-view indirect invalidation owner | retained only because temporal estimator state must not mix shadowed and unshadowed samples | changes when effective Indirect Shadows changes |
+| feature intent | feature-owned CVar | existing sequenced control delivery; no request/View mirror | process / accepted control value |
+| menu check state | CVar query | transient UI projection, not independently editable truth | current UI refresh |
+| active pass/variant parameters | owning lighting feature | CPU/GPU ABI; one consistent accepted frame decision | pass / prepared frame |
+| topology identity | existing graph lifecycle with feature contribution | retained only when accepted feature policy changes scheduled products/passes | graph generation and fence retirement |
+| estimator semantic identity | existing lighting history invalidation owner | required to reject incompatible lobe/shadow samples | affected history generation |
 
 **Integration-hook ledger:**
 
 | Surface | Classification | Justification | Defect-detecting check |
 | --- | --- | --- | --- |
-| Renderer Public viewport contract | new justified hook | Editor and Game/runtime need the same seven rendering semantics | `CHK-DVP-08` traces the only public type and request field |
-| Renderer Private View | existing hook | immutable per-frame publication boundary | `CHK-DVP-08` proves one request-to-View copy and no writeback |
-| Lighting composite C++/HLSL | existing consumer extended | narrow owner where all five completed products meet | `CHK-DVP-10` isolates every non-zero lobe |
-| Direct-light visibility consumption | existing consumer extended | direct shadowing is already a separate signal at primary-surface shading | `CHK-DVP-10` proves unshadowed evaluation and unchanged raw signal |
-| Lit indirect path-lighting evaluation and invalidation | existing consumers extended | secondary-hit direct-light visibility owns indirect shadowing; temporal state depends on it | `CHK-DVP-10` proves scope, reset, and no Reference cross-talk |
-| Editor viewport session/panel/top panel | smallest presentation hook | viewport-local interaction and one request publication | `CHK-DVP-09` covers leaf, mixed parent, reset, and generation behavior |
-| Application, generic frame graph, RHI | no hook permitted | no show-flag policy or transport belongs there | `CHK-DVP-08` stale-name/dependency search |
+| Existing Core console/control delivery | prerequisite hook, only if needed | sequenced live edits and batch acknowledgment | `CHK-DVP-08`, `CHK-DVP-09` trace serial/threaded ordering |
+| Direct lighting/reservoir/shadow owners | existing feature owners extended | admission, lobe math, exclusive producer omission | `CHK-DVP-10`, `CHK-DVP-12` pixels plus pass/work omission |
+| Lit indirect estimator/resolve/history owners | existing feature owners extended | shared estimator semantics and exclusive work/reset | `CHK-DVP-10`, `CHK-DVP-12` lobe, continuation, and history oracles |
+| Lighting composition/products and dependent consumers | existing product boundary extended | no missing/stale reads after producer removal | `CHK-DVP-10`, `CHK-DVP-11` binding/native checks |
+| Existing graph identity/retirement | narrowly justified lifetime hook | cached topology must match accepted feature execution | `CHK-DVP-08`, `CHK-DVP-11` generation/order/in-flight proof |
+| Editor top-panel and existing control interface | presentation hook | CVar-driven hierarchy and atomic bulk intent | `CHK-DVP-09` console/UI/global-scope checks |
+| Renderer Public viewport, request/View, Application, RHI | no Show hook permitted | no Editor show semantics or duplicate CVar transport | `CHK-DVP-08` enclosure/stale-name audit |
 
-**Non-goals:** Indirect Subsurface, persistence, capture schema, producer/trace pruning, topology changes, global parent CVars, an `r.ShowFlags` namespace, a generic registry/settings bag, new diagnostics, Application translation, RHI state, disabling indirect continuation intersections, or changing Reference Path Tracer behavior.
+**Non-goals:** Indirect Subsurface, per-viewport feature overrides, persisted Editor selection, parent CVars, `r.ShowFlags`, generic feature manager/registry/settings bag, Application translation, RHI feature state, runtime shader compilation, indirect continuation bypass, or changing Reference behavior.
 
-**Stop conditions:** stop the slice if CVar mutation remains unsequenced; a contribution leaf lacks a non-zero isolatable product; either shadow leaf lacks a controlled occluder oracle; Indirect Shadows cannot invalidate every dependent temporal state; the Editor must read/write Renderer-private CVars; a second resolved mask is retained; request generation advances once per child; Reference behavior changes; continuation intersections are bypassed; or a required raw diagnostic product is lost.
+**Stop conditions:** unsequenced or mid-frame CVar mutation; a missing real product/oracle; requested unsupported work quietly disappearing; unresolved shared-estimator PDFs/target semantics; no accepted graph-retirement or dependent-history reset route; stale/missing resource reads; fabricated reconstruction guides; disabled diagnostics secretly keeping producers alive; frame/host activation sprawl; Reference cross-talk; or performance claims based only on hidden pixels.
 
-**Exit gate:** `AC-DVP-17` through `AC-DVP-25` and `AC-DVP-27` pass through `CHK-DVP-08` through `CHK-DVP-11`. Record shader cook and decoded D3D12/Vulkan pixel checks as `PASS`, `BLOCKED`, or unrun; source inspection cannot close them.
+**Exit gate:** `AC-DVP-17` through `AC-DVP-25` and `AC-DVP-27`, `AC-DVP-28` through `CHK-DVP-08` through `CHK-DVP-12`. Prove executable work omission separately from numerical correctness; measured savings require retained GPU evidence. Unrun checks remain unrun.
 
 **Current permitted prompt — discovery only:**
 
 ```text
-Execute DVP-SF-P01 through DVP-SF-P04 from DebugViews/Discovery.md. Make no production-code changes. Re-audit the exact candidate, trace Editor/runtime console SetCVar mutation through serial and threaded Renderer execution, identify the owner thread/publication/order/shutdown contract, prove each narrow lighting consumer can observe its feature CVar and immutable View bit per frame without graph reconstruction, identify one independently non-zero analytic fixture for each of the five current lighting products, and freeze controlled direct/indirect shadow oracles plus the indirect-history invalidation set. Update only the owning Discovery/Plan/Acceptance facts needed to record AUTHORIZED or BLOCKED. Reject `r.ShowFlags` CVars, generic callback registries, copied CVar/settings bags, Application feature translation, parent state, no-op products, continuation-ray bypass, Reference cross-talk, and claims based only on source presence. Run documentation links/anchors, UTF-8, stale-path searches, and git diff --check; report every executable check as unrun.
+Execute DVP-SF-P01 through DVP-SF-P05 from DebugViews/Discovery.md. Make no production-code changes. Re-audit the exact candidate and freeze the Editor/console CVar sequencing and bulk-edit route, feature-local IsEnabled/IsActive owners, shared estimator semantics, cached-graph admission/rebuild/retirement, active-product bindings, invalidation scopes, and non-zero lobe/shadow fixtures. Map each leaf/path to omitted exclusive work and remaining shared cost. Update only the owning discovery/plan/acceptance facts needed for AUTHORIZED or BLOCKED. Reject Renderer show state, request/View feature copies, Application translation, parent CVars, composite masks, dummy required products, continuation bypass, Reference cross-talk, and performance claims without GPU evidence. Run scoped documentation checks and git diff --check; report executable probes not run.
 ```
 
 **Implementation prompt — valid only after Discovery records `AUTHORIZED`:**
 
 ```text
-Implement only DVP-4A from DebugViews/Plan.md against the exact Discovery-authorized CVar publication and shadow-invalidation routes. Add the seven-leaf RenderShowFlag/RenderShowFlagSet public viewport contract, publish one set through ViewportRenderRequest and immutable RenderView, combine feature CVar and per-view bits only at each named lighting consumer, and add the Direct Lighting, Indirect Lighting, and Shadows hierarchy with derived parents and one request-generation change per action. Preserve graph topology and raw direct-shadow signal; reset all dependent Lit indirect temporal state when effective Indirect Shadows changes; preserve continuation intersections and Reference behavior. Add no `r.ShowFlags` CVar, IndirectSubsurface surface, parent flag/CVar, persistence, registry, resolved-mask holder, Application/RHI state, producer/trace pruning, compatibility alias, permanent test file, or unledgered integration hook. Execute CHK-DVP-08 through CHK-DVP-11 in claim-driven order and stop on any failed prerequisite or enclosure check.
+Implement DVP-4A in its bounded feature-owned order using the authorized CVar publication, graph-lifecycle, estimator, product, and history routes. Keep Show an Editor-only CVar frontend. Put IsEnabled/IsActive in feature files and keep optional admission inside their Add...Passes entry points. Remove exclusive disabled lobe/shadow work via pass omission, early uniform branches, or justified cooked variants; preserve shared work only for real active consumers. Reconcile bindings/composition/guides/diagnostics and invalidate affected histories so there are no stale reads or silent required-product fallbacks. Add the CVar-driven hierarchy with one ordered parent/reset batch and global-scope explanation. Add no RenderShowFlag set, request/View show fields, parent CVar, r.ShowFlags namespace, generic feature manager, settings mirror, runtime shader compilation, or premature IndirectSubsurface. Preserve continuation intersections and Reference policy. Execute CHK-DVP-08 through CHK-DVP-12 proportionally and stop on failed prerequisites. No finished-result mask is an accepted intermediate slice.
 ```
 
 ### DVP-4B - Indirect Subsurface
 
-**Prerequisite:** `IND-D0-02` and the owning Indirect Lighting package must first define and authorize subsurface lobe classification, estimator/PDF/energy behavior, reconstruction/history consequences, a non-zero oracle, and the real `IndirectSubsurface` product. A UI request alone cannot satisfy this gate.
+**Prerequisite:** `IND-D0-02` and the Indirect Lighting owner authorize subsurface lobe classification, estimator/PDF/energy semantics, reconstruction/history consequences, and a real non-zero product.
 
-**Work:** land the product, producer, reconstruction and diagnostic consequences, composite binding, eighth enum value, global feature CVar, Editor leaf, Lighting-family documentation, and evidence together. The existing Indirect parent automatically expands from two to three available children; no compatibility bit or placeholder row remains.
+**Work:** land producer, activation, disabled-work removal, reconstruction/diagnostic contract, active composite binding, feature CVar, and Editor leaf together. The existing Indirect parent expands from two to three real children; no flag enum or placeholder is required.
 
-**Non-goals:** reclassifying diffuse energy as subsurface, fabricated zero output, a UI-only flag, or opportunistic transmission/volume transport.
+**Non-goals:** reclassifying diffuse energy as subsurface, fabricated output, UI-only enablement, or opportunistic transmission/volume transport.
 
-**Exit gate:** the eight-leaf target satisfies `AC-DVP-17` through `AC-DVP-27`, including a non-zero independent Indirect Subsurface oracle. If the transport decision remains open, record DVP-4B as `BLOCKED` and do not start implementation.
+**Exit gate:** applicable `AC-DVP-17` through `AC-DVP-28`, including a non-zero independent oracle and exclusive-work omission. Remain **BLOCKED** while the transport decision is open.
 
 ## DVP-5 - Prove The Contract
 

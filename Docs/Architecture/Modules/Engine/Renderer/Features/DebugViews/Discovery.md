@@ -1,100 +1,112 @@
 # Debug Views Discovery And Implementation Authorization
 
-**Status:** discovery gate; DVP-4 implementation is blocked pending the CVar publication decision
+**Status:** discovery gate; DVP-4 implementation is blocked pending CVar publication and feature-execution decisions
 
-**Current readiness:** **Not applicable** to this gate. Debug Views readiness remains owned by the [Renderer readiness row](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **Not applicable** to this gate. Debug Views progress remains owned by the [Renderer readiness row](../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
-**Responsibility:** own the unresolved decisions, risks, probes, and binary authorization gate for the next Debug Views implementation slice.
+**Responsibility:** own unresolved decisions, risks, probes, and binary authorization for the next Debug Views implementation slice.
 
-**Authority boundary:** [Controls](Controls/README.md) and [Presentation Architecture](PresentationArchitecture.md) define target behavior; [Plan](Plan.md) orders authorized work; [Acceptance](Acceptance.md) defines proof; this page alone decides whether DVP-4 may start.
+**Authority boundary:** [Controls](Controls/README.md) and [Presentation Architecture](PresentationArchitecture.md) define behavior; [Plan](Plan.md) orders authorized work; [Acceptance](Acceptance.md) defines proof; this page decides whether DVP-4 may start.
 
-**Verified:** 2026-10-04 against revision `26803f97` and the inspected dirty working tree.
+**Verified:** 2026-10-04 against revision `bbb9f7ed` and the inspected dirty working tree.
 
-**Non-claims:** source inspection below does not prove compilation, thread safety, runtime behavior, pixels, backend parity, or release acceptance.
+**Non-claims:** source inspection does not prove compilation, thread safety, runtime behavior, pixels, GPU cost removal, backend parity, or release acceptance.
 
 ## Decision To Make
 
-Authorize DVP-4A only when the five current lighting products, two shadow-evaluation seams, per-view publication boundary, focused Renderer consumers, Editor interaction owner, live CVar mutation path, and indirect-history invalidation form one coherent and race-free vertical slice.
+Authorize DVP-4A only when Editor and console can safely edit one feature-CVar authority, and each lighting/shadow owner can admit execution, remove exclusive disabled work, preserve valid shared work, and retire/reset its products and histories without a hidden fallback.
 
-DVP-4B is a separate authorization owned jointly with Indirect Lighting discovery because `IndirectSubsurface` changes transport and product semantics.
+The revised [Show-menu design](Controls/ShowFlags.md) supersedes the former per-view bit set and composite-only masking target. It is an accepted design direction, not authorization or executable evidence. DVP-4B separately requires the Indirect Lighting transport/product decision.
 
 ## Iteration Control Record
 
 | Field | Record |
 | --- | --- |
-| Iteration identity | `ITER-DVP-SHOWFLAGS-01`; Debug Views owner; **BLOCKED**; documentation/discovery scope only; start revision `26803f97` with a dirty tree containing unrelated user work |
-| Intended decision | authorize or block DVP-4A without changing production code |
-| North Star | `NS-OWNERSHIP`: advance by freezing scope and publication owners; `NS-SIMPLIFY`: advance by rejecting parent/resolved duplicates; `NS-REAL`: blocked until a consumer-visible implementation exists; `NS-EVIDENCE`: preserve, with no executable claim added |
-| Persona targets | `PGE-07`, `PGE-09`, and `PGE-13`: preserve target direction; no evidence-level advance from documentation |
+| Iteration identity | `ITER-DVP-SHOWFLAGS-02`; Debug Views owner; **BLOCKED** for implementation; design revision only; start `bbb9f7ed` with unrelated shader/Launcher changes preserved |
+| Intended outcome | replace hidden-result masking with feature-owned execution and CVar-driven Editor UI |
+| North Star | `NS-OWNERSHIP` / `NS-SIMPLIFY`: advance target enclosure and single authority; `NS-REAL` / `NS-EVIDENCE`: preserve, no implementation or evidence-level advance |
+| Persona targets | `PGE-07`, `PGE-09`, `PGE-13`: preserve direction; no runtime/performance claim |
 | Delivery target | [DVP-4](Plan.md#dvp-4---add-lighting-show-flags), `RD-3`, `FCR-REN-11`; no release verdict |
-| Acceptance | `AC-DVP-17` through `AC-DVP-27` in [Acceptance](Acceptance.md) |
-| Failure modes | `FM-DVP-07` through `FM-DVP-12` in [Acceptance](Acceptance.md) |
-| Checks | `CHK-DVP-08` through `CHK-DVP-11` in [Acceptance](Acceptance.md) |
-| Current decision | **BLOCKED** for DVP-4A by `DVP-SF-D03`, `DVP-SF-D07`, and `DVP-SF-D08`; **BLOCKED** for DVP-4B by `DVP-SF-D05` |
-| Next permitted step | execute `DVP-SF-P01` and `DVP-SF-P04` as read-only ownership/semantics audits, then complete the bounded parameter and fixture probes before production edits |
+| Acceptance / failures / checks | `AC-DVP-17`–`28`, `FM-DVP-07`–`14`, `CHK-DVP-08`–`12` in [Acceptance](Acceptance.md) |
+| Current decision | DVP-4A **BLOCKED** by `DVP-SF-D03`, `DVP-SF-D07`, `DVP-SF-D08`, `DVP-SF-D09`; DVP-4B **BLOCKED** by `DVP-SF-D05` |
+| Next permitted step | read-only ownership audits and bounded local probes `DVP-SF-P01`–`P05`; production edits require recorded authorization |
 
 ## Known Current State
 
 | Area | Observed source state | Evidence boundary |
 | --- | --- | --- |
-| lighting products | `DirectDiffuse`, `DirectSpecular`, `DirectSubsurface`, `IndirectDiffuse`, and `IndirectSpecular` are allocated and read by `LightingComposite` | source present only |
-| indirect subsurface | no product, producer, composite input, debug mode, or admitted indirect lobe was found | `Not found`; no control may advertise it |
-| direct shadows | primary-surface direct lighting reads a separately produced `ShadowVisibilitySignal` | source-present seam; bypass and raw-signal preservation unproved |
-| indirect shadows | Lit indirect evaluation calls `TraceSurfacePathWithRandomFrame`; secondary-hit direct lighting calls `TraceDirectLightSample`, while continuation intersections define the path | source-present seam; control scope, Reference isolation, and temporal invalidation unproved |
-| per-view mode path | `ViewportRenderRequest` is frozen into `RenderView` and Editor publishes through `ViewportPanel` | source present; show flags absent |
-| CVar storage | `ConsoleVariable<T>` stores and returns a plain `T`; `SetCVar` calls `TrySetValueFromString` directly | source shape does not prove cross-thread sequencing |
-| Editor control | `ViewportTopPanel` owns view-mode presentation and `EditorViewportSession` owns local selection | no Show menu or show-flag state exists |
-| Renderer/RHI boundary | lighting composition is Renderer-private and RHI has no feature selector | target must preserve this absence |
+| lighting products | five targets allocated, direct lobes share a shader, indirect lobes share estimator/resolve, composite reads all five | source only; no live lobe activation/removal proved |
+| indirect subsurface | no admitted product/producer/composite input found | `Not found`; do not expose a control |
+| direct shadows | direct family creates a separate signal and consumes it in primary lighting | source seam; producer omission and estimator consequences unproved |
+| indirect shadows | Lit estimator reaches secondary-hit direct visibility through shared path helpers | source seam; branch placement and Reference isolation unproved |
+| graph lifetime | `FramePipeline` caches graph construction and owns topology refresh/retirement | no proof that these proposed CVars invalidate/rebuild cached topology |
+| histories | `RestirLightingInvalidation` hashes scene, shadow bias/distance, and bounce count | no proposed lobe/shadow activation values covered yet |
+| guides and initialization | indirect resolve writes reconstruction guides; lighting targets have a shared clear pass | dependencies must be audited before omitting producers/writes |
+| CVar storage | plain `ConsoleVariable<T>` storage and direct generic setter in the prior inspection | serial/threaded publication and safe UI query still unproved |
+| Editor | top panel owns mode presentation; no Show menu exists | CVar-driven UI and ordered batch edits unimplemented |
+| Renderer/RHI | no implemented Show contract | target preserves this absence; feature helpers remain private |
 
 ## Decision Register
 
 | ID | Decision | Status | Required evidence / consequence |
 | --- | --- | --- | --- |
-| `DVP-SF-D01` | The first slice contains five current non-zero lighting contributions and the two source-present shadow-evaluation seams. | **Accepted** | live product/composite and visibility-consumer audit; no placeholder Indirect Subsurface surface |
-| `DVP-SF-D02` | Direct Lighting, Indirect Lighting, and Shadows parents are derived Editor bulk actions, not flags or CVars. | **Accepted** | one mutable leaf set and parent truth table |
-| `DVP-SF-D03` | Live feature CVar mutation uses a sequenced Renderer-owner publication path while each feature reads at its narrow owner. | **Open / blocking** | `DVP-SF-P01`; name exact mutation thread, queue/command, ordering, shutdown, and requested/active observation |
-| `DVP-SF-D04` | Hidden contributions remain produced and are suppressed only by `LightingComposite`; shadow flags preserve graph topology and the raw direct-shadow signal. | **Accepted** | preserves contribution diagnostics and avoids conflating debug visibility with work pruning |
-| `DVP-SF-D05` | Indirect Subsurface exists only after `IND-D0-02` defines and admits its path class and product contract. | **Open / blocks DVP-4B** | accepted Indirect Lighting decision, producer, reconstruction/diagnostic consequences, and non-zero oracle |
-| `DVP-SF-D06` | Show flags are non-persisted viewport state; CVars are non-persisted global developer gates. | **Accepted** | no rendering-settings or Application persistence hook |
-| `DVP-SF-D07` | Each of the five contribution leaves has a bounded non-zero independent fixture and each shadow leaf has a controlled occluder fixture before implementation. | **Open / blocking** | `DVP-SF-P03/04` fixture and oracle ledger |
-| `DVP-SF-D08` | Direct Shadows bypasses only primary direct visibility; Indirect Shadows bypasses only secondary-hit direct-light visibility in Lit, preserves continuation intersections and Reference behavior, and resets every dependent indirect temporal state. | **Open / blocking** | `DVP-SF-P04`; exact shader ABI, call sites, invalidation owner/generation, and negative controls |
+| `DVP-SF-D01` | Initial scope is five real lobes and two controlled shadow seams. | **Accepted target** | confirm real non-zero products/oracles at the implementation candidate |
+| `DVP-SF-D02` | Parent rows derive intent from child CVars and edit them in one batch. | **Accepted target** | no parent CVar or viewport-local selection mirror |
+| `DVP-SF-D03` | Editor/console mutation and query use one sequenced control authority; frames see one accepted batch. | **Open / blocking** | `P01`: exact thread, publication, query, ordering, acknowledgment, shutdown |
+| `DVP-SF-D04` | Feature-owned IsEnabled/IsActive removes exclusive work instead of masking completed products. | **Accepted target; execution probes open** | `P02/05`: omission and product/lifetime mechanism; old continuity/masking decision removed |
+| `DVP-SF-D05` | Indirect Subsurface requires `IND-D0-02` and a real product. | **Open / blocks DVP-4B** | accepted owning transport decision, producer, and non-zero oracle |
+| `DVP-SF-D06` | Show is an Editor CVar frontend with global scope, not persisted per-view rendering state. | **Accepted target** | no Show transport on request/View, no Editor selection persistence |
+| `DVP-SF-D07` | Each leaf has non-zero pixel and executable-work oracles before implementation. | **Open / blocking** | `P03/04/05`: fixtures, pass/branch/ray omission, remaining shared-cost ledger |
+| `DVP-SF-D08` | Lobe/shadow changes reset all dependent temporal state; indirect shadow bypass preserves continuation and Reference. | **Open / blocking** | `P04/05`: exact caller/ABI, affected histories, invalidation owners and negative controls |
+| `DVP-SF-D09` | Each supported path has valid active products, sampling/estimator semantics, and a safe cached-graph admission/retirement route. | **Open / blocking** | `P02/05`: branches/variants, PDFs/targets, guides, bindings, topology identity and in-flight retirement |
 
 ## Risk Register
 
-| ID | Cause and event | Likelihood rationale / impact | Prevention / detection | Owner | Contingency and retirement |
-| --- | --- | --- | --- | --- | --- |
-| `RISK-DVP-SF-01` | console thread writes plain CVar storage while Renderer reads it | likely in threaded mode from the inspected direct setter; high correctness impact | block on `DVP-SF-P01` and `CHK-DVP-08` | Core console and Renderer concurrency owners | choose one sequenced owner route; retire with source trace plus threaded toggle evidence |
-| `RISK-DVP-SF-02` | parent state is stored beside children | medium because hierarchical UI invites a parent boolean; medium maintenance/behavior impact | derived-only architecture; static state-holder audit | Editor viewport owner | delete parent field/CVar; retire through `CHK-DVP-08/09` |
-| `RISK-DVP-SF-03` | suppression prunes producers | medium because disabled work suggests optimization; high history/diagnostic impact | composite-only first slice; raw-product negative check | Renderer lighting owner | restore producer continuity; retire through `CHK-DVP-10` |
-| `RISK-DVP-SF-04` | Indirect Subsurface is inferred in UI/composite | high because it is explicitly requested but absent; high false-capability impact | hard DVP-4B gate | Indirect Lighting owner | remove every premature surface; retire only with `IND-D0-02` evidence |
-| `RISK-DVP-SF-05` | per-view and global scopes are presented as one value | medium because both use the same leaf names; medium diagnosis impact | explicit AND rule, separate console/UI truth, two-viewport matrix | Renderer contract and Editor presentation owners | improve labeling or block; retire through `CHK-DVP-09/10` |
-| `RISK-DVP-SF-06` | “Indirect Shadows” disables continuation intersections or leaks into Reference | medium because visibility and path intersection share ray-tracing helpers; high transport/reference impact | freeze the secondary-hit-only seam and add Reference/continuation negative controls | Indirect Lighting and Reference owners | restore the exact scope or remove the leaf; retire through `CHK-DVP-10/11` |
-| `RISK-DVP-SF-07` | shadowed and unshadowed indirect samples mix in temporal reservoirs/reconstruction | high because the current indirect route reuses temporal state; high ghosting/bias impact | enumerate and reset dependent state on effective-toggle generation | Indirect Lighting owner | block implementation until the reset set is complete; retire through `CHK-DVP-10` |
+| ID | Failure | Prevention / check | Owner / retirement |
+| --- | --- | --- | --- |
+| `RISK-DVP-SF-01` | plain storage races or a frame observes half a parent edit | block on sequenced mutation/query and batch probe; `CHK-DVP-08`, `CHK-DVP-09` | existing console and Renderer control owners; retire with threaded evidence |
+| `RISK-DVP-SF-02` | parent/UI mirror becomes a second authority | derive from CVars; source/state-holder audit | Editor owner; `CHK-DVP-08`, `CHK-DVP-09` |
+| `RISK-DVP-SF-03` | producer omission leaves stale reads or enabled-required work silently disappears | active-product/required-failure oracles; no zero-as-success | lighting product owners; `CHK-DVP-10`, `CHK-DVP-11` |
+| `RISK-DVP-SF-04` | absent Indirect Subsurface is advertised | hard owning transport/product gate | Indirect Lighting; remove premature surfaces, retire with `IND-D0-02` |
+| `RISK-DVP-SF-05` | UI implies viewport-local state or active support from an enabled CVar | shared-scope UI and enabled/active/unavailable matrix | Editor and feature owners; `CHK-DVP-09`, `CHK-DVP-10` |
+| `RISK-DVP-SF-06` | shadow bypass deletes continuation traces or leaks into Reference | Lit-caller policy and continuation/Reference negative controls | indirect/Reference owners; `CHK-DVP-10`, `CHK-DVP-11` |
+| `RISK-DVP-SF-07` | old lobe/shadow state survives disable/re-enable | enumerate reset set and semantic identity | history owners; `CHK-DVP-10` |
+| `RISK-DVP-SF-08` | hidden pixels are mistaken for removed cost; cached graph still dispatches disabled work | pass/ray/branch evidence and honest shared-cost accounting | feature/graph owners; `CHK-DVP-12` |
+| `RISK-DVP-SF-09` | lobe pruning invalidates PDFs/reservoir targets or removes mandatory guides | estimator and reconstruction-owner review before execution changes | direct/indirect/provider consumers; `CHK-DVP-10`, `CHK-DVP-11` |
+
+All risks remain open until the mapped checks have candidate evidence; target wording does not retire a risk.
 
 ## Required Probes
 
 ### `DVP-SF-P01` - CVar Mutation And Thread Ownership
 
-Trace Editor and runtime console execution, `SetCVar`, Renderer serial/threaded modes, the control queue, frame/pass parameter preparation, shutdown, and existing live Renderer CVar consumers. Produce one bounded owner/sequence diagram and decide among only routes that satisfy the Renderer and Editor standards. The selected route must expose requested versus active state if application is delayed.
+Trace Editor/runtime console, direct SetCVar, serial/threaded Renderer, control queues, safe UI queries, frame admission, shutdown, and existing live feature CVars. Choose one existing-owner route for single edits and parent/reset batches. Name requested/applied observation when delivery is delayed.
 
-**Stop rule:** if satisfying the boundary requires a generic callback registry, copied settings bag, Application feature translation, or unbounded Core/Renderer refactor, DVP-4A remains blocked and the CVar requirement returns for scope review.
+**Stop rule:** a generic callback registry, settings bag, Application feature translation, private Renderer headers in Editor, or an unbounded cross-module refactor keeps DVP-4A blocked.
 
-### `DVP-SF-P02` - Per-Frame Parameter Reachability
+### `DVP-SF-P02` - Feature Activation And Cached Graph Reachability
 
-Prove that lighting-composite, primary direct-lighting, and Lit indirect-lighting parameters are prepared from the current immutable View and current accepted feature gate every frame without graph reconstruction. Record each exact producer, thread, cadence, and shader ABI surface.
+For each leaf/path, locate the feature-local IsEnabled/IsActive owner, admission entry point, shader parameter/variant ABI, resources and consumers. Determine whether a runtime branch suffices or graph topology must change. Trace accepted CVar edits into existing graph identity/rebuild/retirement; prove admission, bindings, shader values, and invalidation observe one accepted frame state. Do not assume a per-frame parameter update removes a cached dispatch.
 
 ### `DVP-SF-P03` - Five-Product Non-Zero Fixtures
 
-Identify one bounded analytic fixture per existing lobe where the target product is non-zero and independently distinguishable. These fixtures become the `CHK-DVP-10` oracle; a zero-only path cannot authorize a flag.
+Identify one bounded analytic fixture per current lobe with independent non-zero energy. Freeze all-on and each-off references before changing implementation. Define a missing-prerequisite challenge for enabled work and a disabled diagnostic oracle. Record format tolerances and any shared-estimator sample/PDF consequences.
 
 ### `DVP-SF-P04` - Shadow Scope And Invalidation
 
-Trace `ShadowVisibilitySignal` into primary direct lighting and trace `RestirIndirectReservoir::EvaluateCandidate` through secondary-hit direct-light visibility. Identify the narrow shader parameters that can substitute visibility `1` without changing graph topology. Enumerate every temporal reservoir, reconstruction, accumulation, confidence, or generation whose meaning changes when effective Indirect Shadows changes, and name the existing per-view invalidation owner that resets it.
+Trace primary direct visibility and secondary-hit direct-light visibility, including every visibility-dependent reservoir target/weight. Name the exact bypass/producer omission route and affected temporal reservoir, reconstruction, accumulation, confidence, and guide owners.
 
-Freeze two controlled occluder fixtures: one where Direct Shadows changes only primary direct lighting while the raw shadow signal remains identical, and one where Indirect Shadows changes secondary-hit direct-light contribution while continuation-hit identity and Reference output remain unchanged. If the second oracle cannot distinguish shadow visibility from path continuation semantics, the Indirect Shadows leaf remains blocked.
+Freeze primary/secondary occluder fixtures: Direct Shadows off matches fully visible primary lighting with exclusive signal work absent; Indirect Shadows off removes secondary-hit visibility traces while continuation-hit identity and Reference policy remain unchanged. Do not require the raw disabled shadow diagnostic to remain produced. If shared work genuinely needs visibility, freeze and disclose that dependency before claiming removal.
+
+### `DVP-SF-P05` - Work Removal, Products, And Shared Estimators
+
+Produce one bounded per-path execution ledger covering each leaf and all-off group:
+exclusive and shared passes, trace categories, lobe math/writes, active-product bindings, bounded branches/permutations, sampling/PDF/reservoir semantics, guide production, history resets, and remaining cost.
+
+Prefer no resource/read/write for inactive contributions. Justify intentional current-frame disabled-zero initialization only where a selected fixed-output ABI requires it; it must never satisfy missing enabled work or fabricate guides. Freeze pass/dispatch and shader/ray oracles plus the same-scene GPU timing protocol. These probes authorize implementation, not performance acceptance.
 
 ## Exit Rule
 
-DVP-4A becomes **AUTHORIZED** only when `DVP-SF-D03` is accepted with `DVP-SF-P01/02` evidence, all five `DVP-SF-P03` contribution fixtures and both `DVP-SF-P04` shadow fixtures are identified, `DVP-SF-D08` has an accepted invalidation route, every risk has a live prevention/check mapping, and the [Plan](Plan.md#dvp-4---add-lighting-show-flags) requires the resulting route without choosing new architecture during implementation.
+DVP-4A becomes **AUTHORIZED** only when `DVP-SF-D03`, `DVP-SF-D07`, `DVP-SF-D08`, `DVP-SF-D09` have accepted `P01`–`P05` evidence, the execution ledger has no unresolved transport/product/history/lifetime route, every risk has a live check mapping, and [Plan](Plan.md#dvp-4---add-lighting-show-flags) requires those routes without delegating architecture decisions to implementation.
 
-DVP-4B remains **BLOCKED** until `DVP-SF-D05` passes in the owning Indirect Lighting package. Documentation length, a disabled UI row, or a zero texture cannot satisfy either gate.
+DVP-4B stays **BLOCKED** until `DVP-SF-D05` passes in the Indirect Lighting package. Design edits, zero-only fixtures, hidden pixels, or an unchecked UI row cannot satisfy either gate.

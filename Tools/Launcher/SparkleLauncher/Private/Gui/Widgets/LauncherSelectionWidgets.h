@@ -10,7 +10,6 @@
 
 class QCheckBox;
 class QComboBox;
-class QLabel;
 class QObject;
 
 namespace SparkleLauncher
@@ -26,5 +25,4 @@ namespace SparkleLauncher
 	    QObject* context,
 	    std::function<void(bool)> commitSelection);
 	QStringList CollectSelectedScopeValues(const QVector<QCheckBox*>& scopeBoxes);
-	void UpdateScopeSelectionSummary(QLabel* selectionSummary, bool hasSelection, const QString& emptyMessage);
 }

@@ -3,7 +3,8 @@
 cbuffer PerObjectVSConstantBufferData
 {
 	row_major float4x4 WorldMatrix;
-	row_major float3x3 WorldInverseTranspose;
+	// Match XMStoreFloat3x4: three columns, each occupying one 16-byte register.
+	column_major float3x3 WorldInverseTranspose;
 };
 
 cbuffer PerObjectPS

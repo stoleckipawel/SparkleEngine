@@ -169,8 +169,6 @@ namespace SparkleLauncher
 		addRule("#CleanScopeCheckBox::indicator:checked", "background: #b64f48; border: 1px solid #dc7067;");
 		addRule("#CleanScopeDescription", "color: " + textSecondary + "; font-size: 8.5pt;");
 		addRule("#CleanScopePreview", "color: " + textMuted + "; font-size: 8.25pt; padding-left: 14px;");
-		addRule("#WorkflowSelectionSummary", "color: " + textBody + "; font-size: 8.75pt; font-weight: 650; padding: 1px 0 7px 0;");
-		addRule("#WorkflowSelectionSummary[State=\"warning\"]", "color: " + warning + ";");
 		addRule("#WorkflowSelectionPanel", "background: #171917; border: 1px solid " + divider + "; border-radius: 4px;");
 		addRule("#WorkflowScopeRow", "background: transparent; border: none; border-bottom: 1px solid " + divider + ";");
 		addRule("#WorkflowScopeRow:hover", "background: #1d211e;");

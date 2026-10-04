@@ -88,7 +88,46 @@ The different Device Z storage types are an implementation distinction, not perm
 
 ## Raster Frontend
 
-The raster branch builds compatible mesh batches, binds vertex/index/instance/deformation/material data, chooses solid or wireframe fill, and issues instanced/indexed-instanced draws into six color products plus depth. Wireframe is a raster fill-mode feature; it is not an equivalent ray-GBuffer view.
+The raster branch builds compatible mesh batches, binds vertex/index/instance/deformation/material data, chooses solid or wireframe fill, and issues instanced/indexed-instanced draws into seven color products plus depth. Wireframe is a raster fill-mode feature; it is not an equivalent ray-GBuffer view.
+
+### Rotated-normal correction — 2026-10-04
+
+`ITER-GBUF-NORMAL-01` starts at `bbb9f7ed9e574d36776d539c51a9de51218bfa12` with a clean tree.
+Owner: Renderer shader-data boundary. Scope: correct normal-matrix interpretation without changing source assets,
+level transforms, winding, lights, materials, frame composition, or backend code. Other concurrently appearing changes
+are outside this iteration. Target: preserve geometry/material correctness and the existing raster/ray production routes;
+no release-readiness score or Reference estimator acceptance is advanced.
+Checked Git shader blobs: MeshInstanceShaderData `7c4038c33f1697ea3c65a35ca484e6dcca06dc90`;
+ObjectShaderData `5825e103a406e38df2585b550f125f56fc349ca8`.
+
+The DamagedHelmet glTF node contains a 90-degree X rotation. Import reflects source X, converts the node transform,
+reverses triangle winding, and generates the missing MikkTSpace tangents. The CPU publishes the inverse-transpose
+normal matrix with `XMStoreFloat3x4`. Previously the shared HLSL records interpreted those packed columns as rows,
+so normals rotated differently from positions and tangents. This is a shader-data ABI defect, not a reason to flip
+this model's normals or normal-map green channel. Identity transforms can conceal the defect. See the canonical
+[normal-matrix storage contract](../../../../../Decisions/WorldCoordinateAndUnits.md#storage-and-abi).
+
+The correction is confined to `Resources/MeshInstanceShaderData.hlsli` and `Resources/ObjectShaderData.hlsli`.
+Existing raster GBuffer, ray-hit material reconstruction, geometric normals, and robust ray endpoints consume the
+correct matrix through their unchanged multiplication expressions. The CPU's 272-byte mesh-instance record,
+48-byte packed normal matrix, material offset, resource bindings, and allocation policy are unchanged.
+Performance classification: preserves storage and semantic work; no added GPU checks, copies, resources, or diagnostics.
+
+| Criterion / failure / check | Observation and evidence boundary |
+| --- | --- |
+| `AC-GN-01` / `FM-GN-01` / `CHK-GN-01`: imported vertex normals and geometry agree after the authored transform; detect transposed interpretation with the source mesh | Read `DamagedHelmet.gltf` and its binary accessors directly. All 14,556 source normals have lengths in `[0.9999519, 1]`. Across 15,452 triangles, the mean dot of normalized mean vertex normal with geometric normal changes from `-0.2998684` to `0.9973475`; opposing triangles change from 10,463 to zero. All 1,654 vertices whose correct world normal has Y below `-0.8` previously had Y above `0.8`. This is a numerical source-data probe, before normal-map perturbation, not a rendered-image result. |
+| `AC-GN-02` / `FM-GN-02` / `CHK-GN-02`: storage decoding preserves inverse-transpose normals for identity, the helmet rotation, rotation plus non-uniform scale/translation, shear, and mirrored scale | PowerShell/System.Numerics reconstructs the packed columns by the `XMStoreFloat3x4` indexing contract and decodes the new declaration. Direction error against the uncompressed inverse transpose is zero in all five cases; absolute dot with the transformed perpendicular tangent is at most `8.95e-8` (`1e-6` tolerance). This does not establish mirrored tangent-frame or full deformation parity. |
+| `AC-GN-03` / `FM-GN-03` / `CHK-GN-03`: DXIL and SPIR-V preserve normal-matrix and following-field ABI | A temporary shader includes both actual shared headers and consumes transformed normals plus following mesh fields. DXC `1.9.0.5347 (fe2615732)` compiles `cs_6_6`, HLSL 2021, strict mode, warnings-as-errors, and all-resources-bound for DXIL and `-spirv -fspv-target-env=vulkan1.3`. DXIL reflection and SPIR-V disassembly agree on mesh matrix offset 192, following material offset 240, and stride 272; the normal-matrix column stride is 16. `spirv-val --target-env vulkan1.3` passes. The temporary probe is removed; no test or diagnostic surface is shipped. |
+| `AC-GN-04` / `FM-GN-04` / `CHK-GN-04`: actual viewport normals/light response and raster/ray agreement on D3D12 and Vulkan | Owner-run verification remains deferred: recook changed shaders, reopen DamagedHelmet, compare World Normal, World Tangent, Lit, and Reference, then repeat with ray GBuffer and Vulkan; use Sponza as the preservation check. A remaining black result escalates to the first incorrect lighting/visibility product rather than another normal flip. |
+
+Risk `RISK-GN-01`: old cooked shaders retain the incorrect interpretation. Prevention/recovery: regenerate affected
+DXIL and SPIR-V shader packages through the existing Launcher cook workflow and restart the application. Detection:
+the unchanged green upward underside or black Lit response persists in the rebuilt shader generation. Owner: Renderer;
+retirement evidence: `CHK-GN-04` on the newly cooked generation. Mesh/material/texture recooking is not required by
+this correction because their representations did not change.
+
+Decision: source/math/layout checks pass; visual/backend runtime acceptance remains unrun. `git diff --check` is the
+final whitespace check. A full Editor build, full content cook, GPU render, and runtime capture were not performed.
 
 Raster material descriptors remain per material. Transparent alpha is represented in source data, but the current GBuffer pipeline does not implement sorting, order-independent transparency, or transmission and therefore must not advertise transparent PBR output.
 

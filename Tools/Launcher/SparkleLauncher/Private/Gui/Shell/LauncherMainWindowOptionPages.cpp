@@ -247,10 +247,6 @@ namespace SparkleLauncher
 
 		QVBoxLayout* cookLayout = AddOptionGroup(layout, "Choose outputs", "Select the runtime content to prepare.");
 
-		QLabel* selectionSummary = new QLabel(cookLayout->parentWidget());
-		selectionSummary->setObjectName("WorkflowSelectionSummary");
-		cookLayout->addWidget(selectionSummary);
-
 		QFrame* selectionPanel = new QFrame(cookLayout->parentWidget());
 		selectionPanel->setObjectName("WorkflowSelectionPanel");
 		selectionPanel->setMinimumWidth(LauncherUi::ScopeSelection::ContentMinWidth);
@@ -309,20 +305,15 @@ namespace SparkleLauncher
 		              "ShaderCompiler discovers typed shaders and canonical targets. Incremental cooking preserves unaffected map entries.")
 		        : QStringLiteral("Incremental cooking reuses current outputs."));
 
-		ConnectSelectAllScopeBox(
-		    selectAllBox,
-		    scopeBoxes,
-		    this,
-		    [this, scopeBoxes, selectionSummary](bool) { UpdateCookScopeSetting(scopeBoxes, selectionSummary); });
-		UpdateCookScopeSetting(scopeBoxes, selectionSummary);
+		ConnectSelectAllScopeBox(selectAllBox, scopeBoxes, this, [this, scopeBoxes](bool) { UpdateCookScopeSetting(scopeBoxes); });
+		UpdateCookScopeSetting(scopeBoxes);
 
 		AddBuildEnvironmentStatus(layout, "cook.workspace");
 	}
 
-	void LauncherMainWindow::UpdateCookScopeSetting(const QVector<QCheckBox*>& scopeBoxes, QLabel* selectionSummary)
+	void LauncherMainWindow::UpdateCookScopeSetting(const QVector<QCheckBox*>& scopeBoxes)
 	{
 		const QStringList selectedValues = CollectSelectedScopeValues(scopeBoxes);
-		UpdateScopeSelectionSummary(selectionSummary, !selectedValues.empty(), "Select at least one output to cook.");
 		m_settings.SetCookScopes(selectedValues.join(';'));
 		UpdateRunAvailability();
 	}

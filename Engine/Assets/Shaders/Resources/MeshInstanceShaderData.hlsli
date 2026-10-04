@@ -5,7 +5,8 @@ struct MeshInstanceData
 	row_major float4x4 WorldMatrix;
 	row_major float4x4 PreviousWorldMatrix;
 	row_major float4x4 WorldInverseMatrix;
-	row_major float3x4 WorldInverseTranspose;
+	// XMStoreFloat3x4 stores three columns of the row-vector normal matrix.
+	column_major float4x3 WorldInverseTranspose;
 	uint MaterialSlot;
 	uint Flags;
 	uint JointMatrixOffset;

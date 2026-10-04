@@ -80,6 +80,16 @@ Quaternion storage is `X, Y, Z, W`, where W is the scalar component. Runtime qua
 
 ### Storage and ABI
 
+Normals use the row-vector inverse transpose: `normalWorld = normalize(normalLocal * transpose(inverse(WorldMatrix)))`.
+`XMStoreFloat3x4` stores the first three **columns** of its input matrix as three contiguous four-float vectors.
+Renderer's structured-buffer normal matrix therefore declares `column_major float4x3 WorldInverseTranspose`,
+then uses its upper `float3x3` for row-vector multiplication. The per-object constant-buffer equivalent is
+`column_major float3x3` with a 16-byte column stride. Neither declaration changes the semantic multiplication order.
+Declaring this packed input as row-major transposes the normal transform again; identity transforms hide the error,
+while rotations, shear, and non-uniform scale expose it. The storage behavior is explicit in Microsoft's
+[DirectXMath implementation](https://github.com/microsoft/DirectXMath/blob/main/Inc/DirectXMathConvert.inl)
+and [instancing guidance](https://github.com/microsoft/DirectXTK/wiki/Multistream-rendering-and-instancing).
+
 Canonical C++ matrices use DirectXMath row-major element naming. Translation is stored in `_41`, `_42`, and `_43`. Canonical HLSL payloads declare matrices `row_major` and transform with `mul(rowVector, matrix)`. Cooked matrices preserve that canonical C++ representation.
 
 Row-vector semantics do not imply one universal backend byte layout. Source formats, D3D12, and Vulkan may expose different matrix storage or packing rules. The owning boundary performs an explicit transpose or pack exactly once. In particular, a native ray-tracing instance transform is a row-major 3x4 column-vector affine payload, so the RHI packing contract transposes the canonical linear transform and places `_41`, `_42`, and `_43` in the native translation column. A `memcpy` is valid only when a known-value ABI test proves both layout and semantics.
