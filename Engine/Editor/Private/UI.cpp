@@ -23,7 +23,7 @@
 #include "Scene/Model/EditorSceneModel.h"
 #include "Scene/Model/EditorSceneModelBuilder.h"
 #include "Scene/Transactions/EditorTransactionHistory.h"
-#include "Settings/EngineRenderingSettingsSection.h"
+#include "Settings/EngineRenderingSettingsController.h"
 #include "Settings/EditorRestartService.h"
 #include "Viewport/EditorViewportSession.h"
 #include "Window/Window.h"
@@ -151,7 +151,7 @@ UI::UI(EditorHostServices hostServices) :
 	    .MaterialVariants = std::move(hostServices.MaterialVariants)});
 	m_transactionHistory = std::make_unique<EditorTransactionHistory>(std::move(hostServices.SubmitWorldEdit));
 	m_renderPacketBuilder = std::make_unique<ImGuiRenderPacketBuilder>();
-	m_renderingSettings = std::make_unique<EngineRenderingSettingsSection>(
+	m_renderingSettings = std::make_unique<EngineRenderingSettingsController>(
 	    std::move(hostServices.RenderingSettings),
 	    std::move(hostServices.SubmitRenderingSettings),
 	    std::move(hostServices.CaptureRenderingSettings));

@@ -1,7 +1,7 @@
 #pragma once
 
 class LevelSession;
-class EngineRenderingSettingsSection;
+class EngineRenderingSettingsController;
 class EditorViewportSession;
 
 class ViewportTopPanel final
@@ -9,7 +9,7 @@ class ViewportTopPanel final
 public:
 	ViewportTopPanel(
 	    LevelSession* levelSession = nullptr,
-	    EngineRenderingSettingsSection* renderingSettings = nullptr,
+	    EngineRenderingSettingsController* renderingSettings = nullptr,
 	    EditorViewportSession* viewportSession = nullptr) noexcept;
 	~ViewportTopPanel() noexcept;
 
@@ -29,7 +29,7 @@ private:
 	void BuildRightControls(bool disableInteraction, bool compact) noexcept;
 
 	LevelSession* m_levelSession = nullptr;
-	EngineRenderingSettingsSection* m_renderingSettings = nullptr;
+	EngineRenderingSettingsController* m_renderingSettings = nullptr;
 	EditorViewportSession* m_viewportSession = nullptr;
 	float m_leftPixels = 0.0f;
 	float m_topPixels = 0.0f;

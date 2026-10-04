@@ -1,12 +1,12 @@
 #include "PCH.h"
 
-#include "Settings/EngineRenderingSettingsSection.h"
+#include "Settings/EngineRenderingSettingsController.h"
 
 #include <sstream>
 #include <utility>
 #include <vector>
 
-EngineRenderingSettingsSection::EngineRenderingSettingsSection(
+EngineRenderingSettingsController::EngineRenderingSettingsController(
     EngineRenderingSettingsState state,
     CommitHandler commitHandler,
     RefreshHandler refreshHandler) :
@@ -18,7 +18,7 @@ EngineRenderingSettingsSection::EngineRenderingSettingsSection(
 {
 }
 
-void EngineRenderingSettingsSection::RefreshFromRuntimeState() noexcept
+void EngineRenderingSettingsController::RefreshFromRuntimeState() noexcept
 {
 	if (!m_refreshHandler)
 	{
@@ -29,17 +29,17 @@ void EngineRenderingSettingsSection::RefreshFromRuntimeState() noexcept
 	m_sessionPreferHighPerformanceAdapter = m_state.PreferHighPerformanceAdapter;
 }
 
-bool EngineRenderingSettingsSection::HasPendingRestart() const noexcept
+bool EngineRenderingSettingsController::HasPendingRestart() const noexcept
 {
 	return ComputePendingRestart();
 }
 
-std::string EngineRenderingSettingsSection::BuildPendingRestartMessage() const
+std::string EngineRenderingSettingsController::BuildPendingRestartMessage() const
 {
 	return DescribePendingRestart();
 }
 
-void EngineRenderingSettingsSection::CommitState()
+void EngineRenderingSettingsController::CommitState()
 {
 	if (m_commitHandler)
 	{
@@ -47,138 +47,138 @@ void EngineRenderingSettingsSection::CommitState()
 	}
 }
 
-void EngineRenderingSettingsSection::SetVSync(bool enabled)
+void EngineRenderingSettingsController::SetVSync(bool enabled)
 {
 	SetValue(m_state.VSync, enabled);
 }
 
-void EngineRenderingSettingsSection::SetBackBufferFormat(PixelFormat format)
+void EngineRenderingSettingsController::SetBackBufferFormat(PixelFormat format)
 {
 	SetValue(m_state.BackBufferFormat, format);
 }
 
-void EngineRenderingSettingsSection::SetPreferHighPerformanceAdapter(bool enabled)
+void EngineRenderingSettingsController::SetPreferHighPerformanceAdapter(bool enabled)
 {
 	SetValue(m_state.PreferHighPerformanceAdapter, enabled);
 }
 
-void EngineRenderingSettingsSection::SetToneMapper(EngineToneMapper toneMapper)
+void EngineRenderingSettingsController::SetToneMapper(EngineToneMapper toneMapper)
 {
 	SetValue(m_state.ToneMapper, toneMapper);
 }
 
-void EngineRenderingSettingsSection::SetExposureMode(EngineExposureMode mode)
+void EngineRenderingSettingsController::SetExposureMode(EngineExposureMode mode)
 {
 	SetValue(m_state.ExposureMode, mode);
 }
 
-void EngineRenderingSettingsSection::SetExposureMeteringMethod(EngineExposureMeteringMethod method)
+void EngineRenderingSettingsController::SetExposureMeteringMethod(EngineExposureMeteringMethod method)
 {
 	SetValue(m_state.ExposureMeteringMethod, method);
 }
 
-void EngineRenderingSettingsSection::SetOutputColorEncoding(EngineOutputColorEncoding encoding)
+void EngineRenderingSettingsController::SetOutputColorEncoding(EngineOutputColorEncoding encoding)
 {
 	SetValue(m_state.OutputColorEncoding, encoding);
 }
 
-void EngineRenderingSettingsSection::SetManualExposure(float exposure)
+void EngineRenderingSettingsController::SetManualExposure(float exposure)
 {
 	SetValue(m_state.ManualExposure, exposure);
 }
 
-void EngineRenderingSettingsSection::SetExposureCompensation(float compensation)
+void EngineRenderingSettingsController::SetExposureCompensation(float compensation)
 {
 	SetValue(m_state.ExposureCompensation, compensation);
 }
 
-void EngineRenderingSettingsSection::SetExposureTargetLuminance(float luminance)
+void EngineRenderingSettingsController::SetExposureTargetLuminance(float luminance)
 {
 	SetValue(m_state.ExposureTargetLuminance, luminance);
 }
 
-void EngineRenderingSettingsSection::SetExposureMin(float exposure)
+void EngineRenderingSettingsController::SetExposureMin(float exposure)
 {
 	SetValue(m_state.ExposureMin, exposure);
 }
 
-void EngineRenderingSettingsSection::SetExposureMax(float exposure)
+void EngineRenderingSettingsController::SetExposureMax(float exposure)
 {
 	SetValue(m_state.ExposureMax, exposure);
 }
 
-void EngineRenderingSettingsSection::SetExposureAdaptationSpeedUp(float speed)
+void EngineRenderingSettingsController::SetExposureAdaptationSpeedUp(float speed)
 {
 	SetValue(m_state.ExposureAdaptationSpeedUp, speed);
 }
 
-void EngineRenderingSettingsSection::SetExposureAdaptationSpeedDown(float speed)
+void EngineRenderingSettingsController::SetExposureAdaptationSpeedDown(float speed)
 {
 	SetValue(m_state.ExposureAdaptationSpeedDown, speed);
 }
 
-void EngineRenderingSettingsSection::SetUpscalerProvider(EUpscalerProviderKind provider)
+void EngineRenderingSettingsController::SetUpscalerProvider(EUpscalerProviderKind provider)
 {
 	SetValue(m_state.UpscalerProvider, provider);
 }
 
-void EngineRenderingSettingsSection::SetUpscalerQualityMode(EUpscalerQualityMode mode)
+void EngineRenderingSettingsController::SetUpscalerQualityMode(EUpscalerQualityMode mode)
 {
 	SetValue(m_state.UpscalerQualityMode, mode);
 }
 
-void EngineRenderingSettingsSection::SetRayReconstructionMode(EngineRayReconstructionMode mode)
+void EngineRenderingSettingsController::SetRayReconstructionMode(EngineRayReconstructionMode mode)
 {
 	SetValue(m_state.RayReconstructionMode, mode);
 }
 
-void EngineRenderingSettingsSection::SetGBufferAlgorithm(GBufferAlgorithm algorithm)
+void EngineRenderingSettingsController::SetGBufferAlgorithm(GBufferAlgorithm algorithm)
 {
 	SetValue(m_state.SelectedGBufferAlgorithm, algorithm);
 }
 
-void EngineRenderingSettingsSection::SetMeshAutoBatching(bool enabled)
+void EngineRenderingSettingsController::SetMeshAutoBatching(bool enabled)
 {
 	SetValue(m_state.MeshAutoBatching, enabled);
 }
 
-void EngineRenderingSettingsSection::SetRefitTlas(bool enabled)
+void EngineRenderingSettingsController::SetRefitTlas(bool enabled)
 {
 	SetValue(m_state.RefitTlas, enabled);
 }
 
-void EngineRenderingSettingsSection::SetPtlasActive(bool active)
+void EngineRenderingSettingsController::SetPtlasActive(bool active)
 {
 	SetValue(m_state.PtlasActive, active);
 }
 
-void EngineRenderingSettingsSection::SetPtlasPartitionsPerAxis(std::uint32_t partitionsPerAxis)
+void EngineRenderingSettingsController::SetPtlasPartitionsPerAxis(std::uint32_t partitionsPerAxis)
 {
 	SetValue(m_state.PtlasPartitionsPerAxis, partitionsPerAxis);
 }
 
-void EngineRenderingSettingsSection::SetPtlasPartitionUpdateMode(RayTracingPtlasPartitionUpdateMode mode)
+void EngineRenderingSettingsController::SetPtlasPartitionUpdateMode(RayTracingPtlasPartitionUpdateMode mode)
 {
 	SetValue(m_state.PtlasPartitionUpdateMode, mode);
 }
 
-void EngineRenderingSettingsSection::SetPtlasMarkAllDynamicInPartition(bool enabled)
+void EngineRenderingSettingsController::SetPtlasMarkAllDynamicInPartition(bool enabled)
 {
 	SetValue(m_state.PtlasMarkAllDynamicInPartition, enabled);
 }
 
-void EngineRenderingSettingsSection::SetPtlasModeChangeDistance(float distance)
+void EngineRenderingSettingsController::SetPtlasModeChangeDistance(float distance)
 {
 	SetValue(m_state.PtlasModeChangeDistance, distance);
 }
 
-bool EngineRenderingSettingsSection::ComputePendingRestart() const noexcept
+bool EngineRenderingSettingsController::ComputePendingRestart() const noexcept
 {
 	return m_sessionPreferHighPerformanceAdapter != m_state.PreferHighPerformanceAdapter
 	    || m_sessionBackBufferFormat != m_state.BackBufferFormat;
 }
 
-std::string EngineRenderingSettingsSection::DescribePendingRestart() const
+std::string EngineRenderingSettingsController::DescribePendingRestart() const
 {
 	std::vector<std::string> reasons;
 	if (m_sessionPreferHighPerformanceAdapter != m_state.PreferHighPerformanceAdapter)

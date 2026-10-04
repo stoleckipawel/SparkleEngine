@@ -7,7 +7,7 @@
 #include <cfloat>
 #include <cstdint>
 
-namespace RenderingSettingsPanelUi
+namespace RenderingSettingsUi
 {
 	inline constexpr float kLabelColumnWidth = 340.0f;
 

@@ -1,52 +1,52 @@
 #include "PCH.h"
 
-#include "Panels/RenderingUpscalingSettingsPanel.h"
+#include "Panels/RenderingUpscalingSettingsSection.h"
 
-#include "Panels/RenderingSettingsPanelUi.h"
+#include "Panels/RenderingSettingsUi.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
-#include "Settings/EngineRenderingSettingsSection.h"
+#include "Settings/EngineRenderingSettingsController.h"
 
 #include <imgui.h>
 
 void DrawUpscalingSettingsSection(
-    EngineRenderingSettingsSection& settingsSection,
+    EngineRenderingSettingsController& settingsController,
     const EngineRenderingSettingsState& settings,
     const char* filterText)
 {
-	static constexpr RenderingSettingsPanelUi::ComboOption<EUpscalerProviderKind> upscalerProviderOptions[] = {
+	static constexpr RenderingSettingsUi::ComboOption<EUpscalerProviderKind> upscalerProviderOptions[] = {
 	    {"Linear", EUpscalerProviderKind::Linear},
 	    {"NVIDIA DLSS", EUpscalerProviderKind::NvidiaDlss},
 	};
-	static constexpr RenderingSettingsPanelUi::ComboOption<EUpscalerQualityMode> upscalerQualityOptions[] = {
+	static constexpr RenderingSettingsUi::ComboOption<EUpscalerQualityMode> upscalerQualityOptions[] = {
 	    {"Native AA", EUpscalerQualityMode::NativeAA},
 	    {"Quality", EUpscalerQualityMode::Quality},
 	    {"Balanced", EUpscalerQualityMode::Balanced},
 	    {"Performance", EUpscalerQualityMode::Performance},
 	    {"Ultra performance", EUpscalerQualityMode::UltraPerformance},
 	};
-	if (!RenderingSettingsPanelUi::MatchesFilter(
+	if (!RenderingSettingsUi::MatchesFilter(
 	        filterText,
 	        "Upscaling",
 	        "upscaler upscaling linear bilinear dlss quality native aa balanced performance")
-	    || !RenderingSettingsPanelUi::BeginSettingsCategory("Upscaling"))
+	    || !RenderingSettingsUi::BeginSettingsCategory("Upscaling"))
 	{
 		return;
 	}
 
-	if (RenderingSettingsPanelUi::BeginSettingsTable("##RenderingUpscalingSettings"))
+	if (RenderingSettingsUi::BeginSettingsTable("##RenderingUpscalingSettings"))
 	{
-		RenderingSettingsPanelUi::DrawComboOptionRow(
+		RenderingSettingsUi::DrawComboOptionRow(
 		    "##UpscalerProvider",
 		    "Provider",
 		    settings.UpscalerProvider,
 		    upscalerProviderOptions,
-		    [&settingsSection](EUpscalerProviderKind value) { settingsSection.SetUpscalerProvider(value); });
-		RenderingSettingsPanelUi::DrawComboOptionRow(
+		    [&settingsController](EUpscalerProviderKind value) { settingsController.SetUpscalerProvider(value); });
+		RenderingSettingsUi::DrawComboOptionRow(
 		    "##UpscalerQualityMode",
 		    "Quality mode",
 		    settings.UpscalerQualityMode,
 		    upscalerQualityOptions,
-		    [&settingsSection](EUpscalerQualityMode value) { settingsSection.SetUpscalerQualityMode(value); });
+		    [&settingsController](EUpscalerQualityMode value) { settingsController.SetUpscalerQualityMode(value); });
 		ImGui::EndTable();
 	}
 	ImGui::Dummy(ImVec2(0.0f, 4.0f));

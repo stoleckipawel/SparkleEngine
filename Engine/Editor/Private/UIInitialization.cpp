@@ -16,7 +16,7 @@
 #include "Panels/UsedTexturesPanel.h"
 #include "Panels/ViewportPanel.h"
 #include "Panels/ViewportTopPanel.h"
-#include "Settings/EngineRenderingSettingsSection.h"
+#include "Settings/EngineRenderingSettingsController.h"
 #include "Renderer/Public/UI/ImGuiRenderPacketBuilder.h"
 #include "Scene/Model/EditorSceneModel.h"
 #include "Scene/Model/EditorSceneModelBuilder.h"

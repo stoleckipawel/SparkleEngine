@@ -2,20 +2,22 @@
 
 #include "Panels/RenderingSettingsPanel.h"
 
-#include "Panels/RenderingDisplaySettingsPanel.h"
-#include "Panels/RenderingRayReconstructionSettingsPanel.h"
-#include "Panels/RenderingRayTracingSceneSettingsPanel.h"
-#include "Panels/RenderingSettingsPanelUi.h"
-#include "Panels/RenderingUpscalingSettingsPanel.h"
+#include "Panels/RenderingDisplaySettingsSection.h"
+#include "Panels/RenderingExposureSettingsSection.h"
+#include "Panels/RenderingGeometrySettingsSection.h"
+#include "Panels/RenderingRayReconstructionSettingsSection.h"
+#include "Panels/RenderingRayTracingSceneSettingsSection.h"
+#include "Panels/RenderingToneMappingSettingsSection.h"
+#include "Panels/RenderingUpscalingSettingsSection.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
-#include "Settings/EngineRenderingSettingsSection.h"
+#include "Settings/EngineRenderingSettingsController.h"
 #include "Style/SparkleUiPalette.h"
 
 #include <imgui.h>
 
 #include <string>
 
-void RenderingSettingsPanel::SetSettings(EngineRenderingSettingsSection* settings) noexcept
+void RenderingSettingsPanel::SetSettings(EngineRenderingSettingsController* settings) noexcept
 {
 	m_settings = settings;
 }
@@ -58,31 +60,11 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 	}
 
 	ImGui::BeginDisabled(disableInteraction);
-	static constexpr RenderingSettingsPanelUi::ComboOption<GBufferAlgorithm> gBufferAlgorithmOptions[] = {
-	    {"Rasterized", GBufferAlgorithm::Rasterized},
-	    {"Ray tracing", GBufferAlgorithm::RayTracing}};
 	DrawDisplaySettingsSection(*m_settings, settings, filterText);
+	DrawExposureSettingsSection(*m_settings, settings, filterText);
+	DrawToneMappingSettingsSection(*m_settings, settings, filterText);
 
-	if (RenderingSettingsPanelUi::MatchesFilter(filterText, "Geometry", "geometry mesh auto batching")
-	    && RenderingSettingsPanelUi::BeginSettingsCategory("Geometry"))
-	{
-		if (RenderingSettingsPanelUi::BeginSettingsTable("##RenderingGeometrySettings"))
-		{
-			RenderingSettingsPanelUi::DrawComboOptionRow(
-			    "##GBufferAlgorithm",
-			    "GBuffer algorithm",
-			    settings.SelectedGBufferAlgorithm,
-			    gBufferAlgorithmOptions,
-			    [this](GBufferAlgorithm value) { m_settings->SetGBufferAlgorithm(value); });
-			RenderingSettingsPanelUi::DrawBooleanRow(
-			    "##MeshAutoBatching",
-			    "Mesh auto batching",
-			    settings.MeshAutoBatching,
-			    [this](bool value) { m_settings->SetMeshAutoBatching(value); });
-			ImGui::EndTable();
-		}
-		ImGui::Dummy(ImVec2(0.0f, 4.0f));
-	}
+	DrawGeometrySettingsSection(*m_settings, settings, filterText);
 
 	DrawRayReconstructionSettingsSection(*m_settings, settings, filterText);
 	DrawUpscalingSettingsSection(*m_settings, settings, filterText);

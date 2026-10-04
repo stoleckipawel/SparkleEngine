@@ -1,4 +1,4 @@
-# Debug View Delivery Plan
+# Debug View Staged Delivery Plan
 
 **Status:** implementation plan; not proof of build, runtime, visual, backend, or release acceptance
 
@@ -8,7 +8,9 @@
 
 **Verified baseline:** 2026-10-04 at revision `26803f97` with an inspected dirty working tree; every implementation stage must re-audit its candidate.
 
-**DVP-4 design revision:** 2026-10-04 at `bbb9f7ed`; CVar-driven feature execution replaces the former per-view Show set/composite masking. This adds no executable evidence for DVP-0 through DVP-5.
+**Planning iteration:** `ITER-DVP-SHOWFLAGS-03`; documentation-only stage refinement; start `bbb9f7ed` with pre-existing design, shader and Launcher edits preserved. `NS-OWNERSHIP`/`NS-SIMPLIFY` advance the target delivery discipline; `PGE-07`/`PGE-09`/`PGE-13` and runtime/GPU readiness are preserved, not advanced. The applicable proof rows remain owned by Discovery/Acceptance; no new candidate result.
+
+**DVP-4 plan revision:** `DVP-SF-IP-01`, 2026-10-04; drafted from `bbb9f7ed`, reconciled at handoff with `84b7c5a4` after the prior design changes were committed. Concurrent Editor work is outside this planning slice. Ten bounded stages refine CVar-driven feature execution; only discovery is presently permitted. This adds no executable evidence for DVP-0 through DVP-5.
 
 **Architecture authority:** [Viewport Rendering Controls](Controls/README.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
 
@@ -69,28 +71,72 @@ The [Lighting Show Menu And Feature Execution Controls](Controls/ShowFlags.md) t
 
 ### DVP-4A - Existing Lighting And Shadow Controls
 
-**Objective:** make the hierarchical Editor Show menu edit the seven real feature CVars and remove disabled features' exclusive execution cost. Renderer sees only feature intent and prerequisites, never a Show bit set.
+**Plan identity:** `DVP-SF-IP-01`; staged refinement of the accepted [Show-menu design](Controls/ShowFlags.md), using the repository [staged-plan template](../../../../../../Engineering/Workflow/Templates/FeatureDeliveryPackage.md#scaffold-planmd--staged-delivery-and-copy-ready-prompts).
 
-**Prerequisites:**
+**Current permission:** only `DVP-4A-0` discovery is ready to execute. Production stages are conditional, not authorized by this document. [Discovery](Discovery.md) may separately authorize the exact prerequisite-only `DVP-4A-1` repair while keeping lighting implementation blocked; `DVP-4A-2` and later require its explicit DVP-4A authorization and their own predecessor exit evidence.
 
-1. [Discovery](Discovery.md) records DVP-4A as **AUTHORIZED**. Its decision remains **BLOCKED**; this design revision does not authorize production edits.
-2. Re-audit the five lighting products, shared direct/indirect estimators, direct shadow signal, secondary-hit visibility, CVar mutation/query route, cached graph lifecycle, reconstruction guides, and all dependent history owners at the candidate revision.
-3. Prove sequenced console and Editor CVar mutation, including one parent/reset batch before frame admission and requested/applied observation. Repair the existing delivery owner if necessary; no private-header coupling, Application feature translator, request/View copy, or parallel settings authority is accepted.
-4. Freeze a path-by-leaf execution ledger: exact feature-local `IsEnabled`/`IsActive` owner, exclusive/shared passes and math, supported runtime branch or cooked variant, active products/bindings, topology change mechanism, dependent invalidation, unavailable-state behavior, and remaining shared cost.
-5. Supply independent non-zero lobe fixtures, primary/secondary occluder fixtures, required-product failure challenges, and negative controls that detect work still executing behind a hidden result.
+The existing DVP-0 through DVP-3 mode/presentation work is a baseline to reconcile, not a prerequisite instruction to replay. Do not reinstate superseded selectors or reimplement source-present mode controls. Numeric mode parity, presentation domains and Reference selection remain preservation obligations under their own owners.
 
-**Delivery order:**
+#### Staged Sequence And Estimate Envelope
 
-1. **Control publication:** register the seven feature-named CVars beside their existing owners. Establish the authorized sequenced mutation/query and batch route, with no Renderer show-flag API or request/View fields.
-2. **Feature activation and lifecycle:** put `IsEnabled`/`IsActive` in the owning feature files; return at optional family entry points before exclusive resource/pass creation. Extend existing graph identity/retirement and affected-history invalidation only where topology or estimator semantics require it.
-3. **Direct lighting:** bypass disabled lobe math/writes in the shared shader or select a bounded cooked variant. Omit the direct family and exclusive reservoir/shadow work when none of its lobes is active. Reconcile active-product bindings and reconstruction consumers in the same slice.
-4. **Lit indirect lighting:** apply lobe intent before exclusive estimation/resolve, preserving valid sampling/PDF/target semantics for active lobes. Omit the indirect family when no active consumer requires it; prove guide ownership and resets. Do not infer that disabling primary specular output permits deleting specular continuation events.
-5. **Shadows:** remove direct visibility production when no active consumer needs it and bypass secondary-hit direct-light shadow traces when Indirect Shadows is disabled. Preserve continuation intersections and Reference policy. Reset every dependent temporal state.
-6. **Composition and diagnostics:** consume only active products; use intentional disabled-output initialization only for a justified fixed-output ABI. Remove masked finished-result suppression. A disabled raw diagnostic is unavailable, not secretly produced, stale, or zero-as-success.
-7. **Editor frontend:** add the hierarchical Show dropdown using existing CVar query/mutation. Derive leaf and parent checks from CVar intent, reflect console edits, and submit one batch for parent/reset actions. Explain shared scope; add no session selection mirror or viewport-generation transport.
-8. **Reconcile:** update affected runtime-CVar catalog, feature documentation, shaders/cooked membership, and navigation alongside implementation. Do not expose Indirect Subsurface prematurely.
+| Stage | Observable outcome | Dependency | Engineering envelope | Review/evidence envelope | Largest uncertainty |
+| --- | --- | --- | --- | --- | --- |
+| [`DVP-4A-0`](#dvp-4a-0---freeze-the-candidate-and-execution-decisions) | Freeze The Candidate And Execution Decisions | none; read-only discovery | 6–16 h | 4–8 h | CVar ordering and shared estimator/product contracts |
+| [`DVP-4A-1`](#dvp-4a-1---prove-sequenced-cvar-delivery) | Prove Sequenced CVar Delivery | 0; prerequisite-only authorization if needed | 8–24 h | 4–8 h | existing console/query and Renderer control thread boundaries |
+| [`DVP-4A-2`](#dvp-4a-2---deliver-direct-subsurface-as-the-first-vertical-slice) | Deliver Direct Subsurface As The First Vertical Slice | 1 proof; Discovery AUTHORIZED | 8–16 h | 4–8 h | shared direct shader output/binding strategy |
+| [`DVP-4A-3`](#dvp-4a-3---complete-direct-lobes-and-all-off-admission) | Complete Direct Lobes And All-Off Admission | 2 | 12–24 h | 4–8 h | direct reservoir and shadow dependencies with no active lobe |
+| [`DVP-4A-4`](#dvp-4a-4---remove-exclusive-direct-shadow-work) | Remove Exclusive Direct Shadow Work | 3 | 8–16 h | 4–8 h | visibility-dependent reservoir weighting |
+| [`DVP-4A-5`](#dvp-4a-5---deliver-indirect-lobes-and-shared-estimator-admission) | Deliver Indirect Lobes And Shared-Estimator Admission | 4; indirect semantic ledger accepted | 24–48 h | 8–16 h | sampling/PDF/target and reconstruction-guide coupling |
+| [`DVP-4A-6`](#dvp-4a-6---bypass-secondary-hit-shadow-visibility) | Bypass Secondary-Hit Shadow Visibility | 5 | 12–24 h | 4–8 h | shared path helper policy and temporal reuse |
+| [`DVP-4A-7`](#dvp-4a-7---add-the-cvar-driven-editor-show-menu) | Add The CVar-Driven Editor Show Menu | 6; all seven consumers proved | 8–16 h | 4–8 h | safe query refresh and keyboard/mode UX |
+| [`DVP-4A-8`](#dvp-4a-8---close-backend-provider-and-execution-evidence) | Close Backend, Provider And Execution Evidence | 7; frozen matrix and measurement protocol | 12–24 h | 8–16 h | hardware/tool access and provider-compatible products |
+| [`DVP-4A-9`](#dvp-4a-9---adopt-the-controls-and-close-the-slice) | Adopt The Controls And Close The Slice | 8; conjunctive acceptance | 4–8 h | 4–8 h | orphan consumers and candidate/report consistency |
 
-Steps 3–5 are bounded vertical slices, each including product admission, parameters/shaders, history, and focused validation before moving on. Do not land a temporary composite-mask path as an intermediate implementation.
+These are initial planning ranges, not commitments or measured throughput. They assume one experienced engine engineer, focused C++/shader build tools, controlled fixtures, existing GPU capture support and access to each advertised backend/provider cell. Waiting for independent control/concurrency, lighting-estimator, or graphics/evidence review is not included. Stage 0 revises ranges from its exact change map before production authorization. Stage 1 becomes a proof-only step if the current delivery route already satisfies the contract; no refactor is justified by an estimate.
+
+The critical path is the table order. A selected stage can be split into smaller same-owner batches, but it cannot skip its coherent product/history/binding closure or authorize a later stage on source presence alone. If review finds a new architecture/transport/provider decision, return to Discovery and the owning contract; do not grow the current prompt's scope.
+
+#### Universal Execution Contract
+
+Every copy-ready prompt below incorporates this section and its selected stage's objective, prerequisites, work, non-goals, exit and stop rules.
+
+1. Read `AGENTS.md`, `Docs/README.md`, [Change Integration](../../../../../../Engineering/Workflow/ChangeIntegration.md), [Change Lifecycle](../../../../../../Engineering/Workflow/ChangeLifecycle.md), the [Engineering task map](../../../../../../Engineering/README.md#choose-by-task), and the exact Show/Discovery/Acceptance and prior-stage artifacts. Select Renderer, Editor, ownership/copy/naming/style/concurrency/validation rules according to the changed responsibility; do not copy their standards into implementation.
+2. Record a small iteration control record in the existing change/report owner: stage ID, candidate revision and dirty boundary, prerequisite revisions, mapped AC/FM/CHK/RISK rows, intended outcome and permitted files/hooks. Preserve unrelated and concurrently appearing changes.
+3. Before editing, audit current owners, producers, consumers, lifetime, public APIs, CMake/shader-cook/generated membership and the frozen execution ledger. Source paths below are inspection starting points, not permission for every listed file to change.
+4. Execute only one selected stage. No new public type, state holder, helper, copy, configuration, variant or outside-feature hook without a current consumer, lifetime reason and accepted check. Register a feature CVar only in the stage delivering its real execution consumer.
+5. Reuse existing owners; apply a clean break to replaced owned paths and reconcile all direct consumers immediately. Generic orchestration names semantic operations; feature admission, resources, shader bindings, estimator policy and failures stay at their narrow owners.
+6. Every stage runs the applicable `CHK-DVP-08` architecture-fitness audit: changed public surface, state/copy inventory, dependency direction, definition-to-use placement, repeated CVar/predicate searches, every outside-feature occurrence with hook role, and bounded-removal reasoning. No permanent architecture-test framework or disposable submitted fixture is required. Run `architecture_boundary_check` when Renderer/RHI boundaries change.
+7. Predeclare the cheapest claim-falsifying check, exact candidate/configuration/backend, oracle, tolerances/samples, artifact and escalation trigger. Use scoped formatting/source/compile/shader checks first; escalate only to the stage's required runtime/GPU cells. Do not replace an oracle with a full workspace build/cook.
+8. Finish each batch with responsibility refinement and a scoped diff review. Keep functions/files cohesive; split genuinely independent policy/mechanism, not into forwarding-only wrappers or numbered fragments. Delete dead interim masks/holders/includes, not merely hide them.
+9. Every prompt's `NON-NEGOTIABLE` paragraph is an exit gate. Quote each item in the handoff with source or executable proof at the level it requires, or report `BLOCKED`. Failed/unavailable mandatory checks cannot be carried as an authorized next-stage prerequisite.
+10. Handoff records exact commands/results/artifacts, changed/deleted files by responsibility, public/API/copy/hook deltas, performance classification, cleanup, remaining risks, prerequisite validity and whether the named next stage is authorized. Stage results belong in the issue/candidate-bound `FCR-REN-11` owner, not an implementation diary in this plan.
+
+#### Cross-Stage Invariants And Drift Stops
+
+- `IsEnabled` is accepted feature intent; `IsActive` adds actual path/consumer/prerequisite support. Off/inapplicable is not broken; enabled but unavailable cannot silently succeed.
+- Show stays Editor presentation of process-global feature CVars. No Renderer Show type, request/View feature carrier, per-viewport mirror, parent CVar, generic manager or Application/RHI feature translation.
+- One accepted batch/frame state feeds admission, topology, pass parameters and affected-history identity; no independently reread half-frame policy.
+- Disabled exclusive evaluation/traces/writes do not run. Shared work requires a named active consumer; initialized disabled outputs require the frozen fixed-ABI justification, never enabled-missing-work or fabricated-guide substitution.
+- Activation and semantic invalidation stay feature-owned. Cached graph changes use the existing lifecycle/retirement boundary; no unowned resources or stale history survive disable/re-enable.
+- Active transport, Reference, emissive/sky and selected provider contracts stay valid. No continuation-as-shadow shortcut, silent provider substitution, new lobe meaning or post-result tolerance change.
+- Each vertical slice reconciles producer, parameters/shader, output consumer, history, diagnostics, build/cook membership and documentation together. No interim finished-result mask is admissible.
+- Temporary validation probes remain local-only and are removed before handoff; valid stage evidence may be reused only while its candidate inputs and oracle remain unchanged.
+
+#### Source And Build Change Map
+
+| Responsibility | Existing inspection home | Permitted shape |
+| --- | --- | --- |
+| CVar registration/parsing/query | `Engine/Core/{Public,Private}/Console` | extend existing generic authority only under the prerequisite's approved budget |
+| Renderer sequencing/completion | `Engine/Renderer/Private/Concurrency/{Control,Coordinator}` | existing-owner delivery/lifetime hook; no lighting policy |
+| Direct lobe evaluation/reservoirs | `Engine/Renderer/Private/Passes/Lighting/Direct` and corresponding shaders | feature-local controls/admission and focused bindings/evaluation |
+| Primary visibility | `Engine/Renderer/Private/Passes/Lighting/Shadows` | direct shadow admission/resources/bindings |
+| Lit indirect estimation/resolve | `Engine/Renderer/Private/Passes/Lighting/Restir/Indirect`, `RayTracing/Effects/RestirLighting` and existing shared shader owners | keep controls with their consuming feature; shared tracing gets narrow caller policy, not CVar reads |
+| Lighting product/history consumers | existing Lighting targets/composite/invalidation, visualization and guide/provider consumers | only active-product and reset hooks required by the selected slice |
+| Cached graph lifetime | `FramePipelineGraph.cpp` and existing graph identity/retirement owners | feature-contributed topology identity; no leaf policy or Show set in the frame shell |
+| Editor presentation | `Engine/Editor/Private/Panels/ViewportTopPanel` and existing console/control access | widgets/labels only, no private Renderer headers or mutable feature truth |
+| Build and generated products | owning CMake membership, shader registrations/cook products | update affected producer/consumer ABI and regenerate scoped disposable output together |
+
+Do not pre-create any proposed control/settings/activation file. Reuse the cohesive existing owner when it can carry the responsibility; add a feature-local unit only after the stage's definition/usage audit proves it has independent policy/mechanism and real consumers.
 
 **Data/copy budget:**
 
@@ -114,22 +160,354 @@ Steps 3–5 are bounded vertical slices, each including product admission, param
 | Editor top-panel and existing control interface | presentation hook | CVar-driven hierarchy and atomic bulk intent | `CHK-DVP-09` console/UI/global-scope checks |
 | Renderer Public viewport, request/View, Application, RHI | no Show hook permitted | no Editor show semantics or duplicate CVar transport | `CHK-DVP-08` enclosure/stale-name audit |
 
-**Non-goals:** Indirect Subsurface, per-viewport feature overrides, persisted Editor selection, parent CVars, `r.ShowFlags`, generic feature manager/registry/settings bag, Application translation, RHI feature state, runtime shader compilation, indirect continuation bypass, or changing Reference behavior.
+### DVP-4A-0 - Freeze The Candidate And Execution Decisions
 
-**Stop conditions:** unsequenced or mid-frame CVar mutation; a missing real product/oracle; requested unsupported work quietly disappearing; unresolved shared-estimator PDFs/target semantics; no accepted graph-retirement or dependent-history reset route; stale/missing resource reads; fabricated reconstruction guides; disabled diagnostics secretly keeping producers alive; frame/host activation sprawl; Reference cross-talk; or performance claims based only on hidden pixels.
+**Objective:** Freeze the exact execution design and validation controls so no implementation prompt has to invent architecture.
 
-**Exit gate:** `AC-DVP-17` through `AC-DVP-25` and `AC-DVP-27`, `AC-DVP-28` through `CHK-DVP-08` through `CHK-DVP-12`. Prove executable work omission separately from numerical correctness; measured savings require retained GPU evidence. Unrun checks remain unrun.
+**Prerequisites:** Read the current Show-menu contract, Discovery, Acceptance, repository template, and owning Lighting contracts. Reconcile DVP-0 through DVP-3 against the live candidate; do not rerun their historical migration prompts merely because they precede DVP-4.
 
-**Current permitted prompt — discovery only:**
+**Work:**
+
+1. Execute DVP-SF-P01 through P05. Trace Core CVar parse/set/query, Renderer serial/threaded command ordering, cached graph construction/retirement, feature entry points, shared shaders/estimators, guide consumers, and history invalidation.
+2. Freeze each leaf/path's owner, helper inputs, exclusive/shared work, branch or bounded cooked variant, resource/read/write disposition, disabled diagnostic result, estimator/PDF/target semantics, and reset scope. Choose exactly one admitted route per path; alternatives do not remain implementation-time decisions.
+3. Freeze all-on/each-off/group-off fixtures, decoded-format and statistical tolerances, seeds/sample budgets, backend/provider cells, GPU measurement method, and negative controls before candidate results. Define mandatory guides and missing-enabled-product failure behavior.
+4. Record the decision and exact revision in Discovery. If CVar delivery requires production repair, authorize only the bounded prerequisite stage DVP-4A-1, with an explicit file/API/hook budget; keep lighting implementation blocked. Otherwise authorize DVP-4A only with the required probe evidence. Retain proposals as proposals, not existing behavior.
+
+**Non-goals:** No production edits, feature CVar registration, new public types, renderer-mode migration, external research expansion, or changed transport/product scope.
+
+**Exit gate:** Discovery owns an accepted route/fixture ledger for every included cell, with no semantic, scope, lifetime, output, or evidence choice left to later prompts. CHK-DVP-08 source/ownership coverage is recorded; D03/07/08/09 dispositions identify what is accepted and what still needs the prerequisite repair.
+
+**Stop conditions:** Any unresolved route, missing non-zero oracle, unbounded control refactor, unsupported guide contract, or need to change accepted semantics without returning to its owner. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
+
+**Risk/failure traceability:** `RISK-DVP-SF-01`, `RISK-DVP-SF-02`, `RISK-DVP-SF-03`, `RISK-DVP-SF-04`, `RISK-DVP-SF-05`, `RISK-DVP-SF-06`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-07`, `FM-DVP-08`, `FM-DVP-09`, `FM-DVP-10`, `FM-DVP-11`, `FM-DVP-12`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+
+**Ready-to-use discovery prompt:**
 
 ```text
-Execute DVP-SF-P01 through DVP-SF-P05 from DebugViews/Discovery.md. Make no production-code changes. Re-audit the exact candidate and freeze the Editor/console CVar sequencing and bulk-edit route, feature-local IsEnabled/IsActive owners, shared estimator semantics, cached-graph admission/rebuild/retirement, active-product bindings, invalidation scopes, and non-zero lobe/shadow fixtures. Map each leaf/path to omitted exclusive work and remaining shared cost. Update only the owning discovery/plan/acceptance facts needed for AUTHORIZED or BLOCKED. Reject Renderer show state, request/View feature copies, Application translation, parent CVars, composite masks, dummy required products, continuation bypass, Reference cross-talk, and performance claims without GPU evidence. Run scoped documentation checks and git diff --check; report executable probes not run.
+Execute only DVP-4A-0 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md. Apply its Universal Execution Contract. Make no production-code changes. Execute Discovery probes P01–P05 against the exact candidate and freeze the seven-leaf ownership/execution/product/history ledger, sequenced CVar mutation/query/batch route, graph lifetime, branch/variant selection, shared-estimator semantics, and predeclared numeric/GPU oracles. Reconcile the current mode baseline without replaying obsolete migrations. Update Discovery and directly affected target/check facts only.
+
+NON-NEGOTIABLE: No unresolved correctness/architecture/UX/evidence decision may be delegated to a production prompt. AUTHORIZE only the bounded prerequisite repair when publication is not yet proved; lighting work stays BLOCKED. Quote each gate with exact source/probe evidence, open decisions, and permitted next stage.
+
+Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+
+Validate: Run scoped links/anchors, placeholder/ID/hook checks, UTF-8, and git diff --check; use only bounded local discovery probes required by a named decision. No broad build/cook or runtime acceptance claim. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
+
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-1 is permitted; do not continue automatically into it.
 ```
 
-**Implementation prompt — valid only after Discovery records `AUTHORIZED`:**
+### DVP-4A-1 - Prove Sequenced CVar Delivery
+
+**Objective:** A real existing Renderer CVar can be edited and queried without a race or partially applied bulk frame.
+
+**Prerequisites:** DVP-4A-0 records the exact approved mutation/query/batch route. Discovery explicitly authorizes this prerequisite's file/API delta if delivery is broken. A correct existing route requires proof, not replacement.
+
+**Work:**
+
+1. Extend only the existing Core console/control and Renderer sequencing owners accepted at discovery. Core retains generic parse/registration; Renderer control retains ordering/completion. Do not move lighting names or policy into either generic owner.
+2. Validate all batch entries before applying any; reject invalid/unregistered entries without partial mutation. Prove one accepted batch boundary before feature admission, safe requested/applied observation, and serial/threaded equivalence.
+3. Exercise an already registered live Renderer CVar through the approved route, plus invalid input, failed batch, shutdown, and pending-query cases. Use temporary local probes where needed; do not register dormant lighting CVars to test infrastructure.
+4. Remove any superseded direct mutation/query path in the scoped production route. Update Discovery with executable publication evidence and the explicit DVP-4A authorization decision; no later stage infers it from a successful build.
+
+**Non-goals:** No lighting execution change, seven-CVar placeholder registration, Show UI, generic callback registry, feature manager, Application translator, global settings mirror, or repository-wide CVar refactor.
+
+**Exit gate:** CHK-DVP-08/09 publication checks prove ordered serial/threaded edits/query and no partial batch. Discovery marks D03 accepted and DVP-4A AUTHORIZED only when all other blocking decisions are accepted. Existing unsupported/parse errors remain truthful.
+
+**Stop conditions:** A second editable authority, data race, ownership/deadlock/shutdown ambiguity, exceeded prerequisite budget, or failed batch that mutates any entry. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
+
+**Risk/failure traceability:** `RISK-DVP-SF-01` in [Discovery](Discovery.md#risk-register); `FM-DVP-07`, `FM-DVP-08`, `FM-DVP-09` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+
+**Ready-to-use implementation prompt:**
 
 ```text
-Implement DVP-4A in its bounded feature-owned order using the authorized CVar publication, graph-lifecycle, estimator, product, and history routes. Keep Show an Editor-only CVar frontend. Put IsEnabled/IsActive in feature files and keep optional admission inside their Add...Passes entry points. Remove exclusive disabled lobe/shadow work via pass omission, early uniform branches, or justified cooked variants; preserve shared work only for real active consumers. Reconcile bindings/composition/guides/diagnostics and invalidate affected histories so there are no stale reads or silent required-product fallbacks. Add the CVar-driven hierarchy with one ordered parent/reset batch and global-scope explanation. Add no RenderShowFlag set, request/View show fields, parent CVar, r.ShowFlags namespace, generic feature manager, settings mirror, runtime shader compilation, or premature IndirectSubsurface. Preserve continuation intersections and Reference policy. Execute CHK-DVP-08 through CHK-DVP-12 proportionally and stop on failed prerequisites. No finished-result mask is an accepted intermediate slice.
+Implement or verify only DVP-4A-1 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after verifying DVP-4A-0 and Discovery's exact prerequisite authorization. Apply the Universal Execution Contract. Use the accepted existing Core console and Renderer control route to establish sequenced edits, safe query/acknowledgment, and validated bulk application before frame admission. Exercise an existing live Renderer CVar; add no dormant lighting registrations. Delete superseded scoped direct-write paths.
+
+NON-NEGOTIABLE: One CVar authority, no partial failed batch, safe serial/threaded query and shutdown, and no lighting vocabulary in generic control owners. Do not invent a callback registry, Application translator, or settings mirror. Quote proof for each requirement and obtain Discovery's explicit lighting authorization before declaring DVP-4A-2 permitted.
+
+Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+
+Validate: Run CHK-DVP-08/09's bounded publication probes and the smallest affected compile target; scope invalid-input/batch/shutdown controls to this route. Run architecture_boundary_check when a Renderer/RHI boundary actually changes, formatting and git diff --check. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
+
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-2 is permitted; do not continue automatically into it.
+```
+
+### DVP-4A-2 - Deliver Direct Subsurface As The First Vertical Slice
+
+**Objective:** Console disabling Direct Subsurface removes its exclusive evaluation and publication while diffuse/specular remain valid.
+
+**Prerequisites:** Discovery explicitly authorizes lighting implementation at the exact accepted candidate; stage 1 publication proof and stage 0 direct-lobe ABI/product/history/oracle decisions remain valid.
+
+**Work:**
+
+1. Register only r.Lighting.Direct.Subsurface at the direct feature owner and implement its feature-local IsEnabled/IsActive. Keep defaults enabled and unavailable-versus-disabled behavior distinct.
+2. Apply the frozen uniform early branch or bounded cooked variant before subsurface response math and exclusive writes. Reconcile shared direct shader parameters, output initialization/bindings, composition, guides and diagnostic behavior in this same slice.
+3. Wire the accepted activation into any affected graph identity and history invalidation without putting a per-leaf branch or Show value in FramePipeline/host/request/View.
+4. Exercise enabled, disabled, disabled-diagnostic, missing-enabled-prerequisite and re-enable cases; remove any interim finished-result masking or stale-write assumptions immediately.
+
+**Non-goals:** Other leaf registrations, Editor UI, parent controls, indirect transport changes, all-direct-off pruning not yet supported by all three controls, or new feature-control abstractions without a current consumer.
+
+**Exit gate:** The independently non-zero subsurface fixture satisfies applicable AC-DVP-17/18/20/21/24/25/28 via CHK-DVP-08/10/12. Direct diffuse/specular stay within the frozen oracle; evidence locates skipped math/writes rather than only a dark pixel.
+
+**Stop conditions:** Subsurface still computes behind a composite mask, retained targets lack current-frame semantics, a guide is fabricated, or the first helper requires new frame/host feature state. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
+
+**Risk/failure traceability:** `RISK-DVP-SF-03`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08` in [Discovery](Discovery.md#risk-register); `FM-DVP-10`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+
+**Ready-to-use implementation prompt:**
+
+```text
+Implement only DVP-4A-2 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after explicit Discovery AUTHORIZED and stage 1 proof. Apply the Universal Execution Contract and freeze ledger. Deliver r.Lighting.Direct.Subsurface, feature-local IsEnabled/IsActive, and the accepted early shader/variant route through actual direct evaluation, product binding/composition, affected guides/histories, and diagnostic unavailability. Register no later leaf.
+
+NON-NEGOTIABLE: Skip exclusive subsurface evaluation/publication before the finished result; preserve active diffuse/specular semantics and valid downstream reads. No Renderer Show state, frame/host admission branch, dummy enabled product, stale output, or masked-only intermediate path. Quote candidate-bound pixel and work-removal proof or report BLOCKED.
+
+Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+
+Validate: Use CHK-DVP-08/10/12's single-lobe fixture and negative mask-only control, focused direct/composite shader cook, smallest affected C++ compile, selected runtime row, scoped formatting and git diff --check. Preserve evidence limits for unrun rows. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
+
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-3 is permitted; do not continue automatically into it.
+```
+
+### DVP-4A-3 - Complete Direct Lobes And All-Off Admission
+
+**Objective:** All three direct lobes are independently controllable; all-off removes the exclusive direct family chain.
+
+**Prerequisites:** Stage 2 passes its vertical-slice exit. Discovery's complete direct-family consumer/estimator/guide/topology ledger is accepted and unchanged.
+
+**Work:**
+
+1. Register Direct Diffuse and Direct Specular controls at the same cohesive direct owner and reuse the established helper/ABI pattern without a second mask or settings holder.
+2. Derive direct-family admission from real active lobe consumers inside its existing Add...Passes entry point. When none is active, omit exclusive evaluation, reservoirs and shadow work; keep only dependencies with a named remaining consumer.
+3. Reconcile direct resources, shared target clear, composition inputs, diagnostic product availability, and reconstruction requirements. Implement the approved cached-graph identity/retirement and direct temporal reset consequences atomically.
+4. Prove each lobe, mixed combinations, all-direct-off and re-enable. Delete any now-dead unconditional direct-resource/pass path or superseded binding.
+
+**Non-goals:** Direct Shadows toggle, indirect features, UI, a generic activation manager, new per-lobe orchestrator branches, or rewriting the estimator beyond the frozen active-lobe contract.
+
+**Exit gate:** AC-DVP-17/18/20/21/24/25/28 pass for the direct family. CHK-DVP-08/10/12 prove all-off pass omission, correct active products/guides, generation consistency and fresh re-enable; shared retained work has an actual consumer.
+
+**Stop conditions:** A disabled direct family still allocates/dispatches exclusive work, shadow/reservoir removal changes active indirect semantics, graph rebuilding reads a different policy frame, or bindings become conditional null fallbacks. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
+
+**Risk/failure traceability:** `RISK-DVP-SF-03`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-10`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+
+**Ready-to-use implementation prompt:**
+
+```text
+Implement only DVP-4A-3 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after stage 2 passes. Apply the Universal Execution Contract. Extend the existing direct control owner with Diffuse and Specular, then implement derived family admission and all-direct-off omission using the frozen consumer/estimator/product/graph/history route. Reconcile resources, clear, shader bindings, composition, diagnostics and guides together; delete superseded unconditional paths.
+
+NON-NEGOTIABLE: Admission stays inside the direct feature entry point, parent intent is not stored, and no exclusive family work runs with all direct lobes inactive. Active indirect and mandatory-guide contracts stay valid; every remaining read has an admitted producer. No composite hiding, speculative manager, or frame/host feature branches. Quote per-lobe and group-off pixel/work/lifetime evidence or report BLOCKED.
+
+Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+
+Validate: Execute direct rows of CHK-DVP-08/10/12, focused changed shader/C++ checks and native resource validation. Exercise all-off/re-enable and in-flight topology retirement on the selected row; unrun backend/provider cells remain unproved. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
+
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-4 is permitted; do not continue automatically into it.
+```
+
+### DVP-4A-4 - Remove Exclusive Direct Shadow Work
+
+**Objective:** Direct Shadows off gives fully visible primary direct lighting without unnecessary direct visibility production.
+
+**Prerequisites:** Stage 3 passes. The primary visibility/reservoir dependence, shadow-signal resource contract, active consumers, history invalidation and unshadowed numeric oracle are frozen.
+
+**Work:**
+
+1. Register r.Lighting.Shadows.Direct at the direct-shadow owner with feature-local intent/activation; retained enabled intent is inactive when no relevant direct consumer exists.
+2. Omit the direct visibility producer and its exclusive resources when inactive. The primary lighting variant/branch uses visibility 1 without reading an absent signal; adjust only the approved visibility-dependent sampling/reservoir consequences.
+3. Reconcile bindings, direct-shadow diagnostic unavailability, graph lifecycle and all affected temporal state. Preserve indirect visibility and Reference behavior.
+4. Exercise occluder, shadow-off, all-direct-off, retained-shadow-intent/re-enable and missing-enabled-producer challenges.
+
+**Non-goals:** Indirect Shadows, AO/GBuffer occlusion changes, continuation tracing, Reference policy edits, or retaining the shadow signal for a disabled raw diagnostic.
+
+**Exit gate:** AC-DVP-18/21/24/25/27/28 through CHK-DVP-08/10/12: fully visible primary oracle, omitted exclusive shadow dispatch/traces, valid estimator weights and bindings, and affected-history reset. Any retained shared visibility cost is declared and justified.
+
+**Stop conditions:** A shadowed target/PDF/weight remains inconsistent, signal tracing continues solely for display/debug continuity, the raw disabled diagnostic pretends to be produced, or unrelated transport changes. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
+
+**Risk/failure traceability:** `RISK-DVP-SF-03`, `RISK-DVP-SF-06`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-10`, `FM-DVP-12`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+
+**Ready-to-use implementation prompt:**
+
+```text
+Implement only DVP-4A-4 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after stage 3 and the frozen primary visibility/estimator ledger. Apply the Universal Execution Contract. Deliver the Direct Shadows CVar and feature-local activation, omit exclusive visibility production when inactive, and use the accepted fully visible primary evaluation without an absent-resource read. Reconcile sampling/reservoir implications, bindings, graph lifetime, diagnostics and histories.
+
+NON-NEGOTIABLE: The control affects only primary direct visibility, disabled signal work is genuinely absent unless a frozen real shared consumer requires it, and enabled missing visibility remains a failure. Retain shadow intent across direct-family inactivity. Do not alter indirect visibility, AO, continuation intersections or Reference. Quote occluder and dispatch/trace/reset evidence or report BLOCKED.
+
+Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+
+Validate: Use primary-shadow rows of CHK-DVP-08/10/12, focused shadow/direct/reservoir shader cook, affected compile checks and native validation, including re-enable and missing-required-signal negative controls. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
+
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-5 is permitted; do not continue automatically into it.
+```
+
+### DVP-4A-5 - Deliver Indirect Lobes And Shared-Estimator Admission
+
+**Objective:** Indirect diffuse/specular are independently controllable; all-indirect-off removes their exclusive trace/reservoir/resolve chain.
+
+**Prerequisites:** Stages 0–4 pass. Indirect Lighting's owner accepts the exact primary-lobe classification, sampling/PDF/target/weight, emission/environment, guide, active-product and reset consequences; no implementation-time transport choice remains.
+
+**Work:**
+
+1. Register Indirect Diffuse and Indirect Specular beside the owning Lit indirect controls; introduce only the feature-local helpers required by current admission and shader parameters.
+2. Implement the accepted disabled-lobe route before exclusive estimator/resolve work, preserving continuation events needed by remaining classified paths. Use the frozen runtime branch/variant and target/PDF semantics.
+3. Own all-off admission inside the existing indirect family. Reconcile working/history reservoirs, temporal/spatial reuse, resolve, outputs, shared guides, composition, visualization and selected provider contracts in the same slice.
+4. Wire feature topology identity and complete dependent reset scope. Validate all-on, each-off, both-off, provider-required guides, invalid prerequisites, rapid toggles and fresh re-enable; remove dormant/unconditional replaced paths.
+
+**Non-goals:** Indirect Subsurface/transmission/volume, deleting every specular bounce when primary specular is off, provider substitution, indirect shadow toggle, estimator redesign or a second path-tracing implementation.
+
+**Exit gate:** Applicable AC-DVP-17/18/20/21/24/25/28 pass using CHK-DVP-08/10/11/12. The frozen stochastic or numeric oracle validates remaining energy; group-off proves chain omission and honest guide/provider availability; incompatible history is not reused.
+
+**Stop conditions:** Lobe filtering biases active transport outside the accepted contract, continuation events are mistaken for disabled output work, mandatory guides disappear without explicit rejection, or zero output hides a missing enabled producer. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
+
+**Risk/failure traceability:** `RISK-DVP-SF-03`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-10`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+
+**Ready-to-use implementation prompt:**
+
+```text
+Implement only DVP-4A-5 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after stage 4 and the accepted Indirect Lighting semantic/guide/reset ledger. Apply the Universal Execution Contract. Deliver both real indirect feature CVars and local activation through candidate generation, reservoir reuse, resolve, active products/composition and guide consumers. Remove exclusive inactive lobe work and omit the family with no active consumers through its own entry point; update graph lifetime and dependent histories coherently.
+
+NON-NEGOTIABLE: Preserve the frozen path classification, sampling probabilities, PDFs, reservoir targets/weights, active-path emission/environment and mandatory guides. A disabled primary specular contribution does not disable all specular continuation events. No fabricated guides, provider fallback, missing/stale reads, mask-only implementation, Reference coupling, or premature Indirect Subsurface. Quote estimator, pixel, omission and reset proof or report BLOCKED.
+
+Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+
+Validate: Use indirect rows of CHK-DVP-08/10/11/12 with predeclared seeds/sample counts/tolerances; cook affected indirect/shared/composite variants and compile the smallest affected owner. Exercise selected reconstruction provider and all-off negative-guide cases; do not infer unrun cells. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
+
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-6 is permitted; do not continue automatically into it.
+```
+
+### DVP-4A-6 - Bypass Secondary-Hit Shadow Visibility
+
+**Objective:** Indirect Shadows off removes secondary-hit direct-light visibility tests while keeping the active indirect path and Reference estimator valid.
+
+**Prerequisites:** Stage 5 passes and P04 freezes the exact Lit caller/shared helper ABI, visibility-dependent reservoir semantics, history set and secondary occluder/continuation/Reference controls.
+
+**Work:**
+
+1. Register r.Lighting.Shadows.Indirect and its helpers in the Lit indirect owner; do not make shared ray/path helpers read this CVar.
+2. Pass the accepted visibility policy from Lit to the narrow secondary direct-light evaluation. Use visibility 1 before the optional shadow trace; preserve geometry continuation, material hits, emitter/environment evaluation and active transport.
+3. Reset every history whose meaning changes with this visibility evaluation; retain shadow intent when indirect lobes are inactive. Reference supplies its unchanged required visibility policy.
+4. Prove secondary occluder results, shadow-ray omission, continuation-hit identity, Reference output, disable/re-enable, and rapid toggles.
+
+**Non-goals:** Primary direct-shadow changes, shared global shadow switches, AO, altered bounce count/domain, Reference Show controls, or temporal warm-up by continuing disabled visibility work.
+
+**Exit gate:** AC-DVP-18/24/25/27/28 through CHK-DVP-08/10/11/12: unshadowed secondary lighting, absent visibility rays, preserved continuation/Reference policy, and complete reset scope.
+
+**Stop conditions:** The shared helper acquires the feature CVar, continuation rays are skipped, Reference changes, or stale visibility-dependent weights/history survive a toggle. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
+
+**Risk/failure traceability:** `RISK-DVP-SF-06`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-12`, `FM-DVP-14` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+
+**Ready-to-use implementation prompt:**
+
+```text
+Implement only DVP-4A-6 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after stage 5 and P04's accepted caller/ABI/reset ledger. Apply the Universal Execution Contract. Deliver Indirect Shadows intent/activation in the Lit feature, carry its narrow policy to secondary-hit direct-light evaluation, bypass disabled visibility tracing before it runs, and reset dependent histories. Keep Reference's required visibility argument unchanged.
+
+NON-NEGOTIABLE: No CVar reads or Lit policy authority in shared tracing helpers; no continuation-intersection bypass, Reference behavior change, missing enabled products or stale reservoir/reconstruction state. Shadow intent remains enabled independently of whether indirect consumers are active. Quote secondary lighting, trace-category, continuation, Reference and reset oracles or report BLOCKED.
+
+Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+
+Validate: Run secondary-shadow rows of CHK-DVP-08/10/11/12, focused Lit/shared/Reference shader ABI/cook checks and the selected runtime/native-validation row. A bypass omitted or leaked into Reference must fail the negative controls. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
+
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-7 is permitted; do not continue automatically into it.
+```
+
+### DVP-4A-7 - Add The CVar-Driven Editor Show Menu
+
+**Objective:** Users browse and edit all seven real controls through one hierarchical menu reflecting the console's shared feature intent.
+
+**Prerequisites:** Stages 1–6 pass; seven real registrations and consumers exist. The control-query/batch acknowledgment and requested/applied UI contract are frozen.
+
+**Work:**
+
+1. Extend ViewportTopPanel presentation using the existing Core console/control surface. Place Direct Lighting, Indirect Lighting and Shadows groups beside Viewmode, with only their real children.
+2. Derive checks and mixed parents from CVar intent; parent/reset mutations use one ordered batch. Reflect console edits without retaining an EditorViewportSession selection or changing viewport request generation.
+3. Expose shared scope and mode limitations; make missing registrations visible as defects, not unchecked leaf defaults. Keep pending/applied state truthful and disabled raw diagnostics unavailable.
+4. Exercise leaf/group/reset/console/keyboard/focus behavior across multiple viewports and modes. Update the runtime CVar catalog and user-facing navigation without duplicating feature semantics.
+
+**Non-goals:** Viewport-local overrides, persistent Editor mirror, parent CVars, private Renderer includes, a feature registry, menu-to-Application translation or Indirect Subsurface advertising.
+
+**Exit gate:** AC-DVP-17/19/22/23/25 via CHK-DVP-08/09: all seven leaves and parent/reset semantics, global UI/console parity, no partial applied frame, mode intent retention and discoverable keyboard access.
+
+**Stop conditions:** Menu check state becomes another mutable authority, bulk updates race frame admission, the UI claims requested work is already applied, or a Renderer-private symbol is imported. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
+
+**Risk/failure traceability:** `RISK-DVP-SF-01`, `RISK-DVP-SF-02`, `RISK-DVP-SF-05` in [Discovery](Discovery.md#risk-register); `FM-DVP-07`, `FM-DVP-08`, `FM-DVP-09`, `FM-DVP-10` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+
+**Ready-to-use implementation prompt:**
+
+```text
+Implement only DVP-4A-7 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after all seven execution consumers and control delivery are proved. Apply the Universal Execution Contract. Add the Show hierarchy in ViewportTopPanel, querying the existing CVar authority and submitting validated leaf/parent/reset edits through its sequenced batch route. Reflect console edits and global scope; preserve mode-driven CVar intent and truthful pending/unavailable states. Update directly affected user/CVar documentation.
+
+NON-NEGOTIABLE: Editor owns labels and widgets only; no Renderer Show types, private CVar headers, session mirror, viewport-generation transport, stored parent state or premature leaf. One batch changes each parent/reset, all applicable viewports share the result, and checks cannot imply unsupported work is active. Quote menu/console/mode/batch/accessibility proof or report BLOCKED.
+
+Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+
+Validate: Execute CHK-DVP-08/09 with serial/threaded controls and multiple viewport requests, a missing-registration negative probe, keyboard/focus and narrow-layout checks, smallest affected Editor compile, scoped formatting/links and git diff --check. No full engine build as a speculative UI check. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
+
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-8 is permitted; do not continue automatically into it.
+```
+
+### DVP-4A-8 - Close Backend, Provider And Execution Evidence
+
+**Objective:** Every advertised candidate cell has independent correctness and work-removal evidence, with measured costs clearly separated from execution omission.
+
+**Prerequisites:** Stages 2–7 have candidate-bound local evidence and no open production contract defect. Stage 0's backend/provider/mode/format/stochastic/GPU protocol is unchanged; required hardware/tooling is available or explicitly blocked.
+
+**Work:**
+
+1. Cook every affected bounded shader combination and exercise the accepted D3D12/Vulkan cells with native validation. Include supported providers, all-off guide/product admission, serial/threaded edits and in-flight topology retirement.
+2. Run CHK-DVP-10 numeric and failure oracles, then CHK-DVP-12 pass/dispatch/branch/write/trace inspections and repeated GPU timings outside rebuild/warm-up transients.
+3. Report shared sampling/trace/guide costs, intentional disabled-output initialization, allocation/graph rebuild/reset latency and measurement variation. Do not equate a small or noisy timing delta with failed work omission, or omitted work with guaranteed speedup.
+4. Repair only defects falsified in the stage that owns them; invalidate and repeat affected earlier evidence. No optimization, provider substitute or new thresholds are introduced to make the report pass.
+
+**Non-goals:** New features/backends/providers, performance tuning beyond defect repair, adjusted tolerances after observation, whole-workspace validation, or a source-only pass for an unrun matrix cell.
+
+**Exit gate:** CHK-DVP-11/12 and applicable AC-DVP-14/15/20/21/24/27/28 meet frozen oracles on each advertised cell. Unsupported/excluded cells are decided by the contract owner, not quietly omitted. Saved-cost claims have repeatable GPU evidence; unavailable mandatory checks block closure.
+
+**Stop conditions:** Unavailable advertised hardware/probe, uncategorized native issue, mismatched candidate/oracle, incomplete variant bindings, hidden executing work, or a failed run disguised as an excluded row. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
+
+**Risk/failure traceability:** `RISK-DVP-SF-01`, `RISK-DVP-SF-03`, `RISK-DVP-SF-05`, `RISK-DVP-SF-06`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-07`, `FM-DVP-09`, `FM-DVP-10`, `FM-DVP-12`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+
+**Ready-to-use validation prompt:**
+
+```text
+Execute only DVP-4A-8 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after stages 2–7 and the frozen evidence protocol. Apply the Universal Execution Contract. Run CHK-DVP-10/11/12 on the advertised D3D12/Vulkan, provider and mode cells with native validation. Retain exact candidate, commands, hardware/driver, decoded outputs, graph/history observations, pass/branch/write/trace evidence, repeated timings and cleanup. Route falsified defects back to their owning stage and repeat affected evidence.
+
+NON-NEGOTIABLE: No threshold/sample/matrix change after candidate observation, masked pixels as performance proof, inferred unrun backend/provider support, fabricated guides or provider fallback. Distinguish exclusive omission, remaining shared cost, initialization and graph/reset transients from measured steady-state savings. Quote independent cell evidence or report BLOCKED.
+
+Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+
+Validate: Run only the frozen focused cooks/workloads/captures needed by CHK-DVP-10/11/12 and architecture_boundary_check if affected boundaries changed. Use existing per-user evidence locations; do not submit temporary harnesses/probes. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
+
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A-9 is permitted; do not continue automatically into it.
+```
+
+### DVP-4A-9 - Adopt The Controls And Close The Slice
+
+**Objective:** Hand off one clean, feature-enclosed production route with no obsolete masking/Show state and a truthful feature-completion report.
+
+**Prerequisites:** Stage 8 supplies complete evidence for every included advertised cell. All seven controls pass the applicable Acceptance criteria; no failed prerequisite is waived by this closure stage.
+
+**Work:**
+
+1. Re-audit definitions to all uses, public surface delta, feature-named outside hooks, conditional output consumers, cook/build membership and runtime CVar catalog. Prove bounded feature removal touches only its accepted hooks; no generic orchestrator knows the Editor hierarchy.
+2. Delete scoped dead code/includes, interim masks/holders, replaced paths, temporary validation code and orphan generation entries. Regenerate directly affected disposable products; do not defer compatibility or cleanup.
+3. Reconcile dossier/Discovery/Show contract and central readiness only from actual evidence. Record candidate results in the owning FCR-REN-11 report, not a status diary inside this plan.
+4. List remaining explicitly blocked/excluded behavior, including Indirect Subsurface, and the next safe workflow. Supersede completed execution instructions only when they no longer have a live consumer.
+
+**Non-goals:** Implementation of DVP-4B, unrelated repository cleanup, new diagnostic/progress machinery, package/release claims not exercised, or waiver of an unrun required criterion.
+
+**Exit gate:** All included AC-DVP-17–25 and AC-DVP-27/28 pass conjunctively; CHK-DVP-08 enclosure/clean-break and CHK-DVP-09–12 evidence are current. The FCR owner records the result and limitations; DVP-4B remains separately blocked.
+
+**Stop conditions:** An orphan producer/consumer, hidden duplicate authority, unexplained outside hook, public feature mechanism, temporary submitted test, stale evidence identity, or required unrun result remains. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
+
+**Risk/failure traceability:** `RISK-DVP-SF-01`, `RISK-DVP-SF-02`, `RISK-DVP-SF-03`, `RISK-DVP-SF-04`, `RISK-DVP-SF-05`, `RISK-DVP-SF-06`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-07`, `FM-DVP-08`, `FM-DVP-09`, `FM-DVP-10`, `FM-DVP-11`, `FM-DVP-12`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+
+**Ready-to-use closure prompt:**
+
+```text
+Close only DVP-4A-9 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after stage 8's complete evidence. Apply the Universal Execution Contract. Audit enclosure, outside hooks, public APIs, copies, ownership, build/cook membership and all active-product consumers. Delete obsolete masks/state/paths/includes and temporary probes in one clean break, regenerate scoped products, reconcile affected documentation, and record candidate results in the FCR-REN-11 owner.
+
+NON-NEGOTIABLE: No old/new dispatcher, compatibility alias, Show transport, deferred cleanup, dormant feature scaffolding or evidence-level upgrade from source alone. Every included criterion needs current proof; any missing mandatory proof blocks completion. Indirect Subsurface is not pulled into this slice. Quote closure evidence and report the exact remaining limitations/next permitted work.
+
+Do not implement later stages or expand the accepted hook/API/copy/variant budget. Apply this stage's non-goals and stop rules; a missing, stale or contradicted prerequisite means BLOCKED, not permission to choose an alternative.
+
+Validate: Run CHK-DVP-08 enclosure and no-stale-reference audit, directly affected documentation/ID checks, formatting, architecture_boundary_check when applicable, and git diff --check. Reuse valid evidence; do not run broad builds/cooks to replace an absent oracle. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
+
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A closure; DVP-4B remains separately gated is permitted; do not continue automatically into it.
 ```
 
 ### DVP-4B - Indirect Subsurface
@@ -142,11 +520,53 @@ Implement DVP-4A in its bounded feature-owned order using the authorized CVar pu
 
 **Exit gate:** applicable `AC-DVP-17` through `AC-DVP-28`, including a non-zero independent oracle and exclusive-work omission. Remain **BLOCKED** while the transport decision is open.
 
+#### DVP-4B-0 - Authorize The Owning Transport Slice
+
+**Objective and prerequisites:** after DVP-4A, ask the Indirect Lighting owner to close `IND-D0-02` and supply its accepted staged transport/product plan. The Show-menu request is not authority to design that transport here.
+
+**Work:** re-audit the absent product; freeze subsurface classification, energy/PDF/target semantics, real producer, guide/history effects, non-zero and disabled-work oracles, and exact integration handoff into this control system. Keep every premature CVar/UI/resource surface absent.
+
+**Non-goals and stop rule:** no production change, diffuse relabeling, transmission/volume expansion, zero placeholder, or implied DVP-4B authorization from DVP-4A completion. Any unresolved owning transport decision keeps this follow-on blocked.
+
+**Exit gate:** Discovery and the Indirect Lighting owner jointly authorize a concrete transport/product slice with its exact prerequisites, semantic rules and checks. This plan does not duplicate that owner's delivery stages.
+
+**Ready-to-use discovery prompt:**
+
+```text
+Execute only DVP-4B-0 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after DVP-4A closure. Apply its Universal Execution Contract. Make no production-code changes. Work through the owning Indirect Lighting discovery/plan to close IND-D0-02 and freeze the real Indirect Subsurface producer, path classification, energy/PDF/target, product/guide/history, activation and non-zero/disabled-work proof. Record the exact transport-stage and control-integration prerequisites without duplicating that plan here.
+
+NON-NEGOTIABLE: no CVar, Editor leaf, resource, fabricated zero or relabeled diffuse contribution is admitted before the owning transport/product decision. A Show request and prior seven-leaf completion do not authorize transport. Quote the accepted owner decisions and proof contracts or report BLOCKED.
+
+Validate documentation links/anchors, IDs, ownership/hook budget, UTF-8 and git diff --check. Report executable checks as unrun unless a bounded named discovery probe ran. Handoff the exact owning transport stage and whether DVP-4B-1 is permitted; do not implement it.
+```
+
+#### DVP-4B-1 - Integrate The Authorized Real Contribution
+
+**Objective and prerequisites:** integrate the eighth leaf only as part of the exact Indirect Lighting-authorized real product slice. Its producer and control contract must land coherently; an already accepted real producer may be extended, never replaced by a control-only placeholder.
+
+**Work:** follow the owning transport stage; reuse the existing indirect activation/control/publication route, reconcile estimator/resolve/composite/guides/history/diagnostics, register the feature CVar beside its consumer, and expand the derived Editor parent by one real child. Run its non-zero and exclusive-work omission oracles, advertised-backend/native checks, and closure audit.
+
+**Non-goals and stop rule:** no new Show types/settings/parent gates, semantics improvised in this integration step, compatibility path, producer-only/control-only intermediate state, or generic feature framework. Invalidated transport or product evidence returns to its owning stage.
+
+**Exit gate:** `AC-DVP-26` and all applicable `AC-DVP-17` through `AC-DVP-28` pass with current `CHK-DVP-08` through `CHK-DVP-12` evidence. Update the owning candidate report and active feature/CVar documentation; no source-only completion.
+
+**Ready-to-use implementation prompt:**
+
+```text
+Implement only DVP-4B-1 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md within the exact Indirect Lighting-authorized transport/product stage recorded by DVP-4B-0. Apply the Universal Execution Contract. Reuse existing indirect feature controls and sequenced publication. Integrate the real Indirect Subsurface producer and activation/disabled-work path through estimator/resolve, composite, guides, history and diagnostics; add its feature CVar and one real Editor child in the same coherent slice.
+
+NON-NEGOTIABLE: the owning transport rules and non-zero oracle are prerequisites, not implementation choices. No diffuse relabeling, fabricated product, UI-only registration, stale reads, masked-only output, duplicate settings/Show state, compatibility path or unledgered hook. Quote AC-DVP-26 and applicable execution/product/history/enclosure evidence or report BLOCKED.
+
+Validate the owning transport checks plus applicable CHK-DVP-08 through CHK-DVP-12, bounded shader/C++ checks, advertised-backend/native rows, affected documentation and git diff --check. Handoff exact prerequisite/candidate identity, files/deletions/copies/hooks, commands/artifacts, unrun checks and the owning report's closure disposition. Do not broaden transport or claim unrun performance proof.
+```
+
 ## DVP-5 - Prove The Contract
 
-Exercise enum/HLSL parity, every consumer, two-viewport isolation, Lit/Reference/Lit topology, exact/HDR numeric presentation, extent changes, output encoding, and advertised D3D12/Vulkan rows. Record only checks actually run in the owning completion report.
+Exercise enum/HLSL parity, every consumer, two-viewport mode isolation, shared feature-CVar UI/console parity, Lit/Reference/Lit topology, exact/HDR numeric presentation, extent changes, output encoding, and advertised D3D12/Vulkan rows. DVP-4A-8/9 own the lighting-control execution/evidence handoff; this family-wide closure does not repeat it or infer a missing row. Record only checks actually run in the owning completion report.
 
 ## Ready-To-Use Source Cleanup Prompt
+
+This is a mode-baseline reconciliation prompt, not a DVP-4 implementation instruction. Use it only when the live mode audit identifies a directly scoped defect; do not replay historical migration or add feature controls through it.
 
 ```text
 Reconcile the live Debug Views and Reference Path Tracer source to Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Controls/ViewModes.md. Keep RenderViewMode as the sole host-independent per-view rendering choice on ViewportRenderRequest and immutable RenderView. Keep Editor labels/icons/menu layout local while using the same enum directly. Consume the value only at the owning frame-composition, raster, debug-resolve, and feature-lifecycle decisions. Delete parallel Editor enums, preset translators, visualization targets, mode-shaped show flags, selection CVars, command bridges, graph/feature settings copies, compatibility aliases, and RHI fields. Preserve ReferencePathTracer = 1 and contiguous values. Keep the Reference implementation private and the shared frame shell unchanged. Add no diagnostics, registry, generic settings bag, recipe hierarchy, or speculative controls. Run focused source checks, architecture_boundary_check, documentation link/anchor checks, and git diff --check; report builds and runtime checks as deferred unless actually run.

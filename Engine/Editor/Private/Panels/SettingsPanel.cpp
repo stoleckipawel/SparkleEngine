@@ -25,7 +25,7 @@ void SettingsPanel::SetOpen(bool open) noexcept
 	m_isOpen = open;
 }
 
-void SettingsPanel::SetRenderingSettings(EngineRenderingSettingsSection* renderingSettings) noexcept
+void SettingsPanel::SetRenderingSettings(EngineRenderingSettingsController* renderingSettings) noexcept
 {
 	m_renderingSettings = renderingSettings;
 	if (!m_renderingPanel)

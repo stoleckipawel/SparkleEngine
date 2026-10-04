@@ -34,7 +34,7 @@ class SettingsPanel;
 class UsedShadersPanel;
 class UsedMeshesPanel;
 class UsedTexturesPanel;
-class EngineRenderingSettingsSection;
+class EngineRenderingSettingsController;
 class EditorRestartService;
 class InputSystem;
 class LevelSession;
@@ -134,7 +134,7 @@ private:
 	std::unique_ptr<UsedShadersPanel> m_usedShadersPanel;
 	std::unique_ptr<UsedMeshesPanel> m_usedMeshesPanel;
 	std::unique_ptr<UsedTexturesPanel> m_usedTexturesPanel;
-	std::unique_ptr<EngineRenderingSettingsSection> m_renderingSettings;
+	std::unique_ptr<EngineRenderingSettingsController> m_renderingSettings;
 	std::unique_ptr<EditorRestartService> m_restartService;
 	Timer* m_timer = nullptr;
 	LevelSession* m_levelSession = nullptr;

@@ -4,7 +4,7 @@
 #include "Level/Level.h"
 #include "Level/LevelSession.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
-#include "Settings/EngineRenderingSettingsSection.h"
+#include "Settings/EngineRenderingSettingsController.h"
 #include "Style/SparkleUiPalette.h"
 #include "Util/UiUtil.h"
 #include "Viewport/ViewportCameraProperties.h"
@@ -71,7 +71,7 @@ static ViewModePresentation DescribeViewMode(RenderViewMode viewMode) noexcept
 
 ViewportTopPanel::ViewportTopPanel(
     LevelSession* levelSession,
-    EngineRenderingSettingsSection* renderingSettings,
+    EngineRenderingSettingsController* renderingSettings,
     EditorViewportSession* viewportSession) noexcept :
     m_renderingSettings(renderingSettings),
     m_viewportSession(viewportSession)

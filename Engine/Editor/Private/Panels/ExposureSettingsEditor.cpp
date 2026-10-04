@@ -2,9 +2,9 @@
 
 #include "Panels/ExposureSettingsEditor.h"
 
-#include "Panels/RenderingSettingsPanelUi.h"
+#include "Panels/RenderingSettingsUi.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
-#include "Settings/EngineRenderingSettingsSection.h"
+#include "Settings/EngineRenderingSettingsController.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 #include <imgui.h>
@@ -124,84 +124,84 @@ private:
 	}
 };
 
-void ExposureSettingsEditor::DrawSettings(EngineRenderingSettingsSection& settingsSection, const EngineRenderingSettingsState& settings)
+void ExposureSettingsEditor::DrawSettings(EngineRenderingSettingsController& settingsController, const EngineRenderingSettingsState& settings)
 {
-	static constexpr RenderingSettingsPanelUi::ComboOption<EngineExposureMode> exposureModeOptions[] = {
+	static constexpr RenderingSettingsUi::ComboOption<EngineExposureMode> exposureModeOptions[] = {
 	    {"Manual", EngineExposureMode::Manual},
 	    {"Automatic", EngineExposureMode::Automatic},
 	};
-	static constexpr RenderingSettingsPanelUi::ComboOption<EngineExposureMeteringMethod> exposureMeteringMethodOptions[] = {
+	static constexpr RenderingSettingsUi::ComboOption<EngineExposureMeteringMethod> exposureMeteringMethodOptions[] = {
 	    {"Parallel reduction", EngineExposureMeteringMethod::ParallelReduction},
 	    {"Downsample pyramid", EngineExposureMeteringMethod::DownsamplePyramid},
 	};
 
-	RenderingSettingsPanelUi::DrawComboOptionRow(
+	RenderingSettingsUi::DrawComboOptionRow(
 	    "##ExposureMode",
 	    "Exposure mode",
 	    settings.ExposureMode,
 	    exposureModeOptions,
-	    [&settingsSection](EngineExposureMode value) { settingsSection.SetExposureMode(value); });
-	RenderingSettingsPanelUi::DrawComboOptionRow(
+	    [&settingsController](EngineExposureMode value) { settingsController.SetExposureMode(value); });
+	RenderingSettingsUi::DrawComboOptionRow(
 	    "##ExposureMeteringMethod",
 	    "Exposure metering",
 	    settings.ExposureMeteringMethod,
 	    exposureMeteringMethodOptions,
-	    [&settingsSection](EngineExposureMeteringMethod value) { settingsSection.SetExposureMeteringMethod(value); });
+	    [&settingsController](EngineExposureMeteringMethod value) { settingsController.SetExposureMeteringMethod(value); });
 	ImGui::BeginDisabled(settings.ExposureMode != EngineExposureMode::Manual);
-	RenderingSettingsPanelUi::DrawFloatInputRow(
+	RenderingSettingsUi::DrawFloatInputRow(
 	    "##ManualExposure",
 	    "Manual exposure",
 	    settings.ManualExposure,
-	    [&settingsSection](float value) { settingsSection.SetManualExposure(value); },
+	    [&settingsController](float value) { settingsController.SetManualExposure(value); },
 	    0.1f,
 	    1.0f,
 	    "%.4f");
 	ImGui::EndDisabled();
-	RenderingSettingsPanelUi::DrawFloatInputRow(
+	RenderingSettingsUi::DrawFloatInputRow(
 	    "##ExposureCompensation",
 	    "Exposure compensation EV",
 	    settings.ExposureCompensation,
-	    [&settingsSection](float value) { settingsSection.SetExposureCompensation(value); },
+	    [&settingsController](float value) { settingsController.SetExposureCompensation(value); },
 	    0.1f,
 	    1.0f,
 	    "%.2f");
-	RenderingSettingsPanelUi::DrawFloatInputRow(
+	RenderingSettingsUi::DrawFloatInputRow(
 	    "##ExposureTargetLuminance",
 	    "Target luminance",
 	    settings.ExposureTargetLuminance,
-	    [&settingsSection](float value) { settingsSection.SetExposureTargetLuminance(value); },
+	    [&settingsController](float value) { settingsController.SetExposureTargetLuminance(value); },
 	    0.01f,
 	    0.1f,
 	    "%.4f");
-	RenderingSettingsPanelUi::DrawFloatInputRow(
+	RenderingSettingsUi::DrawFloatInputRow(
 	    "##ExposureMin",
 	    "Min exposure",
 	    settings.ExposureMin,
-	    [&settingsSection](float value) { settingsSection.SetExposureMin(value); },
+	    [&settingsController](float value) { settingsController.SetExposureMin(value); },
 	    0.0001f,
 	    0.01f,
 	    "%.6f");
-	RenderingSettingsPanelUi::DrawFloatInputRow(
+	RenderingSettingsUi::DrawFloatInputRow(
 	    "##ExposureMax",
 	    "Max exposure",
 	    settings.ExposureMax,
-	    [&settingsSection](float value) { settingsSection.SetExposureMax(value); },
+	    [&settingsController](float value) { settingsController.SetExposureMax(value); },
 	    1.0f,
 	    64.0f,
 	    "%.3f");
-	RenderingSettingsPanelUi::DrawFloatInputRow(
+	RenderingSettingsUi::DrawFloatInputRow(
 	    "##ExposureAdaptationSpeedUp",
 	    "Adapt speed up",
 	    settings.ExposureAdaptationSpeedUp,
-	    [&settingsSection](float value) { settingsSection.SetExposureAdaptationSpeedUp(value); },
+	    [&settingsController](float value) { settingsController.SetExposureAdaptationSpeedUp(value); },
 	    0.1f,
 	    1.0f,
 	    "%.3f");
-	RenderingSettingsPanelUi::DrawFloatInputRow(
+	RenderingSettingsUi::DrawFloatInputRow(
 	    "##ExposureAdaptationSpeedDown",
 	    "Adapt speed down",
 	    settings.ExposureAdaptationSpeedDown,
-	    [&settingsSection](float value) { settingsSection.SetExposureAdaptationSpeedDown(value); },
+	    [&settingsController](float value) { settingsController.SetExposureAdaptationSpeedDown(value); },
 	    0.1f,
 	    1.0f,
 	    "%.3f");

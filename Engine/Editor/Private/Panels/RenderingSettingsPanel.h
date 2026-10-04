@@ -1,15 +1,15 @@
 #pragma once
 
-class EngineRenderingSettingsSection;
+class EngineRenderingSettingsController;
 
 class RenderingSettingsPanel final
 {
 public:
-	void SetSettings(EngineRenderingSettingsSection* settings) noexcept;
+	void SetSettings(EngineRenderingSettingsController* settings) noexcept;
 	void RefreshFromRuntimeState() noexcept;
 	bool HasPendingRestart() const noexcept;
 	void BuildUI(bool disableInteraction, const char* filterText = nullptr);
 
 private:
-	EngineRenderingSettingsSection* m_settings = nullptr;
+	EngineRenderingSettingsController* m_settings = nullptr;
 };

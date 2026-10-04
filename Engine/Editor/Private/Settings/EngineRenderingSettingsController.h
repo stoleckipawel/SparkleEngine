@@ -5,13 +5,13 @@
 #include <functional>
 #include <string>
 
-class EngineRenderingSettingsSection final
+class EngineRenderingSettingsController final
 {
 public:
 	using CommitHandler = std::function<void(EngineRenderingSettingsState)>;
 	using RefreshHandler = std::function<EngineRenderingSettingsState()>;
 
-	EngineRenderingSettingsSection(EngineRenderingSettingsState state, CommitHandler commitHandler, RefreshHandler refreshHandler);
+	EngineRenderingSettingsController(EngineRenderingSettingsState state, CommitHandler commitHandler, RefreshHandler refreshHandler);
 
 	const EngineRenderingSettingsState& GetState() const noexcept { return m_state; }
 	void RefreshFromRuntimeState() noexcept;

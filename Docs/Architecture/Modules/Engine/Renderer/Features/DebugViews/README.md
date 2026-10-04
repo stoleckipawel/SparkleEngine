@@ -12,6 +12,8 @@
 
 **Delivery:** [Discovery gate](Discovery.md), [Plan](Plan.md), and [Acceptance](Acceptance.md)
 
+**Next implementation route:** the [ten-stage DVP-4A sequence](Plan.md#dvp-4a---existing-lighting-and-shadow-controls) supplies one copy-ready prompt per bounded slice. Start with discovery/freeze; all production work remains gated. The plan uses the repository Feature Delivery Package template and does not advance implementation readiness.
+
 ## Current Source Shape
 
 Sparkle has one host-independent `RenderViewMode` contract:

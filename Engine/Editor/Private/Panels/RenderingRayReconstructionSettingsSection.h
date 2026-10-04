@@ -1,9 +1,9 @@
 #pragma once
 
 struct EngineRenderingSettingsState;
-class EngineRenderingSettingsSection;
+class EngineRenderingSettingsController;
 
 void DrawRayReconstructionSettingsSection(
-    EngineRenderingSettingsSection& settingsSection,
+    EngineRenderingSettingsController& settingsController,
     const EngineRenderingSettingsState& settings,
     const char* filterText);

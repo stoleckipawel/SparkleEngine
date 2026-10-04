@@ -18,6 +18,14 @@ Authorize DVP-4A only when Editor and console can safely edit one feature-CVar a
 
 The revised [Show-menu design](Controls/ShowFlags.md) supersedes the former per-view bit set and composite-only masking target. It is an accepted design direction, not authorization or executable evidence. DVP-4B separately requires the Indirect Lighting transport/product decision.
 
+### Authorization Boundaries For The Staged Plan
+
+The [DVP-4A staged sequence](Plan.md#dvp-4a---existing-lighting-and-shadow-controls) begins with read-only `DVP-4A-0`. Its decision may authorize only `DVP-4A-1`, a bounded prerequisite repair of existing CVar delivery, while DVP-4A lighting implementation stays **BLOCKED**. Record the exact candidate, approved mutation/query/batch route, touched owners, public/API/copy/hook budget, negative controls, and executable exit evidence required from that repair. This limited decision does not authorize feature registration, activation, shaders, or Show UI.
+
+If the existing route already satisfies the contract, `DVP-4A-1` proves it and makes no unnecessary production change. Only after its publication evidence and the other blocking decisions pass may this gate record DVP-4A **AUTHORIZED** for `DVP-4A-2`. Every subsequent stage separately requires its predecessor's exact exit evidence; global authorization is not permission to bypass a stage, choose an unresolved architecture, or run every prompt at once.
+
+No prerequisite repair is authorized by this planning revision. A failed or exceeded repair scope returns here for review; it cannot expand into a generic control framework or an unbounded CVar rewrite.
+
 ## Iteration Control Record
 
 | Field | Record |

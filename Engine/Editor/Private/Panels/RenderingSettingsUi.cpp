@@ -1,13 +1,13 @@
 #include "PCH.h"
 
-#include "Panels/RenderingSettingsPanelUi.h"
+#include "Panels/RenderingSettingsUi.h"
 
 #include "Style/SparkleUiPalette.h"
 #include "Util/UiUtil.h"
 
 #include <string>
 
-namespace RenderingSettingsPanelUi
+namespace RenderingSettingsUi
 {
 	bool MatchesFilter(const char* filterText, const char* title, const char* keywords)
 	{
