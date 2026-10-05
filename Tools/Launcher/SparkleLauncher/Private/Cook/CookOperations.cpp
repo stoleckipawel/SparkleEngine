@@ -9,10 +9,14 @@
 #include "Core/Public/Paths/WorkspaceOutputPaths.h"
 
 #include <algorithm>
+#include <filesystem>
 #include <optional>
 #include <sstream>
+#include <string>
+#include <string_view>
 #include <system_error>
 #include <utility>
+#include <vector>
 
 namespace SparkleLauncher
 {
@@ -23,33 +27,23 @@ namespace SparkleLauncher
 		std::vector<std::string> MissingSupportEntries;
 	};
 
-	std::vector<std::string> GetRequiredCookToolRuntimeFiles(const std::filesystem::path& toolPath)
-	{
-		const std::string toolName = toolPath.stem().string();
-		if (toolName == "ShaderCompiler")
-		{
-			return {
-			    "dxcompiler.dll",
-			    "SPIRV-Tools-shared.dll",
-			    "slang.dll",
-			    "slang-compiler.dll",
-			    "slang-glsl-module.dll",
-			    "slang-glslang.dll",
-			    "slang-rt.dll",
-			    "slang.slang",
-			};
-		}
-
-		return {};
-	}
-
 	CookToolRuntimeReadiness InspectCookToolRuntimeReadiness(const std::filesystem::path& toolPath)
 	{
 		CookToolRuntimeReadiness readiness;
+		if (toolPath.stem() != "ShaderCompiler")
+		{
+			return readiness;
+		}
 		const std::filesystem::path toolDirectory = toolPath.parent_path();
 		std::error_code errorCode;
-		for (const std::string& runtimeFileName : GetRequiredCookToolRuntimeFiles(toolPath))
+		for (std::string_view sdkFile : GetShaderCompilerRequiredSdkFiles())
 		{
+			constexpr std::string_view binaryPrefix = "Bin/";
+			if (!sdkFile.starts_with(binaryPrefix))
+			{
+				continue;
+			}
+			const std::string_view runtimeFileName = sdkFile.substr(binaryPrefix.size());
 			errorCode.clear();
 			if (std::filesystem::is_regular_file(toolDirectory / runtimeFileName, errorCode) && !errorCode)
 			{
@@ -57,10 +51,10 @@ namespace SparkleLauncher
 			}
 
 			readiness.Ready = false;
-			readiness.MissingSupportEntries.push_back(runtimeFileName);
+			readiness.MissingSupportEntries.emplace_back(runtimeFileName);
 		}
 
-		if (toolPath.stem() == "ShaderCompiler" && !HasShaderCompilerStandardModules(toolDirectory))
+		if (!HasShaderCompilerStandardModules(toolDirectory))
 		{
 			readiness.Ready = false;
 			readiness.MissingSupportEntries.emplace_back("slang-standard-module-*");

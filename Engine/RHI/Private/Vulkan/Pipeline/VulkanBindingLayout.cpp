@@ -133,7 +133,8 @@ public:
 			{
 				nativeBindings.push_back(descriptorBinding.Binding);
 				auto& requirements = descriptorSetRequirements[setIndex];
-				const auto requirement = std::ranges::find(requirements, descriptorBinding.Binding.descriptorType, &VkDescriptorPoolSize::type);
+				const auto requirement =
+				    std::ranges::find(requirements, descriptorBinding.Binding.descriptorType, &VkDescriptorPoolSize::type);
 				if (requirement == requirements.end())
 				{
 					requirements.push_back({descriptorBinding.Binding.descriptorType, descriptorBinding.Binding.descriptorCount});

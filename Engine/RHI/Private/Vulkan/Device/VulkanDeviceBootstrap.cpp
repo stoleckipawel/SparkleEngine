@@ -227,6 +227,7 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 	m_featureStatus.SupportsShaderInt64 = selected.Features.features.shaderInt64 == VK_TRUE;
 	m_featureStatus.SupportsShaderFloat64 = selected.Features.features.shaderFloat64 == VK_TRUE;
 	m_featureStatus.SupportsScalarBlockLayout = selected.Features12.scalarBlockLayout == VK_TRUE;
+	m_featureStatus.SupportsHostQueryReset = selected.Features12.hostQueryReset == VK_TRUE;
 	m_featureStatus.SupportsStorageImageReadWithoutFormat = selected.Features.features.shaderStorageImageReadWithoutFormat == VK_TRUE;
 	m_featureStatus.SupportsStorageImageWriteWithoutFormat = selected.Features.features.shaderStorageImageWriteWithoutFormat == VK_TRUE;
 	m_featureStatus.SupportsSampledImageArrayNonUniformIndexing = selected.Features12.shaderSampledImageArrayNonUniformIndexing == VK_TRUE;
@@ -316,6 +317,8 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	{
 		enabledFeatures12.scalarBlockLayout = m_featureStatus.SupportsScalarBlockLayout ? VK_TRUE : VK_FALSE;
 		m_featureStatus.EnabledScalarBlockLayout = enabledFeatures12.scalarBlockLayout == VK_TRUE;
+		enabledFeatures12.hostQueryReset = m_featureStatus.SupportsHostQueryReset ? VK_TRUE : VK_FALSE;
+		m_featureStatus.EnabledHostQueryReset = enabledFeatures12.hostQueryReset == VK_TRUE;
 		enabledFeatures12.timelineSemaphore = m_featureStatus.SupportsTimelineSemaphore ? VK_TRUE : VK_FALSE;
 		enabledFeatures12.shaderSampledImageArrayNonUniformIndexing =
 		    m_featureStatus.SupportsSampledImageArrayNonUniformIndexing ? VK_TRUE : VK_FALSE;

@@ -1,7 +1,9 @@
 #pragma once
 
 #include <filesystem>
+#include <span>
 #include <string>
+#include <string_view>
 
 namespace SparkleLauncher
 {
@@ -12,6 +14,7 @@ namespace SparkleLauncher
 		std::string Detail;
 	};
 
+	std::span<const std::string_view> GetShaderCompilerRequiredSdkFiles() noexcept;
 	bool HasShaderCompilerStandardModules(const std::filesystem::path& binaryDirectory);
 	ShaderCompilerSdkStatus DetectShaderCompilerSdk();
 }

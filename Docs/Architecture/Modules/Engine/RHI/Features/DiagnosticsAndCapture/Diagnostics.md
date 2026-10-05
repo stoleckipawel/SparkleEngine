@@ -2,7 +2,7 @@
 
 **Status:** current feature dossier; source-backed, not diagnostic truthfulness, fault-handling, observer-cost, or release evidence
 
-**Verified:** 2026-09-06 at committed `master` revision `8414b5dc`
+**Verified:** general dossier snapshot 2026-09-06 at committed `master` revision `8414b5dc`; Vulkan timestamp feature admission re-inspected 2026-10-06 at dirty `5e2388d9`
 
 **Scope:** `RHI-DIAG-01` through `RHI-DIAG-05`; native object identity, GPU events, timestamps, validation messages, D3D12 crash data, live-object reporting, bounded delivery, and observer configuration
 
@@ -43,6 +43,12 @@ RHI diagnostic records identify the neutral request and native work that actuall
 - D3D12 and Vulkan expose different native facilities. The diagnostic owner reports that asymmetry and availability; it does not fabricate a common observation the backend did not produce.
 
 ## Design Decisions And Tradeoffs
+
+### Vulkan Timestamp Reset Capability
+
+The Vulkan timing implementation resets newly allocated timestamp slots on the host, under its query-pool mutex, and records writes on the query's owning queue. Device bootstrap must query and enable Vulkan 1.2 `hostQueryReset` before that implementation is advertised. Supported and enabled facts remain backend-private in `VulkanFeatureStatus`; no Renderer policy or new neutral API is introduced. When the feature is unavailable, timing initialization creates no query pools and the existing diagnostics composition reports timing unavailable rather than making an invalid reset call or returning a fabricated zero duration.
+
+Do not replace this with a reset command inside every timestamp write: timestamp scopes can surround work within a render pass, where a query-reset command is not admitted. Query reuse still requires the existing frame-slot retirement before resolve/release; enabling the feature does not waive lifetime rules. The selected Stage-8 failure and replay evidence is owned by `artifacts/validation/releases/v0.1.0/410d05e-dvp-stage8-execution-20261005/features/FCR-REN-11/completion.md`. It does not establish observer-cost or complete diagnostic acceptance.
 
 | Decision | Benefit | Cost or risk |
 | --- | --- | --- |

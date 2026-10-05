@@ -4,6 +4,7 @@
 #include "Level/Level.h"
 #include "Level/LevelSession.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
+#include "Renderer/Public/Viewport/RenderViewMode.h"
 #include "Settings/EngineRenderingSettingsController.h"
 #include "Style/SparkleUiPalette.h"
 #include "Util/UiUtil.h"
@@ -15,6 +16,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <cstring>
 #include <cstdio>
 #include <string>

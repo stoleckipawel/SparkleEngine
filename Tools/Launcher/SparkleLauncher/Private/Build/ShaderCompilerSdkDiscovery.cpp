@@ -4,14 +4,38 @@
 #include "Core/Public/Strings/StringUtils.h"
 
 #include <array>
+#include <filesystem>
 #include <optional>
+#include <span>
 #include <sstream>
+#include <string>
 #include <string_view>
 #include <system_error>
 #include <vector>
 
 namespace SparkleLauncher
 {
+	static constexpr auto shaderCompilerRequiredSdkFiles = std::to_array<std::string_view>(
+	    {"Include/dxc/dxcapi.h",
+	        "Lib/dxcompiler.lib",
+	        "Bin/dxcompiler.dll",
+	        "Include/spirv-tools/libspirv.hpp",
+	        "Lib/SPIRV-Tools-shared.lib",
+	        "Bin/SPIRV-Tools-shared.dll",
+	        "Include/slang/slang.h",
+	        "Lib/slang.lib",
+	        "Bin/slang.dll",
+	        "Bin/slang-compiler.dll",
+	        "Bin/slang-glsl-module.dll",
+	        "Bin/slang-glslang.dll",
+	        "Bin/slang-rt.dll",
+	        "Bin/slang.slang"});
+
+	std::span<const std::string_view> GetShaderCompilerRequiredSdkFiles() noexcept
+	{
+		return shaderCompilerRequiredSdkFiles;
+	}
+
 	bool HasShaderCompilerStandardModules(const std::filesystem::path& binaryDirectory)
 	{
 		std::error_code errorCode;
@@ -49,24 +73,9 @@ namespace SparkleLauncher
 		}
 
 		status.Root = sdkRoot->lexically_normal();
-		static constexpr auto requiredFiles = std::to_array<std::string_view>(
-		    {"Include/dxc/dxcapi.h",
-		        "Lib/dxcompiler.lib",
-		        "Bin/dxcompiler.dll",
-		        "Include/spirv-tools/libspirv.hpp",
-		        "Lib/SPIRV-Tools-shared.lib",
-		        "Bin/SPIRV-Tools-shared.dll",
-		        "Include/slang/slang.h",
-		        "Lib/slang.lib",
-		        "Bin/slang.dll",
-		        "Bin/slang-compiler.dll",
-		        "Bin/slang-glsl-module.dll",
-		        "Bin/slang-glslang.dll",
-		        "Bin/slang-rt.dll",
-		        "Bin/slang.slang"});
 
 		std::vector<std::string> missingEntries;
-		for (std::string_view relativePath : requiredFiles)
+		for (std::string_view relativePath : GetShaderCompilerRequiredSdkFiles())
 		{
 			std::error_code errorCode;
 			if (!std::filesystem::is_regular_file(status.Root / relativePath, errorCode))

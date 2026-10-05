@@ -46,6 +46,12 @@ A request for a supported neutral texture/subresource becomes one asynchronous r
 
 ## Design Decisions And Tradeoffs
 
+### Scalar Float Readback
+
+The shared `IsRhiCaptureFormatSupported` whitelist admits `R32_Float` alongside its existing color formats. This preserves real scalar products such as reconstruction roughness and path hit distance without shader packing or conversion. Each texel is one native 32-bit float; callers decode the returned format, extent and row pitch rather than assuming tightly packed RGBA rows. Vulkan uses the existing format byte-size calculation and D3D12 uses the source's native copy footprint. No additional backend copy path, semantic guide production, neutral API or encoded-image format is introduced.
+
+The selected 2026-10-06 dirty `5e2388d9` Stage-8 candidate exercises scalar readback at the existing capture owner. Candidate results and negative/cleanup provenance belong to `artifacts/validation/releases/v0.1.0/410d05e-dvp-stage8-execution-20261005/features/FCR-REN-11/completion.md`; this narrow extension does not close the full format-pattern, cancellation or device-loss matrix.
+
 | Decision | Benefit | Cost or risk |
 | --- | --- | --- |
 | Renderer selects semantic product; RHI reads bytes | Color/provenance meaning stays with the feature that produced the texture | A byte-perfect capture can still be semantically misidentified by its caller |

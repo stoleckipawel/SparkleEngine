@@ -233,6 +233,12 @@ private:
 			    "Cannot initialize Vulkan timing without a physical device and logical device.");
 		}
 
+		// Host resets keep timestamp writes valid inside render passes as well as outside them.
+		if (!m_rhi.GetFeatureStatus().EnabledHostQueryReset)
+		{
+			return;
+		}
+
 		VkPhysicalDeviceProperties physicalDeviceProperties = {};
 		vkGetPhysicalDeviceProperties(m_rhi.GetPhysicalDevice(), &physicalDeviceProperties);
 

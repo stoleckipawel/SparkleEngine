@@ -46,10 +46,6 @@ void VulkanRecordingDescriptorPool::Reset() noexcept
 
 bool VulkanRecordingDescriptorPool::CanAllocate(const PoolPage& page, std::span<const VkDescriptorPoolSize> requirements) noexcept
 {
-	if (page.AllocatedSets >= DescriptorSetCapacity)
-	{
-		return false;
-	}
 	for (const VkDescriptorPoolSize& requirement : requirements)
 	{
 		const auto available = std::ranges::find(page.Remaining, requirement.type, &VkDescriptorPoolSize::type);
@@ -65,6 +61,7 @@ VkDescriptorSet VulkanRecordingDescriptorPool::AllocateSet(
     VkDescriptorSetLayout layout,
     std::span<const VkDescriptorPoolSize> requirements) noexcept
 {
+	// The global set cap bounds every page; per-page counts identify unused pages for reclamation.
 	if (layout == VK_NULL_HANDLE || m_allocatedSetCount >= DescriptorSetCapacity)
 	{
 		return VK_NULL_HANDLE;

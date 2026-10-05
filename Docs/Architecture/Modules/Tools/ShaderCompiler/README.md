@@ -31,7 +31,7 @@
 | `SHD-BUILD-02` | Shared shader contracts | Implemented path | `ShaderContracts` defines target, stage, feature, reflection, parameter-layout, map/library, dependency, and publication identities shared by registration, tool, and runtime consumers. | `S` | Pending |
 | `SHD-BUILD-03` | Contract-only registrations | Implemented path | Renderer shader registrations compile into a separate object target that the host tool can link without linking the full runtime Renderer implementation. | `S` | Pending |
 | `SHD-BUILD-04` | Runtime shader source dependency | Not found for intended Shipping path | Runtime opens cooked map/library products and materializes RHI programs/pipelines. Application shader-recook sources are excluded from the runtime target. This needs package inspection before it becomes a Shipping proof. | `S` | Pending |
-| `SHD-BUILD-05` | Tool dependencies | Capability-gated | DXC, Slang and SPIRV-Tools are found from configured dependency/Vulkan SDK routes; required DLLs and Slang standard modules are staged for the tool. Launcher checks the required SDK files and cooked-tool runtime bundle. Clean-machine discovery is unproven. | `S` | Pending |
+| `SHD-BUILD-05` | Tool dependencies | Capability-gated | DXC, Slang and SPIRV-Tools are found from configured dependency/Vulkan SDK routes; required DLLs and Slang standard modules are staged for the tool. Launcher SDK discovery and cooked-tool readiness consume one required-file inventory, with binary-directory entries selecting the deployed runtime bundle; they share standard-module directory detection and reject directories substituted for required files. Clean-machine discovery is unproven. | `S` | Pending |
 
 ## Command-Line Surface
 

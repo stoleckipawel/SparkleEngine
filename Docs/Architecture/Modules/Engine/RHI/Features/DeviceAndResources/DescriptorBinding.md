@@ -2,7 +2,7 @@
 
 **Status:** current feature dossier; source-backed, not binding correctness, capacity, or backend-parity evidence
 
-**Verified:** 2026-09-06 at committed `master` revision `8414b5dc`
+**Verified:** general dossier snapshot 2026-09-06 at committed `master` revision `8414b5dc`; recording-pool capacity route re-inspected 2026-10-05 at dirty `410d05ef`
 
 **Scope:** `RHI-BIND-*`; descriptor layouts, handles, allocation, resource/sampler writes, binding sets/tables, arrays, indexing capabilities, recording lifetime, and bounded Renderer material-table consumption
 
@@ -54,6 +54,16 @@ A complete neutral binding layout plus type-correct writes becomes backend descr
 | Retain descriptors by GPU completion | Prevents stale native references | Delayed work can retain heap/pool capacity and must remain bounded |
 
 ## Acceptance Criteria
+
+### Vulkan Recording-Pool Capacity
+
+`VulkanBindingLayoutCompiler` derives each set's per-descriptor-type demand from the final deduplicated native layout bindings, including immutable samplers. `VulkanBindingLayout` retains that immutable allocation metadata; the recording binding owner passes a borrowed span to `VulkanRecordingDescriptorPool`. Renderer shader names, material limits and scene policy do not enter the pool.
+
+A recording pool checks both remaining descriptors of each requested type and its existing aggregate 256-set limit before native allocation. A page is sized to at least the actual set demand; an exhausted page is not reused in the same recording. Pages are retained across resets, with remaining counts restored only after the recording context's submission retirement. An unused page may be replaced for a larger demand; used pages remain live. Page count is bounded by the aggregate set limit, including after changing layouts across resets. Unexpected native creation/allocation/reset failures are fatal, not missing bindings disguised as successful recording.
+
+This repairs the case where one material-array set required over 4,096 sampled-image descriptors but the old recording pool declared only 1,024. Per-type capacity is independent of `maxSets`; see [Vulkan allocation requirements](https://docs.vulkan.org/refpages/latest/refpages/source/vkAllocateDescriptorSets.html). The existing baseline capacities remain floors, not promises that every layout fits one page. Multiple pages and layout-derived metadata have declared memory and allocation cost; retained-page reuse is not a measured performance improvement.
+
+Candidate evidence belongs to `artifacts/validation/releases/v0.1.0/410d05e-dvp-stage8-execution-20261005/features/FCR-REN-11/completion.md`: focused owner compilation, native 4,096-descriptor exact-capacity/reset checks, aggregate capacity-plus-one rejection and an underdeclared-demand negative control. These selected checks do not close the complete descriptor churn, in-flight, backend-parity or pressure matrix below.
 
 - `AC-RHI-BIND-01` — layouts and writes preserve binding index, type, array count, visibility, resource/view/sampler identity, and shader-reflection compatibility on both backends.
 - `AC-RHI-BIND-02` — invalid, missing, mismatched, stale, duplicate, or out-of-range writes reject before draw/dispatch.
