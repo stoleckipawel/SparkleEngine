@@ -4,11 +4,15 @@
 #include "Core/Public/Math/MathUtils.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Lighting/Restir/Indirect/RestirIndirectResolveShader.h"
-#include "RayTracing/Effects/RestirLighting/RestirIndirectLightingSettings.h"
+#include "Passes/Lighting/Restir/Indirect/IndirectLightingControls.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowPassData.h"
 #include "ShaderData/SceneShaderParameters.h"
 
-void AddRestirIndirectResolvePass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
+void AddRestirIndirectResolvePass(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
+    bool writeRayReconstructionGuides,
+    const RenderFrameGraphResources& resources)
 {
 	auto& parameters = builder.AllocParameters<RestirIndirectResolveCS>();
 	parameters->CurrentReservoirSampleTexture = builder.CreateSRV(resources.History.RestirIndirectReservoir.Sample.Current);
@@ -28,12 +32,19 @@ void AddRestirIndirectResolvePass(FrameGraphBuilder& builder, RenderViewportExte
 	BindSceneShaderParameters(builder, parameters, resources);
 	BindRayTracedShadowParameters(builder, parameters);
 
+	const auto& gbuffer = resources.Transient.GBuffer;
+	const auto& lighting = resources.Transient.Lighting;
 	builder.AddPassParameterSetup(
 	    parameters,
-	    [](auto& fields)
+	    [baseColor = gbuffer.BaseColor,
+	        material = gbuffer.Material,
+	        diffuse = lighting.IndirectDiffuse,
+	        specular = lighting.IndirectSpecular,
+	        writeRayReconstructionGuides](auto& fields)
 	    {
-		    const RestirIndirectLightingSettings settings = BuildRestirIndirectLightingSettings();
-		    fields.RestirIndirectConstants = RestirIndirectLightingUniformData{.BounceCount = settings.BounceCount};
+		    auto uniform = BuildIndirectLightingUniform(baseColor, material, diffuse, specular);
+		    uniform.WriteReconstructionGuides = writeRayReconstructionGuides ? 1u : 0u;
+		    fields.RestirIndirectConstants = uniform;
 	    });
 
 	builder.Dispatch<RestirIndirectResolveCS>(

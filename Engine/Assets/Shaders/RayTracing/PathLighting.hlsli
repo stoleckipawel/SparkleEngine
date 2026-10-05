@@ -25,6 +25,7 @@ namespace RayTracingPathLighting
 	                                                     uint pathSampleIndex,
 	                                                     uint bounceIndex,
 	                                                     uint randomFrameIndex,
+	                                                     bool traceSecondaryShadows,
 	                                                     out RayTracingHitSurfaceData outHitSurface)
 	{
 		outHitSurface = (RayTracingHitSurfaceData)0;
@@ -38,9 +39,13 @@ namespace RayTracingPathLighting
 			outHitSurface = hitSurface;
 			result.Hit = hitSurface.Valid;
 			result.HitPositionWorld = hitSurface.Valid ? hitSurface.PositionWorld : 0.0f.xxx;
-			result.IncidentRadiance = hitSurface.Valid
-			    ? ShadeRayTracingHitIncidentRadiance(hitSurface, directionWorld, pathSampleIndex, bounceIndex, randomFrameIndex)
-			    : 0.0f.xxx;
+			result.IncidentRadiance = hitSurface.Valid ? ShadeRayTracingHitIncidentRadiance(hitSurface,
+			                                                                                directionWorld,
+			                                                                                pathSampleIndex,
+			                                                                                bounceIndex,
+			                                                                                randomFrameIndex,
+			                                                                                traceSecondaryShadows)
+			                                           : 0.0f.xxx;
 			return result;
 		}
 
@@ -55,7 +60,10 @@ namespace RayTracingPathLighting
 	                                       uint sampleIndex,
 	                                       uint specularSampleMode,
 	                                       uint bounceCount,
-	                                       uint randomFrameIndex)
+	                                       uint randomFrameIndex,
+	                                       bool evaluatePrimaryDiffuse,
+	                                       bool evaluatePrimarySpecular,
+	                                       bool traceSecondaryShadows)
 	{
 		Result result = (Result)0;
 
@@ -66,12 +74,17 @@ namespace RayTracingPathLighting
 		float3 specularThroughput = 0.0f.xxx;
 		const uint sanitizedBounceCount = max(bounceCount, 1u);
 
-		[loop] for (uint bounceIndex = 0u; bounceIndex < sanitizedBounceCount; ++bounceIndex)
+		[loop]
+		for (uint bounceIndex = 0u; bounceIndex < sanitizedBounceCount; ++bounceIndex)
 		{
 			const RayTracingPathSampling::RandomSamples randomSamples =
 			    RayTracingPathSampling::GenerateRandomSamples(pixelCoord, bounceIndex, sampleIndex, randomFrameIndex);
 			const RayTracingPathSample::DirectionSample sample =
-			    RayTracingPathSampling::SampleBSDF(surface, specularSampleMode, randomSamples);
+			    RayTracingPathSampling::SampleBSDF(surface,
+			                                       specularSampleMode,
+			                                       randomSamples,
+			                                       bounceIndex != 0u || evaluatePrimaryDiffuse,
+			                                       bounceIndex != 0u || evaluatePrimarySpecular);
 			if (!sample.HasSupport)
 			{
 				break;
@@ -86,8 +99,14 @@ namespace RayTracingPathLighting
 			else
 			{
 				const float3 continuationThroughput = sample.DiffuseThroughput + sample.SpecularThroughput;
-				diffuseThroughput *= continuationThroughput;
-				specularThroughput *= continuationThroughput;
+				if (evaluatePrimaryDiffuse)
+				{
+					diffuseThroughput *= continuationThroughput;
+				}
+				if (evaluatePrimarySpecular)
+				{
+					specularThroughput *= continuationThroughput;
+				}
 			}
 
 			const float survivalProbability = RayTracingPathSampling::RussianRouletteSurvivalProbability(path.Throughput, bounceIndex);
@@ -98,8 +117,14 @@ namespace RayTracingPathLighting
 			if (survivalProbability < 1.0f)
 			{
 				PathTracer::ApplySurvivalCompensation(path.Throughput, survivalProbability);
-				PathTracer::ApplySurvivalCompensation(diffuseThroughput, survivalProbability);
-				PathTracer::ApplySurvivalCompensation(specularThroughput, survivalProbability);
+				if (evaluatePrimaryDiffuse)
+				{
+					PathTracer::ApplySurvivalCompensation(diffuseThroughput, survivalProbability);
+				}
+				if (evaluatePrimarySpecular)
+				{
+					PathTracer::ApplySurvivalCompensation(specularThroughput, survivalProbability);
+				}
 			}
 
 			float3 rayOriginWorld = 0.0f.xxx;
@@ -113,9 +138,16 @@ namespace RayTracingPathLighting
 			                                                                sampleIndex,
 			                                                                bounceIndex,
 			                                                                randomFrameIndex,
+			                                                                traceSecondaryShadows,
 			                                                                hitSurface);
-			PathTracer::AddRadiance(result.DiffuseContribution, diffuseThroughput, lighting.IncidentRadiance);
-			PathTracer::AddRadiance(result.SpecularContribution, specularThroughput, lighting.IncidentRadiance);
+			if (evaluatePrimaryDiffuse)
+			{
+				PathTracer::AddRadiance(result.DiffuseContribution, diffuseThroughput, lighting.IncidentRadiance);
+			}
+			if (evaluatePrimarySpecular)
+			{
+				PathTracer::AddRadiance(result.SpecularContribution, specularThroughput, lighting.IncidentRadiance);
+			}
 
 			if (bounceIndex == 0u)
 			{
@@ -132,23 +164,6 @@ namespace RayTracingPathLighting
 		return result;
 	}
 
-	Result TraceSurfacePath(Texture2D skyTexture,
-	                        SamplerState skySampler,
-	                        RayTracingPathSurface primarySurface,
-	                        uint2 pixelCoord,
-	                        uint sampleIndex,
-	                        uint specularSampleMode,
-	                        uint bounceCount)
-	{
-		return TraceSurfacePathWithRandomFrame(skyTexture,
-		                                       skySampler,
-		                                       primarySurface,
-		                                       pixelCoord,
-		                                       sampleIndex,
-		                                       specularSampleMode,
-		                                       bounceCount,
-		                                       FrameIndex);
-	}
 }
 
 #endif

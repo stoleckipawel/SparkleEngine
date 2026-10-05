@@ -1,76 +1,38 @@
 #include "../../PCH.h"
 #include "Passes/Lighting/LightingTargetClear.h"
 
-#include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassCommandContext.h"
 #include "FrameGraph/ResourceUsage.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 
-#include <array>
+#include <vector>
 
-static constexpr const char* LightingTargetClearPassName = "LightingTargetClear";
-
-static auto GetLightingTargets(const LightingRenderTargets& lighting) noexcept
+void AddLightingTargetClearPass(
+    FrameGraphBuilder& builder,
+    std::string_view name,
+    RenderViewportExtent extent,
+    std::span<const FrameGraphTextureHandle> targets)
 {
-	return std::array{
-	    lighting.DirectDiffuse,
-	    lighting.DirectSpecular,
-	    lighting.DirectSubsurface,
-	    lighting.IndirectDiffuse,
-	    lighting.IndirectSpecular};
-}
-
-static auto GetRayReconstructionGuideTargets(const LightingRenderTargets& lighting) noexcept
-{
-	return std::array{
-	    lighting.ReconstructionGuides.DiffuseAlbedo,
-	    lighting.ReconstructionGuides.SpecularAlbedo,
-	    lighting.ReconstructionGuides.Roughness,
-	    lighting.ReconstructionGuides.SpecularHitDistance};
-}
-
-void AddLightingTargetClearPass(FrameGraphBuilder& builder, const RenderFrameGraphResources& resources)
-{
-	const LightingRenderTargets& lighting = resources.Transient.Lighting;
-
+	const std::vector<FrameGraphTextureHandle> ownedTargets(targets.begin(), targets.end());
 	builder.AddPass(
-	    LightingTargetClearPassName,
+	    name,
 	    EFrameGraphPassKind::Raster,
-	    [lighting](PassResourceBuilder& resourceBuilder)
+	    [ownedTargets](PassResourceBuilder& resources)
 	    {
-		    resourceBuilder.Write(lighting.DirectDiffuse, ResourceUsage::RenderTarget, "DirectDiffuse");
-		    resourceBuilder.Write(lighting.DirectSpecular, ResourceUsage::RenderTarget, "DirectSpecular");
-		    resourceBuilder.Write(lighting.DirectSubsurface, ResourceUsage::RenderTarget, "DirectSubsurface");
-		    resourceBuilder.Write(lighting.IndirectDiffuse, ResourceUsage::RenderTarget, "IndirectDiffuse");
-		    resourceBuilder.Write(lighting.IndirectSpecular, ResourceUsage::RenderTarget, "IndirectSpecular");
-
-		    resourceBuilder.Write(
-		        lighting.ReconstructionGuides.DiffuseAlbedo,
-		        ResourceUsage::RenderTarget,
-		        "RayReconstructionDiffuseAlbedo");
-
-		    resourceBuilder.Write(
-		        lighting.ReconstructionGuides.SpecularAlbedo,
-		        ResourceUsage::RenderTarget,
-		        "RayReconstructionSpecularAlbedo");
-
-		    resourceBuilder.Write(lighting.ReconstructionGuides.Roughness, ResourceUsage::RenderTarget, "RayReconstructionRoughness");
-
-		    resourceBuilder.Write(
-		        lighting.ReconstructionGuides.SpecularHitDistance,
-		        ResourceUsage::RenderTarget,
-		        "RayReconstructionSpecularHitDistance");
+		    for (const auto target : ownedTargets)
+		    {
+			    resources.Write(target, ResourceUsage::RenderTarget, "LightingTarget");
+		    }
 	    },
-	    [lighting](PassCommandContext& context)
+	    [ownedTargets, extent](PassCommandContext& context)
 	    {
-		    for (FrameGraphTextureHandle target : GetLightingTargets(lighting))
+		    context.Commands.SetScissorRect(0, 0, static_cast<std::int32_t>(extent.Width), static_cast<std::int32_t>(extent.Height));
+		    context.Resources.BindRenderTargets(context.Commands, ownedTargets);
+		    for (const auto target : ownedTargets)
 		    {
 			    context.Resources.ClearRenderTarget(context.Commands, target);
 		    }
-
-		    for (FrameGraphTextureHandle target : GetRayReconstructionGuideTargets(lighting))
-		    {
-			    context.Resources.ClearRenderTarget(context.Commands, target);
-		    }
+		    context.Resources.EndRasterPass(context.Commands);
 	    });
 }

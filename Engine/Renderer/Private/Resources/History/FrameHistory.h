@@ -2,6 +2,7 @@
 
 #include "FrameGraph/FrameGraphTextureHistory.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
+#include <string_view>
 
 class FrameGraph;
 class FrameGraphBuilder;
@@ -25,10 +26,10 @@ struct FrameHistoryResourceLayout final
 };
 
 FrameHistoryResourceLayout DeclareFrameHistoryResources(FrameGraphBuilder& builder);
-void DeclareRestirLightingHistoryResources(
+FrameGraphReservoirHistoryHandles DeclareLightingReservoirHistory(
     FrameGraphBuilder& builder,
     RenderViewportExtent renderExtent,
-    FrameHistoryResourceLayout& history);
+    std::string_view name);
 
 void InvalidateFrameHistory(FrameGraph& frameGraph, const FrameHistoryResourceLayout& history) noexcept;
 void InvalidateRestirLightingHistory(FrameGraph& frameGraph, const FrameHistoryResourceLayout& history) noexcept;

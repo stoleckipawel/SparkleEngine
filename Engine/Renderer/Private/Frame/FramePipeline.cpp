@@ -10,6 +10,7 @@
 #include "Frame/RenderFrameTime.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerSession.h"
+#include "Passes/Scene/SceneRenderingPasses.h"
 #include "Resources/History/FrameHistory.h"
 #include "Diagnostics/RendererMemoryMonitor.h"
 #include "Pipeline/RenderPassRuntimeCache.h"
@@ -226,15 +227,21 @@ void FramePipeline::PrepareFrame(const RenderViewInput& viewInput, const RenderF
 	m_textureCache->UpdateSceneTextures(m_renderScene->GetTextures(), m_deviceServices);
 
 	RenderFrame& frame = PrepareRenderFrame(viewInput, time);
+	ViewportFrameProducts products = m_frameResources.ViewportProducts;
+	m_frameGraphExecutable =
+	    PrepareSceneRenderingProducts(frame.View.viewMode, m_frameGraphSettings, m_frameResources, products) && m_frameGraphExecutable;
 	PublishViewportRenderProducts(
 	    m_viewportRenderProducts,
 	    m_viewportRenderRequest,
-	    m_frameResources.ViewportProducts,
+	    products,
 	    m_frameGraphSettings.RenderExtent,
 	    m_frameGraphSettings.OutputExtent);
 
 	UpdateFrameHistory(*m_frameGraph, m_frameResources.History, frame.PreparedScene, frame.View, *m_renderViewState, *m_imageProviders);
-	SetupImageProviderFrame(frame);
+	if (m_frameGraphExecutable)
+	{
+		SetupImageProviderFrame(frame);
+	}
 	frame.RayTracingBindings = m_renderScene->PrepareRayTracingFrame(frame.PreparedScene, frame.View.rayTracingPlan);
 }
 

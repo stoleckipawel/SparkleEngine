@@ -20,6 +20,14 @@ std::uint64_t ShaderCompileRequestHasher::Compute(const ShaderCompileRequest& re
 	appendString(request.VirtualSourcePath);
 	appendString(ShaderCompileProfile::BuildTargetProfile(request));
 	appendString(request.EntryPoint);
+	if (IsSpirVTarget(request.Target))
+	{
+		appendString("StorageImageFormatUnknown");
+		canonical += ShaderCompileProfile::SpirVUseUnknownStorageImageFormat ? '1' : '0';
+		appendString("DirectXBufferLayout");
+		canonical += ShaderCompileProfile::SpirVUseDirectXBufferLayout ? '1' : '0';
+		appendString("DescriptorBindings=Canonical");
+	}
 	canonical += std::to_string(static_cast<std::uint32_t>(request.Stage));
 	canonical += '|';
 	canonical += std::to_string(static_cast<std::uint32_t>(request.Target));

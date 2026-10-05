@@ -3,7 +3,8 @@
 
 #include "DxcShaderBackend.h"
 
-#include "SpirVBindingNormalizer.h"
+#include "Compiler/SpirV/SpirVBindingNormalizer.h"
+#include "Compiler/SpirV/SpirVDisassembler.h"
 
 #include "Compiler/ShaderCompileProfile.h"
 #include "Compiler/ShaderSourceMountTable.h"
@@ -11,7 +12,7 @@
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "DxilReflectionExtractor.h"
-#include "SpirVReflectionExtractor.h"
+#include "Compiler/SpirV/SpirVReflectionExtractor.h"
 
 SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_dxcShaderBackendLogger, kDxcCompilerLoggerCategory);
 
@@ -283,6 +284,14 @@ void DxcShaderBackend::BuildCompileArguments(
 	if (IsSpirVTarget(request.Target))
 	{
 		outArgs.push_back(L"-spirv");
+		if constexpr (ShaderCompileProfile::SpirVUseDirectXBufferLayout)
+		{
+			outArgs.push_back(L"-fvk-use-dx-layout");
+		}
+		if constexpr (ShaderCompileProfile::SpirVUseUnknownStorageImageFormat)
+		{
+			outArgs.push_back(L"-fspv-use-unknown-image-format");
+		}
 		switch (request.Target)
 		{
 			case ShaderTarget::SpirV14:
@@ -447,7 +456,8 @@ ShaderDebugArtifactSet DxcShaderBackend::CaptureDebugArtifacts(
 	ShaderDebugArtifactSet debugArtifacts;
 	debugArtifacts.CompileArguments = BuildDebugArgumentStrings(compileArgs);
 	debugArtifacts.CompilerOutput.assign(compilerOutput);
-	debugArtifacts.Disassembly = ExtractDisassembly(utils, compiler, bytecode);
+	debugArtifacts.Disassembly =
+	    IsSpirVTarget(request.Target) ? SpirVDisassembler::Disassemble(bytecode) : ExtractDisassembly(utils, compiler, bytecode);
 	if (debugArtifacts.Disassembly.empty())
 	{
 		throw Diagnostics::Error("DXC failed to capture disassembly for shader source '" + request.VirtualSourcePath + "'.");

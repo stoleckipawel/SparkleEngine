@@ -6,10 +6,7 @@
 #include "FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Formats/PixelFormat.h"
 
-DirectShadowSignalResources CreateDirectShadowSignalResources(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    RenderFrameGraphResources& resources)
+void CreateDirectShadowSignalResources(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, RenderFrameGraphResources& resources)
 {
 	const FrameGraphTextureDesc visibilityDesc = FrameGraphTextureDesc::CreateColor(
 	    "ShadowVisibilitySignalRaw",
@@ -17,21 +14,4 @@ DirectShadowSignalResources CreateDirectShadowSignalResources(
 	    sceneExtent.Height,
 	    PixelFormat::R32G32B32A32_Float);
 	resources.Transient.ShadowVisibilitySignal = builder.CreateTexture(visibilityDesc);
-	resources.Transient.DirectLightTemporalReservoirSample = builder.CreateTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "DirectLightTemporalReservoirSample",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
-	        PixelFormat::R32G32B32A32_Float));
-	resources.Transient.DirectLightTemporalReservoirWeight = builder.CreateTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "DirectLightTemporalReservoirWeight",
-	        sceneExtent.Width,
-	        sceneExtent.Height,
-	        PixelFormat::R32G32B32A32_Float));
-	return DirectShadowSignalResources{
-	    .Visibility = resources.Transient.ShadowVisibilitySignal,
-	    .TemporalReservoirSample = resources.Transient.DirectLightTemporalReservoirSample,
-	    .TemporalReservoirWeight = resources.Transient.DirectLightTemporalReservoirWeight,
-	    .ReservoirHistory = resources.History.DirectLightReservoir};
 }

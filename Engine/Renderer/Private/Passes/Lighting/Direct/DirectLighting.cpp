@@ -2,16 +2,13 @@
 #include "Passes/Lighting/Direct/DirectLighting.h"
 
 #include "Core/Public/Math/MathUtils.h"
-#include "Passes/Lighting/Shadows/DirectShadowSignalResources.h"
+#include "Passes/Lighting/Shadows/DirectShadowControls.h"
+#include "Passes/Lighting/Direct/DirectLightingControls.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "ShaderData/SceneShaderParameters.h"
 
-void AddDirectLightingPass(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources,
-    const DirectShadowSignalResources& shadowSignals)
+void AddDirectLightingPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
 	const LightingRenderTargets& lighting = resources.Transient.Lighting;
 	const GBufferRenderTargets& gbuffer = resources.Transient.GBuffer;
@@ -20,9 +17,14 @@ void AddDirectLightingPass(
 	parameters->DirectDiffuse = builder.CreateUAV(lighting.DirectDiffuse);
 	parameters->DirectSpecular = builder.CreateUAV(lighting.DirectSpecular);
 	parameters->DirectSubsurface = builder.CreateUAV(lighting.DirectSubsurface);
-	parameters->ShadowVisibilitySignal = builder.CreateSRV(shadowSignals.Visibility);
-	parameters->CurrentReservoirSample = builder.CreateSRV(shadowSignals.ReservoirHistory.Sample.Current);
-	parameters->CurrentReservoirWeight = builder.CreateSRV(shadowSignals.ReservoirHistory.Weight.Current);
+	RequireDirectShadowSignal(resources.Transient.ShadowVisibilitySignal.IsValid());
+	parameters->ShadowVisibilitySignal = builder.CreateSRV(resources.Transient.ShadowVisibilitySignal);
+	builder.AddResourceProductionSetup(
+	    parameters,
+	    resources.Transient.ShadowVisibilitySignal,
+	    [](auto&, bool produced) { RequireDirectShadowSignal(produced); });
+	parameters->CurrentReservoirSample = builder.CreateSRV(resources.History.DirectLightReservoir.Sample.Current);
+	parameters->CurrentReservoirWeight = builder.CreateSRV(resources.History.DirectLightReservoir.Weight.Current);
 	parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
 	parameters->GBufferWorldNormal = builder.CreateSRV(gbuffer.WorldNormal);
 	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
@@ -30,6 +32,19 @@ void AddDirectLightingPass(
 	parameters->SceneDepth = builder.CreateSRV(resources.Transient.Scene.SceneDepth);
 
 	BindSceneShaderParameters(builder, parameters, resources);
+
+	builder.AddPassParameterSetup(
+	    parameters,
+	    [baseColorInput = gbuffer.BaseColor,
+	        materialInput = gbuffer.Material,
+	        subsurfaceInput = gbuffer.Subsurface,
+	        diffuseOutput = lighting.DirectDiffuse,
+	        specularOutput = lighting.DirectSpecular,
+	        subsurfaceOutput = lighting.DirectSubsurface](auto& fields)
+	    {
+		    fields.DirectLightingConstants =
+		        BuildDirectLightingUniform(baseColorInput, materialInput, subsurfaceInput, diffuseOutput, specularOutput, subsurfaceOutput);
+	    });
 
 	builder.Dispatch<DirectLightingCS>(
 	    parameters,

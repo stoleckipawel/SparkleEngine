@@ -1,14 +1,14 @@
 # Lighting Show Menu And Feature Execution Controls
 
-**Status:** target architecture; not implemented
+**Status:** target execution contract; seven console controls and hierarchical Editor Show menu source-integrated; current lighting execution evidence requires reconciliation
 
-**Current readiness:** **0/100 — target only** for this control slice. Existing Debug Views progress remains owned by the [Renderer readiness row](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** no seven-control/menu completion score is claimed. Bounded Stage-5 results belong to [Discovery](../Discovery.md#current-candidate-evidence-and-permission); family progress remains owned by the [Renderer readiness row](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 **Responsibility:** define how the Editor Show menu drives feature CVars and how feature-owned activation removes lighting and shadow work without introducing Renderer show-flag state.
 
 **Authority boundary:** [Plan](../Plan.md#dvp-4---add-lighting-show-flags) owns delivery order; [Discovery](../Discovery.md) owns implementation authorization; [Acceptance](../Acceptance.md) owns proof contracts; the [Lighting family](../../Lighting/README.md) owns transport and lobe semantics. [Research](../Research.md#unreal-engine) is precedent, not authority for this CVar design.
 
-**Verified:** 2026-10-04 against revision `bbb9f7ed` and the inspected dirty working tree. Code and build configuration remain the implementation authority.
+**Verified:** 2026-10-05 against dirty `410d05ef`. The Stage-7 menu has bounded serial/threaded executable UI/control evidence. Changes to lighting schemas during this iteration contradict earlier selected execution snapshots; [Discovery](../Discovery.md#stage-7-ui-admission) records the remaining reconciliation. Code and build configuration remain the implementation authority.
 
 **Non-claims:** this design does not prove compilation, shader cooking, runtime behavior, pixels, backend parity, saved GPU time, or release acceptance.
 
@@ -16,7 +16,9 @@ The Editor's **Show** menu is a convenient frontend for turning Renderer feature
 
 ## Current Gap And Delivery Scope
 
-The current Lit route produces five separate lighting products, but its direct shader evaluates multiple lobes in one dispatch and its indirect estimator shares path/reservoir work. `LightingComposite` reads all five products. `LightingTargetClear` initializes their targets. None of this source presence proves that disabling a leaf currently removes its cost.
+The following execution description records the admitted Stage-2–6 candidate contracts and selected evidence. It must not be read as proof for the subsequently changed schemas: [Stage-7 reconciliation](../Discovery.md#stage-7-ui-admission) identifies the current contradictions. Menu/control behavior below has its own bounded executable result. Repair and replay the affected execution owners before carrying their omission/guide claims to the new candidate.
+
+The Lit direct family produces three separate products and the indirect family produces two, with runtime early evaluation/write gates. All-direct-off and all-indirect-off omit their reservoir histories, working reservoirs and exclusive evaluation/tracing/reuse/resolve chains. Both retain their actual render-extent radiance targets and current-frame zero initialization for the fixed composition/visualization ABI. Composition has one shader; visualization selects the lobe through the existing View uniform. Active indirect resolve always binds four actual render-extent guide targets, with requested guide writes controlled by its uniform. Allocation/clear alone does not establish genuine path-derived guide availability. Missing required guides make that viewport unavailable before provider binding; no provider or intent is substituted. These are current source contracts; previous variant-based native omission results do not validate this repaired candidate.
 
 The current non-Reference diagnostic modes still enter the real-time Lit middle before visualization. A future GBuffer-only path is not claimed here: discovery must map admission and downstream dependencies for the actual selected route rather than assume the mode label already prunes lighting.
 
@@ -31,7 +33,9 @@ The current non-Reference diagnostic modes still enter the real-time Lit middle 
 | Shadows / Direct Shadows | `ShadowVisibilitySignal` and primary direct-light evaluation | direct shadow-signal production and visibility consumer |
 | Shadows / Indirect Shadows | secondary-hit direct-light visibility in Lit indirect transport | indirect estimator's visibility evaluation |
 
-The initial scope is seven real leaves. Do not add an Indirect Subsurface CVar, UI row, resource, or zero-producing placeholder before the owning [lobe-classification decision](../../Lighting/IndirectLighting/TransportAndEstimator.md#lobe-classification) admits the product. This is a design update only; [Discovery](../Discovery.md) remains blocked until execution, publication, and invalidation probes pass.
+The initial scope is seven real leaves. Do not add an Indirect Subsurface CVar, UI row, resource, or zero-producing placeholder before the owning [lobe-classification decision](../../Lighting/IndirectLighting/TransportAndEstimator.md#lobe-classification) admits the product. All three Direct leaves are currently implemented: their default-enabled feature CVars remove exclusive evaluation and resolve writes through the same early uniform branches, retain intentional radiance initialization for fixed consumer bindings, reset dependent histories, and make disabled raw diagnostics unavailable. All-direct-off removes the exclusive family chain and rebuilds/retire its cached graph through the existing lifetime route. [Discovery](../Discovery.md#current-candidate-evidence-and-permission) records the bounded native result and next permitted stage; this is not menu, active-provider, later-control or measured GPU-savings completion.
+
+Direct Shadows remains owned by Shadows. Disabling `r.Lighting.Shadows.Direct` omits the visibility tracing producer. While Direct evaluation is admitted, its single shader retains a real initialized signal binding; a uniform branch bypasses the signal load and evaluates visibility as one. Retained shadow intent stays inactive while all direct leaves are off. Re-enable restores tracing; missing allocated or produced input fails. Direct reservoirs and indirect visibility remain independent consumers. The inactive binding is initialization for the fixed ABI, not a produced diagnostic or guide.
 
 ## One Control Authority
 
@@ -109,6 +113,10 @@ Optional feature entry points call their own `IsActive` and return before declar
 
 ## Editor Interaction
 
+Open **Show** beside **Viewmode**. Direct Lighting, Indirect Lighting and Shadows each have a bulk checkbox and their implemented children. A mixed parent displays a dash and the word `mixed`; checked or mixed disables the group, unchecked enables it. **Reset Lighting Features** enables all seven leaves in one batch. Leaf tooltips name the corresponding console variable and global scope. Checks describe acknowledged intent, not current-frame GPU completion.
+
+The menu queries the existing synchronous Core executor only while open. It has no retained selection; console edits appear on the next draw. Missing registrations/types suppress the editable hierarchy and show a defect; rejected edits keep the prior authoritative values and show the operation error until a successful retry. Reference, GBuffer and GPU-scene inspection disable edits with an explanation. Lit, Lit-shaded Wireframe and lighting-lobe inspection retain the global edit route; disabled diagnostic availability still belongs to the Renderer product owner.
+
 Editor adds **Show** beside **Viewmode**. It presents feature intent, not a guarantee that the chosen path can execute it:
 
 ```text
@@ -121,7 +129,6 @@ Show — shared feature controls
    ├─ [x/-] Indirect Lighting
    │  ├─ [x] Diffuse
    │  ├─ [x] Specular
-   │  └─ [x] Subsurface   (only after its product lands)
    └─ [x/-] Shadows
       ├─ [x] Direct Shadows
       └─ [x] Indirect Shadows
@@ -144,10 +151,10 @@ The old `Show(component) * completedComponent` composition is rejected. Composit
 | Production shape | Disabled behavior | Cost that can remain |
 | --- | --- | --- |
 | dedicated pass/family | skip its producer and exclusive dependent passes/resources | work required by other active consumers |
-| lobes share one dispatch | uniform branch before disabled lobe evaluation and writes, or a bounded cooked permutation | shared GBuffer loads, sampling, and dispatch overhead |
+| lobes share one dispatch | uniform branch before disabled lobe evaluation and writes | shared GBuffer loads, sampling, and dispatch overhead |
 | transport/reservoir work is shared | omit exclusive lobe work; remove the shared chain only when no active consumer needs it | valid sampling, traversal, reservoir work needed by remaining lobes |
 
-Use runtime-uniform branches for live values unless a feature has a justified, bounded permutation set. A define changes code only through a selected cooked variant; changing a CVar cannot change a compiled define. Variant membership, bindings, shader cook, and selection belong to the same feature and cover supported combinations. Do not create exponential per-flag variants, runtime shader compilation, or unrelated shader branches in the frame shell.
+Use runtime-uniform branches for live evaluation and output policy. This slice has one registered shader per operation; no family-presence, shadow-policy or guide-write permutations are admitted. Genuine inline-query and native ray-pipeline traversal programs retain their existing stage-specific contracts. Keep control storage and parameter preparation in their feature owners; Frame consumes semantic intent/topology and must not acquire leaf switches, per-viewport flag storage or policy mirrors.
 
 ### Direct And Indirect Lighting
 
@@ -158,10 +165,12 @@ Use runtime-uniform branches for live values unless a feature has a justified, b
 
 ### Shadows
 
-- **Direct Shadows off:** omit primary direct-light shadow visibility production when no other active consumer requires it, and evaluate primary direct lighting as fully visible (`visibility = 1`) without sampling an absent signal. If a shared estimator requires shadow data, discovery must prove the narrowed route before claiming removal; do not keep unnecessary tracing solely to preserve a diagnostic.
+- **Direct Shadows off:** omit primary direct-light shadow visibility production when no other active consumer requires it, and evaluate primary direct lighting as fully visible (`visibility = 1`) without sampling the retained initialized signal. If a shared estimator requires shadow data, discovery must prove the narrowed route before claiming removal; do not keep unnecessary tracing solely to preserve a diagnostic.
 - **Indirect Shadows off:** bypass the shadow visibility trace for direct-light samples at secondary hits in the Lit estimator and use visibility `1`. Preserve continuation intersections, hit reconstruction, emitter hits, environment termination, and the active path's material transport. These intersections define the indirect path; they are not optional shadow rays.
 - **Shadows parent off:** applies both leaf changes in one batch. It does not disable ambient occlusion, GBuffer occlusion data, transport intersections, or the Reference estimator.
 - A shadow CVar can remain enabled while its lighting owner is inactive. `IsEnabled` preserves intent; `IsActive` is false without a relevant active lighting consumer. Re-enabling lighting activates shadows only if the shadow CVar and prerequisites allow it.
+
+The implemented indirect shadow leaf is `r.Lighting.Shadows.Indirect` (default true), owned by Lit `IndirectLightingControls`. The existing 32-byte CPU/HLSL uniform carries `TraceSecondaryShadows` through initial, reuse and resolve evaluations. One explicit policy reaches the secondary direct-light accumulator before visibility tracing; it does not alter continuation or proposal PDFs. Retained intent enters the existing reservoir/provider invalidation hash. Reference uses its independent required `PathVisibility` route, not this Lit helper. Candidate-bound execution proof lives in [Discovery](../Discovery.md#current-candidate-evidence-and-permission).
 
 Reference Path Tracer ignores these Lit execution CVars until its owner accepts a separate contribution/visibility contract. Do not alter shared tracing helpers so Lit indirect-shadow policy leaks into Reference. The policy argument belongs to the Lit caller; the Reference caller retains its required transport.
 
@@ -175,7 +184,7 @@ Every read still has one real scheduled producer or an explicitly declared inten
 
 ## Graph Lifetime And Histories
 
-The current frame graph is cached, so per-frame parameter updates alone cannot remove an already scheduled dispatch. Each feature must prove the narrow mechanism appropriate to its path: an execution admission facility preserving declared dependencies, or a topology rebuild through the existing graph generation/retirement owner. Lobe-only uniform shader branches may use pass parameters when topology is unchanged.
+The current frame graph is cached, so per-frame parameter updates alone cannot remove an already scheduled dispatch. The [accepted admission ledger](../Discovery.md#accepted-admission-ledger) selects existing graph-generation/retirement rebuilding for family-presence changes, and runtime-uniform early shader branches for lobe-only changes with unchanged topology. Implementations must use those frozen routes rather than choose another admission facility. The ledger also owns unavailable-guide and pre-publication disabled-diagnostic decisions; their execution evidence remains the owning stages' exit requirement.
 
 Retain accepted CVar-derived values only when required by graph topology identity, a frame/pass ABI, or temporal invalidation. Such a value is a feature-owned lifecycle fact, not another editable authority. Do not add a global resolved show mask or route feature values through viewport requests/settings to trigger rebuilding. Rebuilding finishes before execution of the affected frame; old in-flight GPU resources/graphs retire through their existing fence-based lifetime.
 

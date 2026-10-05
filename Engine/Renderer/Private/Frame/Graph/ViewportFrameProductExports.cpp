@@ -20,7 +20,7 @@ void ExportViewportFrameProducts(
     const RenderFrameGraphSettings& settings,
     const RenderFrameGraphResources& resources) noexcept
 {
-	builder.ExportTexture(resources.ViewportProducts.FinalColorLdr, "Viewport.FinalColorLdr");
+	ExportTextureIfValid(builder, resources.ViewportProducts.FinalColorLdr, "Viewport.FinalColorLdr");
 
 	if (HasAnyRenderOutputFlags(settings.RequestedOutputs, RenderOutputFlags::SceneDepth))
 	{

@@ -8,6 +8,7 @@
 #include "ShaderData/ViewTemporalUniformData.h"
 #include "ShaderData/LightGpuData.h"
 #include "ShaderData/SceneLightingUniformData.h"
+#include "Passes/Lighting/Direct/DirectLightingUniformData.h"
 
 class DirectLightReservoirSpatialCS final : public GlobalShader<DirectLightReservoirSpatialCS>
 {
@@ -23,6 +24,7 @@ public:
 	SHADER_PARAMETER_CBUFFER(ViewCameraUniformData, ViewCamera)
 	SHADER_PARAMETER_CBUFFER(ViewTemporalUniformData, ViewTemporal)
 	SHADER_PARAMETER_CBUFFER(SceneLightingUniformData, SceneLighting)
+	SHADER_PARAMETER_CBUFFER(DirectLightingUniformData, DirectLightingConstants)
 	SHADER_PARAMETER_BUFFER_SRV(DirectionalLightGpuData, DirectionalLights)
 	SHADER_PARAMETER_BUFFER_SRV(PointLightGpuData, PointLights)
 	SHADER_PARAMETER_BUFFER_SRV(SpotLightGpuData, SpotLights)

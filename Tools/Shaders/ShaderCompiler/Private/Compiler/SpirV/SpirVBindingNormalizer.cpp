@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "SpirVBindingNormalizer.h"
+#include "Compiler/SpirV/SpirVBindingNormalizer.h"
 
 #include "Core/Public/Diagnostics/Error.h"
 
@@ -8,10 +8,11 @@
 
 #include <algorithm>
 #include <cstring>
+#include <string>
 
 void SpirVBindingNormalizer::Normalize(std::vector<std::uint8_t>& bytecode, std::span<const ShaderDescriptorBindingRemap> remaps)
 {
-	if (bytecode.empty() || remaps.empty())
+	if (bytecode.empty())
 	{
 		return;
 	}
@@ -39,14 +40,17 @@ void SpirVBindingNormalizer::Normalize(std::vector<std::uint8_t>& bytecode, std:
 	{
 		if (binding == nullptr || binding->name == nullptr)
 		{
-			continue;
+			spvReflectDestroyShaderModule(&module);
+			throw Diagnostics::Error("SPIR-V descriptor has no canonical binding name");
 		}
 		const auto remap = std::ranges::find_if(
 		    remaps,
 		    [binding](const ShaderDescriptorBindingRemap& candidate) { return candidate.Name == binding->name; });
 		if (remap == remaps.end())
 		{
-			continue;
+			const std::string name = binding->name;
+			spvReflectDestroyShaderModule(&module);
+			throw Diagnostics::Error("SPIR-V descriptor has no unambiguous canonical binding: '" + name + "'");
 		}
 		result = spvReflectChangeDescriptorBindingNumbers(&module, binding, remap->Binding, remap->Set);
 		if (result != SPV_REFLECT_RESULT_SUCCESS)

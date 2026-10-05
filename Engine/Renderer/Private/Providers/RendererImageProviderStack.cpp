@@ -46,13 +46,12 @@ void RendererImageProviderStack::Initialize()
 	                .Consumer = ERhiNativeInteropConsumer::ExternalProvider,
 	                .Reason = "Renderer upscaler provider initialization"})))
 	{
-		m_upscaler->Shutdown();
-		m_upscaler.reset();
-		CVarUpscalerProvider.Set(EUpscalerProviderKind::Linear);
-
-		g_rendererImageProviderStackLogger->warn(
-		    "The configured renderer upscaler could not initialize on the selected RHI backend and adapter; falling back to linear "
-		    "upscaling.");
+		Diagnostics::Fatal(
+		    g_rendererImageProviderStackLogger,
+		    __FILE__,
+		    __LINE__,
+		    "The selected renderer upscaler failed initialization on the selected backend and adapter. Selection is unchanged; choose a "
+		    "supported provider or repair its prerequisites.");
 	}
 
 	m_rayReconstruction = CreateConfiguredRayReconstructionProvider();
@@ -64,13 +63,12 @@ void RendererImageProviderStack::Initialize()
 	                .Consumer = ERhiNativeInteropConsumer::ExternalProvider,
 	                .Reason = "Renderer ray-reconstruction provider initialization"})))
 	{
-		m_rayReconstruction->Shutdown();
-		m_rayReconstruction.reset();
-		CVarRayReconstructionMode.Set(EngineRayReconstructionMode::Off);
-
-		g_rendererImageProviderStackLogger->warn(
-		    "The configured ray-reconstruction provider could not initialize on the selected RHI backend and adapter; disabling ray "
-		    "reconstruction.");
+		Diagnostics::Fatal(
+		    g_rendererImageProviderStackLogger,
+		    __FILE__,
+		    __LINE__,
+		    "The selected ray-reconstruction provider failed initialization on the selected backend and adapter. Selection is unchanged; "
+		    "choose a supported provider or repair its prerequisites.");
 	}
 
 	m_resetHistoryPending = true;

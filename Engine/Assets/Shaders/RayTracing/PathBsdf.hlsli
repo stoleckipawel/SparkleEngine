@@ -78,7 +78,11 @@ namespace PathBsdf
 		return denominator != 0.0f ? abs((wiNs * woNg) / denominator) : 0.0f;
 	}
 
-	Evaluation EvaluateContinuous(RayTracingPathSurface surface, float3 directionWorld, LobeMasses masses)
+	Evaluation EvaluateContinuous(RayTracingPathSurface surface,
+	                              float3 directionWorld,
+	                              LobeMasses masses,
+	                              bool evaluateDiffuse,
+	                              bool evaluateSpecular)
 	{
 		Evaluation result = (Evaluation)0;
 		const float noL = dot(surface.NormalWorld, directionWorld);
@@ -105,7 +109,11 @@ namespace PathBsdf
 
 		const float3 f0 = lerp(surface.DielectricF0.xxx, surface.BaseColor, surface.Metallic);
 		const float3 fresnel = FresnelSchlick(voH, f0);
-		const float3 diffuse = (1.0f.xxx - fresnel) * (1.0f - surface.Metallic) * surface.BaseColor * INV_PI;
+		float3 diffuse = 0.0f.xxx;
+		if (evaluateDiffuse)
+		{
+			diffuse = (1.0f.xxx - fresnel) * (1.0f - surface.Metallic) * surface.BaseColor * INV_PI;
+		}
 		float3 specular = 0.0f.xxx;
 		float specularPdfW = 0.0f;
 		if (!masses.SpecularDelta && masses.Specular > 0.0f)
@@ -113,14 +121,23 @@ namespace PathBsdf
 			const float alpha = surface.Roughness * surface.Roughness;
 			const float distribution = DistributionGGX(noH, alpha);
 			const float g1View = SmithG1(noV, alpha);
-			const float geometry = g1View * SmithG1(noL, alpha);
-			specular = fresnel * distribution * geometry / (4.0f * noL * noV);
+			if (evaluateSpecular)
+			{
+				const float geometry = g1View * SmithG1(noL, alpha);
+				specular = fresnel * distribution * geometry / (4.0f * noL * noV);
+			}
 			specularPdfW = distribution * g1View / (4.0f * noV);
 		}
 
 		const float correction = ShadingNormalCorrection(surface, directionWorld);
-		result.Diffuse = diffuse * correction;
-		result.Specular = specular * correction;
+		if (evaluateDiffuse)
+		{
+			result.Diffuse = diffuse * correction;
+		}
+		if (evaluateSpecular)
+		{
+			result.Specular = specular * correction;
+		}
 		result.PdfW = masses.Diffuse * noL * INV_PI + masses.Specular * specularPdfW;
 		result.Cosine = ngL;
 		result.HasSupport = result.PdfW > 0.0f && any(result.Diffuse + result.Specular > 0.0f);
@@ -157,7 +174,12 @@ namespace PathBsdf
 		return normalize(halfVectorWorld);
 	}
 
-	RayTracingPathSample::DirectionSample Sample(RayTracingPathSurface surface, LobeMasses masses, uint selectedLobe, float2 sample)
+	RayTracingPathSample::DirectionSample Sample(RayTracingPathSurface surface,
+	                                             LobeMasses masses,
+	                                             uint selectedLobe,
+	                                             float2 sample,
+	                                             bool evaluateDiffuse,
+	                                             bool evaluateSpecular)
 	{
 		RayTracingPathSample::DirectionSample result = (RayTracingPathSample::DirectionSample)0;
 
@@ -172,11 +194,13 @@ namespace PathBsdf
 			{
 				result.DirectionWorld = normalize(reflect(-surface.ViewDirWorld, surface.NormalWorld));
 
-				const float3 f0 = lerp(surface.DielectricF0.xxx, surface.BaseColor, surface.Metallic);
-				const float cosine = abs(dot(surface.ViewDirWorld, surface.NormalWorld));
-				const float correction = ShadingNormalCorrection(surface, result.DirectionWorld);
-
-				result.SpecularThroughput = FresnelSchlick(cosine, f0) * correction / masses.Specular;
+				if (evaluateSpecular)
+				{
+					const float3 f0 = lerp(surface.DielectricF0.xxx, surface.BaseColor, surface.Metallic);
+					const float cosine = abs(dot(surface.ViewDirWorld, surface.NormalWorld));
+					const float correction = ShadingNormalCorrection(surface, result.DirectionWorld);
+					result.SpecularThroughput = FresnelSchlick(cosine, f0) * correction / masses.Specular;
+				}
 				result.Delta = true;
 				result.HasSupport = any(result.SpecularThroughput > 0.0f);
 				return result;
@@ -185,13 +209,19 @@ namespace PathBsdf
 			result.DirectionWorld = normalize(reflect(-surface.ViewDirWorld, halfVector));
 		}
 
-		const Evaluation evaluation = EvaluateContinuous(surface, result.DirectionWorld, masses);
+		const Evaluation evaluation = EvaluateContinuous(surface, result.DirectionWorld, masses, evaluateDiffuse, evaluateSpecular);
 		result.PdfW = evaluation.PdfW;
 		if (evaluation.HasSupport)
 		{
 			const float sampleWeight = evaluation.Cosine / evaluation.PdfW;
-			result.DiffuseThroughput = evaluation.Diffuse * sampleWeight;
-			result.SpecularThroughput = evaluation.Specular * sampleWeight;
+			if (evaluateDiffuse)
+			{
+				result.DiffuseThroughput = evaluation.Diffuse * sampleWeight;
+			}
+			if (evaluateSpecular)
+			{
+				result.SpecularThroughput = evaluation.Specular * sampleWeight;
+			}
 		}
 		result.Delta = false;
 		result.HasSupport = evaluation.HasSupport;

@@ -124,6 +124,7 @@ private:
 	GBufferAlgorithm m_builtGBufferAlgorithm = GBufferAlgorithm::Rasterized;
 	std::uint64_t m_builtRayTracingGraphGeneration = 0u;
 	std::uint64_t m_builtShaderGeneration = 0u;
+	std::uint64_t m_builtSceneRenderingTopologyIdentity = 0u;
 	RenderViewportExtent m_windowExtent = {};
 	ViewportRenderRequest m_viewportRenderRequest = {};
 	ViewportRenderProducts m_viewportRenderProducts = {};

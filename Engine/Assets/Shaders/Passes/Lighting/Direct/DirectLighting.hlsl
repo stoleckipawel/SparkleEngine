@@ -15,7 +15,7 @@ void AddDirectLightSample(GBufferData gBuffer,
                           float3 viewDirWorld,
                           bool evaluateSubsurface,
                           LightSampling::DirectLightSample lightSample,
-                          ShadowVisibilitySample shadow,
+                          float visibility,
                           float sampleWeight,
                           inout float3 directDiffuse,
                           inout float3 directSpecular,
@@ -37,9 +37,11 @@ void AddDirectLightSample(GBufferData gBuffer,
 	                                             gBuffer.DielectricF0,
 	                                             gBuffer.SubsurfaceColor,
 	                                             gBuffer.SubsurfaceStrength,
+	                                             DirectLightingEvaluateDiffuse != 0u,
+	                                             DirectLightingEvaluateSpecular != 0u,
 	                                             evaluateSubsurface,
 	                                             lightSample,
-	                                             shadow.Visibility,
+	                                             visibility,
 	                                             lightDiffuse,
 	                                             lightSpecular,
 	                                             lightSubsurface);
@@ -49,7 +51,8 @@ void AddDirectLightSample(GBufferData gBuffer,
 	directSubsurface += lightSubsurface * sampleWeight;
 }
 
-[numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
+[numthreads(8, 8, 1)]
+void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
 	uint width = 0;
 	uint height = 0;
@@ -63,9 +66,18 @@ void AddDirectLightSample(GBufferData gBuffer,
 	const GBufferData gBuffer = LoadGBuffer(dispatchThreadId.xy);
 	if (IsSkyPixel(gBuffer.SceneDepth))
 	{
-		DirectDiffuse[dispatchThreadId.xy] = 0.0f.xxxx;
-		DirectSpecular[dispatchThreadId.xy] = 0.0f.xxxx;
-		DirectSubsurface[dispatchThreadId.xy] = 0.0f.xxxx;
+		if (DirectLightingEvaluateDiffuse != 0u)
+		{
+			DirectDiffuse[dispatchThreadId.xy] = 0.0f.xxxx;
+		}
+		if (DirectLightingEvaluateSpecular != 0u)
+		{
+			DirectSpecular[dispatchThreadId.xy] = 0.0f.xxxx;
+		}
+		if (DirectLightingEvaluateSubsurface != 0u)
+		{
+			DirectSubsurface[dispatchThreadId.xy] = 0.0f.xxxx;
+		}
 		return;
 	}
 
@@ -78,9 +90,12 @@ void AddDirectLightSample(GBufferData gBuffer,
 	const DirectLightReservoir::Reservoir reservoir =
 	    DirectLightReservoir::UnpackReservoir(CurrentReservoirSample.Load(int3(dispatchThreadId.xy, 0)),
 	                                          CurrentReservoirWeight.Load(int3(dispatchThreadId.xy, 0)));
-	const ShadowVisibilitySample shadowSignal =
-	    RayTracedShadowSignalPacking::UnpackShadowSignal(ShadowVisibilitySignal.Load(int3(dispatchThreadId.xy, 0)));
-	const bool evaluateSubsurface = HasSubsurface(gBuffer);
+	float visibility = 1.0f;
+	if (DirectLightingEvaluateShadows != 0u)
+	{
+		visibility = RayTracedShadowSignalPacking::UnpackShadowSignal(ShadowVisibilitySignal.Load(int3(dispatchThreadId.xy, 0))).Visibility;
+	}
+	const bool evaluateSubsurface = DirectLightingEvaluateSubsurface != 0u && HasSubsurface(gBuffer);
 	if (DirectLightReservoir::IsValid(reservoir))
 	{
 		const LightSampling::DirectLightSample lightSample = DirectLightReservoir::ReplayLightSample(reservoir, positionWorld);
@@ -90,14 +105,23 @@ void AddDirectLightSample(GBufferData gBuffer,
 		                     viewDirWorld,
 		                     evaluateSubsurface,
 		                     lightSample,
-		                     shadowSignal,
+		                     visibility,
 		                     reservoirWeight,
 		                     directDiffuse,
 		                     directSpecular,
 		                     directSubsurface);
 	}
 
-	DirectDiffuse[dispatchThreadId.xy] = float4(directDiffuse, gBuffer.Alpha);
-	DirectSpecular[dispatchThreadId.xy] = float4(directSpecular, gBuffer.Alpha);
-	DirectSubsurface[dispatchThreadId.xy] = float4(directSubsurface, gBuffer.Alpha);
+	if (DirectLightingEvaluateDiffuse != 0u)
+	{
+		DirectDiffuse[dispatchThreadId.xy] = float4(directDiffuse, gBuffer.Alpha);
+	}
+	if (DirectLightingEvaluateSpecular != 0u)
+	{
+		DirectSpecular[dispatchThreadId.xy] = float4(directSpecular, gBuffer.Alpha);
+	}
+	if (DirectLightingEvaluateSubsurface != 0u)
+	{
+		DirectSubsurface[dispatchThreadId.xy] = float4(directSubsurface, gBuffer.Alpha);
+	}
 }

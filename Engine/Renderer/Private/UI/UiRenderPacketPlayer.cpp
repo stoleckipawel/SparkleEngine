@@ -231,15 +231,20 @@ void UiRenderPacketPlayer::CopyDrawList(
 		const UiDrawCommand& source = packet.Commands[packetList.CommandOffset + index];
 		ImDrawCmd& command = drawList.CmdBuffer[index];
 		command.ClipRect = {source.ClipRect[0], source.ClipRect[1], source.ClipRect[2], source.ClipRect[3]};
+		command.ElemCount = source.ElementCount;
 		if (ImTextureData* texture = FindTexture(source.TextureHandle))
 		{
 			command.TexRef = texture->GetTexRef();
 		}
 		else
 		{
-			command.TexRef = ImTextureRef(static_cast<ImTextureID>(textures.Resolve(source.TextureHandle)));
+			const std::uint64_t textureId = textures.Resolve(source.TextureHandle);
+			command.TexRef = ImTextureRef(static_cast<ImTextureID>(textureId));
+			if (textureId == 0u && source.Kind == UiDrawCommandKind::Draw)
+			{
+				command.ElemCount = 0u;
+			}
 		}
-		command.ElemCount = source.ElementCount;
 		command.IdxOffset = source.IndexOffset;
 		command.VtxOffset = static_cast<unsigned int>(source.VertexOffset);
 		command.UserCallback = source.Kind == UiDrawCommandKind::ResetRenderState ? ImDrawCallback_ResetRenderState : nullptr;

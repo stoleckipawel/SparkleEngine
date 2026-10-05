@@ -17,6 +17,10 @@ sparkle_configure_host_tool_target(ShaderCompiler)
 
 set(DXC_SDK_ROOT "$ENV{VULKAN_SDK}" CACHE PATH "DXC SDK root")
 set(SLANG_SDK_ROOT "$ENV{VULKAN_SDK}" CACHE PATH "Slang SDK root")
+set(SPIRV_TOOLS_SDK_ROOT "$ENV{VULKAN_SDK}" CACHE PATH "SPIRV-Tools SDK root")
+find_path(SPIRV_TOOLS_INCLUDE_DIR NAMES spirv-tools/libspirv.hpp PATHS "${SPIRV_TOOLS_SDK_ROOT}/Include" REQUIRED)
+find_library(SPIRV_TOOLS_IMPORT_LIBRARY NAMES SPIRV-Tools-shared PATHS "${SPIRV_TOOLS_SDK_ROOT}/Lib" REQUIRED)
+find_file(SPIRV_TOOLS_RUNTIME_LIBRARY NAMES SPIRV-Tools-shared.dll PATHS "${SPIRV_TOOLS_SDK_ROOT}/Bin" REQUIRED)
 find_path(DXC_INCLUDE_DIR NAMES dxcapi.h PATHS "${DXC_SDK_ROOT}/Include/dxc" REQUIRED)
 find_library(DXC_IMPORT_LIBRARY NAMES dxcompiler PATHS "${DXC_SDK_ROOT}/Lib" REQUIRED)
 find_file(DXC_RUNTIME_LIBRARY NAMES dxcompiler.dll PATHS "${DXC_SDK_ROOT}/Bin" REQUIRED)
@@ -54,12 +58,14 @@ target_include_directories(ShaderCompiler
         ${CMAKE_CURRENT_SOURCE_DIR}/Backends
         ${DXC_INCLUDE_DIR}
         ${SLANG_INCLUDE_DIR}
+        ${SPIRV_TOOLS_INCLUDE_DIR}
         ${CMAKE_SOURCE_DIR}/Engine
         ${CMAKE_SOURCE_DIR}/Engine/Core/Public/Diagnostics
 )
 
 target_compile_definitions(ShaderCompiler
     PRIVATE
+        SPIRV_TOOLS_SHAREDLIB
         SPARKLE_SHADER_COMPILER_DXC_INCLUDE_DIR="${DXC_INCLUDE_DIR}"
         SPARKLE_SHADER_COMPILER_DXC_IMPORT_LIBRARY="${DXC_IMPORT_LIBRARY}"
         SPARKLE_SHADER_COMPILER_DXC_RUNTIME_LIBRARY="${DXC_RUNTIME_LIBRARY}"
@@ -84,6 +90,7 @@ target_link_libraries(ShaderCompiler
         SparkleRendererShaderCookRegistrationObjects
         ${DXC_IMPORT_LIBRARY}
         spirv_reflect
+        ${SPIRV_TOOLS_IMPORT_LIBRARY}
         slang::slang
 )
 
@@ -94,6 +101,9 @@ add_custom_command(TARGET ShaderCompiler POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${SLANG_RUNTIME_LIBRARY}"
         "$<TARGET_FILE_DIR:ShaderCompiler>/slang.dll"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${SPIRV_TOOLS_RUNTIME_LIBRARY}"
+        "$<TARGET_FILE_DIR:ShaderCompiler>/SPIRV-Tools-shared.dll"
 )
 
 foreach(slang_runtime_support_file IN LISTS SLANG_RUNTIME_SUPPORT_FILES)

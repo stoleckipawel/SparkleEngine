@@ -10,7 +10,7 @@
 #include <spirv_reflect.h>
 
 // SPIR-V -> ShaderReflection extractor backed by SPIRV-Reflect.
-// SPIRV-Reflect symbols stay confined to Backends/Dxc/.
+// SPIRV-Reflect symbols stay confined to the compiler's SPIR-V implementation.
 class SpirVReflectionExtractor final
 {
 public:

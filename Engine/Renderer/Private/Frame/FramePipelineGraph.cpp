@@ -7,6 +7,7 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Passes/Presentation/PresentationPolicy.h"
+#include "Passes/Scene/SceneRenderingPasses.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "Pipeline/RenderPassRuntimeCache.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
@@ -62,6 +63,7 @@ void FramePipeline::InitializeFrameGraph(const RenderFrameGraphSettings& setting
 	m_builtGBufferAlgorithm = CVarGBufferAlgorithm.Get();
 	m_builtRayTracingGraphGeneration = rayTracingScene.GetGraphGeneration();
 	m_builtShaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration();
+	m_builtSceneRenderingTopologyIdentity = GetSceneRenderingTopologyIdentity(m_viewportRenderRequest.ViewMode, settings);
 	m_frameResources = resources;
 	m_imageProviderFrameGraphKey = m_imageProviders->GetFrameGraphKey();
 	m_frameGraph = std::move(frameGraph);
@@ -128,8 +130,10 @@ void FramePipeline::RefreshGraphForTopology() noexcept
 	const GBufferAlgorithm gBufferAlgorithm = CVarGBufferAlgorithm.Get();
 	const std::uint64_t rayTracingGraphGeneration = m_renderScene->GetRayTracingScene().GetGraphGeneration();
 	const std::uint64_t shaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration();
+	const std::uint64_t sceneTopologyIdentity = GetSceneRenderingTopologyIdentity(m_viewportRenderRequest.ViewMode, settings);
 	if (providerChanged || settings != m_frameGraphSettings || gBufferAlgorithm != m_builtGBufferAlgorithm
-	    || rayTracingGraphGeneration != m_builtRayTracingGraphGeneration || shaderGeneration != m_builtShaderGeneration)
+	    || rayTracingGraphGeneration != m_builtRayTracingGraphGeneration || shaderGeneration != m_builtShaderGeneration
+	    || sceneTopologyIdentity != m_builtSceneRenderingTopologyIdentity)
 	{
 		InvalidateViewHistory(RenderViewInvalidationReason::GraphTopology);
 		RefreshFrameExecution(settings);

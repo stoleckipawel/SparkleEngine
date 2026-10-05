@@ -5,4 +5,8 @@
 
 class FrameGraphBuilder;
 
-void AddRestirIndirectLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, RenderFrameGraphResources& resources);
+void AddRestirIndirectLightingPasses(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
+    bool useRayReconstruction,
+    RenderFrameGraphResources& resources);

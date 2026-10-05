@@ -12,5 +12,6 @@ namespace SparkleLauncher
 		std::string Detail;
 	};
 
+	bool HasShaderCompilerStandardModules(const std::filesystem::path& binaryDirectory);
 	ShaderCompilerSdkStatus DetectShaderCompilerSdk();
 }

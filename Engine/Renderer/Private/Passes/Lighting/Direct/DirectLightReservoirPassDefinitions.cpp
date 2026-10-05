@@ -5,8 +5,8 @@
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Lighting/Direct/DirectLightReservoirSpatialShader.h"
+#include "Passes/Lighting/Direct/DirectLightingControls.h"
 #include "Passes/Lighting/Direct/DirectLightReservoirTemporalShader.h"
-#include "Passes/Lighting/Shadows/DirectShadowSignalResources.h"
 #include "ShaderData/SceneShaderParameters.h"
 
 template <typename Parameters>
@@ -19,20 +19,32 @@ static void BindDirectLightReservoirSurface(FrameGraphBuilder& builder, Paramete
 	parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
 	parameters->SceneDepth = builder.CreateSRV(resources.Transient.Scene.SceneDepth);
 	BindSceneShaderParameters(builder, parameters, resources);
+
+	builder.AddPassParameterSetup(
+	    parameters,
+	    [baseColorInput = gbuffer.BaseColor,
+	        materialInput = gbuffer.Material,
+	        subsurfaceInput = gbuffer.Subsurface,
+	        diffuseOutput = resources.Transient.Lighting.DirectDiffuse,
+	        specularOutput = resources.Transient.Lighting.DirectSpecular,
+	        subsurfaceOutput = resources.Transient.Lighting.DirectSubsurface](auto& fields)
+	    {
+		    fields.DirectLightingConstants =
+		        BuildDirectLightingUniform(baseColorInput, materialInput, subsurfaceInput, diffuseOutput, specularOutput, subsurfaceOutput);
+	    });
 }
 
 void AddDirectLightReservoirTemporalPass(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources,
-    const DirectShadowSignalResources& shadowSignals)
+    const RenderFrameGraphResources& resources)
 {
 	auto& parameters = builder.AllocParameters<DirectLightReservoirTemporalCS>();
-	parameters->TemporalReservoirSample = builder.CreateUAV(shadowSignals.TemporalReservoirSample);
-	parameters->TemporalReservoirWeight = builder.CreateUAV(shadowSignals.TemporalReservoirWeight);
-	parameters->PreviousReservoirSample = builder.CreateSRV(shadowSignals.ReservoirHistory.Sample.Previous);
-	parameters->PreviousReservoirWeight = builder.CreateSRV(shadowSignals.ReservoirHistory.Weight.Previous);
-	parameters->PreviousReservoirSurface = builder.CreateSRV(shadowSignals.ReservoirHistory.Surface.Previous);
+	parameters->TemporalReservoirSample = builder.CreateUAV(resources.Transient.DirectLightTemporalReservoirSample);
+	parameters->TemporalReservoirWeight = builder.CreateUAV(resources.Transient.DirectLightTemporalReservoirWeight);
+	parameters->PreviousReservoirSample = builder.CreateSRV(resources.History.DirectLightReservoir.Sample.Previous);
+	parameters->PreviousReservoirWeight = builder.CreateSRV(resources.History.DirectLightReservoir.Weight.Previous);
+	parameters->PreviousReservoirSurface = builder.CreateSRV(resources.History.DirectLightReservoir.Surface.Previous);
 	parameters->GBufferMotionVector = builder.CreateSRV(resources.Transient.GBuffer.MotionVector);
 
 	BindDirectLightReservoirSurface(builder, parameters, resources);
@@ -47,9 +59,9 @@ void AddDirectLightReservoirTemporalPass(
 		}
 	};
 
-	builder.AddResourceProductionSetup(parameters, shadowSignals.ReservoirHistory.Sample.Previous, invalidateTemporalHistory);
-	builder.AddResourceProductionSetup(parameters, shadowSignals.ReservoirHistory.Weight.Previous, invalidateTemporalHistory);
-	builder.AddResourceProductionSetup(parameters, shadowSignals.ReservoirHistory.Surface.Previous, invalidateTemporalHistory);
+	builder.AddResourceProductionSetup(parameters, resources.History.DirectLightReservoir.Sample.Previous, invalidateTemporalHistory);
+	builder.AddResourceProductionSetup(parameters, resources.History.DirectLightReservoir.Weight.Previous, invalidateTemporalHistory);
+	builder.AddResourceProductionSetup(parameters, resources.History.DirectLightReservoir.Surface.Previous, invalidateTemporalHistory);
 
 	builder.Dispatch<DirectLightReservoirTemporalCS>(
 	    parameters,
@@ -59,15 +71,14 @@ void AddDirectLightReservoirTemporalPass(
 void AddDirectLightReservoirSpatialPass(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources,
-    const DirectShadowSignalResources& shadowSignals)
+    const RenderFrameGraphResources& resources)
 {
 	auto& parameters = builder.AllocParameters<DirectLightReservoirSpatialCS>();
-	parameters->TemporalReservoirSample = builder.CreateSRV(shadowSignals.TemporalReservoirSample);
-	parameters->TemporalReservoirWeight = builder.CreateSRV(shadowSignals.TemporalReservoirWeight);
-	parameters->CurrentReservoirSample = builder.CreateUAV(shadowSignals.ReservoirHistory.Sample.Current);
-	parameters->CurrentReservoirWeight = builder.CreateUAV(shadowSignals.ReservoirHistory.Weight.Current);
-	parameters->CurrentReservoirSurface = builder.CreateUAV(shadowSignals.ReservoirHistory.Surface.Current);
+	parameters->TemporalReservoirSample = builder.CreateSRV(resources.Transient.DirectLightTemporalReservoirSample);
+	parameters->TemporalReservoirWeight = builder.CreateSRV(resources.Transient.DirectLightTemporalReservoirWeight);
+	parameters->CurrentReservoirSample = builder.CreateUAV(resources.History.DirectLightReservoir.Sample.Current);
+	parameters->CurrentReservoirWeight = builder.CreateUAV(resources.History.DirectLightReservoir.Weight.Current);
+	parameters->CurrentReservoirSurface = builder.CreateUAV(resources.History.DirectLightReservoir.Surface.Current);
 
 	BindDirectLightReservoirSurface(builder, parameters, resources);
 

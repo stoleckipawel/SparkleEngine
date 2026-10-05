@@ -3,6 +3,9 @@
 #include "Slang/SlangShaderBackend.h"
 
 #include "Compiler/ShaderCompileProfile.h"
+#include "Compiler/SpirV/SpirVBindingNormalizer.h"
+#include "Compiler/SpirV/SpirVDisassembler.h"
+#include "Compiler/SpirV/SpirVReflectionExtractor.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Slang/SlangReflectionExtractor.h"
@@ -90,14 +93,21 @@ CompiledShader SlangShaderBackend::Compile(const ShaderCompileRequest& request)
 		throw Diagnostics::Error("Slang backend does not support requested shader target");
 	}
 
-	std::array<slang::CompilerOptionEntry, 1> spirvOptions = {{
+	std::array<slang::CompilerOptionEntry, 4> targetOptions = {{
+	    {slang::CompilerOptionName::Optimization,
+	        {slang::CompilerOptionValueKind::Int,
+	            static_cast<std::int32_t>(request.EnableOptimizations ? SLANG_OPTIMIZATION_LEVEL_MAXIMAL : SLANG_OPTIMIZATION_LEVEL_NONE),
+	            0,
+	            nullptr,
+	            nullptr}},
 	    {slang::CompilerOptionName::EmitSpirvDirectly, {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}},
+	    {slang::CompilerOptionName::ForceDXLayout,
+	        {slang::CompilerOptionValueKind::Int, ShaderCompileProfile::SpirVUseDirectXBufferLayout, 0, nullptr, nullptr}},
+	    {slang::CompilerOptionName::DefaultImageFormatUnknown,
+	        {slang::CompilerOptionValueKind::Int, ShaderCompileProfile::SpirVUseUnknownStorageImageFormat, 0, nullptr, nullptr}},
 	}};
-	if (IsSpirVTarget(request.Target))
-	{
-		targetDesc.compilerOptionEntries = spirvOptions.data();
-		targetDesc.compilerOptionEntryCount = static_cast<std::uint32_t>(spirvOptions.size());
-	}
+	targetDesc.compilerOptionEntries = targetOptions.data();
+	targetDesc.compilerOptionEntryCount = IsSpirVTarget(request.Target) ? static_cast<std::uint32_t>(targetOptions.size()) : 1u;
 
 	slang::SessionDesc sessionDesc{};
 	sessionDesc.targets = &targetDesc;
@@ -168,22 +178,34 @@ CompiledShader SlangShaderBackend::Compile(const ShaderCompileRequest& request)
 	const auto* bytes = static_cast<const std::uint8_t*>(codeBlob->getBufferPointer());
 	std::vector<std::uint8_t> bytecode(bytes, bytes + codeBlob->getBufferSize());
 
-	diagnosticBlob.setNull();
-	slang::ProgramLayout* layout = linkedProgram->getLayout(0, diagnosticBlob.writeRef());
-	diagnostics += BlobToString(diagnosticBlob);
-	if (layout == nullptr)
+	ShaderReflection reflection;
+	if (IsSpirVTarget(request.Target))
 	{
-		throw Diagnostics::Error(
-		    "Slang failed to produce reflection layout for target '" + std::string{GetShaderTargetName(request.Target)} + "' source '"
-		    + request.VirtualSourcePath + "' entry '" + request.EntryPoint + "' - " + diagnostics);
+		SpirVBindingNormalizer::Normalize(bytecode, request.DescriptorBindingRemaps);
+		reflection = SpirVReflectionExtractor::Extract(bytecode, request.Stage);
 	}
-
-	ShaderReflection reflection = SlangReflectionExtractor::Extract(*layout, request.Stage);
+	else
+	{
+		diagnosticBlob.setNull();
+		slang::ProgramLayout* layout = linkedProgram->getLayout(0, diagnosticBlob.writeRef());
+		diagnostics += BlobToString(diagnosticBlob);
+		if (layout == nullptr)
+		{
+			throw Diagnostics::Error(
+			    "Slang failed to produce reflection layout for target '" + std::string{GetShaderTargetName(request.Target)} + "' source '"
+			    + request.VirtualSourcePath + "' entry '" + request.EntryPoint + "' - " + diagnostics);
+		}
+		reflection = SlangReflectionExtractor::Extract(*layout, request.Stage);
+	}
 
 	ShaderDebugArtifactSet debugArtifacts;
 	if (request.CaptureDebugArtifacts)
 	{
 		debugArtifacts = CaptureDebugArtifacts(request, sourceText, diagnostics);
+		if (IsSpirVTarget(request.Target))
+		{
+			debugArtifacts.Disassembly = SpirVDisassembler::Disassemble(bytecode);
+		}
 	}
 
 	CompiledShader compiledShader(std::move(bytecode));
@@ -234,6 +256,19 @@ std::vector<std::string> SlangShaderBackend::BuildDebugArgumentStrings(const Sha
 	args.push_back(IsSpirVTarget(request.Target) ? "spirv" : "dxil");
 	args.push_back("-profile");
 	args.push_back(ShaderCompileProfile::GetSlangTargetProfileName(request.Target));
+	args.push_back(request.EnableOptimizations ? "-O3" : "-O0");
+	if (IsSpirVTarget(request.Target))
+	{
+		args.push_back("-emit-spirv-directly");
+		if constexpr (ShaderCompileProfile::SpirVUseDirectXBufferLayout)
+		{
+			args.push_back("-fvk-use-dx-layout");
+		}
+		if constexpr (ShaderCompileProfile::SpirVUseUnknownStorageImageFormat)
+		{
+			args.push_back("-default-image-format-unknown");
+		}
+	}
 	return args;
 }
 

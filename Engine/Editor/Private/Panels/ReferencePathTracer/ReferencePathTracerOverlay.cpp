@@ -47,8 +47,10 @@ void DrawReferencePathTracerOverlay(
 	const bool unavailable = progress.State == ViewportRenderProgressState::Unavailable;
 	const bool paused = progress.State == ViewportRenderProgressState::Paused;
 	const bool complete = progress.State == ViewportRenderProgressState::Complete;
-	const char* stateLabel = ProgressStateLabels[static_cast<std::size_t>(progress.State)];
-	const char* reasonLabel = ProgressReasonLabels[static_cast<std::size_t>(progress.Reason)];
+	const std::size_t stateIndex = static_cast<std::size_t>(progress.State);
+	const std::size_t reasonIndex = static_cast<std::size_t>(progress.Reason);
+	const char* stateLabel = stateIndex < ProgressStateLabels.size() ? ProgressStateLabels[stateIndex] : "Unknown";
+	const char* reasonLabel = reasonIndex < ProgressReasonLabels.size() ? ProgressReasonLabels[reasonIndex] : "Unknown reason";
 	const float overlayHeight = unavailable ? 118.0f : (complete ? 92.0f : 142.0f);
 	ImGui::BeginChild(
 	    "##ViewportRenderProgress",

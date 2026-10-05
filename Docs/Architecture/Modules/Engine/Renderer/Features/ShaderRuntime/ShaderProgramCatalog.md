@@ -4,6 +4,8 @@
 
 **Snapshot:** 2026-09- 19 at source input revision `a884b6946802e933fafc9fe4c6cdfb93c4cde7e4` plus the current visualization / presentation worktree; all files in `Engine/Renderer/ShaderRegistrations` reconciled with their typed shader declarations and principal frame-graph consumers; evidence `S` only
 
+**Scoped update:** 2026-10-05 at `410d05ef` plus the current review repairs: composition, lighting visualization, direct evaluation and indirect resolve each have one `main` registration. Runtime uniforms control evaluation, primary-shadow sampling, view selection and reconstruction-guide writes. Fixed bindings retain real initialized render-extent targets; omitted families retain radiance initialization but omit reservoirs/history/evaluation. This update does not re-audit every older catalog row. Candidate-bound native results remain owned by [Debug Views Discovery](../DebugViews/Discovery.md#current-candidate-evidence-and-permission).
+
 **Scope:** the exact Renderer global-program membership linked into the shader-contract target, including source, entry point, stage, consumer, traversal model, runtime target expectation, and important binding boundary
 
 **Owners:** `Engine/Renderer/ShaderRegistrations` for registration membership, typed declarations and pass consumers in `Engine/Renderer`, and `Tools/Shaders` for compilation/publication
@@ -36,7 +38,7 @@ There are exactly 35 registrations: 27 Compute, one Vertex, one Pixel, three Ray
 | `SceneDepthCS` | `/Engine/Passes/GBuffer/SceneDepth.hlsl` | `main` | Compute | Converts frontend-specific device depth into common linear R32F scene depth. |
 | `SkyMotionVectorCS` | `/Engine/Passes/GBuffer/SkyMotionVector.hlsl` | `main` | Compute | Completes background motion vectors from current/previous view transforms. |
 | `GBufferVisualizationCS` | `/Engine/Passes/Visualization/GBufferVisualization.hlsl` | `main` | Compute | Reads only GBuffer products for the eight GBuffer visualization modes; output still enters presentation. |
-| `LightingVisualizationCS` | `/Engine/Passes/Visualization/LightingVisualization.hlsl` | `main` | Compute | Reads five lighting lobes plus GBuffer alpha for lighting visualization modes; output still enters presentation. |
+| `LightingVisualizationCS` | `/Engine/Passes/Visualization/LightingVisualization.hlsl` | `main` | Compute | Fixed five lighting inputs and GBuffer alpha; existing View uniform selects the lobe. Disabled diagnostics decline execution/publication. |
 | `GpuSceneVisualizationCS` | `/Engine/Passes/Visualization/GpuSceneVisualization.hlsl` | `main` | Compute | Publishes the instance palette already authored into GBuffer base color for the GPU-scene visualization mode. |
 
 ## ReSTIR Direct Lighting And Shadows
@@ -47,15 +49,16 @@ There are exactly 35 registrations: 27 Compute, one Vertex, one Pixel, three Ray
 | `DirectLightReservoirSpatialCS` | `/Engine/Passes/Lighting/Direct/DirectLightReservoirSpatial.hlsl` | `main` | Compute | Direct-light spatial reuse stage. |
 | `DirectShadowSignalCS` | `/Engine/Passes/Lighting/Shadows/DirectShadowSignal.hlsl` | `main` | Compute | Inline-query visibility adapter; TLAS/hit material/fixed texture table. |
 | `DirectShadowSignalRGS` | `/Engine/Passes/Lighting/Shadows/DirectShadowSignalPipeline.hlsl` | `DirectShadowSignalRayGeneration` | RayGeneration | Native-pipeline visibility adapter and typed global parameters. |
-| `DirectLightingCS` | `/Engine/Passes/Lighting/Direct/DirectLighting.hlsl` | `main` | Compute | Resolves reservoir plus visibility against directional, point, spot, and rect light buffers into direct lobes. |
+| `DirectLightingCS` | `/Engine/Passes/Lighting/Direct/DirectLighting.hlsl` | `main` | Compute | Required initialized visibility binding; uniform bypasses sampling and uses visibility one when shadows are inactive. Uniforms gate direct lobe evaluation and writes. |
 
 ## ReSTIR Indirect Lighting
 
 | Program | Virtual source | Entry | Stage | Runtime consumer and boundary |
 | --- | --- | --- | --- | --- |
-| `RestirIndirectTemporalCS` | `/Engine/Passes/ Lighting / Restir / Indirect/RestirIndirectTemporal.hlsl` | `main` | Compute | Inline-query indirect temporal stage; reads history, TLAS, hit/deformation/material/light/sky resources. |
-| `RestirIndirectSpatialCS` | `/Engine/Passes/ Lighting / Restir / Indirect/RestirIndirectSpatial.hlsl` | `main` | Compute | Inline-query spatial reuse stage over the current indirect reservoir. |
-| `RestirIndirectResolveCS` | `/Engine/Passes/ Lighting / Restir / Indirect/RestirIndirectResolve.hlsl` | `main` | Compute | Inline-query resolve; writes indirect lobes and the four DLSS RR guide targets. |
+| `RestirIndirectTemporalCS` | `/Engine/Passes/Lighting/Restir/Indirect/RestirIndirectTemporal.hlsl` | `main` | Compute | Inline-query indirect temporal stage; reads history, TLAS, hit/deformation/material/light/sky resources. |
+| `RestirIndirectSpatialCS` | `/Engine/Passes/Lighting/Restir/Indirect/RestirIndirectSpatial.hlsl` | `main` | Compute | Inline-query spatial reuse stage over the current indirect reservoir. |
+| `RestirIndirectResolveCS` | `/Engine/Passes/Lighting/Restir/Indirect/RestirIndirectResolve.hlsl` | `main` | Compute | Two radiance and four render-extent guide UAVs; uniforms gate primary physical responses and requested guide writes. Guide allocation alone does not establish a provider product. |
+
 
 See [Indirect Lighting](../Lighting/IndirectLighting/README.md) for the current prototype audit, target algorithm, history, inputs, limits, and evidence boundary.
 
@@ -73,7 +76,7 @@ These rows are current source and registration membership only. Shader cooking, 
 
 | Program | Virtual source | Entry | Stage | Runtime consumer and boundary |
 | --- | --- | --- | --- | --- |
-| `LightingCompositeCS` | `/Engine/Passes/Lighting/LightingComposite.hlsl` | `main` | Compute | Combines direct diffuse/specular/subsurface, indirect diffuse/specular, and GBuffer material/emissive data into HDR scene color. |
+| `LightingCompositeCS` | `/Engine/Passes/Lighting/LightingComposite.hlsl` | `main` | Compute | Fixed five initialized lighting inputs plus GBuffer alpha/emissive into HDR scene color. Disabled lobes contribute their intentionally cleared zero outputs. |
 | `SkyCS` | `/Engine/Passes/Lighting/Sky/Sky.hlsl` | `main` | Compute | Fills background using linear scene depth, sky texture, and view/sky uniforms. |
 
 ## Exposure
@@ -137,7 +140,7 @@ See [Tone Mapping](../PostProcessing/DisplayPipeline/ToneMapping.md) for the thr
 
 ## Runtime Variant Closure
 
-Each one of the 32 logical registrations must have both `DxilSm66` and `SpirV16` cooked entries before the current paired-backend runtime publication is complete. That is 64 logical registration-target entries, subject to content-blob deduplication in `CookedShaderLibrary.slib`. Other tool targets are explicit compiler vocabulary, not required runtime variants.
+Each one of the 35 logical registrations must have both `DxilSm66` and `SpirV16` cooked entries before the current paired-backend runtime publication is complete. That is 70 logical registration-target entries, subject to content-blob deduplication in `CookedShaderLibrary.slib`. Other tool targets are explicit compiler vocabulary, not required runtime variants.
 
 For native ray compositions, registration count is not sufficient. Runtime materialization additionally checks compatible ray metadata, the global parameter owner, hit-group composition, recursion/payload/attribute limits, and shader-table records. Miss/hit programs do not own an independent pass or root parameter structure.
 

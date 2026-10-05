@@ -18,7 +18,16 @@ static FrameGraphTextureHandle CreateLightingTexture(
 	return builder.CreateTexture(desc);
 }
 
-void CreateRealTimeLightingRenderTargets(
+void CreateDirectLightingRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, RenderFrameGraphResources& resources)
+{
+	LightingRenderTargets& lighting = resources.Transient.Lighting;
+	const PixelFormat radianceFormat = RenderFrameGraphFormats::SceneColor;
+	lighting.DirectDiffuse = CreateLightingTexture(builder, "DirectDiffuse", sceneExtent, radianceFormat);
+	lighting.DirectSpecular = CreateLightingTexture(builder, "DirectSpecular", sceneExtent, radianceFormat);
+	lighting.DirectSubsurface = CreateLightingTexture(builder, "DirectSubsurface", sceneExtent, radianceFormat);
+}
+
+void CreateIndirectLightingRenderTargets(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
     bool createRayReconstructionGuides,
@@ -26,23 +35,23 @@ void CreateRealTimeLightingRenderTargets(
 {
 	LightingRenderTargets& lighting = resources.Transient.Lighting;
 	const PixelFormat radianceFormat = RenderFrameGraphFormats::SceneColor;
-	lighting.DirectDiffuse = CreateLightingTexture(builder, "DirectDiffuse", sceneExtent, radianceFormat);
-	lighting.DirectSpecular = CreateLightingTexture(builder, "DirectSpecular", sceneExtent, radianceFormat);
-	lighting.DirectSubsurface = CreateLightingTexture(builder, "DirectSubsurface", sceneExtent, radianceFormat);
 	lighting.IndirectDiffuse = CreateLightingTexture(builder, "IndirectDiffuse", sceneExtent, radianceFormat);
 	lighting.IndirectSpecular = CreateLightingTexture(builder, "IndirectSpecular", sceneExtent, radianceFormat);
 
-	const RenderViewportExtent guideExtent = createRayReconstructionGuides ? sceneExtent : RenderViewportExtent{1u, 1u};
+	if (!createRayReconstructionGuides)
+	{
+		return;
+	}
 
 	lighting.ReconstructionGuides.DiffuseAlbedo =
-	    CreateLightingTexture(builder, "RayReconstructionDiffuseAlbedo", guideExtent, PixelFormat::R16G16B16A16_Float);
+	    CreateLightingTexture(builder, "RayReconstructionDiffuseAlbedo", sceneExtent, PixelFormat::R16G16B16A16_Float);
 
 	lighting.ReconstructionGuides.SpecularAlbedo =
-	    CreateLightingTexture(builder, "RayReconstructionSpecularAlbedo", guideExtent, PixelFormat::R16G16B16A16_Float);
+	    CreateLightingTexture(builder, "RayReconstructionSpecularAlbedo", sceneExtent, PixelFormat::R16G16B16A16_Float);
 
 	lighting.ReconstructionGuides.Roughness =
-	    CreateLightingTexture(builder, "RayReconstructionRoughness", guideExtent, PixelFormat::R32_Float);
+	    CreateLightingTexture(builder, "RayReconstructionRoughness", sceneExtent, PixelFormat::R32_Float);
 
 	lighting.ReconstructionGuides.SpecularHitDistance =
-	    CreateLightingTexture(builder, "RayReconstructionSpecularHitDistance", guideExtent, PixelFormat::R32_Float);
+	    CreateLightingTexture(builder, "RayReconstructionSpecularHitDistance", sceneExtent, PixelFormat::R32_Float);
 }

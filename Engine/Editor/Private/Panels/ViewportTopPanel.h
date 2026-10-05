@@ -1,5 +1,9 @@
 #pragma once
 
+#include "Core/Public/Console/CVarControl.h"
+
+#include <string>
+
 class LevelSession;
 class EngineRenderingSettingsController;
 class EditorViewportSession;
@@ -10,7 +14,8 @@ public:
 	ViewportTopPanel(
 	    LevelSession* levelSession = nullptr,
 	    EngineRenderingSettingsController* renderingSettings = nullptr,
-	    EditorViewportSession* viewportSession = nullptr) noexcept;
+	    EditorViewportSession* viewportSession = nullptr,
+	    const CVarControlExecutor* consoleVariables = nullptr) noexcept;
 	~ViewportTopPanel() noexcept;
 
 	ViewportTopPanel(const ViewportTopPanel&) = delete;
@@ -31,6 +36,8 @@ private:
 	LevelSession* m_levelSession = nullptr;
 	EngineRenderingSettingsController* m_renderingSettings = nullptr;
 	EditorViewportSession* m_viewportSession = nullptr;
+	const CVarControlExecutor* m_consoleVariables = nullptr;
+	std::string m_showControlError;
 	float m_leftPixels = 0.0f;
 	float m_topPixels = 0.0f;
 	float m_widthPixels = 0.0f;

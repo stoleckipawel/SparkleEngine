@@ -38,6 +38,7 @@ struct VulkanFeatureStatus final
 	bool SupportsFillModeNonSolid = false;
 	bool SupportsShaderInt64 = false;
 	bool SupportsShaderFloat64 = false;
+	bool SupportsScalarBlockLayout = false;
 	bool SupportsStorageImageReadWithoutFormat = false;
 	bool SupportsStorageImageWriteWithoutFormat = false;
 	bool SupportsSampledImageArrayNonUniformIndexing = false;
@@ -50,6 +51,7 @@ struct VulkanFeatureStatus final
 	bool EnabledFillModeNonSolid = false;
 	bool EnabledShaderInt64 = false;
 	bool EnabledShaderFloat64 = false;
+	bool EnabledScalarBlockLayout = false;
 	bool EnabledStorageImageReadWithoutFormat = false;
 	bool EnabledStorageImageWriteWithoutFormat = false;
 	bool EnabledSampledImageArrayNonUniformIndexing = false;

@@ -6,6 +6,10 @@ cbuffer RestirIndirectConstants
 	uint RestirIndirectBounceCount;
 	uint RestirIndirectTemporalReuse;
 	uint RestirIndirectSpatialReuse;
+	uint RestirIndirectEvaluateDiffuse;
+	uint RestirIndirectEvaluateSpecular;
+	uint RestirIndirectTraceSecondaryShadows;
+	uint RestirIndirectWriteReconstructionGuides;
 	uint RestirIndirectPadding;
 };
 

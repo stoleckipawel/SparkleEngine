@@ -17,9 +17,26 @@
 #include "Shaders/ShaderParameterLayoutBuilder.h"
 
 #include <algorithm>
+#include <compare>
 #include <format>
-#include <tuple>
-#include <unordered_map>
+#include <iterator>
+#include <string>
+#include <vector>
+
+struct ShaderDescriptorBindingIdentity final
+{
+	std::string Name;
+	ShaderParameterSemanticKind Kind = ShaderParameterSemanticKind::ReadTexture;
+	ShaderParameterResourceDomain Domain = ShaderParameterResourceDomain::None;
+	ShaderParameterAccess Access = ShaderParameterAccess::None;
+
+	auto operator<=>(const ShaderDescriptorBindingIdentity&) const = default;
+
+	bool Matches(const PassParameterDesc& parameter) const noexcept
+	{
+		return Name == parameter.Name && Kind == parameter.Kind && Domain == parameter.ResourceDomain && Access == parameter.Access;
+	}
+};
 
 ShaderCompileInputHash ShaderCompileJobBuilder::BuildInputHash(
     std::uint64_t sourceContentHash,
@@ -106,14 +123,7 @@ ShaderCompileRequest ShaderCompileJobBuilder::BuildRequest(
 
 void ShaderCompileJobBuilder::AppendDescriptorBindingRemaps(const ShaderCookDesc& shader, ShaderCompileRequest& request)
 {
-	struct BindingIdentity final
-	{
-		std::string Name;
-		ShaderParameterSemanticKind Kind = ShaderParameterSemanticKind::ReadTexture;
-		ShaderParameterResourceDomain Domain = ShaderParameterResourceDomain::None;
-		ShaderParameterAccess Access = ShaderParameterAccess::None;
-	};
-	std::vector<BindingIdentity> bindings;
+	std::vector<ShaderDescriptorBindingIdentity> bindings;
 	for (const ShaderRegistrationDesc& registration : GlobalShaderRegistry::GetRegistrations())
 	{
 		const PassParameterLayout layout = BuildShaderParameterLayout(registration);
@@ -125,36 +135,38 @@ void ShaderCompileJobBuilder::AppendDescriptorBindingRemaps(const ShaderCookDesc
 			}
 			const auto existing = std::ranges::find_if(
 			    bindings,
-			    [&parameter](const BindingIdentity& value)
-			    {
-				    return value.Name == parameter.Name && value.Kind == parameter.Kind && value.Domain == parameter.ResourceDomain
-				        && value.Access == parameter.Access;
-			    });
+			    [&parameter](const ShaderDescriptorBindingIdentity& value) { return value.Matches(parameter); });
 			if (existing == bindings.end())
 			{
-				bindings.push_back(BindingIdentity{parameter.Name, parameter.Kind, parameter.ResourceDomain, parameter.Access});
+				bindings.push_back(
+				    ShaderDescriptorBindingIdentity{parameter.Name, parameter.Kind, parameter.ResourceDomain, parameter.Access});
 			}
 		}
 	}
-	std::ranges::sort(
-	    bindings,
-	    [](const BindingIdentity& left, const BindingIdentity& right)
-	    {
-		    return std::tie(left.Name, left.Kind, left.Domain, left.Access) < std::tie(right.Name, right.Kind, right.Domain, right.Access);
-	    });
+	std::ranges::sort(bindings);
+	if (shader.parameterLayout.GetParameters().empty())
+	{
+		for (std::size_t index = 0; index < bindings.size(); ++index)
+		{
+			const ShaderDescriptorBindingIdentity& binding = bindings[index];
+			const bool duplicateBefore = index > 0 && bindings[index - 1].Name == binding.Name;
+			const bool duplicateAfter = index + 1 < bindings.size() && bindings[index + 1].Name == binding.Name;
+			if (!duplicateBefore && !duplicateAfter)
+			{
+				request.DescriptorBindingRemaps.push_back(
+				    ShaderDescriptorBindingRemap{.Name = binding.Name, .Set = 0, .Binding = static_cast<std::uint32_t>(index)});
+			}
+		}
+		return;
+	}
 	for (const PassParameterDesc& parameter : shader.parameterLayout.GetParameters())
 	{
 		if (parameter.Kind == ShaderParameterSemanticKind::RenderTarget || parameter.Kind == ShaderParameterSemanticKind::DepthTarget)
 		{
 			continue;
 		}
-		const auto found = std::ranges::find_if(
-		    bindings,
-		    [&parameter](const BindingIdentity& value)
-		    {
-			    return value.Name == parameter.Name && value.Kind == parameter.Kind && value.Domain == parameter.ResourceDomain
-			        && value.Access == parameter.Access;
-		    });
+		const auto found =
+		    std::ranges::find_if(bindings, [&parameter](const ShaderDescriptorBindingIdentity& value) { return value.Matches(parameter); });
 		if (found == bindings.end())
 		{
 			throw Diagnostics::Error(std::format("Shader parameter '{}' is missing from the global binding assignment.", parameter.Name));

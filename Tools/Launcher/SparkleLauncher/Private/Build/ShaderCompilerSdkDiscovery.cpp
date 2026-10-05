@@ -12,15 +12,15 @@
 
 namespace SparkleLauncher
 {
-	static bool HasDirectChildDirectoryWithPrefix(const std::filesystem::path& root, std::string_view prefix)
+	bool HasShaderCompilerStandardModules(const std::filesystem::path& binaryDirectory)
 	{
 		std::error_code errorCode;
-		if (!std::filesystem::is_directory(root, errorCode))
+		if (!std::filesystem::is_directory(binaryDirectory, errorCode))
 		{
 			return false;
 		}
 
-		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(root, errorCode))
+		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(binaryDirectory, errorCode))
 		{
 			if (errorCode || !entry.is_directory(errorCode))
 			{
@@ -28,7 +28,7 @@ namespace SparkleLauncher
 				continue;
 			}
 			const std::string name = Strings::ToLowerCopy(entry.path().filename().string());
-			if (name.rfind(Strings::ToLowerCopy(prefix), 0) == 0)
+			if (name.starts_with("slang-standard-module-"))
 			{
 				return true;
 			}
@@ -44,35 +44,37 @@ namespace SparkleLauncher
 		if (!sdkRoot.has_value())
 		{
 			status.Detail = "Vulkan SDK was not detected. Install it or define VULKAN_SDK so the enabled ShaderCompiler feature can "
-			                "find DXC and Slang.";
+			                "find DXC, Slang and SPIRV-Tools.";
 			return status;
 		}
 
 		status.Root = sdkRoot->lexically_normal();
-		const std::array<std::pair<std::filesystem::path, std::string_view>, 11> requiredFiles = {{
-		    {status.Root / "Include" / "dxc" / "dxcapi.h", "Include/dxc/dxcapi.h"},
-		    {status.Root / "Lib" / "dxcompiler.lib", "Lib/dxcompiler.lib"},
-		    {status.Root / "Bin" / "dxcompiler.dll", "Bin/dxcompiler.dll"},
-		    {status.Root / "Include" / "slang" / "slang.h", "Include/slang/slang.h"},
-		    {status.Root / "Lib" / "slang.lib", "Lib/slang.lib"},
-		    {status.Root / "Bin" / "slang.dll", "Bin/slang.dll"},
-		    {status.Root / "Bin" / "slang-compiler.dll", "Bin/slang-compiler.dll"},
-		    {status.Root / "Bin" / "slang-glsl-module.dll", "Bin/slang-glsl-module.dll"},
-		    {status.Root / "Bin" / "slang-glslang.dll", "Bin/slang-glslang.dll"},
-		    {status.Root / "Bin" / "slang-rt.dll", "Bin/slang-rt.dll"},
-		    {status.Root / "Bin" / "slang.slang", "Bin/slang.slang"},
-		}};
+		static constexpr auto requiredFiles = std::to_array<std::string_view>(
+		    {"Include/dxc/dxcapi.h",
+		        "Lib/dxcompiler.lib",
+		        "Bin/dxcompiler.dll",
+		        "Include/spirv-tools/libspirv.hpp",
+		        "Lib/SPIRV-Tools-shared.lib",
+		        "Bin/SPIRV-Tools-shared.dll",
+		        "Include/slang/slang.h",
+		        "Lib/slang.lib",
+		        "Bin/slang.dll",
+		        "Bin/slang-compiler.dll",
+		        "Bin/slang-glsl-module.dll",
+		        "Bin/slang-glslang.dll",
+		        "Bin/slang-rt.dll",
+		        "Bin/slang.slang"});
 
 		std::vector<std::string> missingEntries;
-		for (const auto& [path, displayPath] : requiredFiles)
+		for (std::string_view relativePath : requiredFiles)
 		{
 			std::error_code errorCode;
-			if (!std::filesystem::exists(path, errorCode))
+			if (!std::filesystem::is_regular_file(status.Root / relativePath, errorCode))
 			{
-				missingEntries.emplace_back(displayPath);
+				missingEntries.emplace_back(relativePath);
 			}
 		}
-		if (!HasDirectChildDirectoryWithPrefix(status.Root / "Bin", "slang-standard-module-"))
+		if (!HasShaderCompilerStandardModules(status.Root / "Bin"))
 		{
 			missingEntries.push_back("Bin/slang-standard-module-*");
 		}

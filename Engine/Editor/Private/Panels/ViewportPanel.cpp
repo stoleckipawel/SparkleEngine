@@ -132,13 +132,27 @@ void ViewportPanel::BuildEmptyState() noexcept
 {
 	ImGui::TextDisabled("Viewport output unavailable");
 	ImGui::Spacing();
-	ImGui::TextWrapped("EditorApplication is requesting runtime output, but no final LDR color surface is available for presentation yet.");
+	switch (m_renderProducts.GetProgress().Reason)
+	{
+		case ViewportRenderProgressReason::FeatureDisabled:
+			ImGui::TextWrapped("This view needs a disabled rendering feature. Enable it or choose another view mode.");
+			break;
+		case ViewportRenderProgressReason::MissingRequiredProduct:
+			ImGui::TextWrapped(
+			    "The selected rendering configuration is unavailable. Enable its required features or choose another configuration.");
+			break;
+		default:
+			ImGui::TextWrapped("Waiting for viewport output.");
+			break;
+	}
 }
 
 void ViewportPanel::BuildProgressOverlay() noexcept
 {
 	const ViewportRenderProgress& progress = m_renderProducts.GetProgress();
-	if (progress.State == ViewportRenderProgressState::None)
+	if (m_renderRequest.ViewMode != RenderViewMode::ReferencePathTracer || progress.State == ViewportRenderProgressState::None
+	    || progress.Reason == ViewportRenderProgressReason::FeatureDisabled
+	    || progress.Reason == ViewportRenderProgressReason::MissingRequiredProduct)
 	{
 		return;
 	}

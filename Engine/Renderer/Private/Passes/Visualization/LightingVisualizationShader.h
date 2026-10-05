@@ -1,8 +1,8 @@
 #pragma once
 
+#include "ShaderParameters/ShaderParameterStruct.h"
 #include "RHI/Public/Shaders/Authoring/GlobalShader.h"
 #include "ShaderData/ViewUniformData.h"
-#include "ShaderParameters/ShaderParameterStruct.h"
 
 class LightingVisualizationCS final : public GlobalShader<LightingVisualizationCS>
 {

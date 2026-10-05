@@ -3,6 +3,7 @@
 #include "FrameGraph/FrameGraphTextureHandle.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "RHI/Public/Resources/RhiResourceHandles.h"
+#include "RHI/Public/Interop/ResourceState.h"
 
 #include <cstdint>
 
@@ -35,7 +36,7 @@ private:
 	void Allocate(RenderViewportExtent extent);
 	void Release() noexcept;
 	bool Bind(FrameGraph& frameGraph) const noexcept;
-	void RecordUse() noexcept;
+	void RecordSubmission() noexcept;
 	bool CanRetain() const noexcept;
 	bool IsAllocated() const noexcept;
 
@@ -48,6 +49,7 @@ private:
 		RhiOwnedResourceHandle CommittedM2 = {};
 		RenderViewportExtent Extent = {};
 		std::uint64_t Bytes = 0u;
+		ResourceState BoundaryState = ResourceState::Undefined;
 
 		explicit operator bool() const noexcept { return static_cast<bool>(WorkingMean); }
 	};
@@ -56,5 +58,4 @@ private:
 	RendererMemoryMonitor& m_memoryMonitor;
 	ReferencePathTracerGraphResources m_graphResources;
 	Allocation m_allocation;
-	bool m_used = false;
 };

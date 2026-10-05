@@ -22,17 +22,12 @@ namespace RayTracingPathSampling
 
 	RandomSamples GenerateRandomSamples(uint2 pixelCoord, uint bounceIndex, uint sampleIndex, uint randomFrameIndex)
 	{
-		const uint sampleSalt = sampleIndex * 4099u;
-		const float2 basePixel = float2(pixelCoord) + float2(bounceIndex * 17u + sampleSalt, bounceIndex * 29u + sampleSalt);
-		const float2 lobeAndRoulette =
-		    CommonRandom::InterleavedGradientNoise2(basePixel, randomFrameIndex + bounceIndex * 131u + sampleSalt, float2(211.0f, 97.0f));
-		const float2 direction =
-		    CommonRandom::InterleavedGradientNoise2(basePixel, randomFrameIndex + bounceIndex * 149u + sampleSalt, float2(41.0f, 137.0f));
+		const uint4 words = CommonRandom::Philox4x32(uint4(pixelCoord, randomFrameIndex, sampleIndex), uint2(bounceIndex, 0x4C495450u));
 
 		RandomSamples result;
-		result.Lobe = lobeAndRoulette.x;
-		result.Roulette = lobeAndRoulette.y;
-		result.Direction = direction;
+		result.Lobe = CommonRandom::OpenUnitInterval(words.x);
+		result.Direction = float2(CommonRandom::OpenUnitInterval(words.y), CommonRandom::OpenUnitInterval(words.z));
+		result.Roulette = CommonRandom::OpenUnitInterval(words.w);
 		return result;
 	}
 
@@ -56,7 +51,11 @@ namespace RayTracingPathSampling
 		return result;
 	}
 
-	RayTracingPathSample::DirectionSample SampleBSDF(RayTracingPathSurface surface, uint specularSampleMode, RandomSamples randomSamples)
+	RayTracingPathSample::DirectionSample SampleBSDF(RayTracingPathSurface surface,
+	                                                 uint specularSampleMode,
+	                                                 RandomSamples randomSamples,
+	                                                 bool evaluateDiffuse,
+	                                                 bool evaluateSpecular)
 	{
 		if (!surface.Valid)
 		{
@@ -80,7 +79,7 @@ namespace RayTracingPathSampling
 			selectedLobe = RayTracingPathSample::LobeDiffuse;
 		}
 
-		return PathBsdf::Sample(surface, masses, selectedLobe, randomSamples.Direction);
+		return PathBsdf::Sample(surface, masses, selectedLobe, randomSamples.Direction, evaluateDiffuse, evaluateSpecular);
 	}
 
 	float RussianRouletteSurvivalProbability(float3 throughput, uint bounceIndex)

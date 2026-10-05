@@ -5,6 +5,11 @@
 #include "Frame/Graph/RenderFrameGraphSettings.h"
 #include "FrameGraph/Builder/FrameGraphCopyPasses.h"
 
+bool CanPublishPresentationOutput(const RenderFrameGraphResources& resources) noexcept
+{
+	return resources.ViewportProducts.Progress.State != ViewportRenderProgressState::Unavailable;
+}
+
 void AddPresentationOutputPass(
     FrameGraphBuilder& builder,
     const RenderFrameGraphSettings& settings,

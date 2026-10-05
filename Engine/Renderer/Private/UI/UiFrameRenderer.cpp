@@ -108,25 +108,26 @@ void UiFrameRenderer::RenderViewport(
     FrameGraph* frameGraph,
     ViewportRenderProducts& viewportProducts) noexcept
 {
-	if (frameGraph == nullptr || !BeginViewportPresentation(*frameGraph, viewportProducts))
+	const bool presentingViewport = frameGraph != nullptr && packet.ViewportGeneration == viewportProducts.GetGeneration()
+	    && BeginViewportPresentation(*frameGraph, viewportProducts);
+	if (!presentingViewport)
 	{
 		m_textureRegistry->RetireViewportTexture();
 		m_viewportTexture = {};
-		return;
 	}
 
-	if (!packet.HasDrawData() || packet.ViewportGeneration != viewportProducts.GetGeneration())
+	if (packet.HasDrawData())
+	{
+		constexpr float clearColor[4] = {0.06f, 0.06f, 0.07f, 1.0f};
+		RhiPresentationService& presentation = m_deviceServices.GetRenderHardwareInterface().GetPresentationService();
+		presentation.BeginPresentRenderPass(clearColor);
+		Play(packet);
+		presentation.EndPresentRenderPass();
+	}
+	if (presentingViewport)
 	{
 		EndViewportPresentation(*frameGraph, viewportProducts);
-		return;
 	}
-
-	constexpr float clearColor[4] = {0.06f, 0.06f, 0.07f, 1.0f};
-	RhiPresentationService& presentation = m_deviceServices.GetRenderHardwareInterface().GetPresentationService();
-	presentation.BeginPresentRenderPass(clearColor);
-	Play(packet);
-	presentation.EndPresentRenderPass();
-	EndViewportPresentation(*frameGraph, viewportProducts);
 }
 
 void UiFrameRenderer::RenderHostOverlay(const UiRenderPacket& packet) noexcept

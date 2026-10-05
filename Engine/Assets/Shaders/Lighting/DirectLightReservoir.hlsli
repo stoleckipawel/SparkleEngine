@@ -6,6 +6,7 @@
 #include "/Engine/Common/Color.hlsli"
 #include "/Engine/Common/Random.hlsli"
 #include "/Engine/Lighting/DirectLightSampling.hlsli"
+#include "/Engine/Lighting/DirectLightingUniform.hlsli"
 #include "/Engine/Lighting/RestirReservoirCommon.hlsli"
 #include "/Engine/Lighting/SurfaceLighting.hlsli"
 #include "/Engine/Passes/GBuffer/GBufferUtils.hlsli"
@@ -53,7 +54,7 @@ namespace DirectLightReservoir
 		const float3 cameraToSurface = surface.PositionWorld - Position;
 		surface.ViewDistance = length(cameraToSurface);
 		surface.ViewDirWorld = surface.ViewDistance > 1.0e-5f ? -cameraToSurface / surface.ViewDistance : 0.0f.xxx;
-		surface.EvaluateSubsurface = HasSubsurface(surface.GBuffer);
+		surface.EvaluateSubsurface = DirectLightingEvaluateSubsurface != 0u && HasSubsurface(surface.GBuffer);
 		surface.Valid = true;
 		return surface;
 	}
@@ -166,6 +167,8 @@ namespace DirectLightReservoir
 		                                             surface.GBuffer.DielectricF0,
 		                                             surface.GBuffer.SubsurfaceColor,
 		                                             surface.GBuffer.SubsurfaceStrength,
+		                                             DirectLightingEvaluateDiffuse != 0u,
+		                                             DirectLightingEvaluateSpecular != 0u,
 		                                             surface.EvaluateSubsurface,
 		                                             lightSample,
 		                                             1.0f,
@@ -269,7 +272,8 @@ namespace DirectLightReservoir
 
 		Reservoir reservoir = EmptyReservoir();
 		uint rng = RestirReservoirCommon::BuildSeed(pixelCoord, 0xC0FFEEu);
-		[unroll] for (uint candidateIndex = 0u; candidateIndex < RestirReservoirCommon::InitialCandidateCount; ++candidateIndex)
+		[unroll]
+		for (uint candidateIndex = 0u; candidateIndex < RestirReservoirCommon::InitialCandidateCount; ++candidateIndex)
 		{
 			const DirectLightSampling::LightCandidate candidate =
 			    DirectLightSampling::SampleUniformLightCandidate(CommonRandom::Random01(rng));

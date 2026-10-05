@@ -1,21 +1,8 @@
 #pragma once
 
-#include "Resources/History/FrameHistory.h"
-#include "FrameGraph/FrameGraphTextureHandle.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
 
-struct DirectShadowSignalResources final
-{
-	FrameGraphTextureHandle Visibility = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle TemporalReservoirSample = FrameGraphTextureHandle::Invalid();
-	FrameGraphTextureHandle TemporalReservoirWeight = FrameGraphTextureHandle::Invalid();
-	FrameGraphReservoirHistoryHandles ReservoirHistory = {};
-};
-
-DirectShadowSignalResources CreateDirectShadowSignalResources(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    RenderFrameGraphResources& resources);
+void CreateDirectShadowSignalResources(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, RenderFrameGraphResources& resources);

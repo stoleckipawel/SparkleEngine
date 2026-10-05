@@ -182,7 +182,8 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 		candidate.Features12.pNext = &candidate.Features13;
 		vkGetPhysicalDeviceFeatures2(device, &candidate.Features);
 		if (candidate.Features.features.shaderStorageImageReadWithoutFormat != VK_TRUE
-		    || candidate.Features.features.shaderStorageImageWriteWithoutFormat != VK_TRUE)
+		    || candidate.Features.features.shaderStorageImageWriteWithoutFormat != VK_TRUE
+		    || candidate.Features12.scalarBlockLayout != VK_TRUE)
 		{
 			continue;
 		}
@@ -206,7 +207,7 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 		    g_vulkanRhiLogger,
 		    __FILE__,
 		    __LINE__,
-		    "No Vulkan 1.3 physical device exposes a graphics queue and formatless storage-image reads and writes.");
+		    "No Vulkan 1.3 physical device exposes a graphics queue, scalar block layout and formatless storage-image reads and writes.");
 	}
 
 	std::sort(
@@ -225,6 +226,7 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 	m_featureStatus.SupportsFillModeNonSolid = selected.Features.features.fillModeNonSolid == VK_TRUE;
 	m_featureStatus.SupportsShaderInt64 = selected.Features.features.shaderInt64 == VK_TRUE;
 	m_featureStatus.SupportsShaderFloat64 = selected.Features.features.shaderFloat64 == VK_TRUE;
+	m_featureStatus.SupportsScalarBlockLayout = selected.Features12.scalarBlockLayout == VK_TRUE;
 	m_featureStatus.SupportsStorageImageReadWithoutFormat = selected.Features.features.shaderStorageImageReadWithoutFormat == VK_TRUE;
 	m_featureStatus.SupportsStorageImageWriteWithoutFormat = selected.Features.features.shaderStorageImageWriteWithoutFormat == VK_TRUE;
 	m_featureStatus.SupportsSampledImageArrayNonUniformIndexing = selected.Features12.shaderSampledImageArrayNonUniformIndexing == VK_TRUE;
@@ -312,6 +314,8 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	void** enabledNext = &enabledFeatures.pNext;
 	if (m_adapterInfo.ApiVersion >= VK_API_VERSION_1_2)
 	{
+		enabledFeatures12.scalarBlockLayout = m_featureStatus.SupportsScalarBlockLayout ? VK_TRUE : VK_FALSE;
+		m_featureStatus.EnabledScalarBlockLayout = enabledFeatures12.scalarBlockLayout == VK_TRUE;
 		enabledFeatures12.timelineSemaphore = m_featureStatus.SupportsTimelineSemaphore ? VK_TRUE : VK_FALSE;
 		enabledFeatures12.shaderSampledImageArrayNonUniformIndexing =
 		    m_featureStatus.SupportsSampledImageArrayNonUniformIndexing ? VK_TRUE : VK_FALSE;
@@ -467,7 +471,7 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	const std::string deviceExtensions = std::format("Enabled Vulkan device extensions: {}", m_enabledDeviceExtensions.size());
 	const std::string featureSummary = std::format(
 	    "Vulkan features: validation={}, synchronization2 supported/enabled={}/{}, timelineSemaphore supported/enabled={}/{}, "
-	    "dynamicRendering supported/enabled={}/{}, "
+	    "dynamicRendering supported/enabled={}/{}, scalarBlockLayout supported/enabled={}/{}, "
 	    "samplerAnisotropy supported/enabled={}/{}, fillModeNonSolid supported/enabled={}/{}, "
 	    "rtExtensions(as={}, pipeline={}, rayQuery={}, deferredHostOps={}, bda={}, partitionedTlasNv={}), "
 	    "rtFeatures(as={}, pipeline={}, rayQuery={}, bda={}, partitionedTlasNv={}), "
@@ -479,6 +483,8 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	    m_featureStatus.EnabledTimelineSemaphore,
 	    m_featureStatus.SupportsDynamicRendering,
 	    m_featureStatus.EnabledDynamicRendering,
+	    m_featureStatus.SupportsScalarBlockLayout,
+	    m_featureStatus.EnabledScalarBlockLayout,
 	    m_featureStatus.SupportsSamplerAnisotropy,
 	    m_featureStatus.EnabledSamplerAnisotropy,
 	    m_featureStatus.SupportsFillModeNonSolid,

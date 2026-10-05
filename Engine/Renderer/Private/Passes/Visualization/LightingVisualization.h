@@ -5,6 +5,12 @@
 
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
+struct ViewportFrameProducts;
+
+bool PrepareLightingVisualizationProducts(
+    RenderViewMode viewMode,
+    const RenderFrameGraphResources& resources,
+    ViewportFrameProducts& products) noexcept;
 
 void AddLightingVisualizationPass(
     FrameGraphBuilder& builder,

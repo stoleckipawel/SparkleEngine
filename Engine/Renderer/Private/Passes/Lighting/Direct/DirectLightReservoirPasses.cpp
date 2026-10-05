@@ -3,12 +3,8 @@
 
 #include "Passes/Lighting/Direct/DirectLightReservoirPassDefinitions.h"
 
-void AddDirectLightReservoirPasses(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources,
-    const DirectShadowSignalResources& shadowSignals)
+void AddDirectLightReservoirPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
-	AddDirectLightReservoirTemporalPass(builder, sceneExtent, resources, shadowSignals);
-	AddDirectLightReservoirSpatialPass(builder, sceneExtent, resources, shadowSignals);
+	AddDirectLightReservoirTemporalPass(builder, sceneExtent, resources);
+	AddDirectLightReservoirSpatialPass(builder, sceneExtent, resources);
 }

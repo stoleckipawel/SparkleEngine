@@ -110,11 +110,13 @@ public:
 		}
 
 		std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+		std::vector<std::vector<VkDescriptorPoolSize>> descriptorSetRequirements;
 		for (auto& [setIndex, descriptorBindings] : descriptorBindingsBySet)
 		{
 			if (descriptorSetLayouts.size() <= setIndex)
 			{
 				descriptorSetLayouts.resize(static_cast<std::size_t>(setIndex) + 1u, VK_NULL_HANDLE);
+				descriptorSetRequirements.resize(descriptorSetLayouts.size());
 			}
 			std::ranges::sort(
 			    descriptorBindings,
@@ -130,6 +132,16 @@ public:
 			for (const PendingDescriptorBinding& descriptorBinding : descriptorBindings)
 			{
 				nativeBindings.push_back(descriptorBinding.Binding);
+				auto& requirements = descriptorSetRequirements[setIndex];
+				const auto requirement = std::ranges::find(requirements, descriptorBinding.Binding.descriptorType, &VkDescriptorPoolSize::type);
+				if (requirement == requirements.end())
+				{
+					requirements.push_back({descriptorBinding.Binding.descriptorType, descriptorBinding.Binding.descriptorCount});
+				}
+				else
+				{
+					requirement->descriptorCount += descriptorBinding.Binding.descriptorCount;
+				}
 				nativeBindingFlags.push_back(descriptorBinding.BindingFlags);
 				if (descriptorBinding.ImmutableSampler != VK_NULL_HANDLE)
 				{
@@ -198,6 +210,7 @@ public:
 		    rhi.GetDevice(),
 		    *desc.ParameterLayout,
 		    std::move(descriptorSetLayouts),
+		    std::move(descriptorSetRequirements),
 		    std::move(immutableSamplers),
 		    std::move(pushConstantRanges),
 		    std::move(bindings),
@@ -363,6 +376,7 @@ VulkanBindingLayout::VulkanBindingLayout(
     VkDevice device,
     const PassParameterLayout& parameterLayout,
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts,
+    std::vector<std::vector<VkDescriptorPoolSize>> descriptorSetRequirements,
     std::vector<VkSampler> immutableSamplers,
     std::vector<VkPushConstantRange> pushConstantRanges,
     std::vector<CompiledBinding> bindings,
@@ -370,9 +384,16 @@ VulkanBindingLayout::VulkanBindingLayout(
     RenderBindingLayout(parameterLayout, std::move(bindings), std::move(bindingNames)),
     m_device(device),
     m_descriptorSetLayouts(std::move(descriptorSetLayouts)),
+    m_descriptorSetRequirements(std::move(descriptorSetRequirements)),
     m_immutableSamplers(std::move(immutableSamplers)),
     m_pushConstantRanges(std::move(pushConstantRanges))
 {
+}
+
+std::span<const VkDescriptorPoolSize> VulkanBindingLayout::GetDescriptorSetRequirements(std::uint32_t setIndex) const noexcept
+{
+	assert(setIndex < m_descriptorSetRequirements.size());
+	return m_descriptorSetRequirements[setIndex];
 }
 
 VulkanBindingLayout::~VulkanBindingLayout() noexcept

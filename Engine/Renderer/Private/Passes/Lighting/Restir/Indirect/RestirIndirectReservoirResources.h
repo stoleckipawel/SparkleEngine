@@ -4,6 +4,9 @@
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraphBuilder;
+struct RenderFrameGraphResources;
+
+void CreateRestirIndirectHistoryResources(FrameGraphBuilder& builder, RenderViewportExtent extent, RenderFrameGraphResources& resources);
 
 struct RestirIndirectWorkingReservoirs final
 {

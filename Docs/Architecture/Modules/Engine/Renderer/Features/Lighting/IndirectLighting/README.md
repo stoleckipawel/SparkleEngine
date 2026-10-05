@@ -12,6 +12,8 @@
 
 **Current readiness:** **45/100** per [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer)
 
+**Bounded control evidence, 2026-10-05:** default-enabled primary indirect diffuse/specular CVars, early physical-response gates, all-off chain omission, history/re-enable, and selected D3D12 genuine-guide reconstruction now have [candidate-bound Debug Views evidence](../../DebugViews/Discovery.md#current-candidate-evidence-and-permission). Full material proposal PDFs and continuation lobes are preserved. The native Vulkan hit-record ABI prerequisite was repaired at ShaderCompiler/device owners and the selected paired-backend matrix repeated. This supersedes only the corresponding dated control/source facts, not IND-D0/GRIS, convergence, motion, full backend/provider or release gates; readiness stays 45/100.
+
 ## Outcome
 
 Sparkle needs a correct real-time indirect-lighting feature whose first-bounce and multi-bounce claims are mathematically explicit, compare against an independent reference, and remain useful under camera/scene motion. ReSTIR is the selected research family, not a license to call any reservoir of random seeds “ReSTIR GI.”
@@ -143,4 +145,3 @@ Indirect Lighting is done only when `IND-D0` is accepted, the seed-replay path i
 - [`PathLighting.hlsli`](../../../../../../../../Engine/Assets/Shaders/RayTracing/PathLighting.hlsli) and [`PathSampling.hlsli`](../../../../../../../../Engine/Assets/Shaders/RayTracing/PathSampling.hlsli)
 - [`RestirIndirectLightingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/Restir/Indirect/RestirIndirectLightingPasses.cpp)
 - [`Sky.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/Sky/Sky.cpp) and [`LightingComposite.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/LightingComposite.cpp)
-

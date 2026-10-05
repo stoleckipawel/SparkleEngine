@@ -1,6 +1,7 @@
 #include "SparkleLauncher/CookOperations.h"
 
 #include "CookOperationProcessRequests.h"
+#include "ShaderCompilerSdkDiscovery.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "SparkleLauncher/BuildProfileCatalog.h"
 #include "LauncherStatePaths.h"
@@ -29,6 +30,7 @@ namespace SparkleLauncher
 		{
 			return {
 			    "dxcompiler.dll",
+			    "SPIRV-Tools-shared.dll",
 			    "slang.dll",
 			    "slang-compiler.dll",
 			    "slang-glsl-module.dll",
@@ -41,51 +43,6 @@ namespace SparkleLauncher
 		return {};
 	}
 
-	std::vector<std::string> GetRequiredCookToolRuntimeDirectoryPrefixes(const std::filesystem::path& toolPath)
-	{
-		const std::string toolName = toolPath.stem().string();
-		if (toolName == "ShaderCompiler")
-		{
-			return {"slang-standard-module-"};
-		}
-
-		return {};
-	}
-
-	bool HasDirectChildDirectoryWithPrefix(const std::filesystem::path& root, std::string_view prefix)
-	{
-		std::error_code errorCode;
-		if (!std::filesystem::is_directory(root, errorCode))
-		{
-			return false;
-		}
-
-		const std::string prefixText(prefix);
-		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(root, errorCode))
-		{
-			if (errorCode)
-			{
-				errorCode.clear();
-				continue;
-			}
-
-			if (!entry.is_directory(errorCode))
-			{
-				errorCode.clear();
-				continue;
-			}
-
-			const std::string name = entry.path().filename().string();
-			if (name.rfind(prefixText, 0) == 0)
-			{
-				return true;
-			}
-			errorCode.clear();
-		}
-
-		return false;
-	}
-
 	CookToolRuntimeReadiness InspectCookToolRuntimeReadiness(const std::filesystem::path& toolPath)
 	{
 		CookToolRuntimeReadiness readiness;
@@ -94,7 +51,7 @@ namespace SparkleLauncher
 		for (const std::string& runtimeFileName : GetRequiredCookToolRuntimeFiles(toolPath))
 		{
 			errorCode.clear();
-			if (std::filesystem::exists(toolDirectory / runtimeFileName, errorCode) && !errorCode)
+			if (std::filesystem::is_regular_file(toolDirectory / runtimeFileName, errorCode) && !errorCode)
 			{
 				continue;
 			}
@@ -103,16 +60,10 @@ namespace SparkleLauncher
 			readiness.MissingSupportEntries.push_back(runtimeFileName);
 		}
 
-		for (const std::string& runtimeDirectoryPrefix : GetRequiredCookToolRuntimeDirectoryPrefixes(toolPath))
+		if (toolPath.stem() == "ShaderCompiler" && !HasShaderCompilerStandardModules(toolDirectory))
 		{
-			errorCode.clear();
-			if (HasDirectChildDirectoryWithPrefix(toolDirectory, runtimeDirectoryPrefix))
-			{
-				continue;
-			}
-
 			readiness.Ready = false;
-			readiness.MissingSupportEntries.push_back(runtimeDirectoryPrefix + "*");
+			readiness.MissingSupportEntries.emplace_back("slang-standard-module-*");
 		}
 
 		return readiness;

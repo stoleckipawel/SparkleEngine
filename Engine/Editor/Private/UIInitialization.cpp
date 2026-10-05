@@ -92,7 +92,8 @@ void UI::InitializeCorePanels()
 void UI::InitializeViewportPanels()
 {
 	m_viewportSession = std::make_unique<EditorViewportSession>();
-	m_viewportTopPanel = std::make_unique<ViewportTopPanel>(m_levelSession, m_renderingSettings.get(), m_viewportSession.get());
+	m_viewportTopPanel =
+	    std::make_unique<ViewportTopPanel>(m_levelSession, m_renderingSettings.get(), m_viewportSession.get(), &m_consoleVariables);
 	m_viewportPanel =
 	    std::make_unique<ViewportPanel>(EditorWorkspaceLayout::SceneOutlinerWidth, EditorWorkspaceLayout::SceneInspectorWidth);
 	m_viewportPanel->SetExposureOverrides(m_viewportSession->GetSettings().Exposure);

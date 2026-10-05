@@ -11,6 +11,10 @@ void AddPresentationPasses(
     RenderViewMode viewMode,
     RenderFrameGraphResources& resources)
 {
+	if (!CanPublishPresentationOutput(resources))
+	{
+		return;
+	}
 	const FrameGraphTextureHandle displayLinearColor = AddDisplayMappingPass(builder, settings.OutputExtent, viewMode, resources);
 	const FrameGraphTextureHandle encodedColor = AddOutputEncodingPass(builder, settings, displayLinearColor);
 	AddPresentationOutputPass(builder, settings, encodedColor, resources);

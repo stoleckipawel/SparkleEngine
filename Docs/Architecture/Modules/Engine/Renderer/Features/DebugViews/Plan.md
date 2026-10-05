@@ -10,7 +10,7 @@
 
 **Planning iteration:** `ITER-DVP-SHOWFLAGS-03`; documentation-only stage refinement; start `bbb9f7ed` with pre-existing design, shader and Launcher edits preserved. `NS-OWNERSHIP`/`NS-SIMPLIFY` advance the target delivery discipline; `PGE-07`/`PGE-09`/`PGE-13` and runtime/GPU readiness are preserved, not advanced. The applicable proof rows remain owned by Discovery/Acceptance; no new candidate result.
 
-**DVP-4 plan revision:** `DVP-SF-IP-01`, 2026-10-04; drafted from `bbb9f7ed`, reconciled at handoff with `84b7c5a4` after the prior design changes were committed. Concurrent Editor work is outside this planning slice. Ten bounded stages refine CVar-driven feature execution; only discovery is presently permitted. This adds no executable evidence for DVP-0 through DVP-5.
+**DVP-4 plan revision:** `DVP-SF-IP-01`, 2026-10-04; drafted from `bbb9f7ed`, reconciled at handoff with `84b7c5a4` after the prior design changes were committed. Concurrent Editor work is outside this planning slice. Ten bounded stages refine CVar-driven feature execution; required discovery and prerequisite repairs are the first delivery work whenever the selected stage is not yet ready. This adds no executable evidence for DVP-0 through DVP-5.
 
 **Architecture authority:** [Viewport Rendering Controls](Controls/README.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
 
@@ -18,7 +18,17 @@
 
 **Feature acceptance:** [Acceptance](Acceptance.md)
 
+**Prerequisite-closure revision:** `ITER-DVP-PREREQ-04`, 2026-10-05 at `410d05ef`, with pre-existing Debug Views, lighting and shader edits preserved. Documentation-only: every selected stage includes automatic prerequisite closure; acceptance criteria and executable evidence are unchanged. Scope is this plan, not other feature plans.
+
 **Execution-policy iteration:** 2026-10-04 at `d29d2351614a98f101537e028267da2dc99ee9ec`; preserve the two pre-existing Discovery edits. This documentation slice applies autonomous prerequisite repair/resumption to all 13 copy-ready prompts and removes manual Editor-opening/interaction gates through the Acceptance owner. No production/API/copy/hook/variant delta or new implementation verdict; retained automated AC/FM/CHK oracles are unchanged.
+
+**Current shader-policy revision, 2026-10-05:** the user requires runtime-uniform behavior, superseding earlier family-presence, primary-shadow and guide-write schema alternatives. Each operation has one registration. Feature owners retain initialized fixed-ABI bindings: five radiance targets even with inactive families, a visibility target while Direct evaluates, and four guide targets while Indirect resolves. Inactive families still omit reservoirs/history and exclusive evaluation/tracing; inactive primary shadows omit tracing; unrequested guides omit guide writes. No allocation or GPU-time saving is inferred from these branches. Frame remains intent-based and consumes the existing semantic topology identity. Prior candidate-bound variant/omission results require revalidation for this source revision; see [Discovery](Discovery.md#current-candidate-evidence-and-permission).
+
+## Stage Selection Includes Prerequisite Delivery
+
+Selecting any stage in this plan selects its necessary dependency closure, even when predecessors or owning repairs were not separately queued. The executor must first establish missing prerequisites under the [Universal Execution Contract](#universal-execution-contract), then deliver and validate the requested stage. `After`, `Prerequisites`, `only`, `read-only discovery`, and a stage's non-goals constrain its own dependent work; they never prohibit the separately recorded prerequisite work needed to make that stage executable. This policy applies to DVP-0 through DVP-5, all DVP-4A/4B substages, and every copy-ready prompt. It takes precedence over a generic template instruction to end work solely because a prerequisite is missing.
+
+An isolated request ends after the selected stage passes, not before its prerequisites are repaired. Later unrelated stages are not implicitly selected. Stage gates remain proof obligations: establish them, do not skip them or declare them passed from documentation alone.
 
 ## Delivery At A Glance
 
@@ -75,9 +85,9 @@ The [Lighting Show Menu And Feature Execution Controls](Controls/ShowFlags.md) t
 
 **Plan identity:** `DVP-SF-IP-01`; staged refinement of the accepted [Show-menu design](Controls/ShowFlags.md), using the repository [staged-plan template](../../../../../../Engineering/Workflow/Templates/FeatureDeliveryPackage.md#scaffold-planmd--staged-delivery-and-copy-ready-prompts).
 
-**Current permission:** [Discovery's bounded prerequisite evidence](Discovery.md#bounded-delivery-evidence) closes DVP-4A-1 for its exact candidate. Resume scoped DVP-4A-0 discovery at D07/D08/D09; lighting production stages remain unauthorized. `DVP-4A-2` and later require explicit DVP-4A authorization and their own predecessor exit evidence. The delivery result is not permission to replay historical mode migrations or replace the proved CVar route.
+**Current permission:** DVP-4A-7 is user-selected. [Discovery's UI admission](Discovery.md#stage-7-ui-admission) records its bounded menu/control result and lighting-schema overlap requiring prerequisite reconciliation. Stage 8 is not admitted or queued until that reconciliation and the complete Stage-7 exit pass. The [accepted admission ledger](Discovery.md#accepted-admission-ledger) remains the estimator/product/guide/diagnostic/topology authority; candidate results remain in FCR-REN-11, not this plan.
 
-The [2026-10-04 candidate audit](Discovery.md#dvp-4a-0-candidate-and-probe-record) stopped at the DVP-4A-0 blocking prerequisites. The subsequent bounded route admits delivery repair only. Do not interpret the source dependency ledger as frozen lighting execution architecture or replay DVP-0 through DVP-3.
+The [2026-10-04 candidate audit](Discovery.md#dvp-4a-0-candidate-and-probe-record) stopped at the DVP-4A-0 blocking prerequisites. The subsequent bounded route admits delivery repair first; the selected stage's dependency closure requires executing that repair and returning with proof. Do not interpret the source dependency ledger as frozen lighting execution architecture or replay DVP-0 through DVP-3.
 
 The existing DVP-0 through DVP-3 mode/presentation work is a baseline to reconcile, not a prerequisite instruction to replay. Do not reinstate superseded selectors or reimplement source-present mode controls. Numeric mode parity, presentation domains and Reference selection remain preservation obligations under their own owners.
 
@@ -104,7 +114,17 @@ The critical path is the table order. A selected stage can be split into smaller
 
 Every copy-ready prompt below incorporates this section and its selected stage's objective, prerequisites, work, non-goals, exit and stop rules.
 
-**Autonomous execution policy (all stages and copy-ready prompts):** execute the user-queued stages in dependency order without routine approval questions or a gate-only handoff. A failed prerequisite or stop condition stops unsafe dependent edits, not prerequisite work. Diagnose the cause, return to the named Architecture/Discovery/Acceptance owner, record the smallest coherent prerequisite repair and its file/API/hook/copy budget, implement it in the existing production path, run the required positive and negative checks, invalidate affected evidence, and resume after the gate passes. The user's queue authorizes necessary in-scope prerequisite repairs; discovery's no-production-edit restriction applies to discovery itself, not to a separately recorded owning repair. Update owning decisions before changing accepted semantics; do not silently expand transport/product scope, introduce a fallback, replay unaffected stages or weaken an oracle after observation. Keep working while safe in-scope repairs, checks or independent queued work remain. Only an exhausted dependency requiring new external authority, unavailable hardware/access or a material user-only product choice warrants an actionable handoff. Record evidence truthfully; autonomy never converts an unrun check into a pass. Advance automatically after accepted exits when stages are user-queued; an explicitly isolated request retains its scope.
+**Mandatory prerequisite-first execution (all stages and copy-ready prompts):** a missing, failed, stale or contradicted prerequisite is the executor's next work item, never sufficient reason for a BLOCKED-only handoff. Before dependent implementation:
+
+1. Re-audit the selected stage's exact candidate, prerequisite artifacts and owning decisions. Reuse current passing evidence; do not replay an unaffected predecessor.
+2. Trace each unmet requirement to its owning stage or Architecture/Discovery/Acceptance subject and recursively establish its prerequisites in dependency order. Missing code, an unclosed design decision, failed checks, stale products and missing proof all require work, not a status-only response.
+3. Record the smallest coherent owning repair, affected files/API/hooks/copies, risks and defect-detecting checks in the existing change/report owner. Establish missing semantic/design decisions there before production edits; then implement required in-scope changes through the existing production path. Revise the bounded repair ledger when new necessary work is exposed, rather than using its absence as a reason to stop. No routine approval is needed for this dependency closure.
+4. Run the prerequisite's required positive and negative checks, regenerate affected disposable products, invalidate stale evidence and repair any falsified result. Acceptance thresholds, scope and independent-review requirements are not waived or manufactured to obtain a pass.
+5. Update the owning decisions and candidate-bound evidence, return automatically to the selected stage, and deliver its outcome. Repeat this loop whenever a prerequisite or stage check fails. Continue to later stages only when user-queued.
+
+Stop conditions suspend unsafe dependent edits, not the repair loop. A discovery-only or no-production-edit budget applies to that discovery activity; necessary production repair runs as a separately recorded owning prerequisite within the selected stage's dependency closure. Cross-owner work is not an instruction to ask another executor to do it or to wait passively. Keep working while safe dependency work remains.
+
+Only an exhausted dependency that genuinely requires unavailable hardware/access, new external authority, or a material user-only product choice permits an actionable handoff. State the exact unresolved requirement, attempted safe remedies, remaining input and resume point. Such a limit never authorizes a false pass, a weaker oracle, silent product/transport expansion or a fallback. This documentation change does not itself execute or accept any production stage.
 
 **Automated verification policy:** no stage requires a person to open the Editor, inspect screenshots, click widgets or perform manual keyboard/focus/layout checks. Use agent-run native fixtures, control-route probes, source/ABI checks and scoped builds/cooks for retained correctness obligations. Manual-only interaction/appearance checks are optional follow-up observations, not admission or completion gates; record them as outside this automated delivery scope, never as passed. Preserve the automated menu/console intent, batch, mode-isolation, product, GPU-execution, history and backend obligations in [Acceptance](Acceptance.md).
 
@@ -155,7 +175,7 @@ Do not pre-create any proposed control/settings/activation file. Reuse the cohes
 | --- | --- | --- | --- |
 | feature intent | feature-owned CVar | existing sequenced control delivery; no request/View mirror | process / accepted control value |
 | menu check state | CVar query | transient UI projection, not independently editable truth | current UI refresh |
-| active pass/variant parameters | owning lighting feature | CPU/GPU ABI; one consistent accepted frame decision | pass / prepared frame |
+| active pass parameters | owning lighting feature | CPU/GPU ABI; one consistent accepted frame decision | pass / prepared frame |
 | topology identity | existing graph lifecycle with feature contribution | retained only when accepted feature policy changes scheduled products/passes | graph generation and fence retirement |
 | estimator semantic identity | existing lighting history invalidation owner | required to reject incompatible lobe/shadow samples | affected history generation |
 
@@ -175,14 +195,14 @@ Do not pre-create any proposed control/settings/activation file. Reuse the cohes
 
 **Objective:** Freeze the exact execution design and validation controls so no implementation prompt has to invent architecture.
 
-**Prerequisites:** Read the current Show-menu contract, Discovery, Acceptance, repository template, and owning Lighting contracts. Reconcile DVP-0 through DVP-3 against the live candidate; do not rerun their historical migration prompts merely because they precede DVP-4.
+**Prerequisites to establish automatically:** Read the current Show-menu contract, Discovery, Acceptance, repository template, and owning Lighting contracts. Reconcile DVP-0 through DVP-3 against the live candidate; do not rerun their historical migration prompts merely because they precede DVP-4.
 
 **Work:**
 
 1. Execute DVP-SF-P01 through P05. Trace Core CVar parse/set/query, Renderer serial/threaded command ordering, cached graph construction/retirement, feature entry points, shared shaders/estimators, guide consumers, and history invalidation.
-2. Freeze each leaf/path's owner, helper inputs, exclusive/shared work, branch or bounded cooked variant, resource/read/write disposition, disabled diagnostic result, estimator/PDF/target semantics, and reset scope. Choose exactly one admitted route per path; alternatives do not remain implementation-time decisions.
+2. Freeze each leaf/path's owner, helper inputs, exclusive/shared work, uniform branch, resource/read/write disposition, disabled diagnostic result, estimator/PDF/target semantics, and reset scope. Choose exactly one admitted route per path; alternatives do not remain implementation-time decisions.
 3. Freeze all-on/each-off/group-off fixtures, decoded-format and statistical tolerances, seeds/sample budgets, backend/provider cells, GPU measurement method, and negative controls before candidate results. Define mandatory guides and missing-enabled-product failure behavior.
-4. Record the decision and exact revision in Discovery. If CVar delivery requires production repair, authorize only the bounded prerequisite stage DVP-4A-1, with an explicit file/API/hook budget; keep lighting implementation blocked. Otherwise authorize DVP-4A only with the required probe evidence. Retain proposals as proposals, not existing behavior.
+4. Record the decision and exact revision in Discovery. If CVar delivery requires production repair, establish and execute the bounded prerequisite stage DVP-4A-1 with an explicit file/API/hook budget, validate it, and return automatically. Establish remaining owning prerequisites the same way before dependent lighting edits. Authorize DVP-4A only with the required probe evidence; retain proposals as proposals, not existing behavior.
 5. Resolve falsified lighting baselines at their existing owning plans before freezing feature-control equivalence: [Direct baseline dependency](../Lighting/DirectLighting/Discovery.md#debug-controls-baseline-dependency) and [Indirect lobe accounting](../Lighting/IndirectLighting/Discovery.md#debug-controls-lobe-accounting-dependency). DVP-4A-0 may execute independent bounded discovery probes and prepare fixtures/protocols, but cannot repair material/transport semantics under its no-production-edit budget. A corrected lighting baseline precedes the all-on reference; never require preserving a known defect while simultaneously claiming the corrected owner contract. Return here with the exact repaired candidate, accepted owner decisions and new baseline artifacts. Do not replay DVP-4A-1 unless its production inputs changed.
 
 **Non-goals:** No production edits, feature CVar registration, new public types, renderer-mode migration, external research expansion, or changed transport/product scope.
@@ -196,11 +216,11 @@ Do not pre-create any proposed control/settings/activation file. Reuse the cohes
 **Ready-to-use discovery prompt:**
 
 ```text
-AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+AUTONOMOUS EXECUTION: Selecting this stage includes its necessary prerequisite closure, even if predecessors and owning repairs were not separately queued. First audit and recursively establish every missing, failed, stale or contradicted prerequisite at its owner; implement required in-scope repairs, run the required checks, refresh invalidated evidence, then automatically resume and deliver this stage. Do not hand off merely because a stage is BLOCKED. Apply the Universal Execution Contract; only an exhausted external dependency or material user-only choice permits an actionable handoff. Agent-run checks are required; manual Editor interaction is not a prerequisite. Preserve truthful evidence and stop after this stage unless later stages are user-queued.
 
-Execute only DVP-4A-0 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md. Apply its Universal Execution Contract. Make no production-code changes. Execute Discovery probes P01–P05 against the exact candidate and freeze the seven-leaf ownership/execution/product/history ledger, sequenced CVar mutation/query/batch route, graph lifetime, branch/variant selection, shared-estimator semantics, and predeclared numeric/GPU oracles. Reconcile the current mode baseline without replaying obsolete migrations. Update Discovery and directly affected target/check facts only.
+Execute only DVP-4A-0 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md. Apply its Universal Execution Contract. Keep discovery itself read-only; execute necessary production fixes as recorded owning prerequisite repairs, validate them and return. Execute Discovery probes P01–P05 against the exact candidate and freeze the seven-leaf ownership/execution/product/history ledger, sequenced CVar mutation/query/batch route, graph lifetime, uniform policy, shared-estimator semantics, and predeclared numeric/GPU oracles. Reconcile the current mode baseline without replaying obsolete migrations. Update Discovery and directly affected target/check facts only.
 
-NON-NEGOTIABLE: No unresolved correctness/architecture/UX/evidence decision may be delegated to a production prompt. AUTHORIZE only the bounded prerequisite repair when publication is not yet proved; lighting work stays BLOCKED. Quote each gate with exact source/probe evidence, open decisions, and permitted next stage.
+NON-NEGOTIABLE: No unresolved correctness/architecture/UX/evidence decision may be delegated to a production prompt. When publication is not yet proved, establish the bounded owning repair, execute it and prove publication before resuming discovery and dependent lighting work. Quote each gate with exact source/probe evidence, open decisions, and permitted next stage.
 
 Do not bypass predecessor gates or silently expand the accepted hook/API/copy/variant budget. Apply non-goals and stop rules to dependent work; repair missing, stale or contradicted prerequisites at their owners, prove the repair and resume instead of choosing an unaccepted alternative.
 
@@ -213,7 +233,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 
 **Objective:** A real existing Renderer CVar can be edited and queried without a race or partially applied bulk frame.
 
-**Prerequisites:** DVP-4A-0 records the exact approved mutation/query/batch route. Discovery explicitly authorizes this prerequisite's file/API delta if delivery is broken. A correct existing route requires proof, not replacement.
+**Prerequisites to establish automatically:** DVP-4A-0 records the exact approved mutation/query/batch route. Discovery explicitly authorizes this prerequisite's file/API delta if delivery is broken. A correct existing route requires proof, not replacement.
 
 **Work:**
 
@@ -233,7 +253,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 **Ready-to-use implementation prompt:**
 
 ```text
-AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+AUTONOMOUS EXECUTION: Selecting this stage includes its necessary prerequisite closure, even if predecessors and owning repairs were not separately queued. First audit and recursively establish every missing, failed, stale or contradicted prerequisite at its owner; implement required in-scope repairs, run the required checks, refresh invalidated evidence, then automatically resume and deliver this stage. Do not hand off merely because a stage is BLOCKED. Apply the Universal Execution Contract; only an exhausted external dependency or material user-only choice permits an actionable handoff. Agent-run checks are required; manual Editor interaction is not a prerequisite. Preserve truthful evidence and stop after this stage unless later stages are user-queued.
 
 Implement or verify only DVP-4A-1 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after verifying DVP-4A-0 and Discovery's exact prerequisite authorization. Apply the Universal Execution Contract. Use the accepted existing Core console and Renderer control route to establish sequenced edits, safe query/acknowledgment, and validated bulk application before frame admission. Exercise an existing live Renderer CVar; add no dormant lighting registrations. Delete superseded scoped direct-write paths.
 
@@ -250,12 +270,12 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 
 **Objective:** Console disabling Direct Subsurface removes its exclusive evaluation and publication while diffuse/specular remain valid.
 
-**Prerequisites:** Discovery explicitly authorizes lighting implementation at the exact accepted candidate; stage 1 publication proof and stage 0 direct-lobe ABI/product/history/oracle decisions remain valid.
+**Prerequisites to establish automatically:** Discovery explicitly authorizes lighting implementation at the exact accepted candidate; stage 1 publication proof and stage 0 direct-lobe ABI/product/history/oracle decisions remain valid.
 
 **Work:**
 
 1. Register only r.Lighting.Direct.Subsurface at the direct feature owner and implement its feature-local IsEnabled/IsActive. Keep defaults enabled and unavailable-versus-disabled behavior distinct.
-2. Apply the frozen uniform early branch or bounded cooked variant before subsurface response math and exclusive writes. Reconcile shared direct shader parameters, output initialization/bindings, composition, guides and diagnostic behavior in this same slice.
+2. Apply the frozen uniform early uniform branch before subsurface response math and exclusive writes. Reconcile shared direct shader parameters, output initialization/bindings, composition, guides and diagnostic behavior in this same slice.
 3. Wire the accepted activation into any affected graph identity and history invalidation without putting a per-leaf branch or Show value in FramePipeline/host/request/View.
 4. Exercise enabled, disabled, disabled-diagnostic, missing-enabled-prerequisite and re-enable cases; remove any interim finished-result masking or stale-write assumptions immediately.
 
@@ -270,9 +290,9 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 **Ready-to-use implementation prompt:**
 
 ```text
-AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+AUTONOMOUS EXECUTION: Selecting this stage includes its necessary prerequisite closure, even if predecessors and owning repairs were not separately queued. First audit and recursively establish every missing, failed, stale or contradicted prerequisite at its owner; implement required in-scope repairs, run the required checks, refresh invalidated evidence, then automatically resume and deliver this stage. Do not hand off merely because a stage is BLOCKED. Apply the Universal Execution Contract; only an exhausted external dependency or material user-only choice permits an actionable handoff. Agent-run checks are required; manual Editor interaction is not a prerequisite. Preserve truthful evidence and stop after this stage unless later stages are user-queued.
 
-Implement only DVP-4A-2 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after explicit Discovery AUTHORIZED and stage 1 proof. Apply the Universal Execution Contract and freeze ledger. Deliver r.Lighting.Direct.Subsurface, feature-local IsEnabled/IsActive, and the accepted early shader/variant route through actual direct evaluation, product binding/composition, affected guides/histories, and diagnostic unavailability. Register no later leaf.
+Implement only DVP-4A-2 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after explicit Discovery AUTHORIZED and stage 1 proof. Apply the Universal Execution Contract and freeze ledger. Deliver r.Lighting.Direct.Subsurface, feature-local IsEnabled/IsActive, and the accepted early shader route through actual direct evaluation, product binding/composition, affected guides/histories, and diagnostic unavailability. Register no later leaf.
 
 NON-NEGOTIABLE: Skip exclusive subsurface evaluation/publication before the finished result; preserve active diffuse/specular semantics and valid downstream reads. No Renderer Show state, frame/host admission branch, dummy enabled product, stale output, or masked-only intermediate path. Quote candidate-bound pixel and work-removal proof ; repair missing proof or falsified prerequisites before resuming.
 
@@ -287,7 +307,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 
 **Objective:** All three direct lobes are independently controllable; all-off removes the exclusive direct family chain.
 
-**Prerequisites:** Stage 2 passes its vertical-slice exit. Discovery's complete direct-family consumer/estimator/guide/topology ledger is accepted and unchanged.
+**Prerequisites to establish automatically:** Stage 2 passes its vertical-slice exit. Discovery's complete direct-family consumer/estimator/guide/topology ledger is accepted and unchanged.
 
 **Work:**
 
@@ -307,7 +327,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 **Ready-to-use implementation prompt:**
 
 ```text
-AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+AUTONOMOUS EXECUTION: Selecting this stage includes its necessary prerequisite closure, even if predecessors and owning repairs were not separately queued. First audit and recursively establish every missing, failed, stale or contradicted prerequisite at its owner; implement required in-scope repairs, run the required checks, refresh invalidated evidence, then automatically resume and deliver this stage. Do not hand off merely because a stage is BLOCKED. Apply the Universal Execution Contract; only an exhausted external dependency or material user-only choice permits an actionable handoff. Agent-run checks are required; manual Editor interaction is not a prerequisite. Preserve truthful evidence and stop after this stage unless later stages are user-queued.
 
 Implement only DVP-4A-3 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after stage 2 passes. Apply the Universal Execution Contract. Extend the existing direct control owner with Diffuse and Specular, then implement derived family admission and all-direct-off omission using the frozen consumer/estimator/product/graph/history route. Reconcile resources, clear, shader bindings, composition, diagnostics and guides together; delete superseded unconditional paths.
 
@@ -324,12 +344,12 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 
 **Objective:** Direct Shadows off gives fully visible primary direct lighting without unnecessary direct visibility production.
 
-**Prerequisites:** Stage 3 passes. The primary visibility/reservoir dependence, shadow-signal resource contract, active consumers, history invalidation and unshadowed numeric oracle are frozen.
+**Prerequisites to establish automatically:** Stage 3 passes. The primary visibility/reservoir dependence, shadow-signal resource contract, active consumers, history invalidation and unshadowed numeric oracle are frozen.
 
 **Work:**
 
 1. Register r.Lighting.Shadows.Direct at the direct-shadow owner with feature-local intent/activation; retained enabled intent is inactive when no relevant direct consumer exists.
-2. Omit the direct visibility producer and its exclusive resources when inactive. The primary lighting variant/branch uses visibility 1 without reading an absent signal; adjust only the approved visibility-dependent sampling/reservoir consequences.
+2. Omit the direct visibility tracing producer when inactive. Keep its actual target initialized for the fixed Direct ABI; the primary lighting uniform branch uses visibility 1 without reading that signal; adjust only the approved visibility-dependent sampling/reservoir consequences.
 3. Reconcile bindings, direct-shadow diagnostic unavailability, graph lifecycle and all affected temporal state. Preserve indirect visibility and Reference behavior.
 4. Exercise occluder, shadow-off, all-direct-off, retained-shadow-intent/re-enable and missing-enabled-producer challenges.
 
@@ -344,7 +364,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 **Ready-to-use implementation prompt:**
 
 ```text
-AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+AUTONOMOUS EXECUTION: Selecting this stage includes its necessary prerequisite closure, even if predecessors and owning repairs were not separately queued. First audit and recursively establish every missing, failed, stale or contradicted prerequisite at its owner; implement required in-scope repairs, run the required checks, refresh invalidated evidence, then automatically resume and deliver this stage. Do not hand off merely because a stage is BLOCKED. Apply the Universal Execution Contract; only an exhausted external dependency or material user-only choice permits an actionable handoff. Agent-run checks are required; manual Editor interaction is not a prerequisite. Preserve truthful evidence and stop after this stage unless later stages are user-queued.
 
 Implement only DVP-4A-4 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after stage 3 and the frozen primary visibility/estimator ledger. Apply the Universal Execution Contract. Deliver the Direct Shadows CVar and feature-local activation, omit exclusive visibility production when inactive, and use the accepted fully visible primary evaluation without an absent-resource read. Reconcile sampling/reservoir implications, bindings, graph lifetime, diagnostics and histories.
 
@@ -361,7 +381,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 
 **Objective:** Indirect diffuse/specular are independently controllable; all-indirect-off removes their exclusive trace/reservoir/resolve chain.
 
-**Prerequisites:** Stages 0–4 pass. Indirect Lighting's owner accepts the exact primary-lobe classification, sampling/PDF/target/weight, emission/environment, guide, active-product and reset consequences; no implementation-time transport choice remains.
+**Prerequisites to establish automatically:** Stages 0–4 pass. Indirect Lighting's owner accepts the exact primary-lobe classification, sampling/PDF/target/weight, emission/environment, guide, active-product and reset consequences; no implementation-time transport choice remains.
 
 **Work:**
 
@@ -381,7 +401,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 **Ready-to-use implementation prompt:**
 
 ```text
-AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+AUTONOMOUS EXECUTION: Selecting this stage includes its necessary prerequisite closure, even if predecessors and owning repairs were not separately queued. First audit and recursively establish every missing, failed, stale or contradicted prerequisite at its owner; implement required in-scope repairs, run the required checks, refresh invalidated evidence, then automatically resume and deliver this stage. Do not hand off merely because a stage is BLOCKED. Apply the Universal Execution Contract; only an exhausted external dependency or material user-only choice permits an actionable handoff. Agent-run checks are required; manual Editor interaction is not a prerequisite. Preserve truthful evidence and stop after this stage unless later stages are user-queued.
 
 Implement only DVP-4A-5 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after stage 4 and the accepted Indirect Lighting semantic/guide/reset ledger. Apply the Universal Execution Contract. Deliver both real indirect feature CVars and local activation through candidate generation, reservoir reuse, resolve, active products/composition and guide consumers. Remove exclusive inactive lobe work and omit the family with no active consumers through its own entry point; update graph lifetime and dependent histories coherently.
 
@@ -398,7 +418,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 
 **Objective:** Indirect Shadows off removes secondary-hit direct-light visibility tests while keeping the active indirect path and Reference estimator valid.
 
-**Prerequisites:** Stage 5 passes and P04 freezes the exact Lit caller/shared helper ABI, visibility-dependent reservoir semantics, history set and secondary occluder/continuation/Reference controls.
+**Prerequisites to establish automatically:** Stage 5 passes and P04 freezes the exact Lit caller/shared helper ABI, visibility-dependent reservoir semantics, history set and secondary occluder/continuation/Reference controls.
 
 **Work:**
 
@@ -418,7 +438,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 **Ready-to-use implementation prompt:**
 
 ```text
-AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+AUTONOMOUS EXECUTION: Selecting this stage includes its necessary prerequisite closure, even if predecessors and owning repairs were not separately queued. First audit and recursively establish every missing, failed, stale or contradicted prerequisite at its owner; implement required in-scope repairs, run the required checks, refresh invalidated evidence, then automatically resume and deliver this stage. Do not hand off merely because a stage is BLOCKED. Apply the Universal Execution Contract; only an exhausted external dependency or material user-only choice permits an actionable handoff. Agent-run checks are required; manual Editor interaction is not a prerequisite. Preserve truthful evidence and stop after this stage unless later stages are user-queued.
 
 Implement only DVP-4A-6 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after stage 5 and P04's accepted caller/ABI/reset ledger. Apply the Universal Execution Contract. Deliver Indirect Shadows intent/activation in the Lit feature, carry its narrow policy to secondary-hit direct-light evaluation, bypass disabled visibility tracing before it runs, and reset dependent histories. Keep Reference's required visibility argument unchanged.
 
@@ -435,7 +455,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 
 **Objective:** Users browse and edit all seven real controls through one hierarchical menu reflecting the console's shared feature intent.
 
-**Prerequisites:** Stages 1–6 pass; seven real registrations and consumers exist. The control-query/batch acknowledgment and requested/applied UI contract are frozen.
+**Prerequisites to establish automatically:** Stages 1–6 pass; seven real registrations and consumers exist. The control-query/batch acknowledgment and requested/applied UI contract are frozen.
 
 **Work:**
 
@@ -455,7 +475,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 **Ready-to-use implementation prompt:**
 
 ```text
-AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+AUTONOMOUS EXECUTION: Selecting this stage includes its necessary prerequisite closure, even if predecessors and owning repairs were not separately queued. First audit and recursively establish every missing, failed, stale or contradicted prerequisite at its owner; implement required in-scope repairs, run the required checks, refresh invalidated evidence, then automatically resume and deliver this stage. Do not hand off merely because a stage is BLOCKED. Apply the Universal Execution Contract; only an exhausted external dependency or material user-only choice permits an actionable handoff. Agent-run checks are required; manual Editor interaction is not a prerequisite. Preserve truthful evidence and stop after this stage unless later stages are user-queued.
 
 Implement only DVP-4A-7 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after all seven execution consumers and control delivery are proved. Apply the Universal Execution Contract. Add the Show hierarchy in ViewportTopPanel, querying the existing CVar authority and submitting validated leaf/parent/reset edits through its sequenced batch route. Reflect console edits and global scope; preserve mode-driven CVar intent and truthful pending/unavailable states. Update directly affected user/CVar documentation.
 
@@ -472,7 +492,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 
 **Objective:** Every advertised candidate cell has independent correctness and work-removal evidence, with measured costs clearly separated from execution omission.
 
-**Prerequisites:** Stages 2–7 have candidate-bound local evidence and no open production contract defect. Stage 0's backend/provider/mode/format/stochastic/GPU protocol is unchanged; required hardware/tooling is available or explicitly blocked.
+**Prerequisites to establish automatically:** Stages 2–7 have candidate-bound local evidence and no open production contract defect. Stage 0's backend/provider/mode/format/stochastic/GPU protocol is unchanged; prepare and verify required tooling automatically; exhaust safe local access/setup remedies before reporting genuinely unavailable hardware/access.
 
 **Work:**
 
@@ -492,7 +512,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 **Ready-to-use validation prompt:**
 
 ```text
-AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+AUTONOMOUS EXECUTION: Selecting this stage includes its necessary prerequisite closure, even if predecessors and owning repairs were not separately queued. First audit and recursively establish every missing, failed, stale or contradicted prerequisite at its owner; implement required in-scope repairs, run the required checks, refresh invalidated evidence, then automatically resume and deliver this stage. Do not hand off merely because a stage is BLOCKED. Apply the Universal Execution Contract; only an exhausted external dependency or material user-only choice permits an actionable handoff. Agent-run checks are required; manual Editor interaction is not a prerequisite. Preserve truthful evidence and stop after this stage unless later stages are user-queued.
 
 Execute only DVP-4A-8 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after stages 2–7 and the frozen evidence protocol. Apply the Universal Execution Contract. Run CHK-DVP-10/11/12 on the advertised D3D12/Vulkan, provider and mode cells with native validation. Retain exact candidate, commands, hardware/driver, decoded outputs, graph/history observations, pass/branch/write/trace evidence, repeated timings and cleanup. Route falsified defects back to their owning stage and repeat affected evidence.
 
@@ -509,7 +529,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 
 **Objective:** Hand off one clean, feature-enclosed production route with no obsolete masking/Show state and a truthful feature-completion report.
 
-**Prerequisites:** Stage 8 supplies complete evidence for every included advertised cell. All seven controls pass the applicable Acceptance criteria; no failed prerequisite is waived by this closure stage.
+**Prerequisites to establish automatically:** Stage 8 supplies complete evidence for every included advertised cell. All seven controls pass the applicable Acceptance criteria; no failed prerequisite is waived by this closure stage.
 
 **Work:**
 
@@ -520,7 +540,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 
 **Non-goals:** Implementation of DVP-4B, unrelated repository cleanup, new diagnostic/progress machinery, package/release claims not exercised, or waiver of an unrun required criterion.
 
-**Exit gate:** All included AC-DVP-17–25 and AC-DVP-27/28 pass conjunctively; CHK-DVP-08 enclosure/clean-break and CHK-DVP-09–12 evidence are current. The FCR owner records the result and limitations; DVP-4B remains separately blocked.
+**Exit gate:** All included AC-DVP-17–25 and AC-DVP-27/28 pass conjunctively; CHK-DVP-08 enclosure/clean-break and CHK-DVP-09–12 evidence are current. The FCR owner records the result and limitations; when DVP-4B is selected, its owning transport prerequisite is mandatory delivery work before control integration.
 
 **Stop conditions:** An orphan producer/consumer, hidden duplicate authority, unexplained outside hook, public feature mechanism, temporary submitted test, stale evidence identity, or required unrun result remains. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
 
@@ -529,7 +549,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 **Ready-to-use closure prompt:**
 
 ```text
-AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+AUTONOMOUS EXECUTION: Selecting this stage includes its necessary prerequisite closure, even if predecessors and owning repairs were not separately queued. First audit and recursively establish every missing, failed, stale or contradicted prerequisite at its owner; implement required in-scope repairs, run the required checks, refresh invalidated evidence, then automatically resume and deliver this stage. Do not hand off merely because a stage is BLOCKED. Apply the Universal Execution Contract; only an exhausted external dependency or material user-only choice permits an actionable handoff. Agent-run checks are required; manual Editor interaction is not a prerequisite. Preserve truthful evidence and stop after this stage unless later stages are user-queued.
 
 Close only DVP-4A-9 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after stage 8's complete evidence. Apply the Universal Execution Contract. Audit enclosure, outside hooks, public APIs, copies, ownership, build/cook membership and all active-product consumers. Delete obsolete masks/state/paths/includes and temporary probes in one clean break, regenerate scoped products, reconcile affected documentation, and record candidate results in the FCR-REN-11 owner.
 
@@ -539,35 +559,35 @@ Do not bypass predecessor gates or silently expand the accepted hook/API/copy/va
 
 Validate: Run CHK-DVP-08 enclosure and no-stale-reference audit, directly affected documentation/ID checks, formatting, architecture_boundary_check when applicable, and git diff --check. Reuse valid evidence; do not run broad builds/cooks to replace an absent oracle. Retain the applicable CHK-DVP-08 hook/public-surface/definition-to-use audit and quote each required result; never claim an unrun check passed.
 
-Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A closure; DVP-4B remains separately gated is permitted; continue automatically when it is user-queued and its prerequisites pass; otherwise retain isolated-stage scope.
+Handoff: report exact candidate/prerequisites, files by responsibility, deletions, copy/API/hook deltas, commands/configurations/results/artifacts, cleanup, performance classification, open risks and unavailable checks. State whether DVP-4A closure; DVP-4B establishes its own transport prerequisites when selected is permitted; continue automatically when it is user-queued and its prerequisites pass; otherwise retain isolated-stage scope.
 ```
 
 ### DVP-4B - Indirect Subsurface
 
-**Prerequisite:** `IND-D0-02` and the Indirect Lighting owner authorize subsurface lobe classification, estimator/PDF/energy semantics, reconstruction/history consequences, and a real non-zero product.
+**Prerequisite to establish automatically:** `IND-D0-02` and the Indirect Lighting owner authorize subsurface lobe classification, estimator/PDF/energy semantics, reconstruction/history consequences, and a real non-zero product.
 
 **Work:** land producer, activation, disabled-work removal, reconstruction/diagnostic contract, active composite binding, feature CVar, and Editor leaf together. The existing Indirect parent expands from two to three real children; no flag enum or placeholder is required.
 
 **Non-goals:** reclassifying diffuse energy as subsurface, fabricated output, UI-only enablement, or opportunistic transmission/volume transport.
 
-**Exit gate:** applicable `AC-DVP-17` through `AC-DVP-28`, including a non-zero independent oracle and exclusive-work omission. Remain **BLOCKED** while the transport decision is open.
+**Exit gate:** applicable `AC-DVP-17` through `AC-DVP-28`, including a non-zero independent oracle and exclusive-work omission. If the transport decision is open, first execute DVP-4B-0 at the Indirect Lighting owner to establish the real transport/product contract and prerequisite work, then automatically proceed to DVP-4B-1 when its required proof passes.
 
 #### DVP-4B-0 - Authorize The Owning Transport Slice
 
-**Objective and prerequisites:** after DVP-4A, ask the Indirect Lighting owner to close `IND-D0-02` and supply its accepted staged transport/product plan. The Show-menu request is not authority to design that transport here.
+**Objective and prerequisites to establish automatically:** after establishing DVP-4A, work in the Indirect Lighting owner's discovery/plan to close `IND-D0-02` and establish its accepted staged transport/product plan. The Show-menu request is not authority to design that transport here.
 
 **Work:** re-audit the absent product; freeze subsurface classification, energy/PDF/target semantics, real producer, guide/history effects, non-zero and disabled-work oracles, and exact integration handoff into this control system. Keep every premature CVar/UI/resource surface absent.
 
-**Non-goals and stop rule:** no production change, diffuse relabeling, transmission/volume expansion, zero placeholder, or implied DVP-4B authorization from DVP-4A completion. Any unresolved owning transport decision keeps this follow-on blocked.
+**Non-goals and stop rule:** no production change, diffuse relabeling, transmission/volume expansion, zero placeholder, or implied DVP-4B authorization from DVP-4A completion. Any unresolved owning transport decision triggers owning discovery and prerequisite closure before dependent integration; do not end with a blocked-status-only report.
 
 **Exit gate:** Discovery and the Indirect Lighting owner jointly authorize a concrete transport/product slice with its exact prerequisites, semantic rules and checks. This plan does not duplicate that owner's delivery stages.
 
 **Ready-to-use discovery prompt:**
 
 ```text
-AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+AUTONOMOUS EXECUTION: Selecting this stage includes its necessary prerequisite closure, even if predecessors and owning repairs were not separately queued. First audit and recursively establish every missing, failed, stale or contradicted prerequisite at its owner; implement required in-scope repairs, run the required checks, refresh invalidated evidence, then automatically resume and deliver this stage. Do not hand off merely because a stage is BLOCKED. Apply the Universal Execution Contract; only an exhausted external dependency or material user-only choice permits an actionable handoff. Agent-run checks are required; manual Editor interaction is not a prerequisite. Preserve truthful evidence and stop after this stage unless later stages are user-queued.
 
-Execute only DVP-4B-0 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after DVP-4A closure. Apply its Universal Execution Contract. Make no production-code changes. Work through the owning Indirect Lighting discovery/plan to close IND-D0-02 and freeze the real Indirect Subsurface producer, path classification, energy/PDF/target, product/guide/history, activation and non-zero/disabled-work proof. Record the exact transport-stage and control-integration prerequisites without duplicating that plan here.
+Execute only DVP-4B-0 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md after DVP-4A closure. Apply its Universal Execution Contract. Keep transport discovery itself read-only; execute required production repairs through its separately recorded owning stages and return with proof. Work through the owning Indirect Lighting discovery/plan to close IND-D0-02 and freeze the real Indirect Subsurface producer, path classification, energy/PDF/target, product/guide/history, activation and non-zero/disabled-work proof. Record the exact transport-stage and control-integration prerequisites without duplicating that plan here.
 
 NON-NEGOTIABLE: no CVar, Editor leaf, resource, fabricated zero or relabeled diffuse contribution is admitted before the owning transport/product decision. A Show request and prior seven-leaf completion do not authorize transport. Quote the accepted owner decisions and proof contracts ; repair missing proof or falsified prerequisites before resuming.
 
@@ -576,18 +596,18 @@ Validate documentation links/anchors, IDs, ownership/hook budget, UTF-8 and git 
 
 #### DVP-4B-1 - Integrate The Authorized Real Contribution
 
-**Objective and prerequisites:** integrate the eighth leaf only as part of the exact Indirect Lighting-authorized real product slice. Its producer and control contract must land coherently; an already accepted real producer may be extended, never replaced by a control-only placeholder.
+**Objective and prerequisites to establish automatically:** integrate the eighth leaf only as part of the exact Indirect Lighting-authorized real product slice. Its producer and control contract must land coherently; an already accepted real producer may be extended, never replaced by a control-only placeholder.
 
 **Work:** follow the owning transport stage; reuse the existing indirect activation/control/publication route, reconcile estimator/resolve/composite/guides/history/diagnostics, register the feature CVar beside its consumer, and expand the derived Editor parent by one real child. Run its non-zero and exclusive-work omission oracles, advertised-backend/native checks, and closure audit.
 
-**Non-goals and stop rule:** no new Show types/settings/parent gates, semantics improvised in this integration step, compatibility path, producer-only/control-only intermediate state, or generic feature framework. Invalidated transport or product evidence returns to its owning stage.
+**Non-goals and stop rule:** no new Show types/settings/parent gates, semantics improvised in this integration step, compatibility path, producer-only/control-only intermediate state, or generic feature framework. Invalidated transport or product evidence requires automatically repairing and revalidating its owning stage, then returning to this integration.
 
 **Exit gate:** `AC-DVP-26` and all applicable `AC-DVP-17` through `AC-DVP-28` pass with current `CHK-DVP-08` through `CHK-DVP-12` evidence. Update the owning candidate report and active feature/CVar documentation; no source-only completion.
 
 **Ready-to-use implementation prompt:**
 
 ```text
-AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+AUTONOMOUS EXECUTION: Selecting this stage includes its necessary prerequisite closure, even if predecessors and owning repairs were not separately queued. First audit and recursively establish every missing, failed, stale or contradicted prerequisite at its owner; implement required in-scope repairs, run the required checks, refresh invalidated evidence, then automatically resume and deliver this stage. Do not hand off merely because a stage is BLOCKED. Apply the Universal Execution Contract; only an exhausted external dependency or material user-only choice permits an actionable handoff. Agent-run checks are required; manual Editor interaction is not a prerequisite. Preserve truthful evidence and stop after this stage unless later stages are user-queued.
 
 Implement only DVP-4B-1 of Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Plan.md within the exact Indirect Lighting-authorized transport/product stage recorded by DVP-4B-0. Apply the Universal Execution Contract. Reuse existing indirect feature controls and sequenced publication. Integrate the real Indirect Subsurface producer and activation/disabled-work path through estimator/resolve, composite, guides, history and diagnostics; add its feature CVar and one real Editor child in the same coherent slice.
 
@@ -607,7 +627,7 @@ Exercise enum/HLSL parity, every consumer, two-viewport mode isolation, shared f
 This is a mode-baseline reconciliation prompt, not a DVP-4 implementation instruction. Use it only when the live mode audit identifies a directly scoped defect; do not replay historical migration or add feature controls through it.
 
 ```text
-AUTONOMOUS EXECUTION: Apply the Universal Execution Contract's repair-and-resume policy. Deliver missing prerequisites at their named owners without routine approval or a BLOCKED-only handoff; record bounded repairs before editing, validate them, refresh affected evidence and resume. Use agent-run checks; manual Editor opening/interaction is not a prerequisite. Continue automatically to the next user-queued stage after this exit passes; retain explicit isolated-stage scope and truthful evidence.
+AUTONOMOUS EXECUTION: Selecting this stage includes its necessary prerequisite closure, even if predecessors and owning repairs were not separately queued. First audit and recursively establish every missing, failed, stale or contradicted prerequisite at its owner; implement required in-scope repairs, run the required checks, refresh invalidated evidence, then automatically resume and deliver this stage. Do not hand off merely because a stage is BLOCKED. Apply the Universal Execution Contract; only an exhausted external dependency or material user-only choice permits an actionable handoff. Agent-run checks are required; manual Editor interaction is not a prerequisite. Preserve truthful evidence and stop after this stage unless later stages are user-queued.
 
 Reconcile the live Debug Views and Reference Path Tracer source to Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Controls/ViewModes.md. Keep RenderViewMode as the sole host-independent per-view rendering choice on ViewportRenderRequest and immutable RenderView. Keep Editor labels/icons/menu layout local while using the same enum directly. Consume the value only at the owning frame-composition, raster, debug-resolve, and feature-lifecycle decisions. Delete parallel Editor enums, preset translators, visualization targets, mode-shaped show flags, selection CVars, command bridges, graph/feature settings copies, compatibility aliases, and RHI fields. Preserve ReferencePathTracer = 1 and contiguous values. Keep the Reference implementation private and the shared frame shell unchanged. Add no diagnostics, registry, generic settings bag, recipe hierarchy, or speculative controls. Run focused source checks, architecture_boundary_check, documentation link/anchor checks, and git diff --check; report builds and runtime checks as deferred unless actually run.
 ```

@@ -125,6 +125,7 @@ private:
 
 	void ApplyDpiScale(float dpiScale) noexcept;
 
+	CVarControlExecutor m_consoleVariables;
 	std::unique_ptr<MainMenuBarPanel> m_mainMenuBar;
 	std::unique_ptr<EditorConsoleSystem> m_editorConsoleSystem;
 	std::unique_ptr<SceneOutlinerPanel> m_sceneOutlinerPanel;

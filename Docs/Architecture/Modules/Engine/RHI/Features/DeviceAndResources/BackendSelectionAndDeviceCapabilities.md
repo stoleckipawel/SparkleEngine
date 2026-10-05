@@ -43,7 +43,9 @@ A valid request selects one compiled backend, creates one device/adapter topolog
 
 - `RhiBackendSelection` owns parsing and availability; `RenderDeviceServices` owns the neutral service facade and active capability snapshot.
 - CMake owns whether D3D12 and Vulkan targets exist and which backend is the default. Runtime cannot activate a backend omitted from the build.
-- D3D12 requests feature level 12_1; Vulkan selection requires Vulkan 1.3 and scores eligible physical devices.
+- D3D12 requests feature level 12_1; Vulkan selection requires Vulkan 1.3, scalar block layout and formatless storage-image reads/writes, then scores eligible physical devices. Scalar block layout is queried and enabled through Vulkan 1.2 features before services are published; supported/enabled facts appear in bootstrap diagnostics. This is the native legality requirement for the shared DirectX-layout shader buffer ABI, not Renderer lighting policy or a vendor exception. Missing support rejects the device rather than selecting a second record layout.
+
+**Buffer-ABI reconciliation, 2026-10-05:** the selected Debug Views Stage-5 secondary-hit oracle exposed uploaded C++ hit-vertex/material strides `64/360` versus default DXC SPIR-V strides `80/368`. The [ShaderCompiler](../../../../Tools/ShaderCompiler/README.md) now selects DirectX buffer layout and keys that target policy into cook identity. Complete SPIR-V regeneration and candidate-bound native replay are required; successful fresh-environment frames did not exercise the bad secondary-hit records. This bounded repair does not establish the full RHI capability/hardware matrix.
 - The capability record owns API identity, shader target, queue kinds/independence, descriptor indexing, ray tracing, presentation, format/use support, and optional external-feature readiness.
 - Renderer may select policy from neutral fields only. Adapter/vendor-specific branches remain backend/private or provider-owned.
 

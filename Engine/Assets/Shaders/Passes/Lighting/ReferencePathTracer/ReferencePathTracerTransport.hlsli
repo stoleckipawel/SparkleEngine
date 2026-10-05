@@ -29,7 +29,7 @@ namespace ReferencePathTracer
 		const float2 bsdfSample =
 		    float2(CommonRandom::OpenUnitInterval(RandomWord(sampleIdentity, SurfaceDimension(surfaceDepth, BsdfDirectionXOffset))),
 		           CommonRandom::OpenUnitInterval(RandomWord(sampleIdentity, SurfaceDimension(surfaceDepth, BsdfDirectionYOffset))));
-		return PathBsdf::Sample(surface, lobeMasses, selectedLobe, bsdfSample);
+		return PathBsdf::Sample(surface, lobeMasses, selectedLobe, bsdfSample, true, true);
 	}
 
 	bool SurvivesRussianRoulette(inout float3 throughput, SampleIdentity sampleIdentity, uint surfaceVertexCount)

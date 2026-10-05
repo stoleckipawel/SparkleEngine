@@ -319,7 +319,7 @@ void ReferencePathTracerSession::OnFrameSubmitted(RhiSubmissionToken token) noex
 {
 	if (m_selected && m_resources.IsAllocated())
 	{
-		m_resources.RecordUse();
+		m_resources.RecordSubmission();
 	}
 	if (m_workPrepared)
 	{

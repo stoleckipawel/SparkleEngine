@@ -3,7 +3,8 @@
 
 #include "Passes/Lighting/Direct/DirectLightReservoirPasses.h"
 #include "Passes/Lighting/Direct/DirectLighting.h"
-#include "Passes/Lighting/Shadows/DirectShadowSignalResources.h"
+#include "Passes/Lighting/Direct/DirectLightingControls.h"
+#include "Passes/Lighting/Direct/DirectLightingResources.h"
 #include "Passes/Lighting/Shadows/DirectShadowSignal.h"
 
 void AddRestirDirectLightingPasses(
@@ -12,9 +13,14 @@ void AddRestirDirectLightingPasses(
     RenderRayTracingScene& rayTracingScene,
     RenderFrameGraphResources& resources)
 {
-	const DirectShadowSignalResources shadowSignals = CreateDirectShadowSignalResources(builder, sceneExtent, resources);
+	CreateDirectLightingResources(builder, sceneExtent, resources);
+	if (!IsDirectLightingAdmitted())
+	{
+		return;
+	}
+	CreateDirectLightReservoirResources(builder, sceneExtent, resources);
 
-	AddDirectLightReservoirPasses(builder, sceneExtent, resources, shadowSignals);
-	AddDirectShadowSignalPass(builder, sceneExtent, resources, shadowSignals, rayTracingScene);
-	AddDirectLightingPass(builder, sceneExtent, resources, shadowSignals);
+	AddDirectLightReservoirPasses(builder, sceneExtent, resources);
+	AddDirectShadowSignalPass(builder, sceneExtent, resources, rayTracingScene);
+	AddDirectLightingPass(builder, sceneExtent, resources);
 }

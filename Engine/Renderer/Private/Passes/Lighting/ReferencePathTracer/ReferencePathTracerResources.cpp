@@ -69,32 +69,31 @@ void ReferencePathTracerResources::Allocate(RenderViewportExtent extent)
 
 	m_allocation.WorkingMean = resources.CreateTextureResource(
 	    desc,
-	    ResourceState::Common,
+	    ResourceState::Undefined,
 	    RhiMemoryCategory::Texture,
 	    RhiMemoryResidencyClass::DeviceLocal,
 	    L"ReferencePathTracer.WorkingMean");
 	m_allocation.WorkingM2 = resources.CreateTextureResource(
 	    desc,
-	    ResourceState::Common,
+	    ResourceState::Undefined,
 	    RhiMemoryCategory::Texture,
 	    RhiMemoryResidencyClass::DeviceLocal,
 	    L"ReferencePathTracer.WorkingM2");
 	m_allocation.CommittedMean = resources.CreateTextureResource(
 	    desc,
-	    ResourceState::Common,
+	    ResourceState::Undefined,
 	    RhiMemoryCategory::Texture,
 	    RhiMemoryResidencyClass::DeviceLocal,
 	    L"ReferencePathTracer.CommittedMean");
 	m_allocation.CommittedM2 = resources.CreateTextureResource(
 	    desc,
-	    ResourceState::Common,
+	    ResourceState::Undefined,
 	    RhiMemoryCategory::Texture,
 	    RhiMemoryResidencyClass::DeviceLocal,
 	    L"ReferencePathTracer.CommittedM2");
 
 	m_allocation.Extent = extent;
 	m_allocation.Bytes = resources.GetTextureAllocationInfo(desc).SizeInBytes * 4u;
-	m_used = false;
 }
 
 void ReferencePathTracerResources::Release() noexcept
@@ -118,7 +117,6 @@ void ReferencePathTracerResources::Release() noexcept
 	}
 
 	m_allocation = {};
-	m_used = false;
 }
 
 bool ReferencePathTracerResources::Bind(FrameGraph& frameGraph) const noexcept
@@ -128,20 +126,17 @@ bool ReferencePathTracerResources::Bind(FrameGraph& frameGraph) const noexcept
 		return false;
 	}
 
-	const ResourceState workingState = m_used ? ResourceState::ShaderResource : ResourceState::Common;
-	const ResourceState committedState = m_used ? ResourceState::UnorderedAccess : ResourceState::Common;
-
-	frameGraph.BindPersistentTexture(m_graphResources.WorkingMean, m_allocation.WorkingMean, workingState);
-	frameGraph.BindPersistentTexture(m_graphResources.WorkingM2, m_allocation.WorkingM2, workingState);
-	frameGraph.BindPersistentTexture(m_graphResources.CommittedMean, m_allocation.CommittedMean, committedState);
-	frameGraph.BindPersistentTexture(m_graphResources.CommittedM2, m_allocation.CommittedM2, committedState);
+	frameGraph.BindPersistentTexture(m_graphResources.WorkingMean, m_allocation.WorkingMean, m_allocation.BoundaryState);
+	frameGraph.BindPersistentTexture(m_graphResources.WorkingM2, m_allocation.WorkingM2, m_allocation.BoundaryState);
+	frameGraph.BindPersistentTexture(m_graphResources.CommittedMean, m_allocation.CommittedMean, m_allocation.BoundaryState);
+	frameGraph.BindPersistentTexture(m_graphResources.CommittedM2, m_allocation.CommittedM2, m_allocation.BoundaryState);
 
 	return true;
 }
 
-void ReferencePathTracerResources::RecordUse() noexcept
+void ReferencePathTracerResources::RecordSubmission() noexcept
 {
-	m_used = true;
+	m_allocation.BoundaryState = ResourceState::Common;
 }
 
 bool ReferencePathTracerResources::CanRetain() const noexcept

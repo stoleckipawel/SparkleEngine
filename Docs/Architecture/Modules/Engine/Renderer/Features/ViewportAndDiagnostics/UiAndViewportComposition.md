@@ -2,6 +2,8 @@
 
 **Status:** current feature dossier; source-backed, not blend, color, DPI, input, lifetime, stress, or release evidence
 
+**Scoped update:** 2026-10-05 source repair separates host UI replay from viewport-image admission. Missing or generation-mismatched images retire the viewport handle; unresolved image commands are omitted while valid UI commands continue. Native blend, DPI, transition, and lifetime acceptance remains unproved.
+
 **Verified:** 2026-09-06 against source revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
 **Scope:** `REN-UI-01` through `REN-UI-04`; immutable UI packets, host overlays, editor viewport presentation, texture handles, and the post-graph/pre-submit composition boundary
@@ -38,7 +40,7 @@ Composition occurs after the scene graph and before final submit. This gives hos
 | --- | --- | --- |
 | None | no UI work | scene output continues unchanged |
 | HostOverlay | replay packet through the RHI ImGui renderer inside a presentation overlay pass | empty draw data produces no overlay |
-| Viewport | transition final viewport color to shader read, resolve/publish a texture handle, require packet/product viewport-generation agreement, draw the viewport presentation pass, then return the product to Common state | missing graph/product/texture retires the viewport texture; empty or generation-mismatched packet is not drawn |
+| Viewport | transition final viewport color to shader read, resolve/publish a texture handle, require packet/product viewport-generation agreement, draw the viewport presentation pass, then return the product to Common state | missing graph/product/texture or generation disagreement retires the viewport texture; valid host UI commands still draw, unresolved image commands are omitted, and empty draw data produces no UI work |
 
 ## Ownership And Lifetime
 
@@ -59,7 +61,7 @@ Composition occurs after the scene graph and before final submit. This gives hos
 - `AC-UVC-01` — None, HostOverlay, and Viewport modes execute only their documented post-graph/pre-submit behavior and do not alter scene products when no UI work is requested.
 - `AC-UVC-02` — immutable packet replay preserves vertex/index/command order, clipping, texture selection, premultiplied/straight-alpha contract, color transfer, and draw-data lifetime through submission.
 - `AC-UVC-03` — host overlay composition matches the declared blend/color result across transparent, opaque, nested clip, empty, high-DPI, and resize fixtures without changing input ownership.
-- `AC-UVC-04` — editor viewport draw occurs only when packet and product viewport generations match; missing/stale product or texture retires/refuses the handle and never draws another viewport's image.
+- `AC-UVC-04` — editor viewport image draw occurs only when packet and product viewport generations match; host UI remains drawable without that image; missing/stale product or texture retires/refuses the handle and never draws another viewport's image.
 - `AC-UVC-05` — final viewport color transitions Common -> shader read -> Common around UI use, with correct queue ordering and completion lifetime on D3D12 and Vulkan.
 - `AC-UVC-06` — repeated viewport create/resize/destroy/recreate and non-viewport texture registration have a measured/documented bound and stale-handle behavior; append-only growth is not treated as unlimited support.
 - `AC-UVC-07` — two simultaneous viewports with different generations, DPI, extents, packets, and textures remain isolated through rapid switching and level reload.

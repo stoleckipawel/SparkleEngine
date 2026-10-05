@@ -296,6 +296,8 @@ Names are illustrative until implementation review, but responsibilities are fix
 
 There is no compatibility reader, legacy alias, or dual manifest representation. During alpha development, a contract change invalidates and regenerates local checkpoints/artifacts.
 
+Persistent accumulators bind their actual frame-boundary state, not the interior state of their last pass. `ReferencePathTracerResources` allocates uninitialized images as Undefined and retains one allocation-owned boundary state. Before first submission it binds Undefined; after the graph restores its reserved Common final state, `RecordSubmission` records Common for subsequent bindings. Reallocation resets that state. The frame graph remains the sole owner of interior transitions. This lifecycle correction does not change Reference's visibility policy or sample identity; bounded native evidence belongs to Debug Views' Stage-6 candidate report.
+
 ## State And Lifetime
 
 ```mermaid

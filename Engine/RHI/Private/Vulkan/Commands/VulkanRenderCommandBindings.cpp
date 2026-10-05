@@ -266,7 +266,9 @@ VkDescriptorSet VulkanRenderCommandList::EnsureDescriptorSet(
 	if (descriptorSets[setIndex] == VK_NULL_HANDLE || boundSets[setIndex])
 	{
 		const VkDescriptorSet previousSet = descriptorSets[setIndex];
-		descriptorSets[setIndex] = m_recordingDescriptorPool->AllocateSet(layout->GetDescriptorSetLayouts()[setIndex]);
+		descriptorSets[setIndex] = m_recordingDescriptorPool->AllocateSet(
+		    layout->GetDescriptorSetLayouts()[setIndex],
+		    layout->GetDescriptorSetRequirements(setIndex));
 		if (previousSet != VK_NULL_HANDLE && boundSets[setIndex] && descriptorSets[setIndex] != VK_NULL_HANDLE)
 		{
 			CopyDescriptorSet(layout, setIndex, previousSet, descriptorSets[setIndex]);

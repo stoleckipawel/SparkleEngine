@@ -2,17 +2,17 @@
 
 **Status:** feature dossier; source-present mode migration, executable validation deferred
 
-**Current readiness:** **40/100**. The single per-view source route is present in the current changelist, but build, runtime, visual, backend, and release evidence is not claimed.
+**Current readiness:** **40/100** for the family; no family/release closure is claimed. Bounded delivery, admission and direct/indirect-family execution results are recorded by [Discovery](Discovery.md#current-candidate-evidence-and-permission), not inferred for the remaining mode/control matrix.
 
 **Responsibility:** feature-local navigation and current evidence posture for Renderer debug-view controls, presentation, delivery, and acceptance
 
-**Verified:** 2026-10-04 against revision `26803f97` with unrelated work present in the dirty tree
+**Verified:** mode baseline at `26803f97`; bounded Stage-6 execution on 2026-10-05 at `410d05ef` plus the dirty inputs recorded by Discovery. Unrelated work remains preserved.
 
 **Architecture:** [Viewport Rendering Controls](Controls/README.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
 
 **Delivery:** [Discovery gate](Discovery.md), [Plan](Plan.md), and [Acceptance](Acceptance.md)
 
-**Next implementation route:** the [ten-stage DVP-4A sequence](Plan.md#dvp-4a---existing-lighting-and-shadow-controls) supplies one copy-ready prompt per bounded slice. Start with discovery/freeze; all production work remains gated. The plan uses the repository Feature Delivery Package template and does not advance implementation readiness.
+**Next implementation route:** DVP-4A-7 is selected. The Show menu is source-integrated and passes bounded serial/threaded menu/control probes. [Current candidate reconciliation](Discovery.md#stage-7-ui-admission) records changed lighting schemas that contradict the prior execution snapshot; resolving that overlap and refreshing affected proof remain necessary before Stage 7's complete exit or Stage 8 admission. The [ten-stage sequence](Plan.md#dvp-4a---existing-lighting-and-shadow-controls) retains the required execution gates. This does not advance family/release readiness.
 
 ## Current Source Shape
 
@@ -38,7 +38,7 @@ The debug resolve is partitioned into GBuffer, lighting, and GPU-scene families.
 | --- | --- | --- |
 | `REN-DBG-01` final/material | Lit, Wireframe | Ordinary frame; Wireframe changes raster fill |
 | `REN-DBG-02` GBuffer | Diffuse, World Normal, World Tangent, Roughness, Metallic, Emissive, Ambient Occlusion, Subsurface Color, Subsurface Strength | `GBufferVisualizationCS` reads only GBuffer products; World Normal and World Tangent map signed world-space XYZ to display-linear RGB in `[0, 1]` without changing axes or orientation |
-| `REN-DBG-03` lighting | Direct Diffuse, Direct Specular, Direct Subsurface, Indirect Diffuse, Indirect Specular | `LightingVisualizationCS` reads lighting lobes plus GBuffer alpha |
+| `REN-DBG-03` lighting | Direct Diffuse, Direct Specular, Direct Subsurface, Indirect Diffuse, Indirect Specular | one `LightingVisualizationCS` reads five initialized lighting products plus GBuffer alpha; the View uniform selects the lobe; disabled direct and indirect raw modes report unavailable |
 | `REN-DBG-04` scene | GPU Scene Instances | instance identity generation plus `GpuSceneVisualizationCS` |
 | `REN-LGT-04` reference | Reference Path Tracer | private Reference middle/session with Editor menu and operational overlay; source-present, not executable-proved |
 
@@ -58,4 +58,4 @@ This is source presence, not pixel proof. The acceptance route must still exerci
 
 Any new mode must have a real production consumer. Any future independently selectable show control must be orthogonal to the selected mode and land with that consumer; it cannot recreate the removed parallel taxonomy.
 
-The first independent-control target is [Lighting Show Menu And Feature Execution Controls](Controls/ShowFlags.md): an Editor hierarchy driving the same feature CVars as the console, feature-local `IsEnabled`/`IsActive`, and removal of exclusive disabled lighting/shadow work. The controls are shared across applicable viewports; there is no Renderer Show set or request/View transport. Five real lobe leaves and two shadow leaves are planned; Indirect Subsurface remains gated by its owning transport/product decision. [Discovery](Discovery.md) still blocks implementation pending sequenced CVar batches, execution/product admission, shared-estimator semantics, graph/history lifecycle, and defect-detecting oracles. This design update adds no implementation or performance evidence.
+The [Lighting Show menu](Controls/ShowFlags.md#editor-interaction) presents five lobe and two shadow CVars through one shared authority. Open Show beside Viewmode to edit leaves, bulk parents or reset; console edits refresh its checks. There is no Renderer Show set or request/View transport. Indirect Subsurface is not advertised. [Discovery](Discovery.md#stage-7-ui-admission) separates executable menu/control proof from the lighting execution prerequisites currently being reconciled; prior native evidence is candidate-bound, not automatic proof for changed schemas. No measured GPU savings or release result is claimed.

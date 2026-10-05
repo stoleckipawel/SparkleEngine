@@ -9,6 +9,7 @@
 #include "ShaderData/ViewCameraUniformData.h"
 #include "ShaderData/ViewTemporalUniformData.h"
 #include "ShaderData/ViewUniformData.h"
+#include "Passes/Lighting/Direct/DirectLightingUniformData.h"
 
 class DirectLightingCS final : public GlobalShader<DirectLightingCS>
 {
@@ -17,13 +18,13 @@ public:
 	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, DirectDiffuse)
 	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, DirectSpecular)
 	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, DirectSubsurface)
-	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, ShadowVisibilitySignal)
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, CurrentReservoirSample)
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, CurrentReservoirWeight)
 	SHADER_PARAMETER_CBUFFER(ViewUniformData, View)
 	SHADER_PARAMETER_CBUFFER(ViewCameraUniformData, ViewCamera)
 	SHADER_PARAMETER_CBUFFER(ViewTemporalUniformData, ViewTemporal)
 	SHADER_PARAMETER_CBUFFER(SceneLightingUniformData, SceneLighting)
+	SHADER_PARAMETER_CBUFFER(DirectLightingUniformData, DirectLightingConstants)
 	SHADER_PARAMETER_BUFFER_SRV(DirectionalLightGpuData, DirectionalLights)
 	SHADER_PARAMETER_BUFFER_SRV(PointLightGpuData, PointLights)
 	SHADER_PARAMETER_BUFFER_SRV(SpotLightGpuData, SpotLights)
@@ -33,15 +34,11 @@ public:
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, GBufferMaterial)
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, GBufferSubsurface)
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, SceneDepth)
+	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, ShadowVisibilitySignal)
 	END_SHADER_PARAMETER_STRUCT()
 };
 
 class FrameGraphBuilder;
-struct DirectShadowSignalResources;
 struct RenderFrameGraphResources;
 
-void AddDirectLightingPass(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources,
-    const DirectShadowSignalResources& shadowSignals);
+void AddDirectLightingPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources);
