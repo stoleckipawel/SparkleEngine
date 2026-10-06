@@ -5,13 +5,10 @@
 class TaskExecutionContext;
 struct RenderScenePreparationRun;
 
-class RenderScenePreparationMerger final
+namespace RenderScenePreparationMerger
 {
-public:
-	static TaskResult Merge(TaskExecutionContext& context);
-	static TaskResult BuildRayTracingPlan(TaskExecutionContext& context);
-	static void PublishSceneOutputs(RenderScenePreparationRun& run);
+	TaskResult Merge(TaskExecutionContext& context);
+	TaskResult BuildRayTracingPlan(TaskExecutionContext& context);
+	void PublishSceneOutputs(RenderScenePreparationRun& run);
 
-private:
-	static void PublishPrimitives(RenderScenePreparationRun& run);
-};
+}

@@ -6,6 +6,7 @@
 #include "Meshes/GpuMesh.h"
 #include "Textures/RendererTexture.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
+#include "Scene/Materials/MaterialEmissionControls.h"
 
 #include <cstdint>
 class LightingSceneStateHasher final
@@ -173,6 +174,7 @@ LightingSceneStateIdentity BuildLightingSceneStateIdentity(const PreparedRenderS
 	identity.Deformation = Hash::FinalizeFnv1a64(deformation);
 
 	std::uint64_t materials = Hash::kFnv64OffsetBasis;
+	materials = LightingStateHash::AppendBool(materials, CVarEmissiveEnabled.Get());
 	materials = LightingSceneStateHasher::AppendCount(materials, scene.materials);
 	for (const MaterialData& material : scene.materials)
 	{

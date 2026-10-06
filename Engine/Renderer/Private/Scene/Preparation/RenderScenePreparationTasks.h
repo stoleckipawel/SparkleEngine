@@ -6,11 +6,10 @@
 
 class TaskExecutionContext;
 
-class RenderScenePreparationTasks final
+namespace RenderScenePreparationTasks
 {
-public:
-	static TaskResult TransformPrimitives(std::uint32_t begin, std::uint32_t end, TaskExecutionContext& context);
-	static TaskResult CopyJointMatrices(std::uint32_t begin, std::uint32_t end, TaskExecutionContext& context);
-	static TaskResult CopyMorphWeights(std::uint32_t begin, std::uint32_t end, TaskExecutionContext& context);
-	static TaskResult PrepareLights(std::uint32_t begin, std::uint32_t end, TaskExecutionContext& context);
-};
+	TaskResult TransformPrimitives(std::uint32_t begin, std::uint32_t end, TaskExecutionContext& context);
+	TaskResult CopyJointMatrices(std::uint32_t begin, std::uint32_t end, TaskExecutionContext& context);
+	TaskResult CopyMorphWeights(std::uint32_t begin, std::uint32_t end, TaskExecutionContext& context);
+	TaskResult PrepareLights(std::uint32_t begin, std::uint32_t end, TaskExecutionContext& context);
+}

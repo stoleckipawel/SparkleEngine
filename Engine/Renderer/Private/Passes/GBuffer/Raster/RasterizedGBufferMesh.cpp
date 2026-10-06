@@ -10,6 +10,7 @@
 #include "Pipeline/RasterPassRenderState.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
+#include "Scene/Materials/MaterialEmissionControls.h"
 #include "View/RenderView.h"
 
 #include <cstdint>
@@ -51,6 +52,7 @@ static TypedPassParameterInstance<GBufferGraphParameters>& BuildGBufferRasterPar
 	parameters->Shader.Vertex.MorphWeights = builder.CreateSRV<float>(externalResources.Scene.Geometry.MorphWeights);
 	parameters->Shader.Vertex.PreviousMorphWeights = builder.CreateSRV<float>(externalResources.Scene.Geometry.PreviousMorphWeights);
 	parameters->Shader.Pixel.SamplerAniso16xWrap = RhiSamplerDesc{.MaxAnisotropy = RhiSamplerAnisotropy::X16};
+	parameters->Shader.Pixel.EmissiveEnabled = CVarEmissiveEnabled.Get() ? 1u : 0u;
 
 	parameters->Shader.Vertex.ViewCamera = frame.View.cameraUniform;
 	parameters->Shader.Vertex.ViewTemporal = frame.View.temporalUniform;

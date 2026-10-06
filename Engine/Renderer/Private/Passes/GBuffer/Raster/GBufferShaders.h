@@ -32,6 +32,7 @@ class GBufferPS final : public GlobalShader<GBufferPS>
 {
 public:
 	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, GBufferPS)
+	SHADER_PARAMETER(std::uint32_t, EmissiveEnabled)
 	SHADER_PARAMETER_CBUFFER(ViewUniformData, View)
 	SHADER_PARAMETER_CBUFFER(PerObjectPSConstantBufferData, PerObjectPS)
 	SHADER_PARAMETER_CBUFFER(ViewTemporalUniformData, ViewTemporal)

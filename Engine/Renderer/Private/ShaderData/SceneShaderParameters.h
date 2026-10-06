@@ -6,6 +6,7 @@
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
 #include "Scene/GpuScene/RenderSceneGpuBindings.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
+#include "Scene/Materials/MaterialEmissionControls.h"
 #include "ShaderData/FrameUniformData.h"
 #include "ShaderData/RayTracingHitUniformData.h"
 #include "ShaderData/SkyUniformData.h"
@@ -18,6 +19,11 @@ template <typename TParameterInstance> void BindSceneShaderParameters(
     const RenderFrameGraphResources& resources)
 {
 	const RenderSceneGpuResources& scene = resources.ImportedScene.Scene;
+
+	if constexpr (requires { parameters->EmissiveEnabled; })
+	{
+		parameters->EmissiveEnabled = CVarEmissiveEnabled.Get() ? 1u : 0u;
+	}
 
 	if constexpr (requires { parameters->SceneTlas; })
 	{

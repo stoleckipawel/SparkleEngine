@@ -31,6 +31,10 @@ namespace PathLightSampling
 
 	uint CountEmissiveTriangles(uint instanceId)
 	{
+		if (EmissiveEnabled == 0u)
+		{
+			return 0u;
+		}
 		const RayTracingHitInstance instance = RayTracingHitInstances[instanceId];
 		return (instance.Flags & RayTracingHitSurface::InstanceFlagValid) != 0u
 		        && (RayTracingHitMaterials[instance.MaterialSlot].Flags & RayTracingHitSurface::MaterialFlagEmissive) != 0u
@@ -40,6 +44,10 @@ namespace PathLightSampling
 
 	uint CountEmissiveTriangles()
 	{
+		if (EmissiveEnabled == 0u)
+		{
+			return 0u;
+		}
 		uint count = 0u;
 		[loop]
 		for (uint instanceId = 0u; instanceId < RayTracingHitInstanceCount; ++instanceId)
@@ -177,6 +185,10 @@ namespace PathLightSampling
 
 	LightSampling::DirectLightSample SampleEmissiveTriangle(float3 positionWorld, uint instanceId, uint primitiveIndex, float2 sample)
 	{
+		if (EmissiveEnabled == 0u)
+		{
+			return (LightSampling::DirectLightSample)0;
+		}
 		const EmissiveTriangle emissiveTriangle = LoadEmissiveTriangle(instanceId, primitiveIndex);
 		const float root = sqrt(sample.x);
 		const float3 barycentrics = float3(1.0f - root, root * (1.0f - sample.y), root * sample.y);
@@ -219,6 +231,10 @@ namespace PathLightSampling
 
 	float EmissiveTrianglePdfW(float3 positionWorld, float3 hitPositionWorld, uint instanceId, uint primitiveIndex)
 	{
+		if (EmissiveEnabled == 0u)
+		{
+			return 0.0f;
+		}
 		const EmissiveTriangle emissiveTriangle = LoadEmissiveTriangle(instanceId, primitiveIndex);
 		const bool twoSided = (emissiveTriangle.Instance.Flags & RayTracingHitSurface::InstanceFlagTwoSided) != 0u;
 		const LightSampling::DirectLightSample sample = LightSampling::RadiometricAreaLightSample(positionWorld,

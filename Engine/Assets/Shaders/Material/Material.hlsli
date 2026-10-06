@@ -111,6 +111,10 @@ namespace Material
 
 	float3 SampleEmissive(float2 UV)
 	{
+		if (EmissiveEnabled == 0u)
+		{
+			return 0.0f.xxx;
+		}
 		if (!HasTexture(TextureGroupEmissive))
 		{
 			return EmissiveColor;

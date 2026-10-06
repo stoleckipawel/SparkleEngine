@@ -61,7 +61,7 @@ Lit clears SceneColor to black before composition and writes only GBuffer surfac
 
 ## Shared Ownership And Lifetime
 
-Sky enablement affects environment radiance only; directional and local analytic lights keep their independently prepared records. `r.Lighting.Emissive` independently controls visible material emission and emission used in transport. Its existing material-cache generation supplies the same derived emission to raster and ray consumers, retaining the authored emission for re-enable. [Scene Rendering Controls](../DebugViews/Controls/ShowFlags.md#scene-rendering-controls) owns this behavior and the Show-menu bulk actions.
+Sky enablement affects environment radiance only; directional and local analytic lights keep their independently prepared records. `r.Lighting.Emissive` independently controls visible material emission and emission used in transport. Its ordinary `EmissiveEnabled` shader parameter gates raster emission, ray emission, and emissive candidate sampling, preserving authored material data and analytic lights. [Scene Rendering Controls](../DebugViews/Controls/ShowFlags.md#scene-rendering-controls) owns this behavior and the Show-menu bulk actions.
 
 - The persistent render scene and GPU scene own light records, material/geometry bindings, and sky resources.
 - The frame-local prepared scene and view own visible light/surface state, camera identity, motion, and history inputs.

@@ -32,6 +32,7 @@ public:
 	SHADER_PARAMETER_BUFFER_SRV(MorphTargetDeltaData, MorphTargetDeltas)
 	SHADER_PARAMETER_BUFFER_SRV(uint32_t, RayTracingHitIndices)
 	SHADER_PARAMETER_BUFFER_SRV(RayTracingHitInstance, RayTracingHitInstances)
+	SHADER_PARAMETER(std::uint32_t, EmissiveEnabled)
 	SHADER_PARAMETER_BUFFER_SRV(RayTracingHitMaterial, RayTracingHitMaterials)
 	SHADER_PARAMETER_BUFFER_SRV(MeshInstanceData, MeshInstances)
 	SHADER_PARAMETER_BUFFER_SRV(VertexSkinInfluenceData, SkinInfluences)

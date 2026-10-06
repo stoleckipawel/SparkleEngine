@@ -23,7 +23,7 @@ RayTracingMaterialSample EvaluateRayTracingHitMaterial(RayTracingHitMaterial mat
 {
 	RayTracingMaterialSample result;
 	result.BaseColor = material.BaseColor;
-	result.Emissive = material.EmissiveColor;
+	result.Emissive = EmissiveEnabled != 0u ? material.EmissiveColor : 0.0f.xxx;
 	result.NormalTangent = float3(0.0f, 0.0f, 1.0f);
 	result.SubsurfaceColor = material.SubsurfaceColor;
 	result.Roughness = material.Roughness;
@@ -58,7 +58,8 @@ RayTracingMaterialSample EvaluateRayTracingHitMaterial(RayTracingHitMaterial mat
 		    SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotMetallic, uv).r * material.Metallic;
 	}
 
-	if (MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotEmissive))
+	if (EmissiveEnabled != 0u
+	    && MaterialTextureTableSampling::HasTexture(material.TextureFlags, MaterialTextureTableSampling::TextureSlotEmissive))
 	{
 		result.Emissive =
 		    SampleRayTracingMaterialTexture(material, MaterialTextureTableSampling::TextureSlotEmissive, uv).rgb * material.EmissiveColor;

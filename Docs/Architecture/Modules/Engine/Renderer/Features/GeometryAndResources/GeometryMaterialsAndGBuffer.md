@@ -62,7 +62,7 @@ Raster GBuffer uses a bindful per-material layout for eight texture roles: base 
 
 ## GBuffer Products
 
-The Emissive Show control changes the derived material generation at MaterialCache, preserving authored material values. Disabled emission produces zero GBuffer emission and zero ray-material emission with no emissive texture sample; the existing PerObjectPS path remains in use. [Scene Rendering Controls](../DebugViews/Controls/ShowFlags.md#scene-rendering-controls) owns that control contract.
+The Emissive Show control supplies an ordinary `EmissiveEnabled` scalar shader parameter to raster and ray material evaluation. Disabled emission produces zero GBuffer emission and zero evaluated ray emission before an emissive texture sample; authored material factors, GPU payloads, MaterialCache generations, and the existing PerObjectPS path remain intact. [Scene Rendering Controls](../DebugViews/Controls/ShowFlags.md#scene-rendering-controls) owns that control contract.
 
 | Product | Format | Default/clear meaning | Downstream role |
 | --- | --- | --- | --- |

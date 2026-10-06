@@ -13,7 +13,7 @@ TaskResult RenderScenePreparationMerger::Merge(TaskExecutionContext& context)
 	RenderScenePreparationRun& run = *context.TryGet<RenderScenePreparationRun>();
 
 	CommitPreparedRenderLights(run.PreparedLights, run.PreparedScene);
-	PublishPrimitives(run);
+	run.PreparedScene.primitives = std::move(run.PreparedPrimitives);
 	return TaskResult::Success();
 }
 
@@ -23,11 +23,6 @@ void RenderScenePreparationMerger::PublishSceneOutputs(RenderScenePreparationRun
 	run.PreparedScene.previousJointMatrices = std::move(run.Deformation.PreviousJointMatrices);
 	run.PreparedScene.morphWeights = std::move(run.Deformation.MorphWeights);
 	run.PreparedScene.previousMorphWeights = std::move(run.Deformation.PreviousMorphWeights);
-}
-
-void RenderScenePreparationMerger::PublishPrimitives(RenderScenePreparationRun& run)
-{
-	run.PreparedScene.primitives = std::move(run.PreparedPrimitives);
 }
 
 TaskResult RenderScenePreparationMerger::BuildRayTracingPlan(TaskExecutionContext& context)
