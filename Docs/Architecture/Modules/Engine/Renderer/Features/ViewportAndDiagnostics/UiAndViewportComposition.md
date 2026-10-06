@@ -4,6 +4,8 @@
 
 **Scoped update:** 2026-10-05 source repair separates host UI replay from viewport-image admission. Missing or generation-mismatched images retire the viewport handle; unresolved image commands are omitted while valid UI commands continue. Native blend, DPI, transition, and lifetime acceptance remains unproved.
 
+The 2026-10-06 replay correction removes unresolved image commands from the native command list. A zero element count alone still lets ImGui bind the texture descriptor before drawing, which caused a D3D12 validation exception during Sponza startup. Reset-state callbacks and resolved commands retain their original order and vertex/index offsets.
+
 **Verified:** 2026-09-06 against source revision `d236da11`; `Engine/Renderer` is unchanged from the earlier `8414b5dc` source audit
 
 **Scope:** `REN-UI-01` through `REN-UI-04`; immutable UI packets, host overlays, editor viewport presentation, texture handles, and the post-graph/pre-submit composition boundary

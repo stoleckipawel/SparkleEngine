@@ -100,7 +100,7 @@ private:
 	void PrepareFrame(const RenderViewInput& viewInput, const RenderFrameTime& time);
 	void UploadSceneAssets();
 	void PrepareRenderingState(RenderFrame& frame);
-	void PublishFrameProducts(const RenderFrame& frame);
+	void PublishFrameProducts();
 	void ExecuteFrame();
 	void SubmitAndPresent(const UiRenderPacket& packet) noexcept;
 	void RecordFrameSubmission() noexcept;

@@ -9,6 +9,7 @@
 #include "Passes/Lighting/Restir/Indirect/RestirIndirectReservoirResources.h"
 #include "Passes/Lighting/Restir/Indirect/IndirectLightingControls.h"
 #include "Passes/Lighting/Restir/Indirect/IndirectLightingResources.h"
+#include "Passes/Lighting/Restir/Reconstruction/RayReconstructionSurfaceGuides.h"
 
 void AddRestirIndirectLightingPasses(
     FrameGraphBuilder& builder,
@@ -17,6 +18,7 @@ void AddRestirIndirectLightingPasses(
     RenderFrameGraphResources& resources)
 {
 	CreateIndirectLightingResources(builder, sceneExtent, resources);
+	AddRayReconstructionSurfaceGuidesPass(builder, frame, sceneExtent, resources);
 	if (!IsIndirectLightingAdmitted())
 	{
 		return;

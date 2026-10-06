@@ -9,8 +9,7 @@ RWTexture2D<float4> IndirectDiffuse;
 RWTexture2D<float4> IndirectSpecular;
 #include "/Engine/Lighting/RayReconstructionGuides.hlsli"
 
-[numthreads(8, 8, 1)]
-void main(uint3 dispatchThreadId : SV_DispatchThreadID)
+[numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
 	uint width = 0u;
 	uint height = 0u;
@@ -64,6 +63,9 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 	}
 	if (RestirIndirectWriteReconstructionGuides != 0u)
 	{
-		RayReconstructionGuides::WriteSpecularHitDistance(pixelCoord, path, surface.PathSurface.PositionWorld, hasSpecular);
+		RayReconstructionGuides::WriteSpecularHitDistance(pixelCoord,
+		                                                  path.FirstLighting.HitPositionWorld,
+		                                                  surface.PathSurface.PositionWorld,
+		                                                  hasSpecular && path.FirstLighting.Hit);
 	}
 }

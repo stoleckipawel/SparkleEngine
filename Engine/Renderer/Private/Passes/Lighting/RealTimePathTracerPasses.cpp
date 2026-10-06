@@ -3,7 +3,6 @@
 
 #include "Frame/RenderFrame.h"
 #include "Frame/Graph/RenderFrameGraphSettings.h"
-#include "RayReconstruction/RayReconstructionSettings.h"
 #include "Passes/GBuffer/GBufferPasses.h"
 #include "Passes/Lighting/LightingComposite.h"
 #include "Passes/Lighting/RealTimePathTracerProducts.h"
@@ -19,14 +18,12 @@ std::uint64_t GetRealTimePathTracerGraphRebuildKey() noexcept
 	constexpr std::uint64_t directLightingPassesBit = 1u << 0u;
 	constexpr std::uint64_t directShadowPassBit = 1u << 1u;
 	constexpr std::uint64_t indirectLightingPassesBit = 1u << 2u;
-	constexpr std::uint64_t missingRayReconstructionSpecularBit = 1u << 3u;
 
 	return (IsDirectLightingAdmitted() ? directLightingPassesBit : 0u) | (IsDirectShadowsActive() ? directShadowPassBit : 0u)
-	    | (IsIndirectLightingAdmitted() ? indirectLightingPassesBit : 0u)
-	    | ((IsRayReconstructionEnabled() && !CVarIndirectSpecular.Get()) ? missingRayReconstructionSpecularBit : 0u);
+	    | (IsIndirectLightingAdmitted() ? indirectLightingPassesBit : 0u);
 }
 
-bool AddRealTimePathTracerPasses(
+void AddRealTimePathTracerPasses(
     FrameGraphBuilder& builder,
     const RenderFrame& frame,
     const RenderFrameGraphSettings& settings,
@@ -34,10 +31,6 @@ bool AddRealTimePathTracerPasses(
     GpuMeshCache& gpuMeshCache,
     RenderFrameGraphResources& resources)
 {
-	if (!PrepareRealTimePathTracerProducts(frame.View.viewMode, resources.ViewportProducts))
-	{
-		return false;
-	}
 	AddGBufferPasses(builder, frame, settings.RenderExtent, gpuMeshCache, rayTracingScene, resources);
 
 	AddRestirLightingPasses(builder, frame, settings.RenderExtent, rayTracingScene, resources);
@@ -45,5 +38,4 @@ bool AddRealTimePathTracerPasses(
 	AddSkyPass(builder, frame, settings.RenderExtent, resources);
 
 	PublishRealTimePathTracerProducts(resources);
-	return true;
 }

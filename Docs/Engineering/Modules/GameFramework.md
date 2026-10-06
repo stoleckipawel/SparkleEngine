@@ -24,6 +24,10 @@ World, transform, animation, skinning, and extraction semantics must preserve th
 - Systems receive narrow views, not `GameWorld&`, registry access, a controller facade, renderer, UI, or platform services.
 - Small workloads preserve the final-contract serial path; parallel work follows [Tasks Engineering](Tasks.md).
 
+For the world system graph, apply [closed-set dispatch](../Foundations/ModuleOwnership.md#closed-sets-and-dispatch): access declarations, prerequisites, range policy, count resolution, and execution body belong to one stage declaration. Local prerequisite indices do not require a second hashed-ID or per-frame binding registry. Compilation must still reject missing prerequisites, invalid phase ordering, unordered write hazards, and cycles.
+
+Resolve a dependency wave's counts after prerequisite commits, including transforms dirtied by those commits. Range partitioning uses the shared Tasks owner and preserves complete, exclusive coverage; empty ranges do not create work, while a required commit remains real work even without parallel payload. Retained task plans have bounded ownership and keys covering their structural inputs; cached callbacks borrow the current execution context at submission and never retain an expired world epoch or frame pointer. Reuse must preserve failure/cancellation settlement and block successful output publication when required work fails.
+
 ## Derived State and Extraction
 
 - Transform and other derived state are evaluated explicitly; a published `const` view does not lazily mutate caches.

@@ -6,6 +6,24 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraphTextureDesc.h"
 
+void CreateRayReconstructionGuideRenderTargets(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent renderExtent,
+    RenderFrameGraphResources& resources)
+{
+	const auto createGuide = [&builder, renderExtent](const char* name, PixelFormat format)
+	{
+		FrameGraphTextureDesc desc = FrameGraphTextureDesc::CreateColor(name, renderExtent.Width, renderExtent.Height, format);
+		desc.clearColor = {0.0f, 0.0f, 0.0f, 0.0f};
+		return builder.CreateTexture(desc);
+	};
+	auto& guides = resources.Transient.Lighting.ReconstructionGuides;
+	guides.DiffuseAlbedo = createGuide("RayReconstructionDiffuseAlbedo", PixelFormat::R16G16B16A16_Float);
+	guides.SpecularAlbedo = createGuide("RayReconstructionSpecularAlbedo", PixelFormat::R16G16B16A16_Float);
+	guides.Roughness = createGuide("RayReconstructionRoughness", PixelFormat::R32_Float);
+	guides.SpecularHitDistance = createGuide("RayReconstructionSpecularHitDistance", PixelFormat::R32_Float);
+}
+
 RayReconstructionPassResources CreateRestirRayReconstructionResources(
     FrameGraphBuilder& builder,
     RenderViewportExtent renderExtent,

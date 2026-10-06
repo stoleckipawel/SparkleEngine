@@ -18,7 +18,7 @@ The Editor's **Show** menu is a convenient frontend for turning Renderer feature
 
 The following execution description records the admitted Stage-2–6 candidate contracts and selected evidence. It must not be read as proof for the subsequently changed schemas: [Stage-7 reconciliation](../Discovery.md#stage-7-ui-admission) identifies the current contradictions. Menu/control behavior below has its own bounded executable result. Repair and replay the affected execution owners before carrying their omission/guide claims to the new candidate.
 
-The Lit direct family produces three separate products and the indirect family produces two, with runtime early evaluation/write gates. All-direct-off and all-indirect-off omit their reservoir histories, working reservoirs and exclusive evaluation/tracing/reuse/resolve chains. Both retain their actual render-extent radiance targets and current-frame zero initialization for the fixed composition/visualization ABI. Composition has one shader; visualization selects the lobe through the existing View uniform. Active indirect resolve always binds four actual render-extent guide targets, with requested guide writes controlled by its uniform. Allocation/clear alone does not establish genuine path-derived guide availability. Missing required guides make that viewport unavailable before provider binding; no provider or intent is substituted. These are current source contracts; previous variant-based native omission results do not validate this repaired candidate.
+The Lit direct family produces three separate products and the indirect family produces two, with runtime early evaluation/write gates. All-direct-off and all-indirect-off omit their reservoir histories, working reservoirs and exclusive evaluation/tracing/reuse/resolve chains. Both retain their actual render-extent radiance targets and current-frame zero initialization for the fixed composition/visualization ABI. Composition has one shader; visualization selects the lobe through the existing View uniform. Disabled lobes contribute zero, including in their raw diagnostic, without declining viewport execution. Active indirect resolve writes requested reconstruction guides. When every indirect lobe is disabled and Ray Reconstruction is selected, the reconstruction owner dispatches a surface-guide pass over the actual GBuffer; it writes material albedos and roughness and records no indirect specular hit. No indirect tracing, reservoir history or reuse is retained for that consumer. A Show edit never rejects the selected rendering configuration or substitutes a provider. Previous variant-based native omission results do not validate this repaired candidate.
 
 The current non-Reference diagnostic modes still enter the real-time Lit middle before visualization. A future GBuffer-only path is not claimed here: discovery must map admission and downstream dependencies for the actual selected route rather than assume the mode label already prunes lighting.
 
@@ -33,7 +33,7 @@ The current non-Reference diagnostic modes still enter the real-time Lit middle 
 | Shadows / Direct Shadows | `ShadowVisibilitySignal` and primary direct-light evaluation | direct shadow-signal production and visibility consumer |
 | Shadows / Indirect Shadows | secondary-hit direct-light visibility in Lit indirect transport | indirect estimator's visibility evaluation |
 
-The initial scope is seven real leaves. Do not add an Indirect Subsurface CVar, UI row, resource, or zero-producing placeholder before the owning [lobe-classification decision](../../Lighting/IndirectLighting/TransportAndEstimator.md#lobe-classification) admits the product. All three Direct leaves are currently implemented: their default-enabled feature CVars remove exclusive evaluation and resolve writes through the same early uniform branches, retain intentional radiance initialization for fixed consumer bindings, reset dependent histories, and make disabled raw diagnostics unavailable. All-direct-off removes the exclusive family chain and rebuilds/retire its cached graph through the existing lifetime route. [Discovery](../Discovery.md#current-candidate-evidence-and-permission) records the bounded native result and next permitted stage; this is not menu, active-provider, later-control or measured GPU-savings completion.
+The initial scope is seven real leaves. Do not add an Indirect Subsurface CVar, UI row, resource, or zero-producing placeholder before the owning [lobe-classification decision](../../Lighting/IndirectLighting/TransportAndEstimator.md#lobe-classification) admits the product. All three Direct leaves are currently implemented: their default-enabled feature CVars remove exclusive evaluation and resolve writes through the same early uniform branches, retain intentional radiance initialization for fixed consumer bindings, reset dependent histories, and leave disabled raw diagnostics displaying the initialized zero contribution. All-direct-off removes the exclusive family chain and rebuilds/retire its cached graph through the existing lifetime route. [Discovery](../Discovery.md#current-candidate-evidence-and-permission) records the bounded native result and next permitted stage; this is not menu, active-provider, later-control or measured GPU-savings completion.
 
 Direct Shadows remains owned by Shadows. Disabling `r.Lighting.Shadows.Direct` omits the visibility tracing producer. While Direct evaluation is admitted, its single shader retains a real initialized signal binding; a uniform branch bypasses the signal load and evaluates visibility as one. Retained shadow intent stays inactive while all direct leaves are off. Re-enable restores tracing; missing allocated or produced input fails. Direct reservoirs and indirect visibility remain independent consumers. The inactive binding is initialization for the fixed ABI, not a produced diagnostic or guide.
 
@@ -113,36 +113,39 @@ Optional feature entry points call their own `IsActive` and return before declar
 
 ## Editor Interaction
 
-Open **Show** beside **Viewmode**. Direct Lighting, Indirect Lighting and Shadows each have a bulk checkbox and their implemented children. A mixed parent displays a dash and the word `mixed`; checked or mixed disables the group, unchecked enables it. **Reset Lighting Features** enables all seven leaves in one batch. Leaf tooltips name the corresponding console variable and global scope. Checks describe acknowledged intent, not current-frame GPU completion.
+Open **Show** beside **Viewmode**. **Use Defaults** appears first and enables all seven leaves in one batch. The menu uses section headings and the existing semantic Editor icons: **Lighting Components** contains Direct Lighting and Indirect Lighting submenus; **Lighting Features** contains Shadows. Each submenu has an **All** bulk toggle followed by its implemented leaves. All is checked when every child is enabled and displays `Mixed` for a partial selection; checked or mixed disables the group, unchecked enables it. Toggles keep the menu open for repeated edits. Leaf tooltips name the corresponding console variable and global scope. Checks describe acknowledged intent, not current-frame GPU completion. The grouped presentation takes inspiration from [Unreal's Viewport Show Flags](https://dev.epicgames.com/documentation/unreal-engine/viewport-show-flags-in-unreal-engine), while Sparkle lists only its implemented controls.
 
-The menu queries the existing synchronous Core executor only while open. It has no retained selection; console edits appear on the next draw. Missing registrations/types suppress the editable hierarchy and show a defect; rejected edits keep the prior authoritative values and show the operation error until a successful retry. Reference, GBuffer and GPU-scene inspection disable edits with an explanation. Lit, Lit-shaded Wireframe and lighting-lobe inspection retain the global edit route; disabled diagnostic availability still belongs to the Renderer product owner.
+The menu queries the existing synchronous Core executor only while open. It has no retained selection; console edits appear on the next draw. Missing registrations/types suppress the editable hierarchy and show a defect; rejected edits keep the prior authoritative values and show the operation error until a successful retry. These process-global controls remain editable in every view mode; host interaction locks still disable the menu. Renderer owns whether the selected path consumes a feature and whether its diagnostic product is available. The menu does not receive a view-mode selector or decide feature admission.
 
 Editor adds **Show** beside **Viewmode**. It presents feature intent, not a guarantee that the chosen path can execute it:
 
 ```text
-Show — shared feature controls
-└─ Lighting
-   ├─ [x/-] Direct Lighting
-   │  ├─ [x] Diffuse
-   │  ├─ [x] Specular
-   │  └─ [x] Subsurface
-   ├─ [x/-] Indirect Lighting
-   │  ├─ [x] Diffuse
-   │  ├─ [x] Specular
-   └─ [x/-] Shadows
+Show
+├─ Use Defaults
+├─ LIGHTING COMPONENTS
+│  ├─ Direct Lighting >
+│  │  ├─ [x/Mixed] All
+│  │  ├─ [x] Diffuse
+│  │  ├─ [x] Specular
+│  │  └─ [x] Subsurface
+│  └─ Indirect Lighting >
+│     ├─ [x/Mixed] All
+│     ├─ [x] Diffuse
+│     └─ [x] Specular
+└─ LIGHTING FEATURES
+   └─ Shadows >
+      ├─ [x/Mixed] All
       ├─ [x] Direct Shadows
       └─ [x] Indirect Shadows
-
-   Reset Lighting Features
 ```
 
-`ViewportTopPanel` owns labels, hierarchy, interaction, keyboard navigation, and a concise shared-scope tooltip. It reads leaf checks from CVar requested state, including console changes. It does not put selection into `EditorViewportSession` or advance viewport-request generation for a CVar edit; the existing control publication invalidates the affected rendering work.
+`ViewportTopPanel` places the Show button; its private `ViewportShowMenu` owns labels, hierarchy, interaction, keyboard navigation, and a concise shared-scope tooltip. It reads leaf checks from CVar requested state, including console changes. It does not put selection into `EditorViewportSession` or advance viewport-request generation for a CVar edit; the existing control publication invalidates the affected rendering work.
 
 Console and menu clients receive only the generic control request/result capability, not Renderer or execution-control implementation objects. Application binds that capability and owns simulation/UI-packet/render sequencing. The console host owns its overlay lifetime and returns presentation data; it never submits or renders frames. Client callbacks are destroyed before their implementation owner. This is the [AC-DVP-30](../Acceptance.md#completion-criteria) boundary, not a new service or forwarding layer.
 
-Parent checked/mixed/unchecked state is derived from all/any/none of its implemented children being enabled. Clicking a checked or mixed parent disables all those children; clicking an unchecked parent enables all. Reset enables all implemented leaves in one batch. There is no saved mixed-selection restore, parent state, or persisted Editor mirror. Toggling Shadows does not change lighting-lobe CVars, and toggling a lighting group does not change retained shadow intent.
+Each submenu's **All** row derives checked/mixed/unchecked state from all/any/none of its implemented children being enabled. Clicking that row when checked or mixed disables all those children; clicking it when unchecked enables all. **Use Defaults** enables all implemented leaves in one batch. There is no saved mixed-selection restore, parent state, or persisted Editor mirror. Toggling Shadows does not change lighting-lobe CVars, and toggling a lighting group does not change retained shadow intent.
 
-Lit and Lit-shaded Wireframe use these controls. In GBuffer/GPU-scene-only diagnostics or Reference, disable the inapplicable group with a mode explanation; never mutate CVars just because the mode changes. A lighting-lobe diagnostic observes the current execution product: if its feature is disabled, report it unavailable rather than secretly activating it, displaying stale data, or asserting that unchanged raw lighting remains available. Users can explicitly re-enable the feature to inspect it.
+Lit and Lit-shaded Wireframe consume these controls. Editing global intent from an inspection or Reference view can affect other applicable viewports; it does not make the inspected path consume that feature. Never mutate CVars just because the mode changes. A lighting-lobe diagnostic observes the current execution product: a disabled lobe displays its current-frame zero contribution. There is no separate feature-support gate in the Editor, scene orchestration or product publication.
 
 ## Execution And Product Contract
 

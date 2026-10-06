@@ -282,11 +282,7 @@ void ViewportTopPanel::BuildUI(bool disableInteraction) noexcept
 	}
 	BuildViewModeCombo(disableInteraction, compactHeader);
 	ImGui::SameLine();
-	DrawViewportShowMenu(
-	    m_consoleVariables,
-	    m_viewportSession != nullptr ? m_viewportSession->GetViewMode() : RenderViewMode::Lit,
-	    disableInteraction,
-	    m_showControlError);
+	DrawViewportShowMenu(m_consoleVariables, disableInteraction, m_showControlError);
 	BuildRightControls(disableInteraction, compactHeader);
 
 	ImDrawList* drawList = ImGui::GetWindowDrawList();

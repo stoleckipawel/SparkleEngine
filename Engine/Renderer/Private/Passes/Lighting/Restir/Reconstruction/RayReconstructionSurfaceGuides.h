@@ -1,14 +1,13 @@
 #pragma once
 
-struct RenderFrame;
-
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraphBuilder;
+struct RenderFrame;
 struct RenderFrameGraphResources;
 
-void AddLightingVisualizationPass(
+void AddRayReconstructionSurfaceGuidesPass(
     FrameGraphBuilder& builder,
     const RenderFrame& frame,
     RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources);
+    RenderFrameGraphResources& resources);

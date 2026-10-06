@@ -184,6 +184,8 @@ Review the **complexity budget**, not just additions:
 
 A code-positive change can be structurally reductive. A short change can still add an unmanaged second authority.
 
+Apply the [intent-based workflow](../Foundations/ModuleOwnership.md#intent-based-workflow-functions) and [closed-set dispatch](../Foundations/ModuleOwnership.md#closed-sets-and-dispatch) rules to the final source shape. Read each touched workflow body independently: its stage order and failure handling must be understandable without reading another stage's mechanics. Then inspect the extracted steps for substantive work, ownership, and lifetime; reject forwarding-only wrappers, stateless class shells, and argument-hiding bags. Check that a fixed declaration set has one metadata/behavior authority and that replacing an abstraction removed the old interface and binding path. Successful builds and lower line counts do not waive these checks.
+
 Review **change locality** as the scaling test: a capability should evolve and be removable through its owner, explicit composition point, tests, and documentation. If every feature requires edits to unrelated coordinators, generic utilities, global registries, backend internals, or scattered mode checks, the architecture is centralizing complexity rather than scaling.
 
 ### 7. Review Touched-Path Cleanup
@@ -266,7 +268,8 @@ Before `PASS`, answer yes to every applicable question:
 - Is there one real outcome, mutable authority, lifetime owner, and production path?
 - Does every material copy or new holder have a real boundary reason, one producer, an exact lifetime, and no path to become stale mutable truth?
 - Can every new concept and changed file justify its current consumer and reason to exist?
-- Are orchestration and capability mechanics separated without wrapper ceremony?
+- Do all touched workflow levels read as ordered intentions under the [workflow-function rule](../Foundations/ModuleOwnership.md#intent-based-workflow-functions), with substantive steps and no wrapper ceremony?
+- Does each closed command/stage set use the [smallest justified dispatch representation](../Foundations/ModuleOwnership.md#closed-sets-and-dispatch), with one declaration/binding authority?
 - Are system core, public contract, clients and composition separated under the binding [client-separation gate](../Foundations/ModuleOwnership.md#system-core-and-client-separation), with no private access, broad implementation-owner injection or outward core dependence on client usage?
 - Does every shared invariant live with its neutral/domain owner, with sibling backends/providers containing only their genuinely native or capability-specific mechanics?
 - Did the changelist remove the complete replaced path and directly exposed duplicate authority?

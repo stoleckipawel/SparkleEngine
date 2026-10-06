@@ -29,6 +29,10 @@ When one user action crosses several rows, the frontend coordinates narrow reque
 - File/process work is isolated from frame-critical capacity.
 - Concurrency has a weighted memory budget for HDR textures, scenes, compiler sessions, and third-party workers.
 
+Fixed command verbs follow [closed-set dispatch](../Foundations/ModuleOwnership.md#closed-sets-and-dispatch). Keep dispatch and usage metadata authoritative while command functions own argument validation, execution, and exit behavior. A stateless command does not need an allocated object or mutable command registry.
+
+Selection, dependency closure, and shared-pack retention belong to the operation core; interactive frontends present the resulting plan and submit the operation. Runtime/cooked product identities and paths come from their authoritative product descriptor, while source inputs and transformation policy remain with the cooker. Do not duplicate either decision in a GUI, CLI, or second catalog.
+
 ## Import, Cooking, Compilation, And Publication
 
 - Separate read, decode, transform, validate, and transactional publication by real ownership.

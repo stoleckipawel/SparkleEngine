@@ -2,6 +2,7 @@
 #include "Passes/Lighting/LightingRenderTargets.h"
 
 #include "Passes/Lighting/Restir/Indirect/IndirectLightingControls.h"
+#include "Passes/Lighting/Restir/Reconstruction/RestirRayReconstructionResources.h"
 #include "Frame/Graph/RenderFrameGraphFormats.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
@@ -40,15 +41,5 @@ void CreateIndirectLightingRenderTargets(FrameGraphBuilder& builder, RenderViewp
 		return;
 	}
 
-	lighting.ReconstructionGuides.DiffuseAlbedo =
-	    CreateLightingTexture(builder, "RayReconstructionDiffuseAlbedo", sceneExtent, PixelFormat::R16G16B16A16_Float);
-
-	lighting.ReconstructionGuides.SpecularAlbedo =
-	    CreateLightingTexture(builder, "RayReconstructionSpecularAlbedo", sceneExtent, PixelFormat::R16G16B16A16_Float);
-
-	lighting.ReconstructionGuides.Roughness =
-	    CreateLightingTexture(builder, "RayReconstructionRoughness", sceneExtent, PixelFormat::R32_Float);
-
-	lighting.ReconstructionGuides.SpecularHitDistance =
-	    CreateLightingTexture(builder, "RayReconstructionSpecularHitDistance", sceneExtent, PixelFormat::R32_Float);
+	CreateRayReconstructionGuideRenderTargets(builder, sceneExtent, resources);
 }

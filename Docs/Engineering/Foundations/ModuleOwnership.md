@@ -132,9 +132,13 @@ An orchestrator MUST NOT accumulate parsing, data transforms, cache insertion, t
 
 A capability implementation owns one cohesive operation, state machine, transform, policy, encoding, allocation, or lifetime and exposes only what its orchestrator needs.
 
-Do not manufacture lifecycle for a stateless operation. A builder, resolver, or transform with no retained state, replaceable policy, or independently managed resource is a direct function or static operation in its owning subsystem, not a heap-owned collaborator stored by the orchestrator. Promote it to an owned object only when a real lifetime or mutable invariant appears.
+Do not manufacture lifecycle for a stateless operation. A builder, resolver, or transform with no retained state, replaceable policy, or independently managed resource is a direct function in its owning subsystem, not a heap-owned collaborator stored by the orchestrator. A class shell that only groups static functions is also unnecessary: use file-local functions for private work or the existing domain API for shared work. Retain types that carry a real value contract, invariant, resource lifetime, substitutable behavior, or required compile-time protocol; static factories on such types remain valid. Promote an operation to an owned object only when that responsibility requires it.
 
 When a resource object's allocation, retention, release, binding, and retirement are governed exclusively by one state machine, that state machine owns the resource object. Keep allocation mechanics in a focused collaborator when useful, but do not make it a sibling owner and pass it through every transition. Conversely, queue/mailbox envelopes used only to schedule work remain with the coordinator and must be removed before the receiving capability's semantic execution boundary.
+
+### Closed Sets and Dispatch
+
+A small, closed set of commands, stages, or policies uses direct functions, an explicit switch, or one immutable descriptor table according to its actual metadata needs. Do not add mutable registration, hashed identities, type erasure, virtual command objects, or a separate binding registry merely to reconnect declarations to their implementations. Keep each entry's authoritative metadata and behavior together; declaration indices suffice for local dependencies that do not need durable identity. Discovery or replaceable implementations may justify a registry or interface, but the current production consumer and boundary must require it. This does not replace genuine shader, asset, or plugin discovery contracts with fixed switches.
 
 ### Mandatory Orchestrator/Implementor Boundary
 
@@ -148,14 +152,18 @@ Do not plumb globally registered runtime policy through orchestration layers mer
 
 The actual lifecycle/composition owner is the orchestrator. It may name the small set of top-level alternatives it genuinely composes; genericity is not a goal when it obscures the control flow or requires speculative polymorphism. Do not add a generic `Manager`, `Builder`, facade, or base interface merely to forward calls to implementors; use the existing lifecycle owner when it already sequences the work. Implementors may share a concrete helper only when they enforce the same invariant and change together. Different lifetimes, inputs, outputs, failure contracts, or cost models require separate implementors even when their syntax looks similar.
 
-At function level, orchestration and mechanism are separate responsibilities:
+### Intent-Based Workflow Functions
 
-- an orchestration function reads as named stages, selects policy, sequences capabilities, handles stage-level failure, and publishes the result;
+At function level, orchestration and mechanism are separate responsibilities. The top-level body MUST read as domain intentions in execution order at a consistent abstraction level:
+
+- an orchestration function reads as named stages, selects policy, sequences capabilities, handles stage-level failure, and publishes the result; assigning or returning a stage's result remains part of composition;
 - an implementation function performs one cohesive algorithm, transform, state transition, backend operation, or lifetime action;
-- a function does not alternate between high-level sequencing and the internal loops, parsing, allocation, synchronization, or encoding of several stages;
+- a workflow function does not alternate between semantic stages and field-by-field request assembly, feature-progress copying, loops, parsing, allocation, synchronization, binding, or encoding inside those stages;
 - a small owner may sequence private steps that enforce the same invariant and lifetime; extraction is required by independent responsibility, not by ceremony or line count.
 
-An extracted collaborator must remove knowledge from its caller. Passing an owner facade into a one-method wrapper, moving an unchanged long function to another file, or replacing readable stages with indirection does not improve decomposition.
+Apply this rule at every touched composition depth, including preparation, graph construction, execution, publication, and submission. A stage name must correspond to substantive work or a lifecycle invariant. A private composition method may directly use dependencies already owned by its lifecycle owner when its body contains the real composition; do not introduce a forwarding method or dependency bag solely to shorten an argument list.
+
+An extracted collaborator must remove knowledge from its caller. Passing an owner facade into a one-method wrapper, moving an unchanged long function to another file, or replacing readable stages with indirection does not improve decomposition. After replacing a stage or abstraction, delete its obsolete declarations, helper interfaces, bindings, and build membership in the same change under the clean-break policy.
 
 ## Responsibility Audit
 

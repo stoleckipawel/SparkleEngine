@@ -12,7 +12,7 @@ struct RenderFrameGraphSettings;
 
 std::uint64_t GetRealTimePathTracerGraphRebuildKey() noexcept;
 
-bool AddRealTimePathTracerPasses(
+void AddRealTimePathTracerPasses(
     FrameGraphBuilder& builder,
     const RenderFrame& frame,
     const RenderFrameGraphSettings& settings,

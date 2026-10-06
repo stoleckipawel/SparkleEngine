@@ -5,6 +5,11 @@
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
 
+void CreateRayReconstructionGuideRenderTargets(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent renderExtent,
+    RenderFrameGraphResources& resources);
+
 RayReconstructionPassResources CreateRestirRayReconstructionResources(
     FrameGraphBuilder& builder,
     RenderViewportExtent renderExtent,

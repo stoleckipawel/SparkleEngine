@@ -6,6 +6,8 @@
 
 **Recipe-composition amendment:** refreshed 2026-09-13 against source input `9689e6ba870a01ef703da723648d3837e6b20863` plus the current scoped working tree; no build, runtime, GPU, native-validation, performance, or release proof is implied
 
+**Frame-composition amendment:** reconciled 2026-10-06 against `2c4704b7` plus the scoped working tree. Frame preparation owns the declaration/binding lifecycle; graph construction and execution expose ordered semantic operations. This source update does not close the native scheduling or lifetime proof contract.
+
 **Scope:** `REN-FG-01` through `REN-FG-08` and the frame-graph portion of `REN-OWN-04`/`REN-OWN-06`; defines how Renderer feature declarations become resources, dependencies, barriers, queue submissions, and retirement
 
 **Current readiness:** **50/100** — dependency compilation, barriers, transients, queues, recording, and submission exist in source; correctness, failure, parity, and cost evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).

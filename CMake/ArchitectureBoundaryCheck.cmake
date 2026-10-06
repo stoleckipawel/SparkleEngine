@@ -170,12 +170,12 @@ function(sparkle_boundary_scan_file absolute_path)
 
         if(_relative_path STREQUAL "Engine/Renderer/Private/Passes/Scene/SceneRenderingPasses.cpp" AND
            _line MATCHES "#include[^\n]*Passes/(GBuffer|Lighting/RealTimeLighting|Lighting/Restir|Lighting/ReferencePathTracer/(ReferencePathTracerDisplay|ReferencePathTracerResources|ReferencePathTracerSession|ReferencePathTracerTransport))" AND
-           NOT _line MATCHES "#include[^\n]*Passes/Lighting/Restir/Reconstruction/RestirRayReconstruction[.]h")
+           NOT _line MATCHES "#include[^\n]*Passes/Lighting/(Restir/Reconstruction/RestirRayReconstruction|ReferencePathTracer/ReferencePathTracerSession)[.]h")
             sparkle_boundary_append_failure(
                 "RENDERER_SCENE_RENDERING_COMPOSITION_READS_AS_INTENT"
                 "${_relative_path}"
                 "${_line_number}"
-                "Scene-rendering composition selects the real-time or Reference renderer and may invoke the independent reconstruction stage directly; each renderer's GBuffer, ReSTIR transport, resource, and pass mechanics stay behind its AddPasses entry."
+                "Scene-rendering composition selects the renderer, invokes reconstruction, and publishes session products through narrow APIs; each renderer's GBuffer, ReSTIR transport, resource, and pass mechanics stay behind its AddPasses entry."
                 "${_line}")
         endif()
 

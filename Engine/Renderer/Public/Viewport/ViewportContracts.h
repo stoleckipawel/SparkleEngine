@@ -211,8 +211,6 @@ enum class ViewportRenderProgressReason : std::uint8_t
 	UnsupportedContent,
 	UnsupportedCapability,
 	SessionCapacity,
-	FeatureDisabled,
-	MissingRequiredProduct,
 };
 
 struct SPARKLE_RENDERER_API ViewportRenderProgress final

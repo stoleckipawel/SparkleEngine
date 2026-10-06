@@ -12,6 +12,8 @@
 
 **Non-claims:** source inspection does not prove compilation, thread safety, runtime behavior, pixels, GPU cost removal, backend parity, or release acceptance.
 
+**2026-10-06 contract correction:** the user requires every Show control to remain editable in every mode and configuration. The current [Show contract](Controls/ShowFlags.md) and [Acceptance](Acceptance.md) supersede the historical disabled-diagnostic and specular-off/all-off reconstruction refusal decisions below. Disabled contributions display their initialized zero; reconstruction retains actual surface-guide production without retaining disabled indirect transport. The historical candidate results do not validate this changed behavior.
+
 ## Decision To Make
 
 **Execution policy:** [Plan's Universal Execution Contract](Plan.md#universal-execution-contract) requires autonomous prerequisite repair and resumption of the user-queued stages. An unresolved decision is an owning work item, not a request for routine user approval or a terminal gate-only handoff. Record bounded repairs and repeat affected evidence before authorizing dependent edits. [Acceptance's automated delivery scope](Acceptance.md#automated-delivery-scope) removes manual Editor opening/interaction from prerequisites; it does not waive automated correctness, native rendering or work-removal evidence.

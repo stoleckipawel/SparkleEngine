@@ -223,7 +223,7 @@ void FramePipeline::PrepareFrame(const RenderViewInput& viewInput, const RenderF
 	RenderFrame& frame = PrepareRenderFrame(viewInput, time);
 	PrepareRenderingState(frame);
 	PrepareFrameGraph(frame);
-	PublishFrameProducts(frame);
+	PublishFrameProducts();
 }
 
 void FramePipeline::UploadSceneAssets()
@@ -247,10 +247,9 @@ void FramePipeline::PrepareRenderingState(RenderFrame& frame)
 	frame.RayTracingBindings = m_renderScene->PrepareRayTracingFrame(frame.PreparedScene, frame.View.rayTracingPlan);
 }
 
-void FramePipeline::PublishFrameProducts(const RenderFrame& frame)
+void FramePipeline::PublishFrameProducts()
 {
 	ViewportFrameProducts products = m_frameResources.ViewportProducts;
-	m_frameGraphExecutable = PrepareSceneRenderingProducts(frame.View, m_frameResources, products) && m_frameGraphExecutable;
 	PublishViewportRenderProducts(
 	    m_viewportRenderProducts,
 	    m_viewportRenderRequest,

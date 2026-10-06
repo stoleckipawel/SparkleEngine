@@ -1,5 +1,6 @@
 #include "PCH.h"
 #include "Viewport/ViewportShowMenu.h"
+#include "Util/UiUtil.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -12,16 +13,17 @@ struct LightingShowLeaf final
 {
 	const char* Label;
 	const char* CVarName;
+	UiUtil::EditorIcon Icon;
 };
 
 static constexpr std::array<LightingShowLeaf, 7> lightingShowLeaves = {
-    {{"Diffuse", "r.Lighting.Direct.Diffuse"},
-        {"Specular", "r.Lighting.Direct.Specular"},
-        {"Subsurface", "r.Lighting.Direct.Subsurface"},
-        {"Diffuse", "r.Lighting.Indirect.Diffuse"},
-        {"Specular", "r.Lighting.Indirect.Specular"},
-        {"Direct Shadows", "r.Lighting.Shadows.Direct"},
-        {"Indirect Shadows", "r.Lighting.Shadows.Indirect"}}};
+    {{"Diffuse", "r.Lighting.Direct.Diffuse", UiUtil::EditorIcon::ViewDirectDiffuse},
+        {"Specular", "r.Lighting.Direct.Specular", UiUtil::EditorIcon::ViewDirectSpecular},
+        {"Subsurface", "r.Lighting.Direct.Subsurface", UiUtil::EditorIcon::ViewDirectSubsurface},
+        {"Diffuse", "r.Lighting.Indirect.Diffuse", UiUtil::EditorIcon::ViewDirectDiffuse},
+        {"Specular", "r.Lighting.Indirect.Specular", UiUtil::EditorIcon::ViewDirectSpecular},
+        {"Direct Shadows", "r.Lighting.Shadows.Direct", UiUtil::EditorIcon::ViewAmbientOcclusion},
+        {"Indirect Shadows", "r.Lighting.Shadows.Indirect", UiUtil::EditorIcon::ViewAmbientOcclusion}}};
 
 static bool QueryLightingShowIntent(
     const CVarControlExecutor& executor,
@@ -76,11 +78,17 @@ static void SetLightingShowIntent(
 
 static void DrawLightingShowGroup(
     const char* label,
+    UiUtil::EditorIcon icon,
     std::span<const LightingShowLeaf> leaves,
     std::span<const bool> intent,
     const CVarControlExecutor& executor,
     std::string& error)
 {
+	const std::string menuLabel = UiUtil::MakeIconLabel(icon, label);
+	if (!ImGui::BeginMenu(menuLabel.c_str()))
+	{
+		return;
+	}
 	bool anyEnabled = false;
 	bool allEnabled = true;
 	for (bool enabled : intent)
@@ -88,37 +96,29 @@ static void DrawLightingShowGroup(
 		anyEnabled |= enabled;
 		allEnabled &= enabled;
 	}
-	ImGui::PushID(label);
-	ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, anyEnabled && !allEnabled);
-	bool checked = allEnabled;
-	if (ImGui::Checkbox(label, &checked))
+	ImGui::PushItemFlag(ImGuiItemFlags_AutoClosePopups, false);
+	if (ImGui::MenuItem("All", anyEnabled && !allEnabled ? "Mixed" : nullptr, allEnabled))
 	{
 		SetLightingShowIntent(executor, leaves, !anyEnabled, error);
 	}
-	ImGui::PopItemFlag();
-	if (anyEnabled && !allEnabled)
-	{
-		ImGui::SameLine();
-		ImGui::TextDisabled("(mixed)");
-	}
-	ImGui::Indent();
+	ImGui::Separator();
 	for (std::size_t index = 0; index < leaves.size(); ++index)
 	{
-		bool enabled = intent[index];
-		if (ImGui::Checkbox(leaves[index].Label, &enabled))
+		const std::string leafLabel = UiUtil::MakeIconLabel(leaves[index].Icon, leaves[index].Label);
+		if (ImGui::MenuItem(leafLabel.c_str(), nullptr, intent[index]))
 		{
-			SetLightingShowIntent(executor, leaves.subspan(index, 1), enabled, error);
+			SetLightingShowIntent(executor, leaves.subspan(index, 1), !intent[index], error);
 		}
 		if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 		{
 			ImGui::SetTooltip("%s\nAcknowledged intent; shared by all applicable viewports.", leaves[index].CVarName);
 		}
 	}
-	ImGui::Unindent();
-	ImGui::PopID();
+	ImGui::PopItemFlag();
+	ImGui::EndMenu();
 }
 
-void DrawViewportShowMenu(const CVarControlExecutor* executor, RenderViewMode viewMode, bool disableInteraction, std::string& error)
+void DrawViewportShowMenu(const CVarControlExecutor* executor, bool disableInteraction, std::string& error)
 {
 	ImGui::BeginDisabled(disableInteraction);
 	if (ImGui::Button("Show"))
@@ -130,13 +130,11 @@ void DrawViewportShowMenu(const CVarControlExecutor* executor, RenderViewMode vi
 	{
 		ImGui::SetTooltip("Shared lighting controls for all applicable viewports; not viewport-local overrides.");
 	}
+	ImGui::SetNextWindowSizeConstraints(ImVec2(260.0f, 0.0f), ImVec2(420.0f, 600.0f));
 	if (!ImGui::BeginPopup("ViewportShowMenu"))
 	{
 		return;
 	}
-	ImGui::TextDisabled("Lighting (shared feature intent)");
-	ImGui::TextDisabled("Acknowledged controls; displayed frames may lag.");
-	ImGui::Separator();
 	std::array<bool, lightingShowLeaves.size()> intent{};
 	std::string queryError;
 	const bool available = executor != nullptr && *executor && QueryLightingShowIntent(*executor, intent, queryError);
@@ -148,32 +146,37 @@ void DrawViewportShowMenu(const CVarControlExecutor* executor, RenderViewMode vi
 	}
 	else
 	{
-		const bool applicable = viewMode == RenderViewMode::Lit || viewMode == RenderViewMode::Wireframe
-		    || (viewMode >= RenderViewMode::DirectDiffuse && viewMode <= RenderViewMode::IndirectSpecular);
-		if (!applicable)
+		ImGui::BeginDisabled(disableInteraction);
+		ImGui::PushItemFlag(ImGuiItemFlags_AutoClosePopups, false);
+		const std::string defaultsLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Reset, "Use Defaults");
+		if (ImGui::MenuItem(defaultsLabel.c_str()))
 		{
-			ImGui::TextWrapped(
-			    "These controls apply to Lit and Lit-shaded Wireframe, not this inspection or Reference mode. Intent is retained.");
+			SetLightingShowIntent(*executor, lightingShowLeaves, true, error);
 		}
-		ImGui::BeginDisabled(disableInteraction || !applicable);
+		ImGui::PopItemFlag();
+		ImGui::SeparatorText("LIGHTING COMPONENTS");
 		DrawLightingShowGroup(
 		    "Direct Lighting",
+		    UiUtil::EditorIcon::DirectionalLight,
 		    std::span(lightingShowLeaves).subspan(0, 3),
 		    std::span(intent).subspan(0, 3),
 		    *executor,
 		    error);
 		DrawLightingShowGroup(
 		    "Indirect Lighting",
+		    UiUtil::EditorIcon::Light,
 		    std::span(lightingShowLeaves).subspan(3, 2),
 		    std::span(intent).subspan(3, 2),
 		    *executor,
 		    error);
-		DrawLightingShowGroup("Shadows", std::span(lightingShowLeaves).subspan(5, 2), std::span(intent).subspan(5, 2), *executor, error);
-		ImGui::Separator();
-		if (ImGui::Button("Reset Lighting Features"))
-		{
-			SetLightingShowIntent(*executor, lightingShowLeaves, true, error);
-		}
+		ImGui::SeparatorText("LIGHTING FEATURES");
+		DrawLightingShowGroup(
+		    "Shadows",
+		    UiUtil::EditorIcon::ViewAmbientOcclusion,
+		    std::span(lightingShowLeaves).subspan(5, 2),
+		    std::span(intent).subspan(5, 2),
+		    *executor,
+		    error);
 		ImGui::EndDisabled();
 	}
 	if (!error.empty())

@@ -20,6 +20,8 @@ Panels:
 
 Continuous edits coalesce into bounded main-thread transactions with deterministic inverse commands or before/after values.
 
+The public UI host surface exposes bounded host operations and result contracts. Panel/controller types, widget state, and internal initialization/build/cleanup hooks remain private to the UI implementation. Narrowing the header must preserve subscription, callback, worker, and ImGui shutdown order; it must not turn the facade into a second state owner.
+
 ## UI And Render Boundary
 
 - Editor owns view-mode presentation: labels, icons, menu grouping, shortcuts, selection interaction, and widget visibility. The selected value is the Renderer-owned `RenderViewMode`; Editor does not mirror it in a second enum or translate it through a preset object.

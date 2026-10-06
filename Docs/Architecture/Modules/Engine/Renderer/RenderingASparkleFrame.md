@@ -6,6 +6,8 @@
 
 **Reference-recipe amendment:** refreshed 2026-09-13 against source input `9689e6ba870a01ef703da723648d3837e6b20863` plus the current scoped working tree; this records source shape only and does not add build, shader, GPU, visual, performance, or acceptance evidence
 
+**Frame-composition amendment:** reconciled 2026-10-06 against `2c4704b7` plus the scoped working tree for intent-based preparation, composition, execution, publication, and submission. This updates the source route without changing the acceptance status below.
+
 **Responsibility:** explain the intent, ownership, data flow, stage order, branches, lifetime, failure boundaries, and tradeoffs of one Sparkle render frame; feature-specific algorithms and limits belong to the linked dossiers
 
 **Current readiness:** **36/100** across the tracked Renderer portfolio — the described source path is broad, four admitted first-release features are absent, and every candidate verification and delivery gate remains open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#renderer).
@@ -63,18 +65,13 @@ The arrows describe semantic dependency and completion-driven lifetime. Declarat
 
 ```text
 Create frame resources
-  -> Add ray-tracing scene build
-  -> Add GBuffer frontend + sky motion + linear depth
-  -> Add lighting producer + composite + sky
-  -> Add exposure
-  -> Add optional render-resolution debug visualization
-  -> Add optional render-resolution ray-reconstruction denoising
-  -> Add selected Linear or DLSS Super Resolution upscaling
-  -> Add tone mapping + output encoding
-  -> Copy to back buffer or retain viewport product
+  -> Add ray-tracing scene publication
+  -> Add selected scene rendering
+  -> Add presentation
+  -> Export requested viewport products
 ```
 
-This is not one fixed list of GPU commands. The topology is specialized before construction.
+Scene composition selects the real-time renderer or Reference Path Tracer, then orders shared exposure, optional visualization, optional scene denoising, and presentation upscaling. Presentation owns tone mapping or exact display-linear output, output encoding, and the back-buffer or viewport-product target. Each selected owner declares its own resources and passes. The graph compiler derives GPU command order from their dependencies.
 
 ### Feature Composition Contract
 
@@ -84,7 +81,7 @@ The frame is a composition owner, not the implementation home for every feature.
 
 `GBuffer`, `RestirLighting`, and `Exposure` demonstrate the intended local shape: the graph or stage aggregator calls one responsibility-bearing function while private collaborators remain beside that feature. Shared parameter binding and pipeline-composition utilities may automate canonical Scene/View/RHI mechanism used by multiple current passes, but may not absorb feature outputs, histories, estimator choices, or dispatch policy. This is precedent, not automatic proof that every existing file is ideal. Every new or materially changed feature retains a per-stage integration-hook ledger and fails architecture review when feature-specific state leaks into generic Scene, View, history, settings, RHI, UI, or frame-resource owners without a separately proved shared contract.
 
-The Reference Path Tracer is explicitly **one frame with an alternate middle recipe**. `FramePipeline::BuildRenderFrameGraph` selects on `RenderViewMode::ReferencePathTracer`: Lit builds GBuffer, ReSTIR lighting, and reconstruction; Reference Path Tracer builds independent camera transport, raw accumulation, and a display resolve. No recipe hierarchy or graph factory carries feature objects. Both branches retain the existing prepared Scene/View, ray-tracing-scene publication, frame-graph compiler/executor, RHI submission, viewport products, UI packets, and presentation tail. The feature is neither a second renderer nor a debug/post-process layer over Lit.
+The Reference Path Tracer is explicitly **one frame with an alternate middle recipe**. `FramePipeline::AddSceneRenderingPasses` selects on `RenderViewMode::ReferencePathTracer`: Lit builds GBuffer and ReSTIR lighting; Reference Path Tracer builds independent camera transport, raw accumulation, and a display resolve. Optional denoising owns its Lit-only activation below that branch. No recipe hierarchy or graph factory carries feature objects. Both branches retain the existing prepared Scene/View, ray-tracing-scene publication, frame-graph compiler/executor, RHI submission, viewport products, UI packets, and presentation tail. The feature is neither a second renderer nor a debug/post-process layer over Lit.
 
 | Decision axis | Available current branch | Important consequence |
 | --- | --- | --- |

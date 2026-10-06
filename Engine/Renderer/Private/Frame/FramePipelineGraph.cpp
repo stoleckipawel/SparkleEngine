@@ -2,6 +2,7 @@
 #include "Frame/FramePipeline.h"
 
 #include "Debug/RendererCVars.h"
+#include "Frame/RenderFrame.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Passes/Presentation/PresentationPolicy.h"

@@ -7,8 +7,6 @@
 #include "Frame/Graph/RenderFrameGraphSettings.h"
 #include "View/RenderView.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
-#include "Passes/Lighting/RealTimePathTracerProducts.h"
-#include "Passes/Visualization/LightingVisualization.h"
 #include "Passes/Lighting/RealTimePathTracerPasses.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerPasses.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerSession.h"
@@ -27,18 +25,6 @@ std::uint64_t GetSceneRenderingGraphRebuildKey(RenderViewMode viewMode) noexcept
 	return (static_cast<std::uint64_t>(viewMode) << viewModeBitOffset) | realTimePathTracerKey;
 }
 
-bool PrepareSceneRenderingProducts(
-    const RenderView& view,
-    const RenderFrameGraphResources& resources,
-    ViewportFrameProducts& products) noexcept
-{
-	if (view.viewMode != RenderViewMode::ReferencePathTracer && !PrepareRealTimePathTracerProducts(view.viewMode, products))
-	{
-		return false;
-	}
-	return PrepareLightingVisualizationProducts(view.viewMode, resources, products);
-}
-
 void FramePipeline::AddSceneRenderingPasses(FrameGraphBuilder& builder, const RenderFrame& frame, RenderFrameGraphResources& resources)
 {
 	const RenderFrameGraphSettings& settings = m_frameGraphSettings;
@@ -47,9 +33,9 @@ void FramePipeline::AddSceneRenderingPasses(FrameGraphBuilder& builder, const Re
 	{
 		AddReferencePathTracerPasses(builder, frame, settings, *m_referencePathTracerSession, resources);
 	}
-	else if (!AddRealTimePathTracerPasses(builder, frame, settings, m_renderScene->GetRayTracingScene(), *m_gpuMeshCache, resources))
+	else
 	{
-		return;
+		AddRealTimePathTracerPasses(builder, frame, settings, m_renderScene->GetRayTracingScene(), *m_gpuMeshCache, resources);
 	}
 
 	AddExposurePasses(builder, frame, settings, resources);

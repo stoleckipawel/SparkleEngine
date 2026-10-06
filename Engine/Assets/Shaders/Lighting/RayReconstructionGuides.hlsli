@@ -3,7 +3,6 @@
 
 #include "/Engine/Lighting/SurfaceLighting.hlsli"
 #include "/Engine/Passes/GBuffer/GBufferUtils.hlsli"
-#include "/Engine/RayTracing/PathLighting.hlsli"
 
 RWTexture2D<float4> RayReconstructionDiffuseAlbedo;
 RWTexture2D<float4> RayReconstructionSpecularAlbedo;
@@ -62,10 +61,9 @@ namespace RayReconstructionGuides
 		RayReconstructionRoughness[pixelCoord] = saturate(gBuffer.Roughness);
 	}
 
-	void WriteSpecularHitDistance(uint2 pixelCoord, RayTracingPathLighting::Result path, float3 primaryPositionWorld, bool hasSpecular)
+	void WriteSpecularHitDistance(uint2 pixelCoord, float3 hitPositionWorld, float3 primaryPositionWorld, bool hasSpecularHit)
 	{
-		const bool validSpecularHit = hasSpecular && path.FirstLighting.Hit;
-		const float hitDistance = validSpecularHit ? length(path.FirstLighting.HitPositionWorld - primaryPositionWorld) : 0.0f;
+		const float hitDistance = hasSpecularHit ? length(hitPositionWorld - primaryPositionWorld) : 0.0f;
 		RayReconstructionSpecularHitDistance[pixelCoord] = hitDistance;
 	}
 }
