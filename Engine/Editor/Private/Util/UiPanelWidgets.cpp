@@ -3,7 +3,6 @@
 
 #include "Style/SparkleUiPalette.h"
 #include "Style/SparkleUiTheme.h"
-#include "Util/EditorIconGlyphs.h"
 
 #include "Core/Public/Strings/StringUtils.h"
 

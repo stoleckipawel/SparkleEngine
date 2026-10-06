@@ -3,7 +3,6 @@
 
 #include "Style/SparkleUiPalette.h"
 #include "Style/SparkleUiTheme.h"
-#include "Util/EditorIconGlyphs.h"
 
 #include "Core/Public/Strings/StringUtils.h"
 
@@ -24,7 +23,7 @@ namespace UiUtil
 	const float DetailsLabelWidth = 132.0f;
 	const float DetailsAxisLabelWidth = 12.0f;
 	const float DetailsRowVerticalPadding = 1.0f;
-	const float PlaceholderIconSize = 14.0f;
+	const float EditorIconSize = 14.0f;
 	const float DetailsUtilityColumnWidth = 24.0f;
 	const float DetailsResetButtonSize = 14.0f;
 	const float DetailsDirtyEpsilon = 0.0001f;
@@ -224,7 +223,7 @@ namespace UiUtil
 	void DrawDetailsEmptyUtility(int utilityColumnIndex)
 	{
 		ImGui::TableSetColumnIndex(utilityColumnIndex);
-		ImGui::Dummy(ImVec2(DetailsUtilityColumnWidth, PlaceholderIconSize));
+		ImGui::Dummy(ImVec2(DetailsUtilityColumnWidth, EditorIconSize));
 	}
 
 	void EndDetailsRow()

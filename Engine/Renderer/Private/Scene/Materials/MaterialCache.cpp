@@ -2,6 +2,8 @@
 
 #include "Scene/Materials/MaterialCache.h"
 
+#include "Core/Public/Console/CVar.h"
+
 #include "Textures/DefaultTextures.h"
 #include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -18,6 +20,8 @@
 
 SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_materialCacheLogger, "Renderer.MaterialCache");
 
+static ConsoleVariable<bool> CVarEmissive("r.Lighting.Emissive", true, "Evaluate visible material emission and emissive lighting.");
+
 MaterialCache::MaterialCache(TextureCache& textureCache, RenderHardwareInterface& renderHardwareInterface) noexcept :
     m_textureCache(textureCache),
     m_renderHardwareInterface(renderHardwareInterface)
@@ -30,7 +34,7 @@ void MaterialCache::BuildMaterials(const RenderMaterialTable& materials, std::ui
 {
 	const std::uint64_t textureRevision = m_textureCache.GetBindingRevision();
 	const bool rebuildRequired = m_currentGeneration == nullptr || m_currentGeneration->GetSourceRevision() != sourceRevision
-	    || m_currentGeneration->GetTextureRevision() != textureRevision;
+	    || m_currentGeneration->GetTextureRevision() != textureRevision || m_builtEmissiveEnabled != CVarEmissive.Get();
 	if (rebuildRequired)
 	{
 		Rebuild(materials, sourceRevision, textureRevision);
@@ -66,6 +70,7 @@ void MaterialCache::Rebuild(const RenderMaterialTable& materials, std::uint64_t 
 	output->m_textureRevision = textureRevision;
 	output->m_generation = nextGeneration;
 	m_currentGeneration = std::move(output);
+	m_builtEmissiveEnabled = CVarEmissive.Get();
 	m_textureCache.CommitBindingRevision(textureRevision);
 }
 
@@ -76,6 +81,11 @@ void MaterialCache::BuildMaterial(
     RenderMaterialGeneration& output)
 {
 	MaterialData material = MaterialData::FromDesc(desc);
+	if (!CVarEmissive.Get())
+	{
+		material.emissiveColor = {};
+		material.textureFlags &= ~GetTextureGroupFlag(TextureGroup::Emissive);
+	}
 	material.gpuHandle = MaterialGpuHandle{.Index = materialIndex, .Generation = generation};
 
 	const std::array<const RendererTexture*, MaterialTextureSlots::Count> textures{
@@ -86,7 +96,9 @@ void MaterialCache::BuildMaterial(
 	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(
 	        desc.FindTextureReference(TextureGroup::AmbientOcclusion),
 	        DefaultTexture::White),
-	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(desc.FindTextureReference(TextureGroup::Emissive), DefaultTexture::Black),
+	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(
+	        CVarEmissive.Get() ? desc.FindTextureReference(TextureGroup::Emissive) : nullptr,
+	        DefaultTexture::Black),
 	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(
 	        desc.FindTextureReference(TextureGroup::SubsurfaceColor),
 	        DefaultTexture::Black),

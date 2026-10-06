@@ -3,14 +3,10 @@
 
 #include "Style/SparkleUiPalette.h"
 #include "Style/SparkleUiTheme.h"
-#include "Util/EditorIconGlyphs.h"
 
 #include "Core/Public/Strings/StringUtils.h"
 
 #include <algorithm>
-#include <cfloat>
-#include <cmath>
-#include <vector>
 
 #include <imgui.h>
 
@@ -18,107 +14,108 @@
 
 namespace UiUtil
 {
+	// Semantic icons map directly to the Font Awesome Free Solid 6.7.1 font asset.
 	const char* GetEditorIconGlyph(EditorIcon icon) noexcept
 	{
 		switch (icon)
 		{
 			case EditorIcon::Folder:
-				return EditorIconGlyphs::FontAwesome::Folder;
+				return "\xef\x81\xbb";
 			case EditorIcon::FolderOpen:
-				return EditorIconGlyphs::FontAwesome::FolderOpen;
+				return "\xef\x81\xbc";
 			case EditorIcon::Camera:
-				return EditorIconGlyphs::FontAwesome::Camera;
+				return "\xef\x80\xb0";
 			case EditorIcon::Light:
-				return EditorIconGlyphs::FontAwesome::Light;
+				return "\xef\x83\xa7";
 			case EditorIcon::DirectionalLight:
-				return EditorIconGlyphs::FontAwesome::DirectionalLight;
+				return "\xef\x86\x85";
 			case EditorIcon::PointLight:
-				return EditorIconGlyphs::FontAwesome::PointLight;
+				return "\xef\x86\x92";
 			case EditorIcon::SpotLight:
-				return EditorIconGlyphs::FontAwesome::SpotLight;
+				return "\xef\x85\x80";
 			case EditorIcon::RectLight:
-				return EditorIconGlyphs::FontAwesome::RectLight;
+				return "\xef\x83\x88";
 			case EditorIcon::Sky:
-				return EditorIconGlyphs::FontAwesome::Sky;
+				return "\xef\x83\x82";
 			case EditorIcon::StaticMesh:
-				return EditorIconGlyphs::FontAwesome::StaticMesh;
+				return "\xef\x86\xb2";
 			case EditorIcon::SkinnedMesh:
-				return EditorIconGlyphs::FontAwesome::SkinnedMesh;
+				return "\xef\x86\x83";
 			case EditorIcon::Material:
-				return EditorIconGlyphs::FontAwesome::Material;
+				return "\xef\x94\xbf";
 			case EditorIcon::EyeVisible:
-				return EditorIconGlyphs::FontAwesome::EyeVisible;
+				return "\xef\x81\xae";
 			case EditorIcon::EyeHidden:
-				return EditorIconGlyphs::FontAwesome::EyeHidden;
+				return "\xef\x81\xb0";
 			case EditorIcon::Reset:
-				return EditorIconGlyphs::FontAwesome::Reset;
+				return "\xef\x83\xa2";
 			case EditorIcon::Filter:
-				return EditorIconGlyphs::FontAwesome::Filter;
+				return "\xef\x82\xb0";
 			case EditorIcon::Settings:
-				return EditorIconGlyphs::FontAwesome::Settings;
+				return "\xef\x80\x93";
 			case EditorIcon::Save:
-				return EditorIconGlyphs::FontAwesome::Save;
+				return "\xef\x83\x87";
 			case EditorIcon::Shader:
-				return EditorIconGlyphs::FontAwesome::Shader;
+				return "\xef\x8b\x9b";
 			case EditorIcon::Refresh:
-				return EditorIconGlyphs::FontAwesome::Refresh;
+				return "\xef\x80\xa1";
 			case EditorIcon::Reload:
-				return EditorIconGlyphs::FontAwesome::Reload;
+				return "\xef\x87\x80";
 			case EditorIcon::Search:
-				return EditorIconGlyphs::FontAwesome::Search;
+				return "\xef\x80\x82";
 			case EditorIcon::Level:
-				return EditorIconGlyphs::FontAwesome::Level;
+				return "\xef\x89\xb9";
 			case EditorIcon::ViewMode:
-				return EditorIconGlyphs::FontAwesome::ViewMode;
+				return "\xef\x97\xbd";
 			case EditorIcon::ViewLit:
-				return EditorIconGlyphs::FontAwesome::ViewLit;
+				return "\xef\x86\x85";
 			case EditorIcon::ViewDiffuse:
-				return EditorIconGlyphs::FontAwesome::ViewDiffuse;
+				return "\xef\x94\xbf";
 			case EditorIcon::ViewNormal:
-				return EditorIconGlyphs::FontAwesome::ViewNormal;
+				return "\xef\x81\x87";
 			case EditorIcon::ViewRoughness:
-				return EditorIconGlyphs::FontAwesome::ViewRoughness;
+				return "\xef\x9b\xbc";
 			case EditorIcon::ViewMetallic:
-				return EditorIconGlyphs::FontAwesome::ViewMetallic;
+				return "\xef\x81\xb6";
 			case EditorIcon::ViewEmissive:
-				return EditorIconGlyphs::FontAwesome::ViewEmissive;
+				return "\xef\x81\xad";
 			case EditorIcon::ViewAmbientOcclusion:
-				return EditorIconGlyphs::FontAwesome::ViewAmbientOcclusion;
+				return "\xef\x81\x82";
 			case EditorIcon::ViewSubsurfaceColor:
-				return EditorIconGlyphs::FontAwesome::ViewSubsurfaceColor;
+				return "\xef\x81\x83";
 			case EditorIcon::ViewSubsurfaceStrength:
-				return EditorIconGlyphs::FontAwesome::ViewSubsurfaceStrength;
+				return "\xef\x9d\xb3";
 			case EditorIcon::ViewDirectDiffuse:
-				return EditorIconGlyphs::FontAwesome::ViewDirectDiffuse;
+				return "\xef\x83\xa7";
 			case EditorIcon::ViewDirectSpecular:
-				return EditorIconGlyphs::FontAwesome::ViewDirectSpecular;
+				return "\xef\x8e\xa5";
 			case EditorIcon::ViewDirectSubsurface:
-				return EditorIconGlyphs::FontAwesome::ViewDirectSubsurface;
+				return "\xef\x97\x92";
 			case EditorIcon::Cpu:
-				return EditorIconGlyphs::FontAwesome::Cpu;
+				return "\xef\x8b\x9b";
 			case EditorIcon::Gpu:
-				return EditorIconGlyphs::FontAwesome::Gpu;
+				return "\xef\x84\x88";
 			case EditorIcon::Help:
-				return EditorIconGlyphs::FontAwesome::Help;
+				return "\xef\x81\x99";
 			case EditorIcon::Clear:
-				return EditorIconGlyphs::FontAwesome::Clear;
+				return "\xef\x87\xb8";
 			case EditorIcon::Copy:
-				return EditorIconGlyphs::FontAwesome::Copy;
+				return "\xef\x83\x85";
 			case EditorIcon::Console:
-				return EditorIconGlyphs::FontAwesome::Console;
+				return "\xef\x84\xa0";
 			case EditorIcon::SourceFile:
-				return EditorIconGlyphs::FontAwesome::SourceFile;
+				return "\xef\x87\x89";
 			case EditorIcon::Reflection:
-				return EditorIconGlyphs::FontAwesome::Reflection;
+				return "\xef\x82\xae";
 			case EditorIcon::Disassembly:
-				return EditorIconGlyphs::FontAwesome::Disassembly;
+				return "\xef\x84\xa0";
 			case EditorIcon::CompileRequest:
-				return EditorIconGlyphs::FontAwesome::CompileRequest;
+				return "\xef\x91\xad";
 			case EditorIcon::Sort:
-				return EditorIconGlyphs::FontAwesome::Sort;
+				return "\xef\x85\xa0";
 			case EditorIcon::None:
 			default:
-				return EditorIconGlyphs::FontAwesome::Default;
+				return "\xef\x81\x99";
 		}
 	}
 
@@ -144,11 +141,6 @@ namespace UiUtil
 		return ImGui::ColorConvertFloat4ToU32(color);
 	}
 
-	void DrawEditorIcon(EditorIcon icon, const char* tooltip, bool drawBadgeBackground)
-	{
-		DrawPlaceholderTypeIcon(GetEditorIconGlyph(icon), tooltip, drawBadgeBackground);
-	}
-
 	bool DrawEditorIconButton(EditorIcon icon, const char* id, const char* tooltip)
 	{
 		ImGui::PushID(id);
@@ -157,7 +149,7 @@ namespace UiUtil
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SparkleUiPalette::ButtonBackgroundHovered());
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, SparkleUiPalette::ButtonBackgroundActive());
 		ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::TextMuted());
-		const bool pressed = ImGui::Button(GetEditorIconGlyph(icon), ImVec2(PlaceholderIconSize, PlaceholderIconSize));
+		const bool pressed = ImGui::Button(GetEditorIconGlyph(icon), ImVec2(EditorIconSize, EditorIconSize));
 		if (tooltip != nullptr && tooltip[0] != '\0' && ImGui::IsItemHovered())
 		{
 			ImGui::SetTooltip("%s", tooltip);
@@ -201,18 +193,18 @@ namespace UiUtil
 
 	bool DrawCenteredVisibilityIconButton(const char* id, bool visible) noexcept
 	{
-		constexpr float kVisibilityIconSize = 14.0f;
 		const float availableWidth = ImGui::GetContentRegionAvail().x;
-		const float horizontalOffset = (std::max) (0.0f, (availableWidth - kVisibilityIconSize) * 0.5f);
-		const float verticalOffset = (std::max) (0.0f, (ImGui::GetFrameHeight() - kVisibilityIconSize) * 0.5f);
+		const float horizontalOffset = (std::max) (0.0f, (availableWidth - EditorIconSize) * 0.5f);
+		const float verticalOffset = (std::max) (0.0f, (ImGui::GetFrameHeight() - EditorIconSize) * 0.5f);
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + horizontalOffset);
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + verticalOffset);
 		return DrawVisibilityIconButton(id, visible);
 	}
 
-	void DrawPlaceholderTypeIcon(const char* text, const char* tooltip, bool drawBadgeBackground)
+	void DrawEditorIcon(EditorIcon icon, const char* tooltip, bool drawBadgeBackground)
 	{
-		const ImVec2 size(PlaceholderIconSize, PlaceholderIconSize);
+		const char* text = GetEditorIconGlyph(icon);
+		const ImVec2 size(EditorIconSize, EditorIconSize);
 		const ImVec2 start = ImGui::GetCursorScreenPos();
 		ImGui::InvisibleButton("##placeholder_type_icon", size);
 
@@ -241,7 +233,7 @@ namespace UiUtil
 	{
 		ImGui::PushID(id);
 		const ImVec2 start = ImGui::GetCursorScreenPos();
-		const ImVec2 size(PlaceholderIconSize, PlaceholderIconSize);
+		const ImVec2 size(EditorIconSize, EditorIconSize);
 		const bool pressed = ImGui::InvisibleButton("##visibility", size);
 		const bool hovered = ImGui::IsItemHovered();
 		const bool active = ImGui::IsItemActive();

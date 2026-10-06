@@ -35,4 +35,5 @@ private:
 	TextureCache& m_textureCache;
 	RenderHardwareInterface& m_renderHardwareInterface;
 	std::shared_ptr<const RenderMaterialGeneration> m_currentGeneration;
+	bool m_builtEmissiveEnabled = true;
 };

@@ -16,7 +16,7 @@ TaskResult RenderScenePreparationTasks::TransformPrimitives(std::uint32_t begin,
 	RenderScenePreparationRun& run = *context.TryGet<RenderScenePreparationRun>();
 	const std::size_t rangeBegin = (std::min<std::size_t>) (begin, run.ResolvedPrimitives.size());
 	const std::size_t rangeEnd = (std::min<std::size_t>) (end, run.ResolvedPrimitives.size());
-	RenderPrimitivePreparation::TransformRange(
+	PrepareRenderPrimitives(
 	    std::span<const ResolvedRenderPrimitive>{run.ResolvedPrimitives}.subspan(rangeBegin, rangeEnd - rangeBegin),
 	    std::span<PreparedRenderPrimitive>{run.PreparedPrimitives}.subspan(rangeBegin, rangeEnd - rangeBegin));
 	return TaskResult::Success();
@@ -51,7 +51,7 @@ TaskResult RenderScenePreparationTasks::PrepareLights(std::uint32_t begin, std::
 	RenderScenePreparationRun& run = *context.TryGet<RenderScenePreparationRun>();
 	const std::size_t rangeBegin = (std::min<std::size_t>) (begin, run.PreparedLights.size());
 	const std::size_t rangeEnd = (std::min<std::size_t>) (end, run.PreparedLights.size());
-	RenderLightPreparation::PrepareRange(
+	PrepareRenderLights(
 	    run.Lights.subspan(rangeBegin, rangeEnd - rangeBegin),
 	    std::span<PreparedRenderLight>{run.PreparedLights}.subspan(rangeBegin, rangeEnd - rangeBegin));
 	return TaskResult::Success();

@@ -13,7 +13,7 @@ namespace UiUtil
 	extern const float DetailsLabelWidth;
 	extern const float DetailsAxisLabelWidth;
 	extern const float DetailsRowVerticalPadding;
-	extern const float PlaceholderIconSize;
+	extern const float EditorIconSize;
 	extern const float DetailsUtilityColumnWidth;
 	extern const float DetailsResetButtonSize;
 	extern const float DetailsDirtyEpsilon;

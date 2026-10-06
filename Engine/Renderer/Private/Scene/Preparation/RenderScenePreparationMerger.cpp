@@ -12,7 +12,7 @@ TaskResult RenderScenePreparationMerger::Merge(TaskExecutionContext& context)
 {
 	RenderScenePreparationRun& run = *context.TryGet<RenderScenePreparationRun>();
 
-	RenderLightPreparation::Commit(run.PreparedLights, run.PreparedScene);
+	CommitPreparedRenderLights(run.PreparedLights, run.PreparedScene);
 	PublishPrimitives(run);
 	return TaskResult::Success();
 }

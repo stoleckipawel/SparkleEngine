@@ -17,10 +17,11 @@ struct ShowControl final
 	UiUtil::EditorIcon Icon;
 };
 
-static constexpr std::array<ShowControl, 14> showControls = {
+static constexpr std::array<ShowControl, 15> showControls = {
     {{"Sky", "r.Sky.Enabled", UiUtil::EditorIcon::Sky},
         {"Static Meshes", "r.Meshes.Static", UiUtil::EditorIcon::StaticMesh},
         {"Skinned Meshes", "r.Meshes.Skinned", UiUtil::EditorIcon::SkinnedMesh},
+        {"Emissive", "r.Lighting.Emissive", UiUtil::EditorIcon::ViewEmissive},
         {"Directional Lights", "r.Lighting.Lights.Directional", UiUtil::EditorIcon::DirectionalLight},
         {"Point Lights", "r.Lighting.Lights.Point", UiUtil::EditorIcon::PointLight},
         {"Spot Lights", "r.Lighting.Lights.Spot", UiUtil::EditorIcon::SpotLight},
@@ -46,11 +47,12 @@ static constexpr auto showMenuEntries = std::to_array<ShowMenuEntry>(
     {{nullptr, UiUtil::EditorIcon::None, 0, 1, "COMMON SHOW FLAGS"},
         {nullptr, UiUtil::EditorIcon::None, 1, 1, nullptr},
         {nullptr, UiUtil::EditorIcon::None, 2, 1, nullptr},
-        {nullptr, UiUtil::EditorIcon::None, 3, 1, "LIGHT TYPES"},
-        {"Local Lights", UiUtil::EditorIcon::PointLight, 4, 3, nullptr},
-        {"Direct Lighting", UiUtil::EditorIcon::DirectionalLight, 7, 3, "LIGHTING COMPONENTS"},
-        {"Indirect Lighting", UiUtil::EditorIcon::Light, 10, 2, nullptr},
-        {"Shadows", UiUtil::EditorIcon::ViewAmbientOcclusion, 12, 2, "LIGHTING FEATURES"}});
+        {nullptr, UiUtil::EditorIcon::None, 3, 1, nullptr},
+        {nullptr, UiUtil::EditorIcon::None, 4, 1, "LIGHT TYPES"},
+        {"Local Lights", UiUtil::EditorIcon::PointLight, 5, 3, nullptr},
+        {"Direct Lighting", UiUtil::EditorIcon::DirectionalLight, 8, 3, "LIGHTING COMPONENTS"},
+        {"Indirect Lighting", UiUtil::EditorIcon::Light, 11, 2, nullptr},
+        {"Shadows", UiUtil::EditorIcon::ViewAmbientOcclusion, 13, 2, "LIGHTING FEATURES"}});
 
 static bool QueryShowControlIntent(const CVarControlExecutor& executor, std::array<bool, showControls.size()>& intent, std::string& error)
 {

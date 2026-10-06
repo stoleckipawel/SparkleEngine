@@ -103,7 +103,6 @@ namespace UiUtil
 	ImU32 WithAlphaU32(ImVec4 color, float alpha) noexcept;
 	void DrawEditorIcon(EditorIcon icon, const char* tooltip = nullptr, bool drawBadgeBackground = true);
 	bool DrawEditorIconButton(EditorIcon icon, const char* id, const char* tooltip = nullptr);
-	void DrawPlaceholderTypeIcon(const char* text, const char* tooltip = nullptr, bool drawBadgeBackground = true);
 	bool DrawVisibilityIconButton(const char* id, bool visible);
 	bool DrawFilterChip(const char* label, bool active) noexcept;
 	void DrawMutedText(const char* text, float alpha = 0.72f) noexcept;
