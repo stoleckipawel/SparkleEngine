@@ -133,33 +133,11 @@ Optional feature entry points call their own `IsActive` and return before declar
 
 ## Editor Interaction
 
-Open **Show** beside the current view-mode button. **Use Defaults** appears first and enables all seven leaves in one batch. The menu uses section headings and the existing semantic Editor icons: **Lighting Components** contains Direct Lighting and Indirect Lighting submenus; **Lighting Features** contains Shadows. Each submenu has an **All** bulk toggle followed by its implemented leaves. All has a left check when every child is enabled and a dash for a partial selection; checked or mixed disables the group, unchecked enables it. Toggles keep the menu open for repeated edits. Leaf tooltips name the corresponding console variable and global scope. Checks describe acknowledged intent, not current-frame GPU completion. The grouped presentation takes inspiration from [Unreal's Viewport Show Flags](https://dev.epicgames.com/documentation/unreal-engine/viewport-show-flags-in-unreal-engine), while Sparkle lists only its implemented controls.
+Open **Show** beside the current view-mode button. **Use Defaults** appears first and enables all implemented leaves in one batch. The menu uses section headings and semantic Editor icons: **Common Show Flags** contains Sky, Static Meshes, and Skinned Meshes; **Light Types** contains Directional Lights and Local Lights; **Lighting Components** contains Direct Lighting and Indirect Lighting submenus; **Lighting Features** contains Shadows. Each submenu has an **All** bulk toggle followed by its implemented leaves. All has a left check when every child is enabled and a dash for a partial selection; checked or mixed disables the group, unchecked enables it. Toggles keep the menu open for repeated edits. Leaf tooltips name the corresponding console variable and global scope. Checks describe acknowledged intent, not current-frame GPU completion. The grouped presentation takes inspiration from [Unreal's Viewport Show Flags](https://dev.epicgames.com/documentation/unreal-engine/viewport-show-flags-in-unreal-engine), while Sparkle lists only its implemented controls.
 
-The Show popup is anchored below its toolbar and uses the [shared Editor menu pattern](../../../../Editor/README.md#ui-implementation-boundary). Root and child widths follow their labels and column gutters independently; no fixed popup width or enlarged menu font is imposed. Root submenu rows omit the unused check column; child toggles have separate left check and muted icon columns. `ViewportShowMenu` owns only the lighting presentation groups and CVar queries/commands. Shared `UiUtil` widgets own sizing, styling, sections, and marks; they retain native ImGui selection, keyboard navigation, and popup lifetime.
+The Show popup is anchored below its toolbar and uses the [shared Editor menu pattern](../../../../Editor/README.md#ui-implementation-boundary). Root and child widths follow their labels and column gutters independently; no fixed popup width or enlarged menu font is imposed. Root submenu rows omit the unused check column; child toggles have separate left check and muted icon columns. `ViewportShowMenu` owns only the rendering presentation groups and CVar queries/commands. Shared `UiUtil` widgets own sizing, styling, sections, and marks; they retain native ImGui selection, keyboard navigation, and popup lifetime.
 
 The menu queries the existing synchronous Core executor only while open. It has no retained selection; console edits appear on the next draw. Missing registrations/types suppress the editable hierarchy and show a defect; rejected edits keep the prior authoritative values and show the operation error until a successful retry. These process-global controls remain editable in every view mode; host interaction locks still disable the menu. Renderer owns whether the selected path consumes a feature and whether its diagnostic product is available. The menu does not receive a view-mode selector or decide feature admission.
-
-Editor places **Show** beside the current view-mode button. It presents feature intent:
-
-```text
-Show
-├─ Use Defaults
-├─ LIGHTING COMPONENTS
-│  ├─ Direct Lighting >
-│  │  ├─ [x/Mixed] All
-│  │  ├─ [x] Diffuse
-│  │  ├─ [x] Specular
-│  │  └─ [x] Subsurface
-│  └─ Indirect Lighting >
-│     ├─ [x/Mixed] All
-│     ├─ [x] Diffuse
-│     └─ [x] Specular
-└─ LIGHTING FEATURES
-   └─ Shadows >
-      ├─ [x/Mixed] All
-      ├─ [x] Direct Shadows
-      └─ [x] Indirect Shadows
-```
 
 `ViewportTopPanel` places the Show button; its private `ViewportShowMenu` owns labels, hierarchy, interaction, keyboard navigation, and a concise shared-scope tooltip. It reads leaf checks from CVar requested state, including console changes. It does not put selection into `EditorViewportSession` or advance viewport-request generation for a CVar edit; the existing control publication invalidates the affected rendering work.
 
@@ -167,7 +145,7 @@ Console and menu clients receive only the generic control request/result capabil
 
 Each submenu's **All** row derives checked/mixed/unchecked state from all/any/none of its implemented children being enabled. Clicking that row when checked or mixed disables all those children; clicking it when unchecked enables all. **Use Defaults** enables all implemented leaves in one batch. There is no saved mixed-selection restore, parent state, or persisted Editor mirror. Toggling Shadows does not change lighting-lobe CVars, and toggling a lighting group does not change retained shadow intent.
 
-Lit and Lit-shaded Wireframe consume these controls. Editing global intent from an inspection or Reference view can affect other applicable viewports; it does not make the inspected path consume that feature. Never mutate CVars just because the mode changes. A lighting-lobe diagnostic observes the current execution product: a disabled lobe displays its current-frame zero contribution. There is no separate feature-support gate in the Editor, scene orchestration or product publication.
+Lit and Lit-shaded Wireframe consume the lighting-lobe and shadow controls. Mesh, analytic light-type, and Sky controls also affect the prepared scene consumed by Reference transport. Inspection modes consume their relevant scene inputs; editing global intent can affect other viewports without making the inspected path consume an unrelated lighting feature. Never mutate CVars just because the mode changes. A lighting-lobe diagnostic observes the current execution product: a disabled lobe displays its current-frame zero contribution. There is no separate feature-support gate in the Editor, scene orchestration or product publication.
 
 ## Execution And Product Contract
 

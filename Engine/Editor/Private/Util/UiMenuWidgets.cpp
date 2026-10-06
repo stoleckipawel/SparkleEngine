@@ -8,7 +8,7 @@
 #include <cstring>
 #include <limits>
 
-namespace
+namespace UiUtil
 {
 	constexpr float menuHorizontalPadding = 0.6f;
 	constexpr float menuVerticalPadding = 0.4f;
@@ -23,7 +23,7 @@ namespace
 	constexpr float menuHeadingLineGap = 0.7f;
 	constexpr float menuHeadingLineWidth = 1.5f;
 
-	const char* NextMenuHeadingGlyph(const char* character)
+	static const char* NextMenuHeadingGlyph(const char* character)
 	{
 		const char* next = character + 1;
 		while ((static_cast<unsigned char>(*next) & 0xc0u) == 0x80u)
@@ -33,7 +33,7 @@ namespace
 		return next;
 	}
 
-	void DrawMenuRowContent(ImDrawList& drawList, ImVec2 position, const char* label, UiUtil::EditorIcon icon, bool hasCheckColumn)
+	static void DrawMenuRowContent(ImDrawList& drawList, ImVec2 position, const char* label, EditorIcon icon, bool hasCheckColumn)
 	{
 		const float fontSize = ImGui::GetFontSize();
 		const float checkOffset = hasCheckColumn ? menuCheckColumnWidth : 0.0f;
@@ -51,10 +51,6 @@ namespace
 		    label,
 		    labelEnd);
 	}
-}
-
-namespace UiUtil
-{
 	MenuStyleScope::MenuStyleScope()
 	{
 		const float fontSize = ImGui::GetFontSize();
