@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Frame/Graph/RenderFrameGraphResources.h"
+#include "Frame/RenderFrame.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
 #include "Scene/GpuScene/RenderSceneGpuBindings.h"
@@ -10,8 +11,11 @@
 #include "ShaderData/SkyUniformData.h"
 #include "View/RenderView.h"
 
-template <typename TParameterInstance>
-void BindSceneShaderParameters(FrameGraphBuilder& builder, TParameterInstance& parameters, const RenderFrameGraphResources& resources)
+template <typename TParameterInstance> void BindSceneShaderParameters(
+    FrameGraphBuilder& builder,
+    const RenderFrame& frame,
+    TParameterInstance& parameters,
+    const RenderFrameGraphResources& resources)
 {
 	const RenderSceneGpuResources& scene = resources.ImportedScene.Scene;
 
@@ -93,56 +97,44 @@ void BindSceneShaderParameters(FrameGraphBuilder& builder, TParameterInstance& p
 
 	if constexpr (requires { parameters->Frame; })
 	{
-		builder.AddParameterSetup<FrameUniformData>(
-		    parameters,
-		    [](auto& parameters, const FrameUniformData& frame) { parameters->Frame = frame; });
+		parameters->Frame = BuildFrameUniformData(frame.Identity.FrameId, frame.Time);
 	}
 	if constexpr (requires { parameters->View; } || requires { parameters->ViewCamera; } || requires { parameters->ViewTemporal; })
 	{
-		builder.AddParameterSetup<RenderView>(
-		    parameters,
-		    [](auto& parameters, const RenderView& view)
-		    {
-			    if constexpr (requires { parameters->View; })
-			    {
-				    parameters->View = view.uniform;
-			    }
-			    if constexpr (requires { parameters->ViewCamera; })
-			    {
-				    parameters->ViewCamera = view.cameraUniform;
-			    }
-			    if constexpr (requires { parameters->ViewTemporal; })
-			    {
-				    parameters->ViewTemporal = view.temporalUniform;
-			    }
-		    });
+		if constexpr (requires { parameters->View; })
+		{
+			parameters->View = frame.View.uniform;
+		}
+		if constexpr (requires { parameters->ViewCamera; })
+		{
+			parameters->ViewCamera = frame.View.cameraUniform;
+		}
+		if constexpr (requires { parameters->ViewTemporal; })
+		{
+			parameters->ViewTemporal = frame.View.temporalUniform;
+		}
 	}
 	if constexpr (
 	    requires { parameters->Sky; } || requires { parameters->SceneLighting; } || requires { parameters->RayTracingHitConstants; }
 	    || requires { parameters->MaterialTextureTable; })
 	{
-		builder.AddParameterSetup<PreparedRenderScene>(
-		    parameters,
-		    [](auto& parameters, const PreparedRenderScene& preparedScene)
-		    {
-			    if constexpr (requires { parameters->Sky; })
-			    {
-				    parameters->Sky = MakeSkyUniformData(preparedScene.sky);
-			    }
-			    if constexpr (requires { parameters->SceneLighting; })
-			    {
-				    parameters->SceneLighting = preparedScene.gpuBindings->Lighting.Uniform;
-			    }
-			    if constexpr (requires { parameters->RayTracingHitConstants; })
-			    {
-				    parameters->RayTracingHitConstants = RayTracingHitUniformData{
-				        .RayTracingHitInstanceCount = preparedScene.gpuBindings->RayTracing.InstanceCount,
-				        .RayTracingHitMaterialCount = preparedScene.gpuBindings->RayTracing.MaterialCount};
-			    }
-			    if constexpr (requires { parameters->MaterialTextureTable; })
-			    {
-				    parameters->MaterialTextureTable = preparedScene.materialTextureTable.Binding;
-			    }
-		    });
+		if constexpr (requires { parameters->Sky; })
+		{
+			parameters->Sky = MakeSkyUniformData(frame.PreparedScene.sky);
+		}
+		if constexpr (requires { parameters->SceneLighting; })
+		{
+			parameters->SceneLighting = frame.PreparedScene.gpuBindings->Lighting.Uniform;
+		}
+		if constexpr (requires { parameters->RayTracingHitConstants; })
+		{
+			parameters->RayTracingHitConstants = RayTracingHitUniformData{
+			    .RayTracingHitInstanceCount = frame.PreparedScene.gpuBindings->RayTracing.InstanceCount,
+			    .RayTracingHitMaterialCount = frame.PreparedScene.gpuBindings->RayTracing.MaterialCount};
+		}
+		if constexpr (requires { parameters->MaterialTextureTable; })
+		{
+			parameters->MaterialTextureTable = frame.PreparedScene.materialTextureTable.Binding;
+		}
 	}
 }

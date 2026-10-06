@@ -1,12 +1,17 @@
 #include "../../../PCH.h"
 #include "Passes/PostProcessing/Exposure/ExposurePasses.h"
 
+#include "Frame/RenderFrame.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "Passes/PostProcessing/Exposure/ExposureAdaptation.h"
 #include "Passes/PostProcessing/Exposure/ExposureMeteringPasses.h"
 
-void AddExposurePasses(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings, const RenderFrameGraphResources& resources)
+void AddExposurePasses(
+    FrameGraphBuilder& builder,
+    const RenderFrame& frame,
+    const RenderFrameGraphSettings& settings,
+    const RenderFrameGraphResources& resources)
 {
 	ExposureMomentTexture moments;
 	switch (settings.ExposureMeteringMethod)
@@ -21,5 +26,5 @@ void AddExposurePasses(FrameGraphBuilder& builder, const RenderFrameGraphSetting
 			throw Diagnostics::Error("Exposure graph construction received an invalid metering method.");
 	}
 
-	AddExposureAdaptationPass(builder, moments, resources);
+	AddExposureAdaptationPass(builder, frame, moments, resources);
 }

@@ -2,8 +2,6 @@
 #include "Frame/FramePipeline.h"
 
 #include "Debug/RendererCVars.h"
-#include "Frame/RenderFrame.h"
-#include "Frame/Graph/ViewportFrameProductExports.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Passes/Presentation/PresentationPolicy.h"
@@ -55,15 +53,13 @@ void FramePipeline::InitializeFrameGraph(const RenderFrameGraphSettings& setting
 	rayTracingScene.BeginGraphBuild();
 	auto frameGraph = std::make_unique<FrameGraph>(&m_deviceServices.GetRenderHardwareInterface(), &m_window);
 	FrameGraphBuilder builder(*frameGraph, m_renderPassRuntimeCache);
-	RenderFrameGraphResources resources = BuildRenderFrameGraph(builder, settings);
-	ExportViewportFrameProducts(builder, settings, resources);
+	m_frameResources = CreateRenderFrameGraphResources(builder, settings);
 
 	m_frameGraphSettings = settings;
 	m_builtGBufferAlgorithm = CVarGBufferAlgorithm.Get();
 	m_builtRayTracingGraphGeneration = rayTracingScene.GetGraphGeneration();
 	m_builtShaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration();
-	m_builtSceneRenderingTopologyIdentity = GetSceneRenderingTopologyIdentity(m_viewportRenderRequest.ViewMode);
-	m_frameResources = resources;
+	m_builtSceneRenderingGraphRebuildKey = GetSceneRenderingGraphRebuildKey(m_viewportRenderRequest.ViewMode);
 	m_imageProviderFrameGraphKey = m_imageProviders->GetFrameGraphKey();
 	m_frameGraph = std::move(frameGraph);
 	++m_graphTopologyGeneration;
@@ -129,10 +125,10 @@ void FramePipeline::RefreshGraphForTopology() noexcept
 	const GBufferAlgorithm gBufferAlgorithm = CVarGBufferAlgorithm.Get();
 	const std::uint64_t rayTracingGraphGeneration = m_renderScene->GetRayTracingScene().GetGraphGeneration();
 	const std::uint64_t shaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration();
-	const std::uint64_t sceneTopologyIdentity = GetSceneRenderingTopologyIdentity(m_viewportRenderRequest.ViewMode);
+	const std::uint64_t sceneRenderingGraphRebuildKey = GetSceneRenderingGraphRebuildKey(m_viewportRenderRequest.ViewMode);
 	if (providerChanged || settings != m_frameGraphSettings || gBufferAlgorithm != m_builtGBufferAlgorithm
 	    || rayTracingGraphGeneration != m_builtRayTracingGraphGeneration || shaderGeneration != m_builtShaderGeneration
-	    || sceneTopologyIdentity != m_builtSceneRenderingTopologyIdentity)
+	    || sceneRenderingGraphRebuildKey != m_builtSceneRenderingGraphRebuildKey)
 	{
 		InvalidateViewHistory(RenderViewInvalidationReason::GraphTopology);
 		RefreshFrameExecution(settings);

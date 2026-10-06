@@ -12,6 +12,8 @@
 
 **Current readiness:** **50/100** — the shared task runtime and consumers exist in source; stress, failure, shutdown, capacity, and causal-performance proof remain open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
 
+Source ownership reconciled on 2026-10-06: `ParallelFor` computes balanced partition boundaries with widened arithmetic (`count * index / partitions`). Each nonempty range stays within the item count, including counts just above the partition cap. GameFramework resolves live counts at settled host dependency waves and delegates populated ranges to this shared implementation.
+
 ## At A Glance
 
 | Contract | Current behavior | Important limit |

@@ -174,9 +174,14 @@ public:
 	{
 		m_renderPassRuntimeCache.MaterializeRayTracingRuntime<TRayGenerationShader>(composition);
 		const RayTracingPassPipelineRuntime runtime = m_renderPassRuntimeCache.GetRayTracingRuntime<TRayGenerationShader>(composition);
-		std::shared_ptr<RayTracingShaderTable> shaderTable(
-		    m_renderPassRuntimeCache.CreateRayTracingShaderTable<TRayGenerationShader>(composition));
-		AddRayTracingPass<TRayGenerationShader>(label, runtime, std::move(shaderTable), parameters, dimensions);
+		const std::string tableKey = std::string(label) + "." + std::to_string(reinterpret_cast<std::uintptr_t>(&runtime.Pipeline)) + "."
+		    + std::to_string(runtime.Generation);
+		auto& shaderTable = m_frameGraph.m_rayTracingShaderTables[tableKey];
+		if (shaderTable == nullptr)
+		{
+			shaderTable = m_renderPassRuntimeCache.CreateRayTracingShaderTable<TRayGenerationShader>(composition);
+		}
+		AddRayTracingPass<TRayGenerationShader>(label, tableKey, runtime, shaderTable, parameters, dimensions);
 	}
 
 	template <typename TRayGenerationShader> void TraceRays(
@@ -188,14 +193,18 @@ public:
 	{
 		m_renderPassRuntimeCache.MaterializeRayTracingRuntime<TRayGenerationShader>(composition);
 		const RayTracingPassPipelineRuntime runtime = m_renderPassRuntimeCache.GetRayTracingRuntime<TRayGenerationShader>(composition);
-		const auto materializationStart = std::chrono::steady_clock::now();
-		std::shared_ptr<RayTracingShaderTable> shaderTable(
-		    m_renderPassRuntimeCache.CreateRayTracingShaderTable<TRayGenerationShader>(composition, shaderTablePlan));
-		const std::uint64_t tableSize = GetRayTracingShaderTableSize(*shaderTable);
-		const std::uint64_t materializationMicroseconds = static_cast<std::uint64_t>(
-		    std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - materializationStart).count());
-		shaderTablePlan.RecordMaterialization(tableSize, materializationMicroseconds);
-		AddRayTracingPass<TRayGenerationShader>(label, runtime, std::move(shaderTable), parameters, dimensions);
+		const std::string tableKey = std::string(label) + "." + std::to_string(reinterpret_cast<std::uintptr_t>(&runtime.Pipeline)) + "."
+		    + std::to_string(runtime.Generation) + "." + std::to_string(shaderTablePlan.GetGeneration());
+		auto& shaderTable = m_frameGraph.m_rayTracingShaderTables[tableKey];
+		if (shaderTable == nullptr)
+		{
+			const auto materializationStart = std::chrono::steady_clock::now();
+			shaderTable = m_renderPassRuntimeCache.CreateRayTracingShaderTable<TRayGenerationShader>(composition, shaderTablePlan);
+			const auto elapsed = static_cast<std::uint64_t>(
+			    std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - materializationStart).count());
+			shaderTablePlan.RecordMaterialization(GetRayTracingShaderTableSize(*shaderTable), elapsed);
+		}
+		AddRayTracingPass<TRayGenerationShader>(label, tableKey, runtime, shaderTable, parameters, dimensions);
 	}
 
 	template <typename TShader> TypedPassParameterInstance<typename TShader::Parameters>& AllocParameters()
@@ -211,37 +220,11 @@ public:
 		return m_frameGraph.AllocParameters<TParameters>(label);
 	}
 
-	template <typename TParameters, typename TCallback>
-	void AddPassParameterSetup(TypedPassParameterInstance<TParameters>& parameters, TCallback&& callback)
-	{
-		auto* parameterInstance = &parameters;
-		m_frameGraph.m_passParameterSetups.emplace_back(
-		    [parameterInstance, setup = std::forward<TCallback>(callback)]() mutable { setup(*parameterInstance); });
-	}
+	bool IsTextureHistoryValid(FrameGraphTextureHistory history) const noexcept { return m_frameGraph.IsTextureHistoryValid(history); }
 
-	template <typename TValue, typename TCallback> void AddParameterSetup(TCallback&& callback)
+	void BindPersistentTexture(FrameGraphTextureHandle handle, RhiOwnedResourceHandle resource, ResourceState state) noexcept
 	{
-		m_frameGraph.AddParameterSetup<TValue>(std::forward<TCallback>(callback));
-	}
-
-	template <typename TValue, typename TParameters, typename TCallback>
-	void AddParameterSetup(TypedPassParameterInstance<TParameters>& parameters, TCallback&& callback)
-	{
-		auto* parameterInstance = &parameters;
-		m_frameGraph.AddParameterSetup<TValue>([parameterInstance, setup = std::forward<TCallback>(callback)](const TValue& value) mutable
-		    { setup(*parameterInstance, value); });
-	}
-
-	template <typename TParameters, typename TCallback> void AddResourceProductionSetup(
-	    TypedPassParameterInstance<TParameters>& parameters,
-	    FrameGraphTextureHandle resource,
-	    TCallback&& callback)
-	{
-		auto* parameterInstance = &parameters;
-		FrameGraph* frameGraph = &m_frameGraph;
-		m_frameGraph.m_resourceProductionSetups.emplace_back(
-		    [parameterInstance, frameGraph, resource, setup = std::forward<TCallback>(callback)]() mutable
-		    { setup(*parameterInstance, frameGraph->HasBeenProduced(resource)); });
+		m_frameGraph.BindPersistentTexture(handle, resource, state);
 	}
 
 	FrameGraphTextureHandle ImportBackBuffer(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
@@ -310,15 +293,15 @@ private:
 
 	template <typename TRayGenerationShader> void AddRayTracingPass(
 	    std::string_view label,
+	    std::string_view tableKey,
 	    const RayTracingPassPipelineRuntime& runtime,
 	    std::shared_ptr<RayTracingShaderTable> shaderTable,
 	    TypedPassParameterInstance<typename TRayGenerationShader::Parameters>& parameters,
 	    const RayTracingDispatchDimensions& dimensions)
 	{
-		const ShaderRegistrationDesc& shader = GlobalShader<TRayGenerationShader>::GetRegistration();
 		const std::uint64_t tableSize = GetRayTracingShaderTableSize(*shaderTable);
 		FrameGraphBufferHandle shaderTableBuffer = m_frameGraph.ReservePersistentBuffer(
-		    FrameGraphBufferDesc::Create(std::string(shader.ShaderName) + "ShaderTable", tableSize),
+		    FrameGraphBufferDesc::Create(std::string(tableKey) + ".ShaderTable", tableSize),
 		    ResourceState::RayTracingShaderTable);
 		m_frameGraph.BindPersistentBuffer(shaderTableBuffer, shaderTable->GetResource(), ResourceState::RayTracingShaderTable);
 		const std::string diagnosticLabel(label);

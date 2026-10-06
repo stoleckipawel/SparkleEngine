@@ -81,7 +81,9 @@ private:
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics();
 	void InitializeFrameStorage();
 	void InitializeRenderFrames();
-	RenderFrameGraphResources BuildRenderFrameGraph(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings);
+	void PrepareFrameGraph(const RenderFrame& frame);
+	RenderFrameGraphResources BuildRenderFrameGraph(FrameGraphBuilder& builder, const RenderFrame& frame);
+	void AddSceneRenderingPasses(FrameGraphBuilder& builder, const RenderFrame& frame, RenderFrameGraphResources& resources);
 	void InitializeFrameGraph(const RenderFrameGraphSettings& settings) noexcept;
 	void RefreshFrameExecution(const RenderFrameGraphSettings& settings) noexcept;
 	void RebuildFrameExecutionAfterSwapChainDrain(const RenderFrameGraphSettings& settings) noexcept;
@@ -96,9 +98,15 @@ private:
 	void RefreshGraphForTopology() noexcept;
 	void BeginBackendFrame() noexcept;
 	void PrepareFrame(const RenderViewInput& viewInput, const RenderFrameTime& time);
+	void UploadSceneAssets();
+	void PrepareRenderingState(RenderFrame& frame);
+	void PublishFrameProducts(const RenderFrame& frame);
 	void ExecuteFrame();
 	void SubmitAndPresent(const UiRenderPacket& packet) noexcept;
+	void RecordFrameSubmission() noexcept;
 	RenderFrame& PrepareRenderFrame(const RenderViewInput& viewInput, const RenderFrameTime& time);
+	RenderFrame& InitializeRenderFrame(const RenderFrameTime& time);
+	void PrepareRenderView(RenderFrame& frame, const RenderViewInput& viewInput);
 	void InvalidateViewHistory(RenderViewInvalidationReason reason) noexcept;
 	FrameExecutionDiagnostics& GetCurrentFrameDiagnostics() noexcept;
 	const FrameExecutionDiagnostics& GetCurrentFrameDiagnostics() const noexcept;
@@ -123,7 +131,7 @@ private:
 	GBufferAlgorithm m_builtGBufferAlgorithm = GBufferAlgorithm::Rasterized;
 	std::uint64_t m_builtRayTracingGraphGeneration = 0u;
 	std::uint64_t m_builtShaderGeneration = 0u;
-	std::uint64_t m_builtSceneRenderingTopologyIdentity = 0u;
+	std::uint64_t m_builtSceneRenderingGraphRebuildKey = 0u;
 	RenderViewportExtent m_windowExtent = {};
 	ViewportRenderRequest m_viewportRenderRequest = {};
 	ViewportRenderProducts m_viewportRenderProducts = {};

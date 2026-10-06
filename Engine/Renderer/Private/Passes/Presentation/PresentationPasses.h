@@ -1,13 +1,14 @@
 #pragma once
 
+struct RenderFrame;
+
 #include "Frame/Graph/RenderFrameGraphSettings.h"
 
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
-struct ViewportRenderRequest;
 
 void AddPresentationPasses(
     FrameGraphBuilder& builder,
+    const RenderFrame& frame,
     const RenderFrameGraphSettings& settings,
-    const ViewportRenderRequest& viewport,
     RenderFrameGraphResources& resources);

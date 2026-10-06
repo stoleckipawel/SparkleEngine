@@ -1,6 +1,7 @@
 #include "PCH.h"
 #include "Passes/GBuffer/Raster/RasterizedGBufferMesh.h"
 
+#include "Frame/RenderFrame.h"
 #include "Config/DepthConvention.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
@@ -12,10 +13,12 @@
 #include "View/RenderView.h"
 
 #include <cstdint>
-#include <functional>
-#include <memory>
 
-void AddRasterizedGBufferMeshPass(FrameGraphBuilder& builder, GpuMeshCache& gpuMeshCache, const RenderFrameGraphResources& resources)
+void AddRasterizedGBufferMeshPass(
+    FrameGraphBuilder& builder,
+    const RenderFrame& frame,
+    GpuMeshCache& gpuMeshCache,
+    const RenderFrameGraphResources& resources)
 {
 	const GBufferRenderTargets& targets = resources.Transient.GBuffer;
 	const RenderFrameGraphImportedSceneResources& externalResources = resources.ImportedScene;
@@ -50,22 +53,10 @@ void AddRasterizedGBufferMeshPass(FrameGraphBuilder& builder, GpuMeshCache& gpuM
 	parameters->Shader.Vertex.PreviousMorphWeights = builder.CreateSRV<float>(externalResources.Scene.Geometry.PreviousMorphWeights);
 	parameters->Shader.Pixel.SamplerAniso16xWrap = RhiSamplerDesc{.MaxAnisotropy = RhiSamplerAnisotropy::X16};
 
-	auto frameInput = std::make_shared<GBufferMeshPassInput>();
-	builder.AddParameterSetup<PreparedRenderScene>(
-	    [frameInput](const PreparedRenderScene& preparedScene) { frameInput->PreparedScene = std::cref(preparedScene); });
-	builder.AddParameterSetup<RenderView>(
-	    parameters,
-	    [frameInput](auto& parameters, const RenderView& view)
-	    {
-		    frameInput->View = std::cref(view);
-		    frameInput->Viewport = view.viewport;
-		    frameInput->Scissor = view.scissorRect;
-		    frameInput->Wireframe = view.viewMode == RenderViewMode::Wireframe;
-		    parameters->Shader.Vertex.ViewCamera = view.cameraUniform;
-		    parameters->Shader.Vertex.ViewTemporal = view.temporalUniform;
-		    parameters->Shader.Pixel.View = view.uniform;
-		    parameters->Shader.Pixel.ViewTemporal = view.temporalUniform;
-	    });
+	parameters->Shader.Vertex.ViewCamera = frame.View.cameraUniform;
+	parameters->Shader.Vertex.ViewTemporal = frame.View.temporalUniform;
+	parameters->Shader.Pixel.View = frame.View.uniform;
+	parameters->Shader.Pixel.ViewTemporal = frame.View.temporalUniform;
 
 	RasterPassRenderState renderState;
 	renderState.SetOpaqueBlend();
@@ -73,5 +64,5 @@ void AddRasterizedGBufferMeshPass(FrameGraphBuilder& builder, GpuMeshCache& gpuM
 	renderState.SetDepthWrite(true);
 	renderState.DisableStencil();
 
-	builder.Draw<GBufferVS, GBufferPS>(parameters, renderState, GBufferMeshPass(gpuMeshCache, frameInput));
+	builder.Draw<GBufferVS, GBufferPS>(parameters, renderState, GBufferMeshPass(gpuMeshCache, frame.PreparedScene, frame.View));
 }

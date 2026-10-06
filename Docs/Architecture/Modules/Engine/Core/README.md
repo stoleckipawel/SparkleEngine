@@ -12,6 +12,8 @@
 
 **Current readiness:** **50/100** — broad integrated source foundations exist; verification and delivery/adoption credit remain zero. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
 
+Source ownership reconciled on 2026-10-06: `CommandLine::ReadToken` owns the borrowed wide-token view and advancing offset used by Application CVar parsing and RHI backend selection. Core also owns the immutable default texture product catalog shared by Renderer and AssetCooker; cooking and runtime policy remain with those consumers.
+
 ## At A Glance
 
 | Foundation | Current role | Deliberate boundary |

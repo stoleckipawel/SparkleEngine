@@ -5,8 +5,6 @@
 #include "Diagnostics/MeshDiagnosticsCollector.h"
 #include "UI/UiFrameRenderer.h"
 #include "Frame/RenderFrame.h"
-#include "Frame/Graph/ExecuteRenderFrameGraph.h"
-#include "Frame/Graph/RenderProductGraphHandle.h"
 #include "Frame/RenderFrameTime.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerSession.h"
@@ -221,11 +219,36 @@ void FramePipeline::BeginBackendFrame() noexcept
 
 void FramePipeline::PrepareFrame(const RenderViewInput& viewInput, const RenderFrameTime& time)
 {
+	UploadSceneAssets();
+	RenderFrame& frame = PrepareRenderFrame(viewInput, time);
+	PrepareRenderingState(frame);
+	PrepareFrameGraph(frame);
+	PublishFrameProducts(frame);
+}
+
+void FramePipeline::UploadSceneAssets()
+{
 	RenderCommandList& graphicsCommandList = m_deviceServices.GetCurrentGraphicsCommandList();
 	m_gpuMeshCache->UploadReadyMeshes(graphicsCommandList);
 	m_textureCache->UpdateSceneTextures(m_renderScene->GetTextures(), m_deviceServices);
+}
 
-	RenderFrame& frame = PrepareRenderFrame(viewInput, time);
+void FramePipeline::PrepareRenderingState(RenderFrame& frame)
+{
+	UpdateFrameHistory(*m_frameGraph, m_frameResources.History, frame.PreparedScene, frame.View, *m_renderViewState, *m_imageProviders);
+	m_frameGraphExecutable = m_referencePathTracerSession->PrepareFrame(
+	    frame,
+	    m_viewportRenderRequest.RenderAction,
+	    m_viewportRenderRequest.RenderActionSequence);
+	if (m_frameGraphExecutable)
+	{
+		m_imageProviders->SetupFrame(frame.View, frame.Identity);
+	}
+	frame.RayTracingBindings = m_renderScene->PrepareRayTracingFrame(frame.PreparedScene, frame.View.rayTracingPlan);
+}
+
+void FramePipeline::PublishFrameProducts(const RenderFrame& frame)
+{
 	ViewportFrameProducts products = m_frameResources.ViewportProducts;
 	m_frameGraphExecutable = PrepareSceneRenderingProducts(frame.View, m_frameResources, products) && m_frameGraphExecutable;
 	PublishViewportRenderProducts(
@@ -234,44 +257,35 @@ void FramePipeline::PrepareFrame(const RenderViewInput& viewInput, const RenderF
 	    products,
 	    m_frameGraphSettings.RenderExtent,
 	    m_frameGraphSettings.OutputExtent);
-
-	UpdateFrameHistory(*m_frameGraph, m_frameResources.History, frame.PreparedScene, frame.View, *m_renderViewState, *m_imageProviders);
-	if (m_frameGraphExecutable)
-	{
-		m_imageProviders->SetupFrame(frame.View, frame.Identity);
-	}
-	frame.RayTracingBindings = m_renderScene->PrepareRayTracingFrame(frame.PreparedScene, frame.View.rayTracingPlan);
-}
-
-void FramePipeline::ExecuteFrame()
-{
-	if (!m_frameGraphExecutable)
-	{
-		return;
-	}
-	const std::uint32_t frameIndex = m_deviceServices.GetRenderHardwareInterface().GetCurrentFrameIndex();
-	const RenderFrame& frame = *m_renderFrames[frameIndex];
-	ExecuteRenderFrameGraph(*m_frameGraph, m_frameResources, frame, m_deviceServices, GetCurrentFrameDiagnostics(), m_taskExecutor);
 }
 
 RenderFrame& FramePipeline::PrepareRenderFrame(const RenderViewInput& viewInput, const RenderFrameTime& time)
 {
+	RenderFrame& frame = InitializeRenderFrame(time);
+	m_renderScenePreparation->Execute(*m_renderScene, frame.PreparedScene);
+	PrepareRenderView(frame, viewInput);
+	frame.PreparedScene.gpuBindings = &m_renderScene->UpdateGpuScene(frame.PreparedScene, frame.View, frame.FrameInFlightIndex);
+	return frame;
+}
+
+RenderFrame& FramePipeline::InitializeRenderFrame(const RenderFrameTime& time)
+{
 	const std::uint32_t frameIndex = m_deviceServices.GetRenderHardwareInterface().GetCurrentFrameIndex();
-	std::unique_ptr<RenderFrame>& frameSlot = m_renderFrames[frameIndex];
-	RenderFrame& frame = *frameSlot;
-	RenderScene& scene = *m_renderScene;
+	RenderFrame& frame = *m_renderFrames[frameIndex];
 
 	frame.Identity = RenderFrameIdentity{
 	    .FrameId = m_frameId,
-	    .SceneGeneration = scene.GetSceneGeneration(),
+	    .SceneGeneration = m_renderScene->GetSceneGeneration(),
 	    .ShaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration(),
 	    .ImageProviderGeneration = m_imageProviders->GetGeneration()};
 
 	frame.Time = time;
 	frame.FrameInFlightIndex = frameIndex;
+	return frame;
+}
 
-	m_renderScenePreparation->Execute(scene, frame.PreparedScene);
-
+void FramePipeline::PrepareRenderView(RenderFrame& frame, const RenderViewInput& viewInput)
+{
 	BuildRenderView(
 	    frame.View,
 	    *m_renderViewState,
@@ -287,22 +301,18 @@ RenderFrame& FramePipeline::PrepareRenderFrame(const RenderViewInput& viewInput,
 	        .GraphTopologyGeneration = m_graphTopologyGeneration});
 
 	m_renderViewPreparation->Prepare(frame.PreparedScene, frame.View, *m_renderViewState);
-	frame.PreparedScene.gpuBindings = &scene.UpdateGpuScene(frame.PreparedScene, frame.View, frame.FrameInFlightIndex);
-
-	m_frameGraphExecutable = m_referencePathTracerSession->PrepareFrame(
-	    frame,
-	    m_viewportRenderRequest.RenderAction,
-	    m_viewportRenderRequest.RenderActionSequence,
-	    m_frameResources.ViewportProducts,
-	    *m_frameGraph);
-
-	return *frameSlot;
 }
 
 void FramePipeline::SubmitAndPresent(const UiRenderPacket& packet) noexcept
 {
 	m_uiFrameRenderer->Render(packet, m_frameGraph.get(), m_viewportRenderProducts);
 	m_deviceServices.SubmitFrame(m_frameId);
+	RecordFrameSubmission();
+	m_deviceServices.AdvanceFrameInFlight();
+}
+
+void FramePipeline::RecordFrameSubmission() noexcept
+{
 	const RhiSubmissionToken graphicsToken = m_deviceServices.GetLastSubmittedToken(ERhiQueueType::Graphics);
 	if (m_frameGraphExecutable)
 	{
@@ -310,5 +320,4 @@ void FramePipeline::SubmitAndPresent(const UiRenderPacket& packet) noexcept
 	}
 	m_textureCache->RecordUploadSubmission(graphicsToken);
 	m_gpuMeshCache->RecordUploadSubmission(graphicsToken);
-	m_deviceServices.AdvanceFrameInFlight();
 }

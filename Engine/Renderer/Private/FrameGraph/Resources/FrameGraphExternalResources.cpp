@@ -10,49 +10,45 @@
 
 SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_frameGraphExternalLogger, "Renderer.FrameGraph");
 
-class FrameGraphExternalResourceContract final
+static std::string FormatResourceName(const FrameGraphResourceMetadata& metadata)
 {
-public:
-	static std::string FormatResourceName(const FrameGraphResourceMetadata& metadata)
-	{
-		return metadata.debugName.empty() ? std::format("handle {}", metadata.handle.index) : metadata.debugName;
-	}
+	return metadata.debugName.empty() ? std::format("handle {}", metadata.handle.index) : metadata.debugName;
+}
 
-	static void FailMissingUnorderedAccessSupport(const FrameGraphResourceMetadata& metadata) noexcept
-	{
-		Diagnostics::Fatal(
-		    g_frameGraphExternalLogger,
-		    __FILE__,
-		    __LINE__,
-		    std::format(
-		        "FrameGraph external resource validation failed: resource='{}' handle={} ownership={} requiredUsage=UnorderedAccess "
-		        "remediation='create/import the resource with unordered-access support or remove UAV declarations for this pass path'",
-		        FormatResourceName(metadata),
-		        metadata.handle.index,
-		        IsExternalFrameGraphResource(metadata.ownership) ? "External" : "Internal"));
-	}
+static void FailMissingUnorderedAccessSupport(const FrameGraphResourceMetadata& metadata) noexcept
+{
+	Diagnostics::Fatal(
+	    g_frameGraphExternalLogger,
+	    __FILE__,
+	    __LINE__,
+	    std::format(
+	        "FrameGraph external resource validation failed: resource='{}' handle={} ownership={} requiredUsage=UnorderedAccess "
+	        "remediation='create/import the resource with unordered-access support or remove UAV declarations for this pass path'",
+	        FormatResourceName(metadata),
+	        metadata.handle.index,
+	        IsExternalFrameGraphResource(metadata.ownership) ? "External" : "Internal"));
+}
 
-	static bool RequiresUsage(const FrameGraphPlan& plan, FrameGraphResourceHandle handle, ResourceUsage usage) noexcept
+static bool RequiresUsage(const FrameGraphPlan& plan, FrameGraphResourceHandle handle, ResourceUsage usage) noexcept
+{
+	for (const FrameGraphPassNode& passRecord : plan.passes)
 	{
-		for (const FrameGraphPassNode& passRecord : plan.passes)
+		for (const PassResourceDeclaration& declaration : passRecord.declarations)
 		{
-			for (const PassResourceDeclaration& declaration : passRecord.declarations)
+			if (declaration.handle == handle && declaration.usage == usage)
 			{
-				if (declaration.handle == handle && declaration.usage == usage)
-				{
-					return true;
-				}
+				return true;
 			}
 		}
-
-		return false;
 	}
 
-	static bool RequiresUnorderedAccessView(const FrameGraphPlan& plan, FrameGraphResourceHandle handle) noexcept
-	{
-		return RequiresUsage(plan, handle, ResourceUsage::UnorderedAccess);
-	}
-};
+	return false;
+}
+
+static bool RequiresUnorderedAccessView(const FrameGraphPlan& plan, FrameGraphResourceHandle handle) noexcept
+{
+	return RequiresUsage(plan, handle, ResourceUsage::UnorderedAccess);
+}
 
 void FrameGraph::SyncImportedResourceAccesses() const noexcept
 {
@@ -79,26 +75,24 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 
 		if (metadata.kind == FrameGraphResourceKind::ColorRenderTarget)
 		{
-			if (FrameGraphExternalResourceContract::RequiresUsage(m_compiledPlan, handle, ResourceUsage::RenderTarget)
-			    && !access.renderTargetView)
+			if (RequiresUsage(m_compiledPlan, handle, ResourceUsage::RenderTarget) && !access.renderTargetView)
 			{
 				access.renderTargetView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 				    RhiResourceViewDesc::RenderTarget(access.resource, metadata.textureDesc.format));
 			}
 
-			if (FrameGraphExternalResourceContract::RequiresUsage(m_compiledPlan, handle, ResourceUsage::ShaderRead)
-			    && !access.shaderResourceView)
+			if (RequiresUsage(m_compiledPlan, handle, ResourceUsage::ShaderRead) && !access.shaderResourceView)
 			{
 				access.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 				    RhiResourceViewDesc::TextureShaderResource(access.resource, metadata.textureDesc.format));
 				access.ownsShaderResourceView = static_cast<bool>(access.shaderResourceView);
 			}
 
-			if (FrameGraphExternalResourceContract::RequiresUnorderedAccessView(m_compiledPlan, handle))
+			if (RequiresUnorderedAccessView(m_compiledPlan, handle))
 			{
 				if (!m_renderHardwareInterface->GetResourceService().SupportsUnorderedAccess(access.resource))
 				{
-					FrameGraphExternalResourceContract::FailMissingUnorderedAccessSupport(metadata);
+					FailMissingUnorderedAccessSupport(metadata);
 				}
 
 				if (!access.unorderedAccessView)
@@ -116,8 +110,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 				    RhiResourceViewDesc::DepthStencil(access.resource, metadata.textureDesc.format));
 			}
 
-			if (FrameGraphExternalResourceContract::RequiresUsage(m_compiledPlan, handle, ResourceUsage::ShaderRead)
-			    && !access.shaderResourceView)
+			if (RequiresUsage(m_compiledPlan, handle, ResourceUsage::ShaderRead) && !access.shaderResourceView)
 			{
 				access.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 				    RhiResourceViewDesc::TextureShaderResource(access.resource, metadata.textureDesc.format));
@@ -126,8 +119,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 		}
 		else if (metadata.kind == FrameGraphResourceKind::Buffer)
 		{
-			if (FrameGraphExternalResourceContract::RequiresUsage(m_compiledPlan, handle, ResourceUsage::ShaderRead)
-			    && !access.shaderResourceView)
+			if (RequiresUsage(m_compiledPlan, handle, ResourceUsage::ShaderRead) && !access.shaderResourceView)
 			{
 				access.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 				    RhiResourceViewDesc::BufferShaderResource(
@@ -137,11 +129,11 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 				access.ownsShaderResourceView = static_cast<bool>(access.shaderResourceView);
 			}
 
-			if (FrameGraphExternalResourceContract::RequiresUnorderedAccessView(m_compiledPlan, handle))
+			if (RequiresUnorderedAccessView(m_compiledPlan, handle))
 			{
 				if (!m_renderHardwareInterface->GetResourceService().SupportsUnorderedAccess(access.resource))
 				{
-					FrameGraphExternalResourceContract::FailMissingUnorderedAccessSupport(metadata);
+					FailMissingUnorderedAccessSupport(metadata);
 				}
 
 				if (!access.unorderedAccessView)

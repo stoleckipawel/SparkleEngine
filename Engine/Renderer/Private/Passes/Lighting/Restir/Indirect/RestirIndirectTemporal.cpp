@@ -1,6 +1,7 @@
 #include "PCH.h"
 #include "Passes/Lighting/Restir/Indirect/RestirIndirectTemporal.h"
 
+#include "Frame/RenderFrame.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Lighting/Restir/Indirect/RestirIndirectTemporalShader.h"
@@ -10,6 +11,7 @@
 
 void AddRestirIndirectTemporalPass(
     FrameGraphBuilder& builder,
+    const RenderFrame& frame,
     RenderViewportExtent sceneExtent,
     const RestirIndirectWorkingReservoirs& workingReservoirs,
     const RenderFrameGraphResources& resources)
@@ -26,24 +28,19 @@ void AddRestirIndirectTemporalPass(
 	parameters->GBufferMaterial = builder.CreateSRV(resources.Transient.GBuffer.Material);
 	parameters->SceneDepth = builder.CreateSRV(resources.Transient.Scene.SceneDepth);
 
-	BindSceneShaderParameters(builder, parameters, resources);
-	BindRayTracedShadowParameters(builder, parameters);
+	BindSceneShaderParameters(builder, frame, parameters, resources);
+	BindRayTracedShadowParameters(frame.PreparedScene, parameters);
 
-	const auto invalidateTemporalHistory = [](auto& parameters, bool hasBeenProduced)
+	if (!builder.IsTextureHistoryValid(resources.History.RestirIndirectReservoir.Sample)
+	    || !builder.IsTextureHistoryValid(resources.History.RestirIndirectReservoir.Weight)
+	    || !builder.IsTextureHistoryValid(resources.History.RestirIndirectReservoir.Surface))
 	{
-		if (!hasBeenProduced)
-		{
-			ViewTemporalUniformData temporal = *parameters->ViewTemporal.GetValue();
-			temporal.HistoryValid = 0u;
-			parameters->ViewTemporal = temporal;
-		}
-	};
+		ViewTemporalUniformData temporal = frame.View.temporalUniform;
+		temporal.HistoryValid = 0u;
+		parameters->ViewTemporal = temporal;
+	}
 
-	builder.AddResourceProductionSetup(parameters, resources.History.RestirIndirectReservoir.Sample.Previous, invalidateTemporalHistory);
-	builder.AddResourceProductionSetup(parameters, resources.History.RestirIndirectReservoir.Weight.Previous, invalidateTemporalHistory);
-	builder.AddResourceProductionSetup(parameters, resources.History.RestirIndirectReservoir.Surface.Previous, invalidateTemporalHistory);
-
-	BindRestirIndirectParameters(builder, parameters, resources);
+	BindRestirIndirectParameters(parameters, resources);
 
 	builder.Dispatch<RestirIndirectTemporalCS>(
 	    parameters,

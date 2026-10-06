@@ -10,24 +10,30 @@
 #include <algorithm>
 #include <string>
 
-class FrameGraphTextureHistoryPlanner final
+static bool UsesHandle(const PassResourceDeclaration& declaration, FrameGraphTextureHandle handle) noexcept
 {
-public:
-	static bool UsesHandle(const PassResourceDeclaration& declaration, FrameGraphTextureHandle handle) noexcept
-	{
-		return declaration.handle == handle.GetResourceHandle();
-	}
+	return declaration.handle == handle.GetResourceHandle();
+}
 
-	static std::wstring BuildHistoryResourceName(std::string_view name)
-	{
-		std::wstring result(name.begin(), name.end());
-		result.append(L"History");
-		return result;
-	}
-};
+static std::wstring BuildHistoryResourceName(std::string_view name)
+{
+	std::wstring result(name.begin(), name.end());
+	result.append(L"History");
+	return result;
+}
 
 FrameGraphTextureHistory FrameGraph::CreateTextureHistory(const FrameGraphTextureDesc& desc) noexcept
 {
+	for (const TextureHistoryRecord& history : m_textureHistories)
+	{
+		if (history.desc.name == desc.name)
+		{
+			assert(
+			    history.desc.width == desc.width && history.desc.height == desc.height && history.desc.format == desc.format
+			    && history.desc.kind == desc.kind && history.desc.sampleCount == desc.sampleCount);
+			return history.handles;
+		}
+	}
 	FrameGraphTextureDesc previousDesc = desc;
 	previousDesc.name = "Previous" + desc.name + "History";
 	FrameGraphTextureDesc currentDesc = desc;
@@ -75,8 +81,8 @@ void FrameGraph::PrepareTextureHistories(const FrameGraphPlan& plan)
 		{
 			for (const PassResourceDeclaration& declaration : pass.declarations)
 			{
-				const bool usesPrevious = FrameGraphTextureHistoryPlanner::UsesHandle(declaration, history.handles.Previous);
-				const bool usesCurrent = FrameGraphTextureHistoryPlanner::UsesHandle(declaration, history.handles.Current);
+				const bool usesPrevious = UsesHandle(declaration, history.handles.Previous);
+				const bool usesCurrent = UsesHandle(declaration, history.handles.Current);
 				if (!usesPrevious && !usesCurrent)
 				{
 					continue;
@@ -140,7 +146,7 @@ void FrameGraph::PrepareTextureHistories(const FrameGraphPlan& plan)
 				    ResourceState::Undefined,
 				    RhiMemoryCategory::Texture,
 				    RhiMemoryResidencyClass::DeviceLocal,
-				    FrameGraphTextureHistoryPlanner::BuildHistoryResourceName(history.desc.name));
+				    BuildHistoryResourceName(history.desc.name));
 			}
 		}
 
@@ -200,4 +206,18 @@ void FrameGraph::ReleaseTextureHistories() noexcept
 		}
 	}
 	m_textureHistories.clear();
+}
+
+bool FrameGraph::IsTextureHistoryValid(FrameGraphTextureHistory handles) const noexcept
+{
+	const std::uint32_t count = (std::max) (2u, m_renderHardwareInterface->GetCapabilities().Presentation.MaximumFramesInFlight);
+	const std::uint32_t previousIndex = static_cast<std::uint32_t>((m_historyFrameIndex + count - 1u) % count);
+	for (const TextureHistoryRecord& history : m_textureHistories)
+	{
+		if (history.handles.Previous == handles.Previous && history.handles.Current == handles.Current)
+		{
+			return history.resources[previousIndex] && history.generations[previousIndex] == history.generation;
+		}
+	}
+	return false;
 }

@@ -8,6 +8,8 @@
 
 **Current readiness:** **40/100** — AS, inline, native-pipeline, shader-table, and partitioned vocabulary/routes exist but remain capability-gated and unproved across devices/backends/effects. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#rhi-and-gpu-execution).
 
+Source ownership reconciled on 2026-10-06: Vulkan PTLAS sizing and build recording both call `VulkanTypeConversions::ConfigurePartitionedTlasInput`. One conversion owns the instance capacities, partition counts, fast-trace flag, and partition-translation flag chain; backend capability and native execution contracts are unchanged.
+
 ## At A Glance
 
 | Capability | Current RHI contract | Does not imply |

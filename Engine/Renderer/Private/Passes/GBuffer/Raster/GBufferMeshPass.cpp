@@ -32,9 +32,10 @@ void GBufferGraphParameters::Describe(ShaderParameterStructBuilder<GBufferGraphP
 	builder.Include(&GBufferGraphParameters::Shader);
 }
 
-GBufferMeshPass::GBufferMeshPass(GpuMeshCache& gpuMeshCache, const std::shared_ptr<GBufferMeshPassInput>& frameInput) noexcept :
+GBufferMeshPass::GBufferMeshPass(GpuMeshCache& gpuMeshCache, const PreparedRenderScene& scene, const RenderView& view) noexcept :
     m_meshBatchDrawer(std::make_shared<GBufferMeshBatchDrawer>(gpuMeshCache)),
-    m_frameInput(frameInput)
+    m_scene(scene),
+    m_view(view)
 {
 }
 
@@ -55,20 +56,14 @@ void GBufferMeshPass::MaterializePipelines(
     const RasterPassRenderState& renderState,
     const GraphicsAttachmentSignature& attachments) const
 {
-	if (m_frameInput == nullptr || !m_frameInput->PreparedScene.has_value() || !m_frameInput->View.has_value())
-	{
-		throw Diagnostics::Error("GBuffer pass preparation requires the current scene and view.");
-	}
-	const RenderView& view = m_frameInput->View->get();
+	const RenderView& view = m_view.get();
 	m_meshBatchDrawer->PrepareDrawsAndMaterializePipelines(
 	    runtimeCache,
-	    m_frameInput->PreparedScene->get(),
+	    m_scene.get(),
 	    view,
 	    renderState,
 	    attachments,
-	    m_frameInput->Wireframe);
-	m_frameInput->PreparedScene.reset();
-	m_frameInput->View.reset();
+	    view.viewMode == RenderViewMode::Wireframe);
 }
 
 void GBufferMeshPass::Draw(PassCommandContext& context, ParameterInstance& parameters) const
@@ -78,9 +73,8 @@ void GBufferMeshPass::Draw(PassCommandContext& context, ParameterInstance& param
 
 void GBufferMeshPass::PrepareRasterPass(RenderCommandContext& commandContext) const
 {
-	assert(m_frameInput != nullptr);
-	commandContext.SetViewport(m_frameInput->Viewport);
-	commandContext.SetScissorRect(m_frameInput->Scissor);
+	commandContext.SetViewport(m_view.get().viewport);
+	commandContext.SetScissorRect(m_view.get().scissorRect);
 }
 
 void GBufferMeshPass::DrawPreparedMeshes(

@@ -6,6 +6,8 @@
 #include "FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Formats/PixelFormat.h"
 #include "Passes/Lighting/Restir/RestirLightingInvalidation.h"
+#include "Passes/Lighting/Direct/DirectLightingControls.h"
+#include "Passes/Lighting/Restir/Indirect/IndirectLightingControls.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 #include "View/RenderView.h"
@@ -62,7 +64,7 @@ void UpdateFrameHistory(
     RenderViewState& viewState,
     RendererImageProviderStack& imageProviders)
 {
-	if ((history.DirectLightReservoir.Sample.IsValid() || history.RestirIndirectReservoir.Sample.IsValid())
+	if ((IsDirectLightingAdmitted() || IsIndirectLightingAdmitted())
 	    && viewState.UpdateRestirLightingHistory(BuildRestirLightingHistoryInvalidationHash(preparedScene)))
 	{
 		InvalidateRestirLightingHistory(frameGraph, history);

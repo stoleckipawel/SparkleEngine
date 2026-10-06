@@ -1,6 +1,7 @@
 #include "../../../PCH.h"
 #include "Passes/PostProcessing/Exposure/ExposureAdaptation.h"
 
+#include "Frame/RenderFrame.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/PostProcessing/Exposure/ExposureShader.h"
@@ -9,6 +10,7 @@
 
 void AddExposureAdaptationPass(
     FrameGraphBuilder& builder,
+    const RenderFrame& frame,
     const ExposureMomentTexture& luminanceMoments,
     const RenderFrameGraphResources& resources)
 {
@@ -18,29 +20,17 @@ void AddExposureAdaptationPass(
 	parameters->ExposureHistoryTexture = builder.CreateUAV(resources.History.Exposure.Current);
 	parameters->ExposureTexture = builder.CreateUAV(resources.Transient.Exposure);
 
-	builder.AddParameterSetup<RenderView>(
-	    parameters,
-	    [](auto& parameters, const RenderView& view)
-	    {
-		    parameters->ExposureMode = static_cast<std::uint32_t>(view.displaySettings.ExposureMode);
-		    parameters->ExposureHistoryValid = 0u;
-		    parameters->ManualExposure = view.displaySettings.ManualExposure;
-		    parameters->ExposureCompensation = view.displaySettings.ExposureCompensation;
-		    parameters->ExposureTargetLuminance = view.displaySettings.ExposureTargetLuminance;
-		    parameters->ExposureMin = view.displaySettings.ExposureMin;
-		    parameters->ExposureMax = view.displaySettings.ExposureMax;
-		    parameters->ExposureAdaptationSpeedUp = view.displaySettings.ExposureAdaptationSpeedUp;
-		    parameters->ExposureAdaptationSpeedDown = view.displaySettings.ExposureAdaptationSpeedDown;
-	    });
+	parameters->ExposureMode = static_cast<std::uint32_t>(frame.View.displaySettings.ExposureMode);
+	parameters->ExposureHistoryValid = builder.IsTextureHistoryValid(resources.History.Exposure) ? 1u : 0u;
+	parameters->ManualExposure = frame.View.displaySettings.ManualExposure;
+	parameters->ExposureCompensation = frame.View.displaySettings.ExposureCompensation;
+	parameters->ExposureTargetLuminance = frame.View.displaySettings.ExposureTargetLuminance;
+	parameters->ExposureMin = frame.View.displaySettings.ExposureMin;
+	parameters->ExposureMax = frame.View.displaySettings.ExposureMax;
+	parameters->ExposureAdaptationSpeedUp = frame.View.displaySettings.ExposureAdaptationSpeedUp;
+	parameters->ExposureAdaptationSpeedDown = frame.View.displaySettings.ExposureAdaptationSpeedDown;
 
-	builder.AddParameterSetup<FrameUniformData>(
-	    parameters,
-	    [](auto& parameters, const FrameUniformData& frame) { parameters->Frame = frame; });
-
-	builder.AddResourceProductionSetup(
-	    parameters,
-	    resources.History.Exposure.Previous,
-	    [](auto& parameters, bool hasBeenProduced) { parameters->ExposureHistoryValid = hasBeenProduced ? 1u : 0u; });
+	parameters->Frame = BuildFrameUniformData(frame.Identity.FrameId, frame.Time);
 
 	builder.DispatchAsync<ExposureCS>(parameters, ComputeDispatchDesc{1u, 1u, 1u});
 }

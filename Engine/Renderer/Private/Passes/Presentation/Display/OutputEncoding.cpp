@@ -53,7 +53,7 @@ FrameGraphTextureHandle AddOutputEncodingPass(
 	parameters->DisplayLinearColor = builder.CreateSRV(displayLinearColor);
 	parameters->EncodedColor = builder.CreateUAV(encodedColor);
 
-	builder.AddPassParameterSetup(parameters, [](auto& parameters) { parameters->OutputColorEncoding = ResolveOutputColorEncoding(); });
+	parameters->OutputColorEncoding = ResolveOutputColorEncoding();
 
 	builder.Dispatch<OutputEncodingCS>(
 	    parameters,

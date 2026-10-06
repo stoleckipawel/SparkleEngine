@@ -3,6 +3,7 @@
 #include "Passes/Lighting/Restir/Reconstruction/RestirRayReconstruction.h"
 
 #include "Frame/Graph/RenderFrameGraphResources.h"
+#include "Frame/RenderFrame.h"
 #include "RayReconstruction/RayReconstructionSettings.h"
 #include "Passes/Lighting/Restir/Reconstruction/RestirRayReconstructionResources.h"
 #include "Providers/RendererImageProviderStack.h"
@@ -10,11 +11,12 @@
 
 void AddRestirRayReconstructionPass(
     FrameGraphBuilder& builder,
+    const RenderFrame& frame,
     RenderViewportExtent sceneExtent,
     RendererImageProviderStack& imageProviders,
     RenderFrameGraphResources& resources)
 {
-	if (!IsRayReconstructionEnabled())
+	if (!ShouldUseRayReconstruction(frame.View.viewMode))
 	{
 		return;
 	}

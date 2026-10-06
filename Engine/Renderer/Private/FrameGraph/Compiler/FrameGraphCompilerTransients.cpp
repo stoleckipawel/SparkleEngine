@@ -4,94 +4,87 @@
 #include <algorithm>
 #include <cassert>
 
-class FrameGraphTransientAliasingPolicy final
+static bool AreClearValuesEqual(const RhiOptimizedClearValue& lhs, const RhiOptimizedClearValue& rhs, FrameGraphResourceKind kind) noexcept
 {
-public:
-	static bool AreClearValuesEqual(
-	    const RhiOptimizedClearValue& lhs,
-	    const RhiOptimizedClearValue& rhs,
-	    FrameGraphResourceKind kind) noexcept
+	if (lhs.ValueType != rhs.ValueType || lhs.Format != rhs.Format)
 	{
-		if (lhs.ValueType != rhs.ValueType || lhs.Format != rhs.Format)
-		{
-			return false;
-		}
+		return false;
+	}
 
-		if (kind == FrameGraphResourceKind::DepthStencil)
-		{
-			return lhs.Depth == rhs.Depth && lhs.Stencil == rhs.Stencil;
-		}
+	if (kind == FrameGraphResourceKind::DepthStencil)
+	{
+		return lhs.Depth == rhs.Depth && lhs.Stencil == rhs.Stencil;
+	}
 
-		if (kind == FrameGraphResourceKind::Buffer)
-		{
-			return true;
-		}
-
-		for (std::size_t colorIndex = 0; colorIndex < 4; ++colorIndex)
-		{
-			if (lhs.Color[colorIndex] != rhs.Color[colorIndex])
-			{
-				return false;
-			}
-		}
-
+	if (kind == FrameGraphResourceKind::Buffer)
+	{
 		return true;
 	}
 
-	static bool CanSharePhysicalBlock(
-	    const FrameGraphTransientResourcePlan& currentOwner,
-	    const FrameGraphTransientResourcePlan& transientPlan) noexcept
+	for (std::size_t colorIndex = 0; colorIndex < 4; ++colorIndex)
 	{
-		const auto& ownerPhysicalPlan = currentOwner.physicalAllocation;
-		const auto& physicalPlan = transientPlan.physicalAllocation;
-		if (ownerPhysicalPlan.pool != physicalPlan.pool)
+		if (lhs.Color[colorIndex] != rhs.Color[colorIndex])
 		{
 			return false;
 		}
-
-		if (currentOwner.lifetime.lastExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX
-		    || transientPlan.lifetime.firstExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX)
-		{
-			return false;
-		}
-
-		if (currentOwner.lifetime.lastExecutionIndex >= transientPlan.lifetime.firstExecutionIndex)
-		{
-			return false;
-		}
-
-		if (ownerPhysicalPlan.alignment != physicalPlan.alignment || ownerPhysicalPlan.sizeInBytes < physicalPlan.sizeInBytes
-		    || ownerPhysicalPlan.memoryBlockOffset != physicalPlan.memoryBlockOffset)
-		{
-			return false;
-		}
-
-		if (ownerPhysicalPlan.pool == RhiTransientAllocationPool::Buffer)
-		{
-			if (ownerPhysicalPlan.bufferResourceDesc != physicalPlan.bufferResourceDesc)
-			{
-				return false;
-			}
-		}
-		else if (ownerPhysicalPlan.textureResourceDesc != physicalPlan.textureResourceDesc)
-		{
-			return false;
-		}
-
-		if (ownerPhysicalPlan.hasOptimizedClearValue != physicalPlan.hasOptimizedClearValue)
-		{
-			return false;
-		}
-
-		if (ownerPhysicalPlan.hasOptimizedClearValue
-		    && !AreClearValuesEqual(ownerPhysicalPlan.optimizedClearValue, physicalPlan.optimizedClearValue, transientPlan.kind))
-		{
-			return false;
-		}
-
-		return true;
 	}
-};
+
+	return true;
+}
+
+static bool CanSharePhysicalBlock(
+    const FrameGraphTransientResourcePlan& currentOwner,
+    const FrameGraphTransientResourcePlan& transientPlan) noexcept
+{
+	const auto& ownerPhysicalPlan = currentOwner.physicalAllocation;
+	const auto& physicalPlan = transientPlan.physicalAllocation;
+	if (ownerPhysicalPlan.pool != physicalPlan.pool)
+	{
+		return false;
+	}
+
+	if (currentOwner.lifetime.lastExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX
+	    || transientPlan.lifetime.firstExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX)
+	{
+		return false;
+	}
+
+	if (currentOwner.lifetime.lastExecutionIndex >= transientPlan.lifetime.firstExecutionIndex)
+	{
+		return false;
+	}
+
+	if (ownerPhysicalPlan.alignment != physicalPlan.alignment || ownerPhysicalPlan.sizeInBytes < physicalPlan.sizeInBytes
+	    || ownerPhysicalPlan.memoryBlockOffset != physicalPlan.memoryBlockOffset)
+	{
+		return false;
+	}
+
+	if (ownerPhysicalPlan.pool == RhiTransientAllocationPool::Buffer)
+	{
+		if (ownerPhysicalPlan.bufferResourceDesc != physicalPlan.bufferResourceDesc)
+		{
+			return false;
+		}
+	}
+	else if (ownerPhysicalPlan.textureResourceDesc != physicalPlan.textureResourceDesc)
+	{
+		return false;
+	}
+
+	if (ownerPhysicalPlan.hasOptimizedClearValue != physicalPlan.hasOptimizedClearValue)
+	{
+		return false;
+	}
+
+	if (ownerPhysicalPlan.hasOptimizedClearValue
+	    && !AreClearValuesEqual(ownerPhysicalPlan.optimizedClearValue, physicalPlan.optimizedClearValue, transientPlan.kind))
+	{
+		return false;
+	}
+
+	return true;
+}
 
 void FrameGraphCompiler::BuildTransientResourceLifetimes() noexcept
 {
@@ -234,7 +227,7 @@ void FrameGraphCompiler::BuildTransientPhysicalBlockAssignments() noexcept
 			assert(!block.handles.empty());
 			const FrameGraphTransientResourcePlan* currentOwner = FindTransientResourcePlan(block.handles.back());
 			assert(currentOwner != nullptr);
-			if (!FrameGraphTransientAliasingPolicy::CanSharePhysicalBlock(*currentOwner, *transientPlan))
+			if (!CanSharePhysicalBlock(*currentOwner, *transientPlan))
 			{
 				continue;
 			}

@@ -11,61 +11,57 @@
 
 SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogFrameGraphBarrierPlayback, "Renderer.FrameGraph");
 
-class FrameGraphBarrierFailureReporter final
+static std::string FormatResourceLabel(const FrameGraphResourceHandle handle) noexcept
 {
-public:
-	static std::string FormatResourceLabel(const FrameGraphResourceHandle handle) noexcept
+	if (!handle.IsValid())
 	{
-		if (!handle.IsValid())
-		{
-			return "invalid";
-		}
-
-		return std::format("{}", handle.index);
+		return "invalid";
 	}
 
-	static void FailUnresolvedAliasingBarrier(
-	    std::string_view passName,
-	    const FrameGraphAliasingBarrier& barrier,
-	    std::string_view beforeResourceName,
-	    std::string_view afterResourceName) noexcept
-	{
-		Diagnostics::Fatal(
-		    LogFrameGraphBarrierPlayback,
-		    __FILE__,
-		    __LINE__,
-		    std::format(
-		        "FrameGraph aliasing barrier validation failed: pass='{}' block={} beforeHandle={} beforeResource='{}' afterHandle={} "
-		        "afterResource='{}' remediation='verify transient resource lifetimes and materialization before barrier playback'",
-		        passName,
-		        barrier.physicalBlockIndex,
-		        FormatResourceLabel(barrier.beforeHandle),
-		        beforeResourceName,
-		        FormatResourceLabel(barrier.afterHandle),
-		        afterResourceName));
-	}
+	return std::format("{}", handle.index);
+}
 
-	static void FailUnresolvedResourceBarrier(
-	    std::string_view passName,
-	    const FrameGraphBarrier& barrier,
-	    std::string_view resourceName) noexcept
-	{
-		Diagnostics::Fatal(
-		    LogFrameGraphBarrierPlayback,
-		    __FILE__,
-		    __LINE__,
-		    std::format(
-		        "FrameGraph resource barrier validation failed: pass='{}' handle={} resource='{}' label='{}' beforeState={} afterState={} "
-		        "remediation='declare the resource in setup and ensure the resource is imported, persistent-bound, or "
-		        "transient-materialized before execution'",
-		        passName,
-		        FormatResourceLabel(barrier.handle),
-		        resourceName,
-		        barrier.label.empty() ? "<unlabeled>" : barrier.label,
-		        ResourceStateToString(barrier.before),
-		        ResourceStateToString(barrier.after)));
-	}
-};
+static void FailUnresolvedAliasingBarrier(
+    std::string_view passName,
+    const FrameGraphAliasingBarrier& barrier,
+    std::string_view beforeResourceName,
+    std::string_view afterResourceName) noexcept
+{
+	Diagnostics::Fatal(
+	    LogFrameGraphBarrierPlayback,
+	    __FILE__,
+	    __LINE__,
+	    std::format(
+	        "FrameGraph aliasing barrier validation failed: pass='{}' block={} beforeHandle={} beforeResource='{}' afterHandle={} "
+	        "afterResource='{}' remediation='verify transient resource lifetimes and materialization before barrier playback'",
+	        passName,
+	        barrier.physicalBlockIndex,
+	        FormatResourceLabel(barrier.beforeHandle),
+	        beforeResourceName,
+	        FormatResourceLabel(barrier.afterHandle),
+	        afterResourceName));
+}
+
+static void FailUnresolvedResourceBarrier(
+    std::string_view passName,
+    const FrameGraphBarrier& barrier,
+    std::string_view resourceName) noexcept
+{
+	Diagnostics::Fatal(
+	    LogFrameGraphBarrierPlayback,
+	    __FILE__,
+	    __LINE__,
+	    std::format(
+	        "FrameGraph resource barrier validation failed: pass='{}' handle={} resource='{}' label='{}' beforeState={} afterState={} "
+	        "remediation='declare the resource in setup and ensure the resource is imported, persistent-bound, or "
+	        "transient-materialized before execution'",
+	        passName,
+	        FormatResourceLabel(barrier.handle),
+	        resourceName,
+	        barrier.label.empty() ? "<unlabeled>" : barrier.label,
+	        ResourceStateToString(barrier.before),
+	        ResourceStateToString(barrier.after)));
+}
 
 void FrameGraph::EmitCompiledBarriers(RenderCommandContext& commandContext, const std::vector<FrameGraphBarrier>& barriers) const noexcept
 {
@@ -106,7 +102,7 @@ void FrameGraph::EmitTransientAliasingBarriers(
 				afterName = m_resourceRegistry.GetMetadata(barrier.afterHandle).debugName;
 			}
 
-			FrameGraphBarrierFailureReporter::FailUnresolvedAliasingBarrier(passName, barrier, beforeName, afterName);
+			FailUnresolvedAliasingBarrier(passName, barrier, beforeName, afterName);
 		}
 
 		commandContext.AliasResource(beforeResource, afterResource);
@@ -129,7 +125,7 @@ void FrameGraph::EmitCompiledBarriers(
 				resourceName = m_resourceRegistry.GetMetadata(barrier.handle).debugName;
 			}
 
-			FrameGraphBarrierFailureReporter::FailUnresolvedResourceBarrier(passName, barrier, resourceName);
+			FailUnresolvedResourceBarrier(passName, barrier, resourceName);
 		}
 
 		switch (barrier.type)

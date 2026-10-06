@@ -1,13 +1,18 @@
 #include "PCH.h"
 #include "Passes/GBuffer/SkyMotionVector.h"
 
+#include "Frame/RenderFrame.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/GBuffer/SkyMotionVectorShader.h"
 #include "View/RenderView.h"
 
-void AddSkyMotionVectorPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
+void AddSkyMotionVectorPass(
+    FrameGraphBuilder& builder,
+    const RenderFrame& frame,
+    RenderViewportExtent sceneExtent,
+    const RenderFrameGraphResources& resources)
 {
 	const GBufferRenderTargets& targets = resources.Transient.GBuffer;
 
@@ -15,14 +20,9 @@ void AddSkyMotionVectorPass(FrameGraphBuilder& builder, RenderViewportExtent sce
 	parameters->GBufferDeviceZ = builder.CreateSRV(targets.DeviceZ);
 	parameters->GBufferMotionVector = builder.CreateUAV(targets.MotionVector);
 
-	builder.AddParameterSetup<RenderView>(
-	    parameters,
-	    [](auto& parameters, const RenderView& view)
-	    {
-		    parameters->View = view.uniform;
-		    parameters->ViewCamera = view.cameraUniform;
-		    parameters->ViewTemporal = view.temporalUniform;
-	    });
+	parameters->View = frame.View.uniform;
+	parameters->ViewCamera = frame.View.cameraUniform;
+	parameters->ViewTemporal = frame.View.temporalUniform;
 
 	builder.DispatchAsync<SkyMotionVectorCS>(
 	    parameters,

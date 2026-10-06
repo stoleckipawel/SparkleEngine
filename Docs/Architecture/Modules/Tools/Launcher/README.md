@@ -12,6 +12,8 @@
 
 **Current readiness:** **50/100** — a broad developer workflow exists in source; clean-machine execution, cancellation/failure truth, distribution classification, and adoption evidence remain open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#product-build-and-delivery).
 
+Source ownership reconciled on 2026-10-06: maintenance core `BuildLevelCleanPaths` selects extracted level cleanup paths, walks parent packs, deduplicates targets, and retains parents used by other selected levels. Qt converts those path specifications for preview and submits the existing maintenance operation. Cached source archives remain outside the selected paths; catalog validation and maintenance containment still guard the paths before removal. This is source ownership evidence, not destructive-operation acceptance.
+
 ## At A Glance
 
 | User intent | Launcher responsibility | Success boundary |

@@ -12,6 +12,8 @@
 
 **Current readiness:** glTF/GLB/FBX/PLY import routes are source-integrated; fidelity, determinism, provenance, adversarial-input, visual, and product proof remain open. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools) for the separately owned scored assessment.
 
+Source ownership reconciled on 2026-10-06: `ImportedScene::FindSkeletonJointForNode` owns source-node lookup across skeletons for both glTF and FBX animation import. First-match ordering and the invalid-index pair remain unchanged; importer-specific source translation stays in each importer.
+
 ## At A Glance
 
 | Source family | Current coverage | Principal exclusions |

@@ -15,16 +15,10 @@
 #include <ostream>
 #include <string>
 
-class CookShadersCommandExecution final
-{
-public:
-	static void PrintSummary(const ShaderCookResult& result, const ShaderCookSettings& settings);
-	static int RunAnalysisPasses(const ShaderCookResult& result, const ShaderCookSettings& settings);
-
-private:
-	static std::string FormatTargets(std::span<const ShaderTarget> targets);
-	static void RunCookedShaderStats(const ShaderCookResult& result);
-};
+static void PrintSummary(const ShaderCookResult& result, const ShaderCookSettings& settings);
+static int RunAnalysisPasses(const ShaderCookResult& result, const ShaderCookSettings& settings);
+static std::string FormatTargets(std::span<const ShaderTarget> targets);
+static void RunCookedShaderStats(const ShaderCookResult& result);
 
 int CookShaders(std::span<const std::string_view> args)
 {
@@ -67,15 +61,15 @@ int CookShaders(std::span<const std::string_view> args)
 		return kExitCodeCookFailure;
 	}
 
-	CookShadersCommandExecution::PrintSummary(cookResult, settings);
+	PrintSummary(cookResult, settings);
 	if (cookResult.output.entries.empty())
 	{
 		return kExitCodeNoWork;
 	}
-	return CookShadersCommandExecution::RunAnalysisPasses(cookResult, settings);
+	return RunAnalysisPasses(cookResult, settings);
 }
 
-void CookShadersCommandExecution::PrintSummary(const ShaderCookResult& result, const ShaderCookSettings& settings)
+static void PrintSummary(const ShaderCookResult& result, const ShaderCookSettings& settings)
 {
 	ToolConsole::Summary(
 	    std::cout,
@@ -87,7 +81,7 @@ void CookShadersCommandExecution::PrintSummary(const ShaderCookResult& result, c
 	        ToolConsole::QuotedField("targets", FormatTargets(settings.targets))});
 }
 
-int CookShadersCommandExecution::RunAnalysisPasses(const ShaderCookResult& result, const ShaderCookSettings& settings)
+static int RunAnalysisPasses(const ShaderCookResult& result, const ShaderCookSettings& settings)
 {
 	for (const std::string& analysisPass : settings.analysisPasses)
 	{
@@ -120,7 +114,7 @@ int CookShadersCommandExecution::RunAnalysisPasses(const ShaderCookResult& resul
 	return kExitCodeSuccess;
 }
 
-std::string CookShadersCommandExecution::FormatTargets(std::span<const ShaderTarget> targets)
+static std::string FormatTargets(std::span<const ShaderTarget> targets)
 {
 	std::string result;
 	for (std::size_t index = 0; index < targets.size(); ++index)
@@ -136,7 +130,7 @@ std::string CookShadersCommandExecution::FormatTargets(std::span<const ShaderTar
 	return result;
 }
 
-void CookShadersCommandExecution::RunCookedShaderStats(const ShaderCookResult& result)
+static void RunCookedShaderStats(const ShaderCookResult& result)
 {
 	const CookedShaderStatsReport report = CookedShaderStatsPass::WriteCsv(result.output, result.outputDirectory / "Analysis");
 

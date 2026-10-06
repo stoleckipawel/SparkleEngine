@@ -1,6 +1,7 @@
 #include "PCH.h"
 
 #include "Passes/GBuffer/RayTracing/RayTracingGBufferMesh.h"
+#include "Frame/RenderFrame.h"
 
 #include "Core/Public/Math/MathUtils.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
@@ -10,8 +11,10 @@
 #include "Scene/RayTracing/RenderRayTracingScene.h"
 #include "ShaderData/SceneShaderParameters.h"
 
-template <typename TShader>
-static auto& BuildRayTracingGBufferParameters(FrameGraphBuilder& builder, const RenderFrameGraphResources& resources)
+template <typename TShader> static auto& BuildRayTracingGBufferParameters(
+    FrameGraphBuilder& builder,
+    const RenderFrame& frame,
+    const RenderFrameGraphResources& resources)
 {
 	const GBufferRenderTargets& targets = resources.Transient.GBuffer;
 
@@ -25,13 +28,14 @@ static auto& BuildRayTracingGBufferParameters(FrameGraphBuilder& builder, const 
 	parameters->GBufferDeviceZ = builder.CreateUAV(targets.DeviceZ);
 	parameters->GBufferMotionVector = builder.CreateUAV(targets.MotionVector);
 
-	BindSceneShaderParameters(builder, parameters, resources);
+	BindSceneShaderParameters(builder, frame, parameters, resources);
 
 	return parameters;
 }
 
 void AddRayTracingGBufferMeshPass(
     FrameGraphBuilder& builder,
+    const RenderFrame& frame,
     RenderViewportExtent sceneExtent,
     const RenderFrameGraphResources& resources,
     RenderRayTracingScene& rayTracingScene)
@@ -42,5 +46,5 @@ void AddRayTracingGBufferMeshPass(
 	    rayTracingScene,
 	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u},
 	    RayTracingDispatchDimensions{.Width = sceneExtent.Width, .Height = sceneExtent.Height, .Depth = 1u},
-	    [&]<typename TShader>() -> auto& { return BuildRayTracingGBufferParameters<TShader>(builder, resources); });
+	    [&]<typename TShader>() -> auto& { return BuildRayTracingGBufferParameters<TShader>(builder, frame, resources); });
 }

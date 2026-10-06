@@ -7,7 +7,6 @@
 
 #include <functional>
 #include <memory>
-#include <optional>
 
 class RenderCommandContext;
 class GBufferMeshBatchDrawer;
@@ -19,16 +18,6 @@ struct PassCommandContext;
 struct PreparedRenderScene;
 struct RenderView;
 class FrameGraphResourceCommands;
-
-struct GBufferMeshPassInput final
-{
-	// These required values are borrowed only from parameter application through compiled-pass preparation.
-	std::optional<std::reference_wrapper<const PreparedRenderScene>> PreparedScene;
-	std::optional<std::reference_wrapper<const RenderView>> View;
-	RhiViewport Viewport = {};
-	RhiRect Scissor = {};
-	bool Wireframe = false;
-};
 
 struct GBufferShaderParameters final
 {
@@ -63,7 +52,7 @@ public:
 	using ParameterInstance = TypedPassParameterInstance<Parameters>;
 	using DrawParameterInstance = TypedPassParameterInstance<DrawParameters>;
 
-	GBufferMeshPass(GpuMeshCache& gpuMeshCache, const std::shared_ptr<GBufferMeshPassInput>& frameInput) noexcept;
+	GBufferMeshPass(GpuMeshCache& gpuMeshCache, const PreparedRenderScene& scene, const RenderView& view) noexcept;
 	~GBufferMeshPass() noexcept;
 
 	static const DrawParameterMetadata& GetDrawParameterMetadata() noexcept;
@@ -81,5 +70,6 @@ private:
 	    const Parameters& parameters) const;
 
 	std::shared_ptr<GBufferMeshBatchDrawer> m_meshBatchDrawer;
-	std::shared_ptr<GBufferMeshPassInput> m_frameInput;
+	std::reference_wrapper<const PreparedRenderScene> m_scene;
+	std::reference_wrapper<const RenderView> m_view;
 };

@@ -52,7 +52,7 @@ The top-level CMake project requires C++20, loads the Sparkle build profiles and
 | `Engine/Tasks` | `SparkleTasks` | private `SparkleCore` |
 | `Engine/Platform` | `SparklePlatform` | public `SparkleCore` |
 | `Engine/RHI` | `SparkleRHICommon`, `SparkleRHIDiagnostics`, backend targets, `SparkleRHI` | public `SparkleCore`; private Platform and selected backends |
-| `Engine/GameFramework` | `SparkleGameFramework` | public Core, Platform, and Tasks; no Renderer dependency |
+| `Engine/GameFramework` | `SparkleGameFramework` | public Core and Tasks; no Renderer or Platform dependency |
 | `Engine/Renderer` | registration/provider targets and `SparkleRenderer` | public Core and RHI; private Platform, GameFramework, Tasks, providers, and ImGui |
 | `Engine/Editor` | `SparkleEditor` | public Core, RHI, Renderer, GameFramework, and Platform; private ImGui |
 | `Engine/Application` | `SparkleApplication`, `SparkleApplicationEditor` | runtime host publishes Renderer; editor host layers Editor over the runtime host |
@@ -133,7 +133,7 @@ flowchart TD
     View --> Build
     Build --> Passes[Feature passes]
     Build --> Graph[Generic frame-graph infrastructure]
-    Passes --> Execute[ExecuteRenderFrameGraph]
+    Passes --> Execute[FramePipeline::ExecuteFrame]
     Graph --> Execute
     Execute --> Submit[RenderDeviceServices::SubmitFrame]
 ```
@@ -278,7 +278,7 @@ The repository-wide documentation reconciliation remains a static source/build-c
 - `Engine/Renderer/Private/Host/RendererHost.*`
 - `Engine/Renderer/Private/Frame/FramePipeline.*`
 - `Engine/Renderer/Private/Frame/Graph/BuildRenderFrameGraph.*`
-- `Engine/Renderer/Private/Frame/Graph/ExecuteRenderFrameGraph.*`
+- `Engine/Renderer/Private/Frame/Graph/ExecuteRenderFrameGraph.cpp`
 - `Engine/Renderer/Private/Scene/RayTracing/RayTracingShaderTablePlan.*`
 - `Engine/Renderer/Private/Pipeline/RenderPassRuntimeCache.*`
 - `Engine/RHI/Public/Device/RenderHardwareInterface.h`

@@ -435,8 +435,8 @@ function(sparkle_boundary_scan_file absolute_path)
                 "${_line}")
         endif()
 
-        if(_relative_path STREQUAL "Engine/Renderer/Private/Frame/Graph/ExecuteRenderFrameGraph.h" AND
-           _line MATCHES "(PreparedRenderScene|RenderFrameIdentity|RenderFrameTime|RenderRayTracingFrameBindings|RenderView)")
+        if(_relative_path STREQUAL "Engine/Renderer/Private/Frame/FramePipeline.h" AND
+           _line MATCHES "(BuildRenderFrameGraph|PrepareFrameGraph|PrepareRenderingState|PublishFrameProducts)[ 	]*[(].*(PreparedRenderScene|RenderFrameIdentity|RenderFrameTime|RenderRayTracingFrameBindings|RenderView)")
             sparkle_boundary_append_failure(
                 "RENDERER_FRAME_EXECUTION_ACCEPTS_CANONICAL_FRAME"
                 "${_relative_path}"

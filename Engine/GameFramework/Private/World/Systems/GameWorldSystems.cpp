@@ -8,11 +8,7 @@
 #include "World/GameWorldState.h"
 #include "World/Resources/GameWorldResourceStores.h"
 #include "World/Systems/Descriptors/GameWorldSystemContract.h"
-#include "World/Systems/Execution/AnimationSystemExecution.h"
-#include "World/Systems/Execution/MeshExtractionSystemExecution.h"
-#include "World/Systems/Execution/SimulationSystemExecution.h"
 #include "World/Systems/Execution/SystemChangeCommitter.h"
-#include "World/Systems/Execution/TransformSystemExecution.h"
 #include "World/Systems/GameSystemGraph.h"
 
 namespace ECS
@@ -24,27 +20,17 @@ namespace ECS
 		return storage == nullptr ? 0u : static_cast<std::uint32_t>(storage->GetEntities().size());
 	}
 
-	class GameWorldSystemExecution final
+	GameWorldSystemExecution::GameWorldSystemExecution(
+	    GameWorldState& state,
+	    const GameWorldSystemExecutionContext& context,
+	    const StructureFrozenEpoch& epoch) :
+	    m_simulation(state, context.Camera, epoch),
+	    m_animation(state, context.Resources, context.Camera.DeltaSeconds, epoch),
+	    m_transform(state, epoch),
+	    m_extraction(state, context.Resources.Skeletons, epoch),
+	    m_state(state)
 	{
-	public:
-		GameWorldSystemExecution(GameWorldState& state, const GameWorldSystemExecutionContext& context, const StructureFrozenEpoch& epoch) :
-		    m_simulation(state, context.Camera, epoch),
-		    m_animation(state, context.Resources, context.Camera.DeltaSeconds, epoch),
-		    m_transform(state, epoch),
-		    m_extraction(state, context.Resources.Skeletons, epoch),
-		    m_state(state)
-		{
-		}
-
-		static CompiledGameSystemGraph BuildGraph();
-
-	private:
-		SimulationSystemExecution m_simulation;
-		AnimationSystemExecution m_animation;
-		TransformSystemExecution m_transform;
-		MeshExtractionSystemExecution m_extraction;
-		GameWorldState& m_state;
-	};
+	}
 
 	CompiledGameSystemGraph GameWorldSystemExecution::BuildGraph()
 	{

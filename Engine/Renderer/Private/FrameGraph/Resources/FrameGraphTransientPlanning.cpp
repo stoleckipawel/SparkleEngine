@@ -9,100 +9,96 @@
 #include <cassert>
 #include <string>
 
-class FrameGraphTransientResourcePlanner final
+static bool RequiresUnorderedAccess(const FrameGraphPlan& plan, FrameGraphResourceHandle handle) noexcept
 {
-public:
-	static bool RequiresUnorderedAccess(const FrameGraphPlan& plan, FrameGraphResourceHandle handle) noexcept
+	for (const FrameGraphPassNode& passRecord : plan.passes)
 	{
-		for (const FrameGraphPassNode& passRecord : plan.passes)
+		for (const PassResourceDeclaration& declaration : passRecord.declarations)
 		{
-			for (const PassResourceDeclaration& declaration : passRecord.declarations)
+			if (declaration.handle == handle && UsesUnorderedAccess(declaration.usage))
 			{
-				if (declaration.handle == handle && UsesUnorderedAccess(declaration.usage))
-				{
-					return true;
-				}
+				return true;
 			}
 		}
-
-		return false;
 	}
 
-	static bool RequiresRenderTarget(const FrameGraphPlan& plan, FrameGraphResourceHandle handle) noexcept
+	return false;
+}
+
+static bool RequiresRenderTarget(const FrameGraphPlan& plan, FrameGraphResourceHandle handle) noexcept
+{
+	for (const FrameGraphPassNode& passRecord : plan.passes)
 	{
-		for (const FrameGraphPassNode& passRecord : plan.passes)
+		for (const PassResourceDeclaration& declaration : passRecord.declarations)
 		{
-			for (const PassResourceDeclaration& declaration : passRecord.declarations)
+			if (declaration.handle == handle && declaration.usage == ResourceUsage::RenderTarget)
 			{
-				if (declaration.handle == handle && declaration.usage == ResourceUsage::RenderTarget)
-				{
-					return true;
-				}
+				return true;
 			}
 		}
-
-		return false;
 	}
 
-	static RhiBufferResourceDesc BuildTransientBufferDesc(const FrameGraphBufferDesc& desc, bool requiresUnorderedAccess) noexcept
+	return false;
+}
+
+static RhiBufferResourceDesc BuildTransientBufferDesc(const FrameGraphBufferDesc& desc, bool requiresUnorderedAccess) noexcept
+{
+	return RhiBufferResourceDesc{
+	    .SizeInBytes = desc.sizeInBytes,
+	    .StrideInBytes = desc.strideInBytes,
+	    .AllowUnorderedAccess = requiresUnorderedAccess};
+}
+
+static RhiTextureResourceDesc BuildTransientResourceDesc(
+    const FrameGraphTextureDesc& desc,
+    FrameGraphResourceKind kind,
+    bool requiresRenderTarget,
+    bool requiresUnorderedAccess) noexcept
+{
+	RhiTextureResourceDesc resourceDesc{};
+	resourceDesc.Width = desc.width;
+	resourceDesc.Height = desc.height;
+	resourceDesc.Format = desc.format;
+	resourceDesc.MipLevels = 1;
+	resourceDesc.SampleCount = desc.sampleCount;
+	resourceDesc.AllowRenderTarget = kind == FrameGraphResourceKind::ColorRenderTarget && requiresRenderTarget;
+	resourceDesc.AllowDepthStencil = kind == FrameGraphResourceKind::DepthStencil;
+	resourceDesc.AllowUnorderedAccess = requiresUnorderedAccess;
+	return resourceDesc;
+}
+
+static RhiOptimizedClearValue BuildTransientOptimizedClearValue(const FrameGraphTextureDesc& desc, FrameGraphResourceKind kind) noexcept
+{
+	RhiOptimizedClearValue clearValue{};
+	clearValue.Format = desc.format;
+
+	if (kind == FrameGraphResourceKind::DepthStencil)
 	{
-		return RhiBufferResourceDesc{
-		    .SizeInBytes = desc.sizeInBytes,
-		    .StrideInBytes = desc.strideInBytes,
-		    .AllowUnorderedAccess = requiresUnorderedAccess};
-	}
-
-	static RhiTextureResourceDesc BuildTransientResourceDesc(
-	    const FrameGraphTextureDesc& desc,
-	    FrameGraphResourceKind kind,
-	    bool requiresRenderTarget,
-	    bool requiresUnorderedAccess) noexcept
-	{
-		RhiTextureResourceDesc resourceDesc{};
-		resourceDesc.Width = desc.width;
-		resourceDesc.Height = desc.height;
-		resourceDesc.Format = desc.format;
-		resourceDesc.MipLevels = 1;
-		resourceDesc.SampleCount = desc.sampleCount;
-		resourceDesc.AllowRenderTarget = kind == FrameGraphResourceKind::ColorRenderTarget && requiresRenderTarget;
-		resourceDesc.AllowDepthStencil = kind == FrameGraphResourceKind::DepthStencil;
-		resourceDesc.AllowUnorderedAccess = requiresUnorderedAccess;
-		return resourceDesc;
-	}
-
-	static RhiOptimizedClearValue BuildTransientOptimizedClearValue(const FrameGraphTextureDesc& desc, FrameGraphResourceKind kind) noexcept
-	{
-		RhiOptimizedClearValue clearValue{};
-		clearValue.Format = desc.format;
-
-		if (kind == FrameGraphResourceKind::DepthStencil)
-		{
-			clearValue.ValueType = RhiOptimizedClearValue::Type::DepthStencil;
-			clearValue.Depth = DepthConvention::GetClearDepth();
-			clearValue.Stencil = 0;
-			return clearValue;
-		}
-
-		clearValue.ValueType = RhiOptimizedClearValue::Type::Color;
-		clearValue.Color = desc.clearColor;
+		clearValue.ValueType = RhiOptimizedClearValue::Type::DepthStencil;
+		clearValue.Depth = DepthConvention::GetClearDepth();
+		clearValue.Stencil = 0;
 		return clearValue;
 	}
 
-	static RhiTransientAllocationPool ResolveTransientAllocationPool(FrameGraphResourceKind kind, bool requiresRenderTarget) noexcept
+	clearValue.ValueType = RhiOptimizedClearValue::Type::Color;
+	clearValue.Color = desc.clearColor;
+	return clearValue;
+}
+
+static RhiTransientAllocationPool ResolveTransientAllocationPool(FrameGraphResourceKind kind, bool requiresRenderTarget) noexcept
+{
+	if (kind == FrameGraphResourceKind::DepthStencil)
 	{
-		if (kind == FrameGraphResourceKind::DepthStencil)
-		{
-			return RhiTransientAllocationPool::DepthStencilTexture;
-		}
-
-		if (kind == FrameGraphResourceKind::Buffer)
-		{
-			return RhiTransientAllocationPool::Buffer;
-		}
-
-		return requiresRenderTarget ? RhiTransientAllocationPool::RenderTargetTexture : RhiTransientAllocationPool::Texture;
+		return RhiTransientAllocationPool::DepthStencilTexture;
 	}
-};
+
+	if (kind == FrameGraphResourceKind::Buffer)
+	{
+		return RhiTransientAllocationPool::Buffer;
+	}
+
+	return requiresRenderTarget ? RhiTransientAllocationPool::RenderTargetTexture : RhiTransientAllocationPool::Texture;
+}
 
 void FrameGraph::BuildTransientMaterializationPlan(FrameGraphPlan& plan) const noexcept
 {
@@ -128,21 +124,17 @@ FrameGraphTransientResourcePlan FrameGraph::BuildTransientResourcePlan(
     const FrameGraphResourceMetadata& resourceMetadata,
     const FrameGraphPlan& plan) const noexcept
 {
-	const bool requiresUnorderedAccess = FrameGraphTransientResourcePlanner::RequiresUnorderedAccess(plan, transientResource.handle);
-	const bool requiresRenderTarget = FrameGraphTransientResourcePlanner::RequiresRenderTarget(plan, transientResource.handle);
+	const bool requiresUnorderedAccess = RequiresUnorderedAccess(plan, transientResource.handle);
+	const bool requiresRenderTarget = RequiresRenderTarget(plan, transientResource.handle);
 	const bool isBuffer = resourceMetadata.resourceClass == FrameGraphResourceClass::Buffer;
 	const bool hasOptimizedClearValue =
 	    !isBuffer && (resourceMetadata.kind == FrameGraphResourceKind::DepthStencil || requiresRenderTarget);
 
-	const RhiBufferResourceDesc bufferResourceDesc = isBuffer
-	    ? FrameGraphTransientResourcePlanner::BuildTransientBufferDesc(transientResource.bufferDesc, requiresUnorderedAccess)
-	    : RhiBufferResourceDesc{};
-	const RhiTextureResourceDesc textureResourceDesc = isBuffer ? RhiTextureResourceDesc{}
-	                                                            : FrameGraphTransientResourcePlanner::BuildTransientResourceDesc(
-	                                                                  transientResource.textureDesc,
-	                                                                  resourceMetadata.kind,
-	                                                                  requiresRenderTarget,
-	                                                                  requiresUnorderedAccess);
+	const RhiBufferResourceDesc bufferResourceDesc =
+	    isBuffer ? BuildTransientBufferDesc(transientResource.bufferDesc, requiresUnorderedAccess) : RhiBufferResourceDesc{};
+	const RhiTextureResourceDesc textureResourceDesc = isBuffer
+	    ? RhiTextureResourceDesc{}
+	    : BuildTransientResourceDesc(transientResource.textureDesc, resourceMetadata.kind, requiresRenderTarget, requiresUnorderedAccess);
 	const RhiResourceAllocationInfo allocationInfo = isBuffer
 	    ? m_renderHardwareInterface->GetResourceService().GetBufferAllocationInfo(bufferResourceDesc)
 	    : m_renderHardwareInterface->GetResourceService().GetTextureAllocationInfo(textureResourceDesc);
@@ -155,16 +147,15 @@ FrameGraphTransientResourcePlan FrameGraph::BuildTransientResourcePlan(
 	    .kind = resourceMetadata.kind,
 	    .physicalAllocation = FrameGraphTransientResourcePlan::PhysicalAllocationPlan{
 	        .physicalBlockIndex = INVALID_FRAME_GRAPH_RESOURCE_INDEX,
-	        .pool = FrameGraphTransientResourcePlanner::ResolveTransientAllocationPool(resourceMetadata.kind, requiresRenderTarget),
+	        .pool = ResolveTransientAllocationPool(resourceMetadata.kind, requiresRenderTarget),
 	        .sizeInBytes = allocationInfo.SizeInBytes,
 	        .alignment = allocationInfo.Alignment,
 	        .memoryBlockOffset = 0,
 	        .textureResourceDesc = textureResourceDesc,
 	        .bufferResourceDesc = bufferResourceDesc,
-	        .optimizedClearValue = hasOptimizedClearValue ? FrameGraphTransientResourcePlanner::BuildTransientOptimizedClearValue(
-	                                                            transientResource.textureDesc,
-	                                                            resourceMetadata.kind)
-	                                                      : RhiOptimizedClearValue{},
+	        .optimizedClearValue = hasOptimizedClearValue
+	            ? BuildTransientOptimizedClearValue(transientResource.textureDesc, resourceMetadata.kind)
+	            : RhiOptimizedClearValue{},
 	        .hasOptimizedClearValue = hasOptimizedClearValue,
 	        .initialState = resourceMetadata.initialState}};
 }

@@ -1,6 +1,7 @@
 #include "../../../PCH.h"
 #include "Passes/Presentation/Display/ToneMapping.h"
 
+#include "Frame/RenderFrame.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "Frame/Graph/RenderFrameGraphFormats.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
@@ -11,6 +12,7 @@
 
 FrameGraphTextureHandle AddToneMappingPass(
     FrameGraphBuilder& builder,
+    const RenderFrame& frame,
     RenderViewportExtent outputExtent,
     const RenderFrameGraphResources& resources)
 {
@@ -26,10 +28,7 @@ FrameGraphTextureHandle AddToneMappingPass(
 	parameters->ExposureTexture = builder.CreateSRV(resources.Transient.Exposure);
 	parameters->ToneMappedColor = builder.CreateUAV(toneMappedColor);
 
-	builder.AddParameterSetup<RenderView>(
-	    parameters,
-	    [](auto& parameters, const RenderView& view)
-	    { parameters->ToneMapper = static_cast<std::uint32_t>(view.displaySettings.ToneMapper); });
+	parameters->ToneMapper = static_cast<std::uint32_t>(frame.View.displaySettings.ToneMapper);
 
 	builder.Dispatch<ToneMappingCS>(
 	    parameters,

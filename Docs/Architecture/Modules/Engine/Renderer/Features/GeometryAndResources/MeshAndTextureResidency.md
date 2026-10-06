@@ -8,6 +8,8 @@
 
 **Current readiness:** **50/100** — bounded read/decode/upload/activate/replace/retire routes exist; boundary/failure/cancellation/pressure/lifetime/memory/soak evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
+Source ownership reconciled on 2026-10-06: default texture product identities and cooked paths come from Core's `Assets/DefaultTexture.h`; Renderer retains lookup and bootstrap consumption, while source-image and cooking policy remain in AssetCooker. This ownership change does not alter residency or missing-texture behavior.
+
 ## At A Glance
 
 | Lifecycle | Required truth | Current limitation |

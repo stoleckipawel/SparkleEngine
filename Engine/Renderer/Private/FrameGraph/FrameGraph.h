@@ -29,11 +29,11 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
-#include <typeindex>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
+class RayTracingShaderTable;
 class RenderCommandContext;
 class RenderCommandList;
 class RhiCommandSubmissionService;
@@ -182,29 +182,9 @@ public:
 	}
 
 	void Setup();
-	void ApplyPassParameterDefaults();
+	void BeginFrame();
 	void PreparePasses();
-	void ApplyResourceProductionSetups();
-
-	template <typename TValue, typename TCallback> void AddParameterSetup(TCallback&& callback)
-	{
-		auto& callbacks = m_parameterSetups[typeid(TValue)];
-		callbacks.emplace_back(
-		    [setup = std::forward<TCallback>(callback)](const void* value) mutable { setup(*static_cast<const TValue*>(value)); });
-	}
-
-	template <typename TValue> void ApplyParameters(const TValue& value)
-	{
-		const auto callbacks = m_parameterSetups.find(typeid(TValue));
-		if (callbacks == m_parameterSetups.end())
-		{
-			return;
-		}
-		for (const ParameterSetupCallback& setup : callbacks->second)
-		{
-			setup(&value);
-		}
-	}
+	bool IsTextureHistoryValid(FrameGraphTextureHistory history) const noexcept;
 
 	const FrameGraphPlan& Compile();
 
@@ -233,13 +213,6 @@ public:
 	FrameGraphTextureHandle CreateTexture(const FrameGraphTextureDesc& desc) noexcept;
 	FrameGraphTextureHistory CreateTextureHistory(const FrameGraphTextureDesc& desc) noexcept;
 	void InvalidateTextureHistory(FrameGraphTextureHistory history) noexcept;
-	bool HasBeenProduced(FrameGraphResourceHandle handle) const noexcept;
-	bool HasBeenProduced(FrameGraphTextureHandle handle) const noexcept { return HasBeenProduced(handle.GetResourceHandle()); }
-	bool HasBeenProduced(FrameGraphBufferHandle handle) const noexcept { return HasBeenProduced(handle.GetResourceHandle()); }
-	bool HasBeenProduced(FrameGraphAccelerationStructureHandle handle) const noexcept
-	{
-		return HasBeenProduced(handle.GetResourceHandle());
-	}
 	FrameGraphBufferHandle ReservePersistentBuffer(
 	    const FrameGraphBufferDesc& desc,
 	    ResourceState initialState = ResourceState::Common) noexcept;
@@ -352,11 +325,8 @@ public:
 private:
 	using SetupCallback = std::function<bool(PassResourceBuilder&)>;
 	using ExecuteCallback = std::function<void(PassCommandContext&)>;
-	using PassParameterSetupCallback = std::function<void()>;
 	using PassPreparationCallback = std::function<void()>;
 	using PassPreparation = std::pair<FrameGraphPassIndex, PassPreparationCallback>;
-	using ResourceProductionSetupCallback = std::function<void()>;
-	using ParameterSetupCallback = std::function<void(const void*)>;
 
 	template <typename TParameterBindings, typename ExecuteFn>
 	static ExecuteCallback MakeParameterizedExecuteCallback(TParameterBindings* parameters, ExecuteFn&& executeFn)
@@ -448,6 +418,10 @@ private:
 	void CommitTextureHistories() const noexcept;
 	void ReleaseTextureHistories() noexcept;
 	FrameGraphResourceHandle AllocateDynamicResourceHandle() noexcept;
+	FrameGraphResourceHandle FindResource(
+	    std::string_view name,
+	    FrameGraphResourceKind kind,
+	    FrameGraphResourceOwnership ownership) const noexcept;
 
 	struct TextureHistoryRecord
 	{
@@ -486,11 +460,9 @@ private:
 		bool active = true;
 	};
 
+	std::unordered_map<std::string, std::shared_ptr<RayTracingShaderTable>> m_rayTracingShaderTables;
 	std::vector<RegisteredPass> m_passes;
-	std::vector<PassParameterSetupCallback> m_passParameterSetups;
 	std::vector<PassPreparation> m_passPreparations;
-	std::vector<ResourceProductionSetupCallback> m_resourceProductionSetups;
-	std::unordered_map<std::type_index, std::vector<ParameterSetupCallback>> m_parameterSetups;
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	Window* m_window = nullptr;
 	FrameGraphResourceRegistry m_resourceRegistry;

@@ -1,5 +1,7 @@
 #pragma once
 
+struct RenderFrame;
+
 #include "ShaderData/SceneLightingUniformData.h"
 #include "ShaderData/ViewTemporalUniformData.h"
 #include "ShaderData/ViewCameraUniformData.h"
@@ -43,4 +45,8 @@ public:
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
 
-void AddDirectLightingPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources);
+void AddDirectLightingPass(
+    FrameGraphBuilder& builder,
+    const RenderFrame& frame,
+    RenderViewportExtent sceneExtent,
+    const RenderFrameGraphResources& resources);

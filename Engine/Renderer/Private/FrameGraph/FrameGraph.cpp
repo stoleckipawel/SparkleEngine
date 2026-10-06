@@ -90,3 +90,19 @@ void FrameGraph::UpdateTrackedResourceState(FrameGraphResourceHandle handle, Res
 
 	m_resourceStateTracker.UpdateCurrentState(handle, currentState);
 }
+
+FrameGraphResourceHandle FrameGraph::FindResource(
+    std::string_view name,
+    FrameGraphResourceKind kind,
+    FrameGraphResourceOwnership ownership) const noexcept
+{
+	for (FrameGraphResourceHandle handle : m_resourceRegistry.GetRegisteredHandles())
+	{
+		const auto& metadata = m_resourceRegistry.GetMetadata(handle);
+		if (metadata.debugName == name && metadata.kind == kind && metadata.ownership == ownership)
+		{
+			return handle;
+		}
+	}
+	return FrameGraphResourceHandle::Invalid();
+}

@@ -1,6 +1,7 @@
 #include "PCH.h"
 #include "Passes/Lighting/Restir/Indirect/RestirIndirectResolve.h"
 
+#include "Frame/RenderFrame.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Lighting/Restir/Indirect/RestirIndirectResolveShader.h"
@@ -9,7 +10,11 @@
 #include "RayTracing/Effects/Shadows/RayTracedShadowPassData.h"
 #include "ShaderData/SceneShaderParameters.h"
 
-void AddRestirIndirectResolvePass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
+void AddRestirIndirectResolvePass(
+    FrameGraphBuilder& builder,
+    const RenderFrame& frame,
+    RenderViewportExtent sceneExtent,
+    const RenderFrameGraphResources& resources)
 {
 	auto& parameters = builder.AllocParameters<RestirIndirectResolveCS>();
 	parameters->CurrentReservoirSampleTexture = builder.CreateSRV(resources.History.RestirIndirectReservoir.Sample.Current);
@@ -26,15 +31,12 @@ void AddRestirIndirectResolvePass(FrameGraphBuilder& builder, RenderViewportExte
 	parameters->GBufferMaterial = builder.CreateSRV(resources.Transient.GBuffer.Material);
 	parameters->SceneDepth = builder.CreateSRV(resources.Transient.Scene.SceneDepth);
 
-	BindSceneShaderParameters(builder, parameters, resources);
-	BindRayTracedShadowParameters(builder, parameters);
+	BindSceneShaderParameters(builder, frame, parameters, resources);
+	BindRayTracedShadowParameters(frame.PreparedScene, parameters);
 
-	BindRestirIndirectParameters(builder, parameters, resources);
+	BindRestirIndirectParameters(parameters, resources);
 
-	builder.AddParameterSetup<RenderView>(
-	    parameters,
-	    [](auto& parameters, const RenderView& view)
-	    { parameters->RestirIndirectWriteReconstructionGuides = ShouldUseRayReconstruction(view.viewMode) ? 1u : 0u; });
+	parameters->RestirIndirectWriteReconstructionGuides = ShouldUseRayReconstruction(frame.View.viewMode) ? 1u : 0u;
 
 	builder.Dispatch<RestirIndirectResolveCS>(
 	    parameters,

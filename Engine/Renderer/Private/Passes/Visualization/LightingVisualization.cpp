@@ -1,6 +1,7 @@
 #include "../../PCH.h"
 #include "Passes/Visualization/LightingVisualization.h"
 
+#include "Frame/RenderFrame.h"
 #include "Passes/Lighting/Direct/DirectLightingControls.h"
 #include "Passes/Lighting/Restir/Indirect/IndirectLightingControls.h"
 #include "Core/Public/Math/MathUtils.h"
@@ -47,7 +48,11 @@ bool PrepareLightingVisualizationProducts(
 	return false;
 }
 
-void AddLightingVisualizationPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
+void AddLightingVisualizationPass(
+    FrameGraphBuilder& builder,
+    const RenderFrame& frame,
+    RenderViewportExtent sceneExtent,
+    const RenderFrameGraphResources& resources)
 {
 	const auto& lighting = resources.Transient.Lighting;
 	auto& parameters = builder.AllocParameters<LightingVisualizationCS>();
@@ -58,7 +63,7 @@ void AddLightingVisualizationPass(FrameGraphBuilder& builder, RenderViewportExte
 	parameters->DirectSubsurface = builder.CreateSRV(lighting.DirectSubsurface);
 	parameters->IndirectDiffuse = builder.CreateSRV(lighting.IndirectDiffuse);
 	parameters->IndirectSpecular = builder.CreateSRV(lighting.IndirectSpecular);
-	BindSceneShaderParameters(builder, parameters, resources);
+	BindSceneShaderParameters(builder, frame, parameters, resources);
 	builder.Dispatch<LightingVisualizationCS>(
 	    parameters,
 	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});

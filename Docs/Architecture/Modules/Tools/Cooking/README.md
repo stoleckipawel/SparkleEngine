@@ -34,6 +34,10 @@ flowchart LR
 
 Cooking is a product boundary, not a collection of file converters. A successful child process is insufficient unless every declared output is present, mutually compatible, and published as one generation.
 
+### Shared Default Texture Products
+
+Source ownership reconciled on 2026-10-06: Core's `Assets/DefaultTexture.h` owns the eight default product identities, display names, and cooked relative paths consumed by Renderer and AssetCooker. AssetCooker retains source-image selection, asset-ID hashing, color space, filtering, channel, group, and dimension policy. Runtime has no tool dependency. TextureCooker's two fixed verbs dispatch directly to functions; command classes, factories, and allocated registries are removed without changing request processing or exit-code policy.
+
 ## Orchestration And Products
 
 | ID | Capability | State | Exact current coverage and limit | Evidence |

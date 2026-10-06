@@ -1,6 +1,7 @@
 #include "PCH.h"
 #include "Passes/GBuffer/GBufferPasses.h"
 
+#include "Frame/RenderFrame.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "Debug/RendererCVars.h"
 #include "Passes/GBuffer/GBufferRenderTargets.h"
@@ -12,6 +13,7 @@
 
 void AddGBufferPasses(
     FrameGraphBuilder& builder,
+    const RenderFrame& frame,
     RenderViewportExtent sceneExtent,
     GpuMeshCache& gpuMeshCache,
     RenderRayTracingScene& rayTracingScene,
@@ -24,15 +26,15 @@ void AddGBufferPasses(
 	switch (algorithm)
 	{
 		case GBufferAlgorithm::Rasterized:
-			AddRasterizedGBufferMeshPass(builder, gpuMeshCache, resources);
+			AddRasterizedGBufferMeshPass(builder, frame, gpuMeshCache, resources);
 			break;
 		case GBufferAlgorithm::RayTracing:
-			AddRayTracingGBufferMeshPass(builder, sceneExtent, resources, rayTracingScene);
+			AddRayTracingGBufferMeshPass(builder, frame, sceneExtent, resources, rayTracingScene);
 			break;
 		default:
 			throw Diagnostics::Error("GBuffer graph construction received an invalid algorithm.");
 	}
 
-	AddSkyMotionVectorPass(builder, sceneExtent, resources);
-	AddLinearizeDeviceZPass(builder, sceneExtent, resources);
+	AddSkyMotionVectorPass(builder, frame, sceneExtent, resources);
+	AddLinearizeDeviceZPass(builder, frame, sceneExtent, resources);
 }

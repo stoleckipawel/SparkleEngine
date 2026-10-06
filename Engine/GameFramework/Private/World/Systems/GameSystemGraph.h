@@ -119,7 +119,7 @@ namespace ECS
 		explicit operator bool() const noexcept { return IsValid(); }
 		const GameSystemGraphError& GetError() const noexcept;
 		std::span<const GameSystemDesc> GetSystems() const noexcept;
-		bool Execute(TaskExecutor& executor, GameWorldSystemExecution& systems, GameSystemGraphError& error) const;
+		bool Execute(TaskExecutor& executor, GameWorldSystemExecution& systems, GameSystemGraphError& error);
 
 	private:
 		friend class GameSystemGraph;
@@ -131,7 +131,7 @@ namespace ECS
 	{
 	public:
 		std::uint32_t Add(GameSystemDesc descriptor);
-		CompiledGameSystemGraph Compile() const;
+		CompiledGameSystemGraph Compile();
 
 	private:
 		std::vector<GameSystemDesc> m_systems;

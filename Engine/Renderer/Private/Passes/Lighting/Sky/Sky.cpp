@@ -1,6 +1,7 @@
 #include "../../../PCH.h"
 #include "Passes/Lighting/Sky/Sky.h"
 
+#include "Frame/RenderFrame.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
@@ -8,7 +9,11 @@
 #include "Scene/Preparation/PreparedRenderScene.h"
 #include "View/RenderView.h"
 
-void AddSkyPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
+void AddSkyPass(
+    FrameGraphBuilder& builder,
+    const RenderFrame& frame,
+    RenderViewportExtent sceneExtent,
+    const RenderFrameGraphResources& resources)
 {
 	auto& parameters = builder.AllocParameters<SkyCS>();
 	parameters->SceneColor = builder.CreateUAV(resources.Transient.Scene.SceneColor);
@@ -19,17 +24,10 @@ void AddSkyPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, co
 	    .MipFilter = RhiSamplerMipFilter::Linear,
 	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Clamp)};
 
-	builder.AddParameterSetup<RenderView>(
-	    parameters,
-	    [](auto& parameters, const RenderView& view)
-	    {
-		    parameters->View = view.uniform;
-		    parameters->ViewCamera = view.cameraUniform;
-		    parameters->ViewTemporal = view.temporalUniform;
-	    });
-	builder.AddParameterSetup<PreparedRenderScene>(
-	    parameters,
-	    [](auto& parameters, const PreparedRenderScene& scene) { parameters->Sky = MakeSkyUniformData(scene.sky); });
+	parameters->View = frame.View.uniform;
+	parameters->ViewCamera = frame.View.cameraUniform;
+	parameters->ViewTemporal = frame.View.temporalUniform;
+	parameters->Sky = MakeSkyUniformData(frame.PreparedScene.sky);
 
 	builder.Dispatch<SkyCS>(
 	    parameters,

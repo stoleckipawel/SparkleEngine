@@ -24,6 +24,8 @@ One Lit View produces finite scene-linear `IndirectDiffuse` and `IndirectSpecula
 | reconstruction | optional adjacent RR guides, no mandatory baseline | portable raw-first diffuse/specular baseline plus optional RR |
 | evidence | source inventory | analytic/statistical/convergence/temporal/backend/workload evidence |
 
+Current implementation ownership reconciled on 2026-10-06: temporal, spatial, and resolve passes share `BindRestirIndirectParameters` in the existing ReSTIR indirect owner. It registers the same six pass-parameter values and captured resource handles at execution setup time; CVar sampling is not moved into graph construction. Resolve-only reconstruction-guide policy stays in resolve. This removes repeated setup without changing the estimator or claiming `IND-D0` conformance.
+
 ## Feature Enclosure
 
 Proposed steady-state homes:

@@ -1,6 +1,7 @@
 #include "../../../PCH.h"
 #include "Passes/Lighting/Shadows/DirectShadowSignal.h"
 
+#include "Frame/RenderFrame.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
@@ -14,8 +15,10 @@
 #include "Scene/RayTracing/RenderRayTracingScene.h"
 #include "ShaderData/SceneShaderParameters.h"
 
-template <typename TShader>
-static auto& BuildDirectShadowSignalParameters(FrameGraphBuilder& builder, const RenderFrameGraphResources& resources)
+template <typename TShader> static auto& BuildDirectShadowSignalParameters(
+    FrameGraphBuilder& builder,
+    const RenderFrame& frame,
+    const RenderFrameGraphResources& resources)
 {
 	auto& parameters = builder.AllocParameters<TShader>();
 	parameters->ShadowVisibilitySignal = builder.CreateUAV(resources.Transient.ShadowVisibilitySignal);
@@ -24,14 +27,15 @@ static auto& BuildDirectShadowSignalParameters(FrameGraphBuilder& builder, const
 	parameters->SceneDepth = builder.CreateSRV(resources.Transient.Scene.SceneDepth);
 	parameters->GBufferWorldNormal = builder.CreateSRV(resources.Transient.GBuffer.WorldNormal);
 
-	BindSceneShaderParameters(builder, parameters, resources);
-	BindRayTracedShadowParameters(builder, parameters);
+	BindSceneShaderParameters(builder, frame, parameters, resources);
+	BindRayTracedShadowParameters(frame.PreparedScene, parameters);
 
 	return parameters;
 }
 
 void AddDirectShadowSignalPass(
     FrameGraphBuilder& builder,
+    const RenderFrame& frame,
     RenderViewportExtent sceneExtent,
     RenderFrameGraphResources& resources,
     RenderRayTracingScene& rayTracingScene)
@@ -49,5 +53,5 @@ void AddDirectShadowSignalPass(
 	    rayTracingScene,
 	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u},
 	    RayTracingDispatchDimensions{.Width = sceneExtent.Width, .Height = sceneExtent.Height, .Depth = 1u},
-	    [&]<typename TShader>() -> auto& { return BuildDirectShadowSignalParameters<TShader>(builder, resources); });
+	    [&]<typename TShader>() -> auto& { return BuildDirectShadowSignalParameters<TShader>(builder, frame, resources); });
 }

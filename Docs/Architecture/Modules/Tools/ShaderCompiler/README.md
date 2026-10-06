@@ -23,6 +23,8 @@
 > [!TIP]
 > This is a source capability ledger. Start with the [Shader System Architecture](../../../CrossModule/ShaderSystem/README.md) for the mental model, then search here by `SHD-*` ID, authored language, stage, target, or product. Registration, compilation, publication, runtime loading, and executable use are separate claims.
 
+Source ownership reconciled on 2026-10-06: the five fixed CLI verbs are functions referenced by one immutable descriptor table, which also owns usage text. Dispatch no longer allocates command objects or a polymorphic registry; argument parsing, cook execution, diagnostics, and exit-code policy remain in their existing owners.
+
 ## Build And Delivery Shape
 
 | Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |

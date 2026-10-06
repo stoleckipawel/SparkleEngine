@@ -33,6 +33,10 @@ flowchart LR
 
 The Editor should expose owner commands and read models, not mutate Renderer/RHI/native state directly. That makes undo, concurrency, and failure tractable at the cost of explicit command/result plumbing.
 
+### UI Implementation Boundary
+
+Source ownership reconciled on 2026-10-06: the public `UI` facade contains host services, diagnostics, viewport operations, and one private implementation owner. Panels, mutable controllers, scene/history state, ImGui lifecycle, and window subscriptions live in private `UIImplementation` sources. The implementation resets subscriptions before shutting down the Win32 backend and ImGui context. This preserves the existing lifetime order; it does not establish interactive or shutdown acceptance.
+
 ### Rendering Settings Ownership
 
 The settings UI separates window orchestration, category presentation, and edit state:

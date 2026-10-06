@@ -9,38 +9,34 @@
 
 SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogFrameGraphTransientAllocator, "Renderer.FrameGraph");
 
-class FrameGraphTransientAllocationPolicy final
+static bool RequiresShaderResourceView(const FrameGraphTransientResourcePlan& transientPlan) noexcept
 {
-public:
-	static bool RequiresShaderResourceView(const FrameGraphTransientResourcePlan& transientPlan) noexcept
+	return std::find(
+	           transientPlan.lifetime.requiredStates.begin(),
+	           transientPlan.lifetime.requiredStates.end(),
+	           ResourceState::ShaderResource)
+	    != transientPlan.lifetime.requiredStates.end();
+}
+
+static bool RequiresUnorderedAccessView(const FrameGraphTransientResourcePlan& transientPlan) noexcept
+{
+	return transientPlan.kind != FrameGraphResourceKind::DepthStencil
+	    && std::find(
+	           transientPlan.lifetime.requiredStates.begin(),
+	           transientPlan.lifetime.requiredStates.end(),
+	           ResourceState::UnorderedAccess)
+	    != transientPlan.lifetime.requiredStates.end();
+}
+
+static std::wstring BuildWideDebugName(const std::string& name, const wchar_t* defaultDebugName)
+{
+	if (name.empty())
 	{
-		return std::find(
-		           transientPlan.lifetime.requiredStates.begin(),
-		           transientPlan.lifetime.requiredStates.end(),
-		           ResourceState::ShaderResource)
-		    != transientPlan.lifetime.requiredStates.end();
+		return defaultDebugName;
 	}
 
-	static bool RequiresUnorderedAccessView(const FrameGraphTransientResourcePlan& transientPlan) noexcept
-	{
-		return transientPlan.kind != FrameGraphResourceKind::DepthStencil
-		    && std::find(
-		           transientPlan.lifetime.requiredStates.begin(),
-		           transientPlan.lifetime.requiredStates.end(),
-		           ResourceState::UnorderedAccess)
-		    != transientPlan.lifetime.requiredStates.end();
-	}
-
-	static std::wstring BuildWideDebugName(const std::string& name, const wchar_t* defaultDebugName)
-	{
-		if (name.empty())
-		{
-			return defaultDebugName;
-		}
-
-		return std::wstring(name.begin(), name.end());
-	}
-};
+	return std::wstring(name.begin(), name.end());
+}
 
 FrameGraphTransientAllocator::FrameGraphTransientAllocator(RenderHardwareInterface& renderHardwareInterface) noexcept :
     m_renderHardwareInterface(&renderHardwareInterface)
@@ -74,8 +70,8 @@ void FrameGraphTransientAllocator::Prepare(const FrameGraphTransientPlan& plan) 
 		        .physicalBlockIndex = resource.physicalAllocation.physicalBlockIndex,
 		        .textureDesc = resource.physicalAllocation.textureResourceDesc,
 		        .bufferDesc = resource.physicalAllocation.bufferResourceDesc,
-		        .requiresShaderResourceView = FrameGraphTransientAllocationPolicy::RequiresShaderResourceView(resource),
-		        .requiresUnorderedAccessView = FrameGraphTransientAllocationPolicy::RequiresUnorderedAccessView(resource)});
+		        .requiresShaderResourceView = RequiresShaderResourceView(resource),
+		        .requiresUnorderedAccessView = RequiresUnorderedAccessView(resource)});
 	}
 
 	if (planEntries == m_planEntries)
@@ -192,8 +188,7 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 	{
 		case FrameGraphResourceKind::DepthStencil:
 		{
-			const std::wstring debugName =
-			    FrameGraphTransientAllocationPolicy::BuildWideDebugName(transientPlan.textureDesc.name, L"FG_DepthTransient");
+			const std::wstring debugName = BuildWideDebugName(transientPlan.textureDesc.name, L"FG_DepthTransient");
 			allocation.ownedResource = m_renderHardwareInterface->GetResourceService().CreateAliasingTextureResource(
 			    memoryBlock,
 			    memoryBlockOffset,
@@ -207,7 +202,7 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 			allocation.resource = m_renderHardwareInterface->GetResourceService().GetResourceHandle(allocation.ownedResource);
 			allocation.depthStencilView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 			    RhiResourceViewDesc::DepthStencil(allocation.resource, transientPlan.textureDesc.format));
-			if (FrameGraphTransientAllocationPolicy::RequiresShaderResourceView(transientPlan))
+			if (RequiresShaderResourceView(transientPlan))
 			{
 				allocation.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 				    RhiResourceViewDesc::TextureShaderResource(allocation.resource, transientPlan.textureDesc.format));
@@ -217,8 +212,7 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 
 		case FrameGraphResourceKind::ColorRenderTarget:
 		{
-			const std::wstring debugName =
-			    FrameGraphTransientAllocationPolicy::BuildWideDebugName(transientPlan.textureDesc.name, L"FG_ColorTransient");
+			const std::wstring debugName = BuildWideDebugName(transientPlan.textureDesc.name, L"FG_ColorTransient");
 			allocation.ownedResource = m_renderHardwareInterface->GetResourceService().CreateAliasingTextureResource(
 			    memoryBlock,
 			    memoryBlockOffset,
@@ -236,13 +230,13 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 				    RhiResourceViewDesc::RenderTarget(allocation.resource, transientPlan.textureDesc.format));
 			}
 
-			if (FrameGraphTransientAllocationPolicy::RequiresShaderResourceView(transientPlan))
+			if (RequiresShaderResourceView(transientPlan))
 			{
 				allocation.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 				    RhiResourceViewDesc::TextureShaderResource(allocation.resource, transientPlan.textureDesc.format));
 			}
 
-			if (FrameGraphTransientAllocationPolicy::RequiresUnorderedAccessView(transientPlan))
+			if (RequiresUnorderedAccessView(transientPlan))
 			{
 				allocation.unorderedAccessView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 				    RhiResourceViewDesc::TextureUnorderedAccess(allocation.resource, transientPlan.textureDesc.format));
@@ -252,8 +246,7 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 
 		case FrameGraphResourceKind::Buffer:
 		{
-			const std::wstring debugName =
-			    FrameGraphTransientAllocationPolicy::BuildWideDebugName(transientPlan.bufferDesc.name, L"FG_BufferTransient");
+			const std::wstring debugName = BuildWideDebugName(transientPlan.bufferDesc.name, L"FG_BufferTransient");
 			allocation.ownedResource = m_renderHardwareInterface->GetResourceService().CreateAliasingBufferResource(
 			    memoryBlock,
 			    memoryBlockOffset,
@@ -263,7 +256,7 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 			    debugName);
 			allocation.resource = m_renderHardwareInterface->GetResourceService().GetResourceHandle(allocation.ownedResource);
 
-			if (FrameGraphTransientAllocationPolicy::RequiresShaderResourceView(transientPlan))
+			if (RequiresShaderResourceView(transientPlan))
 			{
 				allocation.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 				    RhiResourceViewDesc::BufferShaderResource(
@@ -272,7 +265,7 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 				        transientPlan.bufferDesc.strideInBytes));
 			}
 
-			if (FrameGraphTransientAllocationPolicy::RequiresUnorderedAccessView(transientPlan))
+			if (RequiresUnorderedAccessView(transientPlan))
 			{
 				allocation.unorderedAccessView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 				    RhiResourceViewDesc::BufferUnorderedAccess(

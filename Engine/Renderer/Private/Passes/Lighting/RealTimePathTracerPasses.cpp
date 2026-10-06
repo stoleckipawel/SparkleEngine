@@ -1,6 +1,7 @@
 #include "../../PCH.h"
 #include "Passes/Lighting/RealTimePathTracerPasses.h"
 
+#include "Frame/RenderFrame.h"
 #include "Frame/Graph/RenderFrameGraphSettings.h"
 #include "RayReconstruction/RayReconstructionSettings.h"
 #include "Passes/GBuffer/GBufferPasses.h"
@@ -13,24 +14,36 @@
 #include "Passes/Lighting/Shadows/DirectShadowControls.h"
 #include "Passes/Lighting/Restir/Indirect/IndirectLightingControls.h"
 
-std::uint64_t GetRealTimePathTracerTopologyIdentity() noexcept
+std::uint64_t GetRealTimePathTracerGraphRebuildKey() noexcept
 {
-	return (IsDirectLightingAdmitted() ? 1u : 0u) | (IsDirectShadowsActive() ? 2u : 0u) | (IsIndirectLightingAdmitted() ? 4u : 0u)
-	    | ((!IsRayReconstructionEnabled() || CVarIndirectSpecular.Get()) ? 0u : 8u);
+	constexpr std::uint64_t directLightingPassesBit = 1u << 0u;
+	constexpr std::uint64_t directShadowPassBit = 1u << 1u;
+	constexpr std::uint64_t indirectLightingPassesBit = 1u << 2u;
+	constexpr std::uint64_t missingRayReconstructionSpecularBit = 1u << 3u;
+
+	return (IsDirectLightingAdmitted() ? directLightingPassesBit : 0u) | (IsDirectShadowsActive() ? directShadowPassBit : 0u)
+	    | (IsIndirectLightingAdmitted() ? indirectLightingPassesBit : 0u)
+	    | ((IsRayReconstructionEnabled() && !CVarIndirectSpecular.Get()) ? missingRayReconstructionSpecularBit : 0u);
 }
 
-void AddRealTimePathTracerPasses(
+bool AddRealTimePathTracerPasses(
     FrameGraphBuilder& builder,
+    const RenderFrame& frame,
     const RenderFrameGraphSettings& settings,
     RenderRayTracingScene& rayTracingScene,
     GpuMeshCache& gpuMeshCache,
     RenderFrameGraphResources& resources)
 {
-	AddGBufferPasses(builder, settings.RenderExtent, gpuMeshCache, rayTracingScene, resources);
+	if (!PrepareRealTimePathTracerProducts(frame.View.viewMode, resources.ViewportProducts))
+	{
+		return false;
+	}
+	AddGBufferPasses(builder, frame, settings.RenderExtent, gpuMeshCache, rayTracingScene, resources);
 
-	AddRestirLightingPasses(builder, settings.RenderExtent, rayTracingScene, resources);
+	AddRestirLightingPasses(builder, frame, settings.RenderExtent, rayTracingScene, resources);
 	AddLightingCompositePass(builder, settings.RenderExtent, resources);
-	AddSkyPass(builder, settings.RenderExtent, resources);
+	AddSkyPass(builder, frame, settings.RenderExtent, resources);
 
 	PublishRealTimePathTracerProducts(resources);
+	return true;
 }

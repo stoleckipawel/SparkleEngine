@@ -1,6 +1,8 @@
 #include "../../PCH.h"
 #include "Passes/Scene/SceneRenderingPasses.h"
 
+#include "Frame/FramePipeline.h"
+#include "Frame/RenderFrame.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Frame/Graph/RenderFrameGraphSettings.h"
 #include "View/RenderView.h"
@@ -9,16 +11,20 @@
 #include "Passes/Visualization/LightingVisualization.h"
 #include "Passes/Lighting/RealTimePathTracerPasses.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerPasses.h"
+#include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerSession.h"
 #include "Passes/PostProcessing/Exposure/ExposurePasses.h"
 #include "Passes/Presentation/Upscaling/SceneUpscalingPasses.h"
 #include "Passes/Lighting/Restir/Reconstruction/RestirRayReconstruction.h"
 #include "Passes/Scene/SceneVisualizationPasses.h"
 #include "Passes/Presentation/PresentationPolicy.h"
+#include "Scene/RenderScene.h"
 
-std::uint64_t GetSceneRenderingTopologyIdentity(RenderViewMode viewMode) noexcept
+std::uint64_t GetSceneRenderingGraphRebuildKey(RenderViewMode viewMode) noexcept
 {
-	const std::uint64_t rendererIdentity = viewMode == RenderViewMode::ReferencePathTracer ? 0u : GetRealTimePathTracerTopologyIdentity();
-	return (static_cast<std::uint64_t>(viewMode) << 8u) | rendererIdentity;
+	constexpr std::uint32_t viewModeBitOffset = 8u;
+	const std::uint64_t realTimePathTracerKey =
+	    viewMode == RenderViewMode::ReferencePathTracer ? 0u : GetRealTimePathTracerGraphRebuildKey();
+	return (static_cast<std::uint64_t>(viewMode) << viewModeBitOffset) | realTimePathTracerKey;
 }
 
 bool PrepareSceneRenderingProducts(
@@ -33,35 +39,21 @@ bool PrepareSceneRenderingProducts(
 	return PrepareLightingVisualizationProducts(view.viewMode, resources, products);
 }
 
-void AddSceneRenderingPasses(
-    FrameGraphBuilder& builder,
-    const RenderFrameGraphSettings& settings,
-    const ViewportRenderRequest& viewport,
-    RenderRayTracingScene& rayTracingScene,
-    GpuMeshCache& gpuMeshCache,
-    RendererImageProviderStack& imageProviders,
-    ReferencePathTracerSession& referencePathTracerSession,
-    RenderFrameGraphResources& resources)
+void FramePipeline::AddSceneRenderingPasses(FrameGraphBuilder& builder, const RenderFrame& frame, RenderFrameGraphResources& resources)
 {
-	if (viewport.ViewMode != RenderViewMode::ReferencePathTracer
-	    && !PrepareRealTimePathTracerProducts(viewport.ViewMode, resources.ViewportProducts))
+	const RenderFrameGraphSettings& settings = m_frameGraphSettings;
+	m_referencePathTracerSession->PublishFrameProducts(resources.ViewportProducts);
+	if (frame.View.viewMode == RenderViewMode::ReferencePathTracer)
+	{
+		AddReferencePathTracerPasses(builder, frame, settings, *m_referencePathTracerSession, resources);
+	}
+	else if (!AddRealTimePathTracerPasses(builder, frame, settings, m_renderScene->GetRayTracingScene(), *m_gpuMeshCache, resources))
 	{
 		return;
 	}
-	if (viewport.ViewMode == RenderViewMode::ReferencePathTracer)
-	{
-		AddReferencePathTracerPasses(builder, settings, referencePathTracerSession, resources);
-	}
-	else
-	{
-		AddRealTimePathTracerPasses(builder, settings, rayTracingScene, gpuMeshCache, resources);
-	}
 
-	AddExposurePasses(builder, settings, resources);
-	AddSceneVisualizationPasses(builder, settings.RenderExtent, viewport.ViewMode, resources);
-	if (viewport.ViewMode == RenderViewMode::Lit)
-	{
-		AddRestirRayReconstructionPass(builder, settings.RenderExtent, imageProviders, resources);
-	}
-	AddSceneUpscalingPasses(builder, settings, ResolveSceneUpscalingMethod(viewport.ViewMode), imageProviders, resources);
+	AddExposurePasses(builder, frame, settings, resources);
+	AddSceneVisualizationPasses(builder, frame, settings.RenderExtent, resources);
+	AddRestirRayReconstructionPass(builder, frame, settings.RenderExtent, *m_imageProviders, resources);
+	AddSceneUpscalingPasses(builder, settings, ResolveSceneUpscalingMethod(frame.View.viewMode), *m_imageProviders, resources);
 }

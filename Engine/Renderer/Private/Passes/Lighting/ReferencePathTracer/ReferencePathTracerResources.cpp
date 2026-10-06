@@ -4,7 +4,6 @@
 
 #include "Diagnostics/RendererMemoryMonitor.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -119,17 +118,17 @@ void ReferencePathTracerResources::Release() noexcept
 	m_allocation = {};
 }
 
-bool ReferencePathTracerResources::Bind(FrameGraph& frameGraph) const noexcept
+bool ReferencePathTracerResources::Bind(FrameGraphBuilder& builder) const noexcept
 {
 	if (!m_allocation)
 	{
 		return false;
 	}
 
-	frameGraph.BindPersistentTexture(m_graphResources.WorkingMean, m_allocation.WorkingMean, m_allocation.BoundaryState);
-	frameGraph.BindPersistentTexture(m_graphResources.WorkingM2, m_allocation.WorkingM2, m_allocation.BoundaryState);
-	frameGraph.BindPersistentTexture(m_graphResources.CommittedMean, m_allocation.CommittedMean, m_allocation.BoundaryState);
-	frameGraph.BindPersistentTexture(m_graphResources.CommittedM2, m_allocation.CommittedM2, m_allocation.BoundaryState);
+	builder.BindPersistentTexture(m_graphResources.WorkingMean, m_allocation.WorkingMean, m_allocation.BoundaryState);
+	builder.BindPersistentTexture(m_graphResources.WorkingM2, m_allocation.WorkingM2, m_allocation.BoundaryState);
+	builder.BindPersistentTexture(m_graphResources.CommittedMean, m_allocation.CommittedMean, m_allocation.BoundaryState);
+	builder.BindPersistentTexture(m_graphResources.CommittedM2, m_allocation.CommittedM2, m_allocation.BoundaryState);
 
 	return true;
 }

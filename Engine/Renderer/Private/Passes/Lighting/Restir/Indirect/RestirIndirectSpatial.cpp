@@ -1,6 +1,7 @@
 #include "PCH.h"
 #include "Passes/Lighting/Restir/Indirect/RestirIndirectSpatial.h"
 
+#include "Frame/RenderFrame.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Lighting/Restir/Indirect/RestirIndirectSpatialShader.h"
@@ -10,6 +11,7 @@
 
 void AddRestirIndirectSpatialPass(
     FrameGraphBuilder& builder,
+    const RenderFrame& frame,
     RenderViewportExtent sceneExtent,
     const RestirIndirectWorkingReservoirs& workingReservoirs,
     const RenderFrameGraphResources& resources)
@@ -25,10 +27,10 @@ void AddRestirIndirectSpatialPass(
 	parameters->GBufferMaterial = builder.CreateSRV(resources.Transient.GBuffer.Material);
 	parameters->SceneDepth = builder.CreateSRV(resources.Transient.Scene.SceneDepth);
 
-	BindSceneShaderParameters(builder, parameters, resources);
-	BindRayTracedShadowParameters(builder, parameters);
+	BindSceneShaderParameters(builder, frame, parameters, resources);
+	BindRayTracedShadowParameters(frame.PreparedScene, parameters);
 
-	BindRestirIndirectParameters(builder, parameters, resources);
+	BindRestirIndirectParameters(parameters, resources);
 
 	builder.Dispatch<RestirIndirectSpatialCS>(
 	    parameters,

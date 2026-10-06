@@ -1,31 +1,29 @@
 #include "../../PCH.h"
 #include "Frame/FramePipeline.h"
+#include "Frame/RenderFrame.h"
 
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Presentation/PresentationPasses.h"
 #include "Passes/Scene/RayTracingScenePass.h"
-#include "Passes/Scene/SceneRenderingPasses.h"
 #include "Scene/RenderScene.h"
+#include "Scene/RenderSceneFrameGraphBindings.h"
+#include "Frame/Graph/ViewportFrameProductExports.h"
 
-RenderFrameGraphResources FramePipeline::BuildRenderFrameGraph(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings)
+void FramePipeline::PrepareFrameGraph(const RenderFrame& frame)
 {
-	RenderRayTracingScene& rayTracingScene = m_renderScene->GetRayTracingScene();
+	m_frameGraph->BeginFrame();
+	FrameGraphBuilder builder(*m_frameGraph, m_renderPassRuntimeCache);
+	m_frameResources = BuildRenderFrameGraph(builder, frame);
+	BindRenderSceneFrameGraphResources(*m_frameGraph, m_frameResources, frame.PreparedScene, frame.RayTracingBindings);
+}
 
-	RenderFrameGraphResources resources = CreateRenderFrameGraphResources(builder, settings);
-	AddRayTracingScenePass(builder, rayTracingScene, resources);
-
-	AddSceneRenderingPasses(
-	    builder,
-	    settings,
-	    m_viewportRenderRequest,
-	    rayTracingScene,
-	    *m_gpuMeshCache,
-	    *m_imageProviders,
-	    *m_referencePathTracerSession,
-	    resources);
-
-	AddPresentationPasses(builder, settings, m_viewportRenderRequest, resources);
-
+RenderFrameGraphResources FramePipeline::BuildRenderFrameGraph(FrameGraphBuilder& builder, const RenderFrame& frame)
+{
+	RenderFrameGraphResources resources = CreateRenderFrameGraphResources(builder, m_frameGraphSettings);
+	AddRayTracingScenePass(builder, frame, m_renderScene->GetRayTracingScene(), resources);
+	AddSceneRenderingPasses(builder, frame, resources);
+	AddPresentationPasses(builder, frame, m_frameGraphSettings, resources);
+	ExportViewportFrameProducts(builder, m_frameGraphSettings, resources);
 	return resources;
 }

@@ -7,7 +7,6 @@
 
 #include <cstdint>
 
-class FrameGraph;
 class FrameGraphBuilder;
 class RendererMemoryMonitor;
 class RenderDeviceServices;
@@ -35,7 +34,7 @@ private:
 	void ReserveGraphResources(FrameGraphBuilder& builder, RenderViewportExtent extent);
 	void Allocate(RenderViewportExtent extent);
 	void Release() noexcept;
-	bool Bind(FrameGraph& frameGraph) const noexcept;
+	bool Bind(FrameGraphBuilder& builder) const noexcept;
 	void RecordSubmission() noexcept;
 	bool CanRetain() const noexcept;
 	bool IsAllocated() const noexcept;

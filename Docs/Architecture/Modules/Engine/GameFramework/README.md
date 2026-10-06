@@ -34,7 +34,13 @@ This boundary trades direct Renderer access for deterministic publication and cl
 
 ## Module Boundary
 
-GameFramework depends on Core, Platform, and Tasks but not Renderer or RHI. It owns simulation/world truth and publishes Renderer-neutral `RenderFrameSubmission` data. This separation is a current implemented boundary, not merely an intended layering rule.
+GameFramework depends on Core and Tasks but not Platform, Renderer, or RHI. It owns simulation/world truth and publishes Renderer-neutral `RenderFrameSubmission` data. This separation is a current implemented boundary, not merely an intended layering rule.
+
+### World System Scheduling
+
+Source ownership reconciled on 2026-10-06 against base revision `026a3a56` with this cleanup applied; this is structural evidence, not runtime or performance acceptance. `GameWorldSystems.cpp` declares each stage's query/resource access, prerequisites, range policy, item count, and body together. Prerequisites use indices returned by the declaration builder; there is no separate hashed system identity or per-frame binding registry.
+
+Compilation retains phase/resource validation, write-hazard rejection, and cycle rejection, then records dependency waves. The host submits each wave through `SparkleTasks`, resolving item counts after prerequisite commits. Empty stages add no tasks; serial workloads add one task; larger stages use the shared `ParallelFor` implementation. The frozen structure epoch spans all waves and deterministic output commits. Failure stops subsequent waves and prevents successful world publication. Each wave retains one compiled Tasks graph and its item-count key; count changes replace it after the previous submission settles. Cached callbacks obtain the current frame execution owner from the typed Tasks context, never from a retained frame reference. Graph construction occurs on count changes, while host settlement remains a scheduling cost; fewer scheduled nodes alone do not establish a frame-time improvement.
 
 ## Level And Cooked-Asset Capabilities
 
@@ -56,7 +62,7 @@ GameFramework depends on Core, Platform, and Tasks but not Renderer or RHI. It o
 | `GF-009` | Entity identity/lifetime | Implemented path | Generation-aware entity IDs, registry-backed component storage, alive check, destruction, and deferred structural command commit. No public arbitrary entity/component creation API is exposed. | `S` |
 | `GF-010` | Fixed component schema | Implemented path | 13 stable hashed schemas: LocalTransform, WorldTransform, CameraDerivedState, MeshInstance, Visibility, Camera, Light, AnimationState, MorphState, SkinningState, Name, AuthoredIdentity, and EditorMetadata. | `S` |
 | `GF-011` | Typed queries and frozen structure | Implemented path | Read/write query descriptors declare system access; world structure is frozen for a system epoch and structural changes commit outside it. This is a purpose-built ECS, not a generic public ECS framework. | `S` |
-| `GF-012` | Compiled system graph | Implemented path | Eleven stages execute camera movement; playback; pose; morph; skinning; morph commit; system-output commit; transforms; camera derived state; mesh extraction; extraction commit. Dependencies and parallel-range policies are compiled. | `S` |
+| `GF-012` | Compiled system graph | Implemented path | Eleven stages execute camera movement; playback; pose; morph; skinning; morph commit; system-output commit; transforms; camera derived state; mesh extraction; extraction commit. Access and dependency topology are compiled; populated ranges are materialized at host wave boundaries. | `S` |
 | `GF-013` | Parallel world evaluation | Implemented path | Camera, animation, pose, transform, and extraction systems use explicit grain/serial/partition limits through Tasks. Deterministic numerical output under different worker counts is not yet evidenced. | `S` |
 | `GF-014` | Transform hierarchy evaluation | Implemented path | Dirty local/world transforms propagate through hierarchy; full reevaluation is available after scene commit; inverse-transpose data is produced for rendering. | `S` |
 | `GF-015` | Camera simulation | Implemented path | Camera input intent drives navigation; derived world matrix, direction, aspect, visibility, and active camera are published. Perspective and orthographic vocabulary exists, but importer/runtime coverage differs. | `S` |

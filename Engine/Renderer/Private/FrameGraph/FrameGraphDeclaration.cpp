@@ -7,34 +7,31 @@
 #include <string>
 #include <utility>
 
-class FrameGraphPassLabelFormatter final
+static std::string FormatPassEventScopeLabel(FrameGraphPassIndex passIndex, std::string_view passName, EFrameGraphPassKind passKind)
 {
-public:
-	static std::string FormatPassEventScopeLabel(FrameGraphPassIndex passIndex, std::string_view passName, EFrameGraphPassKind passKind)
-	{
-		std::string label{"FrameGraph/"};
-		label += FrameGraphPassKindToString(passKind);
-		label += "/";
-		label += std::to_string(passIndex);
-		label += "/";
-		label.append(passName.begin(), passName.end());
-		return label;
-	}
+	std::string label{"FrameGraph/"};
+	label += FrameGraphPassKindToString(passKind);
+	label += "/";
+	label += std::to_string(passIndex);
+	label += "/";
+	label.append(passName.begin(), passName.end());
+	return label;
+}
 
-	static std::string FormatPassDiagnosticName(std::string_view passName)
-	{
-		std::string name{"Renderer.FrameGraph."};
-		name.append(passName.begin(), passName.end());
-		return name;
-	}
-};
-
-void FrameGraph::ApplyPassParameterDefaults()
+static std::string FormatPassDiagnosticName(std::string_view passName)
 {
-	for (const PassParameterSetupCallback& setup : m_passParameterSetups)
-	{
-		setup();
-	}
+	std::string name{"Renderer.FrameGraph."};
+	name.append(passName.begin(), passName.end());
+	return name;
+}
+
+void FrameGraph::BeginFrame()
+{
+	// Recording has joined before the next frame; GPU-owned resources remain in this graph generation.
+	m_passes.clear();
+	m_passPreparations.clear();
+	m_allocatedParameterInstances.clear();
+	m_productRoots.clear();
 }
 
 void FrameGraph::PreparePasses()
@@ -46,45 +43,6 @@ void FrameGraph::PreparePasses()
 			prepare();
 		}
 	}
-}
-
-void FrameGraph::ApplyResourceProductionSetups()
-{
-	for (const ResourceProductionSetupCallback& setup : m_resourceProductionSetups)
-	{
-		setup();
-	}
-}
-
-bool FrameGraph::HasBeenProduced(FrameGraphResourceHandle handle) const noexcept
-{
-	if (!handle.IsValid() || !m_resourceRegistry.IsRegistered(handle))
-	{
-		return false;
-	}
-
-	if (m_resourceRegistry.GetMetadata(handle).hasExternalContents)
-	{
-		return true;
-	}
-
-	const auto resource = std::find_if(
-	    m_compiledPlan.resources.begin(),
-	    m_compiledPlan.resources.end(),
-	    [handle](const FrameGraphResourceNode& candidate) { return candidate.handle == handle; });
-	if (resource == m_compiledPlan.resources.end())
-	{
-		return false;
-	}
-
-	return std::any_of(
-	    resource->versions.begin(),
-	    resource->versions.end(),
-	    [this](const FrameGraphResourceVersion& version)
-	    {
-		    return version.writerPass != INVALID_FRAME_GRAPH_PASS_INDEX && version.writerPass < m_compiledPlan.passes.size()
-		        && m_compiledPlan.passes[version.writerPass].alive;
-	    });
 }
 
 void FrameGraph::Setup()
@@ -107,11 +65,8 @@ void FrameGraph::Setup()
 		        .passName = pass.name,
 		        .kind = pass.kind,
 		        .queuePreference = pass.queuePreference,
-		        .diagnosticName = FrameGraphPassLabelFormatter::FormatPassDiagnosticName(pass.name),
-		        .eventScopeLabel = FrameGraphPassLabelFormatter::FormatPassEventScopeLabel(
-		            static_cast<FrameGraphPassIndex>(passIndex),
-		            pass.name,
-		            pass.kind),
+		        .diagnosticName = FormatPassDiagnosticName(pass.name),
+		        .eventScopeLabel = FormatPassEventScopeLabel(static_cast<FrameGraphPassIndex>(passIndex), pass.name, pass.kind),
 		        .declarations = std::move(declarations),
 		        .executionModel = pass.executionModel});
 	}

@@ -9,35 +9,31 @@
 #include <algorithm>
 #include <cassert>
 
-class FrameGraphResourceVersionValidator final
+static void ValidateResourceVersionGraph(const FrameGraphPlan& plan) noexcept
 {
-public:
-	static void ValidateResourceVersionGraph(const FrameGraphPlan& plan) noexcept
+	for (const FrameGraphResourceNode& resource : plan.resources)
 	{
-		for (const FrameGraphResourceNode& resource : plan.resources)
+		assert(resource.handle.IsValid());
+		assert(!resource.versions.empty());
+		assert(resource.currentVersion < resource.versions.size());
+
+		for (std::size_t versionIndex = 0; versionIndex < resource.versions.size(); ++versionIndex)
 		{
-			assert(resource.handle.IsValid());
-			assert(!resource.versions.empty());
-			assert(resource.currentVersion < resource.versions.size());
-
-			for (std::size_t versionIndex = 0; versionIndex < resource.versions.size(); ++versionIndex)
+			const FrameGraphResourceVersion& version = resource.versions[versionIndex];
+			assert(version.handle == resource.handle);
+			assert(version.version == versionIndex);
+			if (version.writerPass != INVALID_FRAME_GRAPH_PASS_INDEX)
 			{
-				const FrameGraphResourceVersion& version = resource.versions[versionIndex];
-				assert(version.handle == resource.handle);
-				assert(version.version == versionIndex);
-				if (version.writerPass != INVALID_FRAME_GRAPH_PASS_INDEX)
-				{
-					assert(version.writerPass < plan.passes.size());
-				}
+				assert(version.writerPass < plan.passes.size());
+			}
 
-				for (const FrameGraphPassIndex readerPass : version.readerPasses)
-				{
-					assert(readerPass < plan.passes.size());
-				}
+			for (const FrameGraphPassIndex readerPass : version.readerPasses)
+			{
+				assert(readerPass < plan.passes.size());
 			}
 		}
 	}
-};
+}
 
 FrameGraphCompiler::FrameGraphCompiler(
     FrameGraphPlan& plan,
@@ -72,7 +68,7 @@ void FrameGraphCompiler::Compile() noexcept
 	}
 
 	BuildResourceVersionGraph();
-	FrameGraphResourceVersionValidator::ValidateResourceVersionGraph(m_plan);
+	ValidateResourceVersionGraph(m_plan);
 	FinalizePassDependencies();
 	AssignPassQueues();
 	BuildTransientResourceLifetimes();

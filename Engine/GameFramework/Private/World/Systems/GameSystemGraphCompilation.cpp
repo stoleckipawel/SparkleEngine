@@ -16,11 +16,11 @@ namespace ECS
 	class GameSystemGraphCompiler final
 	{
 	public:
-		explicit GameSystemGraphCompiler(const std::vector<GameSystemDesc>& systems) :
-		    m_data(std::make_unique<CompiledGameSystemGraphData>())
+		explicit GameSystemGraphCompiler(std::vector<GameSystemDesc> systems) :
+		    m_data(std::make_unique<CompiledGameSystemGraphData>()),
+		    m_edges(systems.size())
 		{
-			m_data->Systems = systems;
-			m_data->Edges.resize(systems.size());
+			m_data->Systems = std::move(systems);
 		}
 
 		std::unique_ptr<CompiledGameSystemGraphData> Compile()
@@ -155,6 +155,11 @@ namespace ECS
 
 		bool ValidateSystemDeclarations()
 		{
+			if (m_data->Systems.empty())
+			{
+				m_data->Error = {GameSystemGraphErrorCode::TaskGraphRejected, "Game-system graph has no declared systems."};
+				return false;
+			}
 			for (std::uint32_t index = 0; index < m_data->Systems.size(); ++index)
 			{
 				const GameSystemDesc& system = m_data->Systems[index];
@@ -239,7 +244,7 @@ namespace ECS
 			{
 				m_data->Error = {
 				    GameSystemGraphErrorCode::TaskGraphRejected,
-				    std::format("Game system '{}' has an invalid grain policy.", system.Name)};
+				    std::format("Game system '{}' has an invalid range policy or missing execution functions.", system.Name)};
 				return false;
 			}
 			return true;
@@ -266,7 +271,7 @@ namespace ECS
 						    std::format("Game system '{}' depends on a later phase.", system.Name)};
 						return false;
 					}
-					AddEdge(m_data->Edges, prerequisite, index);
+					AddEdge(m_edges, prerequisite, index);
 				}
 			}
 			return true;
@@ -282,11 +287,11 @@ namespace ECS
 					const GameSystemDesc& rhs = m_data->Systems[right];
 					if (lhs.Phase < rhs.Phase)
 					{
-						AddEdge(m_data->Edges, left, right);
+						AddEdge(m_edges, left, right);
 					}
 					else if (rhs.Phase < lhs.Phase)
 					{
-						AddEdge(m_data->Edges, right, left);
+						AddEdge(m_edges, right, left);
 					}
 				}
 			}
@@ -304,7 +309,7 @@ namespace ECS
 					{
 						continue;
 					}
-					if (!HasPath(m_data->Edges, left, right) && !HasPath(m_data->Edges, right, left))
+					if (!HasPath(m_edges, left, right) && !HasPath(m_edges, right, left))
 					{
 						m_data->Error = {
 						    GameSystemGraphErrorCode::AmbiguousHazard,
@@ -318,11 +323,11 @@ namespace ECS
 
 		bool ValidateAcyclicTopology()
 		{
-			for (std::uint32_t from = 0; from < m_data->Edges.size(); ++from)
+			for (std::uint32_t from = 0; from < m_edges.size(); ++from)
 			{
-				for (std::uint32_t to : m_data->Edges[from])
+				for (std::uint32_t to : m_edges[from])
 				{
-					if (HasPath(m_data->Edges, to, from))
+					if (HasPath(m_edges, to, from))
 					{
 						m_data->Error = {GameSystemGraphErrorCode::Cycle, "Game-system prerequisites contain a cycle."};
 						return false;
@@ -335,7 +340,7 @@ namespace ECS
 		void BuildExecutionWaves()
 		{
 			std::vector<std::uint32_t> remaining(m_data->Systems.size());
-			for (const auto& outgoing : m_data->Edges)
+			for (const auto& outgoing : m_edges)
 				for (std::uint32_t target : outgoing)
 					++remaining[target];
 			std::vector<bool> scheduled(m_data->Systems.size());
@@ -350,19 +355,23 @@ namespace ECS
 				{
 					scheduled[index] = true;
 					++count;
-					for (std::uint32_t target : m_data->Edges[index])
+					for (std::uint32_t target : m_edges[index])
 						--remaining[target];
 				}
-				m_data->Waves.push_back(std::move(wave));
+				GameSystemWave compiledWave;
+				compiledWave.ItemCounts.resize(wave.size());
+				compiledWave.Systems = std::move(wave);
+				m_data->Waves.push_back(std::move(compiledWave));
 			}
 		}
 
 		std::unique_ptr<CompiledGameSystemGraphData> m_data;
+		std::vector<std::vector<std::uint32_t>> m_edges;
 	};
 
-	CompiledGameSystemGraph GameSystemGraph::Compile() const
+	CompiledGameSystemGraph GameSystemGraph::Compile()
 	{
-		GameSystemGraphCompiler compiler(m_systems);
+		GameSystemGraphCompiler compiler(std::move(m_systems));
 		return CompiledGameSystemGraph(compiler.Compile());
 	}
 }

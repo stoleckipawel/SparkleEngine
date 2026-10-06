@@ -10,7 +10,6 @@
 #include <chrono>
 #include <cstdint>
 
-class FrameGraph;
 class FrameGraphBuilder;
 class RendererMemoryMonitor;
 class RenderDeviceServices;
@@ -30,22 +29,20 @@ public:
 	    RendererMemoryMonitor& memoryMonitor,
 	    RenderRayTracingScene& rayTracingScene) noexcept;
 
-	bool PrepareFrame(
-	    const RenderFrame& frame,
-	    ViewportRenderAction action,
-	    std::uint64_t actionSequence,
-	    ViewportFrameProducts& products,
-	    FrameGraph& frameGraph) noexcept;
+	bool PrepareFrame(const RenderFrame& frame, ViewportRenderAction action, std::uint64_t actionSequence) noexcept;
+	void PublishFrameProducts(ViewportFrameProducts& products) const noexcept;
 	void OnFrameSubmitted(RhiSubmissionToken token) noexcept;
 
 private:
 	friend void AddReferencePathTracerPasses(
 	    FrameGraphBuilder& builder,
+	    const RenderFrame& frame,
 	    const RenderFrameGraphSettings& settings,
 	    ReferencePathTracerSession& session,
 	    RenderFrameGraphResources& resources);
 	friend void AddReferencePathTracerTransportPass(
 	    FrameGraphBuilder& builder,
+	    const RenderFrame& frame,
 	    RenderViewportExtent extent,
 	    const RenderFrameGraphResources& resources,
 	    const ReferencePathTracerGraphResources& graphResources,
@@ -54,14 +51,14 @@ private:
 
 	static constexpr std::uint32_t WorkRowsPerDispatch = 32u;
 
-	ViewportRenderProgress Update(
+	void Update(
 	    const RenderFrame& frame,
 	    ViewportRenderAction action,
 	    std::uint64_t actionSequence,
 	    RayTracingExecutionFrontend executionFrontend) noexcept;
 	void ReserveGraphResources(FrameGraphBuilder& builder, RenderViewportExtent extent);
 	const ReferencePathTracerGraphResources& GetGraphResources() const noexcept { return m_resources.GetGraphResources(); }
-	bool BindResources(FrameGraph& frameGraph) const noexcept;
+	bool BindResources(FrameGraphBuilder& builder) const noexcept;
 
 	const ReferencePathTracerWork& GetWork() const noexcept { return m_work; }
 

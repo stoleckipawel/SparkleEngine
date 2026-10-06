@@ -26,16 +26,16 @@ ReferencePathTracerSession::ReferencePathTracerSession(
 {
 }
 
-bool ReferencePathTracerSession::PrepareFrame(
-    const RenderFrame& frame,
-    ViewportRenderAction action,
-    std::uint64_t actionSequence,
-    ViewportFrameProducts& products,
-    FrameGraph& frameGraph) noexcept
+bool ReferencePathTracerSession::PrepareFrame(const RenderFrame& frame, ViewportRenderAction action, std::uint64_t actionSequence) noexcept
 {
-	products.Progress = Update(frame, action, actionSequence, m_rayTracingScene.GetExecutionFrontend());
+	Update(frame, action, actionSequence, m_rayTracingScene.GetExecutionFrontend());
+	return !m_selected || (m_unavailableReason == ViewportRenderProgressReason::None && m_resources.IsAllocated());
+}
+
+void ReferencePathTracerSession::PublishFrameProducts(ViewportFrameProducts& products) const noexcept
+{
+	products.Progress = m_selected ? GetProgress() : ViewportRenderProgress{};
 	products.RadianceSamplePrefix = GetRadianceSamplePrefix();
-	return BindResources(frameGraph);
 }
 
 static_assert(
@@ -231,7 +231,7 @@ void ReferencePathTracerSession::ApplyAction(ViewportRenderAction action, std::u
 	}
 }
 
-ViewportRenderProgress ReferencePathTracerSession::Update(
+void ReferencePathTracerSession::Update(
     const RenderFrame& frame,
     ViewportRenderAction action,
     std::uint64_t actionSequence,
@@ -246,7 +246,7 @@ ViewportRenderProgress ReferencePathTracerSession::Update(
 		m_lastActionSequence = actionSequence;
 		m_selected = false;
 		Suspend();
-		return {};
+		return;
 	}
 	m_selected = true;
 	ApplyAction(action, actionSequence, view);
@@ -268,7 +268,7 @@ ViewportRenderProgress ReferencePathTracerSession::Update(
 		m_retentionAvailable = false;
 		m_unavailableReason = ViewportRenderProgressReason::SessionCapacity;
 		m_lastReason = m_unavailableReason;
-		return GetProgress();
+		return;
 	}
 	if (m_hasOwner && m_ownerViewportId == view.viewportId && m_unavailableReason == ViewportRenderProgressReason::SessionCapacity)
 	{
@@ -281,7 +281,7 @@ ViewportRenderProgress ReferencePathTracerSession::Update(
 	m_suspensionPending = false;
 	if (m_unavailableReason != ViewportRenderProgressReason::None)
 	{
-		return GetProgress();
+		return;
 	}
 	m_ownerViewportId = view.viewportId;
 	m_hasOwner = true;
@@ -301,7 +301,6 @@ ViewportRenderProgress ReferencePathTracerSession::Update(
 	{
 		PrepareWork(view.renderExtent);
 	}
-	return GetProgress();
 }
 
 void ReferencePathTracerSession::ReserveGraphResources(FrameGraphBuilder& builder, RenderViewportExtent extent)
@@ -309,9 +308,9 @@ void ReferencePathTracerSession::ReserveGraphResources(FrameGraphBuilder& builde
 	m_resources.ReserveGraphResources(builder, extent);
 }
 
-bool ReferencePathTracerSession::BindResources(FrameGraph& frameGraph) const noexcept
+bool ReferencePathTracerSession::BindResources(FrameGraphBuilder& builder) const noexcept
 {
-	return !m_selected || (m_unavailableReason == ViewportRenderProgressReason::None && m_resources.Bind(frameGraph));
+	return !m_selected || (m_unavailableReason == ViewportRenderProgressReason::None && m_resources.Bind(builder));
 }
 
 void ReferencePathTracerSession::OnFrameSubmitted(RhiSubmissionToken token) noexcept

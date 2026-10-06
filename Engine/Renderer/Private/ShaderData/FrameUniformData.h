@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Frame/RenderFrameTime.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
@@ -22,3 +24,13 @@ static_assert(offsetof(FrameUniformData, TotalTimeSeconds) == 4u);
 static_assert(offsetof(FrameUniformData, DeltaTimeSeconds) == 8u);
 static_assert(offsetof(FrameUniformData, ScaledTotalTimeSeconds) == 12u);
 static_assert(offsetof(FrameUniformData, ScaledDeltaTimeSeconds) == 16u);
+
+inline FrameUniformData BuildFrameUniformData(std::uint64_t frameId, const RenderFrameTime& time) noexcept
+{
+	return FrameUniformData{
+	    .FrameIndex = static_cast<std::uint32_t>(frameId),
+	    .TotalTimeSeconds = static_cast<float>(time.UnscaledTime.count()),
+	    .DeltaTimeSeconds = static_cast<float>(time.UnscaledDelta.count()),
+	    .ScaledTotalTimeSeconds = static_cast<float>(time.ScaledTime.count()),
+	    .ScaledDeltaTimeSeconds = static_cast<float>(time.ScaledDelta.count())};
+}
