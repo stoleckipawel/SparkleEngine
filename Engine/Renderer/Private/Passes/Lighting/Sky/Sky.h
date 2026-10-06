@@ -1,5 +1,9 @@
 #pragma once
 
+#include "Core/Public/Console/CVar.h"
+
+extern ConsoleVariable<bool> CVarSkyEnabled;
+
 struct RenderFrame;
 
 #include "Renderer/Public/Viewport/ViewportContracts.h"

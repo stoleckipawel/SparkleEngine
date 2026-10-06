@@ -18,9 +18,10 @@ std::uint64_t GetRealTimePathTracerGraphRebuildKey() noexcept
 	constexpr std::uint64_t directLightingPassesBit = 1u << 0u;
 	constexpr std::uint64_t directShadowPassBit = 1u << 1u;
 	constexpr std::uint64_t indirectLightingPassesBit = 1u << 2u;
+	constexpr std::uint64_t skyBackgroundPassesBit = 1u << 3u;
 
 	return (IsDirectLightingAdmitted() ? directLightingPassesBit : 0u) | (IsDirectShadowsActive() ? directShadowPassBit : 0u)
-	    | (IsIndirectLightingAdmitted() ? indirectLightingPassesBit : 0u);
+	    | (IsIndirectLightingAdmitted() ? indirectLightingPassesBit : 0u) | (CVarSkyEnabled.Get() ? skyBackgroundPassesBit : 0u);
 }
 
 void AddRealTimePathTracerPasses(
@@ -34,7 +35,7 @@ void AddRealTimePathTracerPasses(
 	AddGBufferPasses(builder, frame, settings.RenderExtent, gpuMeshCache, rayTracingScene, resources);
 
 	AddRestirLightingPasses(builder, frame, settings.RenderExtent, rayTracingScene, resources);
-	AddLightingCompositePass(builder, settings.RenderExtent, resources);
+	AddLightingCompositePasses(builder, settings.RenderExtent, resources);
 	AddSkyPass(builder, frame, settings.RenderExtent, resources);
 
 	PublishRealTimePathTracerProducts(resources);

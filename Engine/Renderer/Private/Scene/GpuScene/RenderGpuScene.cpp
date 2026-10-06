@@ -2,6 +2,7 @@
 #include "Scene/GpuScene/RenderGpuScene.h"
 
 #include "RHI/Public/Frame/RhiFrameConstants.h"
+#include "Core/Public/Hash/HashUtils.h"
 #include "Scene/GpuScene/PersistentStructuredBuffer.h"
 #include "Scene/GpuScene/RenderGpuGeometryState.h"
 #include "Scene/GpuScene/RenderGpuLightingPayloadBuilder.h"
@@ -145,7 +146,14 @@ struct RenderGpuScene::Impl final
 	void UpdateRayTracing(const PreparedRenderScene& preparedScene, RenderGpuDynamicFrameStorage& storage)
 	{
 		const std::uint64_t textureGeneration = preparedScene.materialTextureTable.Generation;
-		const bool topologyChanged = preparedScene.structuralRevision != RayTracingStructuralRevision;
+		std::uint64_t topologyHash = Hash::ContinueFnv1a64Value(Hash::kFnv64OffsetBasis, preparedScene.rayTracingWork.BlasInputs.size());
+		for (const RenderRayTracingBlasInput& input : preparedScene.rayTracingWork.BlasInputs)
+		{
+			topologyHash = Hash::ContinueFnv1a64Value(topologyHash, input.GpuSceneSlot);
+		}
+		topologyHash = Hash::FinalizeFnv1a64(topologyHash);
+		const bool topologyChanged =
+		    preparedScene.structuralRevision != RayTracingStructuralRevision || topologyHash != RayTracingWorkTopologyHash;
 		const bool payloadChanged = topologyChanged || preparedScene.materialRevision != RayTracingMaterialRevision
 		    || textureGeneration != RayTracingTextureGeneration;
 		if (payloadChanged)
@@ -158,6 +166,7 @@ struct RenderGpuScene::Impl final
 			}
 
 			RayTracingStructuralRevision = preparedScene.structuralRevision;
+			RayTracingWorkTopologyHash = topologyHash;
 			RayTracingMaterialRevision = preparedScene.materialRevision;
 			RayTracingTextureGeneration = textureGeneration;
 			++RayTracingPayloadRevision;
@@ -204,6 +213,7 @@ struct RenderGpuScene::Impl final
 		RayTracingPayloads = {};
 		RayTracingPayloadRevision = 0u;
 		RayTracingStructuralRevision = (std::numeric_limits<std::uint64_t>::max)();
+		RayTracingWorkTopologyHash = (std::numeric_limits<std::uint64_t>::max)();
 		RayTracingMaterialRevision = (std::numeric_limits<std::uint64_t>::max)();
 		RayTracingTextureGeneration = (std::numeric_limits<std::uint64_t>::max)();
 	}
@@ -219,6 +229,7 @@ struct RenderGpuScene::Impl final
 	RenderGpuRayTracingPayloads RayTracingPayloads;
 	std::uint64_t RayTracingPayloadRevision = 0u;
 	std::uint64_t RayTracingStructuralRevision = (std::numeric_limits<std::uint64_t>::max)();
+	std::uint64_t RayTracingWorkTopologyHash = (std::numeric_limits<std::uint64_t>::max)();
 	std::uint64_t RayTracingMaterialRevision = (std::numeric_limits<std::uint64_t>::max)();
 	std::uint64_t RayTracingTextureGeneration = (std::numeric_limits<std::uint64_t>::max)();
 };

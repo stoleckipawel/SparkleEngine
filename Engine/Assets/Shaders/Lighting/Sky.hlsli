@@ -14,8 +14,11 @@ float2 ComputeSkyUv(float3 worldDirection)
 
 float3 SampleSkyRadiance(Texture2D skyTexture, SamplerState skySampler, float3 worldDirection)
 {
-	const float3 radiance = skyTexture.SampleLevel(skySampler, ComputeSkyUv(worldDirection), 0.0f).rgb;
-	return SkyEnabled != 0u ? radiance * SkyColor * SkyBrightness : 0.0f.xxx;
+	if (SkyEnabled == 0u)
+	{
+		return 0.0f.xxx;
+	}
+	return skyTexture.SampleLevel(skySampler, ComputeSkyUv(worldDirection), 0.0f).rgb * SkyColor * SkyBrightness;
 }
 
 #endif

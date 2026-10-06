@@ -18,7 +18,8 @@ void AddLinearizeDeviceZPass(
 	parameters->GBufferDeviceZ = builder.CreateSRV(resources.Transient.GBuffer.DeviceZ);
 	parameters->SceneDepth = builder.CreateUAV(resources.Transient.Scene.SceneDepth);
 	parameters->ViewCamera = frame.View.cameraUniform;
-	builder.DispatchAsync<SceneDepthCS>(
+	builder.Dispatch<SceneDepthCS>(
 	    parameters,
-	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
+	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u},
+	    EFrameGraphQueuePreference::AsyncCompute);
 }

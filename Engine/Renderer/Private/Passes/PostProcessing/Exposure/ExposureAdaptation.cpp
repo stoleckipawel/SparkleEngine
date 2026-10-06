@@ -32,5 +32,5 @@ void AddExposureAdaptationPass(
 
 	parameters->Frame = BuildFrameUniformData(frame.Identity.FrameId, frame.Time);
 
-	builder.DispatchAsync<ExposureCS>(parameters, ComputeDispatchDesc{1u, 1u, 1u});
+	builder.Dispatch<ExposureCS>(parameters, ComputeDispatchDesc{1u, 1u, 1u}, EFrameGraphQueuePreference::AsyncCompute);
 }

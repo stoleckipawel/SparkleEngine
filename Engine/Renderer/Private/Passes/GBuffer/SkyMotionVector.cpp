@@ -6,6 +6,7 @@
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/GBuffer/SkyMotionVectorShader.h"
+#include "Passes/Lighting/Sky/Sky.h"
 #include "View/RenderView.h"
 
 void AddSkyMotionVectorPass(
@@ -14,6 +15,10 @@ void AddSkyMotionVectorPass(
     RenderViewportExtent sceneExtent,
     const RenderFrameGraphResources& resources)
 {
+	if (!CVarSkyEnabled.Get())
+	{
+		return;
+	}
 	const GBufferRenderTargets& targets = resources.Transient.GBuffer;
 
 	auto& parameters = builder.AllocParameters<SkyMotionVectorCS>();
@@ -24,7 +29,8 @@ void AddSkyMotionVectorPass(
 	parameters->ViewCamera = frame.View.cameraUniform;
 	parameters->ViewTemporal = frame.View.temporalUniform;
 
-	builder.DispatchAsync<SkyMotionVectorCS>(
+	builder.Dispatch<SkyMotionVectorCS>(
 	    parameters,
-	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
+	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u},
+	    EFrameGraphQueuePreference::AsyncCompute);
 }

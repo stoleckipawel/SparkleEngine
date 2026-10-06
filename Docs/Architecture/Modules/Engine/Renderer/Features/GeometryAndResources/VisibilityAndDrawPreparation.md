@@ -43,7 +43,7 @@ PreparedRenderScene primitives + instance groups
   -> form compatible automatic batches or single batches
   -> stable-sort transparent candidates back-to-front and keep them single
   -> publish rasterPrimitiveIndices + meshInstanceBatches + workload
-  -> raster GBuffer batch drawer
+  -> raster GBuffer mesh pass
 ```
 
 On visibility-task failure, view preparation clears raster indices, batches, and workload and publishes no partial list. Ray-tracing scene/planning has its own inclusion and acceleration-structure contract; a raster visibility decision is not automatically an RT instance-culling decision.
@@ -140,7 +140,7 @@ Primary evidence destination: `REN-E32` in the [Capability Evidence Plan](../../
 - [`RenderViewPreparation.cpp`](../../../../../../../Engine/Renderer/Private/View/RenderViewPreparation.cpp)
 - [`MeshInstanceBatchBuilder.cpp`](../../../../../../../Engine/Renderer/Private/View/MeshInstanceBatchBuilder.cpp)
 - `Engine/Renderer/Private/View/RenderView.h`, `MeshInstanceBatchBuilder.h`, and prepared-scene contracts
-- [`GBufferMeshBatchDrawer.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/Raster/GBufferMeshBatchDrawer.cpp)
+- [`GBufferMeshPass.cpp`](../../../../../../../Engine/Renderer/Private/Passes/GBuffer/Raster/GBufferMeshPass.cpp)
 - [Scene/View Acceptance](../SceneAndViewPreparation/Acceptance.md) and [Geometry, Materials, and GBuffer](GeometryMaterialsAndGBuffer.md)
 
 

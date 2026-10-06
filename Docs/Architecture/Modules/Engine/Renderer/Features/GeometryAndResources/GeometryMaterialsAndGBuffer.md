@@ -39,6 +39,8 @@ This promise currently covers opaque and alpha-tested static, instanced, skinned
 | Frustum visibility | Per-view bounds test produces raster-visible indices | Invalid bounds conservatively remain visible; occlusion culling is not claimed |
 | Ray geometry | Triangle BLASes, shared hit vertices/indices/material/instance records, classic or partitioned TLAS | Deforming BLAS refit is not exposed; procedural intersection is absent |
 
+`r.Meshes.Static` and `r.Meshes.Skinned` independently admit static and skeletal primitives before scene preparation. Disabled primitives retain their authored objects and stable GPU scene slots but produce no deformation, raster batches, ray instances, or emissive-light sampling records. Ray hit-payload caching observes the prepared ray-work membership as well as authored structural revisions, allowing re-enable to restore the payload even when the scene itself has not changed. The [Scene Rendering Controls](../DebugViews/Controls/ShowFlags.md#scene-rendering-controls) contract owns their Show-menu and sequenced mutation behavior. This is implemented routing, not raster/ray parity evidence.
+
 ## Material Contract
 
 | Component | Current authored/GPU meaning | Raster and ray coverage |
@@ -89,6 +91,8 @@ The different Device Z storage types are an implementation distinction, not perm
 ## Raster Frontend
 
 The raster branch builds compatible mesh batches, binds vertex/index/instance/deformation/material data, chooses solid or wireframe fill, and issues instanced/indexed-instanced draws into seven color products plus depth. Wireframe is a raster fill-mode feature; it is not an equivalent ray-GBuffer view.
+
+The 2026-10-06 ownership cleanup (source input `531c7990` plus the scoped working tree) keeps raster graph registration at one abstraction level: build attachment/shader parameters, select depth/blend/stencil intent, and register the mesh pass. `GBufferMeshPass` directly owns its prepared draws and borrows the scene, view, and mesh cache. The graph retains one shared pass state for materialization and recording, so no copied collaborator or separate batch-drawer owner reconnects those stages. Draw selection, skinning rejection, pipeline keys, texture slots, attachment ordering, and clearing prepared work after recording retain their existing rules. Focused compilation and CPU protocol checks do not establish GBuffer visual or native-backend equivalence.
 
 ### Rotated-normal correction — 2026-10-04
 

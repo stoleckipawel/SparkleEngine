@@ -137,26 +137,16 @@ public:
 
 	template <typename TParameterBindings, typename ExecuteFn>
 	requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassCommandContext&, TParameterBindings&>
-	void AddComputePass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
+	void AddComputePass(
+	    std::string_view name,
+	    EFrameGraphQueuePreference queuePreference,
+	    TParameterBindings& parameters,
+	    ExecuteFn&& executeFn)
 	{
 		AddTypedShaderPass(
 		    name,
 		    EFrameGraphPassKind::Compute,
-		    EFrameGraphQueuePreference::Graphics,
-		    parameters,
-		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
-		    { return SetupShaderParameters(builder, typedParameters, passName); },
-		    std::forward<ExecuteFn>(executeFn));
-	}
-
-	template <typename TParameterBindings, typename ExecuteFn>
-	requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassCommandContext&, TParameterBindings&>
-	void AddAsyncComputePass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
-	{
-		AddTypedShaderPass(
-		    name,
-		    EFrameGraphPassKind::Compute,
-		    EFrameGraphQueuePreference::AsyncCompute,
+		    queuePreference,
 		    parameters,
 		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
 		    { return SetupShaderParameters(builder, typedParameters, passName); },

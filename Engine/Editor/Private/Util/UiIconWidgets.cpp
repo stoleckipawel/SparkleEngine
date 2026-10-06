@@ -36,8 +36,14 @@ namespace UiUtil
 				return EditorIconGlyphs::FontAwesome::PointLight;
 			case EditorIcon::SpotLight:
 				return EditorIconGlyphs::FontAwesome::SpotLight;
+			case EditorIcon::RectLight:
+				return EditorIconGlyphs::FontAwesome::RectLight;
+			case EditorIcon::Sky:
+				return EditorIconGlyphs::FontAwesome::Sky;
 			case EditorIcon::StaticMesh:
 				return EditorIconGlyphs::FontAwesome::StaticMesh;
+			case EditorIcon::SkinnedMesh:
+				return EditorIconGlyphs::FontAwesome::SkinnedMesh;
 			case EditorIcon::Material:
 				return EditorIconGlyphs::FontAwesome::Material;
 			case EditorIcon::EyeVisible:

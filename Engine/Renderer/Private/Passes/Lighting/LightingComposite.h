@@ -5,4 +5,4 @@
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
 
-void AddLightingCompositePass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources);
+void AddLightingCompositePasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources);

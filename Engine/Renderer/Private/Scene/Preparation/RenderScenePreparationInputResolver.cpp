@@ -5,7 +5,9 @@
 #include "Core/Public/Diagnostics/Verify.h"
 #include "Meshes/GpuMesh.h"
 #include "Meshes/GpuMeshCache.h"
+#include "Passes/Lighting/Sky/Sky.h"
 #include "Scene/Materials/MaterialHandleResolver.h"
+#include "Scene/Geometry/MeshRenderingControls.h"
 #include "Scene/Preparation/RenderDeformationPreparation.h"
 #include "Scene/Preparation/RenderScenePreparationRun.h"
 #include "Scene/Preparation/RenderMeshClassificationConversion.h"
@@ -51,7 +53,7 @@ void RenderScenePreparationInputResolver::ResolvePrimitives(const RenderScene& s
 	run.ResolvedPrimitives.reserve(scene.GetPrimitives().size());
 	for (const RenderPrimitive& primitive : scene.GetPrimitives())
 	{
-		if (!primitive.Dynamic.Visible || !primitive.GpuMeshResident)
+		if (!primitive.Dynamic.Visible || !primitive.GpuMeshResident || !IsMeshRenderingEnabled(primitive.Static.MeshKind))
 			continue;
 		run.ResolvedPrimitives.push_back(ResolvePrimitive(scene, primitive, scene.GetMaterials().Generation, run.PreparedScene));
 	}
@@ -142,4 +144,5 @@ void RenderScenePreparationInputResolver::ResolveSky(const RenderScene& scene, P
 	if (skyTexture == nullptr || !*skyTexture)
 		Diagnostics::Fatal(g_renderPreparationInputResolverLogger, __FILE__, __LINE__, "Scene sky texture is unavailable.");
 	preparedScene.sky.texture = skyTexture;
+	preparedScene.sky.enabled = preparedScene.sky.enabled && CVarSkyEnabled.Get();
 }

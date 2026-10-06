@@ -61,89 +61,58 @@ public:
 	    const RasterPassRenderState& renderState,
 	    TDrawCollaborator drawCollaborator)
 	{
-		auto rasterPass = std::make_shared<FrameGraphRasterPass>();
+		// Preparation and recording share one collaborator and its compiled attachments.
+		struct RasterPassState final
+		{
+			FrameGraphRasterPass Pass;
+			TDrawCollaborator Draw;
+		};
+		auto passState = std::make_shared<RasterPassState>(RasterPassState{.Draw = std::move(drawCollaborator)});
 		auto* parameterInstance = &parameters;
 		auto* frameGraph = &m_frameGraph;
 		auto* runtimeCache = &m_renderPassRuntimeCache;
 		const FrameGraphPassIndex passIndex = static_cast<FrameGraphPassIndex>(m_frameGraph.m_passes.size());
 		m_frameGraph.m_passPreparations.emplace_back(
 		    passIndex,
-		    [parameterInstance, frameGraph, runtimeCache, renderState, rasterPass, materializer = drawCollaborator]() mutable
+		    [parameterInstance, frameGraph, runtimeCache, renderState, passState]()
 		    {
-			    *rasterPass = frameGraph->BuildRasterPass(parameterInstance->GetPassParameterSet(), renderState);
-			    materializer.MaterializePipelines(*runtimeCache, renderState, rasterPass->Compatibility);
+			    passState->Pass = frameGraph->BuildRasterPass(parameterInstance->GetPassParameterSet(), renderState);
+			    passState->Draw.MaterializePipelines(*runtimeCache, renderState, passState->Pass.Compatibility);
 		    });
 		const std::string diagnosticLabel(label);
 		m_frameGraph.AddRasterPass(
 		    diagnosticLabel,
 		    parameters,
-		    [rasterPass, drawCollaborator = std::move(drawCollaborator)](
-		        PassCommandContext& context,
-		        TypedPassParameterInstance<TParameters>& passParameters) mutable
+		    [passState](PassCommandContext& context, TypedPassParameterInstance<TParameters>& passParameters) mutable
 		    {
-			    drawCollaborator.PrepareRasterPass(context.Commands);
-			    context.Resources.BeginRasterPass(context.Commands, *rasterPass);
-			    drawCollaborator.Draw(context, passParameters);
+			    passState->Draw.PrepareRasterPass(context.Commands);
+			    context.Resources.BeginRasterPass(context.Commands, passState->Pass);
+			    passState->Draw.Draw(context, passParameters);
 			    context.Resources.EndRasterPass(context.Commands);
 		    });
 	}
 
-	template <typename TShader>
-	void Dispatch(TypedPassParameterInstance<typename TShader::Parameters>& parameters, const ComputeDispatchDesc& groupCount)
+	template <typename TShader> void Dispatch(
+	    TypedPassParameterInstance<typename TShader::Parameters>& parameters,
+	    const ComputeDispatchDesc& groupCount,
+	    EFrameGraphQueuePreference queuePreference = EFrameGraphQueuePreference::Graphics)
 	{
 		const ShaderRegistrationDesc& shader = GlobalShader<TShader>::GetRegistration();
-		Dispatch<TShader>(shader.ShaderName, parameters, groupCount);
+		Dispatch<TShader>(shader.ShaderName, parameters, groupCount, queuePreference);
 	}
 
 	template <typename TShader> void Dispatch(
 	    std::string_view label,
 	    TypedPassParameterInstance<typename TShader::Parameters>& parameters,
-	    const ComputeDispatchDesc& groupCount)
+	    const ComputeDispatchDesc& groupCount,
+	    EFrameGraphQueuePreference queuePreference = EFrameGraphQueuePreference::Graphics)
 	{
 		m_renderPassRuntimeCache.MaterializeComputeShaderRuntime<TShader>();
 		const ComputePassPipelineRuntime* const runtime = &m_renderPassRuntimeCache.GetComputeShaderRuntime<TShader>();
 		const std::string diagnosticLabel(label);
 		m_frameGraph.AddComputePass(
 		    diagnosticLabel,
-		    parameters,
-		    [runtime,
-		        groupCount,
-		        diagnosticLabel](PassCommandContext& context, TypedPassParameterInstance<typename TShader::Parameters>& passParameters)
-		    {
-			    const bool valid = passParameters.Sync();
-			    assert(valid);
-			    const bool dispatched = DispatchComputeShader(
-			        context.Resources,
-			        context.Commands,
-			        runtime->BindingLayout,
-			        runtime->Pipeline,
-			        passParameters,
-			        groupCount,
-			        nullptr,
-			        0,
-			        nullptr,
-			        diagnosticLabel.c_str());
-			    assert(dispatched);
-		    });
-	}
-
-	template <typename TShader>
-	void DispatchAsync(TypedPassParameterInstance<typename TShader::Parameters>& parameters, const ComputeDispatchDesc& groupCount)
-	{
-		const ShaderRegistrationDesc& shader = GlobalShader<TShader>::GetRegistration();
-		DispatchAsync<TShader>(shader.ShaderName, parameters, groupCount);
-	}
-
-	template <typename TShader> void DispatchAsync(
-	    std::string_view label,
-	    TypedPassParameterInstance<typename TShader::Parameters>& parameters,
-	    const ComputeDispatchDesc& groupCount)
-	{
-		m_renderPassRuntimeCache.MaterializeComputeShaderRuntime<TShader>();
-		const ComputePassPipelineRuntime* const runtime = &m_renderPassRuntimeCache.GetComputeShaderRuntime<TShader>();
-		const std::string diagnosticLabel(label);
-		m_frameGraph.AddAsyncComputePass(
-		    diagnosticLabel,
+		    queuePreference,
 		    parameters,
 		    [runtime,
 		        groupCount,

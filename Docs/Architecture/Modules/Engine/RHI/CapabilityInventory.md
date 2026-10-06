@@ -211,7 +211,7 @@ Ray tracing is not one boolean. The current contract separates acceleration stru
 - D3D12 implementation: `Engine/RHI/Private/D3D12`.
 - Vulkan implementation: `Engine/RHI/Private/Vulkan`.
 - Build membership and backend switches: `Engine/RHI/CMakeLists.txt` and root CMake options/assertions.
-- Material descriptor coverage: `Engine/Renderer/Private/Scene/Materials`, `Engine/Renderer/Private/Passes/GBuffer/Raster/GBufferMeshBatchDrawer.cpp`, and `Engine/Assets/Shaders/Material/MaterialTextureTable.hlsli`.
+- Material descriptor coverage: `Engine/Renderer/Private/Scene/Materials`, `Engine/Renderer/Private/Passes/GBuffer/Raster/GBufferMeshPass.cpp`, and `Engine/Assets/Shaders/Material/MaterialTextureTable.hlsli`.
 - Effect traversal coverage: `Engine/Renderer/Private/Passes/GBuffer`, `Engine/Renderer/Private/Passes/Lighting`, and `Engine/Renderer/Private/RayTracing`.
 
 

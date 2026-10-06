@@ -4,6 +4,7 @@
 
 #include "Core/Public/Diagnostics/Verify.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
+#include "Scene/Lighting/LightRenderingControls.h"
 
 #include <cmath>
 
@@ -23,7 +24,7 @@ void RenderLightPreparation::PrepareRange(std::span<const RenderLightData> input
 		output = PreparedRenderLight{.Object = row.Object};
 
 		const SceneLightDesc& light = row.Description;
-		if (!light.common.visible)
+		if (!light.common.visible || !IsLightRenderingEnabled(light.GetKind()))
 		{
 			continue;
 		}

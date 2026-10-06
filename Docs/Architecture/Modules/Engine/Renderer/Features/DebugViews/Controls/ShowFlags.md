@@ -78,6 +78,26 @@ SetCVar r.Lighting.Shadows.Indirect 0
 
 Editor resolves and queries registered CVars through the existing Core console/control interface; it must not include Renderer-private CVar headers or add an Application feature-translation chain. No custom feature registry or Renderer Show-menu API is required. A missing expected registration is a configuration defect, not an unchecked or fabricated-disabled leaf.
 
+### Scene Rendering Controls
+
+The same Show menu also edits these scene-wide controls, each defaulting to enabled:
+
+| CVar | Prepared scene or rendering work |
+| --- | --- |
+| `r.Sky.Enabled` | sky background and environment illumination, including indirect bounces, reflections, and Reference Path Tracer transport |
+| `r.Meshes.Static` | static primitives in raster visibility, ray geometry, and emissive light sampling |
+| `r.Meshes.Skinned` | skeletal primitives and their deformation, raster visibility, ray geometry, and emissive light sampling |
+| `r.Lighting.Lights.Directional` | directional light records |
+| `r.Lighting.Lights.Point` | point light records |
+| `r.Lighting.Lights.Spot` | spot light records |
+| `r.Lighting.Lights.Rect` | rectangular area light records |
+
+Common Show Flags contains Sky, Static Meshes, and Skinned Meshes. Light Types contains Directional Lights and the Local Lights submenu. Local Lights' All action edits Point, Spot, and Rect together through one existing control batch; it has no separate parent CVar. Use Defaults enables all fourteen implemented leaves. These controls remain editable in every mode; no configuration-support filter hides or disables them. Decal rendering is not implemented and has no fabricated menu row.
+
+Mesh admission belongs to `Scene/Geometry/MeshRenderingControls`; light-type admission belongs to `Scene/Lighting/LightRenderingControls`. Scene preparation excludes disabled records before deformation, visibility, and ray/light payload preparation while retaining authored scene objects and stable GPU scene slots. Ray hit-payload caching includes the actual prepared work membership, so changing these controls rebuilds omitted hit data on re-enable without requiring an authored scene revision.
+
+Sky owns `r.Sky.Enabled`. Scene preparation combines it with the authored sky enablement into the existing prepared sky state and shared global Sky shader data. The shared radiance sampler returns zero before sampling the environment when disabled. Lit omits the sky color and sky motion passes; its scene-color clear initializes black and the lighting composite writes only surface pixels. Reference transport consumes the same disabled environment state. Existing scene identities observe the filtered geometry, lights, and sky enablement to invalidate ReSTIR and Reference histories. Worker preparation, immutable frame submission, and submission-token retirement retain their existing owners.
+
 ### Publication And Observation
 
 Live mutation must use a proved sequenced owner boundary before Renderer reads feature CVars. The inspected plain CVar storage/direct setter is not evidence of thread safety. Discover and repair the existing CVar delivery owner if needed; do not hide a race behind request/View copies or a parallel settings bag.

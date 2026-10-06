@@ -6,18 +6,26 @@
 
 #include <array>
 #include <algorithm>
+#include <cstddef>
 #include <span>
 #include <utility>
 
-struct LightingShowLeaf final
+struct ShowControl final
 {
 	const char* Label;
 	const char* CVarName;
 	UiUtil::EditorIcon Icon;
 };
 
-static constexpr std::array<LightingShowLeaf, 7> lightingShowLeaves = {
-    {{"Diffuse", "r.Lighting.Direct.Diffuse", UiUtil::EditorIcon::ViewDirectDiffuse},
+static constexpr std::array<ShowControl, 14> showControls = {
+    {{"Sky", "r.Sky.Enabled", UiUtil::EditorIcon::Sky},
+        {"Static Meshes", "r.Meshes.Static", UiUtil::EditorIcon::StaticMesh},
+        {"Skinned Meshes", "r.Meshes.Skinned", UiUtil::EditorIcon::SkinnedMesh},
+        {"Directional Lights", "r.Lighting.Lights.Directional", UiUtil::EditorIcon::DirectionalLight},
+        {"Point Lights", "r.Lighting.Lights.Point", UiUtil::EditorIcon::PointLight},
+        {"Spot Lights", "r.Lighting.Lights.Spot", UiUtil::EditorIcon::SpotLight},
+        {"Rect Lights", "r.Lighting.Lights.Rect", UiUtil::EditorIcon::RectLight},
+        {"Diffuse", "r.Lighting.Direct.Diffuse", UiUtil::EditorIcon::ViewDirectDiffuse},
         {"Specular", "r.Lighting.Direct.Specular", UiUtil::EditorIcon::ViewDirectSpecular},
         {"Subsurface", "r.Lighting.Direct.Subsurface", UiUtil::EditorIcon::ViewDirectSubsurface},
         {"Diffuse", "r.Lighting.Indirect.Diffuse", UiUtil::EditorIcon::ViewDirectDiffuse},
@@ -25,7 +33,7 @@ static constexpr std::array<LightingShowLeaf, 7> lightingShowLeaves = {
         {"Direct Shadows", "r.Lighting.Shadows.Direct", UiUtil::EditorIcon::ViewAmbientOcclusion},
         {"Indirect Shadows", "r.Lighting.Shadows.Indirect", UiUtil::EditorIcon::ViewAmbientOcclusion}}};
 
-struct LightingShowGroup final
+struct ShowMenuEntry final
 {
 	const char* Label;
 	UiUtil::EditorIcon Icon;
@@ -34,19 +42,21 @@ struct LightingShowGroup final
 	const char* Section;
 };
 
-static constexpr auto lightingShowGroups = std::to_array<LightingShowGroup>(
-    {{"Direct Lighting", UiUtil::EditorIcon::DirectionalLight, 0, 3, "LIGHTING COMPONENTS"},
-        {"Indirect Lighting", UiUtil::EditorIcon::Light, 3, 2, nullptr},
-        {"Shadows", UiUtil::EditorIcon::ViewAmbientOcclusion, 5, 2, "LIGHTING FEATURES"}});
+static constexpr auto showMenuEntries = std::to_array<ShowMenuEntry>(
+    {{nullptr, UiUtil::EditorIcon::None, 0, 1, "COMMON SHOW FLAGS"},
+        {nullptr, UiUtil::EditorIcon::None, 1, 1, nullptr},
+        {nullptr, UiUtil::EditorIcon::None, 2, 1, nullptr},
+        {nullptr, UiUtil::EditorIcon::None, 3, 1, "LIGHT TYPES"},
+        {"Local Lights", UiUtil::EditorIcon::PointLight, 4, 3, nullptr},
+        {"Direct Lighting", UiUtil::EditorIcon::DirectionalLight, 7, 3, "LIGHTING COMPONENTS"},
+        {"Indirect Lighting", UiUtil::EditorIcon::Light, 10, 2, nullptr},
+        {"Shadows", UiUtil::EditorIcon::ViewAmbientOcclusion, 12, 2, "LIGHTING FEATURES"}});
 
-static bool QueryLightingShowIntent(
-    const CVarControlExecutor& executor,
-    std::array<bool, lightingShowLeaves.size()>& intent,
-    std::string& error)
+static bool QueryShowControlIntent(const CVarControlExecutor& executor, std::array<bool, showControls.size()>& intent, std::string& error)
 {
 	CVarControlRequest request;
-	request.Entries.reserve(lightingShowLeaves.size());
-	for (const LightingShowLeaf& leaf : lightingShowLeaves)
+	request.Entries.reserve(showControls.size());
+	for (const ShowControl& leaf : showControls)
 	{
 		request.Entries.push_back({leaf.CVarName, {}});
 	}
@@ -56,17 +66,17 @@ static bool QueryLightingShowIntent(
 		error = result.Error;
 		return false;
 	}
-	if (result.Values.size() != lightingShowLeaves.size())
+	if (result.Values.size() != showControls.size())
 	{
-		error = "Lighting control query returned an incomplete response.";
+		error = "Show control query returned an incomplete response.";
 		return false;
 	}
-	for (std::size_t index = 0; index < lightingShowLeaves.size(); ++index)
+	for (std::size_t index = 0; index < showControls.size(); ++index)
 	{
 		const CVarControlValue& value = result.Values[index];
-		if (value.Name != lightingShowLeaves[index].CVarName || value.Type != "bool" || (value.Value != "true" && value.Value != "false"))
+		if (value.Name != showControls[index].CVarName || value.Type != "bool" || (value.Value != "true" && value.Value != "false"))
 		{
-			error = "Invalid lighting control response: " + std::string(lightingShowLeaves[index].CVarName);
+			error = "Invalid show control response: " + std::string(showControls[index].CVarName);
 			return false;
 		}
 		intent[index] = value.Value == "true";
@@ -74,32 +84,41 @@ static bool QueryLightingShowIntent(
 	return true;
 }
 
-static void SetLightingShowIntent(
-    const CVarControlExecutor& executor,
-    std::span<const LightingShowLeaf> leaves,
-    bool enabled,
-    std::string& error)
+static void SetShowControlIntent(const CVarControlExecutor& executor, std::span<const ShowControl> leaves, bool enabled, std::string& error)
 {
 	CVarControlRequest request;
 	request.Operation = CVarControlOperation::Set;
 	request.Entries.reserve(leaves.size());
-	for (const LightingShowLeaf& leaf : leaves)
+	for (const ShowControl& leaf : leaves)
 	{
 		request.Entries.push_back({leaf.CVarName, enabled ? "true" : "false"});
 	}
 	error = executor(std::move(request)).Error;
 }
 
-static void DrawLightingShowGroup(
+static void DrawShowControl(const ShowControl& control, bool enabled, const CVarControlExecutor& executor, std::string& error)
+{
+	const UiUtil::MenuCheckState state = enabled ? UiUtil::MenuCheckState::Checked : UiUtil::MenuCheckState::Unchecked;
+	if (UiUtil::DrawMenuItem(control.Label, control.Icon, state, ImGuiSelectableFlags_NoAutoClosePopups))
+	{
+		SetShowControlIntent(executor, std::span(&control, 1), !enabled, error);
+	}
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+	{
+		ImGui::SetTooltip("%s\nShared by all viewports.", control.CVarName);
+	}
+}
+
+static void DrawShowControlGroup(
     const char* label,
     UiUtil::EditorIcon icon,
-    std::span<const LightingShowLeaf> leaves,
+    std::span<const ShowControl> leaves,
     std::span<const bool> intent,
     const CVarControlExecutor& executor,
     std::string& error)
 {
 	float menuWidth = UiUtil::MeasureMenuRow("All", UiUtil::MenuRowKind::Toggle);
-	for (const LightingShowLeaf& leaf : leaves)
+	for (const ShowControl& leaf : leaves)
 	{
 		menuWidth = (std::max) (menuWidth, UiUtil::MeasureMenuRow(leaf.Label, UiUtil::MenuRowKind::Toggle));
 	}
@@ -119,7 +138,7 @@ static void DrawLightingShowGroup(
 	                                                     : UiUtil::MenuCheckState::Unchecked;
 	if (UiUtil::DrawMenuItem("All", UiUtil::EditorIcon::None, groupState, ImGuiSelectableFlags_NoAutoClosePopups))
 	{
-		SetLightingShowIntent(executor, leaves, !anyEnabled, error);
+		SetShowControlIntent(executor, leaves, !anyEnabled, error);
 	}
 	if (anyEnabled && !allEnabled && ImGui::IsItemHovered())
 	{
@@ -128,15 +147,7 @@ static void DrawLightingShowGroup(
 	ImGui::Separator();
 	for (std::size_t index = 0; index < leaves.size(); ++index)
 	{
-		const UiUtil::MenuCheckState leafState = intent[index] ? UiUtil::MenuCheckState::Checked : UiUtil::MenuCheckState::Unchecked;
-		if (UiUtil::DrawMenuItem(leaves[index].Label, leaves[index].Icon, leafState, ImGuiSelectableFlags_NoAutoClosePopups))
-		{
-			SetLightingShowIntent(executor, leaves.subspan(index, 1), !intent[index], error);
-		}
-		if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-		{
-			ImGui::SetTooltip("%s\nAcknowledged intent; shared by all applicable viewports.", leaves[index].CVarName);
-		}
+		DrawShowControl(leaves[index], intent[index], executor, error);
 	}
 	ImGui::EndMenu();
 }
@@ -153,7 +164,7 @@ void DrawViewportShowMenu(const CVarControlExecutor* executor, bool disableInter
 	const ImVec2 popupPosition(ImGui::GetItemRectMin().x, ImGui::GetWindowPos().y + ImGui::GetWindowHeight());
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 	{
-		ImGui::SetTooltip("Shared lighting controls for all applicable viewports; not viewport-local overrides.");
+		ImGui::SetTooltip("Shared rendering controls for all viewports.");
 	}
 	if (!ImGui::IsPopupOpen("ViewportShowMenu"))
 	{
@@ -161,9 +172,12 @@ void DrawViewportShowMenu(const CVarControlExecutor* executor, bool disableInter
 	}
 	const UiUtil::MenuStyleScope menuStyle;
 	float menuWidth = UiUtil::MeasureMenuRow("Use Defaults", UiUtil::MenuRowKind::Action);
-	for (const LightingShowGroup& group : lightingShowGroups)
+	for (const ShowMenuEntry& group : showMenuEntries)
 	{
-		menuWidth = (std::max) (menuWidth, UiUtil::MeasureMenuRow(group.Label, UiUtil::MenuRowKind::Submenu));
+		const bool isSubmenu = group.LeafCount > 1;
+		const char* label = isSubmenu ? group.Label : showControls[group.FirstLeaf].Label;
+		const auto kind = isSubmenu ? UiUtil::MenuRowKind::Submenu : UiUtil::MenuRowKind::Toggle;
+		menuWidth = (std::max) (menuWidth, UiUtil::MeasureMenuRow(label, kind));
 		if (group.Section != nullptr)
 		{
 			menuWidth = (std::max) (menuWidth, UiUtil::MeasureMenuSection(group.Section));
@@ -173,14 +187,12 @@ void DrawViewportShowMenu(const CVarControlExecutor* executor, bool disableInter
 	{
 		return;
 	}
-	std::array<bool, lightingShowLeaves.size()> intent{};
+	std::array<bool, showControls.size()> intent{};
 	std::string queryError;
-	const bool available = executor != nullptr && *executor && QueryLightingShowIntent(*executor, intent, queryError);
+	const bool available = executor != nullptr && *executor && QueryShowControlIntent(*executor, intent, queryError);
 	if (!available)
 	{
-		ImGui::TextWrapped(
-		    "Lighting controls unavailable: %s",
-		    queryError.empty() ? "Host control executor is missing." : queryError.c_str());
+		ImGui::TextWrapped("Show controls unavailable: %s", queryError.empty() ? "Host control executor is missing." : queryError.c_str());
 	}
 	else
 	{
@@ -191,18 +203,23 @@ void DrawViewportShowMenu(const CVarControlExecutor* executor, bool disableInter
 		        UiUtil::MenuCheckState::Hidden,
 		        ImGuiSelectableFlags_NoAutoClosePopups))
 		{
-			SetLightingShowIntent(*executor, lightingShowLeaves, true, error);
+			SetShowControlIntent(*executor, showControls, true, error);
 		}
-		for (const LightingShowGroup& group : lightingShowGroups)
+		for (const ShowMenuEntry& group : showMenuEntries)
 		{
 			if (group.Section != nullptr)
 			{
 				UiUtil::DrawMenuSection(group.Section);
 			}
-			DrawLightingShowGroup(
+			if (group.LeafCount == 1)
+			{
+				DrawShowControl(showControls[group.FirstLeaf], intent[group.FirstLeaf], *executor, error);
+				continue;
+			}
+			DrawShowControlGroup(
 			    group.Label,
 			    group.Icon,
-			    std::span(lightingShowLeaves).subspan(group.FirstLeaf, group.LeafCount),
+			    std::span(showControls).subspan(group.FirstLeaf, group.LeafCount),
 			    std::span(intent).subspan(group.FirstLeaf, group.LeafCount),
 			    *executor,
 			    error);
@@ -212,7 +229,7 @@ void DrawViewportShowMenu(const CVarControlExecutor* executor, bool disableInter
 	if (!error.empty())
 	{
 		ImGui::Separator();
-		ImGui::TextWrapped("Lighting edit rejected: %s", error.c_str());
+		ImGui::TextWrapped("Show edit rejected: %s", error.c_str());
 	}
 	ImGui::EndPopup();
 }

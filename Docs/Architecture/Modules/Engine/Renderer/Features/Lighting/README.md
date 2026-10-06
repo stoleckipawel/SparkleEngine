@@ -57,6 +57,8 @@ IndirectDiffuse + IndirectSpecular
 
 The composite owns the join point. Direct and indirect producers do not independently tone-map, encode, present, or own a second scene-color path. Volumetric composition has no slot in this graph today and must not be implied by the sky or subsurface paths.
 
+Lit clears SceneColor to black before composition and writes only GBuffer surface pixels. Sky fills background pixels only when `r.Sky.Enabled` is enabled. That same control enters the prepared scene's existing sky enablement, so disabling it also removes environment illumination from indirect transport, reflections, and Reference transport. Directional, point, spot, and rectangular light controls filter prepared light records before either lighting path consumes them. [Scene Rendering Controls](../DebugViews/Controls/ShowFlags.md#scene-rendering-controls) owns the CVar and Editor interaction contract; these source routes do not establish numerical or performance acceptance.
+
 ## Shared Ownership And Lifetime
 
 - The persistent render scene and GPU scene own light records, material/geometry bindings, and sky resources.

@@ -15,7 +15,10 @@ namespace EditorIconGlyphs
 		inline constexpr const char* DirectionalLight = "\xef\x86\x85";
 		inline constexpr const char* PointLight = "\xef\x86\x92";
 		inline constexpr const char* SpotLight = "\xef\x85\x80";
+		inline constexpr const char* RectLight = "\xef\x83\x88";
+		inline constexpr const char* Sky = "\xef\x83\x82";
 		inline constexpr const char* StaticMesh = "\xef\x86\xb2";
+		inline constexpr const char* SkinnedMesh = "\xef\x86\x83";
 		inline constexpr const char* Material = "\xef\x94\xbf";
 		inline constexpr const char* EyeVisible = "\xef\x81\xae";
 		inline constexpr const char* EyeHidden = "\xef\x81\xb0";

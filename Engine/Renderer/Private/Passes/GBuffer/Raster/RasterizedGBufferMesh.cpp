@@ -14,10 +14,9 @@
 
 #include <cstdint>
 
-void AddRasterizedGBufferMeshPass(
+static TypedPassParameterInstance<GBufferGraphParameters>& BuildGBufferRasterParameters(
     FrameGraphBuilder& builder,
     const RenderFrame& frame,
-    GpuMeshCache& gpuMeshCache,
     const RenderFrameGraphResources& resources)
 {
 	const GBufferRenderTargets& targets = resources.Transient.GBuffer;
@@ -58,11 +57,27 @@ void AddRasterizedGBufferMeshPass(
 	parameters->Shader.Pixel.View = frame.View.uniform;
 	parameters->Shader.Pixel.ViewTemporal = frame.View.temporalUniform;
 
+	return parameters;
+}
+
+static RasterPassRenderState CreateGBufferRasterState()
+{
 	RasterPassRenderState renderState;
 	renderState.SetOpaqueBlend();
 	renderState.SetDepthTest(DepthConvention::GetDepthComparisonLessEqualFunc());
 	renderState.SetDepthWrite(true);
 	renderState.DisableStencil();
 
+	return renderState;
+}
+
+void AddRasterizedGBufferMeshPass(
+    FrameGraphBuilder& builder,
+    const RenderFrame& frame,
+    GpuMeshCache& gpuMeshCache,
+    const RenderFrameGraphResources& resources)
+{
+	auto& parameters = BuildGBufferRasterParameters(builder, frame, resources);
+	const RasterPassRenderState renderState = CreateGBufferRasterState();
 	builder.Draw<GBufferVS, GBufferPS>(parameters, renderState, GBufferMeshPass(gpuMeshCache, frame.PreparedScene, frame.View));
 }

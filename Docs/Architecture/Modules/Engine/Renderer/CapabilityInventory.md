@@ -48,7 +48,7 @@ The [RHI module](../RHI/README.md) owns backend-neutral GPU contracts and backen
 
 | Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |
 | --- | --- | --- | --- | --- | --- |
-| `REN-FG-01` | Typed graph authoring | Implemented path | Draw, Dispatch, DispatchAsync, and TraceRays declarations carry typed shader parameters and resource-use declarations into compilation/execution. | `S` | Pending |
+| `REN-FG-01` | Typed graph authoring | Implemented path | Draw, Dispatch (with graphics or async-compute queue preference), and TraceRays declarations carry typed shader parameters and resource-use declarations into compilation/execution. | `S` | Pending |
 | `REN-FG-02` | Compiled pass kinds | Implemented path | Raster, Compute, RayTracing, Transfer, and ExternalProvider are the current pass-kind vocabulary; async compute is a queue preference for compute work rather than a second compute semantic. | `S` | Pending |
 | `REN-FG-03` | Resource model | Implemented path | Imported, persistent, transient, history, and exported textures/buffers plus acceleration-structure registrations. | `S` | Pending |
 | `REN-FG-04` | Dependency compilation | Implemented path | Producer/consumer dependencies, pass order, queue assignment, state transitions, UAV barriers, and alias barriers are compiled before execution. | `S` | Pending |
