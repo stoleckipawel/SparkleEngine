@@ -5,14 +5,12 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Lighting/Restir/Indirect/RestirIndirectResolveShader.h"
 #include "Passes/Lighting/Restir/Indirect/IndirectLightingControls.h"
+#include "RayTracing/Effects/RestirLighting/RestirIndirectLightingCVars.h"
+#include "RayReconstruction/RayReconstructionSettings.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowPassData.h"
 #include "ShaderData/SceneShaderParameters.h"
 
-void AddRestirIndirectResolvePass(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    bool writeRayReconstructionGuides,
-    const RenderFrameGraphResources& resources)
+void AddRestirIndirectResolvePass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
 	auto& parameters = builder.AllocParameters<RestirIndirectResolveCS>();
 	parameters->CurrentReservoirSampleTexture = builder.CreateSRV(resources.History.RestirIndirectReservoir.Sample.Current);
@@ -39,13 +37,20 @@ void AddRestirIndirectResolvePass(
 	    [baseColor = gbuffer.BaseColor,
 	        material = gbuffer.Material,
 	        diffuse = lighting.IndirectDiffuse,
-	        specular = lighting.IndirectSpecular,
-	        writeRayReconstructionGuides](auto& fields)
+	        specular = lighting.IndirectSpecular](auto& parameters)
 	    {
-		    auto uniform = BuildIndirectLightingUniform(baseColor, material, diffuse, specular);
-		    uniform.WriteReconstructionGuides = writeRayReconstructionGuides ? 1u : 0u;
-		    fields.RestirIndirectConstants = uniform;
+		    parameters->RestirIndirectBounceCount = ResolveRestirIndirectBounceCount();
+		    parameters->RestirIndirectTemporalReuse = CVarRestirIndirectTemporalReuse.Get() ? 1u : 0u;
+		    parameters->RestirIndirectSpatialReuse = CVarRestirIndirectSpatialReuse.Get() ? 1u : 0u;
+		    parameters->RestirIndirectEvaluateDiffuse = IsIndirectDiffuseActive(baseColor, diffuse) ? 1u : 0u;
+		    parameters->RestirIndirectEvaluateSpecular = IsIndirectSpecularActive(material, specular) ? 1u : 0u;
+		    parameters->RestirIndirectTraceSecondaryShadows = IsIndirectShadowsActive() ? 1u : 0u;
 	    });
+
+	builder.AddParameterSetup<RenderView>(
+	    parameters,
+	    [](auto& parameters, const RenderView& view)
+	    { parameters->RestirIndirectWriteReconstructionGuides = ShouldUseRayReconstruction(view.viewMode) ? 1u : 0u; });
 
 	builder.Dispatch<RestirIndirectResolveCS>(
 	    parameters,

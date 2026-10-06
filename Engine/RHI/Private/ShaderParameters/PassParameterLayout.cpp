@@ -59,7 +59,8 @@ bool PassParameterLayout::Matches(const PassParameterLayout& other) const noexce
 			return false;
 		}
 		if (lhs.Kind != rhs->Kind || lhs.ResourceDomain != rhs->ResourceDomain || lhs.Access != rhs->Access
-		    || lhs.Visibility != rhs->Visibility || lhs.ArrayCount != rhs->ArrayCount || lhs.ValueSizeInBytes != rhs->ValueSizeInBytes)
+		    || lhs.Visibility != rhs->Visibility || lhs.ArrayCount != rhs->ArrayCount || lhs.ValueSizeInBytes != rhs->ValueSizeInBytes
+		    || lhs.ValueLayoutHash != rhs->ValueLayoutHash)
 		{
 			return false;
 		}
@@ -89,6 +90,7 @@ std::uint32_t PassParameterLayout::AddParameter(PassParameterDesc parameter)
 		assert(existing->Access == parameter.Access);
 		assert(existing->ArrayCount == parameter.ArrayCount);
 		assert(existing->ValueSizeInBytes == parameter.ValueSizeInBytes);
+		assert(existing->ValueLayoutHash == parameter.ValueLayoutHash);
 		existing->Visibility |= parameter.Visibility;
 		return static_cast<std::uint32_t>(std::distance(m_parameters.begin(), existing));
 	}

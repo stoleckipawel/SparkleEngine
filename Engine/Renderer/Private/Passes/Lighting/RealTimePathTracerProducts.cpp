@@ -2,17 +2,12 @@
 #include "Passes/Lighting/RealTimePathTracerProducts.h"
 
 #include "Frame/Graph/RenderFrameGraphResources.h"
-#include "Frame/Graph/RenderFrameGraphSettings.h"
+#include "RayReconstruction/RayReconstructionSettings.h"
 #include "Passes/Lighting/Restir/Indirect/IndirectLightingControls.h"
 
-bool HasRequiredRealTimePathTracerProducts(const RenderFrameGraphSettings& settings) noexcept
+bool PrepareRealTimePathTracerProducts(RenderViewMode viewMode, ViewportFrameProducts& products) noexcept
 {
-	return !settings.UseRayReconstruction || IsIndirectSpecularEnabled();
-}
-
-bool PrepareRealTimePathTracerProducts(const RenderFrameGraphSettings& settings, ViewportFrameProducts& products) noexcept
-{
-	if (HasRequiredRealTimePathTracerProducts(settings))
+	if (!ShouldUseRayReconstruction(viewMode) || CVarIndirectSpecular.Get())
 	{
 		return true;
 	}

@@ -76,7 +76,7 @@ void GBufferMeshBatchDrawer::ConfigureDrawParameters(
 {
 	drawParameters->Vertex = passParameters.Shader.Vertex;
 	drawParameters->Pixel = passParameters.Shader.Pixel;
-	drawParameters->Vertex.MeshInstanceDraw = MeshInstanceDrawConstantBufferData{.FirstInstance = firstInstance};
+	drawParameters->Vertex.FirstInstance = firstInstance;
 }
 
 RhiRasterizerState GBufferMeshBatchDrawer::ResolveRasterizerState(

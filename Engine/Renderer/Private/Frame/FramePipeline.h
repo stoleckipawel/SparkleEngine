@@ -99,7 +99,6 @@ private:
 	void ExecuteFrame();
 	void SubmitAndPresent(const UiRenderPacket& packet) noexcept;
 	RenderFrame& PrepareRenderFrame(const RenderViewInput& viewInput, const RenderFrameTime& time);
-	void SetupImageProviderFrame(const RenderFrame& frame);
 	void InvalidateViewHistory(RenderViewInvalidationReason reason) noexcept;
 	FrameExecutionDiagnostics& GetCurrentFrameDiagnostics() noexcept;
 	const FrameExecutionDiagnostics& GetCurrentFrameDiagnostics() const noexcept;

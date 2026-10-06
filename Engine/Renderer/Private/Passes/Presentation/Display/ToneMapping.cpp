@@ -7,7 +7,6 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/FrameGraphTextureDesc.h"
 #include "Passes/Presentation/Display/ToneMappingShader.h"
-#include "Passes/Presentation/Display/ToneMappingSettings.h"
 #include "View/RenderView.h"
 
 FrameGraphTextureHandle AddToneMappingPass(
@@ -29,8 +28,8 @@ FrameGraphTextureHandle AddToneMappingPass(
 
 	builder.AddParameterSetup<RenderView>(
 	    parameters,
-	    [](auto& fields, const RenderView& view)
-	    { fields.ToneMappingConstants = BuildToneMappingUniformData(view.displaySettings.ToneMapper); });
+	    [](auto& parameters, const RenderView& view)
+	    { parameters->ToneMapper = static_cast<std::uint32_t>(view.displaySettings.ToneMapper); });
 
 	builder.Dispatch<ToneMappingCS>(
 	    parameters,

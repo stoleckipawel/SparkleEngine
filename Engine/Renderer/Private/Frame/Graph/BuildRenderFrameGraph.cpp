@@ -18,14 +18,13 @@ RenderFrameGraphResources FramePipeline::BuildRenderFrameGraph(FrameGraphBuilder
 	AddSceneRenderingPasses(
 	    builder,
 	    settings,
-	    m_viewportRenderRequest.ViewMode,
 	    rayTracingScene,
 	    *m_gpuMeshCache,
 	    *m_imageProviders,
 	    *m_referencePathTracerSession,
 	    resources);
 
-	AddPresentationPasses(builder, settings, m_viewportRenderRequest.ViewMode, resources);
+	AddPresentationPasses(builder, settings, resources);
 
 	return resources;
 }

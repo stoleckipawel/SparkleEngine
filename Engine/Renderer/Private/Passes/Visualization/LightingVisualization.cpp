@@ -47,13 +47,9 @@ bool PrepareLightingVisualizationProducts(
 	return false;
 }
 
-void AddLightingVisualizationPass(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    RenderViewMode viewMode,
-    const RenderFrameGraphResources& resources)
+void AddLightingVisualizationPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
-	switch (viewMode)
+	switch (builder.GetViewMode())
 	{
 		case RenderViewMode::DirectDiffuse:
 		case RenderViewMode::DirectSpecular:

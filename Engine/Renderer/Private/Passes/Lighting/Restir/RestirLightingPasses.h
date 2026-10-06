@@ -9,6 +9,5 @@ class RenderRayTracingScene;
 void AddRestirLightingPasses(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
-    bool useRayReconstruction,
     RenderRayTracingScene& rayTracingScene,
     RenderFrameGraphResources& resources);

@@ -1,4 +1,5 @@
 #pragma once
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 #include <cstdint>
 
 class FrameGraphBuilder;
@@ -7,7 +8,7 @@ class RenderRayTracingScene;
 struct RenderFrameGraphResources;
 struct RenderFrameGraphSettings;
 
-std::uint64_t GetRealTimePathTracerTopologyIdentity(const RenderFrameGraphSettings& settings) noexcept;
+std::uint64_t GetRealTimePathTracerTopologyIdentity() noexcept;
 
 void AddRealTimePathTracerPasses(
     FrameGraphBuilder& builder,

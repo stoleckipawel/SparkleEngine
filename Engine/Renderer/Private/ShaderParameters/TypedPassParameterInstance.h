@@ -17,6 +17,11 @@ public:
 	{
 	}
 
+	TypedPassParameterInstance(const TypedPassParameterInstance&) = delete;
+	TypedPassParameterInstance& operator=(const TypedPassParameterInstance&) = delete;
+	TypedPassParameterInstance(TypedPassParameterInstance&&) = delete;
+	TypedPassParameterInstance& operator=(TypedPassParameterInstance&&) = delete;
+
 	TParameters& GetFields() noexcept
 	{
 		m_isDirty = true;
@@ -49,7 +54,7 @@ public:
 		}
 
 		m_isDirty = false;
-		return m_metadata->Commit(m_fields, m_parameterSet, &m_missingBindings);
+		return m_metadata->Commit(m_fields, m_parameterSet, m_bindingStorage, &m_missingBindings);
 	}
 
 	const std::vector<std::string>& GetMissingBindings() const
@@ -70,4 +75,5 @@ private:
 	mutable bool m_isDirty = true;
 	mutable std::vector<std::string> m_missingBindings;
 	mutable PassParameterSet m_parameterSet;
+	mutable std::vector<std::vector<std::byte>> m_bindingStorage;
 };

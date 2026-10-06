@@ -6,13 +6,9 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Visualization/GpuSceneVisualizationShader.h"
 
-void AddGpuSceneVisualizationPass(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    RenderViewMode viewMode,
-    const RenderFrameGraphResources& resources)
+void AddGpuSceneVisualizationPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
-	if (viewMode != RenderViewMode::GpuSceneInstances)
+	if (builder.GetViewMode() != RenderViewMode::GpuSceneInstances)
 	{
 		return;
 	}

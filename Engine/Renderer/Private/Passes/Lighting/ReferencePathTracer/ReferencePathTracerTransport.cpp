@@ -7,7 +7,7 @@
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerResources.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerSession.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerShader.h"
-#include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerUniformData.h"
+#include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerWork.h"
 #include "RayTracing/RayTracingExecutionFrontend.h"
 #include "RayTracing/RayTracingMaterialPass.h"
 #include "RHI/Public/Samplers/RhiSamplerDesc.h"
@@ -18,7 +18,7 @@ template <typename TShader> static auto& BuildReferencePathTracerParameters(
     FrameGraphBuilder& builder,
     const RenderFrameGraphResources& resources,
     const ReferencePathTracerGraphResources& graphResources,
-    const ReferencePathTracerUniformData& uniformData)
+    const ReferencePathTracerWork& work)
 {
 	auto& parameters = builder.AllocParameters<TShader>();
 	parameters->WorkingMean = builder.CreateUAV(graphResources.WorkingMean);
@@ -34,7 +34,17 @@ template <typename TShader> static auto& BuildReferencePathTracerParameters(
 	BindSceneShaderParameters(builder, parameters, resources);
 	builder.AddPassParameterSetup(
 	    parameters,
-	    [uniformData = &uniformData](auto& fields) { fields.ReferencePathTracerConstants = *uniformData; });
+	    [work = &work](auto& parameters)
+	    {
+		    parameters->SessionSeed = work->SessionSeed;
+		    parameters->ReplicateId = work->ReplicateId;
+		    parameters->SampleOrdinal = work->SampleOrdinal;
+		    parameters->FinitePathDiagnosticSurfaceVertices = work->FinitePathDiagnosticSurfaceVertices;
+		    parameters->FirstRow = work->FirstRow;
+		    parameters->RowCount = work->RowCount;
+		    parameters->PriorSampleCount = work->PriorSampleCount;
+		    parameters->WorkFlags = work->WorkFlags;
+	    });
 
 	return parameters;
 }
@@ -44,7 +54,7 @@ void AddReferencePathTracerTransportPass(
     RenderViewportExtent extent,
     const RenderFrameGraphResources& resources,
     const ReferencePathTracerGraphResources& graphResources,
-    const ReferencePathTracerUniformData& uniformData,
+    const ReferencePathTracerWork& work,
     RenderRayTracingScene& rayTracingScene)
 {
 	if (rayTracingScene.GetExecutionFrontend() == RayTracingExecutionFrontend::None)
@@ -61,6 +71,5 @@ void AddReferencePathTracerTransportPass(
 	        MathUtils::DivideRoundUp(ReferencePathTracerSession::WorkRowsPerDispatch, 8u),
 	        1u},
 	    RayTracingDispatchDimensions{.Width = extent.Width, .Height = ReferencePathTracerSession::WorkRowsPerDispatch, .Depth = 1u},
-	    [&]<typename TShader>() -> auto&
-	    { return BuildReferencePathTracerParameters<TShader>(builder, resources, graphResources, uniformData); });
+	    [&]<typename TShader>() -> auto& { return BuildReferencePathTracerParameters<TShader>(builder, resources, graphResources, work); });
 }

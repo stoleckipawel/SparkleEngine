@@ -55,6 +55,17 @@ std::uint64_t ShaderCompileRequestHasher::Compute(const ShaderCompileRequest& re
 		canonical += ';';
 	}
 
+	if (request.ParameterStruct)
+	{
+		appendString(request.ParameterStruct->AutoParametersName);
+		for (const auto& value : request.ParameterStruct->Values)
+		{
+			appendString(value.Name);
+			appendString(value.HlslType);
+			canonical += std::to_string(value.OffsetInBytes) + ":" + std::to_string(value.SizeInBytes) + ";";
+		}
+	}
+
 	const std::uint64_t hash = Hash::Fnv1a64(canonical);
 	return hash != 0 ? hash : Hash::kFnv64OffsetBasis;
 }

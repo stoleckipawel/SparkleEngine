@@ -9,15 +9,10 @@
 #include "Passes/Lighting/Restir/Indirect/IndirectLightingControls.h"
 #include "Passes/Lighting/Restir/Indirect/IndirectLightingResources.h"
 
-void AddRestirIndirectLightingPasses(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    bool useRayReconstruction,
-    RenderFrameGraphResources& resources)
+void AddRestirIndirectLightingPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, RenderFrameGraphResources& resources)
 {
-	const bool admitted = IsIndirectLightingAdmitted();
-	CreateIndirectLightingResources(builder, sceneExtent, admitted, resources);
-	if (!admitted)
+	CreateIndirectLightingResources(builder, sceneExtent, resources);
+	if (!IsIndirectLightingAdmitted())
 	{
 		return;
 	}
@@ -26,5 +21,5 @@ void AddRestirIndirectLightingPasses(
 
 	AddRestirIndirectTemporalPass(builder, sceneExtent, workingReservoirs, resources);
 	AddRestirIndirectSpatialPass(builder, sceneExtent, workingReservoirs, resources);
-	AddRestirIndirectResolvePass(builder, sceneExtent, useRayReconstruction, resources);
+	AddRestirIndirectResolvePass(builder, sceneExtent, resources);
 }

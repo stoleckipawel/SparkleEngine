@@ -2,7 +2,7 @@
 
 #include "ReferencePathTracerIdentity.h"
 #include "ReferencePathTracerResources.h"
-#include "ReferencePathTracerUniformData.h"
+#include "ReferencePathTracerWork.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "RayTracing/RayTracingExecutionFrontend.h"
 #include "RHI/Public/Commands/RhiQueue.h"
@@ -49,7 +49,7 @@ private:
 	    RenderViewportExtent extent,
 	    const RenderFrameGraphResources& resources,
 	    const ReferencePathTracerGraphResources& graphResources,
-	    const ReferencePathTracerUniformData& uniformData,
+	    const ReferencePathTracerWork& work,
 	    RenderRayTracingScene& rayTracingScene);
 
 	static constexpr std::uint32_t WorkRowsPerDispatch = 32u;
@@ -63,7 +63,7 @@ private:
 	const ReferencePathTracerGraphResources& GetGraphResources() const noexcept { return m_resources.GetGraphResources(); }
 	bool BindResources(FrameGraph& frameGraph) const noexcept;
 
-	const ReferencePathTracerUniformData& GetUniformData() const noexcept { return m_uniformData; }
+	const ReferencePathTracerWork& GetWork() const noexcept { return m_work; }
 
 	static constexpr std::uint32_t TargetSampleCount = 4096u;
 
@@ -97,7 +97,7 @@ private:
 	RenderDeviceServices& m_deviceServices;
 	RenderRayTracingScene& m_rayTracingScene;
 	ReferencePathTracerResources m_resources;
-	ReferencePathTracerUniformData m_uniformData = {};
+	ReferencePathTracerWork m_work = {};
 	ReferencePathTracerIdentity m_identity = {};
 	Hash::Sha256Digest m_identitySha256 = {};
 	PendingCommit m_pendingCommit = {};

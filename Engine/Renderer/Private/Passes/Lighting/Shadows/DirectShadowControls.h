@@ -1,8 +1,8 @@
 #pragma once
 
-#include <cstdint>
+#include "Core/Public/Console/CVar.h"
 
-bool IsDirectShadowsEnabled() noexcept;
+extern ConsoleVariable<bool> CVarDirectShadows;
+
 bool IsDirectShadowsActive() noexcept;
 void RequireDirectShadowSignal(bool available) noexcept;
-std::uint64_t AppendDirectShadowHistoryInvalidationHash(std::uint64_t hash) noexcept;

@@ -1,6 +1,7 @@
 #include "../../../PCH.h"
 #include "Passes/Presentation/Upscaling/SceneUpscalingPasses.h"
 
+#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "Frame/Graph/RenderFrameGraphSettings.h"
@@ -14,11 +15,10 @@
 void AddSceneUpscalingPasses(
     FrameGraphBuilder& builder,
     const RenderFrameGraphSettings& settings,
-    RenderViewMode viewMode,
     RendererImageProviderStack& imageProviders,
     RenderFrameGraphResources& resources)
 {
-	const SceneUpscalingMethod method = ResolveSceneUpscalingMethod(viewMode);
+	const SceneUpscalingMethod method = ResolveSceneUpscalingMethod(builder.GetViewMode());
 	const EUpscalerProviderKind provider = CVarUpscalerProvider.Get();
 
 	resources.Presentation.ResolvedSceneColor = CreateResolvedSceneColorTarget(builder, settings.OutputExtent);

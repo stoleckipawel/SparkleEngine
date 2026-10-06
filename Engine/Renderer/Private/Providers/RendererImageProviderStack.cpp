@@ -2,6 +2,8 @@
 #include "Providers/RendererImageProviderStack.h"
 
 #include "Providers/ImageProviderFrameInput.h"
+#include "Frame/RenderFrameIdentity.h"
+#include "View/RenderView.h"
 #include "RayReconstruction/RayReconstructionProvider.h"
 #include "RayReconstruction/RayReconstructionProviderFactory.h"
 #include "RayReconstruction/RayReconstructionSettings.h"
@@ -148,10 +150,16 @@ void RendererImageProviderStack::ResetHistory() noexcept
 	m_resetHistoryPending = true;
 }
 
-void RendererImageProviderStack::SetupFrame(const ImageProviderFrameInput& frameInput, bool useRayReconstruction)
+void RendererImageProviderStack::SetupFrame(const RenderView& view, const RenderFrameIdentity& identity)
 {
-	ImageProviderFrameInput providerInput = frameInput;
-	providerInput.ResetHistory |= m_resetHistoryPending;
+	ImageProviderFrameInput providerInput{
+	    .RenderExtent = view.renderExtent,
+	    .OutputExtent = view.outputExtent,
+	    .FrameId = identity.FrameId,
+	    .ProviderGeneration = identity.ImageProviderGeneration,
+	    .Camera = view.cameraUniform,
+	    .Temporal = view.temporalUniform,
+	    .ResetHistory = view.temporalUniform.HistoryValid == 0u || m_resetHistoryPending};
 	m_resetHistoryPending = false;
 
 	if (m_upscaler != nullptr)
@@ -159,7 +167,7 @@ void RendererImageProviderStack::SetupFrame(const ImageProviderFrameInput& frame
 		m_upscaler->SetupFrame(providerInput);
 	}
 
-	if (useRayReconstruction)
+	if (ShouldUseRayReconstruction(view.viewMode))
 	{
 		providerInput.OutputExtent = providerInput.RenderExtent;
 		m_rayReconstruction->SetDenoisingExtent(providerInput.RenderExtent);
@@ -180,5 +188,5 @@ ImageProviderGraphKey RendererImageProviderStack::GetFrameGraphKey() const noexc
 {
 	return ImageProviderGraphKey{
 	    .UpscalerProvider = GetUpscalerProviderSelectionKey(),
-	    .RayReconstructionMode = GetRayReconstructionModeKey()};
+	    .RayReconstructionMode = static_cast<std::uint32_t>(CVarRayReconstructionMode.Get())};
 }

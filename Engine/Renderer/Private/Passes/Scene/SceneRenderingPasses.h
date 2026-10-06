@@ -3,6 +3,7 @@
 #include "Renderer/Public/Viewport/RenderViewMode.h"
 #include <cstdint>
 
+struct RenderView;
 class FrameGraphBuilder;
 class GpuMeshCache;
 class ReferencePathTracerSession;
@@ -12,17 +13,15 @@ struct RenderFrameGraphSettings;
 struct RenderFrameGraphResources;
 struct ViewportFrameProducts;
 
-std::uint64_t GetSceneRenderingTopologyIdentity(RenderViewMode viewMode, const RenderFrameGraphSettings& settings) noexcept;
+std::uint64_t GetSceneRenderingTopologyIdentity(RenderViewMode viewMode) noexcept;
 bool PrepareSceneRenderingProducts(
-    RenderViewMode viewMode,
-    const RenderFrameGraphSettings& settings,
+    const RenderView& view,
     const RenderFrameGraphResources& resources,
     ViewportFrameProducts& products) noexcept;
 
 void AddSceneRenderingPasses(
     FrameGraphBuilder& builder,
     const RenderFrameGraphSettings& settings,
-    RenderViewMode viewMode,
     RenderRayTracingScene& rayTracingScene,
     GpuMeshCache& gpuMeshCache,
     RendererImageProviderStack& imageProviders,

@@ -2,6 +2,8 @@
 
 **Status:** current feature dossier; source-backed, not backend-validation, hot-reload stress, or release evidence
 
+**Parameter-model source update:** 2026-10-06; this update does not establish native binding or output acceptance.
+
 **Verified:** 2026-09-06 through committed `master` revision `c28b33bd`; current parameter, pipeline, shader-generation, CMake, and RHI service routes inspected; executable source is unchanged from the earlier `8414b5dc` audit
 
 **Scope:** `REN-PIPE-01` through `REN-PIPE-05` and retained identity `REN-DIAG-08`; owns the bridge from registered typed pass contracts and cooked shader metadata to binding layouts, graphics/compute/ray pipelines, per-pass bindings, runtime caches, and completion-safe shader-generation replacement
@@ -48,7 +50,7 @@ The [Shader Program Catalog](ShaderProgramCatalog.md) owns exact program members
 
 ## Parameter And Binding Model
 
-Typed pass structures register uniform buffers, texture/buffer SRV/UAVs, samplers, acceleration structures, push constants, and raster attachments. The cooked parameter signature and runtime `PassParameterLayout` must match the registration and active map entry.
+Typed pass structures declare direct scalar/vector/matrix values, shared global uniform buffers, the existing per-object material data, texture/buffer SRV/UAVs, samplers, acceleration structures, push constants, and raster attachments. Direct values use automatic HLSL packing and instance-owned byte storage; reflected offsets and sizes are checked during cooking, and their layout hash participates in typed signatures. Per-pass and per-feature authored uniform payloads are excluded. Construction and deferred frame/view/history setup both assign through `parameters->` on the same typed instance. The graph owns each instance at a stable address until graph destruction; copying and moving are forbidden because bindings and callbacks reference its fields and packed storage. The cooked parameter signature and runtime `PassParameterLayout` must match the registration and active map entry.
 
 `PassBinder` has graphics, compute, and ray domains. It can bind a full compiled layout or named subsets and resolves:
 
@@ -57,6 +59,8 @@ Typed pass structures register uniform buffers, texture/buffer SRV/UAVs, sampler
 - acceleration-structure handles through graph resource commands;
 - shared/unique sampler tables through the descriptor service;
 - explicit address/table/push-constant overrides where the contract requires native or externally supplied bindings.
+
+Graph construction reads the canonical submitted mode through `FrameGraphBuilder::GetViewMode()`. Scene topology identity includes that mode, so changing Lit, Reference, Wireframe, or visualization selection rebuilds the applicable graph rather than reusing a graph selected for a different view. Feature eligibility is resolved at its consuming owner; CVar-derived reconstruction booleans are not transported through frame settings or pass signatures.
 
 Missing bindings, incompatible value kinds, attachment-as-SRV misuse, wrong array cardinality, unresolved resources/descriptors, absent required overrides, unknown named bindings, layout mismatch, or unsupported compiled binding type are fatal contract violations. There is no silent null binding policy.
 

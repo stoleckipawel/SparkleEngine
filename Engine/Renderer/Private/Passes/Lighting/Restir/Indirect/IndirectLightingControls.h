@@ -1,18 +1,13 @@
 #pragma once
 #include "FrameGraph/FrameGraphTextureHandle.h"
-#include "RayTracing/Effects/RestirLighting/RestirIndirectLightingUniformData.h"
+#include "Core/Public/Console/CVar.h"
 #include <cstdint>
 
-bool IsIndirectDiffuseEnabled() noexcept;
-bool IsIndirectSpecularEnabled() noexcept;
+extern ConsoleVariable<bool> CVarIndirectDiffuse;
+extern ConsoleVariable<bool> CVarIndirectSpecular;
 bool IsIndirectLightingAdmitted() noexcept;
-bool IsIndirectShadowsEnabled() noexcept;
+extern ConsoleVariable<bool> CVarIndirectShadows;
 bool IsIndirectShadowsActive() noexcept;
 bool IsIndirectDiffuseActive(FrameGraphTextureHandle input, FrameGraphTextureHandle output) noexcept;
 bool IsIndirectSpecularActive(FrameGraphTextureHandle input, FrameGraphTextureHandle output) noexcept;
-RestirIndirectLightingUniformData BuildIndirectLightingUniform(
-    FrameGraphTextureHandle baseColorInput,
-    FrameGraphTextureHandle materialInput,
-    FrameGraphTextureHandle diffuseOutput,
-    FrameGraphTextureHandle specularOutput) noexcept;
 std::uint64_t AppendIndirectLightingHistoryInvalidationHash(std::uint64_t hash) noexcept;

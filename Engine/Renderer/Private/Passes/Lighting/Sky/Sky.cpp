@@ -21,15 +21,15 @@ void AddSkyPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, co
 
 	builder.AddParameterSetup<RenderView>(
 	    parameters,
-	    [](auto& fields, const RenderView& view)
+	    [](auto& parameters, const RenderView& view)
 	    {
-		    fields.View = view.uniform;
-		    fields.ViewCamera = view.cameraUniform;
-		    fields.ViewTemporal = view.temporalUniform;
+		    parameters->View = view.uniform;
+		    parameters->ViewCamera = view.cameraUniform;
+		    parameters->ViewTemporal = view.temporalUniform;
 	    });
 	builder.AddParameterSetup<PreparedRenderScene>(
 	    parameters,
-	    [](auto& fields, const PreparedRenderScene& scene) { fields.Sky = MakeSkyUniformData(scene.sky); });
+	    [](auto& parameters, const PreparedRenderScene& scene) { parameters->Sky = MakeSkyUniformData(scene.sky); });
 
 	builder.Dispatch<SkyCS>(
 	    parameters,

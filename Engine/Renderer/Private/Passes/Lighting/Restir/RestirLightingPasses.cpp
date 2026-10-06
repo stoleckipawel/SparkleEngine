@@ -7,10 +7,9 @@
 void AddRestirLightingPasses(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
-    bool useRayReconstruction,
     RenderRayTracingScene& rayTracingScene,
     RenderFrameGraphResources& resources)
 {
 	AddRestirDirectLightingPasses(builder, sceneExtent, rayTracingScene, resources);
-	AddRestirIndirectLightingPasses(builder, sceneExtent, useRayReconstruction, resources);
+	AddRestirIndirectLightingPasses(builder, sceneExtent, resources);
 }

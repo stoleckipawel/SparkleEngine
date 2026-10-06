@@ -1,17 +1,16 @@
 #pragma once
 
+#include "ShaderData/SceneLightingUniformData.h"
+#include "ShaderData/ViewTemporalUniformData.h"
+#include "ShaderData/ViewCameraUniformData.h"
+#include "ShaderData/ViewUniformData.h"
 #include "ShaderParameters/ShaderParameterStruct.h"
 #include "RHI/Public/Shaders/Authoring/GlobalShader.h"
-#include "Renderer/Private/RayTracing/Effects/Shadows/RayTracedShadowUniformData.h"
 #include "Renderer/Private/RayTracing/RayTracingHitData.h"
 #include "Renderer/Private/RayTracing/RayTracingShaderFeatureFlags.h"
 #include "Renderer/Private/ShaderData/RayTracingMaterialPayload.h"
 #include "Renderer/Private/Scene/Materials/MaterialTextureTableCapability.h"
-#include "ShaderData/ViewUniformData.h"
-#include "ShaderData/ViewCameraUniformData.h"
-#include "ShaderData/ViewTemporalUniformData.h"
 #include "ShaderData/LightGpuData.h"
-#include "ShaderData/SceneLightingUniformData.h"
 
 #include <cstdint>
 
@@ -20,7 +19,7 @@ class DirectShadowSignalCS final : public GlobalShader<DirectShadowSignalCS>
 public:
 	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::InlineRayQuery;
 
-	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, )
+	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, DirectShadowSignalCS)
 	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, ShadowVisibilitySignal)
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, CurrentReservoirSample)
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, CurrentReservoirWeight)
@@ -33,7 +32,10 @@ public:
 	SHADER_PARAMETER_BUFFER_SRV(SpotLightGpuData, SpotLights)
 	SHADER_PARAMETER_BUFFER_SRV(RectLightGpuData, RectLights)
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, SceneDepth)
-	SHADER_PARAMETER_CBUFFER(RayTracedShadowUniformData, RayTracedShadowConstants)
+	SHADER_PARAMETER(std::uint32_t, RayTracedDirectionalShadowsEnabled)
+	SHADER_PARAMETER(std::uint32_t, RayTracedLocalLightShadowsEnabled)
+	SHADER_PARAMETER(float, RayTracedShadowNormalBias)
+	SHADER_PARAMETER(float, RayTracedShadowMaxDistance)
 	SHADER_PARAMETER_BUFFER_SRV(RayTracingHitVertex, RayTracingHitVertices)
 	SHADER_PARAMETER_BUFFER_SRV(uint32_t, RayTracingHitIndices)
 	SHADER_PARAMETER_BUFFER_SRV(RayTracingHitInstance, RayTracingHitInstances)

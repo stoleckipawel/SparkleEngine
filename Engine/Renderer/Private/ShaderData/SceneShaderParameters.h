@@ -13,134 +13,135 @@
 template <typename TParameterInstance>
 void BindSceneShaderParameters(FrameGraphBuilder& builder, TParameterInstance& parameters, const RenderFrameGraphResources& resources)
 {
-	auto* fields = parameters.operator->();
 	const RenderSceneGpuResources& scene = resources.ImportedScene.Scene;
 
-	if constexpr (requires { fields->SceneTlas; })
+	if constexpr (requires { parameters->SceneTlas; })
 	{
-		fields->SceneTlas = builder.CreateAccelerationStructureBinding(resources.SceneTlas);
+		parameters->SceneTlas = builder.CreateAccelerationStructureBinding(resources.SceneTlas);
 	}
-	if constexpr (requires { fields->SkyTexture; })
+	if constexpr (requires { parameters->SkyTexture; })
 	{
-		fields->SkyTexture = builder.CreateSRV(resources.ImportedScene.Sky);
+		parameters->SkyTexture = builder.CreateSRV(resources.ImportedScene.Sky);
 	}
-	if constexpr (requires { fields->DirectionalLights; })
+	if constexpr (requires { parameters->DirectionalLights; })
 	{
-		fields->DirectionalLights = builder.CreateSRV(scene.Lighting.DirectionalLights);
+		parameters->DirectionalLights = builder.CreateSRV(scene.Lighting.DirectionalLights);
 	}
-	if constexpr (requires { fields->PointLights; })
+	if constexpr (requires { parameters->PointLights; })
 	{
-		fields->PointLights = builder.CreateSRV(scene.Lighting.PointLights);
+		parameters->PointLights = builder.CreateSRV(scene.Lighting.PointLights);
 	}
-	if constexpr (requires { fields->SpotLights; })
+	if constexpr (requires { parameters->SpotLights; })
 	{
-		fields->SpotLights = builder.CreateSRV(scene.Lighting.SpotLights);
+		parameters->SpotLights = builder.CreateSRV(scene.Lighting.SpotLights);
 	}
-	if constexpr (requires { fields->RectLights; })
+	if constexpr (requires { parameters->RectLights; })
 	{
-		fields->RectLights = builder.CreateSRV(scene.Lighting.RectLights);
+		parameters->RectLights = builder.CreateSRV(scene.Lighting.RectLights);
 	}
-	if constexpr (requires { fields->RayTracingHitVertices; })
+	if constexpr (requires { parameters->RayTracingHitVertices; })
 	{
-		fields->RayTracingHitVertices = builder.CreateSRV(scene.RayTracing.Vertices);
+		parameters->RayTracingHitVertices = builder.CreateSRV(scene.RayTracing.Vertices);
 	}
-	if constexpr (requires { fields->SkinInfluences; })
+	if constexpr (requires { parameters->SkinInfluences; })
 	{
-		fields->SkinInfluences = builder.CreateSRV(scene.RayTracing.SkinInfluences);
+		parameters->SkinInfluences = builder.CreateSRV(scene.RayTracing.SkinInfluences);
 	}
-	if constexpr (requires { fields->MorphTargetDeltas; })
+	if constexpr (requires { parameters->MorphTargetDeltas; })
 	{
-		fields->MorphTargetDeltas = builder.CreateSRV(scene.RayTracing.MorphTargetDeltas);
+		parameters->MorphTargetDeltas = builder.CreateSRV(scene.RayTracing.MorphTargetDeltas);
 	}
-	if constexpr (requires { fields->RayTracingHitIndices; })
+	if constexpr (requires { parameters->RayTracingHitIndices; })
 	{
-		fields->RayTracingHitIndices = builder.CreateSRV(scene.RayTracing.Indices);
+		parameters->RayTracingHitIndices = builder.CreateSRV(scene.RayTracing.Indices);
 	}
-	if constexpr (requires { fields->RayTracingHitInstances; })
+	if constexpr (requires { parameters->RayTracingHitInstances; })
 	{
-		fields->RayTracingHitInstances = builder.CreateSRV(scene.RayTracing.Instances);
+		parameters->RayTracingHitInstances = builder.CreateSRV(scene.RayTracing.Instances);
 	}
-	if constexpr (requires { fields->RayTracingHitMaterials; })
+	if constexpr (requires { parameters->RayTracingHitMaterials; })
 	{
-		fields->RayTracingHitMaterials = builder.CreateSRV(scene.RayTracing.Materials);
+		parameters->RayTracingHitMaterials = builder.CreateSRV(scene.RayTracing.Materials);
 	}
-	if constexpr (requires { fields->MeshInstances; })
+	if constexpr (requires { parameters->MeshInstances; })
 	{
-		fields->MeshInstances = builder.CreateSRV(scene.Geometry.MeshInstances);
+		parameters->MeshInstances = builder.CreateSRV(scene.Geometry.MeshInstances);
 	}
-	if constexpr (requires { fields->JointMatrices; })
+	if constexpr (requires { parameters->JointMatrices; })
 	{
-		fields->JointMatrices = builder.CreateSRV(scene.Geometry.JointMatrices);
+		parameters->JointMatrices = builder.CreateSRV(scene.Geometry.JointMatrices);
 	}
-	if constexpr (requires { fields->PreviousJointMatrices; })
+	if constexpr (requires { parameters->PreviousJointMatrices; })
 	{
-		fields->PreviousJointMatrices = builder.CreateSRV(scene.Geometry.PreviousJointMatrices);
+		parameters->PreviousJointMatrices = builder.CreateSRV(scene.Geometry.PreviousJointMatrices);
 	}
-	if constexpr (requires { fields->MorphWeights; })
+	if constexpr (requires { parameters->MorphWeights; })
 	{
-		fields->MorphWeights = builder.CreateSRV(scene.Geometry.MorphWeights);
+		parameters->MorphWeights = builder.CreateSRV(scene.Geometry.MorphWeights);
 	}
-	if constexpr (requires { fields->PreviousMorphWeights; })
+	if constexpr (requires { parameters->PreviousMorphWeights; })
 	{
-		fields->PreviousMorphWeights = builder.CreateSRV(scene.Geometry.PreviousMorphWeights);
+		parameters->PreviousMorphWeights = builder.CreateSRV(scene.Geometry.PreviousMorphWeights);
 	}
-	if constexpr (requires { fields->SamplerLinearClamp; })
+	if constexpr (requires { parameters->SamplerLinearClamp; })
 	{
-		fields->SamplerLinearClamp = RhiSamplerDesc{
+		parameters->SamplerLinearClamp = RhiSamplerDesc{
 		    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 		    .MipFilter = RhiSamplerMipFilter::Linear,
 		    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Clamp)};
 	}
 
-	if constexpr (requires { fields->Frame; })
+	if constexpr (requires { parameters->Frame; })
 	{
-		builder.AddParameterSetup<FrameUniformData>(parameters, [](auto& values, const FrameUniformData& frame) { values.Frame = frame; });
+		builder.AddParameterSetup<FrameUniformData>(
+		    parameters,
+		    [](auto& parameters, const FrameUniformData& frame) { parameters->Frame = frame; });
 	}
-	if constexpr (requires { fields->View; } || requires { fields->ViewCamera; } || requires { fields->ViewTemporal; })
+	if constexpr (requires { parameters->View; } || requires { parameters->ViewCamera; } || requires { parameters->ViewTemporal; })
 	{
 		builder.AddParameterSetup<RenderView>(
 		    parameters,
-		    [](auto& values, const RenderView& view)
+		    [](auto& parameters, const RenderView& view)
 		    {
-			    if constexpr (requires { values.View; })
+			    if constexpr (requires { parameters->View; })
 			    {
-				    values.View = view.uniform;
+				    parameters->View = view.uniform;
 			    }
-			    if constexpr (requires { values.ViewCamera; })
+			    if constexpr (requires { parameters->ViewCamera; })
 			    {
-				    values.ViewCamera = view.cameraUniform;
+				    parameters->ViewCamera = view.cameraUniform;
 			    }
-			    if constexpr (requires { values.ViewTemporal; })
+			    if constexpr (requires { parameters->ViewTemporal; })
 			    {
-				    values.ViewTemporal = view.temporalUniform;
+				    parameters->ViewTemporal = view.temporalUniform;
 			    }
 		    });
 	}
 	if constexpr (
-	    requires { fields->Sky; } || requires { fields->SceneLighting; } || requires { fields->RayTracingHitConstants; }
-	    || requires { fields->MaterialTextureTable; })
+	    requires { parameters->Sky; } || requires { parameters->SceneLighting; } || requires { parameters->RayTracingHitConstants; }
+	    || requires { parameters->MaterialTextureTable; })
 	{
 		builder.AddParameterSetup<PreparedRenderScene>(
 		    parameters,
-		    [](auto& values, const PreparedRenderScene& preparedScene)
+		    [](auto& parameters, const PreparedRenderScene& preparedScene)
 		    {
-			    if constexpr (requires { values.Sky; })
+			    if constexpr (requires { parameters->Sky; })
 			    {
-				    values.Sky = MakeSkyUniformData(preparedScene.sky);
+				    parameters->Sky = MakeSkyUniformData(preparedScene.sky);
 			    }
-			    if constexpr (requires { values.SceneLighting; })
+			    if constexpr (requires { parameters->SceneLighting; })
 			    {
-				    values.SceneLighting = preparedScene.gpuBindings->Lighting.Uniform;
+				    parameters->SceneLighting = preparedScene.gpuBindings->Lighting.Uniform;
 			    }
-			    if constexpr (requires { values.RayTracingHitConstants; })
+			    if constexpr (requires { parameters->RayTracingHitConstants; })
 			    {
-				    values.RayTracingHitConstants = RayTracingHitUniformData{
+				    parameters->RayTracingHitConstants = RayTracingHitUniformData{
 				        .RayTracingHitInstanceCount = preparedScene.gpuBindings->RayTracing.InstanceCount,
 				        .RayTracingHitMaterialCount = preparedScene.gpuBindings->RayTracing.MaterialCount};
 			    }
-			    if constexpr (requires { values.MaterialTextureTable; })
+			    if constexpr (requires { parameters->MaterialTextureTable; })
 			    {
-				    values.MaterialTextureTable = preparedScene.materialTextureTable.Binding;
+				    parameters->MaterialTextureTable = preparedScene.materialTextureTable.Binding;
 			    }
 		    });
 	}

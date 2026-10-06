@@ -1,12 +1,12 @@
 #pragma once
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraphBuilder;
 class RendererImageProviderStack;
 struct RenderFrameGraphResources;
-struct RenderFrameGraphSettings;
 
 void AddRestirRayReconstructionPass(
     FrameGraphBuilder& builder,
-    const RenderFrameGraphSettings& settings,
+    RenderViewportExtent sceneExtent,
     RendererImageProviderStack& imageProviders,
     RenderFrameGraphResources& resources);

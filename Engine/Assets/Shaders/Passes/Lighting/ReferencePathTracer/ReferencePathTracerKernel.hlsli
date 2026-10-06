@@ -7,7 +7,7 @@
 #include "/Engine/RayTracing/RayEndpoints.hlsli"
 #include "/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerSampler.hlsli"
 #include "/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerTransport.hlsli"
-#include "/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerUniformData.hlsli"
+#include "/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerWorkFlags.hlsli"
 
 RWTexture2D<float4> WorkingMean;
 RWTexture2D<float4> WorkingM2;

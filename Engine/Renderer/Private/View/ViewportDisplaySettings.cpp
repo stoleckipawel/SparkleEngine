@@ -82,6 +82,30 @@ ResolvedViewportDisplaySettings ResolvedViewportDisplaySettings::Resolve(const V
 		resolved.ExposureAdaptationSpeedDown = overrides.AdaptationSpeedDown;
 	}
 
+	switch (resolved.ExposureMode)
+	{
+		case EngineExposureMode::Manual:
+		case EngineExposureMode::Automatic:
+			break;
+		default:
+		{
+			SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogExposureSettings, "Renderer.ExposureSettings");
+			Diagnostics::Fatal(LogExposureSettings, __FILE__, __LINE__, "Exposure settings contain an unknown exposure mode.");
+		}
+	}
+	switch (resolved.ToneMapper)
+	{
+		case EngineToneMapper::Reinhard:
+		case EngineToneMapper::AcesApprox:
+		case EngineToneMapper::AcesFilmic:
+			break;
+		default:
+		{
+			SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogToneMappingSettings, "Renderer.ToneMappingSettings");
+			Diagnostics::Fatal(LogToneMappingSettings, __FILE__, __LINE__, "Tone-mapping settings contain an unknown tone mapper.");
+		}
+	}
+
 	resolved.ManualExposure = (std::max) (resolved.ManualExposure, 0.0f);
 	resolved.ExposureCompensation = std::clamp(resolved.ExposureCompensation, -16.0f, 16.0f);
 	resolved.ExposureTargetLuminance = (std::max) (resolved.ExposureTargetLuminance, 0.0001f);

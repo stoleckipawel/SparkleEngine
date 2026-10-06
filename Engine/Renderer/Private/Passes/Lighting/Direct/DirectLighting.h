@@ -1,20 +1,19 @@
 #pragma once
 
+#include "ShaderData/SceneLightingUniformData.h"
+#include "ShaderData/ViewTemporalUniformData.h"
+#include "ShaderData/ViewCameraUniformData.h"
+#include "ShaderData/ViewUniformData.h"
 #include "ShaderParameters/ShaderParameterStruct.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "RHI/Public/Shaders/Authoring/GlobalShader.h"
 
 #include "ShaderData/LightGpuData.h"
-#include "ShaderData/SceneLightingUniformData.h"
-#include "ShaderData/ViewCameraUniformData.h"
-#include "ShaderData/ViewTemporalUniformData.h"
-#include "ShaderData/ViewUniformData.h"
-#include "Passes/Lighting/Direct/DirectLightingUniformData.h"
 
 class DirectLightingCS final : public GlobalShader<DirectLightingCS>
 {
 public:
-	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, )
+	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, DirectLightingCS)
 	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, DirectDiffuse)
 	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, DirectSpecular)
 	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, DirectSubsurface)
@@ -24,7 +23,10 @@ public:
 	SHADER_PARAMETER_CBUFFER(ViewCameraUniformData, ViewCamera)
 	SHADER_PARAMETER_CBUFFER(ViewTemporalUniformData, ViewTemporal)
 	SHADER_PARAMETER_CBUFFER(SceneLightingUniformData, SceneLighting)
-	SHADER_PARAMETER_CBUFFER(DirectLightingUniformData, DirectLightingConstants)
+	SHADER_PARAMETER(std::uint32_t, DirectLightingEvaluateDiffuse)
+	SHADER_PARAMETER(std::uint32_t, DirectLightingEvaluateSpecular)
+	SHADER_PARAMETER(std::uint32_t, DirectLightingEvaluateSubsurface)
+	SHADER_PARAMETER(std::uint32_t, DirectLightingEvaluateShadows)
 	SHADER_PARAMETER_BUFFER_SRV(DirectionalLightGpuData, DirectionalLights)
 	SHADER_PARAMETER_BUFFER_SRV(PointLightGpuData, PointLights)
 	SHADER_PARAMETER_BUFFER_SRV(SpotLightGpuData, SpotLights)

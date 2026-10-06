@@ -6,6 +6,7 @@
 #include "Pipeline/RenderPassRuntimeCache.h"
 #include "Pipeline/RasterPassRenderState.h"
 #include "Scene/RayTracing/RayTracingShaderTablePlan.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 
 #include <algorithm>
 #include <cassert>
@@ -28,7 +29,12 @@
 class FrameGraphBuilder final
 {
 public:
-	FrameGraphBuilder(FrameGraph& frameGraph, const RenderPassRuntimeCache& renderPassRuntimeCache) noexcept;
+	FrameGraphBuilder(
+	    FrameGraph& frameGraph,
+	    const RenderPassRuntimeCache& renderPassRuntimeCache,
+	    const ViewportRenderRequest& viewportRequest) noexcept;
+
+	RenderViewMode GetViewMode() const noexcept { return m_viewportRequest.ViewMode; }
 
 	template <typename TVertexShader, typename TPixelShader, typename TParameters, typename TDrawCollaborator> void Draw(
 	    TypedPassParameterInstance<TParameters>& parameters,
@@ -216,7 +222,7 @@ public:
 	{
 		auto* parameterInstance = &parameters;
 		m_frameGraph.m_passParameterSetups.emplace_back(
-		    [parameterInstance, setup = std::forward<TCallback>(callback)]() mutable { setup(parameterInstance->GetFields()); });
+		    [parameterInstance, setup = std::forward<TCallback>(callback)]() mutable { setup(*parameterInstance); });
 	}
 
 	template <typename TValue, typename TCallback> void AddParameterSetup(TCallback&& callback)
@@ -229,7 +235,7 @@ public:
 	{
 		auto* parameterInstance = &parameters;
 		m_frameGraph.AddParameterSetup<TValue>([parameterInstance, setup = std::forward<TCallback>(callback)](const TValue& value) mutable
-		    { setup(parameterInstance->GetFields(), value); });
+		    { setup(*parameterInstance, value); });
 	}
 
 	template <typename TParameters, typename TCallback> void AddResourceProductionSetup(
@@ -241,7 +247,7 @@ public:
 		FrameGraph* frameGraph = &m_frameGraph;
 		m_frameGraph.m_resourceProductionSetups.emplace_back(
 		    [parameterInstance, frameGraph, resource, setup = std::forward<TCallback>(callback)]() mutable
-		    { setup(parameterInstance->GetFields(), frameGraph->HasBeenProduced(resource)); });
+		    { setup(*parameterInstance, frameGraph->HasBeenProduced(resource)); });
 	}
 
 	FrameGraphTextureHandle ImportBackBuffer(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
@@ -355,4 +361,5 @@ private:
 
 	FrameGraph& m_frameGraph;
 	const RenderPassRuntimeCache& m_renderPassRuntimeCache;
+	const ViewportRenderRequest& m_viewportRequest;
 };

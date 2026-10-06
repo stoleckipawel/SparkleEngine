@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-struct ReferencePathTracerUniformData final
+struct ReferencePathTracerWork final
 {
 	static constexpr std::uint32_t WorkFlagTrace = 1u << 0u;
 	static constexpr std::uint32_t WorkFlagClearDisplay = 1u << 1u;
@@ -17,5 +17,3 @@ struct ReferencePathTracerUniformData final
 	std::uint32_t PriorSampleCount = 0u;
 	std::uint32_t WorkFlags = 0u;
 };
-
-static_assert(sizeof(ReferencePathTracerUniformData) == 32u);

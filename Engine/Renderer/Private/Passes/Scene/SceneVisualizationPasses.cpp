@@ -5,13 +5,9 @@
 #include "Passes/Visualization/GpuSceneVisualization.h"
 #include "Passes/Visualization/LightingVisualization.h"
 
-void AddSceneVisualizationPasses(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    RenderViewMode viewMode,
-    RenderFrameGraphResources& resources)
+void AddSceneVisualizationPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, RenderFrameGraphResources& resources)
 {
-	AddGBufferVisualizationPass(builder, sceneExtent, viewMode, resources);
-	AddLightingVisualizationPass(builder, sceneExtent, viewMode, resources);
-	AddGpuSceneVisualizationPass(builder, sceneExtent, viewMode, resources);
+	AddGBufferVisualizationPass(builder, sceneExtent, resources);
+	AddLightingVisualizationPass(builder, sceneExtent, resources);
+	AddGpuSceneVisualizationPass(builder, sceneExtent, resources);
 }

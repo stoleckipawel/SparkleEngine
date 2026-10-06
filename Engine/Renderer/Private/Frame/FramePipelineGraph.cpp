@@ -38,7 +38,6 @@ RenderFrameGraphSettings FramePipeline::ResolveFrameGraphSettings() const noexce
 	return RenderFrameGraphSettings{
 	    .RenderExtent = ResolveSceneRenderExtent(m_viewportRenderRequest.ViewMode, outputExtent, configuredRenderExtent),
 	    .OutputExtent = outputExtent,
-	    .UseRayReconstruction = ShouldUseRayReconstruction(m_viewportRenderRequest.ViewMode),
 	    .OutputFormat = m_deviceServices.GetRenderHardwareInterface().GetPresentationService().GetPresentColorFormat(),
 	    .ExposureMeteringMethod = displaySettings.ExposureMeteringMethod,
 	    .PresentationTarget = ShouldOutputToBackBuffer() ? FramePresentationTarget::BackBuffer : FramePresentationTarget::ViewportProduct,
@@ -55,7 +54,7 @@ void FramePipeline::InitializeFrameGraph(const RenderFrameGraphSettings& setting
 	RenderRayTracingScene& rayTracingScene = m_renderScene->GetRayTracingScene();
 	rayTracingScene.BeginGraphBuild();
 	auto frameGraph = std::make_unique<FrameGraph>(&m_deviceServices.GetRenderHardwareInterface(), &m_window);
-	FrameGraphBuilder builder(*frameGraph, m_renderPassRuntimeCache);
+	FrameGraphBuilder builder(*frameGraph, m_renderPassRuntimeCache, m_viewportRenderRequest);
 	RenderFrameGraphResources resources = BuildRenderFrameGraph(builder, settings);
 	ExportViewportFrameProducts(builder, settings, resources);
 
@@ -63,7 +62,7 @@ void FramePipeline::InitializeFrameGraph(const RenderFrameGraphSettings& setting
 	m_builtGBufferAlgorithm = CVarGBufferAlgorithm.Get();
 	m_builtRayTracingGraphGeneration = rayTracingScene.GetGraphGeneration();
 	m_builtShaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration();
-	m_builtSceneRenderingTopologyIdentity = GetSceneRenderingTopologyIdentity(m_viewportRenderRequest.ViewMode, settings);
+	m_builtSceneRenderingTopologyIdentity = GetSceneRenderingTopologyIdentity(m_viewportRenderRequest.ViewMode);
 	m_frameResources = resources;
 	m_imageProviderFrameGraphKey = m_imageProviders->GetFrameGraphKey();
 	m_frameGraph = std::move(frameGraph);
@@ -130,7 +129,7 @@ void FramePipeline::RefreshGraphForTopology() noexcept
 	const GBufferAlgorithm gBufferAlgorithm = CVarGBufferAlgorithm.Get();
 	const std::uint64_t rayTracingGraphGeneration = m_renderScene->GetRayTracingScene().GetGraphGeneration();
 	const std::uint64_t shaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration();
-	const std::uint64_t sceneTopologyIdentity = GetSceneRenderingTopologyIdentity(m_viewportRenderRequest.ViewMode, settings);
+	const std::uint64_t sceneTopologyIdentity = GetSceneRenderingTopologyIdentity(m_viewportRenderRequest.ViewMode);
 	if (providerChanged || settings != m_frameGraphSettings || gBufferAlgorithm != m_builtGBufferAlgorithm
 	    || rayTracingGraphGeneration != m_builtRayTracingGraphGeneration || shaderGeneration != m_builtShaderGeneration
 	    || sceneTopologyIdentity != m_builtSceneRenderingTopologyIdentity)

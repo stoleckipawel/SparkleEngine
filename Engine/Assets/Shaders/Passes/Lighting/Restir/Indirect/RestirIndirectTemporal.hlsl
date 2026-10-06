@@ -1,6 +1,5 @@
 #include "/Engine/Resources/ViewTemporalUniformData.hlsli"
 
-#include "/Engine/Lighting/RestirIndirectLightingUniform.hlsli"
 #include "/Engine/Passes/GBuffer/MotionVector.hlsli"
 
 RWTexture2D<float4> TemporalReservoirSampleTexture;

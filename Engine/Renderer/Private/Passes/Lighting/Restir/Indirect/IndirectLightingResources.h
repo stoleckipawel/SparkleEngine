@@ -5,8 +5,4 @@
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
 
-void CreateIndirectLightingResources(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    bool createRayReconstructionGuides,
-    RenderFrameGraphResources& resources);
+void CreateIndirectLightingResources(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, RenderFrameGraphResources& resources);

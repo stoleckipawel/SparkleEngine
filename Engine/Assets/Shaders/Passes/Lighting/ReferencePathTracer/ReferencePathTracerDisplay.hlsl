@@ -1,4 +1,4 @@
-#include "/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerUniformData.hlsli"
+#include "/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerWorkFlags.hlsli"
 #include "/Engine/RayTracing/PathAccumulation.hlsli"
 
 Texture2D<float4> WorkingMean;

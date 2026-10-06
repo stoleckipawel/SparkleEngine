@@ -6,6 +6,7 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Lighting/Direct/DirectLightReservoirSpatialShader.h"
 #include "Passes/Lighting/Direct/DirectLightingControls.h"
+#include "Passes/Lighting/Shadows/DirectShadowControls.h"
 #include "Passes/Lighting/Direct/DirectLightReservoirTemporalShader.h"
 #include "ShaderData/SceneShaderParameters.h"
 
@@ -27,10 +28,12 @@ static void BindDirectLightReservoirSurface(FrameGraphBuilder& builder, Paramete
 	        subsurfaceInput = gbuffer.Subsurface,
 	        diffuseOutput = resources.Transient.Lighting.DirectDiffuse,
 	        specularOutput = resources.Transient.Lighting.DirectSpecular,
-	        subsurfaceOutput = resources.Transient.Lighting.DirectSubsurface](auto& fields)
+	        subsurfaceOutput = resources.Transient.Lighting.DirectSubsurface](auto& parameters)
 	    {
-		    fields.DirectLightingConstants =
-		        BuildDirectLightingUniform(baseColorInput, materialInput, subsurfaceInput, diffuseOutput, specularOutput, subsurfaceOutput);
+		    parameters->DirectLightingEvaluateDiffuse = IsDirectDiffuseActive(baseColorInput, diffuseOutput) ? 1u : 0u;
+		    parameters->DirectLightingEvaluateSpecular = IsDirectSpecularActive(materialInput, specularOutput) ? 1u : 0u;
+		    parameters->DirectLightingEvaluateSubsurface = IsDirectSubsurfaceActive(subsurfaceInput, subsurfaceOutput) ? 1u : 0u;
+		    parameters->DirectLightingEvaluateShadows = IsDirectShadowsActive() ? 1u : 0u;
 	    });
 }
 
@@ -49,13 +52,13 @@ void AddDirectLightReservoirTemporalPass(
 
 	BindDirectLightReservoirSurface(builder, parameters, resources);
 
-	const auto invalidateTemporalHistory = [](auto& fields, bool hasBeenProduced)
+	const auto invalidateTemporalHistory = [](auto& parameters, bool hasBeenProduced)
 	{
 		if (!hasBeenProduced)
 		{
-			ViewTemporalUniformData temporal = *fields.ViewTemporal.GetValue();
+			ViewTemporalUniformData temporal = *parameters->ViewTemporal.GetValue();
 			temporal.HistoryValid = 0u;
-			fields.ViewTemporal = temporal;
+			parameters->ViewTemporal = temporal;
 		}
 	};
 

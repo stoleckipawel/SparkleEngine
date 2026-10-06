@@ -1,7 +1,7 @@
+#include "/Engine/Resources/ObjectShaderData.hlsli"
 #pragma once
 
 #include "/Engine/Resources/ViewCameraUniformData.hlsli"
-#include "/Engine/Resources/ObjectShaderData.hlsli"
 float4 PositionLocalToWorld(float4 localPosition)
 {
 	return mul(localPosition, WorldMatrix);

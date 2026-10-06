@@ -5,6 +5,7 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Lighting/Restir/Indirect/RestirIndirectSpatialShader.h"
 #include "Passes/Lighting/Restir/Indirect/IndirectLightingControls.h"
+#include "RayTracing/Effects/RestirLighting/RestirIndirectLightingCVars.h"
 #include "RayTracing/Effects/Shadows/RayTracedShadowPassData.h"
 #include "ShaderData/SceneShaderParameters.h"
 
@@ -35,8 +36,15 @@ void AddRestirIndirectSpatialPass(
 	    [baseColor = gbuffer.BaseColor,
 	        material = gbuffer.Material,
 	        diffuse = lighting.IndirectDiffuse,
-	        specular = lighting.IndirectSpecular](auto& fields)
-	    { fields.RestirIndirectConstants = BuildIndirectLightingUniform(baseColor, material, diffuse, specular); });
+	        specular = lighting.IndirectSpecular](auto& parameters)
+	    {
+		    parameters->RestirIndirectBounceCount = ResolveRestirIndirectBounceCount();
+		    parameters->RestirIndirectTemporalReuse = CVarRestirIndirectTemporalReuse.Get() ? 1u : 0u;
+		    parameters->RestirIndirectSpatialReuse = CVarRestirIndirectSpatialReuse.Get() ? 1u : 0u;
+		    parameters->RestirIndirectEvaluateDiffuse = IsIndirectDiffuseActive(baseColor, diffuse) ? 1u : 0u;
+		    parameters->RestirIndirectEvaluateSpecular = IsIndirectSpecularActive(material, specular) ? 1u : 0u;
+		    parameters->RestirIndirectTraceSecondaryShadows = IsIndirectShadowsActive() ? 1u : 0u;
+	    });
 
 	builder.Dispatch<RestirIndirectSpatialCS>(
 	    parameters,

@@ -2,6 +2,7 @@
 #include "Passes/Lighting/RealTimePathTracerPasses.h"
 
 #include "Frame/Graph/RenderFrameGraphSettings.h"
+#include "RayReconstruction/RayReconstructionSettings.h"
 #include "Passes/GBuffer/GBufferPasses.h"
 #include "Passes/Lighting/LightingComposite.h"
 #include "Passes/Lighting/RealTimePathTracerProducts.h"
@@ -12,10 +13,10 @@
 #include "Passes/Lighting/Shadows/DirectShadowControls.h"
 #include "Passes/Lighting/Restir/Indirect/IndirectLightingControls.h"
 
-std::uint64_t GetRealTimePathTracerTopologyIdentity(const RenderFrameGraphSettings& settings) noexcept
+std::uint64_t GetRealTimePathTracerTopologyIdentity() noexcept
 {
 	return (IsDirectLightingAdmitted() ? 1u : 0u) | (IsDirectShadowsActive() ? 2u : 0u) | (IsIndirectLightingAdmitted() ? 4u : 0u)
-	    | (HasRequiredRealTimePathTracerProducts(settings) ? 0u : 8u);
+	    | ((!IsRayReconstructionEnabled() || CVarIndirectSpecular.Get()) ? 0u : 8u);
 }
 
 void AddRealTimePathTracerPasses(
@@ -27,7 +28,7 @@ void AddRealTimePathTracerPasses(
 {
 	AddGBufferPasses(builder, settings.RenderExtent, gpuMeshCache, rayTracingScene, resources);
 
-	AddRestirLightingPasses(builder, settings.RenderExtent, settings.UseRayReconstruction, rayTracingScene, resources);
+	AddRestirLightingPasses(builder, settings.RenderExtent, rayTracingScene, resources);
 	AddLightingCompositePass(builder, settings.RenderExtent, resources);
 	AddSkyPass(builder, settings.RenderExtent, resources);
 

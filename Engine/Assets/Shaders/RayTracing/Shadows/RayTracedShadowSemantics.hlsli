@@ -4,18 +4,6 @@
 #include "/Engine/Lighting/LightSampling.hlsli"
 #include "/Engine/RayTracing/Shadows/RayTracedShadowSignals.hlsli"
 
-cbuffer RayTracedShadowConstants
-{
-	uint RayTracedDirectionalShadowsEnabled;
-	uint RayTracedLocalLightShadowsEnabled;
-	uint RayTracingHitInstanceCount;
-	uint RayTracingHitMaterialCount;
-	float RayTracedShadowNormalBias;
-	float RayTracedShadowMaxDistance;
-	float RayTracedShadowPadding2;
-	float RayTracedShadowPadding3;
-};
-
 struct RayTracedShadowRequest
 {
 	float3 OriginWorld;

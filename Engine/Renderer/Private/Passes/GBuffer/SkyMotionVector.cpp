@@ -17,11 +17,11 @@ void AddSkyMotionVectorPass(FrameGraphBuilder& builder, RenderViewportExtent sce
 
 	builder.AddParameterSetup<RenderView>(
 	    parameters,
-	    [](auto& fields, const RenderView& view)
+	    [](auto& parameters, const RenderView& view)
 	    {
-		    fields.View = view.uniform;
-		    fields.ViewCamera = view.cameraUniform;
-		    fields.ViewTemporal = view.temporalUniform;
+		    parameters->View = view.uniform;
+		    parameters->ViewCamera = view.cameraUniform;
+		    parameters->ViewTemporal = view.temporalUniform;
 	    });
 
 	builder.DispatchAsync<SkyMotionVectorCS>(

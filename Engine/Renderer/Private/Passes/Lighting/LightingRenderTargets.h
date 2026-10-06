@@ -9,5 +9,4 @@ void CreateDirectLightingRenderTargets(FrameGraphBuilder& builder, RenderViewpor
 void CreateIndirectLightingRenderTargets(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
-    bool createRayReconstructionGuides,
     RenderFrameGraphResources& resources);

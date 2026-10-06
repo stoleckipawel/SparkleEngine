@@ -1,22 +1,22 @@
 #pragma once
 
+#include "ShaderData/ViewTemporalUniformData.h"
+#include "ShaderData/ViewCameraUniformData.h"
+#include "ShaderData/ViewUniformData.h"
 #include "ShaderParameters/ShaderParameterStruct.h"
 #include "RHI/Public/Shaders/Authoring/GlobalShader.h"
 
 #include "ShaderData/MeshInstanceShaderData.h"
-#include "ShaderData/MorphTargetShaderData.h"
 #include "ShaderData/PerObjectConstantBufferData.h"
-#include "ShaderData/ViewCameraUniformData.h"
-#include "ShaderData/ViewTemporalUniformData.h"
-#include "ShaderData/ViewUniformData.h"
+#include "ShaderData/MorphTargetShaderData.h"
 
 class GBufferVS final : public GlobalShader<GBufferVS>
 {
 public:
-	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, )
+	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, GBufferVS)
 	SHADER_PARAMETER_CBUFFER(ViewCameraUniformData, ViewCamera)
 	SHADER_PARAMETER_CBUFFER(ViewTemporalUniformData, ViewTemporal)
-	SHADER_PARAMETER_CBUFFER(MeshInstanceDrawConstantBufferData, MeshInstanceDraw)
+	SHADER_PARAMETER(std::uint32_t, FirstInstance)
 	SHADER_PARAMETER_BUFFER_SRV(MeshInstanceData, MeshInstances)
 	SHADER_PARAMETER_BUFFER_SRV(uint32_t, MeshInstanceSlots)
 	SHADER_PARAMETER_EXTERNAL_BUFFER_SRV(VertexSkinInfluenceData, SkinInfluences)
@@ -31,7 +31,7 @@ public:
 class GBufferPS final : public GlobalShader<GBufferPS>
 {
 public:
-	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, )
+	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, GBufferPS)
 	SHADER_PARAMETER_CBUFFER(ViewUniformData, View)
 	SHADER_PARAMETER_CBUFFER(PerObjectPSConstantBufferData, PerObjectPS)
 	SHADER_PARAMETER_CBUFFER(ViewTemporalUniformData, ViewTemporal)

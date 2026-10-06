@@ -4,7 +4,7 @@
 
 class FrameGraphBuilder;
 struct ReferencePathTracerGraphResources;
-struct ReferencePathTracerUniformData;
+struct ReferencePathTracerWork;
 struct RenderFrameGraphResources;
 
 void AddReferencePathTracerDisplayPass(
@@ -12,4 +12,4 @@ void AddReferencePathTracerDisplayPass(
     RenderViewportExtent extent,
     const RenderFrameGraphResources& resources,
     const ReferencePathTracerGraphResources& graphResources,
-    const ReferencePathTracerUniformData& uniformData);
+    const ReferencePathTracerWork& work);

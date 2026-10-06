@@ -148,6 +148,17 @@ void ShaderSourcePreprocessor::AppendExpandedInclude(
 std::string ShaderSourcePreprocessor::Load(std::string_view sourcePath, const ShaderCompileRequest& request)
 {
 	std::string sourceText;
+	if (request.ParameterStruct && !request.ParameterStruct->Values.empty())
+	{
+		const auto& descriptor = *request.ParameterStruct;
+		sourceText = "cbuffer " + descriptor.AutoParametersName + "\n{\n";
+		for (const auto& value : descriptor.Values)
+		{
+			sourceText += value.HlslType + " " + value.Name + " : packoffset(c" + std::to_string(value.OffsetInBytes / 16u) + "."
+			    + "xyzw"[value.OffsetInBytes % 16u / 4u] + ");\n";
+		}
+		sourceText += "};\n";
+	}
 	PreprocessContext context;
 	VisitFile(sourcePath, request, context, sourceText);
 	return sourceText;

@@ -30,7 +30,8 @@ namespace ShaderParameterLayoutAssembly
 		    .Visibility = field.Visibility == ShaderStageVisibility::None ? ShaderParameterLayoutBuilder::GetDefaultVisibility(stage)
 		                                                                  : field.Visibility,
 		    .ArrayCount = field.ArrayCount,
-		    .ValueSizeInBytes = field.ValueSizeInBytes};
+		    .ValueSizeInBytes = field.ValueSizeInBytes,
+		    .ValueLayoutHash = field.ValueLayoutHash};
 	}
 
 	std::uint32_t Category(const PassParameterDesc& parameter) noexcept
@@ -47,6 +48,7 @@ namespace ShaderParameterLayoutAssembly
 		return current.Parameter.Kind == incoming.Kind && current.Parameter.ResourceDomain == incoming.ResourceDomain
 		    && current.Parameter.Access == incoming.Access && current.Parameter.ArrayCount == incoming.ArrayCount
 		    && current.Parameter.ValueSizeInBytes == incoming.ValueSizeInBytes
+		    && current.Parameter.ValueLayoutHash == incoming.ValueLayoutHash
 		    && (current.Parameter.Kind != ShaderParameterSemanticKind::UniformData || current.ValueAlignmentInBytes == alignment);
 	}
 }

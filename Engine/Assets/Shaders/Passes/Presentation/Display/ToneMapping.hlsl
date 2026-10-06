@@ -4,14 +4,6 @@ Texture2D SceneColor;
 Texture2D ExposureTexture;
 RWTexture2D<float4> ToneMappedColor;
 
-cbuffer ToneMappingConstants
-{
-	uint ToneMapper;
-	uint ToneMappingPadding0;
-	uint ToneMappingPadding1;
-	uint ToneMappingPadding2;
-};
-
 [numthreads(8, 8, 1)]
 void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {

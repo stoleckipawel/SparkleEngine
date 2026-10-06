@@ -55,16 +55,16 @@ void AddRasterizedGBufferMeshPass(FrameGraphBuilder& builder, GpuMeshCache& gpuM
 	    [frameInput](const PreparedRenderScene& preparedScene) { frameInput->PreparedScene = std::cref(preparedScene); });
 	builder.AddParameterSetup<RenderView>(
 	    parameters,
-	    [frameInput](auto& fields, const RenderView& view)
+	    [frameInput](auto& parameters, const RenderView& view)
 	    {
 		    frameInput->View = std::cref(view);
 		    frameInput->Viewport = view.viewport;
 		    frameInput->Scissor = view.scissorRect;
 		    frameInput->Wireframe = view.viewMode == RenderViewMode::Wireframe;
-		    fields.Shader.Vertex.ViewCamera = view.cameraUniform;
-		    fields.Shader.Vertex.ViewTemporal = view.temporalUniform;
-		    fields.Shader.Pixel.View = view.uniform;
-		    fields.Shader.Pixel.ViewTemporal = view.temporalUniform;
+		    parameters->Shader.Vertex.ViewCamera = view.cameraUniform;
+		    parameters->Shader.Vertex.ViewTemporal = view.temporalUniform;
+		    parameters->Shader.Pixel.View = view.uniform;
+		    parameters->Shader.Pixel.ViewTemporal = view.temporalUniform;
 	    });
 
 	RasterPassRenderState renderState;

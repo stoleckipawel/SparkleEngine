@@ -16,10 +16,10 @@ void AddReferencePathTracerPasses(
 {
 	session.ReserveGraphResources(builder, settings.RenderExtent);
 	const ReferencePathTracerGraphResources& graphResources = session.GetGraphResources();
-	const ReferencePathTracerUniformData& uniformData = session.GetUniformData();
+	const ReferencePathTracerWork& work = session.GetWork();
 
-	AddReferencePathTracerTransportPass(builder, settings.RenderExtent, resources, graphResources, uniformData, session.m_rayTracingScene);
-	AddReferencePathTracerDisplayPass(builder, settings.RenderExtent, resources, graphResources, uniformData);
+	AddReferencePathTracerTransportPass(builder, settings.RenderExtent, resources, graphResources, work, session.m_rayTracingScene);
+	AddReferencePathTracerDisplayPass(builder, settings.RenderExtent, resources, graphResources, work);
 
 	PublishReferencePathTracerProducts(graphResources, resources);
 }

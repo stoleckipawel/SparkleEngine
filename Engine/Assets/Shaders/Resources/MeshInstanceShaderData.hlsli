@@ -41,12 +41,6 @@ struct JointMatrixData
 	row_major float4x4 Matrix;
 };
 
-cbuffer MeshInstanceDraw
-{
-	uint FirstInstance;
-	uint3 Padding;
-};
-
 StructuredBuffer<MeshInstanceData> MeshInstances;
 StructuredBuffer<uint> MeshInstanceSlots;
 StructuredBuffer<VertexSkinInfluenceData> SkinInfluences;

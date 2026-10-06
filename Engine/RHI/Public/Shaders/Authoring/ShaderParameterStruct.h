@@ -3,6 +3,7 @@
 #include "../../RHIAPI.h"
 #include "../../ShaderParameters/PassParameterLayout.h"
 #include "../ShaderReflection.h"
+#include "Core/Public/Hash/HashUtils.h"
 
 #include <cstdint>
 #include <span>
@@ -12,6 +13,8 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <DirectXMath.h>
+#include <algorithm>
 
 enum class ShaderParameterSamplerBindingPolicy : std::uint8_t
 {
@@ -32,14 +35,61 @@ struct ShaderParameterStructFieldDescriptor final
 	std::uint32_t ArrayCount = 1;
 	std::uint32_t ValueSizeInBytes = 0;
 	std::uint32_t ValueAlignmentInBytes = 0;
+	std::uint64_t ValueLayoutHash = 0;
 	bool Reflected = true;
 	ShaderParameterSamplerBindingPolicy SamplerPolicy = ShaderParameterSamplerBindingPolicy::None;
 };
+
+struct ShaderParameterValueDescriptor final
+{
+	std::string Name;
+	std::string HlslType;
+	std::uint32_t OffsetInBytes = 0;
+	std::uint32_t SizeInBytes = 0;
+};
+
+template <typename T> constexpr const char* GetShaderParameterValueType()
+{
+	if constexpr (std::is_same_v<T, float>)
+	{
+		return "float";
+	}
+	else if constexpr (std::is_same_v<T, std::uint32_t>)
+	{
+		return "uint";
+	}
+	else if constexpr (std::is_same_v<T, std::int32_t>)
+	{
+		return "int";
+	}
+	else if constexpr (std::is_same_v<T, DirectX::XMFLOAT2>)
+	{
+		return "float2";
+	}
+	else if constexpr (std::is_same_v<T, DirectX::XMFLOAT3>)
+	{
+		return "float3";
+	}
+	else if constexpr (std::is_same_v<T, DirectX::XMFLOAT4>)
+	{
+		return "float4";
+	}
+	else if constexpr (std::is_same_v<T, DirectX::XMFLOAT4X4>)
+	{
+		return "row_major float4x4";
+	}
+	else
+	{
+		static_assert(sizeof(T) == 0, "Unsupported shader parameter value type.");
+	}
+}
 
 struct ShaderParameterStructDescriptor final
 {
 	std::string Name;
 	std::vector<ShaderParameterStructFieldDescriptor> Fields;
+	std::vector<ShaderParameterValueDescriptor> Values;
+	std::string AutoParametersName;
 
 	bool IsEmpty() const noexcept { return Fields.empty(); }
 };
@@ -68,10 +118,55 @@ public:
 		ShaderParameterStructDescriptor descriptor;
 		descriptor.Name.assign(name);
 		descriptor.Fields = MutableFields();
+		descriptor.Values = MutableValues();
+		if (!descriptor.Values.empty())
+		{
+			descriptor.AutoParametersName = "AutoParameters_" + std::string(name);
+			std::uint32_t size = 0;
+			std::uint64_t layoutHash = Hash::kFnv64OffsetBasis;
+			for (auto& value : descriptor.Values)
+			{
+				if (value.SizeInBytes > 16u || size % 16u + value.SizeInBytes > 16u)
+				{
+					size = (size + 15u) & ~15u;
+				}
+				value.OffsetInBytes = size;
+				size += value.SizeInBytes;
+				layoutHash = Hash::ContinueFnv1a64(layoutHash, value.Name.data(), value.Name.size());
+				layoutHash = Hash::ContinueFnv1a64(layoutHash, value.HlslType.data(), value.HlslType.size());
+				layoutHash = Hash::ContinueFnv1a64Value(layoutHash, value.OffsetInBytes);
+				layoutHash = Hash::ContinueFnv1a64Value(layoutHash, value.SizeInBytes);
+			}
+			descriptor.Fields.push_back(
+			    ShaderParameterStructFieldDescriptor{
+			        .Name = descriptor.AutoParametersName,
+			        .Kind = CookedShaderResourceKind::ConstantBuffer,
+			        .Dimension = CookedShaderResourceDimension::Buffer,
+			        .SemanticKind = ShaderParameterSemanticKind::UniformData,
+			        .ResourceDomain = ShaderParameterResourceDomain::Uniform,
+			        .ValueSizeInBytes = (size + 15u) & ~15u,
+			        .ValueAlignmentInBytes = 16u,
+			        .ValueLayoutHash = Hash::FinalizeFnv1a64(layoutHash)});
+		}
 		return descriptor;
 	}
 
+	template <typename T> static void AddValue(std::string_view name)
+	{
+		auto& values = MutableValues();
+		if (std::ranges::any_of(values, [name](const auto& value) { return value.Name == name; }))
+		{
+			throw std::logic_error("Duplicate shader parameter value: " + std::string(name));
+		}
+		values.push_back({std::string(name), GetShaderParameterValueType<T>(), 0u, static_cast<std::uint32_t>(sizeof(T))});
+	}
+
 private:
+	static std::vector<ShaderParameterValueDescriptor>& MutableValues()
+	{
+		static std::vector<ShaderParameterValueDescriptor> values;
+		return values;
+	}
 	static std::vector<ShaderParameterStructFieldDescriptor>& MutableFields()
 	{
 		static std::vector<ShaderParameterStructFieldDescriptor> fields;

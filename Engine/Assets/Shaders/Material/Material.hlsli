@@ -1,6 +1,6 @@
+#include "/Engine/Resources/ObjectShaderData.hlsli"
 #pragma once
 
-#include "/Engine/Resources/ObjectShaderData.hlsli"
 #include "/Engine/Resources/Samplers.hlsli"
 #include "/Engine/Geometry/Basis.hlsli"
 #include "/Engine/Geometry/PixelInput.hlsli"

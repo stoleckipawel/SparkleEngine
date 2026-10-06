@@ -12,7 +12,8 @@ class IRayReconstructionProvider;
 class RenderDeviceServices;
 class RenderHardwareInterface;
 class IUpscalerProvider;
-struct ImageProviderFrameInput;
+struct RenderFrameIdentity;
+struct RenderView;
 
 class RendererImageProviderStack final
 {
@@ -28,7 +29,7 @@ public:
 	void ResetHistory() noexcept;
 	void Refresh() noexcept;
 	void PollRetiredGenerations() noexcept;
-	void SetupFrame(const ImageProviderFrameInput& frameInput, bool useRayReconstruction);
+	void SetupFrame(const RenderView& view, const RenderFrameIdentity& identity);
 	RenderViewportExtent ResolveRenderExtent(RenderViewportExtent outputExtent) noexcept;
 
 	ImageProviderGraphKey GetFrameGraphKey() const noexcept;

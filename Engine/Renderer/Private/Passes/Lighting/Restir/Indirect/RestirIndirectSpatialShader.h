@@ -1,28 +1,26 @@
 #pragma once
 
+#include "ShaderData/SkyUniformData.h"
+#include "ShaderData/SceneLightingUniformData.h"
+#include "ShaderData/ViewTemporalUniformData.h"
+#include "ShaderData/ViewCameraUniformData.h"
+#include "ShaderData/ViewUniformData.h"
+#include "ShaderData/FrameUniformData.h"
 #include "ShaderParameters/ShaderParameterStruct.h"
 #include "RHI/Public/Shaders/Authoring/GlobalShader.h"
-#include "Renderer/Private/RayTracing/Effects/RestirLighting/RestirIndirectLightingUniformData.h"
-#include "Renderer/Private/RayTracing/Effects/Shadows/RayTracedShadowUniformData.h"
 #include "Renderer/Private/RayTracing/RayTracingHitData.h"
 #include "Renderer/Private/RayTracing/RayTracingShaderFeatureFlags.h"
 #include "Renderer/Private/Scene/Materials/MaterialTextureTableCapability.h"
-#include "ShaderData/FrameUniformData.h"
-#include "ShaderData/ViewUniformData.h"
-#include "ShaderData/ViewCameraUniformData.h"
-#include "ShaderData/ViewTemporalUniformData.h"
 #include "ShaderData/MeshInstanceShaderData.h"
 #include "ShaderData/MorphTargetShaderData.h"
 #include "ShaderData/LightGpuData.h"
-#include "ShaderData/SceneLightingUniformData.h"
-#include "ShaderData/SkyUniformData.h"
 
 class RestirIndirectSpatialCS final : public GlobalShader<RestirIndirectSpatialCS>
 {
 public:
 	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::InlineRayQuery;
 
-	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, )
+	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, RestirIndirectSpatialCS)
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, TemporalReservoirSampleTexture)
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, TemporalReservoirWeightTexture)
 	SHADER_PARAMETER_TEXTURE_UAV(RWTexture2D, CurrentReservoirSampleTexture)
@@ -34,7 +32,10 @@ public:
 	SHADER_PARAMETER_CBUFFER(ViewCameraUniformData, ViewCamera)
 	SHADER_PARAMETER_CBUFFER(ViewTemporalUniformData, ViewTemporal)
 	SHADER_PARAMETER_CBUFFER(SceneLightingUniformData, SceneLighting)
-	SHADER_PARAMETER_CBUFFER(RayTracedShadowUniformData, RayTracedShadowConstants)
+	SHADER_PARAMETER(std::uint32_t, RayTracedDirectionalShadowsEnabled)
+	SHADER_PARAMETER(std::uint32_t, RayTracedLocalLightShadowsEnabled)
+	SHADER_PARAMETER(float, RayTracedShadowNormalBias)
+	SHADER_PARAMETER(float, RayTracedShadowMaxDistance)
 	SHADER_PARAMETER_CBUFFER(SkyUniformData, Sky)
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, GBufferBaseColor)
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, GBufferWorldNormal)
@@ -56,6 +57,12 @@ public:
 	SHADER_PARAMETER_BUFFER_SRV(SpotLightGpuData, SpotLights)
 	SHADER_PARAMETER_BUFFER_SRV(RectLightGpuData, RectLights)
 	SHADER_PARAMETER_TEXTURE_SRV_ARRAY(Texture2D, MaterialTextureTable, MaterialTextureTableFixedCapacity)
-	SHADER_PARAMETER_CBUFFER(RestirIndirectLightingUniformData, RestirIndirectConstants)
+	SHADER_PARAMETER(std::uint32_t, RestirIndirectBounceCount)
+	SHADER_PARAMETER(std::uint32_t, RestirIndirectTemporalReuse)
+	SHADER_PARAMETER(std::uint32_t, RestirIndirectSpatialReuse)
+	SHADER_PARAMETER(std::uint32_t, RestirIndirectEvaluateDiffuse)
+	SHADER_PARAMETER(std::uint32_t, RestirIndirectEvaluateSpecular)
+	SHADER_PARAMETER(std::uint32_t, RestirIndirectTraceSecondaryShadows)
+	SHADER_PARAMETER(std::uint32_t, RestirIndirectWriteReconstructionGuides)
 	END_SHADER_PARAMETER_STRUCT()
 };

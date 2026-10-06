@@ -10,5 +10,4 @@ struct RenderFrameGraphResources;
 FrameGraphTextureHandle AddDisplayMappingPass(
     FrameGraphBuilder& builder,
     RenderViewportExtent outputExtent,
-    RenderViewMode viewMode,
     const RenderFrameGraphResources& resources);

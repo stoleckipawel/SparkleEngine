@@ -29,6 +29,7 @@ ShaderParameterSignature BuildShaderParameterSignature(const PassParameterLayout
 		hash = Hash::ContinueFnv1a64Value(hash, parameter.Visibility);
 		hash = Hash::ContinueFnv1a64Value(hash, parameter.ArrayCount);
 		hash = Hash::ContinueFnv1a64Value(hash, parameter.ValueSizeInBytes);
+		hash = Hash::ContinueFnv1a64Value(hash, parameter.ValueLayoutHash);
 	}
 	return Hash::FinalizeFnv1a64(hash);
 }

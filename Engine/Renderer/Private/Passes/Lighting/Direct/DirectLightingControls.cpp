@@ -1,7 +1,6 @@
 #include "PCH.h"
 #include "Passes/Lighting/Direct/DirectLightingControls.h"
 
-#include "Passes/Lighting/Shadows/DirectShadowControls.h"
 #include "Core/Public/Console/CVar.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include <format>
@@ -10,24 +9,9 @@ static ConsoleVariable<bool> CVarDirectDiffuse("r.Lighting.Direct.Diffuse", true
 static ConsoleVariable<bool> CVarDirectSpecular("r.Lighting.Direct.Specular", true, "Evaluate direct specular lighting.");
 static ConsoleVariable<bool> CVarDirectSubsurface("r.Lighting.Direct.Subsurface", true, "Evaluate direct subsurface lighting.");
 
-bool IsDirectDiffuseEnabled() noexcept
-{
-	return CVarDirectDiffuse.Get();
-}
-
-bool IsDirectSpecularEnabled() noexcept
-{
-	return CVarDirectSpecular.Get();
-}
-
 bool IsDirectLightingAdmitted() noexcept
 {
-	return IsDirectDiffuseEnabled() || IsDirectSpecularEnabled() || IsDirectSubsurfaceEnabled();
-}
-
-bool IsDirectSubsurfaceEnabled() noexcept
-{
-	return CVarDirectSubsurface.Get();
+	return CVarDirectDiffuse.Get() || CVarDirectSpecular.Get() || CVarDirectSubsurface.Get();
 }
 
 static void RequireDirectLightingProduct(FrameGraphTextureHandle input, FrameGraphTextureHandle output, const char* lobe) noexcept
@@ -45,7 +29,7 @@ static void RequireDirectLightingProduct(FrameGraphTextureHandle input, FrameGra
 
 bool IsDirectDiffuseActive(FrameGraphTextureHandle input, FrameGraphTextureHandle output) noexcept
 {
-	if (!IsDirectDiffuseEnabled())
+	if (!CVarDirectDiffuse.Get())
 	{
 		return false;
 	}
@@ -55,7 +39,7 @@ bool IsDirectDiffuseActive(FrameGraphTextureHandle input, FrameGraphTextureHandl
 
 bool IsDirectSpecularActive(FrameGraphTextureHandle input, FrameGraphTextureHandle output) noexcept
 {
-	if (!IsDirectSpecularEnabled())
+	if (!CVarDirectSpecular.Get())
 	{
 		return false;
 	}
@@ -65,7 +49,7 @@ bool IsDirectSpecularActive(FrameGraphTextureHandle input, FrameGraphTextureHand
 
 bool IsDirectSubsurfaceActive(FrameGraphTextureHandle input, FrameGraphTextureHandle output) noexcept
 {
-	if (!IsDirectSubsurfaceEnabled())
+	if (!CVarDirectSubsurface.Get())
 	{
 		return false;
 	}
@@ -73,24 +57,9 @@ bool IsDirectSubsurfaceActive(FrameGraphTextureHandle input, FrameGraphTextureHa
 	return true;
 }
 
-DirectLightingUniformData BuildDirectLightingUniform(
-    FrameGraphTextureHandle baseColorInput,
-    FrameGraphTextureHandle materialInput,
-    FrameGraphTextureHandle subsurfaceInput,
-    FrameGraphTextureHandle diffuseOutput,
-    FrameGraphTextureHandle specularOutput,
-    FrameGraphTextureHandle subsurfaceOutput) noexcept
-{
-	return DirectLightingUniformData{
-	    .EvaluateDiffuse = IsDirectDiffuseActive(baseColorInput, diffuseOutput) ? 1u : 0u,
-	    .EvaluateSpecular = IsDirectSpecularActive(materialInput, specularOutput) ? 1u : 0u,
-	    .EvaluateSubsurface = IsDirectSubsurfaceActive(subsurfaceInput, subsurfaceOutput) ? 1u : 0u,
-	    .EvaluateShadows = IsDirectShadowsActive() ? 1u : 0u};
-}
-
 std::uint64_t AppendDirectLightingHistoryInvalidationHash(std::uint64_t hash) noexcept
 {
-	hash = Hash::ContinueFnv1a64Value(hash, IsDirectDiffuseEnabled());
-	hash = Hash::ContinueFnv1a64Value(hash, IsDirectSpecularEnabled());
-	return Hash::ContinueFnv1a64Value(hash, IsDirectSubsurfaceEnabled());
+	hash = Hash::ContinueFnv1a64Value(hash, CVarDirectDiffuse.Get());
+	hash = Hash::ContinueFnv1a64Value(hash, CVarDirectSpecular.Get());
+	return Hash::ContinueFnv1a64Value(hash, CVarDirectSubsurface.Get());
 }

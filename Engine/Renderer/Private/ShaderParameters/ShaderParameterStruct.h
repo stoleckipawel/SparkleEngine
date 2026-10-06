@@ -6,6 +6,20 @@
 #include <cstddef>
 #include <cstdint>
 
+struct FrameUniformData;
+struct ViewUniformData;
+struct ViewCameraUniformData;
+struct ViewTemporalUniformData;
+struct SceneLightingUniformData;
+struct SkyUniformData;
+struct RayTracingHitUniformData;
+struct PerObjectPSConstantBufferData;
+
+template <typename T> inline constexpr bool IsSupportedShaderUniformV = std::is_same_v<T, FrameUniformData>
+    || std::is_same_v<T, ViewUniformData> || std::is_same_v<T, ViewCameraUniformData> || std::is_same_v<T, ViewTemporalUniformData>
+    || std::is_same_v<T, SceneLightingUniformData> || std::is_same_v<T, SkyUniformData> || std::is_same_v<T, RayTracingHitUniformData>
+    || std::is_same_v<T, PerObjectPSConstantBufferData>;
+
 template <typename TResource, std::size_t ArrayCount = 1> struct ShaderTextureSRVField;
 
 template <std::size_t ArrayCount> struct ShaderTextureSRVField<Texture2D, ArrayCount>
@@ -44,13 +58,14 @@ template <typename TValue> struct ShaderBufferUAVField<RWStructuredBuffer<TValue
 	using Type = ShaderRWBuffer<TValue>;
 };
 
-#define BEGIN_SHADER_PARAMETER_STRUCT(StructName, Prefix)                                                        \
-	struct StructName                                                                                            \
-	{                                                                                                            \
-		using ThisShaderParameterStruct = StructName;                                                            \
-		static ::ShaderParameterStructDescriptor GetShaderParameterStructDescriptor()                            \
-		{                                                                                                        \
-			return ::ShaderParameterDescriptorRegistry<ThisShaderParameterStruct>::BuildDescriptor(#StructName); \
+#define BEGIN_SHADER_PARAMETER_STRUCT(StructName, Prefix)                                           \
+	struct StructName                                                                               \
+	{                                                                                               \
+		using ThisShaderParameterStruct = StructName;                                               \
+		static ::ShaderParameterStructDescriptor GetShaderParameterStructDescriptor()               \
+		{                                                                                           \
+			return ::ShaderParameterDescriptorRegistry<ThisShaderParameterStruct>::BuildDescriptor( \
+			    sizeof(#Prefix) > 1 ? #Prefix : #StructName);                                       \
 		}
 
 #if defined(SPARKLE_SHADER_CONTRACTS_ONLY)
@@ -70,7 +85,28 @@ template <typename TValue> struct ShaderBufferUAVField<RWStructuredBuffer<TValue
 	  }
 #endif
 
+#if defined(SPARKLE_SHADER_CONTRACTS_ONLY)
+  #define SPARKLE_REGISTER_SHADER_VALUE(Name)
+#else
+  #define SPARKLE_REGISTER_SHADER_VALUE(Name)                                                                                          \
+	  inline static const ::ShaderParameterValueAutoRegister<ThisShaderParameterStruct, decltype(Name)> AutoRegisterValueField_##Name{ \
+		  #Name,                                                                                                                       \
+		  &ThisShaderParameterStruct::Name};
+#endif
+
+#define SHADER_PARAMETER(ValueType, Name)                                                           \
+	ValueType Name{};                                                                               \
+	inline static const bool AutoRegisterValue_##Name = []                                          \
+	{                                                                                               \
+		::ShaderParameterDescriptorRegistry<ThisShaderParameterStruct>::AddValue<ValueType>(#Name); \
+		return true;                                                                                \
+	}();                                                                                            \
+	SPARKLE_REGISTER_SHADER_VALUE(Name)
+
 #define SHADER_PARAMETER_CBUFFER(UniformType, Name)                                                                      \
+	static_assert(                                                                                                       \
+	    ::IsSupportedShaderUniformV<UniformType>,                                                                        \
+	    "Uniform buffers are limited to shared globals and existing per-object data.");                                  \
 	::ShaderUniform<UniformType> Name{};                                                                                 \
 	inline static const ::ShaderParameterDescriptorAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
 	    #Name,                                                                                                           \

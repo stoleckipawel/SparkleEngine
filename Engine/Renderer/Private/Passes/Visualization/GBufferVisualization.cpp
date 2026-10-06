@@ -7,13 +7,9 @@
 #include "Passes/Visualization/GBufferVisualizationShader.h"
 #include "View/RenderView.h"
 
-void AddGBufferVisualizationPass(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    RenderViewMode viewMode,
-    const RenderFrameGraphResources& resources)
+void AddGBufferVisualizationPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
-	switch (viewMode)
+	switch (builder.GetViewMode())
 	{
 		case RenderViewMode::GBufferDiffuse:
 		case RenderViewMode::GBufferWorldNormal:
@@ -40,7 +36,7 @@ void AddGBufferVisualizationPass(
 	parameters->GBufferEmissive = builder.CreateSRV(gbuffer.Emissive);
 	parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
 
-	builder.AddParameterSetup<RenderView>(parameters, [](auto& fields, const RenderView& view) { fields.View = view.uniform; });
+	builder.AddParameterSetup<RenderView>(parameters, [](auto& parameters, const RenderView& view) { parameters->View = view.uniform; });
 
 	builder.Dispatch<GBufferVisualizationCS>(
 	    parameters,

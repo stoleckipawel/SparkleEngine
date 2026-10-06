@@ -6,14 +6,14 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerResources.h"
 #include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerShader.h"
-#include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerUniformData.h"
+#include "Passes/Lighting/ReferencePathTracer/ReferencePathTracerWork.h"
 
 void AddReferencePathTracerDisplayPass(
     FrameGraphBuilder& builder,
     RenderViewportExtent extent,
     const RenderFrameGraphResources& resources,
     const ReferencePathTracerGraphResources& graphResources,
-    const ReferencePathTracerUniformData& uniformData)
+    const ReferencePathTracerWork& work)
 {
 	auto& parameters = builder.AllocParameters<ReferencePathTracerDisplayCS>();
 	parameters->WorkingMean = builder.CreateSRV(graphResources.WorkingMean);
@@ -24,7 +24,17 @@ void AddReferencePathTracerDisplayPass(
 
 	builder.AddPassParameterSetup(
 	    parameters,
-	    [uniformData = &uniformData](auto& fields) { fields.ReferencePathTracerConstants = *uniformData; });
+	    [work = &work](auto& parameters)
+	    {
+		    parameters->SessionSeed = work->SessionSeed;
+		    parameters->ReplicateId = work->ReplicateId;
+		    parameters->SampleOrdinal = work->SampleOrdinal;
+		    parameters->FinitePathDiagnosticSurfaceVertices = work->FinitePathDiagnosticSurfaceVertices;
+		    parameters->FirstRow = work->FirstRow;
+		    parameters->RowCount = work->RowCount;
+		    parameters->PriorSampleCount = work->PriorSampleCount;
+		    parameters->WorkFlags = work->WorkFlags;
+	    });
 
 	builder.Dispatch<ReferencePathTracerDisplayCS>(
 	    "ReferencePathTracer.CommittedDisplay",

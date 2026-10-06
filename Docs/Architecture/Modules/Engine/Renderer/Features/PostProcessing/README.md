@@ -105,7 +105,7 @@ The family passes only when every applicable child contract passes and `CHK-POST
 
 ## Primary Source Routes
 
-- [`SceneRenderingPasses.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Scene/SceneRenderingPasses.cpp) and [`SceneDenoisingPasses.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Scene/SceneDenoisingPasses.cpp)
+- [`SceneRenderingPasses.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Scene/SceneRenderingPasses.cpp)
 - [`BuildRenderFrameGraph.cpp`](../../../../../../../Engine/Renderer/Private/Frame/Graph/BuildRenderFrameGraph.cpp)
 - [`PresentationPasses.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp), [`ToneMapping.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/ToneMapping.cpp), and [`OutputEncoding.cpp`](../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/OutputEncoding.cpp)
 - [`RendererImageProviderStack.cpp`](../../../../../../../Engine/Renderer/Private/Providers/RendererImageProviderStack.cpp)

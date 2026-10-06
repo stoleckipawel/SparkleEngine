@@ -40,10 +40,12 @@ void AddDirectLightingPass(FrameGraphBuilder& builder, RenderViewportExtent scen
 	        subsurfaceInput = gbuffer.Subsurface,
 	        diffuseOutput = lighting.DirectDiffuse,
 	        specularOutput = lighting.DirectSpecular,
-	        subsurfaceOutput = lighting.DirectSubsurface](auto& fields)
+	        subsurfaceOutput = lighting.DirectSubsurface](auto& parameters)
 	    {
-		    fields.DirectLightingConstants =
-		        BuildDirectLightingUniform(baseColorInput, materialInput, subsurfaceInput, diffuseOutput, specularOutput, subsurfaceOutput);
+		    parameters->DirectLightingEvaluateDiffuse = IsDirectDiffuseActive(baseColorInput, diffuseOutput) ? 1u : 0u;
+		    parameters->DirectLightingEvaluateSpecular = IsDirectSpecularActive(materialInput, specularOutput) ? 1u : 0u;
+		    parameters->DirectLightingEvaluateSubsurface = IsDirectSubsurfaceActive(subsurfaceInput, subsurfaceOutput) ? 1u : 0u;
+		    parameters->DirectLightingEvaluateShadows = IsDirectShadowsActive() ? 1u : 0u;
 	    });
 
 	builder.Dispatch<DirectLightingCS>(

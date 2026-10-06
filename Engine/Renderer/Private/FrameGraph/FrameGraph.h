@@ -40,7 +40,6 @@ class RenderCommandList;
 class RhiCommandSubmissionService;
 class FrameExecutionDiagnostics;
 class FrameGraphTransientAllocator;
-class FrameGraphSubmissionExecutor;
 class FrameGraphRecordingChunkRecorder;
 class FrameGraphBuilder;
 class TaskExecutor;
@@ -350,13 +349,6 @@ public:
 
 	ShaderAccelerationStructure CreateAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) const noexcept;
 	FrameGraphRasterPass BuildRasterPass(const PassParameterSet& parameters, const RasterPassRenderState& renderState) const;
-
-	template <typename TValue> ShaderUniform<TValue> Uniform(const TValue& value) const noexcept
-	{
-		ShaderUniform<TValue> field;
-		field = value;
-		return field;
-	}
 
 private:
 	using SetupCallback = std::function<bool(PassResourceBuilder&)>;

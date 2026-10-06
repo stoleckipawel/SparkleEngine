@@ -12,8 +12,4 @@ bool PrepareLightingVisualizationProducts(
     const RenderFrameGraphResources& resources,
     ViewportFrameProducts& products) noexcept;
 
-void AddLightingVisualizationPass(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    RenderViewMode viewMode,
-    const RenderFrameGraphResources& resources);
+void AddLightingVisualizationPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources);

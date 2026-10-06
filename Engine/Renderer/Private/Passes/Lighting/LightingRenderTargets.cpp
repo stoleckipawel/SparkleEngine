@@ -1,6 +1,7 @@
 #include "../../PCH.h"
 #include "Passes/Lighting/LightingRenderTargets.h"
 
+#include "Passes/Lighting/Restir/Indirect/IndirectLightingControls.h"
 #include "Frame/Graph/RenderFrameGraphFormats.h"
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
@@ -27,18 +28,14 @@ void CreateDirectLightingRenderTargets(FrameGraphBuilder& builder, RenderViewpor
 	lighting.DirectSubsurface = CreateLightingTexture(builder, "DirectSubsurface", sceneExtent, radianceFormat);
 }
 
-void CreateIndirectLightingRenderTargets(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    bool createRayReconstructionGuides,
-    RenderFrameGraphResources& resources)
+void CreateIndirectLightingRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, RenderFrameGraphResources& resources)
 {
 	LightingRenderTargets& lighting = resources.Transient.Lighting;
 	const PixelFormat radianceFormat = RenderFrameGraphFormats::SceneColor;
 	lighting.IndirectDiffuse = CreateLightingTexture(builder, "IndirectDiffuse", sceneExtent, radianceFormat);
 	lighting.IndirectSpecular = CreateLightingTexture(builder, "IndirectSpecular", sceneExtent, radianceFormat);
 
-	if (!createRayReconstructionGuides)
+	if (!IsIndirectLightingAdmitted())
 	{
 		return;
 	}

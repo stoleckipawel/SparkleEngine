@@ -35,6 +35,7 @@ struct PassParameterDesc
 	ShaderStageVisibility Visibility = ShaderStageVisibility::All;
 	std::uint32_t ArrayCount = 1;
 	std::uint32_t ValueSizeInBytes = 0;
+	std::uint64_t ValueLayoutHash = 0;
 
 	bool IsArray() const noexcept { return ArrayCount > 1; }
 

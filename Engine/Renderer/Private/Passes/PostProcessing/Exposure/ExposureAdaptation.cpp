@@ -3,7 +3,6 @@
 
 #include "Frame/Graph/RenderFrameGraphResources.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "Passes/PostProcessing/Exposure/ExposureSettings.h"
 #include "Passes/PostProcessing/Exposure/ExposureShader.h"
 #include "ShaderData/FrameUniformData.h"
 #include "View/RenderView.h"
@@ -21,19 +20,27 @@ void AddExposureAdaptationPass(
 
 	builder.AddParameterSetup<RenderView>(
 	    parameters,
-	    [](auto& fields, const RenderView& view) { fields.ExposureConstants = BuildExposureUniformData(view.displaySettings); });
+	    [](auto& parameters, const RenderView& view)
+	    {
+		    parameters->ExposureMode = static_cast<std::uint32_t>(view.displaySettings.ExposureMode);
+		    parameters->ExposureHistoryValid = 0u;
+		    parameters->ManualExposure = view.displaySettings.ManualExposure;
+		    parameters->ExposureCompensation = view.displaySettings.ExposureCompensation;
+		    parameters->ExposureTargetLuminance = view.displaySettings.ExposureTargetLuminance;
+		    parameters->ExposureMin = view.displaySettings.ExposureMin;
+		    parameters->ExposureMax = view.displaySettings.ExposureMax;
+		    parameters->ExposureAdaptationSpeedUp = view.displaySettings.ExposureAdaptationSpeedUp;
+		    parameters->ExposureAdaptationSpeedDown = view.displaySettings.ExposureAdaptationSpeedDown;
+	    });
 
-	builder.AddParameterSetup<FrameUniformData>(parameters, [](auto& fields, const FrameUniformData& frame) { fields.Frame = frame; });
+	builder.AddParameterSetup<FrameUniformData>(
+	    parameters,
+	    [](auto& parameters, const FrameUniformData& frame) { parameters->Frame = frame; });
 
 	builder.AddResourceProductionSetup(
 	    parameters,
 	    resources.History.Exposure.Previous,
-	    [](auto& fields, bool hasBeenProduced)
-	    {
-		    ExposureUniformData exposure = *fields.ExposureConstants.GetValue();
-		    exposure.ExposureHistoryValid = hasBeenProduced ? 1u : 0u;
-		    fields.ExposureConstants = exposure;
-	    });
+	    [](auto& parameters, bool hasBeenProduced) { parameters->ExposureHistoryValid = hasBeenProduced ? 1u : 0u; });
 
 	builder.DispatchAsync<ExposureCS>(parameters, ComputeDispatchDesc{1u, 1u, 1u});
 }

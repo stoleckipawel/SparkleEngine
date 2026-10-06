@@ -38,7 +38,7 @@ Vulkan currently refuses the external Streamline evaluation route instead of cla
 
 - Renderer settings/CVars express requested provider and quality; the provider stack owns readiness and resolved active state.
 - `AddSceneUpscalingPasses` visibly selects exactly one implemented presentation upscaler: Linear or NVIDIA DLSS. The selected provider and quality own the render extent, so DLSS NativeAA remains available at native resolution; generic provider evaluation remains below the concrete selector.
-- `AddSceneDenoisingPasses` independently inserts Ray Reconstruction when eligible. It consumes ReSTIR guides, writes a distinct render-resolution product, and changes only the input passed to the selected presentation upscaler.
+- `AddRestirRayReconstructionPass` reads the graph builder view context and feature-owned reconstruction policy, then independently inserts Ray Reconstruction when eligible. It consumes ReSTIR guides, writes a distinct render-resolution product, and changes only the input passed to the selected presentation upscaler.
 - Ray Reconstruction evaluates with equal input/output render extents and its provider's NativeAA mode. The selected presentation-upscaler quality controls only the later DLSS SR extent conversion; it does not turn Ray Reconstruction into the resolution owner.
 - Provider key/generation contributes to graph topology and prevents a graph from binding stale provider state.
 - Old provider generations retire after their last queue submissions complete.
@@ -98,4 +98,4 @@ This contract is **defined but unproved**. Linear, DLSS SR, and DLSS RR receive 
 
 - [`SceneUpscalingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Upscaling/SceneUpscalingPasses.cpp), [`PresentationPolicy.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPolicy.cpp), and [`NvidiaDlssUpscale.cpp`](../../../../../../../../Engine/Renderer/Private/Upscaling/NvidiaDlss/NvidiaDlssUpscale.cpp)
 - [`RendererImageProviderStack.cpp`](../../../../../../../../Engine/Renderer/Private/Providers/RendererImageProviderStack.cpp)
-- [`SceneDenoisingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Scene/SceneDenoisingPasses.cpp) and [`RestirRayReconstruction.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/Restir/Reconstruction/RestirRayReconstruction.cpp)
+- [`RestirRayReconstruction.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Lighting/Restir/Reconstruction/RestirRayReconstruction.cpp)

@@ -16,7 +16,6 @@ struct RenderFrameGraphSettings final
 {
 	RenderViewportExtent RenderExtent;
 	RenderViewportExtent OutputExtent;
-	bool UseRayReconstruction = false;
 	PixelFormat OutputFormat = PixelFormat::Unknown;
 	EngineExposureMeteringMethod ExposureMeteringMethod = EngineExposureMeteringMethod::ParallelReduction;
 	FramePresentationTarget PresentationTarget = FramePresentationTarget::ViewportProduct;
@@ -24,5 +23,3 @@ struct RenderFrameGraphSettings final
 
 	bool operator==(const RenderFrameGraphSettings&) const noexcept = default;
 };
-
-bool ShouldUseRayReconstruction(RenderViewMode viewMode) noexcept;

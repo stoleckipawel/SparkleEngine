@@ -11,9 +11,9 @@ bool IsRayReconstructionEnabled() noexcept
 	return CVarRayReconstructionMode.Get() != EngineRayReconstructionMode::Off;
 }
 
-std::uint32_t GetRayReconstructionModeKey() noexcept
+bool ShouldUseRayReconstruction(RenderViewMode viewMode) noexcept
 {
-	return static_cast<std::uint32_t>(CVarRayReconstructionMode.Get());
+	return viewMode == RenderViewMode::Lit && IsRayReconstructionEnabled();
 }
 
 const char* RayReconstructionModeToString(EngineRayReconstructionMode mode) noexcept

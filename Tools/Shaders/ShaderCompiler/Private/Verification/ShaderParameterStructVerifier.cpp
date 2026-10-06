@@ -5,6 +5,7 @@
 #include "Core/Public/Diagnostics/Verify.h"
 #include "Core/Public/Json/JsonWriter.h"
 
+#include <algorithm>
 #include <format>
 #include <sstream>
 
@@ -138,6 +139,37 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
     bool allowUnreflectedDeclarations)
 {
 	ShaderParameterStructVerificationResult result;
+
+	if (!descriptor.Values.empty())
+	{
+		const auto block = std::ranges::find_if(
+		    reflection.ConstantBuffers,
+		    [&descriptor](const auto& buffer) { return buffer.Name == descriptor.AutoParametersName; });
+		if (block != reflection.ConstantBuffers.end())
+		{
+			for (const auto& value : descriptor.Values)
+			{
+				const auto member =
+				    std::ranges::find_if(block->Members, [&value](const auto& reflected) { return reflected.Name == value.Name; });
+				if (member == block->Members.end() || member->OffsetInBytes != value.OffsetInBytes
+				    || member->SizeInBytes != value.SizeInBytes)
+				{
+					result.mismatches.push_back(
+					    std::format(
+					        "SC2007 automatic parameter layout mismatch: block='{}' value='{}' expectedOffset={} expectedSize={}",
+					        descriptor.AutoParametersName,
+					        value.Name,
+					        value.OffsetInBytes,
+					        value.SizeInBytes));
+				}
+			}
+		}
+		else if (!allowUnreflectedDeclarations)
+		{
+			result.mismatches.push_back(
+			    std::format("SC2007 automatic parameter block '{}' has no reflected members.", descriptor.AutoParametersName));
+		}
+	}
 
 	for (const ShaderParameterStructFieldDescriptor& field : descriptor.Fields)
 	{

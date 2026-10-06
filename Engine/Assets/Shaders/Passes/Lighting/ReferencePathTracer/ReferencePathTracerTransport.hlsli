@@ -8,7 +8,7 @@
 #include "/Engine/RayTracing/RayTracingSceneTrace.hlsli"
 #include "/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerDirectLighting.hlsli"
 #include "/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerSampler.hlsli"
-#include "/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerUniformData.hlsli"
+#include "/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerWorkFlags.hlsli"
 
 namespace ReferencePathTracer
 {

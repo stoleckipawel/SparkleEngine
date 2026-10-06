@@ -10,6 +10,5 @@ struct RenderFrameGraphSettings;
 void AddSceneUpscalingPasses(
     FrameGraphBuilder& builder,
     const RenderFrameGraphSettings& settings,
-    RenderViewMode viewMode,
     RendererImageProviderStack& imageProviders,
     RenderFrameGraphResources& resources);

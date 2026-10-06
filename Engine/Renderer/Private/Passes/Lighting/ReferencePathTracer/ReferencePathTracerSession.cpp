@@ -167,7 +167,7 @@ void ReferencePathTracerSession::CompletePendingCommit() noexcept
 
 void ReferencePathTracerSession::PrepareWork(RenderViewportExtent extent) noexcept
 {
-	m_uniformData = ReferencePathTracerUniformData{
+	m_work = ReferencePathTracerWork{
 	    .SessionSeed = 0u,
 	    .ReplicateId = 0u,
 	    .SampleOrdinal = m_committedSamples,
@@ -175,12 +175,11 @@ void ReferencePathTracerSession::PrepareWork(RenderViewportExtent extent) noexce
 	    .FirstRow = m_nextRow,
 	    .RowCount = (std::min) (WorkRowsPerDispatch, extent.Height - m_nextRow),
 	    .PriorSampleCount = m_committedSamples,
-	    .WorkFlags =
-	        ReferencePathTracerUniformData::WorkFlagTrace | (m_clearDisplay ? ReferencePathTracerUniformData::WorkFlagClearDisplay : 0u)};
-	m_preparedRowCount = m_uniformData.RowCount;
+	    .WorkFlags = ReferencePathTracerWork::WorkFlagTrace | (m_clearDisplay ? ReferencePathTracerWork::WorkFlagClearDisplay : 0u)};
+	m_preparedRowCount = m_work.RowCount;
 	if (m_nextRow + m_preparedRowCount == extent.Height)
 	{
-		m_uniformData.WorkFlags |= ReferencePathTracerUniformData::WorkFlagCommitPrefix;
+		m_work.WorkFlags |= ReferencePathTracerWork::WorkFlagCommitPrefix;
 	}
 	m_workPrepared = true;
 }
@@ -293,10 +292,10 @@ ViewportRenderProgress ReferencePathTracerSession::Update(
 	}
 	m_retentionAvailable = m_resources.CanRetain();
 
-	m_uniformData = {};
+	m_work = {};
 	if (m_clearDisplay)
 	{
-		m_uniformData.WorkFlags = ReferencePathTracerUniformData::WorkFlagClearDisplay;
+		m_work.WorkFlags = ReferencePathTracerWork::WorkFlagClearDisplay;
 	}
 	if (!m_paused && !m_pausePending && !m_pendingCommit && m_committedSamples < TargetSampleCount)
 	{
@@ -323,7 +322,7 @@ void ReferencePathTracerSession::OnFrameSubmitted(RhiSubmissionToken token) noex
 	}
 	if (m_workPrepared)
 	{
-		if ((m_uniformData.WorkFlags & ReferencePathTracerUniformData::WorkFlagCommitPrefix) != 0u)
+		if ((m_work.WorkFlags & ReferencePathTracerWork::WorkFlagCommitPrefix) != 0u)
 		{
 			m_pendingCommit =
 			    PendingCommit{.Submission = token, .ExecutionGeneration = m_executionGeneration, .Prefix = m_committedSamples + 1u};
@@ -337,7 +336,7 @@ void ReferencePathTracerSession::OnFrameSubmitted(RhiSubmissionToken token) noex
 	m_workPrepared = false;
 	m_clearDisplay = false;
 	m_resetVisible = false;
-	m_uniformData = {};
+	m_work = {};
 }
 
 void ReferencePathTracerSession::Suspend() noexcept

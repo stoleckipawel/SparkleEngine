@@ -3,7 +3,7 @@
 
 #include "/Engine/Resources/ViewCameraUniformData.hlsli"
 
-#include "/Engine/Lighting/DirectLightReservoir.hlsli"
+#include "/Engine/Lighting/DirectLightReservoirData.hlsli"
 #include "/Engine/Passes/GBuffer/GBufferUtils.hlsli"
 #include "/Engine/RayTracing/Shadows/RayTracedShadowSignalPacking.hlsli"
 #include "/Engine/RayTracing/Shadows/RayTracedShadowSemantics.hlsli"

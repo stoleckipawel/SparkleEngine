@@ -48,14 +48,3 @@ struct JointMatrixData
 static_assert(std::is_standard_layout_v<JointMatrixData>, "JointMatrixData must be standard-layout");
 static_assert(std::is_trivially_copyable_v<JointMatrixData>, "JointMatrixData must be trivially-copyable");
 static_assert(sizeof(JointMatrixData) == 64, "JointMatrixData must match the HLSL structured-buffer stride");
-
-struct alignas(256) MeshInstanceDrawConstantBufferData
-{
-	uint32_t FirstInstance = 0;
-	DirectX::XMUINT3 Padding = {0, 0, 0};
-};
-static_assert(std::is_standard_layout_v<MeshInstanceDrawConstantBufferData>);
-static_assert(std::is_trivially_copyable_v<MeshInstanceDrawConstantBufferData>);
-static_assert(alignof(MeshInstanceDrawConstantBufferData) >= 256);
-static_assert(sizeof(MeshInstanceDrawConstantBufferData) % 256 == 0);
-static_assert(sizeof(MeshInstanceDrawConstantBufferData) <= 64 * 1024);

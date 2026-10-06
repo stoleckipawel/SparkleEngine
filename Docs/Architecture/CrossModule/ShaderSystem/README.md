@@ -252,9 +252,9 @@ Graph construction uses that class directly:
 
 ```cpp
 auto& parameters = builder.AllocParameters<DirectLightingCS>();
-parameters.DirectDiffuse = builder.CreateUAV(directDiffuse);
-parameters.ShadowVisibility = builder.CreateSRV(shadowVisibility);
-parameters.View = viewUniforms;
+parameters->DirectDiffuse = builder.CreateUAV(directDiffuse);
+parameters->ShadowVisibility = builder.CreateSRV(shadowVisibility);
+parameters->View = viewUniforms;
 
 builder.Dispatch<DirectLightingCS>(parameters, groupCount);
 ```
@@ -287,6 +287,10 @@ Primary references:
 - [Epic RDG shader and render-target parameter examples](https://dev.epicgames.com/documentation/en-us/unreal-engine/render-dependency-graph-in-unreal-engine)
 - [Epic `FRenderTargetBinding`](https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/RenderCore/FRenderTargetBinding)
 - [NVIDIA NVRHI binding sets and framebuffers at `8e8c36e`](https://github.com/NVIDIA-RTX/NVRHI/blob/8e8c36e37558acec333204619b95d9d2fcdc4a79/doc/ProgrammingGuide.md)
+
+Per-pass scalar/vector/matrix values use `SHADER_PARAMETER(Type, Name)` and the same `parameters->Name` assignments as resources. The descriptor derives a shader-schema-specific `AutoParameters` block with explicit packing offsets; preprocessing emits the HLSL declarations, cooking verifies reflected offsets and sizes, and the value layout participates in compile and parameter signatures. Runtime metadata packs those fields into instance-owned storage before the existing upload/binding path consumes them. Pass authors do not create uniform payload structs or populate a second interface. Deferred setup callbacks receive that same parameter instance, so their assignments also use `parameters->`.
+
+`SHADER_PARAMETER_CBUFFER` remains for shared frame/view/scene globals and the existing per-object material data. These are explicit exceptions; feature-specific lighting, exposure, tone mapping, output encoding, and reference-work values use automatic parameters. The existing `MaterialData::ToPerObjectPSData()` conversion and `PerObjectPS` binding remain intact.
 
 `AllocParameters<Shader>()` means `Shader::Parameters`; it does not allocate a second schema. `Dispatch<Shader>()` resolves `ShaderRef<Shader>` from the active `GlobalShaderMap`, derives the default diagnostic label from the shader type, declares resource usages from the same parameter metadata, materializes the generation-bound layout/pipeline through the backend owner, and records the dispatch later. The caller sees none of the package, map, code-library, binding-layout, or pipeline-cache mechanics.
 
@@ -365,9 +369,9 @@ The effect owner declares one `RayTracingPipelineComposition` relating the typed
 
 ```cpp
 auto& parameters = builder.AllocParameters<RayTracingGBufferRGS>();
-parameters.View = viewUniforms;
-parameters.RayTracingScene = builder.CreateAccelerationStructureBinding(rayTracingScene);
-parameters.BaseColor = builder.CreateUAV(baseColor);
+parameters->View = viewUniforms;
+parameters->RayTracingScene = builder.CreateAccelerationStructureBinding(rayTracingScene);
+parameters->BaseColor = builder.CreateUAV(baseColor);
 
 builder.TraceRays<RayTracingGBufferRGS>("RayTracingGBuffer.Pipeline", composition, parameters, renderExtent);
 ```

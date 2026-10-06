@@ -1,4 +1,3 @@
-#include "/Engine/Lighting/RestirIndirectLightingUniform.hlsli"
 
 Texture2D<float4> CurrentReservoirSampleTexture;
 Texture2D<float4> CurrentReservoirWeightTexture;

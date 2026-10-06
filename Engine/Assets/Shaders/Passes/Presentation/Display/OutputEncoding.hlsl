@@ -3,14 +3,6 @@
 Texture2D DisplayLinearColor;
 RWTexture2D<float4> EncodedColor;
 
-cbuffer OutputEncodingConstants
-{
-	uint OutputColorEncoding;
-	uint OutputEncodingPadding0;
-	uint OutputEncodingPadding1;
-	uint OutputEncodingPadding2;
-};
-
 [numthreads(8, 8, 1)]
 void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {

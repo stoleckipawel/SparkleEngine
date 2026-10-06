@@ -15,7 +15,6 @@
 #include "Diagnostics/RendererMemoryMonitor.h"
 #include "Pipeline/RenderPassRuntimeCache.h"
 #include "Providers/RendererImageProviderStack.h"
-#include "Providers/ImageProviderFrameInput.h"
 #include "RayTracing/RayTracingCapabilityReport.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -228,8 +227,7 @@ void FramePipeline::PrepareFrame(const RenderViewInput& viewInput, const RenderF
 
 	RenderFrame& frame = PrepareRenderFrame(viewInput, time);
 	ViewportFrameProducts products = m_frameResources.ViewportProducts;
-	m_frameGraphExecutable =
-	    PrepareSceneRenderingProducts(frame.View.viewMode, m_frameGraphSettings, m_frameResources, products) && m_frameGraphExecutable;
+	m_frameGraphExecutable = PrepareSceneRenderingProducts(frame.View, m_frameResources, products) && m_frameGraphExecutable;
 	PublishViewportRenderProducts(
 	    m_viewportRenderProducts,
 	    m_viewportRenderRequest,
@@ -240,7 +238,7 @@ void FramePipeline::PrepareFrame(const RenderViewInput& viewInput, const RenderF
 	UpdateFrameHistory(*m_frameGraph, m_frameResources.History, frame.PreparedScene, frame.View, *m_renderViewState, *m_imageProviders);
 	if (m_frameGraphExecutable)
 	{
-		SetupImageProviderFrame(frame);
+		m_imageProviders->SetupFrame(frame.View, frame.Identity);
 	}
 	frame.RayTracingBindings = m_renderScene->PrepareRayTracingFrame(frame.PreparedScene, frame.View.rayTracingPlan);
 }
@@ -299,20 +297,6 @@ RenderFrame& FramePipeline::PrepareRenderFrame(const RenderViewInput& viewInput,
 	    *m_frameGraph);
 
 	return *frameSlot;
-}
-
-void FramePipeline::SetupImageProviderFrame(const RenderFrame& frame)
-{
-	m_imageProviders->SetupFrame(
-	    ImageProviderFrameInput{
-	        .RenderExtent = frame.View.renderExtent,
-	        .OutputExtent = frame.View.outputExtent,
-	        .FrameId = frame.Identity.FrameId,
-	        .ProviderGeneration = frame.Identity.ImageProviderGeneration,
-	        .Camera = frame.View.cameraUniform,
-	        .Temporal = frame.View.temporalUniform,
-	        .ResetHistory = frame.View.temporalUniform.HistoryValid == 0u},
-	    m_frameGraphSettings.UseRayReconstruction);
 }
 
 void FramePipeline::SubmitAndPresent(const UiRenderPacket& packet) noexcept

@@ -87,5 +87,4 @@ This contract is **source-present but unproved**. Passing source checks does not
 ## Primary Source Routes
 
 - [`PresentationPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp), [`DisplayMapping.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/DisplayMapping.cpp), [`ToneMapping.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/ToneMapping.cpp), and [`OutputEncoding.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/OutputEncoding.cpp)
-- [`OutputEncodingSettings.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/OutputEncodingSettings.cpp)
 - [`SceneRenderingPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Scene/SceneRenderingPasses.cpp) and [`PresentationPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp)

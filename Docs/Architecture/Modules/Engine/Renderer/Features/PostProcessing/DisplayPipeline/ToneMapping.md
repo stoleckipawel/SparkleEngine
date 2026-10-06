@@ -75,6 +75,6 @@ This contract is **defined but unproved**. It does not claim reference ACES colo
 
 - [`ToneMapping.hlsl`](../../../../../../../../Engine/Assets/Shaders/Passes/Presentation/Display/ToneMapping.hlsl)
 - [`ToneMapping.hlsli`](../../../../../../../../Engine/Assets/Shaders/Display/ToneMapping.hlsli)
-- [`ToneMappingSettings.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/ToneMappingSettings.cpp)
+- [`ViewportDisplaySettings.cpp`](../../../../../../../../Engine/Renderer/Private/View/ViewportDisplaySettings.cpp)
 - [`ToneMapping.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/Display/ToneMapping.cpp) and [`PresentationPasses.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/Presentation/PresentationPasses.cpp)
 

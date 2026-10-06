@@ -5,30 +5,24 @@
 #include "Frame/Graph/RenderFrameGraphSettings.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 
-#include <string_view>
-
-static void ExportTextureIfValid(FrameGraphBuilder& builder, FrameGraphTextureHandle handle, std::string_view name) noexcept
-{
-	if (handle.IsValid())
-	{
-		builder.ExportTexture(handle, name);
-	}
-}
-
 void ExportViewportFrameProducts(
     FrameGraphBuilder& builder,
     const RenderFrameGraphSettings& settings,
     const RenderFrameGraphResources& resources) noexcept
 {
-	ExportTextureIfValid(builder, resources.ViewportProducts.FinalColorLdr, "Viewport.FinalColorLdr");
-
-	if (HasAnyRenderOutputFlags(settings.RequestedOutputs, RenderOutputFlags::SceneDepth))
+	if (resources.ViewportProducts.FinalColorLdr.IsValid())
 	{
-		ExportTextureIfValid(builder, resources.ViewportProducts.SceneDepth, "Viewport.SceneDepth");
+		builder.ExportTexture(resources.ViewportProducts.FinalColorLdr, "Viewport.FinalColorLdr");
 	}
 
-	if (HasAnyRenderOutputFlags(settings.RequestedOutputs, RenderOutputFlags::Normals))
+	if (HasAnyRenderOutputFlags(settings.RequestedOutputs, RenderOutputFlags::SceneDepth)
+	    && resources.ViewportProducts.SceneDepth.IsValid())
 	{
-		ExportTextureIfValid(builder, resources.ViewportProducts.Normals, "Viewport.Normals");
+		builder.ExportTexture(resources.ViewportProducts.SceneDepth, "Viewport.SceneDepth");
+	}
+
+	if (HasAnyRenderOutputFlags(settings.RequestedOutputs, RenderOutputFlags::Normals) && resources.ViewportProducts.Normals.IsValid())
+	{
+		builder.ExportTexture(resources.ViewportProducts.Normals, "Viewport.Normals");
 	}
 }

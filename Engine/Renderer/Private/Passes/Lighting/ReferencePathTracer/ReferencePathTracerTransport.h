@@ -5,7 +5,7 @@
 class FrameGraphBuilder;
 class RenderRayTracingScene;
 struct ReferencePathTracerGraphResources;
-struct ReferencePathTracerUniformData;
+struct ReferencePathTracerWork;
 struct RenderFrameGraphResources;
 
 void AddReferencePathTracerTransportPass(
@@ -13,5 +13,5 @@ void AddReferencePathTracerTransportPass(
     RenderViewportExtent extent,
     const RenderFrameGraphResources& resources,
     const ReferencePathTracerGraphResources& graphResources,
-    const ReferencePathTracerUniformData& uniformData,
+    const ReferencePathTracerWork& work,
     RenderRayTracingScene& rayTracingScene);

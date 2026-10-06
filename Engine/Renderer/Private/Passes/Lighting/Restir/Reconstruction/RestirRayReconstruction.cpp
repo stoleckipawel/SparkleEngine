@@ -1,31 +1,32 @@
 #include "PCH.h"
+#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/Lighting/Restir/Reconstruction/RestirRayReconstruction.h"
 
 #include "Frame/Graph/RenderFrameGraphResources.h"
-#include "Frame/Graph/RenderFrameGraphSettings.h"
+#include "RayReconstruction/RayReconstructionSettings.h"
 #include "Passes/Lighting/Restir/Reconstruction/RestirRayReconstructionResources.h"
 #include "Providers/RendererImageProviderStack.h"
 #include "RayReconstruction/RayReconstructionPass.h"
 
 void AddRestirRayReconstructionPass(
     FrameGraphBuilder& builder,
-    const RenderFrameGraphSettings& settings,
+    RenderViewportExtent sceneExtent,
     RendererImageProviderStack& imageProviders,
     RenderFrameGraphResources& resources)
 {
-	if (!settings.UseRayReconstruction)
+	if (!ShouldUseRayReconstruction(builder.GetViewMode()))
 	{
 		return;
 	}
 
-	const RayReconstructionPassResources providerInputs = CreateRestirRayReconstructionResources(builder, settings.RenderExtent, resources);
+	const RayReconstructionPassResources providerInputs = CreateRestirRayReconstructionResources(builder, sceneExtent, resources);
 
 	AddRayReconstructionPass(
 	    builder,
 	    *imageProviders.GetRayReconstructionProvider(),
 	    "DlssRayReconstruction",
-	    settings.RenderExtent,
-	    settings.RenderExtent,
+	    sceneExtent,
+	    sceneExtent,
 	    providerInputs);
 
 	resources.Presentation.SceneColorInput = providerInputs.OutputColor;
