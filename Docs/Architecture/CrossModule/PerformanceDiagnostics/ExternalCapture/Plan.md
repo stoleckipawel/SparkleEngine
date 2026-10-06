@@ -360,9 +360,9 @@ Run final MATRIX/COMBINATION/PACKAGE/OBSERVER/ADOPT and remaining failure checks
 | Engine absorption | D07/09 | E01-E11 current-source scan | S13/14; Q01-Q07, existing-consumer ownership | 0/0A/0B/0C, then each provider | AC12/13; FM08/09; EVOLUTION/LOCALITY/ARCH |
 | Launch/bootstrap | D01/03/06/09 | PIX/NGFX/RD API and engine precedence | S01–04; bootstrap + launch journey | 0/0A/1, 3–6 | AC01/02/07/08/12; FM01/03/07; LAUNCH/BOOT/COMBINATION/PACKAGE |
 | Target/next frame | D02/05 | PIX target, NGFX parameters, RD root/window | S05/06; target binding + viewport context | 1, 3–6 | AC03/05; FM02/06; TARGET/NATIVE/MATRIX |
-| Request/lifetime | D04/05/07/09 | Installed native status/teardown contracts | S07–10; controller/adapter + recovery UX | 0B, 1–6 | AC04/09/10/12; FM03/04/07; LIFE/COMBINATION/ARCH |
+| Request/lifetime | D04/05/07/09 | Installed native status/teardown contracts | S07–10/13; controller/adapter + recovery UX | 0B, 1–6 | AC04/09/10/12; FM03/04/07; LIFE/COMBINATION/ARCH |
 | Artifact/symbols | D05/06/08 | Vendor artifact and Shader System provenance | S10/11; native artifact + explicit Open | 1–8 | AC05/11; FM05/06; NATIVE/SYMBOL/UX/ADOPT |
-| Markers/observer/package | D04/06/08 | Godot backend, official event runtime, tool limits | S12/bounds; eligible membership + observer text | 1–8 | AC08/09/10; FM07; PACKAGE/OBSERVER/ARCH |
+| Markers/observer/package | D04/06/08/09 | Godot backend, official event runtime, tool limits | S12/bounds; eligible membership + observer text | 0A, 1–8 | AC08/09/10/12; FM07/08; PACKAGE/OBSERVER/EVOLUTION/ARCH |
 | Specialist activities | D01/05/08 per lane | Systems/AMD/ETW/PresentMon sources and runbook | S04/11; separate activity/handoff UX | 2, 4, 7–8 | AC07/11; FM01/06; MATRIX/SYMBOL/ADOPT |
 
 Abbreviated IDs refer to the complete `EC-D*`, `EC-S*`, `AC-EC-*`, `FM-EC-*`, and `CHK-EC-*` rows in their owners. Candidate report links supply result ownership; this plan is never a parallel PASS diary. Update/supersede completed transition instructions under Documentation Organization after adopted evidence, preserving research/design authorities.

@@ -1,5 +1,7 @@
 #include "/Engine/Passes/PostProcessing/Exposure/ExposureHistogram.hlsli"
 
+StructuredBuffer<uint> HistogramCounts;
+
 RWTexture2D<float4> LuminanceMomentsOutput;
 
 [numthreads(1, 1, 1)]

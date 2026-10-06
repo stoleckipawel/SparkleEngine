@@ -3,33 +3,7 @@
 
 #include <algorithm>
 #include <cassert>
-#include <string>
-#include <string_view>
 #include <vector>
-
-static void AddRawDependency(std::vector<FrameGraphPassIndex>& dependsOn, FrameGraphPassIndex dependency) noexcept
-{
-	if (dependency == INVALID_FRAME_GRAPH_PASS_INDEX)
-	{
-		return;
-	}
-
-	dependsOn.push_back(dependency);
-}
-
-static void RegisterResourceReader(FrameGraphResourceNode& resource, FrameGraphPassIndex readerPass) noexcept
-{
-	if (readerPass == INVALID_FRAME_GRAPH_PASS_INDEX)
-	{
-		return;
-	}
-
-	const auto it = std::find(resource.readersSinceLastWrite.begin(), resource.readersSinceLastWrite.end(), readerPass);
-	if (it == resource.readersSinceLastWrite.end())
-	{
-		resource.readersSinceLastWrite.push_back(readerPass);
-	}
-}
 
 void FrameGraphCompiler::BuildResourceDependencies() noexcept
 {
@@ -318,17 +292,21 @@ void FrameGraphCompiler::RegisterReadDependency(FrameGraphPassNode& passRecord, 
 {
 	if (resource.lastWriterPass != INVALID_FRAME_GRAPH_PASS_INDEX && resource.lastWriterPass != passRecord.index)
 	{
-		AddRawDependency(passRecord.dependsOn, resource.lastWriterPass);
+		passRecord.dependsOn.push_back(resource.lastWriterPass);
 	}
 
-	RegisterResourceReader(resource, passRecord.index);
+	const auto it = std::find(resource.readersSinceLastWrite.begin(), resource.readersSinceLastWrite.end(), passRecord.index);
+	if (it == resource.readersSinceLastWrite.end())
+	{
+		resource.readersSinceLastWrite.push_back(passRecord.index);
+	}
 }
 
 void FrameGraphCompiler::RegisterWriteDependency(FrameGraphPassNode& passRecord, FrameGraphResourceNode& resource) noexcept
 {
 	if (resource.lastWriterPass != INVALID_FRAME_GRAPH_PASS_INDEX && resource.lastWriterPass != passRecord.index)
 	{
-		AddRawDependency(passRecord.dependsOn, resource.lastWriterPass);
+		passRecord.dependsOn.push_back(resource.lastWriterPass);
 	}
 
 	for (const FrameGraphPassIndex readerPass : resource.readersSinceLastWrite)
@@ -338,7 +316,7 @@ void FrameGraphCompiler::RegisterWriteDependency(FrameGraphPassNode& passRecord,
 			continue;
 		}
 
-		AddRawDependency(passRecord.dependsOn, readerPass);
+		passRecord.dependsOn.push_back(readerPass);
 	}
 
 	resource.lastWriterPass = passRecord.index;

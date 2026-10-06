@@ -83,8 +83,9 @@ These rows are current source and registration membership only. Shader cooking, 
 
 | Program | Virtual source | Entry | Stage | Runtime consumer and boundary |
 | --- | --- | --- | --- | --- |
-| `ExposureReduceSceneCS` | `/Engine/Passes/PostProcessing/Exposure/ExposureReduceScene.hlsl` | `main` | Compute | First automatic-exposure reduction directly from scene color. |
-| `ExposureReduceTextureCS` | `/Engine/Passes/PostProcessing/Exposure/ExposureReduceTexture.hlsl` | `main` | Compute | Subsequent parallel reduction over a moments texture. |
+| `ExposureHistogramClearCS` | `/Engine/Passes/PostProcessing/Exposure/ExposureHistogramClear.hlsl` | `main` | Compute | Clears the fixed 512-bin luminance histogram. |
+| `ExposureHistogramBuildCS` | `/Engine/Passes/PostProcessing/Exposure/ExposureHistogramBuild.hlsl` | `main` | Compute | Builds finite scene-linear luminance counts through group-local atomics. |
+| `ExposureHistogramResolveCS` | `/Engine/Passes/PostProcessing/Exposure/ExposureHistogramResolve.hlsl` | `main` | Compute | Resolves the percentile-trimmed arithmetic mean into luminance moments. |
 | `ExposureDownsampleSceneCS` | `/Engine/Passes/PostProcessing/Exposure/ExposureDownsampleScene.hlsl` | `main` | Compute | First mip-chain metering downsample from scene color. |
 | `ExposureDownsampleTextureCS` | `/Engine/Passes/PostProcessing/Exposure/ExposureDownsampleTexture.hlsl` | `main` | Compute | Subsequent mip-chain downsample over intermediate moments. |
 | `ExposureCS` | `/Engine/Passes/PostProcessing/Exposure/Exposure.hlsl` | `main` | Compute | Resolves manual/automatic settings, luminance moments, prior history, clamps, compensation, and adaptation into current 1x1 exposure/history. |

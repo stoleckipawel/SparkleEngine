@@ -1,5 +1,7 @@
 #include "/Engine/Passes/PostProcessing/Exposure/ExposureHistogram.hlsli"
 
+RWStructuredBuffer<uint> HistogramCounts;
+
 Texture2D SceneColor;
 groupshared uint LocalHistogram[ExposureHistogram::BinCount];
 
@@ -26,7 +28,7 @@ void main(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadID)
 	}
 	GroupMemoryBarrierWithGroupSync();
 
-	[unroll]
+	[unroll(2)]
 	for (uint bin = threadIndex; bin < ExposureHistogram::BinCount; bin += 256u)
 	{
 		if (LocalHistogram[bin] != 0u)
