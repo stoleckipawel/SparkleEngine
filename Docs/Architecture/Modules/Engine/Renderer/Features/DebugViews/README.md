@@ -1,18 +1,18 @@
 # Debug Views
 
-**Status:** feature dossier; source-present mode migration, executable validation deferred
+**Status:** feature dossier; Show-flags implementation complete, family acceptance remains bounded
 
-**Current readiness:** **40/100** for the family; no family/release closure is claimed. Bounded delivery, admission and direct/indirect-family execution results are recorded by [Discovery](Discovery.md#current-candidate-evidence-and-permission), not inferred for the remaining mode/control matrix.
+**Current readiness:** **40/100** for the family; no family/release closure is claimed. Bounded delivery, admission and direct/indirect-family execution results are recorded by [Discovery](Done/Discovery.md#current-candidate-evidence-and-permission), not inferred for the remaining mode/control matrix.
 
 **Responsibility:** feature-local navigation and current evidence posture for Renderer debug-view controls, presentation, delivery, and acceptance
 
-**Verified:** mode baseline at `26803f97`; bounded Stage-6 execution on 2026-10-05 at `410d05ef` plus the dirty inputs recorded by Discovery. Unrelated work remains preserved.
+**Verified:** Show delivery at `82528cbe5edbcf729464fbefe6998435730920eb` on 2026-10-06, accepted by the user after bounded serial/threaded D3D12 controls checks and DXIL/SPIR-V shader cooking. Historical mode and lighting baselines retain their original evidence boundaries.
 
 **Architecture:** [Viewport Rendering Controls](Controls/README.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
 
-**Delivery:** [Discovery gate](Discovery.md), [Plan](Plan.md), and [Acceptance](Acceptance.md)
+**Current proof contract:** [Acceptance](Acceptance.md). [Completed delivery records](Done/README.md) retain the plan and discovery history.
 
-**Next implementation route:** DVP-4A-7 is selected. The Show menu is source-integrated and passes bounded serial/threaded menu/control probes. [Current candidate reconciliation](Discovery.md#stage-7-ui-admission) records changed lighting schemas that contradict the prior execution snapshot; resolving that overlap and refreshing affected proof remain necessary before Stage 7's complete exit or Stage 8 admission. The [ten-stage sequence](Plan.md#dvp-4a---existing-lighting-and-shadow-controls) retains the required execution gates. This does not advance family/release readiness.
+**Show delivery:** complete for the implemented feature set. The compact grouped menu, globally editable controls, initialized disabled contributions, scene/light classifications, and shader-parameter emissive control are implemented. Future controls extend their feature owner and the current [Show contract](Controls/ShowFlags.md). Historical delivery prompts are archived, not queued. This does not advance whole-family or release readiness.
 
 ## Current Source Shape
 
@@ -58,4 +58,4 @@ This is source presence, not pixel proof. The acceptance route must still exerci
 
 Any new mode must have a real production consumer. Any future independently selectable show control must be orthogonal to the selected mode and land with that consumer; it cannot recreate the removed parallel taxonomy.
 
-The [Lighting Show menu](Controls/ShowFlags.md#editor-interaction) presents five lobe and two shadow CVars through one shared authority. Open Show beside Viewmode to edit leaves, bulk parents or reset; console edits refresh its checks. There is no Renderer Show set or request/View transport. Indirect Subsurface is not advertised. [Discovery](Discovery.md#stage-7-ui-admission) separates executable menu/control proof from the lighting execution prerequisites currently being reconciled; prior native evidence is candidate-bound, not automatic proof for changed schemas. No measured GPU savings or release result is claimed.
+The [Show menu](Controls/ShowFlags.md#editor-interaction) presents fifteen feature-owned CVars: Sky, Static Meshes, Skinned Meshes, Emissive, four analytic light types, five lighting lobes, and two shadow controls. Open Show beside Viewmode to edit leaves, bulk groups, or defaults; console edits refresh its checks. Sky controls background and environment illumination independently of analytic lights. Emissive uses ordinary shader parameters while retaining authored material data. There is no Renderer Show set or request/View transport. Decals and Indirect Subsurface are not advertised because they have no implemented producer. No measured GPU savings or release result is claimed.

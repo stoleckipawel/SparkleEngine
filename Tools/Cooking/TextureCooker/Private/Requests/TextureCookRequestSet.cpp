@@ -5,19 +5,6 @@
 
 #include <utility>
 
-bool TextureCookPoliciesMatch(const TextureCookPolicy& lhs, const TextureCookPolicy& rhs) noexcept
-{
-	return lhs.colorSpace == rhs.colorSpace && lhs.mipPolicy == rhs.mipPolicy && lhs.mipFilter == rhs.mipFilter
-	    && lhs.colorProcessingPolicy == rhs.colorProcessingPolicy && lhs.textureGroup == rhs.textureGroup && lhs.dimension == rhs.dimension
-	    && lhs.channelMask == rhs.channelMask;
-}
-
-bool TextureCookRequestsMatch(const TextureCookRequest& lhs, const TextureCookRequest& rhs) noexcept
-{
-	return lhs.assetId == rhs.assetId && lhs.sourcePath == rhs.sourcePath && lhs.outputPath == rhs.outputPath
-	    && TextureCookPoliciesMatch(lhs.policy, rhs.policy);
-}
-
 void ValidateTextureCookRequest(const TextureCookRequest& request)
 {
 	if (request.assetId == InvalidTextureAssetId)
@@ -36,21 +23,28 @@ void ValidateTextureCookRequest(const TextureCookRequest& request)
 
 void TextureCookRequestSet::Clear() noexcept
 {
-	requestsById.clear();
-	requests.clear();
+	m_requestIndices.clear();
+	m_requests.clear();
 }
 
 void TextureCookRequestSet::Add(const TextureCookRequest& request)
 {
 	ValidateTextureCookRequest(request);
-	const auto existingRequest = requestsById.find(request.assetId);
-	if (existingRequest == requestsById.end())
+	const auto [position, inserted] = m_requestIndices.try_emplace(request.assetId, m_requests.size());
+	if (inserted)
 	{
-		requestsById.emplace(request.assetId, request);
-		requests.push_back(request);
+		try
+		{
+			m_requests.push_back(request);
+		}
+		catch (...)
+		{
+			m_requestIndices.erase(position);
+			throw;
+		}
 		return;
 	}
-	if (!TextureCookRequestsMatch(existingRequest->second, request))
+	if (m_requests[position->second] != request)
 	{
 		throw Diagnostics::Error("Texture cook request conflict for asset id '" + Formatting::FormatHexUInt64(request.assetId) + "'.");
 	}
@@ -58,7 +52,6 @@ void TextureCookRequestSet::Add(const TextureCookRequest& request)
 
 std::vector<TextureCookRequest> TextureCookRequestSet::ReleaseRequests() noexcept
 {
-	std::vector<TextureCookRequest> releasedRequests = std::move(requests);
-	requestsById.clear();
-	return releasedRequests;
+	m_requestIndices.clear();
+	return std::exchange(m_requests, {});
 }

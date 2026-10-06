@@ -6,16 +6,12 @@
 
 #include <algorithm>
 
-class AnimationPoseComposition final
+static DirectX::XMMATRIX ComposeJointTransform(const ECS::AnimationJointTransform& transform) noexcept
 {
-public:
-	static DirectX::XMMATRIX Compose(const ECS::AnimationJointTransform& transform) noexcept
-	{
-		return DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(&transform.Scale))
-		    * DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&transform.Rotation))
-		    * DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&transform.Translation));
-	}
-};
+	return DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(&transform.Scale))
+	    * DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&transform.Rotation))
+	    * DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&transform.Translation));
+}
 
 namespace AnimationPoseEvaluator
 {
@@ -58,7 +54,7 @@ namespace AnimationPoseEvaluator
 		}
 		for (const std::uint32_t jointIndex : skeleton.EvaluationOrder)
 		{
-			DirectX::XMMATRIX model = AnimationPoseComposition::Compose(localTransforms[jointIndex])
+			DirectX::XMMATRIX model = ComposeJointTransform(localTransforms[jointIndex])
 			    * DirectX::XMLoadFloat4x4(&skeleton.Resource->joints[jointIndex].parentSpaceTransform);
 			const std::uint32_t parent = skeleton.Resource->joints[jointIndex].parentJointIndex;
 			if (parent < modelSpaceTransforms.size())

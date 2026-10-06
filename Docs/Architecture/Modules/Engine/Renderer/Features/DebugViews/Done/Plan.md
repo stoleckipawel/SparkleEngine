@@ -1,10 +1,10 @@
 # Debug View Staged Delivery Plan
 
-**Status:** implementation plan; not proof of build, runtime, visual, backend, or release acceptance
+**Status:** archived implementation plan; Show-flags delivery closed on 2026-10-06 by user acceptance
 
-**Responsibility:** own dependency order, change maps, integration ledgers, stop conditions, and exit gates for Debug Views delivery.
+**Responsibility:** retain the historical dependency order, change maps, integration ledgers, and stage gates. The [archive index](README.md) records closure and routes current contracts; the historical prompts below are not an active implementation queue.
 
-**Current readiness:** **Not applicable** to this plan; see the [Debug Views dossier](README.md) and central [Renderer readiness row](../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** **Not applicable** to this plan; see the [Debug Views dossier](../README.md) and central [Renderer readiness row](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
 **Verified baseline:** 2026-10-04 at revision `26803f97` with an inspected dirty working tree; every implementation stage must re-audit its candidate.
 
@@ -12,11 +12,11 @@
 
 **DVP-4 plan revision:** `DVP-SF-IP-01`, 2026-10-04; drafted from `bbb9f7ed`, reconciled at handoff with `84b7c5a4` after the prior design changes were committed. Concurrent Editor work is outside this planning slice. Ten bounded stages refine CVar-driven feature execution; required discovery and prerequisite repairs are the first delivery work whenever the selected stage is not yet ready. This adds no executable evidence for DVP-0 through DVP-5.
 
-**Architecture authority:** [Viewport Rendering Controls](Controls/README.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
+**Architecture authority:** [Viewport Rendering Controls](../Controls/README.md) and [Debug View Presentation Architecture](../PresentationArchitecture.md)
 
 **Implementation authorization:** [Discovery](Discovery.md)
 
-**Feature acceptance:** [Acceptance](Acceptance.md)
+**Feature acceptance:** [Acceptance](../Acceptance.md)
 
 **Prerequisite-closure revision:** `ITER-DVP-PREREQ-04`, 2026-10-05 at `410d05ef`, with pre-existing Debug Views, lighting and shader edits preserved. Documentation-only: every selected stage includes automatic prerequisite closure; acceptance criteria and executable evidence are unchanged. Scope is this plan, not other feature plans.
 
@@ -26,7 +26,7 @@
 
 ## Stage Selection Includes Prerequisite Delivery
 
-The 2026-10-06 [Show-control contract](Controls/ShowFlags.md) supersedes earlier instructions below to make disabled diagnostics unavailable or reject Ray Reconstruction without indirect specular. All seven controls remain editable in every view mode. Disabled lobes produce intentional zero diagnostic outputs; Ray Reconstruction receives genuine GBuffer surface guides even when the indirect trace/reservoir chain is omitted. Historical stage evidence remains bound to its original candidate and does not prove this correction.
+The 2026-10-06 [Show-control contract](../Controls/ShowFlags.md) supersedes earlier instructions below to make disabled diagnostics unavailable or reject Ray Reconstruction without indirect specular. All seven controls remain editable in every view mode. Disabled lobes produce intentional zero diagnostic outputs; Ray Reconstruction receives genuine GBuffer surface guides even when the indirect trace/reservoir chain is omitted. Historical stage evidence remains bound to its original candidate and does not prove this correction.
 
 Selecting any stage in this plan selects its necessary dependency closure, even when predecessors or owning repairs were not separately queued. The executor must first establish missing prerequisites under the [Universal Execution Contract](#universal-execution-contract), then deliver and validate the requested stage. `After`, `Prerequisites`, `only`, `read-only discovery`, and a stage's non-goals constrain its own dependent work; they never prohibit the separately recorded prerequisite work needed to make that stage executable. This policy applies to DVP-0 through DVP-5, all DVP-4A/4B substages, and every copy-ready prompt. It takes precedence over a generic template instruction to end work solely because a prerequisite is missing.
 
@@ -81,11 +81,11 @@ This source shape is present in the current changelist. The Editor row remains u
 
 ## DVP-4 - Add Lighting Show Flags
 
-The [Lighting Show Menu And Feature Execution Controls](Controls/ShowFlags.md) target is delivered through feature-owned execution slices. This plan orders work; it does not redefine the activation, global scope, or UI semantics owned there.
+The [Lighting Show Menu And Feature Execution Controls](../Controls/ShowFlags.md) target is delivered through feature-owned execution slices. This plan orders work; it does not redefine the activation, global scope, or UI semantics owned there.
 
 ### DVP-4A - Existing Lighting And Shadow Controls
 
-**Plan identity:** `DVP-SF-IP-01`; staged refinement of the accepted [Show-menu design](Controls/ShowFlags.md), using the repository [staged-plan template](../../../../../../Engineering/Workflow/Templates/FeatureDeliveryPackage.md#scaffold-planmd--staged-delivery-and-copy-ready-prompts).
+**Plan identity:** `DVP-SF-IP-01`; staged refinement of the accepted [Show-menu design](../Controls/ShowFlags.md), using the repository [staged-plan template](../../../../../../../Engineering/Workflow/Templates/FeatureDeliveryPackage.md#scaffold-planmd--staged-delivery-and-copy-ready-prompts).
 
 **Current permission:** DVP-4A-7 is user-selected. [Discovery's UI admission](Discovery.md#stage-7-ui-admission) records its bounded menu/control result and lighting-schema overlap requiring prerequisite reconciliation. Stage 8 is not admitted or queued until that reconciliation and the complete Stage-7 exit pass. The [accepted admission ledger](Discovery.md#accepted-admission-ledger) remains the estimator/product/guide/diagnostic/topology authority; candidate results remain in FCR-REN-11, not this plan.
 
@@ -128,9 +128,9 @@ Stop conditions suspend unsafe dependent edits, not the repair loop. A discovery
 
 Only an exhausted dependency that genuinely requires unavailable hardware/access, new external authority, or a material user-only product choice permits an actionable handoff. State the exact unresolved requirement, attempted safe remedies, remaining input and resume point. Such a limit never authorizes a false pass, a weaker oracle, silent product/transport expansion or a fallback. This documentation change does not itself execute or accept any production stage.
 
-**Automated verification policy:** no stage requires a person to open the Editor, inspect screenshots, click widgets or perform manual keyboard/focus/layout checks. Use agent-run native fixtures, control-route probes, source/ABI checks and scoped builds/cooks for retained correctness obligations. Manual-only interaction/appearance checks are optional follow-up observations, not admission or completion gates; record them as outside this automated delivery scope, never as passed. Preserve the automated menu/console intent, batch, mode-isolation, product, GPU-execution, history and backend obligations in [Acceptance](Acceptance.md).
+**Automated verification policy:** no stage requires a person to open the Editor, inspect screenshots, click widgets or perform manual keyboard/focus/layout checks. Use agent-run native fixtures, control-route probes, source/ABI checks and scoped builds/cooks for retained correctness obligations. Manual-only interaction/appearance checks are optional follow-up observations, not admission or completion gates; record them as outside this automated delivery scope, never as passed. Preserve the automated menu/console intent, batch, mode-isolation, product, GPU-execution, history and backend obligations in [Acceptance](../Acceptance.md).
 
-1. Read `AGENTS.md`, `Docs/README.md`, [Change Integration](../../../../../../Engineering/Workflow/ChangeIntegration.md), [Change Lifecycle](../../../../../../Engineering/Workflow/ChangeLifecycle.md), the [Engineering task map](../../../../../../Engineering/README.md#choose-by-task), and the exact Show/Discovery/Acceptance and prior-stage artifacts. Select Renderer, Editor, ownership/copy/naming/style/concurrency/validation rules according to the changed responsibility; do not copy their standards into implementation.
+1. Read `AGENTS.md`, `Docs/README.md`, [Change Integration](../../../../../../../Engineering/Workflow/ChangeIntegration.md), [Change Lifecycle](../../../../../../../Engineering/Workflow/ChangeLifecycle.md), the [Engineering task map](../../../../../../../Engineering/README.md#choose-by-task), and the exact Show/Discovery/Acceptance and prior-stage artifacts. Select Renderer, Editor, ownership/copy/naming/style/concurrency/validation rules according to the changed responsibility; do not copy their standards into implementation.
 2. Record a small iteration control record in the existing change/report owner: stage ID, candidate revision and dirty boundary, prerequisite revisions, mapped AC/FM/CHK/RISK rows, intended outcome and permitted files/hooks. Preserve unrelated and concurrently appearing changes.
 3. Before editing, audit current owners, producers, consumers, lifetime, public APIs, CMake/shader-cook/generated membership and the frozen execution ledger. Source paths below are inspection starting points, not permission for every listed file to change.
 4. Work on one coherent selected stage or its recorded owning prerequisite repair at a time; apply the autonomous execution policy before handing off a failed gate. No new public type, state holder, helper, copy, configuration, variant or outside-feature hook without a current consumer, lifetime reason and accepted check. Register a feature CVar only in the stage delivering its real execution consumer.
@@ -144,9 +144,9 @@ Only an exhausted dependency that genuinely requires unavailable hardware/access
 #### Cross-Stage Invariants And Drift Stops
 
 - `IsEnabled` is accepted feature intent; `IsActive` adds actual path/consumer/prerequisite support. Off/inapplicable is not broken; enabled but unavailable cannot silently succeed.
-- Every stage preserves [AC-DVP-29](Acceptance.md#completion-criteria): direct feature-owned CVar Get/Set, no CPU value cache or forwarding chain, no per-leaf orchestration arguments or settings body hiding a long parameter list. Readability of the frame takes priority over avoiding repeated CVar reads. Thread semantics stay in Core/control ownership, not in FramePipeline; no thread-named accessor is added as an alias without a distinct enforced contract.
-- Every stage preserves [AC-DVP-30](Acceptance.md#completion-criteria): clients receive narrow semantic capabilities, not implementation owners. Application binds console/menu control and owns frame orchestration; console clients neither take Renderer nor schedule rendering. Audit constructor/include/call/lifetime boundaries under CHK-DVP-08 before accepting a stage; no facade overload, forwarding service or service locator may retain the replaced coupling.
-- The binding [System Core And Client Separation](../../../../../../Engineering/Foundations/ModuleOwnership.md#system-core-and-client-separation) standard drives every current and later stage, including generic Core/control work and client composition. AC-DVP-30 specializes that rule for this feature; it is not a separate engineering authority. A violated client/core boundary blocks the stage regardless of compilation or functional results.
+- Every stage preserves [AC-DVP-29](../Acceptance.md#completion-criteria): direct feature-owned CVar Get/Set, no CPU value cache or forwarding chain, no per-leaf orchestration arguments or settings body hiding a long parameter list. Readability of the frame takes priority over avoiding repeated CVar reads. Thread semantics stay in Core/control ownership, not in FramePipeline; no thread-named accessor is added as an alias without a distinct enforced contract.
+- Every stage preserves [AC-DVP-30](../Acceptance.md#completion-criteria): clients receive narrow semantic capabilities, not implementation owners. Application binds console/menu control and owns frame orchestration; console clients neither take Renderer nor schedule rendering. Audit constructor/include/call/lifetime boundaries under CHK-DVP-08 before accepting a stage; no facade overload, forwarding service or service locator may retain the replaced coupling.
+- The binding [System Core And Client Separation](../../../../../../../Engineering/Foundations/ModuleOwnership.md#system-core-and-client-separation) standard drives every current and later stage, including generic Core/control work and client composition. AC-DVP-30 specializes that rule for this feature; it is not a separate engineering authority. A violated client/core boundary blocks the stage regardless of compilation or functional results.
 - Show stays Editor presentation of process-global feature CVars. No Renderer Show type, request/View feature carrier, per-viewport mirror, parent CVar, generic manager or Application/RHI feature translation.
 - One accepted batch/frame state feeds admission, topology, pass parameters and affected-history identity; no independently reread half-frame policy.
 - Disabled exclusive evaluation/traces/writes do not run. Shared work requires a named active consumer; initialized disabled outputs require the frozen fixed-ABI justification, never enabled-missing-work or fabricated-guide substitution.
@@ -205,7 +205,7 @@ Do not pre-create any proposed control/settings/activation file. Reuse the cohes
 2. Freeze each leaf/path's owner, helper inputs, exclusive/shared work, uniform branch, resource/read/write disposition, disabled diagnostic result, estimator/PDF/target semantics, and reset scope. Choose exactly one admitted route per path; alternatives do not remain implementation-time decisions.
 3. Freeze all-on/each-off/group-off fixtures, decoded-format and statistical tolerances, seeds/sample budgets, backend/provider cells, GPU measurement method, and negative controls before candidate results. Define mandatory guides and missing-enabled-product failure behavior.
 4. Record the decision and exact revision in Discovery. If CVar delivery requires production repair, establish and execute the bounded prerequisite stage DVP-4A-1 with an explicit file/API/hook budget, validate it, and return automatically. Establish remaining owning prerequisites the same way before dependent lighting edits. Authorize DVP-4A only with the required probe evidence; retain proposals as proposals, not existing behavior.
-5. Resolve falsified lighting baselines at their existing owning plans before freezing feature-control equivalence: [Direct baseline dependency](../Lighting/DirectLighting/Discovery.md#debug-controls-baseline-dependency) and [Indirect lobe accounting](../Lighting/IndirectLighting/Discovery.md#debug-controls-lobe-accounting-dependency). DVP-4A-0 may execute independent bounded discovery probes and prepare fixtures/protocols, but cannot repair material/transport semantics under its no-production-edit budget. A corrected lighting baseline precedes the all-on reference; never require preserving a known defect while simultaneously claiming the corrected owner contract. Return here with the exact repaired candidate, accepted owner decisions and new baseline artifacts. Do not replay DVP-4A-1 unless its production inputs changed.
+5. Resolve falsified lighting baselines at their existing owning plans before freezing feature-control equivalence: [Direct baseline dependency](../../Lighting/DirectLighting/Discovery.md#debug-controls-baseline-dependency) and [Indirect lobe accounting](../../Lighting/IndirectLighting/Discovery.md#debug-controls-lobe-accounting-dependency). DVP-4A-0 may execute independent bounded discovery probes and prepare fixtures/protocols, but cannot repair material/transport semantics under its no-production-edit budget. A corrected lighting baseline precedes the all-on reference; never require preserving a known defect while simultaneously claiming the corrected owner contract. Return here with the exact repaired candidate, accepted owner decisions and new baseline artifacts. Do not replay DVP-4A-1 unless its production inputs changed.
 
 **Non-goals:** No production edits, feature CVar registration, new public types, renderer-mode migration, external research expansion, or changed transport/product scope.
 
@@ -213,7 +213,7 @@ Do not pre-create any proposed control/settings/activation file. Reuse the cohes
 
 **Stop conditions:** Any unresolved route, missing non-zero oracle, unbounded control refactor, unsupported guide contract, or need to change accepted semantics without returning to its owner. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
 
-**Risk/failure traceability:** `RISK-DVP-SF-01`, `RISK-DVP-SF-02`, `RISK-DVP-SF-03`, `RISK-DVP-SF-04`, `RISK-DVP-SF-05`, `RISK-DVP-SF-06`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-07`, `FM-DVP-08`, `FM-DVP-09`, `FM-DVP-10`, `FM-DVP-11`, `FM-DVP-12`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+**Risk/failure traceability:** `RISK-DVP-SF-01`, `RISK-DVP-SF-02`, `RISK-DVP-SF-03`, `RISK-DVP-SF-04`, `RISK-DVP-SF-05`, `RISK-DVP-SF-06`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-07`, `FM-DVP-08`, `FM-DVP-09`, `FM-DVP-10`, `FM-DVP-11`, `FM-DVP-12`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](../Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
 
 **Ready-to-use discovery prompt:**
 
@@ -250,7 +250,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 
 **Stop conditions:** A second editable authority, data race, ownership/deadlock/shutdown ambiguity, exceeded prerequisite budget, or failed batch that mutates any entry. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
 
-**Risk/failure traceability:** `RISK-DVP-SF-01` in [Discovery](Discovery.md#risk-register); `FM-DVP-07`, `FM-DVP-08`, `FM-DVP-09` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+**Risk/failure traceability:** `RISK-DVP-SF-01` in [Discovery](Discovery.md#risk-register); `FM-DVP-07`, `FM-DVP-08`, `FM-DVP-09` in [Acceptance](../Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
 
 **Ready-to-use implementation prompt:**
 
@@ -287,7 +287,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 
 **Stop conditions:** Subsurface still computes behind a composite mask, retained targets lack current-frame semantics, a guide is fabricated, or the first helper requires new frame/host feature state. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
 
-**Risk/failure traceability:** `RISK-DVP-SF-03`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08` in [Discovery](Discovery.md#risk-register); `FM-DVP-10`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+**Risk/failure traceability:** `RISK-DVP-SF-03`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08` in [Discovery](Discovery.md#risk-register); `FM-DVP-10`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](../Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
 
 **Ready-to-use implementation prompt:**
 
@@ -324,7 +324,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 
 **Stop conditions:** A disabled direct family still allocates/dispatches exclusive work, shadow/reservoir removal changes active indirect semantics, graph rebuilding reads a different policy frame, or bindings become conditional null fallbacks. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
 
-**Risk/failure traceability:** `RISK-DVP-SF-03`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-10`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+**Risk/failure traceability:** `RISK-DVP-SF-03`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-10`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](../Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
 
 **Ready-to-use implementation prompt:**
 
@@ -361,7 +361,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 
 **Stop conditions:** A shadowed target/PDF/weight remains inconsistent, signal tracing continues solely for display/debug continuity, the raw disabled diagnostic pretends to be produced, or unrelated transport changes. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
 
-**Risk/failure traceability:** `RISK-DVP-SF-03`, `RISK-DVP-SF-06`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-10`, `FM-DVP-12`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+**Risk/failure traceability:** `RISK-DVP-SF-03`, `RISK-DVP-SF-06`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-10`, `FM-DVP-12`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](../Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
 
 **Ready-to-use implementation prompt:**
 
@@ -398,7 +398,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 
 **Stop conditions:** Lobe filtering biases active transport outside the accepted contract, continuation events are mistaken for disabled output work, mandatory guides disappear without explicit rejection, or zero output hides a missing enabled producer. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
 
-**Risk/failure traceability:** `RISK-DVP-SF-03`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-10`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+**Risk/failure traceability:** `RISK-DVP-SF-03`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-10`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](../Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
 
 **Ready-to-use implementation prompt:**
 
@@ -435,7 +435,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 
 **Stop conditions:** The shared helper acquires the feature CVar, continuation rays are skipped, Reference changes, or stale visibility-dependent weights/history survive a toggle. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
 
-**Risk/failure traceability:** `RISK-DVP-SF-06`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-12`, `FM-DVP-14` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+**Risk/failure traceability:** `RISK-DVP-SF-06`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-12`, `FM-DVP-14` in [Acceptance](../Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
 
 **Ready-to-use implementation prompt:**
 
@@ -472,7 +472,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 
 **Stop conditions:** Menu check state becomes another mutable authority, bulk updates race frame admission, the UI claims requested work is already applied, or a Renderer-private symbol is imported. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
 
-**Risk/failure traceability:** `RISK-DVP-SF-01`, `RISK-DVP-SF-02`, `RISK-DVP-SF-05` in [Discovery](Discovery.md#risk-register); `FM-DVP-07`, `FM-DVP-08`, `FM-DVP-09`, `FM-DVP-10` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+**Risk/failure traceability:** `RISK-DVP-SF-01`, `RISK-DVP-SF-02`, `RISK-DVP-SF-05` in [Discovery](Discovery.md#risk-register); `FM-DVP-07`, `FM-DVP-08`, `FM-DVP-09`, `FM-DVP-10` in [Acceptance](../Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
 
 **Ready-to-use implementation prompt:**
 
@@ -509,7 +509,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 
 **Stop conditions:** Unavailable advertised hardware/probe, uncategorized native issue, mismatched candidate/oracle, incomplete variant bindings, hidden executing work, or a failed run disguised as an excluded row. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
 
-**Risk/failure traceability:** `RISK-DVP-SF-01`, `RISK-DVP-SF-03`, `RISK-DVP-SF-05`, `RISK-DVP-SF-06`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-07`, `FM-DVP-09`, `FM-DVP-10`, `FM-DVP-12`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+**Risk/failure traceability:** `RISK-DVP-SF-01`, `RISK-DVP-SF-03`, `RISK-DVP-SF-05`, `RISK-DVP-SF-06`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-07`, `FM-DVP-09`, `FM-DVP-10`, `FM-DVP-12`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](../Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
 
 **Ready-to-use validation prompt:**
 
@@ -546,7 +546,7 @@ Handoff: report exact candidate/prerequisites, files by responsibility, deletion
 
 **Stop conditions:** An orphan producer/consumer, hidden duplicate authority, unexplained outside hook, public feature mechanism, temporary submitted test, stale evidence identity, or required unrun result remains. The shared architecture-fitness and clean-break gate is mandatory; source presence does not satisfy a required executable oracle.
 
-**Risk/failure traceability:** `RISK-DVP-SF-01`, `RISK-DVP-SF-02`, `RISK-DVP-SF-03`, `RISK-DVP-SF-04`, `RISK-DVP-SF-05`, `RISK-DVP-SF-06`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-07`, `FM-DVP-08`, `FM-DVP-09`, `FM-DVP-10`, `FM-DVP-11`, `FM-DVP-12`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
+**Risk/failure traceability:** `RISK-DVP-SF-01`, `RISK-DVP-SF-02`, `RISK-DVP-SF-03`, `RISK-DVP-SF-04`, `RISK-DVP-SF-05`, `RISK-DVP-SF-06`, `RISK-DVP-SF-07`, `RISK-DVP-SF-08`, `RISK-DVP-SF-09` in [Discovery](Discovery.md#risk-register); `FM-DVP-07`, `FM-DVP-08`, `FM-DVP-09`, `FM-DVP-10`, `FM-DVP-11`, `FM-DVP-12`, `FM-DVP-13`, `FM-DVP-14` in [Acceptance](../Acceptance.md#failure-modes). The exit's AC/CHK rows and those owners define proof, not a second criterion set here.
 
 **Ready-to-use closure prompt:**
 

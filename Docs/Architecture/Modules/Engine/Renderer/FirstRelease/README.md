@@ -48,7 +48,7 @@ The file boundaries group cohesive features; they do not force whole-file execut
 
 ## Relationship To Existing Renderer Plans
 
-[Debug View Presentation](../Features/DebugViews/Plan.md) is a focused design migration that `RD-3` may select when its current-state reconciliation shows the release criteria require it. [Deferred GBuffer Decals](../Features/DeferredDecals/Plan.md) is the detailed subplan selected by `GR-5` for first-release `FCR-REN-23`. Plan presence alone is not scope admission; the mother plan and FCR registry provide that admission.
+[Debug View Presentation](../Features/DebugViews/Done/Plan.md) is a focused design migration that `RD-3` may select when its current-state reconciliation shows the release criteria require it. [Deferred GBuffer Decals](../Features/DeferredDecals/Plan.md) is the detailed subplan selected by `GR-5` for first-release `FCR-REN-23`. Plan presence alone is not scope admission; the mother plan and FCR registry provide that admission.
 
 ## Renderer-Wide Stop Conditions
 

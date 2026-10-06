@@ -4,6 +4,7 @@
 #include "Core/Public/Assets/TextureProperties.h"
 
 #include <cstdint>
+#include <cstddef>
 #include <filesystem>
 #include <map>
 #include <string>
@@ -46,6 +47,7 @@ struct TextureCookPolicy final
 
 	bool IsSrgb() const noexcept { return colorSpace == TextureColorSpace::Srgb; }
 	bool IsCube() const noexcept { return dimension == TextureDimension::TextureCube; }
+	bool operator==(const TextureCookPolicy&) const noexcept = default;
 };
 
 struct TextureCookRequest final
@@ -57,6 +59,7 @@ struct TextureCookRequest final
 
 	bool IsSrgb() const noexcept { return policy.IsSrgb(); }
 	bool IsCube() const noexcept { return policy.IsCube(); }
+	bool operator==(const TextureCookRequest&) const noexcept = default;
 };
 
 class TextureCookRequestSet final
@@ -65,15 +68,13 @@ public:
 	void Clear() noexcept;
 	void Add(const TextureCookRequest& request);
 	std::vector<TextureCookRequest> ReleaseRequests() noexcept;
-	const std::vector<TextureCookRequest>& Requests() const noexcept { return requests; }
+	const std::vector<TextureCookRequest>& Requests() const noexcept { return m_requests; }
 
 private:
-	std::map<TextureAssetId, TextureCookRequest> requestsById;
-	std::vector<TextureCookRequest> requests;
+	std::map<TextureAssetId, std::size_t> m_requestIndices;
+	std::vector<TextureCookRequest> m_requests;
 };
 
-bool TextureCookPoliciesMatch(const TextureCookPolicy& lhs, const TextureCookPolicy& rhs) noexcept;
-bool TextureCookRequestsMatch(const TextureCookRequest& lhs, const TextureCookRequest& rhs) noexcept;
 void ValidateTextureCookRequest(const TextureCookRequest& request);
 
 const char* GetTextureColorSpaceName(TextureColorSpace colorSpace) noexcept;

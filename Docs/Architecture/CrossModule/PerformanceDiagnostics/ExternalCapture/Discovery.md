@@ -1,0 +1,64 @@
+# External Capture Discovery Gate
+
+**Status:** target architecture decision gate; source decisions recorded, installed-provider gates open
+
+**Scope:** establish the exact API, target, lifecycle, build, and evidence prerequisites before each bounded implementation stage.
+
+**Prepared:** 2026-10-06 at `82528cbe5edbcf729464fbefe6998435730920eb`, initially clean.
+
+**Authority boundary:** [Research](Research.md) supplies precedent; this gate validates decisions/environment; [Plan](Plan.md) owns delivery order. Documentation alone does not pass this gate.
+
+**Current readiness:** **0/100 — target only**; no tool installation or executable capture was exercised by this documentation iteration.
+
+## Decisions Established By This Package
+
+| Decision | Selected target and rationale | Rejected alternative |
+| --- | --- | --- |
+| Priority | PIX, then Nsight Graphics D3D12/Vulkan, then RenderDoc D3D12/Vulkan, then specialist routes. Existing `EXT-*` identities are preserved. | Renumbering identities to look sequential or starting all SDKs at once. |
+| Product | Explicit native frame capture with scene/present/frame correlation, launched from typed intent and context action. | Universal profiling/capture/crash framework or internal Performance session prerequisite. |
+| Owners | Renderer request/target authority, RHI bootstrap/native mechanism, Editor presentation, Launcher/Application intent adapters. | Application/Editor provider state machines or vendor APIs in Renderer. |
+| Lifecycle | Immutable startup; one capture lease held until quiescence; terminal UI and native drain distinguished. | Late device reload, timeout-as-cancel, or unload of live hooks. |
+| Scope | Host-present interval containing the requested scene; limitations explicit. | Promise of an isolated offscreen viewport capture from a window delimiter. |
+| Compatibility | Unknown injected combinations default to unavailable; request exclusivity does not prove hook coexistence. | Provider priority silently choosing a safe-looking subset. |
+| Rest of tools | Typed activity-specific handoff/runbook unless a real programmatic consumer is proven. | Treat every installed tool as another next-frame button. |
+
+These decisions are target contracts proposed for implementation under the user's requested plan. The remaining rows close with installed-header inspection, bounded local probes, and review; no product implementation is authorized by an empty row.
+
+## Gate Rows And Required Artifacts
+
+Each row records candidate revision/dirty fingerprint, owner, exact command or workflow, raw result, observation, and artifact. Put the small control record in the candidate change/report; do not create a second permanent status diary.
+
+| ID / owner | Decision or experiment | Closure condition / dependent stage |
+| --- | --- | --- |
+| `EC-D01` RHI/tool integrator | Inventory Windows/API/GPU/driver, PIX tool/event package, NGFX headers/tool, RenderDoc tool/header; record versions, hashes, licensing and SDK build absence behavior. | PIX inputs pinned for Stage 1; other cells may remain explicitly unavailable until their own stage. Unsupported hardware is a blocked experiment, not rejected feature architecture. |
+| `EC-D02` Renderer/presentation integrator | Trace scene-view token -> UI product -> host window -> swapchain -> actual submit/present. Retain a diagram and controlled two-target or stale-generation probe. | Exact production delimiters and contributing `FrameId` certainty frozen for each provider; no assumed one-viewport-one-swapchain relation. Stage 1 requires PIX mapping. |
+| `EC-D03` RHI/Streamline integrator | Inspect every pre-graphics operation and interposer initialization; define owned module teardown and provider-native launch detection. | Ordered startup/shutdown graph with PIX first-call constraint and NGFX pre-context constraint; clean rollback known or fail-launch policy chosen before injection. |
+| `EC-D04` capture owner | Freeze request/result/path capacities, arm/finalization timeouts, polling/wait execution, native drain/quarantine behavior, no-provider/idle observer budget and noise floor. | Numeric values and measurement procedure chosen before candidate outcomes, with provider/API reason and fault falsifier. One request/three providers are already fixed; no arbitrary unbounded metadata. Stage 1 cannot invent missing caps. |
+| `EC-D05` provider adapter owner | Inspect installed SDK attachment, native-busy, completion, cancel, artifact and open APIs. Compile a disposable local probe only if header/manual inspection is insufficient. | Actual completion/quiescence protocol for the chosen cell, including PIX scheduled-call versus finalized-file distinction and NGFX header/manual mismatch resolution. No native signal means blocked programmatic acceptance, with tool-managed route documented honestly. |
+| `EC-D06` build/package integrator | Resolve exact configuration-specific SDK/source/dependency exclusion and license-notice route. Inspect canonical output and user-state contracts. | Development can build/run no-provider without external tools; Shipping has no optional capture imports/assets/state/callsite. Stage 1 declares smallest build and package audit. |
+| `EC-D07` capture owner + code reviewer | Freeze integration file allowlist, neutral public delta, clone/copy inventory and dependency audit using architecture hook table. Review target/terminal/late-callback failure cases. | `CHK-EC-ARCH` check card is actionable; no orphan public facade or provider-specific generic state. Independent reviewer signoff is required before final adoption; not claimed in this preparation. |
+| `EC-D08` evidence owner | Freeze Sponza/Empty settings, readiness, identities, negative controls, observer runs, native-feature/interposer matrix and result destination. | Exact check cards for [AC-EC](README.md#acceptance-and-check-contract); external readiness depends only on relevant capture facts, not unimplemented internal metric definitions. |
+
+`EC-D0-PIX` closes when all eight rows have the PIX-relevant disposition and artifacts. `EC-D0-NG-D3D12`, `EC-D0-NG-VK`, `EC-D0-RD-D3D12`, and `EC-D0-RD-VK` close each cell's delta before its adapter stage. A missing later SDK does not block delivery of accepted PIX. It does block claiming the complete parent `P1-GATE`.
+
+## Risk Register
+
+| Risk / cause, likelihood rationale, impact | Prevention / detection / contingency | Owner / retirement evidence |
+| --- | --- | --- |
+| `RISK-EC-01`: too-late hooks miss device creation; likely if startup order is guessed; capture may be empty or crash. | Trace all early API/interposer calls; detect absent activity or missing events; fail launch if rollback unproved, relaunch through supported setup. | RHI bootstrap owner; retained early-order probe + valid native capture. |
+| `RISK-EC-02`: wrong present surface or stale generation; likely in offscreen/multi-window UI; convincing wrong-frame success. | Confirm scene contribution and generation; deliberately resize/destroy/alternate present targets; reject stale/unsupported target. | Renderer capture owner; wrong-target control must fail and correct artifact must identify the requested scene. |
+| `RISK-EC-03`: two injected tools or vendor interposer conflict; unknown matrices are common; native device/capture corruption. | Default-deny untested combinations before load; detect native busy/unsafe passive attach; disable capture/relaunch rather than unload hooks. | RHI adapter owner; exact-version pair/triple/interposer matrix and clean relaunch. |
+| `RISK-EC-04`: timeout or shutdown releases native state early; asynchronous finalization makes it plausible; crash or wrong later result. | Quarantine until quiescence; inject late callback and destroy UI; block new capture and detach publication safely. | Capture/controller + native adapter; exactly-once terminal/drain/shutdown proof. |
+| `RISK-EC-05`: beta SDK/manual drift; explicitly unstable API; build or completion protocol mismatch. | Pin installed headers and versions, inspect API changes; detect missing symbols/status mismatch; keep experimental and block that cell rather than emulate. | Nsight integrator; compiled pinned-header probe and native finalization result. |
+| `RISK-EC-06`: dependency or observer leakage; packaging/defaults easily retain optional work; production perf/licensing regressions. | Eligible-source staging and no-provider control; import/string/allocation/overhead audits; remove leaked sources/deps before adoption. | Build/evidence owner; Shipping tool-free package audit and frozen observer comparison. |
+| `RISK-EC-07`: wrong binary/shader symbols; mutable cooks make correlation fragile; misleading source diagnosis. | Bind hashes/source mappings to actual capture; use mismatched-symbol control; expose unavailable symbols and retain exact binary. | Shader/evidence owner; artifact-to-cook/source correlation and rejection of wrong identity. |
+
+Each detection has a controlled check in the dossier. Risk retirement is candidate evidence, not this register's presence.
+
+## Iteration Control Record
+
+`ITER-EXTCAP-DOC-01`: owner is the repository documentation iteration; scope is this package and directly affected navigation/contracts. Start revision is above, with clean status. Intended decision is a reviewable source-backed design and bounded copy-ready plan. Performance classification: **no runtime exposure** because only Markdown changes.
+
+North Star targets are `NS-OWNERSHIP`, `NS-EVIDENCE`, `NS-ADOPTION`, and `NS-SIMPLIFY`: advance design clarity, preserve executable evidence level. [PGE-05, PGE-06, PGE-10 and PGE-14](../../../../Strategy/Requirements.md) remain **preserve** in evidence level; this iteration supplies planning, not their workload proof. Delivery targets are parent Phase 1 `EXT-00`–`EXT-05`; `MAP-00`/`CASE-02` are later capture-correlation gates. No new release target or FCR number is assigned: candidate disposition goes through the existing [feature completion reports](../../../../Acceptance/FeatureCompletionReports.md) and the Performance Diagnostics report when an implementation candidate exists. Release authorization is not a prerequisite for this documentation-only preparation.
+
+Documentation checks: local links/anchors, navigation/sibling budget, source-reference existence, placeholders/stale duplicate capture contracts, UTF-8/newlines/whitespace, and `git diff --check`. Runtime acceptance/failure checks remain unrun and must not be recorded as PASS. Stage 0 is immediately usable; later prompts require their explicit gate artifacts and an implementation request.

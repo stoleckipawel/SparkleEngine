@@ -12,7 +12,7 @@
 
 **Architecture:** [Viewport Rendering Controls](Controls/README.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
 
-**Delivery:** [Plan](Plan.md)
+**Delivery:** [Plan](Done/Plan.md)
 
 Candidate results belong in `FCR-REN-11`. Source inspection does not prove build, runtime, pixel, backend, or release behavior.
 

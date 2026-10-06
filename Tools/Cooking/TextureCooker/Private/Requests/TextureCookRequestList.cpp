@@ -9,27 +9,16 @@
 #include <fstream>
 #include <sstream>
 
-class TextureCookRequestOrdering final
+static void SortForSerialization(std::vector<TextureCookRequest>& requests)
 {
-public:
-	static void SortForSerialization(std::vector<TextureCookRequest>& requests)
-	{
-		std::ranges::sort(
-		    requests,
-		    [](const TextureCookRequest& lhs, const TextureCookRequest& rhs)
-		    {
-			    return lhs.assetId != rhs.assetId ? lhs.assetId < rhs.assetId
-			                                      : lhs.outputPath.generic_string() < rhs.outputPath.generic_string();
-		    });
-	}
-
-	static void SortForConsumption(std::vector<TextureCookRequest>& requests)
-	{
-		std::ranges::sort(
-		    requests,
-		    [](const TextureCookRequest& lhs, const TextureCookRequest& rhs) noexcept { return lhs.assetId < rhs.assetId; });
-	}
-};
+	std::ranges::sort(
+	    requests,
+	    [](const TextureCookRequest& lhs, const TextureCookRequest& rhs)
+	    {
+		    return lhs.assetId != rhs.assetId ? lhs.assetId < rhs.assetId
+		                                      : lhs.outputPath.generic_string() < rhs.outputPath.generic_string();
+	    });
+}
 
 void WriteTextureCookRequestList(const std::filesystem::path& outputPath, const std::vector<TextureCookRequest>& requests)
 {
@@ -39,7 +28,7 @@ void WriteTextureCookRequestList(const std::filesystem::path& outputPath, const 
 	}
 
 	std::vector<TextureCookRequest> sortedRequests = requests;
-	TextureCookRequestOrdering::SortForSerialization(sortedRequests);
+	SortForSerialization(sortedRequests);
 	std::ostringstream output;
 	output << TextureCookRequestCodec::GetHeader() << '\n';
 	for (const TextureCookRequest& request : sortedRequests)
@@ -100,6 +89,6 @@ std::vector<TextureCookRequest> LoadTextureCookRequestList(const std::filesystem
 		throw Diagnostics::Error("Texture cook request file '" + inputPath.string() + "' is empty.");
 	}
 	std::vector<TextureCookRequest> requests = requestSet.ReleaseRequests();
-	TextureCookRequestOrdering::SortForConsumption(requests);
+	std::ranges::sort(requests, {}, &TextureCookRequest::assetId);
 	return requests;
 }
