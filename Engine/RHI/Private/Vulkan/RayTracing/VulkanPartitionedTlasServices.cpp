@@ -58,25 +58,6 @@ VkPartitionedAccelerationStructureOpTypeNV VulkanPartitionedTlasServices::ToVkPa
 	}
 }
 
-void VulkanPartitionedTlasServices::ConfigurePartitionedTlasInput(
-    const RhiPartitionedTlasDesc& desc,
-    VkPartitionedAccelerationStructureInstancesInputNV& input,
-    VkPartitionedAccelerationStructureFlagsNV& flags) noexcept
-{
-	flags = VkPartitionedAccelerationStructureFlagsNV{
-	    .sType = VK_STRUCTURE_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_FLAGS_NV,
-	    .pNext = nullptr,
-	    .enablePartitionTranslation = desc.AllowPartitionTranslation ? VK_TRUE : VK_FALSE};
-	input = VkPartitionedAccelerationStructureInstancesInputNV{
-	    .sType = VK_STRUCTURE_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_INSTANCES_INPUT_NV,
-	    .pNext = &flags,
-	    .flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR,
-	    .instanceCount = desc.InstanceCapacity,
-	    .maxInstancePerPartitionCount = desc.MaxInstancesPerPartition,
-	    .partitionCount = desc.PartitionCount,
-	    .maxInstanceInGlobalPartitionCount = desc.MaxInstancesInGlobalPartition};
-}
-
 RhiPartitionedTlasNativeOperationLayout VulkanPartitionedTlasServices::GetNativeOperationLayout() noexcept
 {
 	return RhiPartitionedTlasNativeOperationLayout{
@@ -127,7 +108,7 @@ RhiPartitionedTlasBuildSizes VulkanPartitionedTlasServices::GetPartitionedTopLev
 
 	VkPartitionedAccelerationStructureFlagsNV partitionedTlasFlags{};
 	VkPartitionedAccelerationStructureInstancesInputNV input{};
-	ConfigurePartitionedTlasInput(desc, input, partitionedTlasFlags);
+	VulkanTypeConversions::ConfigurePartitionedTlasInput(desc, input, partitionedTlasFlags);
 	VkAccelerationStructureBuildSizesInfoKHR nativeInfo{
 	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR,
 	    .pNext = nullptr};

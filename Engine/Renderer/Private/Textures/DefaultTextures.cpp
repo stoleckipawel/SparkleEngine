@@ -1,20 +1,6 @@
 #include "PCH.h"
 #include "Textures/DefaultTextures.h"
 
-class DefaultTexturesConstants final
-{
-public:
-	static constexpr DefaultTextureDesc kDefaultTextureDescs[] = {
-	    {"Checkerboard", "Defaults/default_checkerboard.stex"},
-	    {"White", "Defaults/default_white.stex"},
-	    {"Black", "Defaults/default_black.stex"},
-	    {"Red", "Defaults/default_red.stex"},
-	    {"Green", "Defaults/default_green.stex"},
-	    {"Blue", "Defaults/default_blue.stex"},
-	    {"Normal", "Defaults/default_normal.stex"},
-	    {"Sky", "Defaults/default_cubemap.stex"}};
-};
-
 SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_defaultTexturesLogger, "Renderer.DefaultTextures");
 
 const DefaultTextureDesc& DefaultTextures::GetDesc(DefaultTexture type)
@@ -24,7 +10,7 @@ const DefaultTextureDesc& DefaultTextures::GetDesc(DefaultTexture type)
 	{
 		Diagnostics::Fatal(g_defaultTexturesLogger, __FILE__, __LINE__, "Invalid default texture type.");
 	}
-	return DefaultTexturesConstants::kDefaultTextureDescs[index];
+	return DefaultTextureDescs[index];
 }
 
 const char* DefaultTextures::GetName(DefaultTexture type)

@@ -1,27 +1,8 @@
 #pragma once
 
-#include <cstdint>
+#include "Core/Public/Assets/DefaultTexture.h"
+
 #include <filesystem>
-
-enum class DefaultTexture : std::uint8_t
-{
-	Checkerboard,
-	White,
-	Black,
-	Red,
-	Green,
-	Blue,
-	Normal,
-	Sky,
-
-	Count
-};
-
-struct DefaultTextureDesc
-{
-	const char* name = "Unknown";
-	const char* path = "";
-};
 
 namespace DefaultTextures
 {

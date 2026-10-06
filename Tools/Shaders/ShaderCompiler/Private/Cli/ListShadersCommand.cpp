@@ -10,7 +10,7 @@
 
 #include <iostream>
 
-int ListShadersCommand::Run(std::span<const std::string_view> args) const
+int ListShaders(std::span<const std::string_view> args)
 {
 	const bool validateOnly = args.size() == 1 && args[0] == "--validate";
 	if (!args.empty() && !validateOnly)

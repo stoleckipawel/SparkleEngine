@@ -4,5 +4,10 @@
 
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
+struct ViewportRenderRequest;
 
-void AddPresentationPasses(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings, RenderFrameGraphResources& resources);
+void AddPresentationPasses(
+    FrameGraphBuilder& builder,
+    const RenderFrameGraphSettings& settings,
+    const ViewportRenderRequest& viewport,
+    RenderFrameGraphResources& resources);

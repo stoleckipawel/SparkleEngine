@@ -38,7 +38,7 @@ Vulkan currently refuses the external Streamline evaluation route instead of cla
 
 - Renderer settings/CVars express requested provider and quality; the provider stack owns readiness and resolved active state.
 - `AddSceneUpscalingPasses` visibly selects exactly one implemented presentation upscaler: Linear or NVIDIA DLSS. The selected provider and quality own the render extent, so DLSS NativeAA remains available at native resolution; generic provider evaluation remains below the concrete selector.
-- `AddRestirRayReconstructionPass` reads the graph builder view context and feature-owned reconstruction policy, then independently inserts Ray Reconstruction when eligible. It consumes ReSTIR guides, writes a distinct render-resolution product, and changes only the input passed to the selected presentation upscaler.
+- Scene composition encloses `AddRestirRayReconstructionPass` in Lit mode; the pass checks feature-owned reconstruction policy and inserts Ray Reconstruction when enabled. The frame-graph builder carries no view mode. Reconstruction consumes ReSTIR guides, writes a distinct render-resolution product, and changes only the input passed to the selected presentation upscaler.
 - Ray Reconstruction evaluates with equal input/output render extents and its provider's NativeAA mode. The selected presentation-upscaler quality controls only the later DLSS SR extent conversion; it does not turn Ray Reconstruction into the resolution owner.
 - Provider key/generation contributes to graph topology and prevents a graph from binding stale provider state.
 - Old provider generations retire after their last queue submissions complete.

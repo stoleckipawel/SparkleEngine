@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "UI.h"
+#include "UIImplementation.h"
 
 #include "Panels/SceneInspectorPanel.h"
 #include "Panels/SceneOutlinerPanel.h"
@@ -10,7 +10,7 @@
 
 #include <imgui.h>
 
-void UI::UpdateSceneModel()
+void UI::Implementation::UpdateSceneModel()
 {
 	if (!m_sceneModelBuilder)
 	{
@@ -47,7 +47,7 @@ void UI::UpdateSceneModel()
 	}
 }
 
-void UI::HandleTransactionShortcuts()
+void UI::Implementation::HandleTransactionShortcuts()
 {
 	if (!m_sceneModel || !m_transactionHistory || ImGui::GetIO().WantTextInput)
 	{

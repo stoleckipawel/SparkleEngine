@@ -4,6 +4,7 @@
 #include <cstdint>
 
 struct RenderView;
+struct ViewportRenderRequest;
 class FrameGraphBuilder;
 class GpuMeshCache;
 class ReferencePathTracerSession;
@@ -22,6 +23,7 @@ bool PrepareSceneRenderingProducts(
 void AddSceneRenderingPasses(
     FrameGraphBuilder& builder,
     const RenderFrameGraphSettings& settings,
+    const ViewportRenderRequest& viewport,
     RenderRayTracingScene& rayTracingScene,
     GpuMeshCache& gpuMeshCache,
     RendererImageProviderStack& imageProviders,

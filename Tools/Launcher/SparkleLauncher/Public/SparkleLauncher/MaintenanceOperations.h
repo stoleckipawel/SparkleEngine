@@ -57,6 +57,8 @@ namespace SparkleLauncher
 		std::string Detail;
 	};
 
+	std::vector<MaintenanceCleanPathSpec> BuildLevelCleanPaths(const std::filesystem::path& contentRoot, std::string_view levelId);
+
 	struct MaintenanceOperationRequest
 	{
 		std::filesystem::path RepositoryRoot;

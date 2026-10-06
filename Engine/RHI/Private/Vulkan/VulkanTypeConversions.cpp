@@ -418,3 +418,22 @@ VkImageAspectFlags VulkanTypeConversions::ResolveAspectMask(PixelFormat format) 
 	}
 	Diagnostics::Fatal(g_vulkanTypeConversionsLogger, __FILE__, __LINE__, "Cannot resolve an aspect mask for an unknown Vulkan format.");
 }
+
+void VulkanTypeConversions::ConfigurePartitionedTlasInput(
+    const RhiPartitionedTlasDesc& desc,
+    VkPartitionedAccelerationStructureInstancesInputNV& input,
+    VkPartitionedAccelerationStructureFlagsNV& flags) noexcept
+{
+	flags = VkPartitionedAccelerationStructureFlagsNV{
+	    .sType = VK_STRUCTURE_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_FLAGS_NV,
+	    .pNext = nullptr,
+	    .enablePartitionTranslation = desc.AllowPartitionTranslation ? VK_TRUE : VK_FALSE};
+	input = VkPartitionedAccelerationStructureInstancesInputNV{
+	    .sType = VK_STRUCTURE_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_INSTANCES_INPUT_NV,
+	    .pNext = &flags,
+	    .flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR,
+	    .instanceCount = desc.InstanceCapacity,
+	    .maxInstancePerPartitionCount = desc.MaxInstancesPerPartition,
+	    .partitionCount = desc.PartitionCount,
+	    .maxInstanceInGlobalPartitionCount = desc.MaxInstancesInGlobalPartition};
+}

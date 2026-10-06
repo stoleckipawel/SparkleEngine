@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "UI.h"
+#include "UIImplementation.h"
 
 #include "EditorWorkspaceLayout.h"
 #include "Console/EditorConsoleSystem.h"
@@ -22,7 +22,7 @@
 
 #include <algorithm>
 
-void UI::NewFrame()
+void UI::Implementation::NewFrame()
 {
 	if (!IsReady())
 	{
@@ -36,7 +36,7 @@ void UI::NewFrame()
 	ImGui::NewFrame();
 }
 
-void UI::Build()
+void UI::Implementation::Build()
 {
 	UpdateSceneModel();
 	HandleTransactionShortcuts();
@@ -56,7 +56,7 @@ void UI::Build()
 	ImGui::Render();
 }
 
-void UI::BeginInputRouting(bool disableInteraction)
+void UI::Implementation::BeginInputRouting(bool disableInteraction)
 {
 	if (m_inputSystem == nullptr)
 	{
@@ -67,7 +67,7 @@ void UI::BeginInputRouting(bool disableInteraction)
 	m_inputSystem->BeginInputRoutingFrame(disableInteraction, io.WantTextInput || io.WantCaptureKeyboard);
 }
 
-float UI::BuildMainMenuBar()
+float UI::Implementation::BuildMainMenuBar()
 {
 	if (!m_mainMenuBar)
 	{
@@ -78,7 +78,7 @@ float UI::BuildMainMenuBar()
 	return m_mainMenuBar->GetHeight();
 }
 
-void UI::BuildSceneOutliner(bool disableInteraction, float mainMenuBarHeight)
+void UI::Implementation::BuildSceneOutliner(bool disableInteraction, float mainMenuBarHeight)
 {
 	if (!m_sceneOutlinerPanel)
 	{
@@ -89,7 +89,7 @@ void UI::BuildSceneOutliner(bool disableInteraction, float mainMenuBarHeight)
 	m_sceneOutlinerPanel->BuildUI(disableInteraction);
 }
 
-void UI::BuildCenterWorkspace(bool disableInteraction, float mainMenuBarHeight)
+void UI::Implementation::BuildCenterWorkspace(bool disableInteraction, float mainMenuBarHeight)
 {
 	const ImGuiIO& io = ImGui::GetIO();
 	const float outlinerWidth = m_sceneOutlinerPanel ? m_sceneOutlinerPanel->GetWidth() : EditorWorkspaceLayout::SceneOutlinerWidth;
@@ -121,7 +121,12 @@ void UI::BuildCenterWorkspace(bool disableInteraction, float mainMenuBarHeight)
 	}
 }
 
-void UI::BuildViewport(bool disableInteraction, float topInset, float bottomInset, float outlinerWidth, float inspectorWidth)
+void UI::Implementation::BuildViewport(
+    bool disableInteraction,
+    float topInset,
+    float bottomInset,
+    float outlinerWidth,
+    float inspectorWidth)
 {
 	if (!m_viewportPanel)
 	{
@@ -135,7 +140,7 @@ void UI::BuildViewport(bool disableInteraction, float topInset, float bottomInse
 	RegisterViewportInputRegion();
 }
 
-void UI::RegisterViewportInputRegion()
+void UI::Implementation::RegisterViewportInputRegion()
 {
 	if (!m_viewportPanel || !m_inputSystem)
 	{
@@ -155,7 +160,7 @@ void UI::RegisterViewportInputRegion()
 	    ->RegisterInputTargetRegion(viewportLeft, viewportTop, viewportRight, viewportBottom, m_viewportPanel->GetTargetInputLayer());
 }
 
-void UI::BuildSceneInspector(bool disableInteraction, float mainMenuBarHeight)
+void UI::Implementation::BuildSceneInspector(bool disableInteraction, float mainMenuBarHeight)
 {
 	if (!m_sceneInspectorPanel)
 	{
@@ -166,7 +171,7 @@ void UI::BuildSceneInspector(bool disableInteraction, float mainMenuBarHeight)
 	m_sceneInspectorPanel->BuildUI(disableInteraction);
 }
 
-void UI::BuildUtilityPanels(bool disableInteraction)
+void UI::Implementation::BuildUtilityPanels(bool disableInteraction)
 {
 	if (m_usedShadersPanel)
 	{

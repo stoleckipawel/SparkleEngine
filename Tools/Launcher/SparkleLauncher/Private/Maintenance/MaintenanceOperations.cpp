@@ -1,6 +1,9 @@
 #include "SparkleLauncher/MaintenanceOperations.h"
 
 #include "MaintenanceOperationProcessRequests.h"
+#include "Core/Public/Projects/ProjectLevelCatalog.h"
+
+#include <set>
 
 #include <algorithm>
 #include <optional>
@@ -10,6 +13,102 @@
 
 namespace SparkleLauncher
 {
+	std::vector<MaintenanceCleanPathSpec> BuildLevelCleanPaths(const std::filesystem::path& contentRoot, std::string_view levelId)
+	{
+		const ProjectLevelCatalog catalog = ProjectLevelCatalogFile::Load(contentRoot);
+		std::vector<MaintenanceCleanPathSpec> targets;
+		std::set<std::string, std::less<>> appendedPackIds;
+		std::set<std::string, std::less<>> retainedPackIds;
+
+		const auto retainPackAndParents = [&](const auto& self, std::string_view packId) -> void
+		{
+			if (packId.empty() || !retainedPackIds.insert(std::string(packId)).second)
+			{
+				return;
+			}
+
+			const auto packIt = catalog.assetPacks.find(packId);
+			if (packIt != catalog.assetPacks.end())
+			{
+				self(self, packIt->second.parentPackId);
+			}
+		};
+
+		if (!levelId.empty())
+		{
+			for (const ProjectLevelCatalogEntry& level : catalog.levels)
+			{
+				if (level.selected && level.id != levelId)
+				{
+					retainPackAndParents(retainPackAndParents, level.assetPackId);
+				}
+			}
+		}
+
+		const auto appendPackAndParents = [&](const auto& self, std::string_view packId) -> void
+		{
+			if (packId.empty() || retainedPackIds.contains(packId) || !appendedPackIds.insert(std::string(packId)).second)
+			{
+				return;
+			}
+
+			const auto packIt = catalog.assetPacks.find(packId);
+			if (packIt == catalog.assetPacks.end())
+			{
+				return;
+			}
+
+			const ProjectAssetPack& pack = packIt->second;
+			const auto appendExistingTarget =
+			    [&targets](const std::string& displayName, const std::filesystem::path& path, std::string detail)
+			{
+				std::error_code existsError;
+				if (path.empty() || !std::filesystem::exists(path, existsError) || existsError)
+				{
+					return;
+				}
+
+				MaintenanceCleanPathSpec target;
+				target.DisplayName = displayName;
+				target.Path = path;
+				target.Detail = std::move(detail);
+				targets.push_back(std::move(target));
+			};
+
+			if (pack.external && !pack.extractionPath.empty())
+			{
+				appendExistingTarget(
+				    pack.displayName + " level content",
+				    pack.extractionPath,
+				    "Extracted level content. The cached source archive is preserved for fast re-sync.");
+			}
+
+			self(self, pack.parentPackId);
+		};
+
+		if (levelId.empty())
+		{
+			for (const ProjectLevelCatalogEntry& level : catalog.levels)
+			{
+				if (level.selected)
+				{
+					appendPackAndParents(appendPackAndParents, level.assetPackId);
+				}
+			}
+			return targets;
+		}
+
+		for (const ProjectLevelCatalogEntry& level : catalog.levels)
+		{
+			if (level.id == levelId)
+			{
+				appendPackAndParents(appendPackAndParents, level.assetPackId);
+				break;
+			}
+		}
+		return targets;
+	}
+
 	static void AddReadiness(MaintenanceOperationPlan& plan, std::string message)
 	{
 		plan.ReadinessMessages.push_back(std::move(message));

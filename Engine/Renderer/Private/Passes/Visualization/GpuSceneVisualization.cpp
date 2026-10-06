@@ -8,11 +8,6 @@
 
 void AddGpuSceneVisualizationPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
-	if (builder.GetViewMode() != RenderViewMode::GpuSceneInstances)
-	{
-		return;
-	}
-
 	auto& parameters = builder.AllocParameters<GpuSceneVisualizationCS>();
 	parameters->SceneColor = builder.CreateUAV(resources.Transient.Scene.SceneColor);
 	parameters->GBufferBaseColor = builder.CreateSRV(resources.Transient.GBuffer.BaseColor);

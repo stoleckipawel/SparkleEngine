@@ -58,11 +58,10 @@ TaskNodeHandle ParallelFor(
 		return static_cast<std::uint32_t>((static_cast<std::uint64_t>(value) + divisor - 1u) / divisor);
 	};
 	const std::uint32_t partitionCount = std::min(policy.MaximumPartitions, divideRoundUp(itemCount, policy.GrainSize));
-	const std::uint32_t partitionSize = divideRoundUp(itemCount, partitionCount);
 	for (std::uint32_t partition = 0; partition < partitionCount; ++partition)
 	{
-		const std::uint32_t begin = partition * partitionSize;
-		const std::uint32_t end = std::min(itemCount, begin + partitionSize);
+		const std::uint32_t begin = static_cast<std::uint32_t>(static_cast<std::uint64_t>(itemCount) * partition / partitionCount);
+		const std::uint32_t end = static_cast<std::uint32_t>(static_cast<std::uint64_t>(itemCount) * (partition + 1u) / partitionCount);
 		if (begin == end)
 		{
 			break;

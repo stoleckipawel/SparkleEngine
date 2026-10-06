@@ -26,7 +26,7 @@ private:
 	static void RunCookedShaderStats(const ShaderCookResult& result);
 };
 
-int CookShadersCommand::Run(std::span<const std::string_view> args) const
+int CookShaders(std::span<const std::string_view> args)
 {
 	if (args.size() == 1 && (args[0] == "--help" || args[0] == "-h"))
 	{

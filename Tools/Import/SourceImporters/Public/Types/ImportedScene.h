@@ -10,6 +10,7 @@
 
 #include <cstddef>
 #include <vector>
+#include <utility>
 
 struct ImportedScene
 {
@@ -23,6 +24,8 @@ struct ImportedScene
 	std::vector<ImportedMaterialVariant> materialVariants;
 	std::vector<ImportedMaterialVariantMapping> materialVariantMappings;
 	std::vector<ImportedSkeleton> skeletons;
+
+	std::pair<ImportedSkeletonIndex, std::uint32_t> FindSkeletonJointForNode(std::uint32_t sourceNodeIndex) const noexcept;
 
 	std::size_t GetMeshPrimitiveCount() const noexcept { return meshPrimitives.size(); }
 	std::size_t GetMeshInstanceCount() const noexcept { return meshInstances.size(); }

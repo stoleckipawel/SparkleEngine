@@ -5,4 +5,8 @@
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
 
-void AddSceneVisualizationPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, RenderFrameGraphResources& resources);
+void AddSceneVisualizationPasses(
+    FrameGraphBuilder& builder,
+    RenderViewportExtent sceneExtent,
+    RenderViewMode viewMode,
+    RenderFrameGraphResources& resources);

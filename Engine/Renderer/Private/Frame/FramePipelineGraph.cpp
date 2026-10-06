@@ -54,7 +54,7 @@ void FramePipeline::InitializeFrameGraph(const RenderFrameGraphSettings& setting
 	RenderRayTracingScene& rayTracingScene = m_renderScene->GetRayTracingScene();
 	rayTracingScene.BeginGraphBuild();
 	auto frameGraph = std::make_unique<FrameGraph>(&m_deviceServices.GetRenderHardwareInterface(), &m_window);
-	FrameGraphBuilder builder(*frameGraph, m_renderPassRuntimeCache, m_viewportRenderRequest);
+	FrameGraphBuilder builder(*frameGraph, m_renderPassRuntimeCache);
 	RenderFrameGraphResources resources = BuildRenderFrameGraph(builder, settings);
 	ExportViewportFrameProducts(builder, settings, resources);
 

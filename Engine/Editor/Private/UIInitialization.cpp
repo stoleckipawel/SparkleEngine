@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "UI.h"
+#include "UIImplementation.h"
 
 #include "EditorWorkspaceLayout.h"
 #include "Console/EditorConsoleSystem.h"
@@ -35,7 +35,7 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARA
 
 SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_editorLogger, "Editor");
 
-void UI::InitializeImGuiContext()
+void UI::Implementation::InitializeImGuiContext()
 {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -51,11 +51,11 @@ void UI::InitializeImGuiContext()
 	SparkleUiTheme::ConfigureTypography();
 }
 
-bool UI::InitializeWin32Backend()
+bool UI::Implementation::InitializeWin32Backend()
 {
 	if (!m_window->GetHWND())
 	{
-		Diagnostics::Fatal(g_editorLogger, __FILE__, __LINE__, "UI::InitializeWin32Backend: invalid window handle");
+		Diagnostics::Fatal(g_editorLogger, __FILE__, __LINE__, "UI::Implementation::InitializeWin32Backend: invalid window handle");
 		return false;
 	}
 
@@ -64,7 +64,7 @@ bool UI::InitializeWin32Backend()
 	return true;
 }
 
-void UI::InitializeDefaultPanels()
+void UI::Implementation::InitializeDefaultPanels()
 {
 	InitializeCorePanels();
 	InitializeViewportPanels();
@@ -72,7 +72,7 @@ void UI::InitializeDefaultPanels()
 	InitializeScenePanels();
 }
 
-void UI::InitializeCorePanels()
+void UI::Implementation::InitializeCorePanels()
 {
 	m_mainMenuBar = std::make_unique<MainMenuBarPanel>(m_levelSession, m_window);
 	ConfigureMainMenuBarWindowActions();
@@ -89,7 +89,7 @@ void UI::InitializeCorePanels()
 	    });
 }
 
-void UI::InitializeViewportPanels()
+void UI::Implementation::InitializeViewportPanels()
 {
 	m_viewportSession = std::make_unique<EditorViewportSession>();
 	m_viewportTopPanel =
@@ -99,7 +99,7 @@ void UI::InitializeViewportPanels()
 	m_viewportPanel->SetExposureOverrides(m_viewportSession->GetSettings().Exposure);
 }
 
-void UI::InitializeAssetPanels()
+void UI::Implementation::InitializeAssetPanels()
 {
 	m_usedShadersPanel = std::make_unique<UsedShadersPanel>();
 	m_usedShadersPanel->SetGenerationProvider(m_shaderGenerationProvider);
@@ -120,7 +120,7 @@ void UI::InitializeAssetPanels()
 	    });
 }
 
-void UI::InitializeScenePanels()
+void UI::Implementation::InitializeScenePanels()
 {
 	m_sceneModel = m_sceneModelBuilder->Update();
 	if (m_sceneModel && !m_sceneModel->GetCameras().empty())
@@ -134,7 +134,7 @@ void UI::InitializeScenePanels()
 	    std::make_unique<SceneInspectorPanel>(m_sceneSelection, *m_transactionHistory, EditorWorkspaceLayout::SceneInspectorWidth);
 }
 
-void UI::ConfigureMainMenuBarWindowActions()
+void UI::Implementation::ConfigureMainMenuBarWindowActions()
 {
 	if (!m_mainMenuBar)
 	{
@@ -183,7 +183,7 @@ void UI::ConfigureMainMenuBarWindowActions()
 	    });
 }
 
-void UI::SubscribeToWindowEvents(Window& window)
+void UI::Implementation::SubscribeToWindowEvents(Window& window)
 {
 	auto handle = window.OnWindowMessage.Add(
 	    [this](WindowMessageEvent& event)
@@ -214,7 +214,7 @@ void UI::SubscribeToWindowEvents(Window& window)
 	m_windowDpiScaleHandle = ScopedEventHandle(window.OnDpiScaleChanged, dpiScaleHandle);
 }
 
-void UI::ApplyDpiScale(float dpiScale) noexcept
+void UI::Implementation::ApplyDpiScale(float dpiScale) noexcept
 {
 	ImGuiStyle& style = ImGui::GetStyle();
 	style = ImGuiStyle{};

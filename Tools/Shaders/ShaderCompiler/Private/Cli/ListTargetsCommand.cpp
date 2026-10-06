@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-int ListTargetsCommand::Run(std::span<const std::string_view> args) const
+int ListShaderTargets(std::span<const std::string_view> args)
 {
 	if (!args.empty())
 	{

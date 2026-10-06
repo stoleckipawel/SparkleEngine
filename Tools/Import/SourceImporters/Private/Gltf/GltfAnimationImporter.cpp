@@ -216,25 +216,6 @@ public:
 		return (std::numeric_limits<std::uint32_t>::max)();
 	}
 
-	static std::pair<std::uint32_t, std::uint32_t> FindSkeletonJointForNode(
-	    const SourceImportOutput& output,
-	    std::uint32_t sourceNodeIndex) noexcept
-	{
-		for (std::size_t skeletonIndex = 0; skeletonIndex < output.scene.skeletons.size(); ++skeletonIndex)
-		{
-			const ImportedSkeleton& skeleton = output.scene.skeletons[skeletonIndex];
-			for (std::size_t jointIndex = 0; jointIndex < skeleton.joints.size(); ++jointIndex)
-			{
-				if (skeleton.joints[jointIndex].sourceNodeIndex == sourceNodeIndex)
-				{
-					return {static_cast<std::uint32_t>(skeletonIndex), static_cast<std::uint32_t>(jointIndex)};
-				}
-			}
-		}
-
-		return {(std::numeric_limits<std::uint32_t>::max)(), (std::numeric_limits<std::uint32_t>::max)()};
-	}
-
 	static ImportedSkeletonIndex FindSkeletonForSkin(
 	    const SourceImportOutput& output,
 	    const cgltf_data& data,
@@ -385,7 +366,7 @@ public:
 		}
 
 		const std::uint32_t targetNodeIndex = static_cast<std::uint32_t>(cgltf_node_index(&data, channel.target_node));
-		const auto [jointSkeletonIndex, targetJointIndex] = FindSkeletonJointForNode(output, targetNodeIndex);
+		const auto [jointSkeletonIndex, targetJointIndex] = output.scene.FindSkeletonJointForNode(targetNodeIndex);
 		const ImportedSkeletonIndex targetSkeletonIndex = targetPath == ImportedAnimationTargetPath::Weights
 		    ? FindSkeletonForSkin(output, data, channel.target_node->skin)
 		    : jointSkeletonIndex;

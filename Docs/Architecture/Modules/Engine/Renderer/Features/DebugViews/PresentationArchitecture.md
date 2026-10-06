@@ -31,7 +31,7 @@ RenderView::viewMode
 selected producer-domain color
         |
         v
-DisplayMappingPass(mode domain, exposure, tone mapper)
+PresentationPasses(mode domain, exposure, tone mapper)
         |
         v
 DisplayLinearColor

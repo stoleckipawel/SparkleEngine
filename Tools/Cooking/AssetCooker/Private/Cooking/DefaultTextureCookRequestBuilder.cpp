@@ -1,5 +1,6 @@
 #include "DefaultTextureCookRequestBuilder.h"
 
+#include "Core/Public/Assets/DefaultTexture.h"
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
@@ -14,7 +15,7 @@ public:
 	struct DefaultTextureCookDesc final
 	{
 		std::string_view SourceRelativePath;
-		std::string_view OutputRelativePath;
+		DefaultTexture Product;
 		TextureColorSpace ColorSpace;
 		TextureMipFilter MipFilter;
 		TextureColorProcessingPolicy ColorProcessingPolicy;
@@ -25,7 +26,7 @@ public:
 	static constexpr std::array DefaultTextures = {
 	    DefaultTextureCookDesc{
 	        "Assets/Textures/Defaults/default_checkerboard.png",
-	        "Defaults/default_checkerboard.stex",
+	        DefaultTexture::Checkerboard,
 	        TextureColorSpace::Srgb,
 	        TextureMipFilter::Kaiser,
 	        TextureColorProcessingPolicy::SrgbLinearize,
@@ -33,7 +34,7 @@ public:
 	        TextureDimension::Texture2D},
 	    DefaultTextureCookDesc{
 	        "Assets/Textures/Defaults/default_white.png",
-	        "Defaults/default_white.stex",
+	        DefaultTexture::White,
 	        TextureColorSpace::Srgb,
 	        TextureMipFilter::Regular,
 	        TextureColorProcessingPolicy::SrgbLinearize,
@@ -41,7 +42,7 @@ public:
 	        TextureDimension::Texture2D},
 	    DefaultTextureCookDesc{
 	        "Assets/Textures/Defaults/default_black.png",
-	        "Defaults/default_black.stex",
+	        DefaultTexture::Black,
 	        TextureColorSpace::Srgb,
 	        TextureMipFilter::Regular,
 	        TextureColorProcessingPolicy::SrgbLinearize,
@@ -49,7 +50,7 @@ public:
 	        TextureDimension::Texture2D},
 	    DefaultTextureCookDesc{
 	        "Assets/Textures/Defaults/default_red.png",
-	        "Defaults/default_red.stex",
+	        DefaultTexture::Red,
 	        TextureColorSpace::Srgb,
 	        TextureMipFilter::Regular,
 	        TextureColorProcessingPolicy::SrgbLinearize,
@@ -57,7 +58,7 @@ public:
 	        TextureDimension::Texture2D},
 	    DefaultTextureCookDesc{
 	        "Assets/Textures/Defaults/default_green.png",
-	        "Defaults/default_green.stex",
+	        DefaultTexture::Green,
 	        TextureColorSpace::Srgb,
 	        TextureMipFilter::Regular,
 	        TextureColorProcessingPolicy::SrgbLinearize,
@@ -65,7 +66,7 @@ public:
 	        TextureDimension::Texture2D},
 	    DefaultTextureCookDesc{
 	        "Assets/Textures/Defaults/default_blue.png",
-	        "Defaults/default_blue.stex",
+	        DefaultTexture::Blue,
 	        TextureColorSpace::Srgb,
 	        TextureMipFilter::Regular,
 	        TextureColorProcessingPolicy::SrgbLinearize,
@@ -73,7 +74,7 @@ public:
 	        TextureDimension::Texture2D},
 	    DefaultTextureCookDesc{
 	        "Assets/Textures/Defaults/default_normal.png",
-	        "Defaults/default_normal.stex",
+	        DefaultTexture::Normal,
 	        TextureColorSpace::Linear,
 	        TextureMipFilter::NormalAware,
 	        TextureColorProcessingPolicy::Linear,
@@ -81,7 +82,7 @@ public:
 	        TextureDimension::Texture2D},
 	    DefaultTextureCookDesc{
 	        "Assets/Textures/Sky/evening_road_01_puresky_4k.exr",
-	        "Defaults/default_cubemap.stex",
+	        DefaultTexture::Sky,
 	        TextureColorSpace::Linear,
 	        TextureMipFilter::Regular,
 	        TextureColorProcessingPolicy::Linear,
@@ -99,11 +100,11 @@ public:
 			throw Diagnostics::Error("Default source texture was not found: " + sourcePath.string() + ".");
 		}
 
+		const DefaultTextureDesc& product = DefaultTextureDescs[static_cast<std::size_t>(description.Product)];
 		TextureCookRequest request;
-		request.assetId = Hash::Fnv1a64(std::string("engine-default-texture:") + std::string(description.OutputRelativePath));
+		request.assetId = Hash::Fnv1a64(std::string("engine-default-texture:") + std::string(product.path));
 		request.sourcePath = sourcePath;
-		request.outputPath =
-		    (Filesystem::GetCookedTextureRootPath() / std::filesystem::path(description.OutputRelativePath)).lexically_normal();
+		request.outputPath = (Filesystem::GetCookedTextureRootPath() / std::filesystem::path(product.path)).lexically_normal();
 		request.policy.colorSpace = description.ColorSpace;
 		request.policy.mipPolicy = TextureMipPolicy::Generate;
 		request.policy.mipFilter = description.MipFilter;

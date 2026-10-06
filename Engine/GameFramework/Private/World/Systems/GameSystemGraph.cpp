@@ -20,7 +20,7 @@ namespace ECS
 
 	bool CompiledGameSystemGraph::IsValid() const noexcept
 	{
-		return m_data != nullptr && !m_data->Error && m_data->Tasks.IsValid();
+		return m_data != nullptr && !m_data->Error && !m_data->Systems.empty();
 	}
 
 	const GameSystemGraphError& CompiledGameSystemGraph::GetError() const noexcept
@@ -34,8 +34,10 @@ namespace ECS
 		return m_data != nullptr ? std::span<const GameSystemDesc>(m_data->Systems) : std::span<const GameSystemDesc>{};
 	}
 
-	void GameSystemGraph::Add(GameSystemDesc descriptor)
+	std::uint32_t GameSystemGraph::Add(GameSystemDesc descriptor)
 	{
+		const auto index = static_cast<std::uint32_t>(m_systems.size());
 		m_systems.push_back(std::move(descriptor));
+		return index;
 	}
 }

@@ -15,8 +15,6 @@
 #include "World/Systems/Execution/TransformSystemExecution.h"
 #include "World/Systems/GameSystemGraph.h"
 
-#include <array>
-
 namespace ECS
 {
 
@@ -26,71 +24,231 @@ namespace ECS
 		return storage == nullptr ? 0u : static_cast<std::uint32_t>(storage->GetEntities().size());
 	}
 
-	class GameWorldSystemBindingSet final
+	class GameWorldSystemExecution final
 	{
 	public:
-		GameWorldSystemBindingSet(
-		    GameWorldState& state,
-		    const GameWorldSystemExecutionContext& context,
-		    const StructureFrozenEpoch& epoch) :
+		GameWorldSystemExecution(GameWorldState& state, const GameWorldSystemExecutionContext& context, const StructureFrozenEpoch& epoch) :
 		    m_simulation(state, context.Camera, epoch),
 		    m_animation(state, context.Resources, context.Camera.DeltaSeconds, epoch),
 		    m_transform(state, epoch),
 		    m_extraction(state, context.Resources.Skeletons, epoch),
 		    m_state(state)
 		{
-			BuildBindings();
 		}
 
-		std::span<const GameSystemExecutionBinding> GetBindings() const noexcept { return m_bindings; }
+		static CompiledGameSystemGraph BuildGraph();
 
 	private:
-		void BuildBindings()
-		{
-			m_bindings = {{
-			    {GameWorldSystemIds::CameraMovement,
-			        [this] { return m_simulation.GetCameraCount(); },
-			        [this](auto b, auto e) { return m_simulation.RunCamera(b, e); }},
-			    {GameWorldSystemIds::PlaybackAdvance,
-			        [this] { return m_animation.GetPlaybackCount(); },
-			        [this](auto b, auto e) { return m_animation.RunPlayback(b, e); }},
-			    {GameWorldSystemIds::PoseEvaluation,
-			        [this] { return m_animation.GetPoseCount(); },
-			        [this](auto b, auto e) { return m_animation.RunPose(b, e); }},
-			    {GameWorldSystemIds::MorphWeightEvaluation,
-			        [this] { return m_animation.GetMorphSampleCount(); },
-			        [this](auto b, auto e) { return m_animation.RunMorphSamples(b, e); }},
-			    {GameWorldSystemIds::SkinningMatrixEvaluation,
-			        [this] { return m_animation.GetSkinningCount(); },
-			        [this](auto b, auto e) { return m_animation.RunSkinning(b, e); }},
-			    {GameWorldSystemIds::MorphOutputCommit,
-			        [] { return 1u; },
-			        [this](auto b, auto e) { return m_animation.CommitMorphOutputs(b, e); }},
-			    {GameWorldSystemIds::SystemOutputCommit,
-			        [] { return 1u; },
-			        [this](auto, auto) { return SystemChangeCommitter::CommitSystemOutputs(m_state); }},
-			    {GameWorldSystemIds::TransformEvaluation,
-			        [this] { return m_transform.GetDirtyTransformCount(); },
-			        [this](auto b, auto e) { return m_transform.RunTransforms(b, e); }},
-			    {GameWorldSystemIds::CameraDerivedState,
-			        [this] { return m_transform.GetDirtyTransformCount(); },
-			        [this](auto b, auto e) { return m_transform.RunCameraDerivedState(b, e); }},
-			    {GameWorldSystemIds::MeshExtraction,
-			        [this] { return m_extraction.GetMeshCount(); },
-			        [this](auto b, auto e) { return m_extraction.Run(b, e); }},
-			    {GameWorldSystemIds::ExtractionCommit,
-			        [] { return 1u; },
-			        [this](auto, auto) { return SystemChangeCommitter::CommitExtraction(m_state); }},
-			}};
-		}
-
 		SimulationSystemExecution m_simulation;
 		AnimationSystemExecution m_animation;
 		TransformSystemExecution m_transform;
 		MeshExtractionSystemExecution m_extraction;
 		GameWorldState& m_state;
-		std::array<GameSystemExecutionBinding, 11> m_bindings;
 	};
+
+	CompiledGameSystemGraph GameWorldSystemExecution::BuildGraph()
+	{
+		GameSystemGraph graph;
+		GameSystemDesc camera{"Game.CameraMovement", GameSystemPhase::Simulation};
+		camera.DeclareQuery<CameraMovementQuery>();
+		camera.Resources = {
+		    {GameSystemResourceDomain::UpdateInputs, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::CameraInputIntent, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::CameraNavigationSettings, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::SystemChangeScratch, GameSystemAccessMode::Write}};
+		camera.RangePolicy = GameWorldSystemGrain::Camera;
+		camera.GetItemCount = [](GameWorldSystemExecution& self)
+		{
+			return self.m_simulation.GetCameraCount();
+		};
+		camera.ExecuteRange = [](GameWorldSystemExecution& self, std::uint32_t begin, std::uint32_t end)
+		{
+			return self.m_simulation.RunCamera(begin, end);
+		};
+		graph.Add(std::move(camera));
+
+		GameSystemDesc playback{"Game.AnimationPlaybackAdvance", GameSystemPhase::Animation};
+		playback.DeclareQuery<PlaybackAdvanceQuery>();
+		playback.Resources = {
+		    {GameSystemResourceDomain::UpdateInputs, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::AnimationClips, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::SystemChangeScratch, GameSystemAccessMode::Write}};
+		playback.RangePolicy = GameWorldSystemGrain::Animation;
+		playback.GetItemCount = [](GameWorldSystemExecution& self)
+		{
+			return self.m_animation.GetPlaybackCount();
+		};
+		playback.ExecuteRange = [](GameWorldSystemExecution& self, std::uint32_t begin, std::uint32_t end)
+		{
+			return self.m_animation.RunPlayback(begin, end);
+		};
+		const auto playbackIndex = graph.Add(std::move(playback));
+
+		GameSystemDesc pose{"Game.AnimationPoseEvaluation", GameSystemPhase::Animation};
+		pose.DeclareQuery<PoseEvaluationQuery>();
+		pose.Resources = {
+		    {GameSystemResourceDomain::AnimationClips, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::SkeletonResources, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::PoseScratch, GameSystemAccessMode::Write}};
+		pose.Prerequisites = {playbackIndex};
+		pose.RangePolicy = GameWorldSystemGrain::Pose;
+		pose.GetItemCount = [](GameWorldSystemExecution& self)
+		{
+			return self.m_animation.GetPoseCount();
+		};
+		pose.ExecuteRange = [](GameWorldSystemExecution& self, std::uint32_t begin, std::uint32_t end)
+		{
+			return self.m_animation.RunPose(begin, end);
+		};
+		const auto poseIndex = graph.Add(std::move(pose));
+
+		GameSystemDesc morph{"Game.MorphWeightEvaluation", GameSystemPhase::Animation};
+		morph.DeclareQuery<MorphEvaluationQuery>();
+		morph.Resources = {
+		    {GameSystemResourceDomain::AnimationClips, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::MorphScratch, GameSystemAccessMode::Write}};
+		morph.Prerequisites = {playbackIndex};
+		morph.RangePolicy = GameWorldSystemGrain::Animation;
+		morph.GetItemCount = [](GameWorldSystemExecution& self)
+		{
+			return self.m_animation.GetMorphSampleCount();
+		};
+		morph.ExecuteRange = [](GameWorldSystemExecution& self, std::uint32_t begin, std::uint32_t end)
+		{
+			return self.m_animation.RunMorphSamples(begin, end);
+		};
+		const auto morphIndex = graph.Add(std::move(morph));
+
+		GameSystemDesc skinning{"Game.SkinningMatrixEvaluation", GameSystemPhase::Deformation};
+		skinning.Resources = {
+		    {GameSystemResourceDomain::PoseScratch, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::SkeletonResources, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::SkinningOutput, GameSystemAccessMode::Write}};
+		skinning.Prerequisites = {poseIndex};
+		skinning.RangePolicy = GameWorldSystemGrain::Pose;
+		skinning.GetItemCount = [](GameWorldSystemExecution& self)
+		{
+			return self.m_animation.GetSkinningCount();
+		};
+		skinning.ExecuteRange = [](GameWorldSystemExecution& self, std::uint32_t begin, std::uint32_t end)
+		{
+			return self.m_animation.RunSkinning(begin, end);
+		};
+		const auto skinningIndex = graph.Add(std::move(skinning));
+
+		GameSystemDesc morphCommit{"Game.MorphOutputCommit", GameSystemPhase::Deformation};
+		morphCommit.Resources = {
+		    {GameSystemResourceDomain::MorphScratch, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::MorphOutput, GameSystemAccessMode::Write}};
+		morphCommit.Prerequisites = {morphIndex};
+		morphCommit.RangePolicy = GameWorldSystemGrain::SingleItem;
+		morphCommit.GetItemCount = [](GameWorldSystemExecution&)
+		{
+			return 1u;
+		};
+		morphCommit.ExecuteRange = [](GameWorldSystemExecution& self, std::uint32_t begin, std::uint32_t end)
+		{
+			return self.m_animation.CommitMorphOutputs(begin, end);
+		};
+		const auto morphCommitIndex = graph.Add(std::move(morphCommit));
+
+		GameSystemDesc outputCommit{"Game.SystemOutputCommit", GameSystemPhase::Deformation};
+		outputCommit.Resources = {
+		    {GameSystemResourceDomain::SkinningOutput, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::MorphOutput, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::SystemChangeScratch, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::DirtyTransforms, GameSystemAccessMode::Write},
+		    {GameSystemResourceDomain::WorldChanges, GameSystemAccessMode::Write}};
+		outputCommit.Prerequisites = {skinningIndex, morphCommitIndex};
+		outputCommit.RangePolicy = GameWorldSystemGrain::SingleItem;
+		outputCommit.GetItemCount = [](GameWorldSystemExecution&)
+		{
+			return 1u;
+		};
+		outputCommit.ExecuteRange = [](GameWorldSystemExecution& self, std::uint32_t, std::uint32_t)
+		{
+			return SystemChangeCommitter::CommitSystemOutputs(self.m_state);
+		};
+		graph.Add(std::move(outputCommit));
+
+		GameSystemDesc transform{"Game.TransformEvaluation", GameSystemPhase::Transform};
+		transform.DeclareQuery<TransformEvaluationQuery>();
+		transform.Resources = {
+		    {GameSystemResourceDomain::DirtyTransforms, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::TransformScratch, GameSystemAccessMode::Write}};
+		transform.RangePolicy = GameWorldSystemGrain::Transform;
+		transform.GetItemCount = [](GameWorldSystemExecution& self)
+		{
+			return self.m_transform.GetDirtyTransformCount();
+		};
+		transform.ExecuteRange = [](GameWorldSystemExecution& self, std::uint32_t begin, std::uint32_t end)
+		{
+			return self.m_transform.RunTransforms(begin, end);
+		};
+		const auto transformIndex = graph.Add(std::move(transform));
+
+		GameSystemDesc cameraDerived{"Game.CameraDerivedState", GameSystemPhase::Transform};
+		cameraDerived.DeclareQuery<CameraDerivedStateQuery>();
+		cameraDerived.Resources = {
+		    {GameSystemResourceDomain::DirtyTransforms, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::CameraDerivedScratch, GameSystemAccessMode::Write}};
+		cameraDerived.Prerequisites = {transformIndex};
+		cameraDerived.RangePolicy = GameWorldSystemGrain::Transform;
+		cameraDerived.GetItemCount = [](GameWorldSystemExecution& self)
+		{
+			return self.m_transform.GetDirtyTransformCount();
+		};
+		cameraDerived.ExecuteRange = [](GameWorldSystemExecution& self, std::uint32_t begin, std::uint32_t end)
+		{
+			return self.m_transform.RunCameraDerivedState(begin, end);
+		};
+		graph.Add(std::move(cameraDerived));
+
+		GameSystemDesc extraction{"Game.MeshExtraction", GameSystemPhase::Extraction};
+		extraction.DeclareQuery<MeshExtractionQuery>();
+		extraction.Resources = {
+		    {GameSystemResourceDomain::MeshResources, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::SkeletonResources, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::SkinningOutput, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::MorphOutput, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::ExtractionScratch, GameSystemAccessMode::Write}};
+		extraction.RangePolicy = GameWorldSystemGrain::Extraction;
+		extraction.GetItemCount = [](GameWorldSystemExecution& self)
+		{
+			return self.m_extraction.GetMeshCount();
+		};
+		extraction.ExecuteRange = [](GameWorldSystemExecution& self, std::uint32_t begin, std::uint32_t end)
+		{
+			return self.m_extraction.Run(begin, end);
+		};
+		const auto extractionIndex = graph.Add(std::move(extraction));
+
+		GameSystemDesc extractionCommit{"Game.ExtractionCommit", GameSystemPhase::Extraction};
+		extractionCommit.Resources = {
+		    {GameSystemResourceDomain::ExtractionScratch, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::ExtractionOutput, GameSystemAccessMode::Write},
+		    {GameSystemResourceDomain::TransformScratch, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::CameraDerivedScratch, GameSystemAccessMode::Read},
+		    {GameSystemResourceDomain::WorldChanges, GameSystemAccessMode::Write},
+		    {GameSystemResourceDomain::WorldPublication, GameSystemAccessMode::Write}};
+		extractionCommit.Prerequisites = {extractionIndex};
+		extractionCommit.RangePolicy = GameWorldSystemGrain::SingleItem;
+		extractionCommit.GetItemCount = [](GameWorldSystemExecution&)
+		{
+			return 1u;
+		};
+		extractionCommit.ExecuteRange = [](GameWorldSystemExecution& self, std::uint32_t, std::uint32_t)
+		{
+			return SystemChangeCommitter::CommitExtraction(self.m_state);
+		};
+		graph.Add(std::move(extractionCommit));
+		return graph.Compile();
+	}
+
+	CompiledGameSystemGraph BuildGameWorldSystemGraph()
+	{
+		return GameWorldSystemExecution::BuildGraph();
+	}
 
 	bool ExecuteGameWorldSystems(GameWorldState& state, const GameWorldSystemExecutionContext& context)
 	{
@@ -126,9 +284,9 @@ namespace ECS
 		StructureFrozenEpoch epoch = state.m_registry.FreezeStructure();
 		if (!epoch.IsValid())
 			return false;
-		GameWorldSystemBindingSet bindings(state, context, epoch);
+		GameWorldSystemExecution systems(state, context, epoch);
 		GameSystemGraphError error;
-		const bool executed = state.m_systemGraph.Execute(context.Executor, bindings.GetBindings(), error);
+		const bool executed = state.m_systemGraph.Execute(context.Executor, systems, error);
 		if (executed)
 		{
 			state.m_dirtyTransforms.clear();

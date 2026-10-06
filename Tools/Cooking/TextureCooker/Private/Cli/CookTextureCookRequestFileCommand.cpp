@@ -5,12 +5,7 @@
 #include "Constants/TextureCookerConstants.h"
 #include "Cooking/TextureCookRequestBatchProcessor.h"
 
-bool CookTextureCookRequestFileCommand::MatchesName(std::string_view commandName) noexcept
-{
-	return commandName == TextureCookerConstants::CookRequestFileCommand;
-}
-
-int CookTextureCookRequestFileCommand::Execute(const std::filesystem::path& requestFilePath) const
+int CookTextureCookRequestFile(const std::filesystem::path& requestFilePath)
 {
 	TextureCookRequestBatchProcessor batchProcessor;
 	return batchProcessor.CookRequestFile(requestFilePath);

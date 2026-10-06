@@ -158,6 +158,16 @@ function(sparkle_boundary_scan_file absolute_path)
                 "${_line}")
         endif()
 
+        if(_relative_path MATCHES "^Engine/Renderer/Private/FrameGraph/" AND
+           _line MATCHES "RenderViewMode|ViewportRenderRequest|GetViewMode|#include[^\n]*Viewport/(ViewportContracts|RenderViewMode)[.]h")
+            sparkle_boundary_append_failure(
+                "RENDERER_FRAME_GRAPH_EXCLUDES_VIEW_SELECTION"
+                "${_relative_path}"
+                "${_line_number}"
+                "Frame-graph infrastructure owns graph authoring and execution; view selection and viewport requests stay in high-level composition."
+                "${_line}")
+        endif()
+
         if(_relative_path STREQUAL "Engine/Renderer/Private/Passes/Scene/SceneRenderingPasses.cpp" AND
            _line MATCHES "#include[^\n]*Passes/(GBuffer|Lighting/RealTimeLighting|Lighting/Restir|Lighting/ReferencePathTracer/(ReferencePathTracerDisplay|ReferencePathTracerResources|ReferencePathTracerSession|ReferencePathTracerTransport))" AND
            NOT _line MATCHES "#include[^\n]*Passes/Lighting/Restir/Reconstruction/RestirRayReconstruction[.]h")

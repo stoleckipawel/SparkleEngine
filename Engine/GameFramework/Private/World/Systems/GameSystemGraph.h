@@ -4,7 +4,6 @@
 #include "World/ECS/QueryAccess.h"
 
 #include <cstdint>
-#include <functional>
 #include <memory>
 #include <span>
 #include <string>
@@ -18,26 +17,7 @@ namespace ECS
 {
 	struct CompiledGameSystemGraphData;
 
-	struct GameSystemId final
-	{
-		std::uint64_t Value = 0;
-
-		constexpr bool IsValid() const noexcept { return Value != 0; }
-		constexpr auto operator<=>(const GameSystemId&) const noexcept = default;
-	};
-
-	constexpr GameSystemId MakeGameSystemId(std::string_view canonicalName) noexcept
-	{
-		constexpr std::uint64_t OffsetBasis = 14695981039346656037ull;
-		constexpr std::uint64_t Prime = 1099511628211ull;
-		std::uint64_t hash = OffsetBasis;
-		for (char character : canonicalName)
-		{
-			hash ^= static_cast<std::uint8_t>(character);
-			hash *= Prime;
-		}
-		return GameSystemId{hash};
-	}
+	class GameWorldSystemExecution;
 
 	enum class GameSystemPhase : std::uint8_t
 	{
@@ -82,27 +62,16 @@ namespace ECS
 		GameSystemAccessMode Mode = GameSystemAccessMode::Read;
 	};
 
-	enum class GameSystemExecutionMode : std::uint8_t
-	{
-		SingleTask,
-		ParallelRanges,
-	};
-
-	struct GameSystemExecutionPolicy final
-	{
-		GameSystemExecutionMode Mode = GameSystemExecutionMode::SingleTask;
-		ParallelForPolicy RangePolicy{};
-	};
-
 	struct GameSystemDesc final
 	{
-		GameSystemId Id;
 		std::string Name;
 		GameSystemPhase Phase = GameSystemPhase::Simulation;
 		std::vector<ComponentAccessDesc> Components;
 		std::vector<GameSystemResourceAccess> Resources;
-		std::vector<GameSystemId> Prerequisites;
-		GameSystemExecutionPolicy Execution;
+		std::vector<std::uint32_t> Prerequisites;
+		ParallelForPolicy RangePolicy;
+		std::uint32_t (*GetItemCount)(GameWorldSystemExecution&) = nullptr;
+		bool (*ExecuteRange)(GameWorldSystemExecution&, std::uint32_t begin, std::uint32_t end) = nullptr;
 
 		template <typename QueryType> void DeclareQuery()
 		{
@@ -114,7 +83,6 @@ namespace ECS
 	enum class GameSystemGraphErrorCode : std::uint8_t
 	{
 		None,
-		EmptySystemId,
 		EmptySystemName,
 		DuplicateSystem,
 		MissingPrerequisite,
@@ -126,7 +94,6 @@ namespace ECS
 		AmbiguousHazard,
 		Cycle,
 		TaskGraphRejected,
-		BindingMismatch,
 		ExecutionFailed,
 	};
 
@@ -136,16 +103,6 @@ namespace ECS
 		std::string Message;
 
 		explicit operator bool() const noexcept { return Code != GameSystemGraphErrorCode::None; }
-	};
-
-	using GameSystemItemCountFunction = std::function<std::uint32_t()>;
-	using GameSystemRangeFunction = std::function<bool(std::uint32_t begin, std::uint32_t end)>;
-
-	struct GameSystemExecutionBinding final
-	{
-		GameSystemId Id;
-		GameSystemItemCountFunction GetItemCount;
-		GameSystemRangeFunction ExecuteRange;
 	};
 
 	class CompiledGameSystemGraph final
@@ -162,7 +119,7 @@ namespace ECS
 		explicit operator bool() const noexcept { return IsValid(); }
 		const GameSystemGraphError& GetError() const noexcept;
 		std::span<const GameSystemDesc> GetSystems() const noexcept;
-		bool Execute(TaskExecutor& executor, std::span<const GameSystemExecutionBinding> bindings, GameSystemGraphError& error) const;
+		bool Execute(TaskExecutor& executor, GameWorldSystemExecution& systems, GameSystemGraphError& error) const;
 
 	private:
 		friend class GameSystemGraph;
@@ -173,7 +130,7 @@ namespace ECS
 	class GameSystemGraph final
 	{
 	public:
-		void Add(GameSystemDesc descriptor);
+		std::uint32_t Add(GameSystemDesc descriptor);
 		CompiledGameSystemGraph Compile() const;
 
 	private:

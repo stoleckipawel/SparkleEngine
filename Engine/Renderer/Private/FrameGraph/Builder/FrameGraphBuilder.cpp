@@ -1,13 +1,9 @@
 #include "PCH.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 
-FrameGraphBuilder::FrameGraphBuilder(
-    FrameGraph& frameGraph,
-    const RenderPassRuntimeCache& renderPassRuntimeCache,
-    const ViewportRenderRequest& viewportRequest) noexcept :
+FrameGraphBuilder::FrameGraphBuilder(FrameGraph& frameGraph, const RenderPassRuntimeCache& renderPassRuntimeCache) noexcept :
     m_frameGraph(frameGraph),
-    m_renderPassRuntimeCache(renderPassRuntimeCache),
-    m_viewportRequest(viewportRequest)
+    m_renderPassRuntimeCache(renderPassRuntimeCache)
 {
 }
 

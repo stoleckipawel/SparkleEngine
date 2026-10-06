@@ -1,12 +1,6 @@
 #pragma once
 
-#include "Cli/ICommand.h"
-
 #include <span>
 #include <string_view>
 
-class ListShadersCommand final : public ICommand
-{
-public:
-	int Run(std::span<const std::string_view> args) const override;
-};
+int ListShaders(std::span<const std::string_view> args);

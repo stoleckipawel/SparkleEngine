@@ -60,7 +60,7 @@ Typed pass structures declare direct scalar/vector/matrix values, shared global 
 - shared/unique sampler tables through the descriptor service;
 - explicit address/table/push-constant overrides where the contract requires native or externally supplied bindings.
 
-Graph construction reads the canonical submitted mode through `FrameGraphBuilder::GetViewMode()`. Scene topology identity includes that mode, so changing Lit, Reference, Wireframe, or visualization selection rebuilds the applicable graph rather than reusing a graph selected for a different view. Feature eligibility is resolved at its consuming owner; CVar-derived reconstruction booleans are not transported through frame settings or pass signatures.
+High-level scene and presentation composition read the canonical viewport request by reference; the frame-graph builder carries no view mode or viewport request. Visualization composition selects one product family, scene composition encloses Lit reconstruction, and presentation composition chooses the signal domain. Lower pass authoring receives the selected operation's actual inputs; runtime setup reads the prepared `RenderView`. Scene topology identity still includes the mode, so a mode change rebuilds the applicable graph. Feature eligibility is resolved at its consuming owner; CVar-derived reconstruction booleans are not transported through frame settings or pass signatures.
 
 Missing bindings, incompatible value kinds, attachment-as-SRV misuse, wrong array cardinality, unresolved resources/descriptors, absent required overrides, unknown named bindings, layout mismatch, or unsupported compiled binding type are fatal contract violations. There is no silent null binding policy.
 

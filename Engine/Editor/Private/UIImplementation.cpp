@@ -1,0 +1,208 @@
+#include "PCH.h"
+
+#include "UIImplementation.h"
+
+#include "Console/EditorConsoleSystem.h" // IWYU pragma: keep
+#include "GameFramework/Public/Rendering/RenderViewCameraData.h"
+#include "GameFramework/Public/Scene/Camera/CameraInputIntent.h"
+#include "Panels/MainMenuBarPanel.h"
+#include "Panels/SceneInspectorPanel.h"
+#include "Panels/SceneOutlinerPanel.h"
+#include "Panels/SettingsPanel.h"
+#include "Panels/UsedMeshesPanel.h"
+#include "Panels/UsedShadersPanel.h"
+#include "Panels/UsedTexturesPanel.h"
+#include "Panels/ViewportPanel.h"
+#include "Panels/ViewportTopPanel.h"
+#include "Renderer/Public/Diagnostics/RendererMemoryDiagnostics.h"
+#include "Renderer/Public/UI/UiTextureHandle.h"
+#include "Renderer/Public/Settings/EngineRenderingSettings.h"
+#include "Renderer/Public/UI/ImGuiRenderPacketBuilder.h"
+#include "Renderer/Public/UI/UiRenderPacket.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
+#include "Scene/Model/EditorSceneModel.h"
+#include "Scene/Model/EditorSceneModelBuilder.h"
+#include "Scene/Transactions/EditorTransactionHistory.h"
+#include "Settings/EngineRenderingSettingsController.h"
+#include "Settings/EditorRestartService.h"
+#include "Viewport/EditorViewportSession.h"
+#include "Window/Window.h"
+
+#include <backends/imgui_impl_win32.h>
+#include <imgui.h>
+
+#include <memory>
+#include <utility>
+
+const ViewportRenderRequest& UI::Implementation::GetViewportRenderRequest() const noexcept
+{
+	static const ViewportRenderRequest defaultRequest = []
+	{
+		ViewportRenderRequest request{};
+		request.ViewportId = 1;
+		request.ViewKind = RenderViewKind::Scene;
+		request.RequestedOutputs = RenderOutputFlags::FinalColorLdr | RenderOutputFlags::SceneDepth;
+		return request;
+	}();
+
+	return m_viewportPanel ? m_viewportPanel->GetRenderRequest() : defaultRequest;
+}
+
+RenderViewCameraData UI::Implementation::UpdateViewportCamera(const CameraInputIntent& intent, float deltaSeconds) noexcept
+{
+	UpdateSceneModel();
+	if (!m_viewportSession || !m_sceneModel)
+	{
+		return {};
+	}
+
+	const RenderViewportExtent extent = GetViewportRenderRequest().Extent;
+	m_viewportSession->SynchronizeWorld(m_sceneModel->GetCameras(), m_sceneModel->GetWorldGeneration());
+	const RenderViewCameraData camera = m_viewportSession->UpdateCamera(intent, deltaSeconds, extent);
+	if (m_viewportPanel)
+	{
+		m_viewportPanel->SetExposureOverrides(m_viewportSession->GetSettings().Exposure);
+	}
+	return camera;
+}
+
+void UI::Implementation::SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept
+{
+	m_viewportGeneration = products.GetGeneration();
+	if (m_viewportPanel)
+	{
+		m_viewportPanel->SetRenderProducts(products);
+	}
+}
+
+void UI::Implementation::SetViewportFinalColorTexture(UiTextureHandle texture) noexcept
+{
+	if (m_viewportPanel)
+	{
+		m_viewportPanel->SetFinalColorTexture(texture);
+	}
+}
+
+void UI::Implementation::SetDiagnosticsProviders(EditorDiagnosticsProviders providers)
+{
+	m_shaderGenerationProvider = std::move(providers.ShaderGeneration);
+	m_meshDiagnosticsProvider = std::move(providers.MeshDiagnostics);
+	m_textureDiagnosticsProvider = std::move(providers.TextureDiagnostics);
+	m_memoryDiagnosticsProvider = std::move(providers.MemoryDiagnostics);
+	m_meshPreviewProvider = std::move(providers.MeshPreview);
+
+	if (m_usedShadersPanel)
+	{
+		m_usedShadersPanel->SetGenerationProvider(m_shaderGenerationProvider);
+	}
+	if (m_usedMeshesPanel)
+	{
+		m_usedMeshesPanel->SetDiagnosticsProvider(m_meshDiagnosticsProvider);
+		m_usedMeshesPanel->SetPreviewGeometryProvider(m_meshPreviewProvider);
+	}
+	if (m_usedTexturesPanel)
+	{
+		m_usedTexturesPanel->SetDiagnosticsProvider(m_textureDiagnosticsProvider);
+	}
+	ConfigureMainMenuBarWindowActions();
+}
+
+RendererMemoryDiagnosticsSnapshot UI::Implementation::CaptureMemoryDiagnostics() const
+{
+	return m_memoryDiagnosticsProvider ? m_memoryDiagnosticsProvider() : RendererMemoryDiagnosticsSnapshot{};
+}
+
+bool UI::Implementation::ConsumeShaderReloadRequest() noexcept
+{
+	const bool requested = m_shaderReloadRequested;
+	m_shaderReloadRequested = false;
+	return requested;
+}
+
+bool UI::Implementation::ConsumeShaderRecookRequest() noexcept
+{
+	const bool requested = m_shaderRecookRequested;
+	m_shaderRecookRequested = false;
+	return requested;
+}
+
+ViewportOutputAction UI::Implementation::ConsumeViewportOutputAction() noexcept
+{
+	return m_viewportPanel ? m_viewportPanel->ConsumeOutputAction() : ViewportOutputAction::None;
+}
+
+UiRenderPacket UI::Implementation::ConsumeRenderPacket()
+{
+	return std::move(m_renderPacket);
+}
+
+UI::Implementation::Implementation(EditorHostServices hostServices) :
+    m_timer(&hostServices.RuntimeTimer),
+    m_levelSession(hostServices.Levels),
+    m_window(&hostServices.HostWindow),
+    m_inputSystem(&hostServices.Input),
+    m_sceneSelection(SceneObjectSelection::None())
+{
+	m_sceneModelBuilder = std::make_unique<EditorSceneModelBuilder>(EditorSceneSource{
+	    .AcquireReadView = std::move(hostServices.AcquireWorldReadView),
+	    .ReadChanges = std::move(hostServices.ReadWorldChanges),
+	    .AcknowledgeChanges = std::move(hostServices.AcknowledgeWorldChanges),
+	    .WorldGeneration = std::move(hostServices.WorldGeneration),
+	    .MaterialVariants = std::move(hostServices.MaterialVariants)});
+	m_transactionHistory = std::make_unique<EditorTransactionHistory>(std::move(hostServices.SubmitWorldEdit));
+	m_renderPacketBuilder = std::make_unique<ImGuiRenderPacketBuilder>();
+	m_renderingSettings = std::make_unique<EngineRenderingSettingsController>(
+	    std::move(hostServices.RenderingSettings),
+	    std::move(hostServices.SubmitRenderingSettings),
+	    std::move(hostServices.CaptureRenderingSettings));
+	m_consoleVariables = std::move(hostServices.ConsoleVariables);
+	m_editorConsoleSystem = std::make_unique<EditorConsoleSystem>(m_consoleVariables);
+
+	InitializeImGuiContext();
+	ApplyDpiScale(m_window->GetDpiScale());
+	if (!InitializeWin32Backend())
+	{
+		return;
+	}
+
+	InitializeDefaultPanels();
+	if (m_viewportSession && m_viewportPanel)
+	{
+		m_viewportSession->SetViewModeChangedHandler([this](RenderViewMode viewMode) { m_viewportPanel->SetViewMode(viewMode); });
+	}
+	SubscribeToWindowEvents(hostServices.HostWindow);
+}
+
+UI::Implementation::~Implementation() noexcept
+{
+	m_windowDpiScaleHandle.Reset();
+	m_windowMessageHandle.Reset();
+
+	if (m_isWin32BackendInitialized)
+	{
+		ImGui_ImplWin32_Shutdown();
+		m_isWin32BackendInitialized = false;
+	}
+	if (m_isImGuiContextInitialized)
+	{
+		ImGui::DestroyContext();
+		m_isImGuiContextInitialized = false;
+	}
+}
+
+void UI::Implementation::Update()
+{
+	if (!IsReady())
+	{
+		return;
+	}
+
+	NewFrame();
+	Build();
+	m_renderPacket = m_renderPacketBuilder->Build(*ImGui::GetDrawData(), UiPresentationMode::Viewport, m_viewportGeneration);
+}
+
+bool UI::Implementation::IsReady() const noexcept
+{
+	return m_isImGuiContextInitialized && m_isWin32BackendInitialized;
+}

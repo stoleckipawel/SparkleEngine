@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Public/Viewport/RenderViewMode.h"
+#include "Passes/Presentation/PresentationPolicy.h"
 
 class FrameGraphBuilder;
 class RendererImageProviderStack;
@@ -10,5 +10,6 @@ struct RenderFrameGraphSettings;
 void AddSceneUpscalingPasses(
     FrameGraphBuilder& builder,
     const RenderFrameGraphSettings& settings,
+    SceneUpscalingMethod method,
     RendererImageProviderStack& imageProviders,
     RenderFrameGraphResources& resources);

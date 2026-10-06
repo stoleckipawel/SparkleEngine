@@ -3,15 +3,11 @@
 #include "World/Systems/GameSystemGraph.h"
 
 #include "World/Systems/CompiledGameSystemGraphData.h"
-#include "World/Systems/Execution/GameSystemExecution.h"
-#include "Tasks/Public/TaskExecutionContext.h"
-#include "Tasks/Public/TaskGraph.h"
 
 #include <algorithm>
 #include <format>
 #include <limits>
 #include <memory>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -44,7 +40,7 @@ namespace ECS
 				return std::move(m_data);
 			}
 
-			BuildTaskGraph();
+			BuildExecutionWaves();
 			return std::move(m_data);
 		}
 
@@ -162,11 +158,6 @@ namespace ECS
 			for (std::uint32_t index = 0; index < m_data->Systems.size(); ++index)
 			{
 				const GameSystemDesc& system = m_data->Systems[index];
-				if (!system.Id.IsValid())
-				{
-					m_data->Error = {GameSystemGraphErrorCode::EmptySystemId, "A game system has an empty stable ID."};
-					return false;
-				}
 				if (system.Name.empty())
 				{
 					m_data->Error = {GameSystemGraphErrorCode::EmptySystemName, "A game system has an empty name."};
@@ -179,10 +170,15 @@ namespace ECS
 					    std::format("Game system '{}' declares no component query or resource access.", system.Name)};
 					return false;
 				}
-				if (!m_systemById.emplace(system.Id.Value, index).second || !m_systemByName.emplace(system.Name, index).second)
+				for (std::uint32_t prior = 0; prior < index; ++prior)
 				{
-					m_data->Error = {GameSystemGraphErrorCode::DuplicateSystem, std::format("Duplicate game system '{}'.", system.Name)};
-					return false;
+					if (m_data->Systems[prior].Name == system.Name)
+					{
+						m_data->Error = {
+						    GameSystemGraphErrorCode::DuplicateSystem,
+						    std::format("Duplicate game system '{}'.", system.Name)};
+						return false;
+					}
 				}
 				if (!ValidateAccessDeclarations(system) || !ValidateExecutionPolicy(system))
 				{
@@ -238,8 +234,8 @@ namespace ECS
 
 		bool ValidateExecutionPolicy(const GameSystemDesc& system)
 		{
-			if (system.Execution.Mode == GameSystemExecutionMode::ParallelRanges
-			    && (system.Execution.RangePolicy.GrainSize == 0 || system.Execution.RangePolicy.MaximumPartitions == 0))
+			if (system.RangePolicy.GrainSize == 0 || system.RangePolicy.MaximumPartitions == 0 || !system.GetItemCount
+			    || !system.ExecuteRange)
 			{
 				m_data->Error = {
 				    GameSystemGraphErrorCode::TaskGraphRejected,
@@ -254,24 +250,23 @@ namespace ECS
 			for (std::uint32_t index = 0; index < m_data->Systems.size(); ++index)
 			{
 				const GameSystemDesc& system = m_data->Systems[index];
-				for (GameSystemId prerequisiteId : system.Prerequisites)
+				for (std::uint32_t prerequisite : system.Prerequisites)
 				{
-					const auto prerequisite = m_systemById.find(prerequisiteId.Value);
-					if (prerequisite == m_systemById.end())
+					if (prerequisite >= m_data->Systems.size())
 					{
 						m_data->Error = {
 						    GameSystemGraphErrorCode::MissingPrerequisite,
 						    std::format("Game system '{}' has a missing prerequisite.", system.Name)};
 						return false;
 					}
-					if (m_data->Systems[prerequisite->second].Phase > system.Phase)
+					if (m_data->Systems[prerequisite].Phase > system.Phase)
 					{
 						m_data->Error = {
 						    GameSystemGraphErrorCode::InvalidPhaseDependency,
 						    std::format("Game system '{}' depends on a later phase.", system.Name)};
 						return false;
 					}
-					AddEdge(m_data->Edges, prerequisite->second, index);
+					AddEdge(m_data->Edges, prerequisite, index);
 				}
 			}
 			return true;
@@ -337,80 +332,32 @@ namespace ECS
 			return true;
 		}
 
-		void BuildTaskGraph()
+		void BuildExecutionWaves()
 		{
-			std::uint32_t taskCount = 0;
-			for (const GameSystemDesc& system : m_data->Systems)
-			{
-				taskCount += system.Execution.Mode == GameSystemExecutionMode::ParallelRanges
-				    ? 1u + system.Execution.RangePolicy.MaximumPartitions
-				    : 1u;
-			}
-
-			std::uint32_t edgeCount = 0;
+			std::vector<std::uint32_t> remaining(m_data->Systems.size());
 			for (const auto& outgoing : m_data->Edges)
+				for (std::uint32_t target : outgoing)
+					++remaining[target];
+			std::vector<bool> scheduled(m_data->Systems.size());
+			std::size_t count = 0;
+			while (count < scheduled.size())
 			{
-				edgeCount += static_cast<std::uint32_t>(outgoing.size());
-			}
-
-			TaskGraphBuilder tasks(
-			    TaskGraphLimits{.MaximumTasks = (std::max) (taskCount, 1u), .MaximumEdges = (std::max) (edgeCount + taskCount, 1u)});
-			std::vector<TaskNodeHandle> systemNodes;
-			systemNodes.reserve(m_data->Systems.size());
-			for (std::uint32_t systemIndex = 0; systemIndex < m_data->Systems.size(); ++systemIndex)
-			{
-				AddSystemTasks(tasks, systemNodes, systemIndex);
-			}
-			for (std::uint32_t from = 0; from < m_data->Edges.size(); ++from)
-			{
-				for (std::uint32_t to : m_data->Edges[from])
+				std::vector<std::uint32_t> wave;
+				for (std::uint32_t index = 0; index < scheduled.size(); ++index)
+					if (!scheduled[index] && remaining[index] == 0)
+						wave.push_back(index);
+				for (std::uint32_t index : wave)
 				{
-					tasks.DependsOn(systemNodes[to], systemNodes[from]);
+					scheduled[index] = true;
+					++count;
+					for (std::uint32_t target : m_data->Edges[index])
+						--remaining[target];
 				}
-			}
-
-			m_data->Tasks = tasks.Compile();
-			if (!m_data->Tasks)
-			{
-				m_data->Error = {GameSystemGraphErrorCode::TaskGraphRejected, m_data->Tasks.GetError().Message};
-			}
-		}
-
-		void AddSystemTasks(TaskGraphBuilder& tasks, std::vector<TaskNodeHandle>& systemNodes, std::uint32_t systemIndex)
-		{
-			const GameSystemDesc& system = m_data->Systems[systemIndex];
-			const TaskDesc descriptor{TaskName(system.Name), TaskLane::FrameCritical};
-			if (system.Execution.Mode == GameSystemExecutionMode::SingleTask)
-			{
-				systemNodes.push_back(tasks.Add(
-				    descriptor,
-				    [systemIndex](TaskExecutionContext& context)
-				    {
-					    return GameSystemExecution::ExecutePartition(
-					        systemIndex,
-					        0,
-					        ParallelForPolicy{1, (std::numeric_limits<std::uint32_t>::max)(), 1},
-					        context);
-				    }));
-				return;
-			}
-
-			const TaskNodeHandle group = tasks.Add(descriptor, [](TaskExecutionContext&) { return TaskResult::Success(); });
-			systemNodes.push_back(group);
-			for (std::uint32_t partition = 0; partition < system.Execution.RangePolicy.MaximumPartitions; ++partition)
-			{
-				const std::string taskName = std::format("{}.Range{}", system.Name, partition);
-				tasks.AddNested(
-				    group,
-				    TaskDesc{TaskName(taskName), TaskLane::FrameCritical},
-				    [systemIndex, partition, policy = system.Execution.RangePolicy](TaskExecutionContext& context)
-				    { return GameSystemExecution::ExecutePartition(systemIndex, partition, policy, context); });
+				m_data->Waves.push_back(std::move(wave));
 			}
 		}
 
 		std::unique_ptr<CompiledGameSystemGraphData> m_data;
-		std::unordered_map<std::uint64_t, std::uint32_t> m_systemById;
-		std::unordered_map<std::string, std::uint32_t> m_systemByName;
 	};
 
 	CompiledGameSystemGraph GameSystemGraph::Compile() const

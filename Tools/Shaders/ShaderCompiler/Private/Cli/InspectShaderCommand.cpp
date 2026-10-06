@@ -11,7 +11,7 @@
 
 #include <iostream>
 
-int InspectShaderCommand::Run(std::span<const std::string_view> args) const
+int InspectShader(std::span<const std::string_view> args)
 {
 	if (args.size() != 1)
 	{

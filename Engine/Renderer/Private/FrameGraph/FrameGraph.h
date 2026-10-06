@@ -17,7 +17,6 @@
 #include "FrameGraph/FrameGraphResourceHandle.h"
 #include "FrameGraph/FrameGraphTextureHandle.h"
 #include "FrameGraph/FrameGraphTextureHistory.h"
-#include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "Passes/Core/ShaderPass.h"
 #include "ShaderParameters/TypedPassParameterInstance.h"
 

@@ -81,7 +81,7 @@ static std::string BuildRayTracingFeatureList(const ShaderBackendCapabilities& c
 	return features;
 }
 
-int ListBackendsCommand::Run(std::span<const std::string_view> args) const
+int ListShaderBackends(std::span<const std::string_view> args)
 {
 	if (!args.empty())
 	{

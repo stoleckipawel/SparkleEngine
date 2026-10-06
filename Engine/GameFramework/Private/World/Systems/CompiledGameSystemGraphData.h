@@ -2,8 +2,6 @@
 
 #include "World/Systems/GameSystemGraph.h"
 
-#include "Tasks/Public/TaskGraph.h"
-
 #include <cstdint>
 #include <vector>
 
@@ -13,7 +11,7 @@ namespace ECS
 	{
 		std::vector<GameSystemDesc> Systems;
 		std::vector<std::vector<std::uint32_t>> Edges;
-		CompiledTaskGraph Tasks;
+		std::vector<std::vector<std::uint32_t>> Waves;
 		GameSystemGraphError Error;
 	};
 }

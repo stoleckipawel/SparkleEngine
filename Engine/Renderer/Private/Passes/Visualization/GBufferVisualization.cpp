@@ -9,22 +9,6 @@
 
 void AddGBufferVisualizationPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
-	switch (builder.GetViewMode())
-	{
-		case RenderViewMode::GBufferDiffuse:
-		case RenderViewMode::GBufferWorldNormal:
-		case RenderViewMode::GBufferWorldTangent:
-		case RenderViewMode::GBufferRoughness:
-		case RenderViewMode::GBufferMetallic:
-		case RenderViewMode::GBufferEmissive:
-		case RenderViewMode::GBufferAmbientOcclusion:
-		case RenderViewMode::GBufferSubsurfaceColor:
-		case RenderViewMode::GBufferSubsurfaceStrength:
-			break;
-		default:
-			return;
-	}
-
 	const GBufferRenderTargets& gbuffer = resources.Transient.GBuffer;
 
 	auto& parameters = builder.AllocParameters<GBufferVisualizationCS>();

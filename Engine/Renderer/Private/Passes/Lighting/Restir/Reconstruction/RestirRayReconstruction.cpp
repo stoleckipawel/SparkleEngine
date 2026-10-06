@@ -14,7 +14,7 @@ void AddRestirRayReconstructionPass(
     RendererImageProviderStack& imageProviders,
     RenderFrameGraphResources& resources)
 {
-	if (!ShouldUseRayReconstruction(builder.GetViewMode()))
+	if (!IsRayReconstructionEnabled())
 	{
 		return;
 	}

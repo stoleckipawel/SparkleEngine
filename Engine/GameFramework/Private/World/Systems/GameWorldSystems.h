@@ -7,6 +7,9 @@ class TaskExecutor;
 
 namespace ECS
 {
+	class CompiledGameSystemGraph;
+	CompiledGameSystemGraph BuildGameWorldSystemGraph();
+
 	class GameWorldState;
 
 	struct GameWorldSystemExecutionContext final

@@ -28,7 +28,6 @@ set(TEXTURE_COOKER_PRIVATE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Stages/ShapeStage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Stages/MipStage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Stages/EncodeStage.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/TextureCookerCommandRegistry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookRequestBatchProcessor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookBatchExecutor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookMemoryLimiter.cpp
@@ -45,8 +44,6 @@ set(TEXTURE_COOKER_PRIVATE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/App/TextureCookerApplication.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/CookTextureCookRequestFileCommand.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/InspectTextureCookRequestFileCommand.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/TextureCookerCommand.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/TextureCookerCommandRegistry.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Constants/TextureCookerConstants.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/TexturePipeline.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/WorkingTexture.h

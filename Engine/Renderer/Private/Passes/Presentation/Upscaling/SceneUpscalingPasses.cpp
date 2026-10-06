@@ -15,10 +15,10 @@
 void AddSceneUpscalingPasses(
     FrameGraphBuilder& builder,
     const RenderFrameGraphSettings& settings,
+    SceneUpscalingMethod method,
     RendererImageProviderStack& imageProviders,
     RenderFrameGraphResources& resources)
 {
-	const SceneUpscalingMethod method = ResolveSceneUpscalingMethod(builder.GetViewMode());
 	const EUpscalerProviderKind provider = CVarUpscalerProvider.Get();
 
 	resources.Presentation.ResolvedSceneColor = CreateResolvedSceneColorTarget(builder, settings.OutputExtent);

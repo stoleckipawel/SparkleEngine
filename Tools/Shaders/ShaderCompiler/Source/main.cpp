@@ -1,5 +1,4 @@
-#include "Cli/CommandRegistry.h"
-#include "Cli/ICommand.h"
+#include "Cli/ShaderCompilerCommands.h"
 #include "Constants/ShaderCompilerConstants.h"
 #include "Core/Public/Threading/ThreadOwnership.h"
 
@@ -11,18 +10,17 @@
 int main(int argc, char** argv)
 {
 	Threading::SetCurrentThreadRole("Sparkle.ToolMain");
-	const CommandRegistry registry;
 
 	if (argc >= 2)
 	{
 		const std::string_view verb{argv[1]};
 		if (verb == "--help" || verb == "-h" || verb == "/?")
 		{
-			registry.PrintUsage(std::cout);
+			PrintShaderCompilerUsage(std::cout);
 			return kExitCodeSuccess;
 		}
 
-		const ICommand* command = registry.Find(verb);
+		const ShaderCompilerCommand* command = FindShaderCompilerCommand(verb);
 		if (command != nullptr)
 		{
 			std::vector<std::string_view> commandArgs;
@@ -36,6 +34,6 @@ int main(int argc, char** argv)
 		}
 	}
 
-	registry.PrintUsage(std::cerr);
+	PrintShaderCompilerUsage(std::cerr);
 	return kExitCodeUsage;
 }

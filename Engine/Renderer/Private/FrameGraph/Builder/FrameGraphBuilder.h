@@ -6,7 +6,6 @@
 #include "Pipeline/RenderPassRuntimeCache.h"
 #include "Pipeline/RasterPassRenderState.h"
 #include "Scene/RayTracing/RayTracingShaderTablePlan.h"
-#include "Renderer/Public/Viewport/ViewportContracts.h"
 
 #include <algorithm>
 #include <cassert>
@@ -29,12 +28,7 @@
 class FrameGraphBuilder final
 {
 public:
-	FrameGraphBuilder(
-	    FrameGraph& frameGraph,
-	    const RenderPassRuntimeCache& renderPassRuntimeCache,
-	    const ViewportRenderRequest& viewportRequest) noexcept;
-
-	RenderViewMode GetViewMode() const noexcept { return m_viewportRequest.ViewMode; }
+	FrameGraphBuilder(FrameGraph& frameGraph, const RenderPassRuntimeCache& renderPassRuntimeCache) noexcept;
 
 	template <typename TVertexShader, typename TPixelShader, typename TParameters, typename TDrawCollaborator> void Draw(
 	    TypedPassParameterInstance<TParameters>& parameters,
@@ -361,5 +355,4 @@ private:
 
 	FrameGraph& m_frameGraph;
 	const RenderPassRuntimeCache& m_renderPassRuntimeCache;
-	const ViewportRenderRequest& m_viewportRequest;
 };

@@ -166,10 +166,6 @@ private:
 	static const CompiledBinding* FindBindingByIndex(const VulkanBindingLayout* layout, std::uint32_t bindingIndex) noexcept;
 	static VkShaderStageFlags ToVkShaderStages(ShaderStageMask visibilityMask) noexcept;
 	VulkanResourceStateMapping ResolveResourceState(ResourceState state) const noexcept;
-	static void ConfigurePartitionedTlasInput(
-	    const RhiPartitionedTlasDesc& desc,
-	    VkPartitionedAccelerationStructureInstancesInputNV& input,
-	    VkPartitionedAccelerationStructureFlagsNV& flags) noexcept;
 	VkBuffer ResolveBuffer(RhiGpuVirtualAddress gpuAddress) const noexcept;
 	BufferBinding ResolveBufferBinding(RhiGpuVirtualAddress gpuAddress) const noexcept;
 	bool ResolveResource(RhiResourceHandle resource, VulkanRecordingResource& outResource) const noexcept;

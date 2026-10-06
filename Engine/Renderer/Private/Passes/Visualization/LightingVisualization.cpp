@@ -49,17 +49,6 @@ bool PrepareLightingVisualizationProducts(
 
 void AddLightingVisualizationPass(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
-	switch (builder.GetViewMode())
-	{
-		case RenderViewMode::DirectDiffuse:
-		case RenderViewMode::DirectSpecular:
-		case RenderViewMode::DirectSubsurface:
-		case RenderViewMode::IndirectDiffuse:
-		case RenderViewMode::IndirectSpecular:
-			break;
-		default:
-			return;
-	}
 	const auto& lighting = resources.Transient.Lighting;
 	auto& parameters = builder.AllocParameters<LightingVisualizationCS>();
 	parameters->SceneColor = builder.CreateUAV(resources.Transient.Scene.SceneColor);

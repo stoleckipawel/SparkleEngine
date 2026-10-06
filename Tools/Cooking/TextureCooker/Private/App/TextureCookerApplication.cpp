@@ -2,34 +2,31 @@
 
 #include "App/TextureCookerApplication.h"
 
-#include "Cli/TextureCookerCommandRegistry.h"
+#include "Cli/CookTextureCookRequestFileCommand.h"
+#include "Cli/InspectTextureCookRequestFileCommand.h"
 #include "Constants/TextureCookerConstants.h"
 
+#include <filesystem>
 #include <iostream>
-#include <memory>
 #include <string_view>
 
-int TextureCookerApplication::Run(int argc, char** argv) const
+static void PrintUsage(std::ostream& output)
 {
-	if (argc != 3)
-	{
-		TextureCookerCommandRegistry::PrintUsage(std::cerr);
-		return TextureCookerConstants::ExitUsageError;
-	}
-
-	return RunCommand(std::filesystem::path(argv[2]), argv[1]);
+	output << "Usage:\n"
+	       << "  TextureCooker inspect-request-file <request-file-path>\n"
+	       << "  TextureCooker cook-request-file <request-file-path>\n";
 }
 
-int TextureCookerApplication::RunCommand(const std::filesystem::path& requestFilePath, const char* commandName)
+int RunTextureCooker(int argc, char** argv)
 {
-	const std::string_view command(commandName != nullptr ? commandName : "");
-	std::unique_ptr<TextureCookerCommand> commandHandler = TextureCookerCommandRegistry::Create(command);
-	if (!commandHandler)
+	if (argc == 3)
 	{
-		TextureCookerCommandRegistry::PrintUsage(std::cerr);
-		return TextureCookerConstants::ExitUsageError;
+		const std::string_view command(argv[1] != nullptr ? argv[1] : "");
+		if (command == TextureCookerConstants::InspectRequestFileCommand)
+			return InspectTextureCookRequestFile(std::filesystem::path(argv[2]));
+		if (command == TextureCookerConstants::CookRequestFileCommand)
+			return CookTextureCookRequestFile(std::filesystem::path(argv[2]));
 	}
-
-	const int exitCode = commandHandler->Execute(requestFilePath);
-	return exitCode;
+	PrintUsage(std::cerr);
+	return TextureCookerConstants::ExitUsageError;
 }

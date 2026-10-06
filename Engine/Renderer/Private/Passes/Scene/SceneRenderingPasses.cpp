@@ -13,6 +13,7 @@
 #include "Passes/Presentation/Upscaling/SceneUpscalingPasses.h"
 #include "Passes/Lighting/Restir/Reconstruction/RestirRayReconstruction.h"
 #include "Passes/Scene/SceneVisualizationPasses.h"
+#include "Passes/Presentation/PresentationPolicy.h"
 
 std::uint64_t GetSceneRenderingTopologyIdentity(RenderViewMode viewMode) noexcept
 {
@@ -35,18 +36,19 @@ bool PrepareSceneRenderingProducts(
 void AddSceneRenderingPasses(
     FrameGraphBuilder& builder,
     const RenderFrameGraphSettings& settings,
+    const ViewportRenderRequest& viewport,
     RenderRayTracingScene& rayTracingScene,
     GpuMeshCache& gpuMeshCache,
     RendererImageProviderStack& imageProviders,
     ReferencePathTracerSession& referencePathTracerSession,
     RenderFrameGraphResources& resources)
 {
-	if (builder.GetViewMode() != RenderViewMode::ReferencePathTracer
-	    && !PrepareRealTimePathTracerProducts(builder.GetViewMode(), resources.ViewportProducts))
+	if (viewport.ViewMode != RenderViewMode::ReferencePathTracer
+	    && !PrepareRealTimePathTracerProducts(viewport.ViewMode, resources.ViewportProducts))
 	{
 		return;
 	}
-	if (builder.GetViewMode() == RenderViewMode::ReferencePathTracer)
+	if (viewport.ViewMode == RenderViewMode::ReferencePathTracer)
 	{
 		AddReferencePathTracerPasses(builder, settings, referencePathTracerSession, resources);
 	}
@@ -56,7 +58,10 @@ void AddSceneRenderingPasses(
 	}
 
 	AddExposurePasses(builder, settings, resources);
-	AddSceneVisualizationPasses(builder, settings.RenderExtent, resources);
-	AddRestirRayReconstructionPass(builder, settings.RenderExtent, imageProviders, resources);
-	AddSceneUpscalingPasses(builder, settings, imageProviders, resources);
+	AddSceneVisualizationPasses(builder, settings.RenderExtent, viewport.ViewMode, resources);
+	if (viewport.ViewMode == RenderViewMode::Lit)
+	{
+		AddRestirRayReconstructionPass(builder, settings.RenderExtent, imageProviders, resources);
+	}
+	AddSceneUpscalingPasses(builder, settings, ResolveSceneUpscalingMethod(viewport.ViewMode), imageProviders, resources);
 }

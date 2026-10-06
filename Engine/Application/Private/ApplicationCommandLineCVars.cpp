@@ -5,48 +5,13 @@
 #include "Core/Public/Console/CVar.h"
 #include "Core/Public/Console/CVarRegistry.h"
 #include "Core/Public/Strings/StringUtils.h"
+#include "Core/Public/Process/CommandLineUtils.h"
 
-#include <cwctype>
 #include <string>
 #include <string_view>
 
 namespace ApplicationCommandLineCVars
 {
-	static std::wstring_view ReadCommandLineToken(std::wstring_view commandLine, std::size_t& offset) noexcept
-	{
-		while (offset < commandLine.size() && std::iswspace(commandLine[offset]))
-		{
-			++offset;
-		}
-
-		if (offset >= commandLine.size())
-		{
-			return {};
-		}
-
-		const std::size_t tokenStart = offset;
-		if (commandLine[offset] == L'"')
-		{
-			++offset;
-			const std::size_t quotedStart = offset;
-			while (offset < commandLine.size() && commandLine[offset] != L'"')
-			{
-				++offset;
-			}
-			const std::size_t quotedEnd = offset;
-			if (offset < commandLine.size())
-			{
-				++offset;
-			}
-			return commandLine.substr(quotedStart, quotedEnd - quotedStart);
-		}
-
-		while (offset < commandLine.size() && !std::iswspace(commandLine[offset]))
-		{
-			++offset;
-		}
-		return commandLine.substr(tokenStart, offset - tokenStart);
-	}
 
 	static void ApplyAssignment(std::string_view assignment)
 	{
@@ -74,7 +39,7 @@ namespace ApplicationCommandLineCVars
 		std::size_t offset = 0;
 		while (offset < commandLine.size())
 		{
-			const std::wstring_view wideToken = ReadCommandLineToken(commandLine, offset);
+			const std::wstring_view wideToken = CommandLine::ReadToken(commandLine, offset);
 			if (wideToken.empty())
 			{
 				continue;
@@ -90,7 +55,7 @@ namespace ApplicationCommandLineCVars
 
 			if (Strings::EqualsIgnoreCase(token, "--cvar") || Strings::EqualsIgnoreCase(token, "--set-cvar"))
 			{
-				const std::wstring_view wideValue = ReadCommandLineToken(commandLine, offset);
+				const std::wstring_view wideValue = CommandLine::ReadToken(commandLine, offset);
 				ApplyAssignment(Strings::ToNarrow(wideValue));
 			}
 		}

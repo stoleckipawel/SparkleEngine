@@ -1,8 +1,9 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "Cli/InspectTextureCookRequestFileCommand.h"
 
 #include "Constants/TextureCookerConstants.h"
+#include "TextureCookRequestList.h"
 
 #include "Core/Public/Diagnostics/Error.h"
 #include "Core/Public/Formatting/HexFormat.h"
@@ -10,12 +11,18 @@
 #include <iostream>
 #include <vector>
 
-bool InspectTextureCookRequestFileCommand::MatchesName(std::string_view commandName) noexcept
+static void PrintRequest(const TextureCookRequest& request)
 {
-	return commandName == TextureCookerConstants::InspectRequestFileCommand;
+	std::cout << "  Texture '" << Formatting::FormatHexUInt64(request.assetId) << "' colorSpace='"
+	          << GetTextureColorSpaceName(request.policy.colorSpace) << "' mipPolicy='" << GetTextureMipPolicyName(request.policy.mipPolicy)
+	          << "' mipFilter='" << GetTextureMipFilterName(request.policy.mipFilter) << "' colorProcessing='"
+	          << GetTextureColorProcessingPolicyName(request.policy.colorProcessingPolicy) << "' textureGroup='"
+	          << GetTextureGroupName(request.policy.textureGroup) << "' dimension='" << GetTextureDimensionName(request.policy.dimension)
+	          << "' channelMask='" << GetTextureChannelMaskName(request.policy.channelMask) << "' output='" << request.outputPath.string()
+	          << "' source='" << request.sourcePath.string() << "'\n";
 }
 
-int InspectTextureCookRequestFileCommand::Execute(const std::filesystem::path& requestFilePath) const
+int InspectTextureCookRequestFile(const std::filesystem::path& requestFilePath)
 {
 	std::vector<TextureCookRequest> requests;
 	try
@@ -36,15 +43,4 @@ int InspectTextureCookRequestFileCommand::Execute(const std::filesystem::path& r
 	}
 
 	return TextureCookerConstants::ExitSuccess;
-}
-
-void InspectTextureCookRequestFileCommand::PrintRequest(const TextureCookRequest& request)
-{
-	std::cout << "  Texture '" << Formatting::FormatHexUInt64(request.assetId) << "' colorSpace='"
-	          << GetTextureColorSpaceName(request.policy.colorSpace) << "' mipPolicy='" << GetTextureMipPolicyName(request.policy.mipPolicy)
-	          << "' mipFilter='" << GetTextureMipFilterName(request.policy.mipFilter) << "' colorProcessing='"
-	          << GetTextureColorProcessingPolicyName(request.policy.colorProcessingPolicy) << "' textureGroup='"
-	          << GetTextureGroupName(request.policy.textureGroup) << "' dimension='" << GetTextureDimensionName(request.policy.dimension)
-	          << "' channelMask='" << GetTextureChannelMaskName(request.policy.channelMask) << "' output='" << request.outputPath.string()
-	          << "' source='" << request.sourcePath.string() << "'\n";
 }

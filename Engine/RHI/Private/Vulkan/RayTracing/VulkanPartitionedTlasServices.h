@@ -30,10 +30,6 @@ public:
 private:
 	static VkPartitionedAccelerationStructureInstanceFlagsNV ToVkPartitionedInstanceFlags(RhiPartitionedTlasInstanceFlags flags) noexcept;
 	static VkPartitionedAccelerationStructureOpTypeNV ToVkPartitionedOperationType(ERhiPartitionedTlasOperationType type) noexcept;
-	static void ConfigurePartitionedTlasInput(
-	    const RhiPartitionedTlasDesc& desc,
-	    VkPartitionedAccelerationStructureInstancesInputNV& input,
-	    VkPartitionedAccelerationStructureFlagsNV& flags) noexcept;
 	static RhiPartitionedTlasNativeOperationLayout GetNativeOperationLayout() noexcept;
 	RhiGpuVirtualAddress ResolvePartitionedInstanceAccelerationStructureAddress(RhiGpuVirtualAddress accelerationStructure) const noexcept;
 
