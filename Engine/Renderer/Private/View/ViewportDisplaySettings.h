@@ -9,7 +9,7 @@ struct ResolvedViewportDisplaySettings final
 
 	EngineToneMapper ToneMapper = EngineToneMapper::AcesApprox;
 	EngineExposureMode ExposureMode = EngineExposureMode::Automatic;
-	EngineExposureMeteringMethod ExposureMeteringMethod = EngineExposureMeteringMethod::ParallelReduction;
+	EngineExposureMeteringMethod ExposureMeteringMethod = EngineExposureMeteringMethod::Histogram;
 	float ManualExposure = 1.0f;
 	float ExposureCompensation = 0.0f;
 	float ExposureTargetLuminance = 0.18f;

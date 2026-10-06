@@ -5,29 +5,6 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/PostProcessing/Exposure/ExposureDownsampleSceneShader.h"
 #include "Passes/PostProcessing/Exposure/ExposureDownsampleTextureShader.h"
-#include "Passes/PostProcessing/Exposure/ExposureReduceSceneShader.h"
-#include "Passes/PostProcessing/Exposure/ExposureReduceTextureShader.h"
-void AddExposureSceneReductionPass(FrameGraphBuilder& builder, FrameGraphTextureHandle sceneColor, const ExposureMomentTexture& output)
-{
-	auto& parameters = builder.AllocParameters<ExposureReduceSceneCS>();
-	parameters->SceneColor = builder.CreateSRV(sceneColor);
-	parameters->LuminanceMomentsOutput = builder.CreateUAV(output.Handle);
-	builder.Dispatch<ExposureReduceSceneCS>(
-	    parameters,
-	    ComputeDispatchDesc{output.Width, output.Height, 1u},
-	    EFrameGraphQueuePreference::AsyncCompute);
-}
-
-void AddExposureTextureReductionPass(FrameGraphBuilder& builder, const ExposureMomentTexture& input, const ExposureMomentTexture& output)
-{
-	auto& parameters = builder.AllocParameters<ExposureReduceTextureCS>();
-	parameters->LuminanceMomentsInput = builder.CreateSRV(input.Handle);
-	parameters->LuminanceMomentsOutput = builder.CreateUAV(output.Handle);
-	builder.Dispatch<ExposureReduceTextureCS>(
-	    parameters,
-	    ComputeDispatchDesc{output.Width, output.Height, 1u},
-	    EFrameGraphQueuePreference::AsyncCompute);
-}
 
 void AddExposureSceneDownsamplePass(FrameGraphBuilder& builder, FrameGraphTextureHandle sceneColor, const ExposureMomentTexture& output)
 {

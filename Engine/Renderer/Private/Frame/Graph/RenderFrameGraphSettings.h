@@ -17,7 +17,7 @@ struct RenderFrameGraphSettings final
 	RenderViewportExtent RenderExtent;
 	RenderViewportExtent OutputExtent;
 	PixelFormat OutputFormat = PixelFormat::Unknown;
-	EngineExposureMeteringMethod ExposureMeteringMethod = EngineExposureMeteringMethod::ParallelReduction;
+	EngineExposureMeteringMethod ExposureMeteringMethod = EngineExposureMeteringMethod::Histogram;
 	FramePresentationTarget PresentationTarget = FramePresentationTarget::ViewportProduct;
 	RenderOutputFlags RequestedOutputs = RenderOutputFlags::None;
 

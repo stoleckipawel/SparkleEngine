@@ -8,13 +8,17 @@ namespace Exposure
 	static const uint ExposureModeManual = 0u;
 	static const uint ExposureModeAutomatic = 1u;
 
-	static const uint ExposureMeteringParallelReduction = 0u;
+	static const uint ExposureMeteringHistogram = 0u;
 	static const uint ExposureMeteringDownsamplePyramid = 1u;
 
 	static const float MinimumMeteredLuminance = 1.0e-4f;
 
 	float2 BuildLogLuminanceMoment(float3 linearHdrColor)
 	{
+		if (!all(isfinite(linearHdrColor)))
+		{
+			return 0.0f.xx;
+		}
 		const float luminance = max(CommonColor::LuminanceRec709(CommonColor::ClampPositive(linearHdrColor)), MinimumMeteredLuminance);
 		return float2(log(luminance), 1.0f);
 	}
@@ -55,8 +59,12 @@ namespace Exposure
 			return targetExposure;
 		}
 
-		const float safePreviousExposure = max(previousExposure, MinimumMeteredLuminance);
-		const float safeTargetExposure = max(targetExposure, MinimumMeteredLuminance);
+		if (!isfinite(previousExposure) || previousExposure <= 0.0f)
+		{
+			return targetExposure;
+		}
+		const float safePreviousExposure = previousExposure;
+		const float safeTargetExposure = max(targetExposure, 1.0e-20f);
 		const float adaptationSpeed = max(safeTargetExposure > safePreviousExposure ? adaptationSpeedUp : adaptationSpeedDown, 0.0f);
 		const float adaptationT = saturate(1.0f - exp(-max(frameDeltaSeconds, 0.0f) * adaptationSpeed));
 		const float previousExposureEv = log2(safePreviousExposure);

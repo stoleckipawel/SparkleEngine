@@ -17,7 +17,7 @@ enum class EngineExposureMode : std::uint8_t
 
 enum class EngineExposureMeteringMethod : std::uint8_t
 {
-	ParallelReduction,
+	Histogram,
 	DownsamplePyramid,
 };
 

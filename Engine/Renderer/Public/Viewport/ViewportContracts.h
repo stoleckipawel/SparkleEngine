@@ -54,7 +54,7 @@ struct SPARKLE_RENDERER_API ViewportExposureOverrides final
 	bool OverrideMode = false;
 	EngineExposureMode Mode = EngineExposureMode::Automatic;
 	bool OverrideMeteringMethod = false;
-	EngineExposureMeteringMethod MeteringMethod = EngineExposureMeteringMethod::ParallelReduction;
+	EngineExposureMeteringMethod MeteringMethod = EngineExposureMeteringMethod::Histogram;
 	bool OverrideManualExposure = false;
 	float ManualExposure = 1.0f;
 	bool OverrideCompensation = false;

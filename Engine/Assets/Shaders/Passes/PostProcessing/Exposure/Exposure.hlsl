@@ -9,9 +9,12 @@ RWTexture2D<float4> ExposureHistoryTexture;
 [numthreads(1, 1, 1)]
 void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
-	const float averageLuminance = Exposure::ResolveAverageLuminance(LuminanceMoments.Load(int3(0, 0, 0)).xy);
+	const float2 moments = LuminanceMoments.Load(int3(0, 0, 0)).xy;
+	const float averageLuminance = Exposure::ResolveAverageLuminance(moments);
+	const float4 previousPayload = ExposureHistoryValid != 0u ? PreviousExposureTexture.Load(int3(0, 0, 0)) : 0.0f.xxxx;
+	const bool historyValid = ExposureHistoryValid != 0u && previousPayload.a == float(ExposureMode);
 
-	const float targetExposure = Exposure::ComputeExposure(ExposureMode,
+	float targetExposure = Exposure::ComputeExposure(ExposureMode,
 	                                                       ManualExposure,
 	                                                       ExposureCompensation,
 	                                                       ExposureTargetLuminance,
@@ -19,17 +22,21 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 	                                                       ExposureMax,
 	                                                       averageLuminance);
 
-	const float previousExposure = PreviousExposureTexture.Load(int3(0, 0, 0)).r;
+	if (ExposureMode == Exposure::ExposureModeAutomatic && moments.y <= 0.0f)
+	{
+		// An invalid HDR frame cannot drive adaptation; the first frame uses neutral exposure.
+		targetExposure = clamp(historyValid && isfinite(previousPayload.r) ? previousPayload.r : 1.0f, ExposureMin, ExposureMax);
+	}
 
-	const float exposure = Exposure::AdaptExposure(ExposureMode,
-	                                               ExposureHistoryValid != 0u,
-	                                               previousExposure,
+	const float exposure = clamp(Exposure::AdaptExposure(ExposureMode,
+	                                               historyValid,
+	                                               previousPayload.r,
 	                                               targetExposure,
 	                                               DeltaTimeSeconds,
 	                                               ExposureAdaptationSpeedUp,
-	                                               ExposureAdaptationSpeedDown);
+	                                               ExposureAdaptationSpeedDown), ExposureMin, ExposureMax);
 
-	const float4 exposurePayload = float4(exposure, averageLuminance, targetExposure, previousExposure);
+	const float4 exposurePayload = float4(exposure, averageLuminance, targetExposure, float(ExposureMode));
 	ExposureTexture[uint2(0u, 0u)] = exposurePayload;
 	ExposureHistoryTexture[uint2(0u, 0u)] = exposurePayload;
 }

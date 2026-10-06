@@ -16,7 +16,7 @@ struct EngineRenderingSettingsState final
 	bool PreferHighPerformanceAdapter = true;
 	EngineToneMapper ToneMapper = EngineToneMapper::AcesApprox;
 	EngineExposureMode ExposureMode = EngineExposureMode::Automatic;
-	EngineExposureMeteringMethod ExposureMeteringMethod = EngineExposureMeteringMethod::ParallelReduction;
+	EngineExposureMeteringMethod ExposureMeteringMethod = EngineExposureMeteringMethod::Histogram;
 	EngineOutputColorEncoding OutputColorEncoding = EngineOutputColorEncoding::Automatic;
 	float ManualExposure = 1.0f;
 	float ExposureCompensation = 0.0f;

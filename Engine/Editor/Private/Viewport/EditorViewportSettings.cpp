@@ -129,10 +129,10 @@ void EditorViewportSettings::SanitizeExposure(ViewportExposureOverrides& exposur
 	{
 		exposure.Mode = EngineExposureMode::Automatic;
 	}
-	if (exposure.MeteringMethod != EngineExposureMeteringMethod::ParallelReduction
+	if (exposure.MeteringMethod != EngineExposureMeteringMethod::Histogram
 	    && exposure.MeteringMethod != EngineExposureMeteringMethod::DownsamplePyramid)
 	{
-		exposure.MeteringMethod = EngineExposureMeteringMethod::ParallelReduction;
+		exposure.MeteringMethod = EngineExposureMeteringMethod::Histogram;
 	}
 	exposure.ManualExposure = (std::max) (exposure.ManualExposure, 0.0f);
 	exposure.Compensation = std::clamp(exposure.Compensation, -16.0f, 16.0f);

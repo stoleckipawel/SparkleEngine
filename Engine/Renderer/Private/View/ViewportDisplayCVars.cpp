@@ -13,8 +13,8 @@ ConsoleVariable<EngineExposureMode> CVarExposureMode(
 
 ConsoleVariable<EngineExposureMeteringMethod> CVarExposureMeteringMethod(
     "r.Exposure.MeteringMethod",
-    EngineExposureMeteringMethod::ParallelReduction,
-    "Automatic exposure metering path. 0=parallel reduction, 1=downsample pyramid.");
+    EngineExposureMeteringMethod::Histogram,
+    "Automatic exposure metering path. 0=histogram, 1=downsample pyramid.");
 
 ConsoleVariable<float> CVarManualExposure(
     "r.Exposure.Manual",
@@ -38,9 +38,9 @@ ConsoleVariable<float> CVarExposureMax("r.Exposure.Max", 65536.0f, "Maximum line
 ConsoleVariable<float> CVarExposureAdaptationSpeedUp(
     "r.Exposure.AdaptationSpeedUp",
     3.0f,
-    "Automatic exposure adaptation speed in EV/second when target exposure increases.");
+    "Automatic exposure adaptation speed in inverse seconds when target exposure increases.");
 
 ConsoleVariable<float> CVarExposureAdaptationSpeedDown(
     "r.Exposure.AdaptationSpeedDown",
     1.0f,
-    "Automatic exposure adaptation speed in EV/second when target exposure decreases.");
+    "Automatic exposure adaptation speed in inverse seconds when target exposure decreases.");

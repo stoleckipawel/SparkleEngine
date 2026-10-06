@@ -24,7 +24,7 @@ EngineExposureMeteringMethod ResolvedViewportDisplaySettings::ResolveMeteringMet
 {
 	switch (requested)
 	{
-		case EngineExposureMeteringMethod::ParallelReduction:
+		case EngineExposureMeteringMethod::Histogram:
 		case EngineExposureMeteringMethod::DownsamplePyramid:
 			return requested;
 		default:

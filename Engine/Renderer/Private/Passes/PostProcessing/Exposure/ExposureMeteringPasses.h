@@ -6,7 +6,7 @@
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
 
-ExposureMomentTexture AddExposureReductionPasses(
+ExposureMomentTexture AddExposureHistogramPasses(
     FrameGraphBuilder& builder,
     RenderViewportExtent sceneExtent,
     const RenderFrameGraphResources& resources);

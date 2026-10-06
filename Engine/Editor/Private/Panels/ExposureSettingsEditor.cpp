@@ -133,7 +133,7 @@ void ExposureSettingsEditor::DrawSettings(
 	    {"Automatic", EngineExposureMode::Automatic},
 	};
 	static constexpr RenderingSettingsUi::ComboOption<EngineExposureMeteringMethod> exposureMeteringMethodOptions[] = {
-	    {"Parallel reduction", EngineExposureMeteringMethod::ParallelReduction},
+	    {"Histogram", EngineExposureMeteringMethod::Histogram},
 	    {"Downsample pyramid", EngineExposureMeteringMethod::DownsamplePyramid},
 	};
 
@@ -221,7 +221,7 @@ bool ExposureSettingsEditor::DrawOverrides(ViewportExposureOverrides& exposure, 
 	    {"Automatic", EngineExposureMode::Automatic},
 	};
 	static constexpr ExposureEnumOption<EngineExposureMeteringMethod> exposureMeteringOptions[] = {
-	    {"Parallel reduction", EngineExposureMeteringMethod::ParallelReduction},
+	    {"Histogram", EngineExposureMeteringMethod::Histogram},
 	    {"Downsample pyramid", EngineExposureMeteringMethod::DownsamplePyramid},
 	};
 

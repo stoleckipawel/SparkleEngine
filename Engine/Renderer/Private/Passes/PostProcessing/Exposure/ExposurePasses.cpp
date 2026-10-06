@@ -16,8 +16,8 @@ void AddExposurePasses(
 	ExposureMomentTexture moments;
 	switch (settings.ExposureMeteringMethod)
 	{
-		case EngineExposureMeteringMethod::ParallelReduction:
-			moments = AddExposureReductionPasses(builder, settings.RenderExtent, resources);
+		case EngineExposureMeteringMethod::Histogram:
+			moments = AddExposureHistogramPasses(builder, settings.RenderExtent, resources);
 			break;
 		case EngineExposureMeteringMethod::DownsamplePyramid:
 			moments = AddExposureDownsamplePasses(builder, settings.RenderExtent, resources);
