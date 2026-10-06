@@ -26,7 +26,10 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 	if (ExposureMode == Exposure::ExposureModeAutomatic && moments.y <= 0.0f)
 	{
 		// An invalid HDR frame cannot drive adaptation; the first frame uses neutral exposure.
-		targetExposure = clamp(historyValid && isfinite(previousPayload.r) ? previousPayload.r : 1.0f, ExposureMin, ExposureMax);
+		targetExposure = clamp(
+		    historyValid && isfinite(previousPayload.r) && previousPayload.r > 0.0f ? previousPayload.r : 1.0f,
+		    ExposureMin,
+		    ExposureMax);
 	}
 
 	const float exposure = clamp(

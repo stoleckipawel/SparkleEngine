@@ -1,25 +1,23 @@
 # Renderer Exposure
 
-**Status:** current feature dossier; source-backed, not colorimetric, temporal-response, performance, or release evidence
+**Status:** current feature dossier and acceptance contract; candidate results remain separate
 
-**Verified:** 2026-09- 19 against source input revision `a884b6946802e933fafc9fe4c6cdfb93c4cde7e4` plus the current frame
-      - composition worktree;
-evidence `S` only
+**Verified:** 2026-10-07 against the exposure repair worktree based on `b4f189a9`; executable evidence is candidate-bound
 
 **Scope:** `REN-POST-01` through `REN-POST-03`; manual and automatic exposure, metering, adaptation, history, per-viewport overrides, and asynchronous scheduling
 
 **Parent family:** [Post Processing](../README.md)
 
-**Current readiness:** **45/100** — manual/automatic exposure and per-view history source paths exist; numeric, adaptation/reset, scheduling, parity, color-domain, and quality evidence does not. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
+**Current readiness:** the portfolio row remains **45/100**; this repair does not promote whole-family, colorimetric, performance, or release acceptance. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer) and the [`FCR-REN-09` result route](../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry).
 
 ## At A Glance
 
 | Mode or boundary | Current behavior | Main limitation |
 | --- | --- | --- |
 | Manual | fixed requested multiplier plus compensation and bounds | requires authored intent; no colorimetric acceptance |
-| Automatic / parallel reduction | meters scene luminance to the configured target | numerical and temporal agreement remain unproved |
-| Automatic / downsample pyramid | alternate luminance reduction path | quality/cost equivalence to parallel reduction unproved |
-| Adaptation | asymmetric EV-per-second history for brightening/darkening | cuts, resize, view/provider changes must reset correctly |
+| Automatic / histogram | meters the percentile-trimmed arithmetic mean of luminance bins | fixed log range and quantization; percentiles express a local quality policy |
+| Automatic / downsample pyramid | meters the full-frame geometric mean | dark/black regions can drive a high exposure multiplier |
+| Adaptation | asymmetric exponential response in log2 multiplier space | rates are inverse seconds; cuts and discontinuities require valid history reset |
 | Async scheduling | may run on a capable non-graphics queue | queue assignment does not prove overlap or benefit |
 
 Exposure is measured from pre-debug scene-linear color and resolved per view. Its single multiplier then feeds reconstruction providers and tone mapping, so stale or cross-viewport history can affect several downstream stages even when their own code is correct.
@@ -32,11 +30,11 @@ Sparkle produces one bounded 1x1 exposure multiplier from resolved per-view sett
 | --- | --- | --- |
 | Manual exposure | `r.Exposure.Mode=Manual`, `r.Exposure.Manual`, compensation, min/max | produces a bounded linear multiplier |
 | Automatic exposure | `r.Exposure.Mode=Automatic` | meters scene luminance toward target 0.18 by default and applies compensation/bounds |
-| Metering | `r.Exposure.MeteringMethod` | parallel reduction or downsample pyramid |
-| Adaptation | speed-up 3 EV/s, speed-down 1 EV/s defaults | history-aware asymmetric approach to target |
+| Metering | `r.Exposure.MeteringMethod` | `0=Histogram`, `1=DownsamplePyramid`; deliberately different statistics |
+| Adaptation | speed-up `3/s`, speed-down `1/s` defaults | history-aware exponential approach to target |
 | Scheduling | graph queue preference/capability | may execute on asynchronous compute; useful overlap is unmeasured |
 
-Default exposure is Automatic with ParallelReduction. Default multiplier bounds are `0.000001` and `65536`. Per-viewport overrides can replace mode, method, manual value, compensation, target, bounds, and speeds in resolved display settings.
+Default exposure is Automatic with Histogram. Default multiplier bounds are `0.000001` and `65536`. Per-viewport overrides can replace mode, method, manual value, compensation, target, bounds, and rates in resolved display settings. [Exposure Semantics](ExposureSemantics.md) owns equations, finite-value policy, histogram layout/percentiles, history payload, and the end-to-end color-domain ledger.
 
 ## Ownership And Frame Placement
 
@@ -47,17 +45,17 @@ Default exposure is Automatic with ParallelReduction. Default multiplier bounds 
 
 ## Failure, Tradeoffs, And Evidence
 
-- Invalid bounds, extreme luminance, camera cuts, resize, and mode/viewport changes need finite and reset evidence.
+- Non-finite settings use engine defaults; finite settings and final adaptation are bounded by the semantic contract. Invalid HDR samples cannot poison metering/history. Camera cuts, resize, and mode/viewport changes still require candidate-bound reset evidence.
 - Async scheduling centralizes dependency/barrier ownership in the frame graph, but source presence is not proof of overlap or speedup.
 - Automatic metering improves adaptation but adds temporal behavior that can flicker or lag; manual mode is deterministic but requires authored intent.
 - `REN-E13` owns controlled luminance steps, camera cuts, resize, viewport overrides, bounds, and adaptation. `REN-E17` separately owns how the resulting value participates in tone mapping.
-- Stable proof obligations are defined below; their execution remains pending.
+- The implementation-ledger and bounded checks for `ITER-EXPOSURE-01` are retained locally under `build/exposure-investigation.txt`; results do not replace the broader proof obligations below.
 
 ## Acceptance Criteria
 
 - `AC-EXP-01` — Manual mode resolves the requested multiplier plus compensation into the documented min/max range and remains invariant for fixed settings across frames and scheduling modes.
-- `AC-EXP-02` — ParallelReduction and DownsamplePyramid automatic metering produce finite values within predeclared tolerance for uniform, split, black, bright, NaN/Inf-contaminated, and high-dynamic-range fixtures.
-- `AC-EXP-03` — adaptation follows the declared asymmetric EV-per-second rates under controlled luminance steps and converges monotonically without overshoot outside tolerance.
+- `AC-EXP-02` — Histogram agrees with an independent CPU bin/CDF reference, and DownsamplePyramid agrees with the finite full-frame geometric mean, within predeclared tolerance for uniform, split, black, bright, NaN/Inf-contaminated, odd-size, and high-dynamic-range fixtures. Their outputs need not match each other.
+- `AC-EXP-03` — adaptation follows the declared asymmetric exponential rates in inverse seconds under controlled luminance steps and converges monotonically without overshoot outside tolerance, including multipliers below `0.0001`.
 - `AC-EXP-04` — per-viewport overrides resolve once into `RenderView`; two views with different settings do not share or contaminate exposure history.
 - `AC-EXP-05` — camera cut, scene/view discontinuity, resize, mode/metering change, and relevant topology generation reset history to the documented first-frame result.
 - `AC-EXP-06` — graphics-queue and async-compute execution produce the same exposure/history values and correct dependencies; queue assignment is not called a speedup without measurement.
@@ -78,10 +76,11 @@ Default exposure is Automatic with ParallelReduction. Default multiplier bounds 
 | `CHK-EXP-02` | dual-viewport temporal sequence over overrides, cuts, resize, mode/metering switches, debug-mode changes, and scene reload | `AC-EXP-04`, `AC-EXP-05`, `AC-EXP-07`; `FM-EXP-02`, `FM-EXP-04` |
 | `CHK-EXP-03` | same fixture on graphics and async-compute scheduling with capability unavailable/available, plan/barrier inspection, decoded value comparison, and native validation | `AC-EXP-06`; `FM-EXP-03` |
 
-This contract is **defined but unproved**. `REN-E13` owns candidate execution; tolerances, timestep, luminance domain, and first-frame reset value must be declared before results are viewed.
+`REN-E13` owns candidate execution; tolerances, timestep, luminance domain, and first-frame reset value must be declared before results are viewed. Bounded repair checks do not prove concurrent dual-view isolation, every discontinuity, queue overlap, display calibration, or the full release workload.
 
 ## Primary Source Routes
 
+- [Exposure Semantics](ExposureSemantics.md), including NVIDIA/AMD precedent and its limits
 - [`ExposureAdaptation.cpp`](../../../../../../../../Engine/Renderer/Private/Passes/PostProcessing/Exposure/ExposureAdaptation.cpp) and [`ViewportDisplaySettings.cpp`](../../../../../../../../Engine/Renderer/Private/View/ViewportDisplaySettings.cpp)
 - [`ViewportDisplayCVars.cpp`](../../../../../../../../Engine/Renderer/Private/View/ViewportDisplayCVars.cpp)
 - [`RenderViewBuilder.cpp`](../../../../../../../../Engine/Renderer/Private/View/RenderViewBuilder.cpp)

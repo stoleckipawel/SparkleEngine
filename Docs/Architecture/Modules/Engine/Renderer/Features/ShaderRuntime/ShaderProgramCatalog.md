@@ -6,6 +6,8 @@
 
 **Scoped update:** 2026-10-05 at `410d05ef` plus the current review repairs: composition, lighting visualization, direct evaluation and indirect resolve each have one `main` registration. Runtime uniforms control evaluation, primary-shadow sampling, view selection and reconstruction-guide writes. Fixed bindings retain real initialized render-extent targets; omitted families retain radiance initialization but omit reservoirs/history/evaluation. This update does not re-audit every older catalog row. Candidate-bound native results remain owned by [Debug Views Discovery](../DebugViews/Done/Discovery.md#current-candidate-evidence-and-permission).
 
+**Membership update:** 2026-10-07 exposure repair: three histogram programs replace the two obsolete parallel-reduction programs. Registration names, virtual paths, stages, and total membership are reconciled with current source; this is not a whole-program runtime acceptance result.
+
 **Scope:** the exact Renderer global-program membership linked into the shader-contract target, including source, entry point, stage, consumer, traversal model, runtime target expectation, and important binding boundary
 
 **Owners:** `Engine/Renderer/ShaderRegistrations` for registration membership, typed declarations and pass consumers in `Engine/Renderer`, and `Tools/Shaders` for compilation/publication
@@ -21,17 +23,17 @@
 
 ## Count And Meaning
 
-There are exactly 35 registrations: 27 Compute, one Vertex, one Pixel, three RayGeneration, one Miss, one ClosestHit, and one AnyHit. A row means the program is registered in current source and build membership. It does not mean its two runtime variants cooked successfully or that a driver created and executed its pipeline.
+There are exactly 37 registrations: 29 Compute, one Vertex, one Pixel, three RayGeneration, one Miss, one ClosestHit, and one AnyHit. A row means the program is registered in current source and build membership. It does not mean its two runtime variants cooked successfully or that a driver created and executed its pipeline.
 
 ## Utility, GBuffer, And Debug
 
 | Program | Virtual source | Entry | Stage | Runtime consumer and boundary |
 | --- | --- | --- | --- | --- |
 | `ComputeClearCS` | `/Engine/Passes/Compute/ComputeClear.hlsl` | `main` | Compute | Generic frame-graph texture clear used for lighting/reservoir initialization. |
-| `GBufferVS` | `/Engine/Passes/GBuffer/GBufferVS.hlsl` | `main` | Vertex | Raster GBuffer mesh pass; consumes mesh/instance/deformation data through the graphics layout. |
-| `GBufferPS` | `/Engine/Passes/GBuffer/GBufferPS.hlsl` | `main` | Pixel | Raster GBuffer material evaluation; bindful eight-role material textures; opaque/alpha-mask coverage. |
-| `RayTracingGBufferInlineCS` | `/Engine/Passes/ GBuffer /RayTracing/RayTracingGBufferInline.hlsl` | `RayTracingGBufferInline` | Compute | Automatically selected inline GBuffer adapter; requires inline ray query, TLAS, hit buffers, and fixed material texture array. |
-| `RayTracingGBufferRGS` | `/Engine/Passes/ GBuffer /RayTracing/RayTracingGBufferPipeline.hlsl` | `RayTracingGBufferRayGeneration` | RayGeneration | Native-pipeline GBuffer adapter; owns global typed parameters and trace dispatch. |
+| `GBufferVS` | `/Engine/Passes/GBuffer/Raster/GBufferVS.hlsl` | `main` | Vertex | Raster GBuffer mesh pass; consumes mesh/instance/deformation data through the graphics layout. |
+| `GBufferPS` | `/Engine/Passes/GBuffer/Raster/GBufferPS.hlsl` | `main` | Pixel | Raster GBuffer material evaluation; bindful eight-role material textures; opaque/alpha-mask coverage. |
+| `RayTracingGBufferInlineCS` | `/Engine/Passes/GBuffer/RayTracing/RayTracingGBufferInline.hlsl` | `RayTracingGBufferInline` | Compute | Automatically selected inline GBuffer adapter; requires inline ray query, TLAS, hit buffers, and fixed material texture array. |
+| `RayTracingGBufferRGS` | `/Engine/Passes/GBuffer/RayTracing/RayTracingGBufferPipeline.hlsl` | `RayTracingGBufferRayGeneration` | RayGeneration | Native-pipeline GBuffer adapter; owns global typed parameters and trace dispatch. |
 | `RayTracingMaterialMiss` | `/Engine/RayTracing/RayTracingMaterialPipeline.hlsl` | `RayTracingMaterialMiss` | Miss | Shared full-hit miss behavior for native GBuffer, direct-shadow, and Reference traversal. |
 | `RayTracingMaterialClosestHit` | `/Engine/RayTracing/RayTracingMaterialPipeline.hlsl` | `RayTracingMaterialClosestHit` | ClosestHit | Shared hit distance, instance ID, primitive index, barycentrics, and facing payload for native GBuffer, direct-shadow, and Reference traversal. |
 | `RayTracingMaterialAnyHit` | `/Engine/RayTracing/RayTracingMaterialPipeline.hlsl` | `RayTracingMaterialAnyHit` | AnyHit | Shared alpha-mask rejection over the same material policy as inline traversal. |
@@ -68,7 +70,7 @@ See [Indirect Lighting](../Lighting/IndirectLighting/README.md) for the current 
 | --- | --- | --- | --- | --- |
 | `ReferencePathTracerInlineCS` | `/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerInline.hlsl` | `ReferencePathTracerInline` | Compute | Inline RayQuery adapter that invokes the shared Reference transport kernel. |
 | `ReferencePathTracerRGS` | `/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerPipeline.hlsl` | `ReferencePathTracerRayGeneration` | RayGeneration | Native-pipeline adapter that invokes the same Reference transport kernel and composes shared material hit shaders. |
-| `ReferencePathTracerDisplayCS` | `/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerDisplay.hlsl` | `ReferencePathTracerDisplay` | Compute | Publishes the committed accumulation derivative to the ordinary viewport product. |
+| `ReferencePathTracerDisplayCS` | `/Engine/Passes/Lighting/ReferencePathTracer/ReferencePathTracerDisplay.hlsl` | `main` | Compute | Publishes the committed accumulation derivative to the ordinary viewport product. |
 
 These rows are current source and registration membership only. Shader cooking, pipeline creation, four-route GPU parity, and accepted-reference behavior remain unproved. See the [Reference Path Tracer](../Lighting/ReferencePathTracer/README.md).
 
@@ -78,6 +80,7 @@ These rows are current source and registration membership only. Shader cooking, 
 | --- | --- | --- | --- | --- |
 | `LightingCompositeCS` | `/Engine/Passes/Lighting/LightingComposite.hlsl` | `main` | Compute | Fixed five initialized lighting inputs plus GBuffer alpha/emissive into HDR scene color. Disabled lobes contribute their intentionally cleared zero outputs. |
 | `SkyCS` | `/Engine/Passes/Lighting/Sky/Sky.hlsl` | `main` | Compute | Fills background using linear scene depth, sky texture, and view/sky uniforms. |
+| `RayReconstructionSurfaceGuidesCS` | `/Engine/Passes/Lighting/Restir/Reconstruction/RayReconstructionSurfaceGuides.hlsl` | `main` | Compute | Writes surface albedo/roughness guides from GBuffer data when reconstruction needs them independently of indirect evaluation. |
 
 ## Exposure
 
@@ -127,7 +130,7 @@ See [Tone Mapping](../PostProcessing/DisplayPipeline/ToneMapping.md) for the thr
 
 | Stage | Registered programs | Current honest status |
 | --- | ---: | --- |
-| Compute | 24 | Broad engine workhorse; includes raster-adjacent, ray-query, lighting, history, debug, and presentation programs. |
+| Compute | 29 | Broad engine workhorse; includes raster-adjacent, ray-query, lighting, history, debug, and presentation programs. |
 | Vertex | 1 | Raster GBuffer only. |
 | Pixel | 1 | Raster GBuffer only. |
 | RayGeneration | 3 | Ray GBuffer, direct shadow, and Reference Path Tracer entry points. |
@@ -141,7 +144,7 @@ See [Tone Mapping](../PostProcessing/DisplayPipeline/ToneMapping.md) for the thr
 
 ## Runtime Variant Closure
 
-Each one of the 35 logical registrations must have both `DxilSm66` and `SpirV16` cooked entries before the current paired-backend runtime publication is complete. That is 70 logical registration-target entries, subject to content-blob deduplication in `CookedShaderLibrary.slib`. Other tool targets are explicit compiler vocabulary, not required runtime variants.
+Each one of the 37 logical registrations must have both `DxilSm66` and `SpirV16` cooked entries before the current paired-backend runtime publication is complete. That is 74 logical registration-target entries, subject to content-blob deduplication in `CookedShaderLibrary.slib`. Other tool targets are explicit compiler vocabulary, not required runtime variants.
 
 For native ray compositions, registration count is not sufficient. Runtime materialization additionally checks compatible ray metadata, the global parameter owner, hit-group composition, recursion/payload/attribute limits, and shader-table records. Miss/hit programs do not own an independent pass or root parameter structure.
 

@@ -109,6 +109,7 @@ ResolvedViewportDisplaySettings ResolvedViewportDisplaySettings::Resolve(const V
 	}
 
 	constexpr EngineRenderingSettingsState defaults;
+	constexpr float maximumExposureMultiplier = 65536.0f;
 	const auto finiteOrDefault = [](float value, float fallback)
 	{
 		return std::isfinite(value) ? value : fallback;
@@ -124,8 +125,8 @@ ResolvedViewportDisplaySettings ResolvedViewportDisplaySettings::Resolve(const V
 	resolved.ManualExposure = (std::max) (resolved.ManualExposure, 0.0f);
 	resolved.ExposureCompensation = std::clamp(resolved.ExposureCompensation, -16.0f, 16.0f);
 	resolved.ExposureTargetLuminance = (std::max) (resolved.ExposureTargetLuminance, 0.0001f);
-	resolved.ExposureMin = std::clamp(resolved.ExposureMin, 0.0f, defaults.ExposureMax);
-	resolved.ExposureMax = std::clamp(resolved.ExposureMax, resolved.ExposureMin, defaults.ExposureMax);
+	resolved.ExposureMin = std::clamp(resolved.ExposureMin, 0.0f, maximumExposureMultiplier);
+	resolved.ExposureMax = std::clamp(resolved.ExposureMax, resolved.ExposureMin, maximumExposureMultiplier);
 	resolved.ExposureAdaptationSpeedUp = (std::max) (resolved.ExposureAdaptationSpeedUp, 0.0f);
 	resolved.ExposureAdaptationSpeedDown = (std::max) (resolved.ExposureAdaptationSpeedDown, 0.0f);
 	return resolved;

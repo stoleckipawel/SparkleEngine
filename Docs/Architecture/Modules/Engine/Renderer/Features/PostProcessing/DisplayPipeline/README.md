@@ -40,6 +40,7 @@ flowchart LR
 | Document | Open it for |
 | --- | --- |
 | [Exposure](Exposure.md) | luminance measurement, history, manual/automatic exposure, and frame placement |
+| [Exposure Semantics](ExposureSemantics.md) | metering statistics, bounded multiplier equations, temporal response, and provider/display color domains |
 | [Tone Mapping](ToneMapping.md) | selectable scene-referred HDR to display-linear operators and their limits |
 | [Color Grading](ColorGrading/README.md) | feature definition, discovery, research, semantics, architecture, experience, and conditional delivery plan |
 | [Chromatic Aberration](ChromaticAberration/README.md) | feature definition, discovery, research, semantics, architecture, experience, and conditional delivery plan |

@@ -8,9 +8,6 @@ namespace Exposure
 	static const uint ExposureModeManual = 0u;
 	static const uint ExposureModeAutomatic = 1u;
 
-	static const uint ExposureMeteringHistogram = 0u;
-	static const uint ExposureMeteringDownsamplePyramid = 1u;
-
 	static const float MinimumMeteredLuminance = 1.0e-4f;
 
 	float2 BuildLogLuminanceMoment(float3 linearHdrColor)
