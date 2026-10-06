@@ -9,9 +9,7 @@ struct MeshInstanceBatchBuilder::BuildScratch final
 {
 	std::vector<std::size_t> ValidItemIndices;
 	std::vector<bool> ConsumedItems;
-	std::vector<std::size_t> GroupItems;
-	std::vector<std::size_t> GroupOffsets;
-	std::vector<std::size_t> GroupCounts;
+	std::vector<std::vector<std::size_t>> GroupItems;
 	std::vector<std::size_t> OpaqueItems;
 	std::vector<std::size_t> TransparentItems;
 };
@@ -51,7 +49,10 @@ void MeshInstanceBatchBuilder::ResetBuild(BuildScratch& scratch, MeshInstanceBat
 
 	scratch.ValidItemIndices.clear();
 	scratch.ConsumedItems.clear();
-	scratch.GroupItems.clear();
+	for (std::vector<std::size_t>& groupItems : scratch.GroupItems)
+	{
+		groupItems.clear();
+	}
 	scratch.OpaqueItems.clear();
 	scratch.TransparentItems.clear();
 }
@@ -85,31 +86,16 @@ void MeshInstanceBatchBuilder::CollectPreservedGroupItems(
     BuildScratch& scratch)
 {
 	scratch.ConsumedItems.assign(renderItems.size(), false);
-	scratch.GroupCounts.assign(instanceGroupCount, 0u);
-	scratch.GroupOffsets.resize(instanceGroupCount + 1u);
-	scratch.GroupOffsets.front() = 0u;
+	scratch.GroupItems.resize(instanceGroupCount);
 
 	for (const std::size_t itemIndex : scratch.ValidItemIndices)
 	{
 		const MeshRenderItem& item = renderItems[itemIndex];
-		if (item.InstanceGroupIndex < instanceGroupCount && item.Classification != RenderMaterialClassification::Transparent)
+		const bool hasGroup =
+		    item.InstanceGroupIndex != kInvalidRenderMeshInstanceGroupIndex && item.InstanceGroupIndex < scratch.GroupItems.size();
+		if (hasGroup && item.Classification != RenderMaterialClassification::Transparent)
 		{
-			++scratch.GroupCounts[item.InstanceGroupIndex];
-		}
-	}
-	for (std::size_t groupIndex = 0u; groupIndex < instanceGroupCount; ++groupIndex)
-	{
-		scratch.GroupOffsets[groupIndex + 1u] = scratch.GroupOffsets[groupIndex] + scratch.GroupCounts[groupIndex];
-	}
-	scratch.GroupItems.resize(scratch.GroupOffsets.back());
-	std::fill(scratch.GroupCounts.begin(), scratch.GroupCounts.end(), 0u);
-	for (const std::size_t itemIndex : scratch.ValidItemIndices)
-	{
-		const MeshRenderItem& item = renderItems[itemIndex];
-		if (item.InstanceGroupIndex < instanceGroupCount && item.Classification != RenderMaterialClassification::Transparent)
-		{
-			const std::size_t groupIndex = item.InstanceGroupIndex;
-			scratch.GroupItems[scratch.GroupOffsets[groupIndex] + scratch.GroupCounts[groupIndex]++] = itemIndex;
+			scratch.GroupItems[item.InstanceGroupIndex].push_back(itemIndex);
 		}
 	}
 }
@@ -125,8 +111,7 @@ void MeshInstanceBatchBuilder::AppendPreservedGroups(
 	for (std::size_t groupIndex = 0u; groupIndex < instanceGroups.size(); ++groupIndex)
 	{
 		const RenderMeshInstanceGroup& group = instanceGroups[groupIndex];
-		const std::span<const std::size_t> items =
-		    std::span<const std::size_t>(scratch.GroupItems).subspan(scratch.GroupOffsets[groupIndex], scratch.GroupCounts[groupIndex]);
+		std::vector<std::size_t>& items = scratch.GroupItems[groupIndex];
 		if (group.groupKind == RenderMeshInstanceGroupKind::None || items.size() < 2u)
 		{
 			continue;

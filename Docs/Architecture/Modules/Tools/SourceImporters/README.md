@@ -43,7 +43,7 @@ Import is strict at required semantic boundaries. Optional advanced glTF materia
 | `IMP-002` | GLB | Implemented path | `cgltf`; `.glb` | Embedded geometry buffer data is accepted; embedded material images are explicitly rejected. | `S` |
 | `IMP-003` | FBX | Implemented path | Assimp FBX path; `.fbx` | Scene is triangulated, validated, cache-optimized, globally scaled, converted left-handed, and requires a valid source-units-to-metres conversion. | `S` |
 | `IMP-003a` | PLY | Implemented path | Assimp PLY path; `.ply` | Triangle reconstruction geometry uses the shared Assimp material/geometry translator and assumes one source unit equals one metre; the source does not supply a subsurface material. | `S` |
-| `IMP-004` | OBJ/USD/Alembic/OpenVDB | Not found | None in `SourceSceneImporter` | Catalog entries may name these as future/source-only workloads, but they are not current importer formats. | `S` |
+| `IMP-004` | OBJ/USD/Alembic/OpenVDB | Not found | None in `ImportSourceScene` | Catalog entries may name these as future/source-only workloads, but they are not current importer formats. | `S` |
 
 ## Semantic Coverage
 
@@ -67,7 +67,9 @@ Import is strict at required semantic boundaries. Optional advanced glTF materia
 
 ## Vertical Import Trace
 
-`SourceSceneImporter` selects by lower-case extension -> parser validates file/document -> format-specific translators normalize coordinates and append materials/textures/geometry/instances/cameras/lights/skeletons/animations/variants -> one `SourceImportOutput` owns the complete imported scene plus diagnostics -> Mesh/Material/Scene cookers consume it in the same tool process -> no source-import object crosses into runtime.
+`ImportSourceScene` selects by lower-case extension -> parser validates file/document -> format-specific translators normalize coordinates and append materials/textures/geometry/instances/cameras/lights/skeletons/animations/variants -> one `SourceImportOutput` owns the complete imported scene plus diagnostics -> Mesh/Material/Scene cookers consume it in the same tool process -> no source-import object crosses into runtime.
+
+The selector's immutable `SourceSceneFormats` table owns extension, importer identity, and import function together. `SupportsSourceScenePath` reads that same table for discovery; provenance is assigned from the selected entry. The current glTF/GLB, FBX, and PLY operations require no virtual importer objects or separate registration path. This source shape was rechecked on 2026-10-06; format coverage and the evidence limits above remain unchanged.
 
 ## Explicit Non-Capabilities And Risks
 

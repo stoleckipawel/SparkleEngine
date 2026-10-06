@@ -39,6 +39,8 @@ private:
 
 	void QueueRecook(ShaderRecookRequest request) noexcept;
 	void DetectShaderSourceChanges() noexcept;
+	void HandleReloadRequests(Renderer& renderer, bool reloadRequested) noexcept;
+	void StartQueuedRecook() noexcept;
 	void StartRecook(ShaderRecookRequest request) noexcept;
 	void CompleteRecook(Renderer& renderer, ExecutionResult result) noexcept;
 	void ReloadShaders(Renderer& renderer);
@@ -55,7 +57,7 @@ private:
 	StatusHandler m_statusHandler;
 	EditorOperationSlot<ExecutionResult> m_operation;
 	std::uint64_t m_nextRequestId = 1;
-	std::optional<std::uint64_t> m_lastAcceptedPublicationId;
+	std::optional<std::uint64_t> m_lastObservedPublicationId;
 	std::optional<ShaderRecookRequest> m_queuedRequest;
 	std::string m_lastPublicationDiagnostic;
 	ShaderSourceChangeTracker m_shaderSourceChangeTracker;

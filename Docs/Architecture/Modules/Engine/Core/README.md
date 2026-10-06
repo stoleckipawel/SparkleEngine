@@ -86,5 +86,5 @@ Executable/current directory and markers -> workspace/project discovery -> `Conf
 - No networking, sockets, plugin loader, reflection/type system, general archive/container format, database, allocator framework, or cross-platform process implementation was found in this module.
 - `Windows.h`, DirectXMath, Win32 process code, and private `bcrypt` make the current Core surface Windows-oriented despite otherwise portable helpers.
 - CVar assignment is mutable global state and not synchronized or persisted by Core.
-- Binary helpers validate bounds, but the owning cooked schema must validate magic, version, counts, cross-references, and semantic invariants.
+- `Files::BinarySpanReader` owns cursor advancement, bounds, multiplication overflow, and borrowed raw array bytes. GameFramework's cooked reader translates failures into domain exceptions around that same cursor; it does not implement another byte decoder. The owning cooked schema still validates magic, counts, cross-references, and semantic invariants. This source boundary was rechecked on 2026-10-06.
 - Source presence does not establish crash-safe publication, Unicode/path edge behavior, privilege behavior, or packaged path correctness.

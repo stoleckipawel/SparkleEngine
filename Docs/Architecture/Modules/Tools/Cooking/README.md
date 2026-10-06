@@ -52,6 +52,8 @@ Source ownership reconciled on 2026-10-06: Core's `Assets/DefaultTexture.h` owns
 
 ## Texture Cooking
 
+Source loading was rechecked on 2026-10-06: `LoadTextureSource` selects direct DDS, EXR, HDR, or raster decoding functions from the normalized extension. Decoder-specific parsing and pixel ownership remain local; byte and float RGBA results share checked pitch calculation and payload construction. The fixed format set has no virtual backend objects. This does not establish whole-cook or runtime texture acceptance.
+
 | ID | Capability | State | Exact current coverage and limit | Evidence |
 | --- | --- | --- | --- | --- |
 | `COOK-008` | Source texture formats | Implemented path | DDS, EXR, Radiance `.hdr`/`.hdri`, plus PNG/JPEG/BMP/TGA/GIF/PSD/PIC/PNM/PPM/PGM. Backend decoders validate each format; KTX is not a current source loader here. | `S` |

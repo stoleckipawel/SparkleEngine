@@ -130,13 +130,25 @@ namespace Files
 				return false;
 			}
 
-			std::span<const std::uint8_t> bytes;
-			if (!ReadBytes(sizeInBytes, bytes, outErrorMessage))
+			return ReadString(sizeInBytes, outValue, outErrorMessage);
+		}
+
+		bool ReadString(std::size_t byteCount, std::string& outValue, std::string& outErrorMessage)
+		{
+			if (!CanRead(byteCount))
 			{
+				outErrorMessage = "Unexpected end of binary byte payload";
 				return false;
 			}
-
-			outValue.assign(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+			if (byteCount == 0)
+			{
+				outValue.clear();
+			}
+			else
+			{
+				outValue.assign(reinterpret_cast<const char*>(m_bytes.data() + m_offset), byteCount);
+			}
+			m_offset += byteCount;
 			return true;
 		}
 

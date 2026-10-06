@@ -89,8 +89,8 @@ static void DrawViewModeOption(
     RenderViewMode currentViewMode) noexcept
 {
 	const bool selected = option.Mode == currentViewMode;
-	const std::string optionLabel = UiUtil::MakeIconLabel(option.Icon, option.Label);
-	if (ImGui::Selectable(optionLabel.c_str(), selected))
+	const UiUtil::MenuCheckState checkState = selected ? UiUtil::MenuCheckState::Checked : UiUtil::MenuCheckState::Unchecked;
+	if (UiUtil::DrawMenuItem(option.Label, option.Icon, checkState))
 	{
 		if (viewportSession != nullptr)
 		{
@@ -138,6 +138,7 @@ void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction, bool compact)
 	const float previewWidth =
 	    ImGui::CalcTextSize(previewLabel.c_str()).x + ImGui::GetFrameHeight() + ImGui::GetStyle().FramePadding.x * 2.0f;
 	ImGui::SetNextItemWidth((std::clamp) (previewWidth, 100.0f, compact ? 145.0f : 260.0f));
+	const UiUtil::MenuStyleScope menuStyle;
 	if (ImGui::BeginCombo("##ViewportViewMode", previewLabel.c_str()))
 	{
 		for (const ViewModePresentation& option : viewModePresentations)
@@ -147,10 +148,18 @@ void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction, bool compact)
 				DrawViewModeOption(m_viewportSession, option, currentViewMode);
 			}
 		}
-		ImGui::SeparatorText("VISUALIZATIONS");
+		UiUtil::DrawMenuSection("VISUALIZATIONS");
 		for (const char* category : {"GBuffer", "Lighting"})
 		{
-			if (ImGui::BeginMenu(category))
+			float childWidth = 0.0f;
+			for (const ViewModePresentation& option : viewModePresentations)
+			{
+				if (std::string_view(option.Category) == category)
+				{
+					childWidth = (std::max) (childWidth, UiUtil::MeasureMenuRow(option.Label, UiUtil::MenuRowKind::Toggle));
+				}
+			}
+			if (UiUtil::BeginMenu(category, UiUtil::EditorIcon::ViewMode, childWidth))
 			{
 				for (const ViewModePresentation& option : viewModePresentations)
 				{

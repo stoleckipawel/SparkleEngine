@@ -49,6 +49,8 @@ Launcher is a capability planner and operation host. It is not a package manager
 
 ## Workspace And Toolchain Operations
 
+`RunBuildWorkspaceOperationPlan` prepares the executable plan, reports each ordered step, runs it, validates its outputs, and finishes the operation. Private execution steps own configure-directory preparation, native-output reset, the existing one-attempt dependency recovery, process failure classification, and freshness publication. Preview matching still precedes execution, and a failed or cancelled step stops the workflow. This source shape was rechecked on 2026-10-06; it does not establish native build or installer acceptance.
+
 | ID | Operation/capability | State | Exact current coverage and limit | Evidence |
 | --- | --- | --- | --- | --- |
 | `LAUNCH-006` | Repository/content discovery | Implemented path | Resolves an explicit `--root`, then the working directory, then Launcher-location ancestors against repository markers; no builder-machine path is embedded in the artifact. It also resolves default Showcase content, project markers, catalogs, and artifact paths and reports unreadable/missing state. | `S` |

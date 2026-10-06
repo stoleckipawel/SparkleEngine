@@ -3,6 +3,20 @@
 
 namespace SparkleUiPalette
 {
+	const MenuColors& Menu() noexcept
+	{
+		static const MenuColors colors = {
+		    ImVec4(0.22f, 0.22f, 0.22f, 1.0f),
+		    ImVec4(0.88f, 0.88f, 0.88f, 1.0f),
+		    ImVec4(0.50f, 0.50f, 0.50f, 1.0f),
+		    ImVec4(0.66f, 0.66f, 0.66f, 1.0f),
+		    ImVec4(0.43f, 0.43f, 0.43f, 1.0f),
+		    ImVec4(0.30f, 0.30f, 0.30f, 1.0f),
+		    ImVec4(0.34f, 0.34f, 0.34f, 1.0f),
+		    ImVec4(0.32f, 0.32f, 0.32f, 1.0f)};
+		return colors;
+	}
+
 	ImVec4 TextPrimary() noexcept
 	{
 		return ImVec4(0.86f, 0.88f, 0.91f, 1.0f);

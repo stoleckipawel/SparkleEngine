@@ -80,11 +80,7 @@ void ShaderRecookCoordinator::Update(Renderer& renderer, bool reloadRequested) n
 {
 	DetectShaderSourceChanges();
 
-	if (m_reloadRequested || reloadRequested)
-	{
-		m_reloadRequested = false;
-		HandleManualReload(renderer);
-	}
+	HandleReloadRequests(renderer, reloadRequested);
 
 	if (!m_operation.IsOccupied())
 	{
@@ -100,16 +96,30 @@ void ShaderRecookCoordinator::Update(Renderer& renderer, bool reloadRequested) n
 
 	CompleteRecook(renderer, std::move(result));
 
+	StartQueuedRecook();
+
+	if (!m_operation.IsOccupied())
+	{
+		HandleExternalRecookPublication(renderer);
+	}
+}
+
+void ShaderRecookCoordinator::HandleReloadRequests(Renderer& renderer, bool reloadRequested) noexcept
+{
+	if (m_reloadRequested || reloadRequested)
+	{
+		m_reloadRequested = false;
+		HandleManualReload(renderer);
+	}
+}
+
+void ShaderRecookCoordinator::StartQueuedRecook() noexcept
+{
 	if (m_queuedRequest)
 	{
 		ShaderRecookRequest queuedRequest = std::move(*m_queuedRequest);
 		m_queuedRequest.reset();
 		StartRecook(std::move(queuedRequest));
-	}
-
-	if (!m_operation.IsOccupied())
-	{
-		HandleExternalRecookPublication(renderer);
 	}
 }
 
@@ -163,6 +173,11 @@ void ShaderRecookCoordinator::StartRecook(ShaderRecookRequest request) noexcept
 
 void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ExecutionResult result) noexcept
 {
+	// Cancellation can settle the slot before the compiler body assigns its request identity.
+	if (result.RequestId == 0u)
+	{
+		return;
+	}
 	if (result.Process.NoWork())
 	{
 		PublishStatus(
@@ -198,7 +213,7 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ExecutionResult
 		}
 		catch (const Diagnostics::Error& error)
 		{
-			m_lastAcceptedPublicationId = publication->PublicationId;
+			m_lastObservedPublicationId = publication->PublicationId;
 
 			PublishStatus(
 			    std::format(
@@ -213,7 +228,7 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ExecutionResult
 			return;
 		}
 
-		m_lastAcceptedPublicationId = publication->PublicationId;
+		m_lastObservedPublicationId = publication->PublicationId;
 
 		PublishStatus(
 		    std::format(
@@ -284,21 +299,21 @@ void ShaderRecookCoordinator::HandleExternalRecookPublication(Renderer& renderer
 		return;
 	}
 
-	if (!m_lastAcceptedPublicationId)
+	if (!m_lastObservedPublicationId)
 	{
-		m_lastAcceptedPublicationId = readResult.Publication->PublicationId;
+		m_lastObservedPublicationId = readResult.Publication->PublicationId;
 		m_lastPublicationDiagnostic.clear();
 		return;
 	}
 
-	if (readResult.Publication->PublicationId <= *m_lastAcceptedPublicationId)
+	if (readResult.Publication->PublicationId <= *m_lastObservedPublicationId)
 	{
 		m_lastPublicationDiagnostic.clear();
 		return;
 	}
 
 	std::string publicationDiagnostic;
-	const ShaderRecookPublication* publication = FindFreshPublication(readResult, *m_lastAcceptedPublicationId, publicationDiagnostic);
+	const ShaderRecookPublication* publication = FindFreshPublication(readResult, *m_lastObservedPublicationId, publicationDiagnostic);
 	if (publication == nullptr)
 	{
 		if (!publicationDiagnostic.empty() && publicationDiagnostic != m_lastPublicationDiagnostic)
@@ -315,7 +330,7 @@ void ShaderRecookCoordinator::HandleExternalRecookPublication(Renderer& renderer
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		m_lastAcceptedPublicationId = publication->PublicationId;
+		m_lastObservedPublicationId = publication->PublicationId;
 		m_lastPublicationDiagnostic.clear();
 		PublishStatus(
 		    std::format(
@@ -326,7 +341,7 @@ void ShaderRecookCoordinator::HandleExternalRecookPublication(Renderer& renderer
 		return;
 	}
 
-	m_lastAcceptedPublicationId = publication->PublicationId;
+	m_lastObservedPublicationId = publication->PublicationId;
 	m_lastPublicationDiagnostic.clear();
 	PublishStatus(
 	    std::format(
@@ -371,12 +386,12 @@ std::uint64_t ShaderRecookCoordinator::ReadCurrentPublicationId() noexcept
 	const ShaderRecookPublicationReadResult readResult = ReadRecookPublication();
 	if (readResult.Publication.has_value())
 	{
-		m_lastAcceptedPublicationId = readResult.Publication->PublicationId;
+		m_lastObservedPublicationId = readResult.Publication->PublicationId;
 
 		return readResult.Publication->PublicationId;
 	}
 
-	return m_lastAcceptedPublicationId.value_or(0u);
+	return m_lastObservedPublicationId.value_or(0u);
 }
 
 ShaderRecookPublicationReadResult ShaderRecookCoordinator::ReadRecookPublication() noexcept
@@ -409,7 +424,7 @@ const ShaderRecookPublication* ShaderRecookCoordinator::FindFreshPublication(
 	}
 
 	const ShaderRecookPublication& publication = *readResult.Publication;
-	const std::uint64_t freshnessFloor = std::max(minimumPublicationId, m_lastAcceptedPublicationId.value_or(0u));
+	const std::uint64_t freshnessFloor = std::max(minimumPublicationId, m_lastObservedPublicationId.value_or(0u));
 	if (publication.PublicationId <= freshnessFloor)
 	{
 		outDiagnostic = std::format(

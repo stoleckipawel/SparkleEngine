@@ -140,7 +140,7 @@ namespace SparkleLauncher
 		std::istringstream stream{std::string(text)};
 		for (std::string line; std::getline(stream, line);)
 		{
-			const std::string trimmedLine = TrimCopy(line);
+			const std::string trimmedLine = Strings::TrimCopy(line);
 			if (trimmedLine.find(": error ") != std::string::npos || trimmedLine.find(" error C") != std::string::npos
 			    || trimmedLine.find("fatal error") != std::string::npos)
 			{
@@ -483,24 +483,23 @@ namespace SparkleLauncher
 		return true;
 	}
 
-	static bool RunBuildWorkspaceStep(
+	static bool PrepareBuildWorkspaceStep(
 	    const BuildWorkspaceOperationPlan& plan,
 	    const BuildWorkspaceProcessStep& step,
-	    IProcessRunner& processRunner,
 	    const ProcessOutputCallback& outputCallback,
 	    OperationRecord& operation)
 	{
-		ProcessRequest request = step.Request;
 		if (step.Id == "configure")
 		{
 			std::error_code errorCode;
-			std::filesystem::create_directories(request.WorkingDirectory, errorCode);
+			std::filesystem::create_directories(step.Request.WorkingDirectory, errorCode);
 			if (errorCode)
 			{
 				SetOperationFailure(
 				    operation,
 				    OperationProblemKind::Filesystem,
-				    "Failed to prepare the configure working directory: " + request.WorkingDirectory.string() + ": " + errorCode.message(),
+				    "Failed to prepare the configure working directory: " + step.Request.WorkingDirectory.string() + ": "
+				        + errorCode.message(),
 				    "Verify that the build directory is writable and not locked, then retry Generate Build Files.");
 				MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 				return false;
@@ -526,6 +525,22 @@ namespace SparkleLauncher
 					return false;
 				}
 			}
+		}
+
+		return true;
+	}
+
+	static bool RunBuildWorkspaceStep(
+	    const BuildWorkspaceOperationPlan& plan,
+	    const BuildWorkspaceProcessStep& step,
+	    IProcessRunner& processRunner,
+	    const ProcessOutputCallback& outputCallback,
+	    OperationRecord& operation)
+	{
+		ProcessRequest request = step.Request;
+		if (!PrepareBuildWorkspaceStep(plan, step, outputCallback, operation))
+		{
+			return false;
 		}
 
 		AppendProcessOutputCallback(request, outputCallback);

@@ -6,6 +6,20 @@
 
 namespace SparkleUiPalette
 {
+	struct MenuColors final
+	{
+		ImVec4 Background;
+		ImVec4 Text;
+		ImVec4 MutedText;
+		ImVec4 Icon;
+		ImVec4 Heading;
+		ImVec4 Hovered;
+		ImVec4 Active;
+		ImVec4 Divider;
+	};
+
+	const MenuColors& Menu() noexcept;
+
 	ImVec4 TextPrimary() noexcept;
 	ImVec4 TextMuted() noexcept;
 	ImVec4 WindowBackground() noexcept;

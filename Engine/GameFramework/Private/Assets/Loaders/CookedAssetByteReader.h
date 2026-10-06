@@ -61,13 +61,13 @@ namespace Assets
 
 		std::string ReadString(std::size_t byteCount)
 		{
-			std::span<const std::uint8_t> bytes;
+			std::string value;
 			std::string error;
-			if (!m_reader.ReadBytes(byteCount, bytes, error))
+			if (!m_reader.ReadString(byteCount, value, error))
 			{
 				throw Diagnostics::Error("Unexpected end of cooked asset string data.");
 			}
-			return bytes.empty() ? std::string{} : std::string(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+			return value;
 		}
 
 		std::size_t GetRemainingByteCount() const noexcept { return m_reader.GetRemainingByteCount(); }
