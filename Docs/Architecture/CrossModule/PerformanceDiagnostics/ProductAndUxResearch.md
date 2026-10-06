@@ -12,6 +12,8 @@
 
 ## Purpose And Authority Boundary
 
+The [External Capture Research](ExternalCapture/Research.md) is the 2026-10-06 provider/API and Unreal/Unity/Godot source study; this page retains the broader diagnostics product/visual precedent. Provider delivery follows the delegated [PIX-first plan](ExternalCapture/Plan.md).
+
 This document maps the diagnostic product space before implementation. It asks what information a developer needs, at what depth, in which visual form, and how the views should connect without turning the engine or Editor into a profiler framework.
 
 The selected Sparkle behavior belongs to [Performance Diagnostics Architecture](README.md). This document records precedent, alternatives, and reasons. It does not override:

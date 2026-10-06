@@ -74,7 +74,7 @@ Use the official matched WinPixEventRuntime header/runtime package in eligible D
 
 The proposed next-frame lowering is `PIXSetTargetWindow` followed by `PIXGpuCaptureNextFrames(..., 1)`. Only the containing native present window is a delimiter. Attachment/status/open facilities come from the pinned package's official headers. Stage 0 proves the installed completion signal before that signal can set Completed. If the API exposes only accepted scheduling or a saved growing file, keep finalization unconfirmed and block provider acceptance. These API constraints come from [Microsoft](https://devblogs.microsoft.com/pix/programmatic-capture/); the result contract is Sparkle's [EC-S10](Semantics.md#publication-and-artifact-truth).
 
-PIX Timing stays a separate bounded range workflow in Stage 7, initially tool-managed. Its privilege/collector requirements cannot become an implicit frame-button behavior.
+PIX Timing stays a separate bounded range workflow delivered with the PIX priority group in Stage 2, initially tool-managed. Its privilege/collector requirements cannot become an implicit frame-button behavior.
 
 ### Nsight Second
 
@@ -82,7 +82,7 @@ Use installed NGFX Graphics Capture headers in private eligible targets, with ex
 
 D3D12 and Vulkan adapters resolve their own delimiter and artifact APIs from the pinned [NGFX reference](https://docs.nvidia.com/nsight-graphics/NsightGraphicsSdk/group___n_g_f_x___a_p_i___c_o_r_e.html). Baseline the capture-file count before requesting and associate only the resulting completed artifact with this request. Poll with zero timeout or perform a bounded worker-side wait; never use an indefinite wait on EditorThread/RenderThread. Handle caller-owned path buffers and target filesystem namespace explicitly. Tool/SDK documentation mismatch blocks that cell until installed-header evidence resolves it.
 
-GPU Trace has a distinct activity, range request, host/finalization behavior, and output. Stage 7 uses a separate launch/session; never activate it in a Graphics Capture process. Nsight Systems remains a specialist system-trace route rather than another frame button. No Perf SDK/HUD or counter ingestion is part of this capture product.
+GPU Trace has a distinct activity, range request, host/finalization behavior, and output. Stage 4 completes its tool-managed handoff, together with Nsight Systems, using a separate launch/session; never activate it in a Graphics Capture process. Nsight Systems remains a specialist system-trace route rather than another frame button. No Perf SDK/HUD or counter ingestion is part of this capture product.
 
 ### RenderDoc Third
 

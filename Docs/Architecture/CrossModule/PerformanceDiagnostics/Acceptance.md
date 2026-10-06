@@ -221,10 +221,12 @@ Every vertical slice passes the [authoring-isolation and Shipping-erasure](#auth
 - Unit/UnitGraph use the same joined samples, and correlated example data proves that invalid GPU frames render as gaps rather than zeros.
 - GpuPasses live ranking, unaccounted span, queue separation, row overflow, and count/duration units pass known-value tests.
 - GPU Visualizer hierarchy, flat inclusive, flat exclusive, coalesced call-count/sum/average/max, hot-path expansion, and marker-only rows pass known-value tests.
-- The generated/static scope registry rejects token/path collisions and transient identity components, preserves schema-version decoding, emits balanced command-recording-local duration scopes under randomized task completion, and keeps point markers/resource names out of duration aggregation.
+- The generated/static scope registry rejects token/path collisions and transient identity components, preserves the single current marker vocabulary and exact candidate provenance without internal schema-version dispatch, emits balanced command-recording-local duration scopes under randomized task completion, and keeps point markers/resource names out of duration aggregation.
 - OS process-lifetime peaks, Sparkle session sampled high-water, and benchmark-run sampled high-water remain distinct; reset changes only the session generation and sampled values expose cadence.
 
 ### Backend And Product Matrix
+
+External native-capture criteria/failures/checks are owned by the [External Capture dossier](ExternalCapture/README.md#acceptance-and-check-contract); the rows below retain the parent cross-diagnostics matrix and require that delegated contract. Capture request failure and native quiescence are distinct; a scene viewport maps to a containing present interval rather than an exclusive native scene capture.
 
 - DevelopmentGame and DevelopmentEditor on D3D12 and Vulkan.
 - DevelopmentEditor external capture: PIX on D3D12; RenderDoc on D3D12 and Vulkan; Nsight Graphics Capture on its supported NVIDIA D3D12/Vulkan matrix while explicitly `Experimental`.

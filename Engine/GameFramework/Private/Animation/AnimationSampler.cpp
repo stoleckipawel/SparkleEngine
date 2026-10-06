@@ -4,55 +4,52 @@
 
 #include <algorithm>
 #include <limits>
-#include <span>
 
-static std::span<const AnimationKeyframe> SelectKeyframes(
+static inline std::uint32_t FindKeyframeSegment(
     const AnimationClipResource& clip,
     const AnimationChannel& channel,
     float timeSeconds) noexcept
 {
-	const std::uint32_t first = channel.firstKeyframe;
-	if (channel.keyframeCount == 0u || first >= clip.keyframes.size())
+	if (channel.keyframeCount <= 1u)
 	{
-		return {};
-	}
-	const std::span<const AnimationKeyframe> keyframes{clip.keyframes};
-	if (channel.keyframeCount == 1u)
-	{
-		return keyframes.subspan(first, 1u);
-	}
-	if (channel.interpolation == Assets::CookedAnimationInterpolation::Step)
-	{
-		std::uint32_t selected = 0u;
-		for (std::uint32_t keyframe = 1u; keyframe < channel.keyframeCount; ++keyframe)
-		{
-			if (timeSeconds < keyframes[first + keyframe].timeSeconds)
-			{
-				break;
-			}
-			selected = keyframe;
-		}
-		return keyframes.subspan(first + selected, 1u);
+		return 0;
 	}
 
+	const std::uint32_t first = channel.firstKeyframe;
 	const std::uint32_t lastSegment = channel.keyframeCount - 2u;
-	for (std::uint32_t segment = 0u; segment <= lastSegment; ++segment)
+	for (std::uint32_t segment = 0; segment <= lastSegment; ++segment)
 	{
-		if (timeSeconds <= keyframes[first + segment + 1u].timeSeconds)
+		if (timeSeconds <= clip.keyframes[first + segment + 1u].timeSeconds)
 		{
-			return keyframes.subspan(first + segment, 2u);
+			return segment;
 		}
 	}
-	return keyframes.subspan(first + lastSegment, 2u);
+
+	return lastSegment;
 }
 
-static float ComputeSegmentAlpha(const AnimationKeyframe& lhs, const AnimationKeyframe& rhs, float timeSeconds) noexcept
+static inline float ComputeSegmentAlpha(const AnimationKeyframe& lhs, const AnimationKeyframe& rhs, float timeSeconds) noexcept
 {
 	const float duration = rhs.timeSeconds - lhs.timeSeconds;
 	return duration <= (std::numeric_limits<float>::epsilon)() ? 0.0f : std::clamp((timeSeconds - lhs.timeSeconds) / duration, 0.0f, 1.0f);
 }
 
-static DirectX::XMVECTOR CubicSpline(const AnimationKeyframe& lhs, const AnimationKeyframe& rhs, float alpha) noexcept
+static inline std::uint32_t FindStepKeyframe(const AnimationClipResource& clip, const AnimationChannel& channel, float timeSeconds) noexcept
+{
+	const std::uint32_t first = channel.firstKeyframe;
+	std::uint32_t selected = 0u;
+	for (std::uint32_t keyframe = 1u; keyframe < channel.keyframeCount; ++keyframe)
+	{
+		if (timeSeconds < clip.keyframes[first + keyframe].timeSeconds)
+		{
+			break;
+		}
+		selected = keyframe;
+	}
+	return selected;
+}
+
+static inline DirectX::XMVECTOR CubicSpline(const AnimationKeyframe& lhs, const AnimationKeyframe& rhs, float alpha) noexcept
 {
 	const float alphaSquared = alpha * alpha;
 	const float alphaCubed = alphaSquared * alpha;
@@ -74,18 +71,24 @@ namespace AnimationSampler
 {
 	DirectX::XMVECTOR SampleVectorChannel(const AnimationClipResource& clip, const AnimationChannel& channel, float timeSeconds) noexcept
 	{
-		const std::span<const AnimationKeyframe> keyframes = SelectKeyframes(clip, channel, timeSeconds);
-		if (keyframes.empty())
+		const std::uint32_t first = channel.firstKeyframe;
+		if (channel.keyframeCount == 0u || first >= clip.keyframes.size())
 		{
 			return DirectX::XMVectorZero();
 		}
-		if (keyframes.size() == 1u)
+
+		if (channel.keyframeCount == 1u)
 		{
-			return DirectX::XMLoadFloat4(&keyframes.front().value);
+			return DirectX::XMLoadFloat4(&clip.keyframes[first].value);
+		}
+		if (channel.interpolation == Assets::CookedAnimationInterpolation::Step)
+		{
+			return DirectX::XMLoadFloat4(&clip.keyframes[first + FindStepKeyframe(clip, channel, timeSeconds)].value);
 		}
 
-		const AnimationKeyframe& lhs = keyframes[0];
-		const AnimationKeyframe& rhs = keyframes[1];
+		const std::uint32_t segment = FindKeyframeSegment(clip, channel, timeSeconds);
+		const AnimationKeyframe& lhs = clip.keyframes[first + segment];
+		const AnimationKeyframe& rhs = clip.keyframes[first + segment + 1u];
 		const float alpha = ComputeSegmentAlpha(lhs, rhs, timeSeconds);
 		return channel.interpolation == Assets::CookedAnimationInterpolation::CubicSpline
 		    ? CubicSpline(lhs, rhs, alpha)
@@ -94,18 +97,25 @@ namespace AnimationSampler
 
 	DirectX::XMVECTOR SampleRotationChannel(const AnimationClipResource& clip, const AnimationChannel& channel, float timeSeconds) noexcept
 	{
-		const std::span<const AnimationKeyframe> keyframes = SelectKeyframes(clip, channel, timeSeconds);
-		if (keyframes.empty())
+		const std::uint32_t first = channel.firstKeyframe;
+		if (channel.keyframeCount == 0u || first >= clip.keyframes.size())
 		{
 			return DirectX::XMQuaternionIdentity();
 		}
-		if (keyframes.size() == 1u)
+
+		if (channel.keyframeCount == 1u)
 		{
-			return DirectX::XMQuaternionNormalize(DirectX::XMLoadFloat4(&keyframes.front().value));
+			return DirectX::XMQuaternionNormalize(DirectX::XMLoadFloat4(&clip.keyframes[first].value));
+		}
+		if (channel.interpolation == Assets::CookedAnimationInterpolation::Step)
+		{
+			return DirectX::XMQuaternionNormalize(
+			    DirectX::XMLoadFloat4(&clip.keyframes[first + FindStepKeyframe(clip, channel, timeSeconds)].value));
 		}
 
-		const AnimationKeyframe& lhs = keyframes[0];
-		const AnimationKeyframe& rhs = keyframes[1];
+		const std::uint32_t segment = FindKeyframeSegment(clip, channel, timeSeconds);
+		const AnimationKeyframe& lhs = clip.keyframes[first + segment];
+		const AnimationKeyframe& rhs = clip.keyframes[first + segment + 1u];
 		const float alpha = ComputeSegmentAlpha(lhs, rhs, timeSeconds);
 		const DirectX::XMVECTOR sampled = channel.interpolation == Assets::CookedAnimationInterpolation::CubicSpline
 		    ? CubicSpline(lhs, rhs, alpha)

@@ -31,7 +31,7 @@ This plan is not currently implemented by virtue of being detailed. Each phase r
 
 ## Purpose And Authority Boundary
 
-This plan turns the target architecture into independently reviewable vertical deliveries. It owns order, package dependencies, selection states, implementation prompts, and phase exits. It is deliberately the only performance-diagnostics implementation-plan document: phase notes, speculative class diagrams, and separate checklists should not be added unless they acquire a genuinely different owner and audience.
+This plan turns the target architecture into independently reviewable vertical deliveries. It owns order, package dependencies, selection states, implementation prompts, and phase exits. It owns the parent phase/package gates. [External Capture Plan](ExternalCapture/Plan.md) is the delegated Phase 1 delivery owner for independently reviewable provider/backend slices; it does not own internal diagnostics phases. Do not create additional parallel phase notes or copied capture contracts.
 
 The following documents remain authoritative for their subjects:
 
@@ -328,7 +328,7 @@ Use this confidence vocabulary in `sweep-summary.md`:
 
 ### Ordered phases, selectable packages
 
-Phases close in order. Phase 1 is intentionally external-first: `EXT-00`–`EXT-05` begin `Selected`, and no internal collection/session/view/export package starts until their gate closes. An adapter may become `Rejected` only when current primary documentation, installed-tool evidence, and a smoke attempt prove its declared backend path unsupported; it is not silently deferred. Within later active phases, any optional package may be selected, deferred, or rejected.
+Phases close in order at aggregate acceptance; PIX-relevant discovery and bounded individual delivery proceed through the [delegated external stages](ExternalCapture/Plan.md) before the parent all-map closure. Phase 1 is intentionally external-first: `EXT-00`–`EXT-05` begin `Selected`, and no internal collection/session/view/export package starts until their gate closes. An adapter may become `Rejected` only when current primary documentation, installed-tool evidence, and a smoke attempt prove its declared backend path unsupported; it is not silently deferred. Within later active phases, any optional package may be selected, deferred, or rejected.
 
 Each phase contains three kinds of work:
 
@@ -402,12 +402,12 @@ Copy this compact record into the active change description and update this tabl
 | ID | Package | Kind | Initial state | Hard dependencies |
 | --- | --- | --- | --- | --- |
 | `P0-GATE` | Reconcile contracts, baseline, and selected scope | Gate | Required | None |
-| `EXT-00` | External-provider launch, stable marker-only correlation, capability, arbitration, and icon-group spine | Spine | Selected | `P0-GATE` |
+| `EXT-00` | External-provider launch, marker-only correlation, capability, arbitration and icon spine delivered with real PIX | Spine | Selected | PIX-relevant `P0-GATE` / `EC-D0-PIX` |
 | `EXT-01` | PIX capture on D3D12 | Feature | Selected | `EXT-00` |
-| `EXT-02` | RenderDoc capture on D3D12 | Feature | Selected | `EXT-00` |
-| `EXT-03` | RenderDoc capture on Vulkan | Feature | Selected | `EXT-00` |
 | `EXT-04` | Nsight Graphics capture on D3D12, experimental until its matrix passes | Feature | Selected | `EXT-00`; runbook matrix passes |
 | `EXT-05` | Nsight Graphics capture on Vulkan, experimental until its matrix passes | Feature | Selected | `EXT-00`; runbook matrix passes |
+| `EXT-02` | RenderDoc capture on D3D12 | Feature | Selected | `EXT-00` |
+| `EXT-03` | RenderDoc capture on Vulkan | Feature | Selected | `EXT-00` |
 | `P1-GATE` | External capture lifecycle, compatibility, artifact, authoring, and Shipping-erasure checks | Gate | Required | Final decisions for `EXT-00`–`EXT-05` |
 | `FND-01` | Application session, demand, join, and immutable publication | Spine | Available | `P1-GATE` |
 | `FND-02` | Host phase and frame-interval measurements | Feature | Available | `FND-01` |
@@ -462,7 +462,7 @@ In every example, the phase gates are still reviewed and closed in order. A pack
 The [architecture](README.md) defines the product decomposition; this plan owns its required dependency order. After the baseline, external capture is the first implementation slice and later internal features remain selectable.
 
 1. Freeze metric names, units, validity, `FrameId` join behavior, and a source-backed baseline trace using existing thread/ETW/GPU markers.
-2. Prove the attached external frame-capture product end to end: bounded process-wide provider-set selection before device creation; PIX D3D12, RenderDoc D3D12/Vulkan, and Nsight Graphics D3D12/Vulkan private adapters; marker-only correlation; one conditional icon per capable provider in each viewport's right-control cluster; stable target binding; global exclusive request arbitration; pairwise/multi-provider compatibility evidence; native artifact handoff; absent-tool, failure, observer-cost, and Shipping-erasure evidence. Nsight remains explicitly experimental until its current SDK/tool matrix passes, but its accept-or-evidence-backed-reject decision is completed here rather than deferred behind internal work.
+2. Prove the attached external frame-capture product end to end: bounded process-wide provider-set selection before device creation; PIX D3D12, Nsight Graphics D3D12/Vulkan, then RenderDoc D3D12/Vulkan private adapters; marker-only correlation; one conditional icon per capable provider in each viewport's right-control cluster; stable target binding; global exclusive request arbitration; pairwise/multi-provider compatibility evidence; native artifact handoff; absent-tool, failure, observer-cost, and Shipping-erasure evidence. Nsight remains explicitly experimental until its current SDK/tool matrix passes, but its accept-or-evidence-backed-reject decision is completed here rather than deferred behind internal work.
 3. Add the bounded Application session, host phases, process RAM, Renderer CPU stages, frame-queue waits, and one top-level GPU queue span needed by `MAP-00`, composing the accepted external-capture projection without changing its owners.
 4. Register the fixed expert `Stat` command through the existing Editor/DevelopmentGame console composition; publish `Fps`, `Unit`, and `UnitGraph` from the same model; expose the task-first `Quick Check` viewport path; and prove basic-mode observer cost and keyboard completion.
 5. Complete the workload-owned `MAP-00` vertical slice: fixed resolution/readiness, explicit benchmark export and manifest integration, capture naming, and Sponza calibration.
@@ -533,11 +533,11 @@ Close uncertainty before code without creating speculative frozen contracts. The
 - No new module, registry, event bus, trace store, generic counter API, or empty presenter.
 - No “final” capacity chosen from intuition alone.
 - No optimization based on the current viewport FPS or one screenshot.
-- No implementation of Phase 1 while metric meaning or owner remains ambiguous.
+- No external implementation while its target, capture identity, completion, native lifetime or owner remains ambiguous. Unselected internal metric-definition work does not block a proved external slice.
 
 ### Exit gate
 
-- The complete external provider set, current compatibility matrix, and every acceptance/rejection condition are explicit; internal packages remain unimplemented.
+- The complete external provider set and default-deny compatibility policy are explicit; PIX-relevant discovery closes first, later adapter cells close before their own stages. Internal packages remain unimplemented; unavailable later SDKs do not block a valid PIX result.
 - Every known and newly discovered overlap has one allowed disposition; no ambiguous owner or parallel route is approved for implementation.
 - Every selected package has a complete touched-path record and satisfies the applicable Engineering standards.
 - Authoring remains intent-first, facts have automatic low-level owner seams, and the Development/Shipping source/link/package boundary plus erasure proof is defined before implementation.
@@ -548,124 +548,44 @@ Close uncertainty before code without creating speculative frozen contracts. The
 ### Ready-to-use implementation prompt
 
 ```text
-Execute Performance Diagnostics phase P0-GATE only. Begin by filling the required
-test card and showing the Sponza plus current all-supported-map baseline procedure,
-expected criteria, artifact path, and owner reading task. Read the architecture,
-wireframes, runbook, acceptance workload, AGENTS.md, and all applicable
-engineering standards. Reconcile current code owners, consumers, lifetimes,
-thread boundaries, CMake membership, tests, and dirty work with rg. Fill the
-authority tuple and duplicate-candidate ledger; give every candidate one allowed
-disposition and name exact deletion or boundary proof. Complete the touched-path
-record under the applicable Engineering standards. Audit representative content authoring,
-derive facts at existing low-level owners, fill the authoring/Shipping-erasure
-card, and reject runtime-disabled Shipping residue. I select these external packages:
-PIX D3D12, RenderDoc D3D12/Vulkan, and Nsight Graphics D3D12/Vulkan through
-EXT-00–EXT-05; none may be silently deferred. Revalidate each installed/current
-provider matrix and define evidence-backed rejection where a declared path is
-actually unsupported. Leave all internal FND/ORI/EVD/INV/CAP packages unimplemented.
-Capture the smallest honest serial/threaded baseline and define external launch,
-capability, marker-only identity, target, state, conflict, timeout, artifact, and
-failure semantics. Resolve only decisions required by the external slice. Make no
-internal collection session, stat product, or generic diagnostics framework.
-Run the baseline roster, give the user its symptom/blind-spot matrix to review,
-and do not close P0 before that AC decision. Report exact evidence and update the
-single delivery ledger.
+Execute the external part of Performance Diagnostics P0-GATE through Stage 0 of Docs/Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/Plan.md and its complete prompt. Close PIX-relevant EC-D01-08 first; inventory later Nsight/RenderDoc cells and close their delta before each adapter stage. Apply the Universal Execution Contract and retain exact installed-header/API/target/finalization/lifetime/budget/build decisions and artifacts. Preserve the parent baseline and all-map procedure for aggregate closure; a narrow Empty/Sponza control may establish the first PIX slice, and no internal metric/history/session implementation is required. A missing later tool or hardware remains BLOCKED for that cell and never silently rejects the feature or invalidates accepted PIX. Report exact commands, unsupported/unavailable distinctions and next permitted stage. Do not implement production code during discovery or start all adapters together.
 ```
 
 ## Phase 1 — Prove External Capture End To End
 
-### Test it first
+### Delivery Owner And Priority
 
-Use Sponza for the first capture, then exercise every provider on each declared backend across the supported-map roster. This phase uses existing host `FrameId`, viewport identity, and marker-only boundaries for correlation; it does not wait for or create Sparkle's internal timing/history product. Captures are explicit, and large native artifacts may be linked from the sweep rather than committed.
+Execute the [External Capture staged plan](ExternalCapture/Plan.md), in user priority order **PIX -> Nsight -> RenderDoc -> specialist tools**. It owns Stage 0 discovery and bounded copy-ready prompts through final adoption; this parent plan owns only the phase transition. The [dossier](ExternalCapture/README.md) owns its support matrix, criteria/failures/checks, and individual provider delivery. Existing `EXT-*` identities are preserved even though their execution order changes.
 
-| ID | User action | Expected criteria | Required reading task |
-| --- | --- | --- | --- |
-| `EXT-00` | Launch with no provider, every provider alone, each pair, and the combined requested set; inspect all renderable viewports and click a second icon while one capture is active. | Per-provider capability/state is independent; only requested or detected capable icons appear; clicked provider/viewport identity survives; compatibility conflicts and global `Busy` are explicit; no native handle/provider API reaches Editor. | Classify every provider/backend/version/combination as supported, unavailable, experimental, or evidence-backed rejected before the gate closes. |
-| `EXT-01` | Select provider `pix` in the Launcher, launch `DevelopmentEditor` D3D12, then click the PIX mini icon in the intended viewport. Repeat once through direct CLI to prove both adapters produce the same typed intent. | Correct request serialization and pre-device setup, device/swapchain/present target, next valid frame, stable Sparkle marker tree/bookmark, artifact/native handoff, absent-tool behavior, and exactly-once failure/shutdown. | Open the artifact, identify the Sparkle frame/marker path, and state whether capture target and marker correlation are trustworthy. |
-| `EXT-02` | Select provider `renderdoc` in the Launcher, launch `DevelopmentEditor` D3D12, then click its icon. | Correct request serialization, supported bootstrap/injection route, and D3D12 present target; next-frame capture opens with stable markers and validation-clean state; absent tool remains honest. | Inspect one known pass/resource/pipeline state and record what RenderDoc proves that icon visibility alone does not. |
-| `EXT-03` | Select provider `renderdoc` in the Launcher, launch `DevelopmentEditor` Vulkan, then click its icon. | Vulkan layer/bootstrap order, device/swapchain selection, next-frame artifact, marker parity, and Vulkan validation pass; D3D12 and Vulkan expose the same neutral state meanings. | Compare D3D12/Vulkan marker and target identity and explain any backend-specific capture limitation. |
-| `EXT-04` | Build the currently eligible Nsight Graphics D3D12 adapter, select provider `nsight-graphics`, launch from the Launcher, then click its icon. | Installed SDK/tool matrix is revalidated; next-frame target, marker correlation, failure/timeout/shutdown, pairwise compatibility, and experimental status are honest. | Open the capture and decide whether the current matrix supports production use, remains experimental, or must be rejected with evidence. |
-| `EXT-05` | Repeat `EXT-04` on Vulkan. | Required layer/extension/device path and provider compatibility pass, or the adapter is evidence-backed rejected rather than emulated or retained as a stub. | Compare with D3D12 or state the exact current limitation and removal/retest condition. |
-
-For every provider and eligible combination, capture Sponza first and then one artifact per supported map/backend. Confirm all capable icons coexist in stable order, click each in turn, and verify non-active icons report global `Busy` instead of capturing simultaneously. A provider is not accepted from startup, icon visibility, marker emission, or one lucky frame.
-
-### Outcome
-
-PIX, RenderDoc, and Nsight hooks are proven before internal profiling begins. The result is a complete external path—launch intent, bootstrap, capability, marker-only correlation, viewport action, request/arbitration, native capture, artifact handoff, failure/shutdown, absent-tool behavior, and Shipping erasure—not a provider scaffold.
-
-### `EXT-00` external-provider and marker-only spine
-
-Implement this once for all five selected adapters without depending on `FND-01`, internal GPU timestamps, joined history, stat groups, evidence export, or the Performance workspace.
-
-- Parse the combinable immutable provider intent before Renderer/device creation.
-- Extend `RendererExternalRuntime` and `RendererBackendConfiguration`; keep provider bootstrap and native capture calls in RHI-private D3D12/Vulkan adapters.
-- Separate stable external marker fanout from internal timestamp collection. Reuse existing frame-graph/pass ownership, introduce only the fixed static token/schema needed for cross-tool correlation, and keep timestamp queries off and unimplemented in this phase.
-- Publish the fixed provider set and bounded `NotRequested`, `Unavailable`, `Ready`, `Armed`, `Capturing`, `Completed`, `Failed`, and `Busy` result through the existing Renderer read-state route and a narrow immutable Application-to-Editor projection. This external-capture product remains a stable submodel when `FND-01` later arrives; it is not migrated into a second state owner.
-- Render one far-right mini icon per requested or detected capable provider in every renderable viewport. Multiple icons may coexist.
-- Each click sends one typed request naming provider, stable viewport/present-target token and generation, and expected next valid frame identity. Editor receives no native window/device/queue/swapchain/provider handle.
-- Serialize capture globally initially. Other icons remain visible and report `Busy`; exact provider pairs may become concurrently eligible only after their versioned compatibility test passes.
-- Arm at the backend's safe present boundary. Resize, minimize, zero extent, stale viewport generation, timeout, device loss, viewport destruction, and shutdown settle once.
-- Keep native artifacts native. Sparkle publishes bounded status/provenance and the provider handoff/path only when supplied.
-- Keep content, gameplay, pass bodies, and ordinary feature authoring provider-agnostic. Stable markers come from existing owner plans or one justified static owner token.
-- Exclude all provider parsing, bootstrap, adapters, state, icons/assets, marker strings/fanout, imports, SDKs, layers, DLLs, and call sites from Shipping.
-
-### Provider feature packages
-
-| ID | Delivery | Required proof before `Accepted` |
+| External stage | Package | Observable result |
 | --- | --- | --- |
-| `EXT-01` | PIX capture, D3D12 | Optimized Development startup; capture capability distinct from marker-only runtime; selected viewport/next-frame correctness; artifact/native handoff; normal run without PIX installed; pairwise compatibility; failure/shutdown; runbook operation. |
-| `EXT-02` | RenderDoc capture, D3D12 | Supported pre-device route, correct present target, API validation, artifact, absent-tool run, pairwise PIX/Nsight outcomes, and clean relaunch. |
-| `EXT-03` | RenderDoc capture, Vulkan | Layer/bootstrap ordering, correct device/swapchain target, Vulkan validation, artifact, neutral-state parity, pairwise outcomes, and clean relaunch. |
-| `EXT-04` | Nsight Graphics capture, D3D12 | Current runbook/SDK matrix, explicit experimental eligibility until it passes, artifact or evidence-backed rejection, failure semantics, pairwise compatibility, and no mandatory dependency. |
-| `EXT-05` | Nsight Graphics capture, Vulkan | `EXT-04` proof plus Vulkan layer/extension/device and validation evidence. Reject and delete rather than emulate when the current supported matrix cannot provide capture. |
+| 0 | PIX-relevant P0 discovery | Installed headers/API/target/finalization/lifetime/budgets frozen before code. |
+| 1-2 | `EXT-00` and `EXT-01` | Real PIX Editor capture, then robust Game/lifecycle/Shipping/observer product and separate Timing handoff. |
+| 3-4 | `EXT-04`, `EXT-05` | Nsight Graphics Capture on D3D12, then Vulkan, plus separate GPU Trace/Systems handoff; beta SDK remains explicit. |
+| 5-6 | `EXT-02`, `EXT-03` | RenderDoc on D3D12, then Vulkan through the same neutral authority. |
+| 7 | Specialist handoff | Distinct timing/system/hardware/memory/RT/shader/crash guidance and native workflows. |
+| 8 | Aggregate external closure | Full declared matrix, all-map sweep, Shipping, review/adoption and candidate report. |
 
-### Positive guardrails
+### Test It First
 
-- Revalidate primary provider documentation and installed versions through the runbook immediately before implementation.
-- Deliver one provider end to end, then the remaining adapters through the same neutral contract; complete all selected providers before `P1-GATE`.
-- Use optimized Development builds, existing marker/pass ownership, backend-native validation, stable viewport identity, and native artifacts.
-- Test no provider, each provider, pairwise requested sets, the combined set, absent tools, relaunch, and clean shutdown.
-- Preserve screenshot readback as a separate image-capture responsibility and preserve normal rendering without an attached provider.
+Use the [external check cards](ExternalCapture/README.md#executable-check-cards-to-freeze-before-implementation). Empty and ready Sponza prove each first slice; the parent all-map native-capture gate runs at aggregate closure. Freeze capacities, deadlines, tool versions, native-feature/interposer settings and observer controls before results. Local probes remain unsubmitted and are removed. No internal timing/history/session product is needed to verify capture.
 
-### Negative guardrails
+### `P1-GATE` Exit
 
-- No internal Application performance session, live history, stat catalog, GPU timestamp/query pool, GPU visualizer, benchmark exporter, or internal `ProfileGpu` work in this phase.
-- No late device injection, vendor APIs above RHI private, static RenderDoc linkage, mandatory beta SDK dependency, or provider-specific Editor state machine.
-- No unrequested permanent icons, launch-intent-only `Ready`, hidden provider precedence, simultaneous capture assumption, or silently selected fallback provider.
-- No capture of whichever window presents first, stale viewport target, blocking UI/RenderThread wait, screenshot-service overload, automatic disk capture, or embedded profiler replacement.
-- No provider or marker payload in Shipping and no provider knowledge in content/feature/pass authoring.
+- `EXT-00` and each selected `EXT-01`-`EXT-05` has candidate-bound acceptance or an evidence-backed unsupported/rejected disposition. Missing installation/hardware, unrun checks and unavailable review are blockers, not feature rejection.
+- Accepted providers prove launch -> early bootstrap -> real target/delimiter -> native finalization/artifact/handoff -> inspection -> safe failure/shutdown on their declared backend/profile/native-feature matrix and supported-map roster.
+- Provider capability is distinct from request state; one global native lease is exclusive through quiescence. Untested injected combinations reject before load. Timeout does not manufacture cancellation.
+- The requested scene's contribution and containing native present surface are confirmed, actual frame/interval certainty and multi-window content limitations are explicit, and no wrong-target capture returns success.
+- Marker-only correlation preserves normal parallel recording, symbols/candidate identity are honest, and screenshots/internal timestamps remain separate responsibilities.
+- Content/pass authoring is provider-agnostic; Shipping configures/builds/packages without capture SDKs and contains no optional capture/marker payload or dependency.
+- Relevant external AC/FM/CHK coverage, native validation, observer evidence, architecture hook ledger, `architecture_boundary_check`, independent adoption/review and `git diff --check` have retained results.
 
-### `P1-GATE` exit
+Individual PIX acceptance does not wait for missing later tooling. Internal Phase 2 still waits for this aggregate gate. Specialist lane limitations are recorded separately and do not revoke accepted frame providers.
 
-- `EXT-00` is accepted and each of `EXT-01`–`EXT-05` is `Accepted` or evidence-backed `Rejected`; none is `Deferred`, stubbed, or represented by an untested icon.
-- Every accepted provider passes its declared backend/version/product matrix, absent-tool launch, next-valid-frame clicked-viewport capture, artifact/native handoff, and all-map sweep.
-- Multiple provider icons coexist independently; compatibility conflicts and one global capture arbitration state are honest and exactly-once.
-- Launch parsing, bootstrap, capability, marker identity, request/state, target binding, artifact, and presentation each have one owner; screenshot and external capture remain boundary-tested separate responsibilities.
-- Marker-only correlation works without any internal timestamp/history/session product and preserves normal rendering/recording topology.
-- Content/feature/pass authoring remains provider-agnostic, and Shipping configures without profiler SDKs and contains no external-capture/marker payload or dependency.
-- Timeout, resize/minimize, stale viewport, device loss, finalization, failure, clean relaunch, and shutdown tests pass.
-- Native validation, `architecture_boundary_check`, relevant builds/tests, provider artifacts, and `git diff --check` pass.
-
-### Ready-to-use implementation prompt
+### Ready-To-Use Entry Prompt
 
 ```text
-Implement Performance Diagnostics phase 1 external capture only: EXT-00 through
-EXT-05. Begin with the test/authoring/Shipping cards and the Sponza, all-map,
-backend, provider-alone, pairwise, combined, absent-tool, failure, and relaunch
-matrix. Revalidate the profiler runbook and current primary PIX, RenderDoc, and
-Nsight Graphics documentation/tool versions. Complete the touched-path record
-and authority/duplicate ledger. Extend RendererExternalRuntime,
-the existing Renderer read-state/control route, and backend-private RHI adapters.
-Build only the stable marker-only schema needed for native correlation; do not
-create FND/ORI/EVD/INV/CAP internal timing, history, stat, export, or ProfileGpu
-code. Publish one neutral bounded provider model and typed provider+viewport
-request; render multiple conditional icons but serialize captures globally until
-an exact compatibility test permits otherwise. Keep content/feature/pass authoring
-provider-agnostic. Prove Shipping configures without profiler SDKs and contains no
-provider parser/bootstrap/adapter/state/icon/marker string/import/staged binary or
-call site. Reject and delete an adapter only with current source/tool/smoke evidence;
-never leave a stub. Hand the user every artifact and compatibility decision. Do
-not start internal diagnostics before P1-GATE is accepted.
+Execute only the earliest dependency-ready stage of Docs/Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/Plan.md. Begin at Stage 0 if EC-D0-PIX is absent or stale; otherwise paste that stage's complete prompt and verify its exact prerequisite artifacts. Preserve EXT identities and priority PIX, Nsight, RenderDoc, then specialist tools. Apply the delegated plan's Universal Execution Contract. Do not implement internal Performance phases 2-6 or complete all adapters in one change. Report individual provider evidence separately from aggregate P1-GATE; a missing tool/hardware/check stays BLOCKED, never an invented unsupported rejection.
 ```
 
 ## Phase 2 — Build The Bounded Data Spine

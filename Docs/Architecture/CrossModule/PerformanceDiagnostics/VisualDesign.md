@@ -120,6 +120,8 @@ Color may reinforce categories in the real UI, but text, icons, patterns, and to
 
 ### Attached Profiler Capture Icons
 
+The [external-capture UX](ExternalCapture/UserExperience.md) and [semantics](ExternalCapture/Semantics.md) own these actions. Wireframes are illustrative, not proof of supported injected combinations. Use stable order PIX, Nsight, RenderDoc; disclose containing host-present scope and actual frame/interval certainty.
+
 The real control is a compact group containing each requested or detected provider's recognizable 16-20 px icon in the viewport's right-control cluster, immediately before the existing camera/status controls. ASCII abbreviations are used here only so state remains legible in text:
 
 ```text
@@ -128,7 +130,7 @@ No provider requested or detected
 
 PIX ready after selecting provider `pix`
 + Viewport -------------------------- [Performance v] [PX] [Camera] [FPS] +
-  Tooltip: Capture next frame with PIX | D3D12 | this viewport | Ready
+  Tooltip: Capture next frame with PIX | D3D12 | host interval for this view | Ready
 
 RenderDoc requested but unavailable
 + Viewport ---------------------- [Performance v] [RD!] [Camera] [FPS] +
@@ -139,15 +141,15 @@ Nsight Graphics capture armed after selecting provider `nsight-graphics`
   Status: Armed for next valid present | Graphics Capture | Experimental
 
 PIX and RenderDoc ready; Nsight requested but conflicting
-+ Viewport ----------- [Performance v] [PX] [RD] [NG!] [Camera] [FPS] +
-  PX Tooltip: Capture next frame with PIX | D3D12 | this viewport | Ready
-  RD Tooltip: Capture next frame with RenderDoc | D3D12 | this viewport | Ready
++ Viewport ----------- [Performance v] [PX] [NG!] [RD] [Camera] [FPS] +
+  PX Tooltip: Capture next frame with PIX | D3D12 | host interval for this view | Ready
+  RD Tooltip: Capture next frame with RenderDoc | D3D12 | host interval for this view | Ready
   NG Disabled: incompatible provider combination | Relaunch/setup guidance
 ```
 
-The Launcher provider selection and repeatable direct-CLI `--capture-provider <id>` adapter both produce the same immutable provider set. `nsight-graphics` means Nsight Graphics Capture, not Nsight Systems or GPU Trace. Compatible providers expose independent icons and states. Untested or unsafe capture-layer combinations remain visibly unavailable instead of silently choosing a winner. Clicking a ready icon submits one typed request naming that provider and the next valid frame of that viewport. The panel only lays out a capture presenter; it never builds a command string, stores provider state, calls a vendor API, changes the selected Performance frame, or chooses whichever Editor window presents first.
+The Launcher provider selection and repeatable direct-CLI `--capture-provider <id>` adapter both produce the same immutable provider set. `nsight-graphics` means Nsight Graphics Capture, not Nsight Systems or GPU Trace. Compatible providers expose independent icons and states. Untested or unsafe capture-layer combinations remain visibly unavailable instead of silently choosing a winner. Clicking a ready icon submits one typed request naming that provider and scene context; runtime confirms the containing present interval and scene contribution with explicit identity certainty. The panel only lays out a capture presenter; it never builds a command string, stores provider state, calls a vendor API, changes the selected Performance frame, or chooses whichever Editor window presents first.
 
-Each icon has its own `Unavailable`, `Ready`, `Armed`, `Capturing`, `Finalizing`, `Completed`, and `Failed` state. Initially, only one provider may be armed/capturing/finalizing globally; other ready icons temporarily expose `Busy with <provider>`. Accessible name, tooltip, status notification, and focus styling carry the full meaning; provider color or animation is reinforcement only. Completion offers `Open in <provider>` or `Show in folder` only when that provider returns a usable artifact path.
+Capability entries and request states are separate in the authoritative model; icon labels project `Unavailable`, `Ready`, `Armed`, `Capturing`, `Finalizing`, `Completed`, and `Failed`. One capture lease remains exclusive through native quiescence, even after a timed-out request settles; other ready actions expose `Busy with <provider>` or draining/relaunch guidance. Accessible name, tooltip, status notification, and focus styling carry the full meaning; provider color or animation is reinforcement only. Completion offers `Open in <provider>` or `Show in folder` only when that provider returns a usable artifact path.
 
 ### Console Interaction
 

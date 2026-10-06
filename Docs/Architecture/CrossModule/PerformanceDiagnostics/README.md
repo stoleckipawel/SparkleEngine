@@ -4,6 +4,8 @@
 
 **Last source reconciliation:** 2026-09-29 against the working tree based on committed revision `d1d26dbb`; the capture-specific paths named below were inspected, while unrelated local Renderer changes are outside this reconciliation
 
+**Capture-only reconciliation:** 2026-10-06 at `82528cbe5edbcf729464fbefe6998435730920eb`; [source audit and target refinement](ExternalCapture/README.md). Other current-state observations retain the preceding date.
+
 **Scope:** editor and game frame timing, CPU owner/thread attribution, GPU queue/pass timing, process RAM, GPU memory, bounded live presentation, attached external frame capture, external-profiler correlation, authoring isolation, and Shipping erasure
 
 **Current readiness:** **20/100** — instrumentation foundations exist, but the joined diagnostics product, benchmark export, external-capture workflow, and acceptance evidence do not. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
@@ -32,7 +34,7 @@ The internal layer is a compass: it identifies the likely limiting domain and th
 
 | Concern | Owner |
 | --- | --- |
-| target diagnostic semantics and system shape | this page |
+| target diagnostic semantics and system shape | this page; external capture delegates to [External Capture](ExternalCapture/README.md) |
 | dated current-source capability and gaps | [Capability](Capability.md) |
 | feature-local evidence, failures, checks, and completion | [Acceptance](Acceptance.md) |
 | delivery order and phase exits | [Performance Diagnostics Delivery Plan](Plan.md) |
@@ -96,7 +98,7 @@ Sparkle will provide four complementary diagnostic layers:
 
 The live layer is a compass, not a verdict. It must expose validity, frame identity, configuration, and likely limiting domain without pretending that utilization, FPS, summed scope time, or a single captured frame proves cause.
 
-The table describes the final diagnostic ladder, not implementation order. Delivery is deliberately external-first: after the source-backed baseline, Sparkle proves the complete PIX, RenderDoc, and Nsight Graphics launch-to-artifact paths before adding its internal session, stats, histories, timestamp queries, workspace, or `ProfileGpu`. This establishes trustworthy native captures and marker correlation against the current renderer before internal instrumentation can disturb or obscure it.
+The table describes the final diagnostic ladder, not implementation order. Delivery is deliberately external-first: after the source-backed baseline, Sparkle proves the complete PIX, Nsight Graphics, then RenderDoc launch-to-artifact paths using the [external-capture staged plan](ExternalCapture/Plan.md) before adding its internal session, stats, histories, timestamp queries, workspace, or `ProfileGpu`. This establishes trustworthy native captures and marker correlation against the current renderer before internal instrumentation can disturb or obscure it.
 
 ## Unreal Stat-System Precedent And Sparkle Adaptation
 
@@ -332,7 +334,7 @@ Renderer.Frame                         [FrameId is record metadata]
 
 One private backend adapter fans each semantic scope out to Sparkle timing and supported native markers. The portable marker contract is:
 
-- a generated or `constexpr` registry owns `ScopeToken`, stable display path, schema version, and backend-safe static string storage; build tests reject token/hash collisions and duplicate paths;
+- a generated or `constexpr` registry owns `ScopeToken`, stable display path, and backend-safe static string storage; build tests reject token/hash collisions and duplicate paths;
 - aggregation identity never includes `FrameId`, pointer values, transient graph indices, resource paths, or per-frame formatted text;
 - duration scopes are balanced RAII objects and remain inside one CPU task and one command-list/command-buffer recording lifetime; task-local and command-recording-local stacks prevent cross-thread or cross-command-buffer push/pop pairs;
 - duration regions, point annotations, and resource/object names are distinct operations. A backend/tool may support only a subset without changing semantic scope identity;
@@ -762,55 +764,19 @@ The console and UI issue the same typed requests. UI does not construct command 
 
 ### Attached External Frame Capture
 
-This workflow is distinct from `ProfileGpu`. `ProfileGpu` creates a bounded Sparkle timestamp product for marker-level orientation; each attached-tool icon asks its named external capture layer to record a provider-native frame for API, state, resource, shader, or hardware analysis. Multiple icons may be visible together even though capture execution is serialized initially.
+The [External Capture dossier](ExternalCapture/README.md) owns the source-backed external-capture package, in priority order PIX, Nsight, RenderDoc, then specialist tools. Its [Research](ExternalCapture/Research.md) adds Unreal, Unity and tagged Godot/vendor evidence; its [Discovery](ExternalCapture/Discovery.md) closes installed SDK and target/lifecycle gates. Internal `ProfileGpu` remains a separate timestamp product and is not a dependency of external capture.
 
 #### Launch And Provider Selection
 
-Provider selection is one typed, process-start contract, not three independent booleans or CVars. The Launcher owns the user-facing selection and carries a provider set in its level-run request; direct command-line launches use the repeatable `--capture-provider <id>` adapter. Both normalize to the same immutable `ExternalGpuCaptureLaunchIntent` before `RendererExternalRuntime` initializes any backend or creates a device. The initial stable provider IDs are `pix`, `renderdoc`, and `nsight-graphics`; they may be repeated or combined.
-
-The Launcher does not load vendor libraries, predict runtime readiness, or duplicate the compatibility matrix. It presents optional selections, serializes the typed request, and lets the launched process publish the authoritative result. Direct CLI parsing is an Application startup concern separate from the generic `--cvar` adapter. Unknown or duplicate provider IDs fail validation with an actionable message; they never silently select a provider.
-
-| Provider ID | Selected activity | Backend/capability gate | Initial delivery tier |
-| --- | --- | --- | --- |
-| `pix` | PIX GPU Capture for the next targeted viewport frame. | Windows D3D12 only; the PIX GPU capturer must be loaded or injected before D3D12 device creation and its runtime attachment/capture query must pass. | Supported target after D3D12 smoke, artifact-open, and observer-cost gates pass. |
-| `renderdoc` | RenderDoc frame capture for the next targeted viewport frame. | D3D12 or Vulkan only when the dynamically discovered RenderDoc in-application API and selected device/window path pass. Sparkle does not link RenderDoc statically. | Supported target after paired-backend capture/replay and shutdown gates pass. |
-| `nsight-graphics` | Nsight Graphics **Graphics Capture** for the next targeted viewport frame. It does not mean Nsight Systems or GPU Trace. | Supported NVIDIA D3D12/Vulkan path only; the current NGFX Graphics Capture initialization/request API and activity must pass. | Experimental until the beta SDK/API, driver matrix, artifact finalization, and observer cost are accepted. |
-
-The intent normalizes into a bounded internal provider set before RHI device creation; provider membership cannot change after the device exists. The bootstrap evaluates every requested pair/combination against a versioned, measured compatibility matrix before loading capture layers. Compatible providers initialize independently and each publish their own state and icon. An untested or conflicting combination does not use provider precedence: the affected providers remain visibly `Unavailable(Conflict)` unless the adapter can prove a safe subset without hiding what was rejected. Sparkle never silently changes the graphics API. A requested provider that cannot initialize may leave the Editor running only after its adapter proves clean rollback; a partially initialized or process-unsafe capture layer fails launch.
-
-Launching or attaching through provider-native UIs may activate the same paths without a Sparkle provider selection. Every detected capture API is represented independently, then checked against the same backend and multi-provider compatibility matrix. Passive detection never causes Sparkle to inject another library, and a marker-only runtime such as WinPixEventRuntime is not sufficient evidence that PIX GPU capture is attached.
+Use the [launch/capability semantics](ExternalCapture/Semantics.md#launch-and-capability-rules) and [bootstrap architecture](ExternalCapture/ExecutionArchitecture.md). One immutable bounded provider set reaches early RHI bootstrap through `RendererExternalRuntime`. Native APIs stay private; unknown injected combinations reject before load. Marker-only runtime availability does not mean Ready. Provider priority controls delivery order, never silent runtime selection.
 
 #### Viewport Icon And Interaction
 
-- The Editor places a compact group of 16-20 px provider-branded capture icons in the viewport header's existing right-control cluster, immediately before camera/status controls: one icon per requested or detected provider. `ViewportTopPanel` owns layout only; a dedicated capture presenter consumes an immutable model and emits one typed request, so provider state and vendor logic do not accumulate in the panel. The group uses a stable order and may contain PIX, RenderDoc, and Nsight simultaneously. With no requested/detected provider, the group does not exist; Sparkle does not show inert vendor buttons.
-- Every icon has an independent accessible name and tooltip led by `Capture next frame with <provider>` and includes provider activity, backend, target viewport, readiness, observer warning, compatibility state, and output behavior. The icon alone never carries meaning.
-- A requested but unavailable provider keeps a disabled warning form of its own icon so the user can see why that provider failed or conflicts and open setup guidance. Ready, armed, capturing/finalizing, completed, and failed states are per provider and have distinct text/tooltips; animation is optional reinforcement.
-- Clicking submits an `ExternalCaptureRequestId`, provider ID, and stable viewport target token. Renderer resolves that token to the native present surface at a safe boundary; Editor never chooses an `HWND`, swapchain, device, queue, or command buffer.
-- The capture starts at the next valid present boundary after the click, not during the ImGui event that received it. Minimized, zero-extent, resizing, device-lost, or non-presenting targets reject or remain visibly armed according to the bounded timeout policy; they never capture an unrelated window silently.
-- In a multi-window Editor, the clicked viewport is the delimiter target. PIX uses its target-window facility; RenderDoc and Nsight use their validated device/window or frame-delimiter path. Provider limitations on capturing other process windows remain visible in the result.
-- Icon coexistence does not imply concurrent capture. Initially only one external request across all providers may be armed, capturing, or finalizing; clicking any other provider returns `Busy` and identifies the active provider. `ProfileGpu`, validation modes, and another capture provider cannot overlap unless a measured compatibility matrix explicitly allows that exact combination.
-- The click explicitly authorizes one provider-native capture artifact. When the provider returns a finalized path, Sparkle may offer `Open in <provider>` and `Show in folder`; otherwise it reports completion through the provider's native UI. Sparkle does not copy capture contents into its live ring or silently add the artifact to benchmark evidence.
+The [External Capture UX](ExternalCapture/UserExperience.md) owns first use and the context action; [Visual Design](VisualDesign.md#attached-profiler-capture-icons) illustrates placement. A scene viewport resolves to its containing native present surface; it is not assumed to own a swapchain. Native captures can contain other work, and actual frame/interval certainty is explicit. Editor layout/presentation emits typed intent over the existing control route and owns no capture state.
 
 #### State And Publication
 
-Each provider entry follows the same state machine independently; the global request arbiter may still make another ready provider temporarily `Busy`:
-
-```text
-NotRequested
-    | provider launch intent or passive detection
-    v
-Initializing ---> Unavailable(reason/setup)
-    |
-    v
-Ready --click--> Armed(next valid target present) --provider rejects--> Failed
-                    |
-                    v
-                Capturing ---> Finalizing ---> Completed(path or native-UI handoff)
-                    |                |
-                    `----failure----'
-```
-
-Provider state is an immutable collection keyed by provider ID: activity, backend, API/SDK version, compatibility state, request ID, viewport target, requested/captured `FrameId` where knowable, observer mode, status, failure code, and optional artifact path. Provider callbacks enqueue only bounded completion data; they never mutate Editor state or block EditorThread while a capture finalizes.
+The [capture protocol](ExternalCapture/Semantics.md#state-cancellation-and-exclusivity) distinguishes capability, request terminal state and native quiescence. One controller owns the request/lease and target; backend-private adapters observe native completion. A timeout cannot release an unsafe native lease. Results are immutable read-state projections; artifacts remain native and confirmed finalization or native handoff is required. The [external acceptance/check contract](ExternalCapture/README.md#acceptance-and-check-contract) defines the corresponding negative controls.
 
 ### Visual, Validity, And Accessibility Rules
 
@@ -1012,7 +978,7 @@ Ready/Frozen --Clear or next accepted capture--------------> Idle
 
 ### Scope Identity And Fixed Record
 
-Each frame-graph compile produces a bounded immutable GPU scope plan. The plan records the marker-schema version used to resolve tokens and display paths. The hot record uses capture-local indices for contiguous addressing and stable tokens for identity:
+Each frame-graph compile produces a bounded immutable GPU scope plan. The plan retains the current token/display mapping and exact candidate provenance; it introduces no internal schema version or compatibility decoder. The hot record uses capture-local indices for contiguous addressing and stable tokens for identity:
 
 ```text
 GpuProfileScopeRecord
@@ -1039,7 +1005,7 @@ Display names live in one bounded capture dictionary keyed by `ScopeToken`; hot 
 - repeated instances share an aggregation token but retain distinct capture-local instance indices and call ordinals;
 - a runtime label that cannot resolve to a bounded stable token before recording appears under a fixed `Other` token or is marker-only; it does not create an unbounded dictionary entry.
 
-The token registry is generated or compile-time declared from owner-local definitions. Its verification rejects collisions, missing paths, transient identity components, and schema drift without a version change. Captures preserve the schema version so a later build never resolves an old token silently to a different semantic region.
+The token registry is generated or compile-time declared from owner-local definitions. Its verification rejects collisions, missing paths and transient identity components. Captures preserve the exact candidate and immutable token/display mapping; regenerate disposable Sparkle records when representation changes rather than decode obsolete internal versions.
 
 The current `FrameGraph/<Kind>/<Index>/<PassName>` event label remains useful for external navigation, but the numeric pass index is not the cross-frame aggregation identity because graph composition can change it.
 
@@ -1187,7 +1153,7 @@ Every screenshot or exported summary includes:
 - engine/content/configuration hashes and the reference/comparison-system role when the artifact is benchmark evidence.
 - measurement provenance, valid/original/excluded population counts, elapsed span, and sample generation for every headline comparison;
 - external capture tool/version and capture/replay/system-derived mode when an imported field or screenshot comes from a native tool;
-- profiling-build identity, symbol/shader-debug package hashes, marker-schema version, and object-name eligibility for an external capture.
+- profiling-build identity, symbol/shader-debug package hashes, exact marker/token provenance, and object-name eligibility for an external capture.
 
 Without this banner, a number is orientation only and cannot be promoted into portfolio evidence.
 

@@ -6,7 +6,7 @@
 
 #include <algorithm>
 
-static DirectX::XMMATRIX ComposeJointTransform(const ECS::AnimationJointTransform& transform) noexcept
+static inline DirectX::XMMATRIX ComposeJointTransform(const ECS::AnimationJointTransform& transform) noexcept
 {
 	return DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(&transform.Scale))
 	    * DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&transform.Rotation))

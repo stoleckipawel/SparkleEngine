@@ -52,6 +52,8 @@ Source ownership reconciled on 2026-10-06: Core's `Assets/DefaultTexture.h` owns
 
 ## Texture Cooking
 
+Texture request ownership was reconciled on 2026-10-06: [TextureCookRequestSet](../../../../../Tools/Cooking/TextureCooker/Public/TextureCookRequestList.h) stores each request once in insertion order and indexes its stable asset ID by a private vector position. Positions do not escape the set or survive clear/release; a copied set owns its own requests and index. Value equality belongs to `TextureCookPolicy` and `TextureCookRequest`, so duplicate acceptance and conflict rejection use the complete current records. Failed insertion rolls back the index before propagating the failure. Serialization retains its own sorting copy to preserve the caller's order; loading returns deduplicated requests sorted by asset ID. These are CPU ownership contracts, not whole-cook, publication, or runtime acceptance.
+
 Source loading was rechecked on 2026-10-06: `LoadTextureSource` selects direct DDS, EXR, HDR, or raster decoding functions from the normalized extension. Decoder-specific parsing and pixel ownership remain local; byte and float RGBA results share checked pitch calculation and payload construction. The fixed format set has no virtual backend objects. This does not establish whole-cook or runtime texture acceptance.
 
 | ID | Capability | State | Exact current coverage and limit | Evidence |

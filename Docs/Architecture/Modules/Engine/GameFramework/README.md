@@ -42,6 +42,10 @@ Source ownership reconciled on 2026-10-06 against base revision `026a3a56` with 
 
 Compilation retains phase/resource validation, write-hazard rejection, and cycle rejection, then records dependency waves. The host submits each wave through `SparkleTasks`, resolving item counts after prerequisite commits. Empty stages add no tasks; serial workloads add one task; larger stages use the shared `ParallelFor` implementation. The frozen structure epoch spans all waves and deterministic output commits. Failure stops subsequent waves and prevents successful world publication. Each wave retains one compiled Tasks graph and its item-count key; count changes replace it after the previous submission settles. Cached callbacks obtain the current frame execution owner from the typed Tasks context, never from a retained frame reference. Graph construction occurs on count changes, while host settlement remains a scheduling cost; fewer scheduled nodes alone do not establish a frame-time improvement.
 
+### Animation Sampling Ownership
+
+Source ownership reconciled on 2026-10-06: [AnimationSampler](../../../../../Engine/GameFramework/Private/Animation/AnimationSampler.cpp) keeps step-key selection, segment selection, alpha calculation, and cubic interpolation as file-private operations. Vector and rotation sampling retain distinct interpolation and default contracts; step selection includes keys at the requested time, while linear/cubic selection preserves the existing segment boundary rule. Empty channels return zero vectors or identity rotations, and sampled rotations remain normalized. Keyframe indices stay within the sampling call; selection and interpolation allocate no storage and retain no references. Stateless sampling and pose-composition helpers have no class shells or value-loading forwarding layer; pose, morph, skinning, and output-storage owners remain separate. Focused CPU comparisons do not establish task determinism, rendered animation, or content/runtime acceptance.
+
 ## Level And Cooked-Asset Capabilities
 
 | ID | Capability | State | Exact current coverage and limit | Evidence |

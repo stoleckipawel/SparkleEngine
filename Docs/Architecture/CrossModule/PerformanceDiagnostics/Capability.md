@@ -8,7 +8,7 @@
 
 **Architecture authority:** [Performance Diagnostics Architecture](README.md)
 
-**Delivery authority:** [Performance Diagnostics Delivery Plan](Plan.md)
+**Delivery authority:** [Performance Diagnostics Delivery Plan](Plan.md); external capture delegates to [External Capture Plan](ExternalCapture/Plan.md). The [2026-10-06 source audit](ExternalCapture/Research.md#current-sparkle-baseline) refreshes capture-specific findings; other snapshot rows retain their original date.
 
 **Feature acceptance:** [Performance Diagnostics — Acceptance](Acceptance.md)
 

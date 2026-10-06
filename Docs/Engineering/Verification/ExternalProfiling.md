@@ -2,7 +2,7 @@
 
 **Status:** runbook; version-sensitive operational guidance, not proof of current Sparkle implementation or tool support
 
-**Last external-source reconciliation:** 2026-09-29 for the PIX, RenderDoc, Nsight Graphics, and Unreal capture-button sources; other tool rows remain dated guidance and must be revalidated before use
+**Last external-source reconciliation:** provider protocol and Unreal/Unity/Godot integration research refreshed 2026-10-06 in [External Capture Research](../../Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/Research.md). The version table below retains its 2026-09-29 observations unless explicitly updated; it is not an installed support matrix.
 
 **Scope:** profiling-build preparation, current external-tool capabilities, marker interoperability, capture provenance, operational capture checks, input/display measurement options, and revalidation triggers
 
@@ -49,7 +49,7 @@ Release pages and current manuals establish current capability. Older blogs, tut
 | Nsight Graphics [2026.3 current release](https://developer.nvidia.com/nsight-graphics/get-started), 2026-07-23, and current SDK documentation | GPU Trace and Graphics Capture cover supported NVIDIA D3D12/Vulkan work; the beta SDK supports programmatic Graphics Capture and GPU Trace control. | The SDK is explicitly beta. Sparkle provider `nsight-graphics` means Graphics Capture, not Systems or GPU Trace. Keep the button experimental and record the installed tool/SDK versions, supported activity matrix, GPU/driver, artifact finalization, and observer effect. |
 | Nsight Systems [2026.4.1](https://developer.nvidia.com/nsight-systems/get-started) current release and user guide | Current NVIDIA whole-system CPU scheduling, API, and GPU timeline path for supported Windows/Linux targets; current release notes include D3D12 and Vulkan graphics coverage. | Platform, API, trace-provider, driver, privilege, and collection overhead vary. Record exact collection settings and do not treat a system trace as shader or frame-replay proof. |
 | Epic Unreal Engine 5.8 PIX and RenderDoc integration documentation | `-AttachPix`/`-AttachRenderDoc` request attachment; each successful integration adds its provider capture icon in the upper-right Level Viewport and the icon performs a single-frame capture. Sparkle adopts conditional provider-specific placement and allows multiple requested/detected actions to share a compact group. | This proves the individual Unreal UX precedents, not Sparkle implementation, identical flags, multi-provider compatibility, or successful replay. Revalidate when Epic integration guidance changes. |
-| Radeon GPU Profiler [v2.7](https://gpuopen.com/rgp/), June 2026 | Current AMD queue/barrier/wave/event profiling baseline for supported D3D12/Vulkan platforms and RDNA hardware. | Counter conclusions are architecture/capture specific. Its extended/native PIX marker path currently calls for the Agility SDK 1.721 preview path and matching AMD developer-preview driver; this is not baseline support. Revalidate RGP/RDP, driver, OS, GPU, API, and marker path. |
+| Radeon GPU Profiler [v2.7.1](https://gpuopen.com/rgp/), page rechecked 2026-10-06 | Current AMD queue/barrier/wave/event profiling baseline for supported D3D12/Vulkan platforms and RDNA hardware. | Counter conclusions are architecture/capture specific. Its extended/native PIX marker path currently calls for the Agility SDK 1.721 preview path and matching AMD developer-preview driver; this is not baseline support. Revalidate RGP/RDP, driver, OS, GPU, API, and marker path. |
 | Radeon GPU Detective [v1.6.3](https://gpuopen.com/radeon-gpu-detective/), June 2026 | Current Windows 11 AMD D3D12/Vulkan crash-dump and marker-breadcrumb baseline on listed hardware/drivers. | A breadcrumb narrows location, not root cause. Point markers are ignored and cross-command-list/buffer scopes are not reliable in this version. Revalidate tool/driver/API and known issues. |
 | AMD uProf [v5.3](https://www.amd.com/en/developer/uprof.html), 2026-06-17 | Current AMD x86 hotspot, call-stack, IBS/PMC, cache, power, and supported system-analysis baseline. | Sampling skid, counter availability, multiplexing, OS, and CPU-family limitations remain capture metadata. Revalidate version, OS, CPU, selected profile type, and counter set. |
 | Radeon Memory Visualizer [v1.15](https://gpuopen.com/rmv/) and Radeon Raytracing Analyzer [v1.11](https://gpuopen.com/manuals/rra_manual/) current pages | RMV separates trace/current snapshot/comparison views for AMD memory investigation; RRA analyzes acceleration-structure layout/quality and traversal-oriented evidence. | A point snapshot is not an allocation event trace. RRA simulation/structure metrics are not interchangeable with RGP captured counters. Record installed tool/driver/GPU and revalidate before capture. |
@@ -80,11 +80,11 @@ Keep three modes distinct:
 
 ## Marker Interoperability Contract
 
-The stable Sparkle contract is a canonical `ScopeToken` and versioned semantic display path with private backend fanout. The frame graph/owning subsystem declares the scope once; feature code does not call PIX, RGP, Nsight, RenderDoc, Aftermath, or RGD directly.
+The stable Sparkle contract is a canonical `ScopeToken` and one current semantic display path with private backend fanout. The frame graph/owning subsystem declares the scope once; feature code does not call PIX, RGP, Nsight, RenderDoc, Aftermath, or RGD directly.
 
 Implementation and capture rules:
 
-- generated or `constexpr` registry verification rejects token/hash collisions, duplicate paths, and transient identity; captures store the marker-schema version;
+- generated or `constexpr` registry verification rejects token/hash collisions, duplicate paths, and transient identity; captures store exact candidate/marker provenance; no internal marker-schema version, migration reader or dual vocabulary is introduced;
 - duration scopes are balanced RAII and remain inside one task plus one command-list/command-buffer recording lifetime;
 - task-local and recording-local stacks prevent push/pop pairs from crossing CPU threads, command lists, or Vulkan command buffers;
 - `FrameId`, pointers, graph indices, resource paths, and runtime formatting are metadata, never aggregation identity;
@@ -240,6 +240,8 @@ Do not begin with every hardware counter enabled. Use the narrowest depth that c
 The conclusion is architecture-scoped. A result on one CPU topology does not justify a universal worker formula. A faster serial control does not automatically mean "remove threading"; it may expose task overhead, contention, oversubscription, or a tiny-work crossover.
 
 ### PIX
+
+Implement integration using the [external capture package](../../Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/README.md), not this runbook alone. The PIX frame action and PIX Timing are separate activities. Revalidate installed official headers for readiness, native-busy, target, completion and opening. An enqueued next-frame request or file existence is not a finalized artifact; retain a verified completion/native-handoff signal. Follow the declared containing-present scope and target identity, and never use a timeout as proof of native cancellation.
 
 - Use Timing Capture first for multi-frame D3D12 CPU/GPU overlap, scheduling, pacing, queue, or residency questions.
 - Use GPU Capture for one representative frame's API events, resources, descriptors, pipeline state, barriers, shaders, and outputs.
