@@ -66,6 +66,7 @@ private:
 		std::uint32_t RenderStateKey = 0u;
 	};
 
+	static void ResetBuild(BuildScratch& scratch, MeshInstanceBatchBuildResult& result);
 	static void CollectValidItems(
 	    std::span<const MeshRenderItem> renderItems,
 	    std::span<const PreparedRenderPrimitive> primitives,

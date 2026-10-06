@@ -140,10 +140,8 @@ void AssetCookerDiscovery::InitializePlan(
 	outPlan.projectRoot = repositoryRoot / "Projects" / outPlan.projectName;
 	const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
 	outPlan.cookedRoot = outputs.CookedProjectDirectory(outPlan.projectName);
-	outPlan.shaderCompilerPath =
-	    outputs.ToolTargetOutputs("ShaderCompiler", toolProfile).BinaryDirectory / "ShaderCompiler.exe";
-	outPlan.textureCookerPath =
-	    outputs.ToolTargetOutputs("TextureCooker", toolProfile).BinaryDirectory / "TextureCooker.exe";
+	outPlan.shaderCompilerPath = outputs.ToolTargetOutputs("ShaderCompiler", toolProfile).BinaryDirectory / "ShaderCompiler.exe";
+	outPlan.textureCookerPath = outputs.ToolTargetOutputs("TextureCooker", toolProfile).BinaryDirectory / "TextureCooker.exe";
 	outPlan.temporaryRoot = outputs.ToolScratchDirectory("AssetCooker", toolProfile);
 	AddPlanSteps(category, outPlan.steps);
 }
@@ -312,8 +310,7 @@ bool AssetCookerDiscovery::ResolveSceneSource(
 	outSourcePath.clear();
 
 	const std::filesystem::path exactCandidate = Paths::Normalize(meshRoot / relativeScenePath);
-	if (SourceSceneImporter::SupportsSourceScenePath(relativeScenePath) && Paths::IsUnderRoot(exactCandidate, meshRoot)
-	    && PathExists(exactCandidate))
+	if (SupportsSourceScenePath(relativeScenePath) && Paths::IsUnderRoot(exactCandidate, meshRoot) && PathExists(exactCandidate))
 	{
 		outSourcePath = exactCandidate;
 		return true;

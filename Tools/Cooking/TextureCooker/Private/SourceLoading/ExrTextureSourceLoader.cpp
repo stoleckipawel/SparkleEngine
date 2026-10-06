@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "SourceLoading/ExrTextureSourceLoader.h"
+#include "SourceLoading/TextureSourceLoader.h"
 
 #include "SourceLoading/TextureSourceLoadStages.h"
 
@@ -13,14 +13,9 @@
 #include <format>
 #include <memory>
 
-bool ExrTextureSourceLoader::SupportsFormat(TextureSourceFormat format) const noexcept
+TextureLoadResult LoadExrTextureSource(const std::filesystem::path& sourcePath)
 {
-	return format == TextureSourceFormat::Exr;
-}
-
-TextureLoadResult ExrTextureSourceLoader::Load(const std::filesystem::path& sourcePath) const
-{
-	const TextureSourceFile sourceFile = TextureSourceLoadStages::ReadSourceFile(sourcePath);
+	const TextureSourceFile sourceFile = ReadTextureSourceFile(sourcePath);
 
 	float* decodedPixels = nullptr;
 	int width = 0;
@@ -40,7 +35,7 @@ TextureLoadResult ExrTextureSourceLoader::Load(const std::filesystem::path& sour
 	}
 
 	std::unique_ptr<float, decltype(&std::free)> pixels(decodedPixels, &std::free);
-	return TextureSourceLoadStages::BuildFloatTextureLoadResult(
+	return BuildFloatTextureLoadResult(
 	    width,
 	    height,
 	    pixels.get(),

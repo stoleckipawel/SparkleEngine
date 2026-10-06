@@ -3,7 +3,6 @@
 #include "Util/UiUtil.h"
 
 #include <imgui.h>
-#include <imgui_internal.h>
 
 #include <array>
 #include <span>
@@ -121,7 +120,8 @@ static void DrawLightingShowGroup(
 void DrawViewportShowMenu(const CVarControlExecutor* executor, bool disableInteraction, std::string& error)
 {
 	ImGui::BeginDisabled(disableInteraction);
-	if (ImGui::Button("Show"))
+	const std::string showLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::EyeVisible, "Show");
+	if (ImGui::Button(showLabel.c_str()))
 	{
 		ImGui::OpenPopup("ViewportShowMenu");
 	}

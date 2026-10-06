@@ -43,7 +43,7 @@ ImportedSceneComApartment::~ImportedSceneComApartment()
 SourceImportOutput ImportedSceneCooker::Import(const AssetCookerSceneEntry& sceneEntry)
 {
 	const ImportedSceneComApartment comApartment;
-	return SourceSceneImporter::Import(sceneEntry.sourcePath);
+	return ImportSourceScene(sceneEntry.sourcePath);
 }
 
 CookedSceneBuild ImportedSceneCooker::Build(const AssetCookerSceneEntry& sceneEntry, AssetCookerDiagnostics& diagnostics)

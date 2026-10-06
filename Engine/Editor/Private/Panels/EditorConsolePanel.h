@@ -42,7 +42,7 @@ private:
 	std::array<char, 512> m_inputBuffer{};
 	std::array<char, 128> m_filterBuffer{};
 	std::size_t m_seenConsoleOutputCount = 0;
-	bool m_isOpen = true;
+	bool m_isOpen = false;
 	bool m_scrollToBottom = true;
-	bool m_focusInput = true;
+	bool m_focusInput = false;
 };

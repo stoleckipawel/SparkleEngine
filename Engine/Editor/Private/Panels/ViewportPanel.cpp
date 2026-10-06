@@ -9,24 +9,20 @@
 
 #include <imgui.h>
 
-class ViewportImageLayout final
+static constexpr float MinimumViewportExtent = 64.0f;
+
+static ImVec2 ComputeViewportImageSize(const ImVec2& availableRegion, const RenderViewportExtent& extent) noexcept
 {
-public:
-	static constexpr float MinimumViewportExtent = 64.0f;
-
-	static ImVec2 ComputeViewportImageSize(const ImVec2& availableRegion, const RenderViewportExtent& extent) noexcept
+	if (!extent.IsValid() || availableRegion.x <= 0.0f || availableRegion.y <= 0.0f)
 	{
-		if (!extent.IsValid() || availableRegion.x <= 0.0f || availableRegion.y <= 0.0f)
-		{
-			return ImVec2(0.0f, 0.0f);
-		}
-
-		const float extentWidth = static_cast<float>(extent.Width);
-		const float extentHeight = static_cast<float>(extent.Height);
-		const float scale = (std::min) (availableRegion.x / extentWidth, availableRegion.y / extentHeight);
-		return ImVec2(extentWidth * scale, extentHeight * scale);
+		return ImVec2(0.0f, 0.0f);
 	}
-};
+
+	const float extentWidth = static_cast<float>(extent.Width);
+	const float extentHeight = static_cast<float>(extent.Height);
+	const float scale = (std::min) (availableRegion.x / extentWidth, availableRegion.y / extentHeight);
+	return ImVec2(extentWidth * scale, extentHeight * scale);
+}
 
 ViewportPanel::ViewportPanel(float leftInsetPixels, float rightInsetPixels) noexcept :
     m_leftInsetPixels(leftInsetPixels),
@@ -123,8 +119,8 @@ bool ViewportPanel::GetInputBounds(float& left, float& top, float& right, float&
 
 void ViewportPanel::UpdateRequestedExtent(float availableWidth, float availableHeight) noexcept
 {
-	const float clampedWidth = (std::max) (ViewportImageLayout::MinimumViewportExtent, availableWidth);
-	const float clampedHeight = (std::max) (ViewportImageLayout::MinimumViewportExtent, availableHeight);
+	const float clampedWidth = (std::max) (MinimumViewportExtent, availableWidth);
+	const float clampedHeight = (std::max) (MinimumViewportExtent, availableHeight);
 	SetRequestedExtent(RenderViewportExtent{static_cast<std::uint32_t>(clampedWidth), static_cast<std::uint32_t>(clampedHeight)});
 }
 
@@ -150,10 +146,21 @@ void ViewportPanel::BuildProgressOverlay() noexcept
 
 void ViewportPanel::BuildUI(bool disableInteraction)
 {
-	m_hasInputBounds = false;
+	BeginViewportWindow();
+	ImGui::BeginDisabled(disableInteraction);
+	BeginViewportSurface();
+	BuildViewportImage();
+	BuildProgressOverlay();
+	ImGui::EndChild();
+	ImGui::EndDisabled();
+	ImGui::End();
+}
+
+void ViewportPanel::BeginViewportWindow() const
+{
 	ImGuiIO& io = ImGui::GetIO();
-	const float width = (std::max) (ViewportImageLayout::MinimumViewportExtent, io.DisplaySize.x - m_leftInsetPixels - m_rightInsetPixels);
-	const float height = (std::max) (ViewportImageLayout::MinimumViewportExtent, io.DisplaySize.y - m_topInsetPixels - m_bottomInsetPixels);
+	const float width = (std::max) (MinimumViewportExtent, io.DisplaySize.x - m_leftInsetPixels - m_rightInsetPixels);
+	const float height = (std::max) (MinimumViewportExtent, io.DisplaySize.y - m_topInsetPixels - m_bottomInsetPixels);
 
 	ImGui::SetNextWindowPos(ImVec2(m_leftInsetPixels, m_topInsetPixels), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
@@ -164,9 +171,12 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 	    nullptr,
 	    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
 	ImGui::PopStyleVar(); // WindowPadding
+}
 
-	const float surfaceRegionHeight = (std::max) (ViewportImageLayout::MinimumViewportExtent, ImGui::GetContentRegionAvail().y);
-	ImGui::BeginDisabled(disableInteraction);
+void ViewportPanel::BeginViewportSurface()
+{
+	m_hasInputBounds = false;
+	const float surfaceRegionHeight = (std::max) (MinimumViewportExtent, ImGui::GetContentRegionAvail().y);
 	ImGui::BeginChild(
 	    "##ViewportSurface",
 	    ImVec2(0.0f, surfaceRegionHeight),
@@ -178,7 +188,10 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 	m_inputRight = viewportMin.x + ImGui::GetWindowWidth();
 	m_inputBottom = viewportMin.y + ImGui::GetWindowHeight();
 	m_hasInputBounds = m_inputRight > m_inputLeft && m_inputBottom > m_inputTop;
+}
 
+void ViewportPanel::BuildViewportImage()
+{
 	const ImVec2 availableRegion = ImGui::GetContentRegionAvail();
 	UpdateRequestedExtent(availableRegion.x, availableRegion.y);
 
@@ -189,7 +202,7 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 	}
 	else
 	{
-		const ImVec2 imageSize = ViewportImageLayout::ComputeViewportImageSize(availableRegion, finalColor->Extent);
+		const ImVec2 imageSize = ComputeViewportImageSize(availableRegion, finalColor->Extent);
 		const ImVec2 start = ImGui::GetCursorPos();
 		if (availableRegion.x > imageSize.x)
 		{
@@ -202,10 +215,4 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 
 		ImGui::Image(static_cast<ImTextureID>(m_finalColorTexture.Pack()), imageSize);
 	}
-	BuildProgressOverlay();
-
-	ImGui::EndChild();
-	ImGui::EndDisabled();
-
-	ImGui::End();
 }

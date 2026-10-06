@@ -26,6 +26,8 @@
 
 ## Stage Selection Includes Prerequisite Delivery
 
+The 2026-10-06 [Show-control contract](Controls/ShowFlags.md) supersedes earlier instructions below to make disabled diagnostics unavailable or reject Ray Reconstruction without indirect specular. All seven controls remain editable in every view mode. Disabled lobes produce intentional zero diagnostic outputs; Ray Reconstruction receives genuine GBuffer surface guides even when the indirect trace/reservoir chain is omitted. Historical stage evidence remains bound to its original candidate and does not prove this correction.
+
 Selecting any stage in this plan selects its necessary dependency closure, even when predecessors or owning repairs were not separately queued. The executor must first establish missing prerequisites under the [Universal Execution Contract](#universal-execution-contract), then deliver and validate the requested stage. `After`, `Prerequisites`, `only`, `read-only discovery`, and a stage's non-goals constrain its own dependent work; they never prohibit the separately recorded prerequisite work needed to make that stage executable. This policy applies to DVP-0 through DVP-5, all DVP-4A/4B substages, and every copy-ready prompt. It takes precedence over a generic template instruction to end work solely because a prerequisite is missing.
 
 An isolated request ends after the selected stage passes, not before its prerequisites are repaired. Later unrelated stages are not implicitly selected. Stage gates remain proof obligations: establish them, do not skip them or declare them passed from documentation alone.

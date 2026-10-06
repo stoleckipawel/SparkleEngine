@@ -16,21 +16,10 @@
 #include <format>
 #include <vector>
 
-std::string_view FbxImporter::GetImporterId() const noexcept
-{
-	return "FbxImporter";
-}
-
-bool FbxImporter::SupportsExtension(std::wstring_view extension) const noexcept
-{
-	return extension == L".fbx";
-}
-
-SourceImportOutput FbxImporter::Import(const std::filesystem::path& filePath) const
+SourceImportOutput ImportFbxScene(const std::filesystem::path& filePath)
 {
 	SourceImportOutput output;
 	output.provenance.sourcePath = filePath;
-	output.provenance.importerId = std::string(GetImporterId());
 
 	Assimp::Importer importer;
 	const aiScene& scene = AssimpSceneReader::LoadScene(filePath, importer);

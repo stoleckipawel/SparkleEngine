@@ -17,7 +17,6 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
-#include <cstring>
 #include <cstdio>
 #include <string>
 #include <string_view>
@@ -84,19 +83,6 @@ void ViewportTopPanel::SetGeometry(float leftPixels, float topPixels, float widt
 	m_widthPixels = widthPixels;
 }
 
-static void DrawViewModeCategory(const char* label) noexcept
-{
-	ImGui::Spacing();
-	ImGui::Separator();
-	UiUtil::EditorIcon icon = UiUtil::EditorIcon::ViewMode;
-	if (std::strcmp(label, "Lighting") == 0)
-	{
-		icon = UiUtil::EditorIcon::Light;
-	}
-	const std::string categoryLabel = UiUtil::MakeIconLabel(icon, label);
-	ImGui::TextDisabled("%s", categoryLabel.c_str());
-}
-
 static void DrawViewModeOption(
     EditorViewportSession* viewportSession,
     const ViewModePresentation& option,
@@ -146,40 +132,35 @@ void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction, bool compact)
 		currentViewMode = RenderViewMode::Lit;
 	}
 
-	if (!compact)
-	{
-		ImGui::AlignTextToFramePadding();
-		const std::string viewModeLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::ViewMode, "Viewmode");
-		ImGui::TextDisabled("%s", viewModeLabel.c_str());
-		ImGui::SameLine();
-	}
-	ImGui::SetNextItemWidth(compact ? 145.0f : 180.0f);
 	ImGui::BeginDisabled(disableInteraction);
 	const ViewModePresentation& currentPresentation = DescribeViewMode(currentViewMode);
 	const std::string previewLabel = UiUtil::MakeIconLabel(currentPresentation.Icon, currentPresentation.Label);
+	const float previewWidth =
+	    ImGui::CalcTextSize(previewLabel.c_str()).x + ImGui::GetFrameHeight() + ImGui::GetStyle().FramePadding.x * 2.0f;
+	ImGui::SetNextItemWidth((std::clamp) (previewWidth, 100.0f, compact ? 145.0f : 260.0f));
 	if (ImGui::BeginCombo("##ViewportViewMode", previewLabel.c_str()))
 	{
-		std::string_view category;
 		for (const ViewModePresentation& option : viewModePresentations)
 		{
-			if (category != option.Category)
+			if (std::string_view(option.Category).empty())
 			{
-				if (!category.empty())
-				{
-					ImGui::Unindent(8.0f);
-				}
-				category = option.Category;
-				if (!category.empty())
-				{
-					DrawViewModeCategory(option.Category);
-					ImGui::Indent(8.0f);
-				}
+				DrawViewModeOption(m_viewportSession, option, currentViewMode);
 			}
-			DrawViewModeOption(m_viewportSession, option, currentViewMode);
 		}
-		if (!category.empty())
+		ImGui::SeparatorText("VISUALIZATIONS");
+		for (const char* category : {"GBuffer", "Lighting"})
 		{
-			ImGui::Unindent(8.0f);
+			if (ImGui::BeginMenu(category))
+			{
+				for (const ViewModePresentation& option : viewModePresentations)
+				{
+					if (std::string_view(option.Category) == category)
+					{
+						DrawViewModeOption(m_viewportSession, option, currentViewMode);
+					}
+				}
+				ImGui::EndMenu();
+			}
 		}
 
 		ImGui::EndCombo();
@@ -187,26 +168,14 @@ void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction, bool compact)
 	ImGui::EndDisabled();
 }
 
-void ViewportTopPanel::BuildRightControls(bool disableInteraction, bool compact) noexcept
+void ViewportTopPanel::BuildCameraControls(bool disableInteraction, bool compact) noexcept
 {
-	const ImGuiIO& io = ImGui::GetIO();
-	char statsText[64] = {};
-	std::snprintf(statsText, sizeof(statsText), "%.1f FPS  %.2f ms", io.Framerate, io.DeltaTime * 1000.0f);
-
-	const ImGuiStyle& style = ImGui::GetStyle();
-	const bool showStats = !compact;
-	const float statsWidth = showStats ? ImGui::CalcTextSize(statsText).x : 0.0f;
 	const CameraProjectionKind projectionKind =
 	    m_viewportSession != nullptr ? m_viewportSession->GetSettings().ProjectionKind : CameraProjectionKind::Perspective;
 	const char* projectionLabel = projectionKind == CameraProjectionKind::Orthographic ? "Orthographic" : "Perspective";
 	const std::string cameraText = compact ? UiUtil::GetEditorIconGlyph(UiUtil::EditorIcon::Camera)
 	                                       : UiUtil::MakeIconLabel(UiUtil::EditorIcon::Camera, projectionLabel);
 	const std::string cameraLabel = cameraText + "##ViewportCameraPropertiesButton";
-	const float cameraButtonWidth = ImGui::CalcTextSize(cameraText.c_str()).x + style.FramePadding.x * 2.0f;
-	const float statsSpacing = showStats ? style.ItemSpacing.x : 0.0f;
-	const float rightAlignedX = ImGui::GetWindowWidth() - style.WindowPadding.x - statsWidth - statsSpacing - cameraButtonWidth;
-	const ImVec2 windowPosition = ImGui::GetWindowPos();
-	ImGui::SetCursorScreenPos(ImVec2(windowPosition.x + rightAlignedX, windowPosition.y + style.WindowPadding.y));
 
 	ImGui::BeginDisabled(disableInteraction || m_viewportSession == nullptr || m_renderingSettings == nullptr);
 	if (ImGui::Button(cameraLabel.c_str()))
@@ -222,12 +191,23 @@ void ViewportTopPanel::BuildRightControls(bool disableInteraction, bool compact)
 	{
 		ViewportCameraProperties::BuildPopup(*m_viewportSession, m_renderingSettings->GetState(), disableInteraction);
 	}
+}
 
-	if (showStats)
+void ViewportTopPanel::BuildFrameStats() const noexcept
+{
+	const ImGuiIO& io = ImGui::GetIO();
+	char statsText[64] = {};
+	std::snprintf(statsText, sizeof(statsText), "%.1f FPS  %.2f ms", io.Framerate, io.DeltaTime * 1000.0f);
+	const float rightAlignedX = ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x - ImGui::CalcTextSize(statsText).x;
+	if (rightAlignedX > ImGui::GetCursorPosX() + ImGui::GetStyle().ItemSpacing.x)
 	{
-		ImGui::SameLine();
+		ImGui::SameLine(rightAlignedX);
 		ImGui::AlignTextToFramePadding();
 		ImGui::TextDisabled("%s", statsText);
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Editor frame rate and frame interval");
+		}
 	}
 }
 
@@ -280,10 +260,15 @@ void ViewportTopPanel::BuildUI(bool disableInteraction) noexcept
 		ImGui::TextDisabled("|");
 		ImGui::SameLine(0.0f, compactHeader ? 8.0f : 14.0f);
 	}
+	BuildCameraControls(disableInteraction, compactHeader);
+	ImGui::SameLine();
 	BuildViewModeCombo(disableInteraction, compactHeader);
 	ImGui::SameLine();
 	DrawViewportShowMenu(m_consoleVariables, disableInteraction, m_showControlError);
-	BuildRightControls(disableInteraction, compactHeader);
+	if (!compactHeader)
+	{
+		BuildFrameStats();
+	}
 
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
 	const ImVec2 windowMin = ImGui::GetWindowPos();

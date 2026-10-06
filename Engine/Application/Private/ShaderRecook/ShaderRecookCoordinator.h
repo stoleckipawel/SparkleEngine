@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <string>
 
 #include "EditorOperations/EditorOperationSlot.h"
@@ -36,6 +37,8 @@ private:
 		ShaderCompilerProcessResult Process;
 	};
 
+	void QueueRecook(ShaderRecookRequest request) noexcept;
+	void DetectShaderSourceChanges() noexcept;
 	void StartRecook(ShaderRecookRequest request) noexcept;
 	void CompleteRecook(Renderer& renderer, ExecutionResult result) noexcept;
 	void ReloadShaders(Renderer& renderer);
@@ -44,21 +47,17 @@ private:
 	void PublishStatus(std::string status) noexcept;
 	std::uint64_t ReadCurrentPublicationId() noexcept;
 	ShaderRecookPublicationReadResult ReadRecookPublication() noexcept;
-	bool TryAcceptFreshPublication(
+	const ShaderRecookPublication* FindFreshPublication(
 	    const ShaderRecookPublicationReadResult& readResult,
 	    std::uint64_t minimumPublicationId,
-	    ShaderRecookPublication& outPublication,
-	    std::string& outDiagnostic) noexcept;
+	    std::string& outDiagnostic) const noexcept;
 
 	StatusHandler m_statusHandler;
 	EditorOperationSlot<ExecutionResult> m_operation;
 	std::uint64_t m_nextRequestId = 1;
-	std::uint64_t m_latestRequestId = 0;
-	std::uint64_t m_lastAcceptedPublicationId = 0;
-	ShaderRecookRequest m_queuedRequest;
+	std::optional<std::uint64_t> m_lastAcceptedPublicationId;
+	std::optional<ShaderRecookRequest> m_queuedRequest;
 	std::string m_lastPublicationDiagnostic;
 	ShaderSourceChangeTracker m_shaderSourceChangeTracker;
-	bool m_hasQueuedRecook = false;
 	bool m_reloadRequested = false;
-	bool m_hasAcceptedPublication = false;
 };

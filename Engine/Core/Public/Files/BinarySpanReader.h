@@ -35,6 +35,17 @@ namespace Files
 			return true;
 		}
 
+		template <typename T>
+		bool ReadArrayBytes(std::size_t elementCount, std::span<const std::uint8_t>& outBytes, std::string& outErrorMessage)
+		{
+			static_assert(std::is_trivially_copyable_v<T>, "BinarySpanReader requires trivially-copyable array elements");
+			if (!TryGetArrayByteCount<T>(elementCount, outErrorMessage))
+			{
+				return false;
+			}
+			return ReadBytes(sizeof(T) * elementCount, outBytes, outErrorMessage);
+		}
+
 		template <typename T> bool ReadArray(std::size_t elementCount, std::vector<T>& outValues, std::string& outErrorMessage)
 		{
 			static_assert(std::is_trivially_copyable_v<T>, "BinarySpanReader requires trivially-copyable array elements");
@@ -106,7 +117,7 @@ namespace Files
 				return false;
 			}
 
-			outBytes = std::span<const std::uint8_t>(m_bytes.data() + m_offset, byteCount);
+			outBytes = m_bytes.subspan(m_offset, byteCount);
 			m_offset += byteCount;
 			return true;
 		}

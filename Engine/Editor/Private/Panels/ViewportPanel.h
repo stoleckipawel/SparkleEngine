@@ -35,6 +35,9 @@ public:
 	void BuildUI(bool disableInteraction = false);
 
 private:
+	void BeginViewportWindow() const;
+	void BeginViewportSurface();
+	void BuildViewportImage();
 	void UpdateRequestedExtent(float availableWidth, float availableHeight) noexcept;
 	void BuildEmptyState() noexcept;
 	void BuildProgressOverlay() noexcept;

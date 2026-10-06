@@ -25,6 +25,7 @@ public:
 	void SetMeshToolsOpenHandler(std::function<void()> handler);
 	void SetTextureToolsOpenHandler(std::function<void()> handler);
 	void SetSettingsOpenHandler(std::function<void()> handler);
+	void SetConsoleOpenHandler(std::function<void()> handler);
 	void SetViewportCaptureHandler(std::function<void()> handler);
 	void BuildUI() noexcept;
 	float GetHeight() const noexcept { return m_heightPixels; }
@@ -50,6 +51,7 @@ private:
 	std::function<void()> m_meshToolsOpenHandler;
 	std::function<void()> m_textureToolsOpenHandler;
 	std::function<void()> m_settingsOpenHandler;
+	std::function<void()> m_consoleOpenHandler;
 	std::function<void()> m_viewportCaptureHandler;
 	float m_heightPixels = 0.0f;
 };

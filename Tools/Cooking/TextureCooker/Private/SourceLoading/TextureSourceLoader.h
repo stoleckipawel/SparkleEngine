@@ -1,14 +1,11 @@
 #pragma once
 
-#include "SourceLoading/TextureSourceLoaderBackend.h"
+#include "Pipeline/TextureLoadResult.h"
 
 #include <filesystem>
 
-class TextureSourceLoader final
-{
-public:
-	static TextureLoadResult Load(const std::filesystem::path& sourcePath);
-
-private:
-	static TextureSourceFormat ResolveFormat(const std::filesystem::path& sourcePath) noexcept;
-};
+TextureLoadResult LoadTextureSource(const std::filesystem::path& sourcePath);
+TextureLoadResult LoadDdsTextureSource(const std::filesystem::path& sourcePath);
+TextureLoadResult LoadExrTextureSource(const std::filesystem::path& sourcePath);
+TextureLoadResult LoadHdrTextureSource(const std::filesystem::path& sourcePath);
+TextureLoadResult LoadRasterTextureSource(const std::filesystem::path& sourcePath);

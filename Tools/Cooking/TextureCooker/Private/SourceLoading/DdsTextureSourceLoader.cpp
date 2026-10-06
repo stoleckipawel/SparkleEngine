@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "SourceLoading/DdsTextureSourceLoader.h"
+#include "SourceLoading/TextureSourceLoader.h"
 
 #include "SourceLoading/TextureSourceLoadStages.h"
 
@@ -10,27 +10,65 @@
 #include <cstring>
 #include <format>
 
-bool DdsTextureSourceLoader::SupportsFormat(TextureSourceFormat format) const noexcept
+struct DdsPixelFormat
 {
-	return format == TextureSourceFormat::Dds;
+	std::uint32_t size = 0;
+	std::uint32_t flags = 0;
+	std::uint32_t fourCC = 0;
+	std::uint32_t rgbBitCount = 0;
+	std::uint32_t rBitMask = 0;
+	std::uint32_t gBitMask = 0;
+	std::uint32_t bBitMask = 0;
+	std::uint32_t aBitMask = 0;
+};
+
+struct DdsHeader
+{
+	std::uint32_t size = 0;
+	std::uint32_t flags = 0;
+	std::uint32_t height = 0;
+	std::uint32_t width = 0;
+	std::uint32_t pitchOrLinearSize = 0;
+	std::uint32_t depth = 0;
+	std::uint32_t mipMapCount = 0;
+	std::uint32_t reserved1[11] = {};
+	DdsPixelFormat pixelFormat;
+	std::uint32_t caps = 0;
+	std::uint32_t caps2 = 0;
+	std::uint32_t caps3 = 0;
+	std::uint32_t caps4 = 0;
+	std::uint32_t reserved2 = 0;
+};
+
+struct DdsHeaderDx10
+{
+	DXGI_FORMAT dxgiFormat = DXGI_FORMAT_UNKNOWN;
+	std::uint32_t resourceDimension = 0;
+	std::uint32_t miscFlag = 0;
+	std::uint32_t arraySize = 0;
+	std::uint32_t miscFlags2 = 0;
+};
+
+static_assert(sizeof(DdsPixelFormat) == 32);
+static_assert(sizeof(DdsHeader) == 124);
+static_assert(sizeof(DdsHeaderDx10) == 20);
+
+static constexpr std::uint32_t kDdsMagic = 0x20534444u;
+static constexpr std::uint32_t kPixelFormatFlagFourCc = 0x4u;
+static constexpr std::uint32_t kPixelFormatFlagRgb = 0x40u;
+static constexpr std::uint32_t kCaps2Cubemap = 0x200u;
+static constexpr std::uint32_t kCaps2CubemapAllFaces = 0xfc00u;
+static constexpr std::uint32_t kDx10MiscFlagTextureCube = 0x4u;
+static constexpr std::uint32_t kResourceDimensionTexture2D = 3u;
+
+static constexpr std::uint32_t MakeFourCc(char a, char b, char c, char d) noexcept
+{
+	return static_cast<std::uint32_t>(static_cast<unsigned char>(a)) | (static_cast<std::uint32_t>(static_cast<unsigned char>(b)) << 8u)
+	    | (static_cast<std::uint32_t>(static_cast<unsigned char>(c)) << 16u)
+	    | (static_cast<std::uint32_t>(static_cast<unsigned char>(d)) << 24u);
 }
 
-TextureLoadResult DdsTextureSourceLoader::Load(const std::filesystem::path& sourcePath) const
-{
-	const TextureSourceFile sourceFile = TextureSourceLoadStages::ReadSourceFile(sourcePath);
-	const DdsHeader header = ReadHeader(sourceFile.Bytes);
-
-	const bool hasDx10Header = HasDx10Header(header);
-	const DdsHeaderDx10 dx10Header = hasDx10Header ? ReadDx10Header(sourceFile.Bytes) : DdsHeaderDx10{};
-
-	const DdsHeaderDx10* dx10HeaderPtr = hasDx10Header ? &dx10Header : nullptr;
-	ValidateHeader(header, dx10HeaderPtr, sourceFile.ResolvedPath);
-	const DXGI_FORMAT dxgiFormat = ResolveDxgiFormat(header, dx10HeaderPtr, sourceFile.ResolvedPath);
-
-	return BuildLoadResult(sourceFile.Bytes, header, dx10HeaderPtr, dxgiFormat, sourceFile.ResolvedPath);
-}
-
-DdsTextureSourceLoader::DdsHeader DdsTextureSourceLoader::ReadHeader(const std::vector<std::uint8_t>& fileBytes)
+static DdsHeader ReadHeader(const std::vector<std::uint8_t>& fileBytes)
 {
 	if (fileBytes.size() < sizeof(kDdsMagic) + sizeof(DdsHeader))
 	{
@@ -49,12 +87,12 @@ DdsTextureSourceLoader::DdsHeader DdsTextureSourceLoader::ReadHeader(const std::
 	return header;
 }
 
-bool DdsTextureSourceLoader::HasDx10Header(const DdsHeader& header) noexcept
+static bool HasDx10Header(const DdsHeader& header) noexcept
 {
 	return (header.pixelFormat.flags & kPixelFormatFlagFourCc) != 0 && header.pixelFormat.fourCC == MakeFourCc('D', 'X', '1', '0');
 }
 
-DdsTextureSourceLoader::DdsHeaderDx10 DdsTextureSourceLoader::ReadDx10Header(const std::vector<std::uint8_t>& fileBytes)
+static DdsHeaderDx10 ReadDx10Header(const std::vector<std::uint8_t>& fileBytes)
 {
 	if (fileBytes.size() < sizeof(kDdsMagic) + sizeof(DdsHeader) + sizeof(DdsHeaderDx10))
 	{
@@ -66,10 +104,17 @@ DdsTextureSourceLoader::DdsHeaderDx10 DdsTextureSourceLoader::ReadDx10Header(con
 	return dx10Header;
 }
 
-void DdsTextureSourceLoader::ValidateHeader(
-    const DdsHeader& header,
-    const DdsHeaderDx10* dx10Header,
-    const std::filesystem::path& resolvedPath)
+static bool IsCubemap(const DdsHeader& header, const DdsHeaderDx10* dx10Header) noexcept
+{
+	if (dx10Header != nullptr && (dx10Header->miscFlag & kDx10MiscFlagTextureCube) != 0)
+	{
+		return true;
+	}
+
+	return (header.caps2 & kCaps2Cubemap) != 0;
+}
+
+static void ValidateHeader(const DdsHeader& header, const DdsHeaderDx10* dx10Header, const std::filesystem::path& resolvedPath)
 {
 	if (header.size != sizeof(DdsHeader) || header.pixelFormat.size != sizeof(DdsPixelFormat))
 	{
@@ -107,10 +152,7 @@ void DdsTextureSourceLoader::ValidateHeader(
 	}
 }
 
-DXGI_FORMAT DdsTextureSourceLoader::ResolveDxgiFormat(
-    const DdsHeader& header,
-    const DdsHeaderDx10* dx10Header,
-    const std::filesystem::path& resolvedPath)
+static DXGI_FORMAT ResolveDxgiFormat(const DdsHeader& header, const DdsHeaderDx10* dx10Header, const std::filesystem::path& resolvedPath)
 {
 	if (dx10Header != nullptr)
 	{
@@ -167,7 +209,7 @@ DXGI_FORMAT DdsTextureSourceLoader::ResolveDxgiFormat(
 	throw Diagnostics::Error(std::format("Unsupported DDS pixel format in '{}'.", resolvedPath.string()));
 }
 
-std::uint32_t DdsTextureSourceLoader::ResolveBitsPerPixel(DXGI_FORMAT format, const std::filesystem::path& resolvedPath)
+static std::uint32_t ResolveBitsPerPixel(DXGI_FORMAT format, const std::filesystem::path& resolvedPath)
 {
 	switch (format)
 	{
@@ -183,7 +225,7 @@ std::uint32_t DdsTextureSourceLoader::ResolveBitsPerPixel(DXGI_FORMAT format, co
 	}
 }
 
-std::uint32_t DdsTextureSourceLoader::ResolveBlockSize(DXGI_FORMAT format, const std::filesystem::path& resolvedPath)
+static std::uint32_t ResolveBlockSize(DXGI_FORMAT format, const std::filesystem::path& resolvedPath)
 {
 	switch (format)
 	{
@@ -202,22 +244,12 @@ std::uint32_t DdsTextureSourceLoader::ResolveBlockSize(DXGI_FORMAT format, const
 	}
 }
 
-std::uint32_t DdsTextureSourceLoader::ResolveMipCount(const DdsHeader& header) noexcept
+static std::uint32_t ResolveMipCount(const DdsHeader& header) noexcept
 {
 	return (std::max) (1u, header.mipMapCount);
 }
 
-bool DdsTextureSourceLoader::IsCubemap(const DdsHeader& header, const DdsHeaderDx10* dx10Header) noexcept
-{
-	if (dx10Header != nullptr && (dx10Header->miscFlag & kDx10MiscFlagTextureCube) != 0)
-	{
-		return true;
-	}
-
-	return (header.caps2 & kCaps2Cubemap) != 0;
-}
-
-std::uint32_t DdsTextureSourceLoader::ResolveArraySize(const DdsHeader& header, const DdsHeaderDx10* dx10Header) noexcept
+static std::uint32_t ResolveArraySize(const DdsHeader& header, const DdsHeaderDx10* dx10Header) noexcept
 {
 	if (IsCubemap(header, dx10Header))
 	{
@@ -232,7 +264,7 @@ std::uint32_t DdsTextureSourceLoader::ResolveArraySize(const DdsHeader& header, 
 	return 1;
 }
 
-bool DdsTextureSourceLoader::IsBlockCompressed(DXGI_FORMAT format) noexcept
+static bool IsBlockCompressed(DXGI_FORMAT format) noexcept
 {
 	switch (format)
 	{
@@ -249,7 +281,7 @@ bool DdsTextureSourceLoader::IsBlockCompressed(DXGI_FORMAT format) noexcept
 	}
 }
 
-std::uint32_t DdsTextureSourceLoader::ComputeRowPitch(DXGI_FORMAT format, std::uint32_t width, const std::filesystem::path& resolvedPath)
+static std::uint32_t ComputeRowPitch(DXGI_FORMAT format, std::uint32_t width, const std::filesystem::path& resolvedPath)
 {
 	if (IsBlockCompressed(format))
 	{
@@ -260,7 +292,7 @@ std::uint32_t DdsTextureSourceLoader::ComputeRowPitch(DXGI_FORMAT format, std::u
 	return (width * ResolveBitsPerPixel(format, resolvedPath) + 7u) / 8u;
 }
 
-std::uint32_t DdsTextureSourceLoader::ComputeSlicePitch(
+static std::uint32_t ComputeSlicePitch(
     DXGI_FORMAT format,
     std::uint32_t width,
     std::uint32_t height,
@@ -275,12 +307,12 @@ std::uint32_t DdsTextureSourceLoader::ComputeSlicePitch(
 	return ComputeRowPitch(format, width, resolvedPath) * height;
 }
 
-std::size_t DdsTextureSourceLoader::ResolvePixelDataOffset(const DdsHeader& header) noexcept
+static std::size_t ResolvePixelDataOffset(const DdsHeader& header) noexcept
 {
 	return sizeof(kDdsMagic) + sizeof(DdsHeader) + (HasDx10Header(header) ? sizeof(DdsHeaderDx10) : 0u);
 }
 
-TextureLoadResult DdsTextureSourceLoader::BuildLoadResult(
+static TextureLoadResult BuildLoadResult(
     const std::vector<std::uint8_t>& fileBytes,
     const DdsHeader& header,
     const DdsHeaderDx10* dx10Header,
@@ -336,4 +368,19 @@ TextureLoadResult DdsTextureSourceLoader::BuildLoadResult(
 	}
 
 	return loadResult;
+}
+
+TextureLoadResult LoadDdsTextureSource(const std::filesystem::path& sourcePath)
+{
+	const TextureSourceFile sourceFile = ReadTextureSourceFile(sourcePath);
+	const DdsHeader header = ReadHeader(sourceFile.Bytes);
+
+	const bool hasDx10Header = HasDx10Header(header);
+	const DdsHeaderDx10 dx10Header = hasDx10Header ? ReadDx10Header(sourceFile.Bytes) : DdsHeaderDx10{};
+
+	const DdsHeaderDx10* dx10HeaderPtr = hasDx10Header ? &dx10Header : nullptr;
+	ValidateHeader(header, dx10HeaderPtr, sourceFile.ResolvedPath);
+	const DXGI_FORMAT dxgiFormat = ResolveDxgiFormat(header, dx10HeaderPtr, sourceFile.ResolvedPath);
+
+	return BuildLoadResult(sourceFile.Bytes, header, dx10HeaderPtr, dxgiFormat, sourceFile.ResolvedPath);
 }

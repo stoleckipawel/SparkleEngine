@@ -32,7 +32,7 @@ void TextureAssetCooker::Cook(const TextureCookRequest& request, TextureCookMemo
 {
 	ValidateTextureCookRequest(request);
 
-	TextureLoadResult loadResult = TextureSourceLoader::Load(request.sourcePath);
+	TextureLoadResult loadResult = LoadTextureSource(request.sourcePath);
 	auto pixelDataMemoryLease = memoryLimiter.Acquire(CalculatePixelDataBytes(loadResult));
 	TextureLoadResult cookedTexture = TexturePipeline::Process(request, std::move(loadResult));
 

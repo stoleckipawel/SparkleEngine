@@ -9,7 +9,7 @@
 
 #include <algorithm>
 #include <array>
-#include <cctype>
+#include "Core/Public/Strings/StringUtils.h"
 #include <fstream>
 #include <optional>
 #include <sstream>
@@ -19,23 +19,6 @@
 
 namespace SparkleLauncher
 {
-	static std::string TrimCopy(std::string_view text)
-	{
-		std::size_t first = 0;
-		while (first < text.size() && std::isspace(static_cast<unsigned char>(text[first])))
-		{
-			++first;
-		}
-
-		std::size_t last = text.size();
-		while (last > first && std::isspace(static_cast<unsigned char>(text[last - 1])))
-		{
-			--last;
-		}
-
-		return std::string(text.substr(first, last - first));
-	}
-
 	static std::string ReadLogText(const std::filesystem::path& logPath)
 	{
 		if (logPath.empty())
@@ -96,7 +79,7 @@ namespace SparkleLauncher
 		std::vector<std::string> lines;
 		for (std::string line; std::getline(stream, line);)
 		{
-			lines.push_back(TrimCopy(line));
+			lines.push_back(Strings::TrimCopy(line));
 		}
 
 		if (prioritizeConfigureFailures)
@@ -456,14 +439,11 @@ namespace SparkleLauncher
 		        { return MatchesPlannedStep(planned, executable); });
 	}
 
-	OperationRecord RunBuildWorkspaceOperationPlan(
-	    BuildWorkspaceOperationPlan plan,
-	    IProcessRunner& processRunner,
-	    const ProcessOutputCallback& outputCallback)
+	static bool PrepareBuildWorkspaceExecution(
+	    const BuildWorkspaceOperationPlan& plan,
+	    OperationRecord& operation,
+	    std::vector<BuildWorkspaceProcessStep>& processSteps)
 	{
-		OperationRecord operation = plan.Operation;
-		MarkOperationStarted(operation, operation.LogPath);
-
 		if (!plan.CanRun)
 		{
 			SetOperationFailure(
@@ -472,10 +452,9 @@ namespace SparkleLauncher
 			    plan.ReadinessMessages.empty() ? "Operation is not ready to run." : plan.ReadinessMessages.back(),
 			    "Open Sync, resolve the reported prerequisite, then retry this workflow.");
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
-			return operation;
+			return false;
 		}
 
-		std::vector<BuildWorkspaceProcessStep> processSteps;
 		try
 		{
 			processSteps = BuildProcessStepsForPlan(plan);
@@ -488,7 +467,7 @@ namespace SparkleLauncher
 			    std::string("Operation planning failed: ") + error.what(),
 			    "Refresh the workflow, review its preview, then retry.");
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
-			return operation;
+			return false;
 		}
 		if (!BuildWorkspaceExecutionPlanMatches(plan, processSteps))
 		{
@@ -498,165 +477,198 @@ namespace SparkleLauncher
 			    "Operation inputs changed after planning.",
 			    "Refresh the workflow, review its updated preview, then retry.");
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
-			return operation;
+			return false;
 		}
 
-		for (std::size_t stepIndex = 0; stepIndex < processSteps.size(); ++stepIndex)
+		return true;
+	}
+
+	static bool RunBuildWorkspaceStep(
+	    const BuildWorkspaceOperationPlan& plan,
+	    const BuildWorkspaceProcessStep& step,
+	    IProcessRunner& processRunner,
+	    const ProcessOutputCallback& outputCallback,
+	    OperationRecord& operation)
+	{
+		ProcessRequest request = step.Request;
+		if (step.Id == "configure")
 		{
-			BuildWorkspaceProcessStep& step = processSteps[stepIndex];
-			ReportOperationProgress(outputCallback, step.DisplayName, stepIndex, processSteps.size());
-			ProcessRequest request = step.Request;
-			if (step.Id == "configure")
+			std::error_code errorCode;
+			std::filesystem::create_directories(request.WorkingDirectory, errorCode);
+			if (errorCode)
 			{
-				std::error_code errorCode;
-				std::filesystem::create_directories(request.WorkingDirectory, errorCode);
-				if (errorCode)
+				SetOperationFailure(
+				    operation,
+				    OperationProblemKind::Filesystem,
+				    "Failed to prepare the configure working directory: " + request.WorkingDirectory.string() + ": " + errorCode.message(),
+				    "Verify that the build directory is writable and not locked, then retry Generate Build Files.");
+				MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
+				return false;
+			}
+			if (plan.Request.SourceDependencyId.empty() && RequiresNativeBuildOutputReset(plan.Freshness.State))
+			{
+				if (outputCallback)
+				{
+					outputCallback(
+					    "The selected toolchain is incompatible with existing native outputs. Resetting generated build products while "
+					    "preserving downloaded sources and cooked content.\n");
+				}
+
+				std::string cleanupError;
+				if (!ResetNativeBuildOutputs(plan.RepositoryRoot, plan.Freshness.BuildDirectory, cleanupError))
 				{
 					SetOperationFailure(
 					    operation,
 					    OperationProblemKind::Filesystem,
-					    "Failed to prepare the configure working directory: " + request.WorkingDirectory.string() + ": "
-					        + errorCode.message(),
-					    "Verify that the build directory is writable and not locked, then retry Generate Build Files.");
+					    std::move(cleanupError),
+					    "Close processes using generated build outputs, verify path permissions, then retry.");
 					MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
-					return operation;
-				}
-				if (plan.Request.SourceDependencyId.empty() && RequiresNativeBuildOutputReset(plan.Freshness.State))
-				{
-					if (outputCallback)
-					{
-						outputCallback(
-						    "The selected toolchain is incompatible with existing native outputs. Resetting generated build products while "
-						    "preserving downloaded sources and cooked content.\n");
-					}
-
-					std::string cleanupError;
-					if (!ResetNativeBuildOutputs(plan.RepositoryRoot, plan.Freshness.BuildDirectory, cleanupError))
-					{
-						SetOperationFailure(
-						    operation,
-						    OperationProblemKind::Filesystem,
-						    std::move(cleanupError),
-						    "Close processes using generated build outputs, verify path permissions, then retry.");
-						MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
-						return operation;
-					}
+					return false;
 				}
 			}
+		}
 
-			AppendProcessOutputCallback(request, outputCallback);
+		AppendProcessOutputCallback(request, outputCallback);
 
-			ProcessResult result = processRunner.Run(request);
-			if (!result.Launched || result.Canceled || result.ExitCode != 0)
+		ProcessResult result = processRunner.Run(request);
+		if (!result.Launched || result.Canceled || result.ExitCode != 0)
+		{
+			if (ShouldRetryConfigureAfterDependencyRecovery(plan, step, result))
 			{
-				if (ShouldRetryConfigureAfterDependencyRecovery(plan, step, result))
+				const std::string retryMessage =
+				    "Detected a stale or corrupt source dependency cache. Cleaning build/_deps and retrying configure once.\n";
+				if (request.OutputCallback)
 				{
-					const std::string retryMessage =
-					    "Detected a stale or corrupt source dependency cache. Cleaning build/_deps and retrying configure once.\n";
+					request.OutputCallback(retryMessage);
+				}
+
+				std::string cleanupError;
+				if (!ClearStaleConfigureState(plan, cleanupError) || !ClearSourceDependencyCache(plan, cleanupError))
+				{
+					SetOperationFailure(
+					    operation,
+					    OperationProblemKind::Filesystem,
+					    std::move(cleanupError),
+					    "Close processes using the dependency cache, verify path permissions, then retry Sync.");
+					MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
+					return false;
+				}
+
+				result = processRunner.Run(request);
+				if (result.Launched && !result.Canceled && result.ExitCode == 0)
+				{
 					if (request.OutputCallback)
 					{
-						request.OutputCallback(retryMessage);
+						request.OutputCallback("Source dependency cache recovery succeeded; configure completed on retry.\n");
 					}
-
-					std::string cleanupError;
-					if (!ClearStaleConfigureState(plan, cleanupError) || !ClearSourceDependencyCache(plan, cleanupError))
-					{
-						SetOperationFailure(
-						    operation,
-						    OperationProblemKind::Filesystem,
-						    std::move(cleanupError),
-						    "Close processes using the dependency cache, verify path permissions, then retry Sync.");
-						MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
-						return operation;
-					}
-
-					result = processRunner.Run(request);
-					if (result.Launched && !result.Canceled && result.ExitCode == 0)
-					{
-						if (request.OutputCallback)
-						{
-							request.OutputCallback("Source dependency cache recovery succeeded; configure completed on retry.\n");
-						}
-					}
-				}
-
-				if (!result.Launched || result.Canceled || result.ExitCode != 0)
-				{
-					if (result.Canceled)
-					{
-						SetOperationFailure(
-						    operation,
-						    OperationProblemKind::Cancellation,
-						    step.DisplayName + " was canceled.",
-						    "Run the operation again when ready.");
-					}
-					else
-					{
-						SetProcessOperationFailure(
-						    operation,
-						    result.StartFailure,
-						    MakeBuildWorkspaceFailureSummary(step, result),
-						    BuildWorkspaceRecoveryAction(step));
-					}
-					MarkOperationFinished(
-					    operation,
-					    result.Canceled ? OperationStatus::Canceled : OperationStatus::Failed,
-					    result.ExitCode);
-					return operation;
 				}
 			}
 
-			if (const std::optional<std::string> hostToolValidationFailure = ValidateRequestedHostToolAfterInstall(plan))
+			if (!result.Launched || result.Canceled || result.ExitCode != 0)
 			{
-				SetOperationFailure(
-				    operation,
-				    OperationProblemKind::OutputValidation,
-				    *hostToolValidationFailure,
-				    "Review the installer result, ensure the requested compiler and Visual Studio toolset are selected, then retry "
-				    "Install.");
-				MarkOperationFinished(operation, OperationStatus::Failed, 0);
-				return operation;
+				if (result.Canceled)
+				{
+					SetOperationFailure(
+					    operation,
+					    OperationProblemKind::Cancellation,
+					    step.DisplayName + " was canceled.",
+					    "Run the operation again when ready.");
+				}
+				else
+				{
+					SetProcessOperationFailure(
+					    operation,
+					    result.StartFailure,
+					    MakeBuildWorkspaceFailureSummary(step, result),
+					    BuildWorkspaceRecoveryAction(step));
+				}
+				MarkOperationFinished(operation, result.Canceled ? OperationStatus::Canceled : OperationStatus::Failed, result.ExitCode);
+				return false;
 			}
+		}
+		return true;
+	}
 
-			if (const std::optional<std::string> dependencyValidationFailure = ValidateRequestedSourceDependencyAfterConfigure(plan))
+	static bool ValidateBuildWorkspaceStep(
+	    const BuildWorkspaceOperationPlan& plan,
+	    const BuildWorkspaceProcessStep& step,
+	    OperationRecord& operation)
+	{
+		if (const std::optional<std::string> hostToolValidationFailure = ValidateRequestedHostToolAfterInstall(plan))
+		{
+			SetOperationFailure(
+			    operation,
+			    OperationProblemKind::OutputValidation,
+			    *hostToolValidationFailure,
+			    "Review the installer result, ensure the requested compiler and Visual Studio toolset are selected, then retry "
+			    "Install.");
+			MarkOperationFinished(operation, OperationStatus::Failed, 0);
+			return false;
+		}
+
+		if (const std::optional<std::string> dependencyValidationFailure = ValidateRequestedSourceDependencyAfterConfigure(plan))
+		{
+			SetOperationFailure(
+			    operation,
+			    OperationProblemKind::OutputValidation,
+			    *dependencyValidationFailure,
+			    "Correct the first dependency sync error in the named log, then retry this dependency Sync.");
+			MarkOperationFinished(operation, OperationStatus::Failed, 0);
+			return false;
+		}
+
+		if (step.UpdatesBuildFilesFreshness)
+		{
+			if (const std::optional<std::string> dependencyValidationFailure = ValidateEnabledSourceDependenciesAfterConfigure(plan))
 			{
 				SetOperationFailure(
 				    operation,
 				    OperationProblemKind::OutputValidation,
 				    *dependencyValidationFailure,
-				    "Correct the first dependency sync error in the named log, then retry this dependency Sync.");
+				    "Correct the first dependency configure error in the named log, then retry Sync Code.");
 				MarkOperationFinished(operation, OperationStatus::Failed, 0);
-				return operation;
+				return false;
 			}
 
-			if (step.UpdatesBuildFilesFreshness)
+			std::string errorMessage;
+			if (!UpdateBuildFilesFreshnessStamp(plan.RepositoryRoot, plan.Toolchain, errorMessage))
 			{
-				if (const std::optional<std::string> dependencyValidationFailure = ValidateEnabledSourceDependenciesAfterConfigure(plan))
-				{
-					SetOperationFailure(
-					    operation,
-					    OperationProblemKind::OutputValidation,
-					    *dependencyValidationFailure,
-					    "Correct the first dependency configure error in the named log, then retry Sync Code.");
-					MarkOperationFinished(operation, OperationStatus::Failed, 0);
-					return operation;
-				}
+				SetOperationFailure(
+				    operation,
+				    OperationProblemKind::Filesystem,
+				    std::move(errorMessage),
+				    "Verify write permission for the launcher state directory, then retry Generate Build Files.");
+				MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
+				return false;
+			}
+		}
+		return true;
+	}
 
-				std::string errorMessage;
-				if (!UpdateBuildFilesFreshnessStamp(plan.RepositoryRoot, plan.Toolchain, errorMessage))
-				{
-					SetOperationFailure(
-					    operation,
-					    OperationProblemKind::Filesystem,
-					    std::move(errorMessage),
-					    "Verify write permission for the launcher state directory, then retry Generate Build Files.");
-					MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
-					return operation;
-				}
+	OperationRecord RunBuildWorkspaceOperationPlan(
+	    BuildWorkspaceOperationPlan plan,
+	    IProcessRunner& processRunner,
+	    const ProcessOutputCallback& outputCallback)
+	{
+		OperationRecord operation = plan.Operation;
+		MarkOperationStarted(operation, operation.LogPath);
+		std::vector<BuildWorkspaceProcessStep> processSteps;
+		if (!PrepareBuildWorkspaceExecution(plan, operation, processSteps))
+		{
+			return operation;
+		}
+
+		for (std::size_t stepIndex = 0; stepIndex < processSteps.size(); ++stepIndex)
+		{
+			const BuildWorkspaceProcessStep& step = processSteps[stepIndex];
+			ReportOperationProgress(outputCallback, step.DisplayName, stepIndex, processSteps.size());
+			if (!RunBuildWorkspaceStep(plan, step, processRunner, outputCallback, operation)
+			    || !ValidateBuildWorkspaceStep(plan, step, operation))
+			{
+				return operation;
 			}
 			ReportOperationProgress(outputCallback, step.DisplayName, stepIndex + 1, processSteps.size());
 		}
-
 		MarkOperationFinished(operation, OperationStatus::Succeeded, 0);
 		return operation;
 	}

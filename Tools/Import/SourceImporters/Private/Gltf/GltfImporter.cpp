@@ -14,21 +14,10 @@
 
 #include "Core/Public/Diagnostics/Error.h"
 
-std::string_view GltfImporter::GetImporterId() const noexcept
-{
-	return "GltfImporter";
-}
-
-bool GltfImporter::SupportsExtension(std::wstring_view extension) const noexcept
-{
-	return extension == L".gltf" || extension == L".glb";
-}
-
-SourceImportOutput GltfImporter::Import(const std::filesystem::path& filePath) const
+SourceImportOutput ImportGltfScene(const std::filesystem::path& filePath)
 {
 	SourceImportOutput output;
 	output.provenance.sourcePath = filePath;
-	output.provenance.importerId = std::string(GetImporterId());
 	output.provenance.sourceMetersPerUnit = 1.0f;
 	GltfScene scene;
 	GltfSceneReader::LoadScene(filePath, scene);

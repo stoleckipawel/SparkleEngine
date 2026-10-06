@@ -8,8 +8,10 @@
 
 #include <cstring>
 #include <format>
+#include <limits>
+#include <string_view>
 
-TextureSourceFile TextureSourceLoadStages::ReadSourceFile(const std::filesystem::path& sourcePath)
+TextureSourceFile ReadTextureSourceFile(const std::filesystem::path& sourcePath)
 {
 	const auto resolvedPathResult = Filesystem::ResolveAssetPathNormalized(sourcePath, AssetType::Texture);
 	if (!resolvedPathResult)
@@ -28,77 +30,69 @@ TextureSourceFile TextureSourceLoadStages::ReadSourceFile(const std::filesystem:
 	return sourceFile;
 }
 
-TextureLoadResult TextureSourceLoadStages::BuildByteTextureLoadResult(
+template <typename T> static TextureLoadResult BuildDecodedTexture(
     int width,
     int height,
-    const std::uint8_t* pixelBytes,
-    std::size_t pixelByteCount)
+    const T* pixels,
+    std::size_t elementCount,
+    DXGI_FORMAT format,
+    TextureFormatIntent intent,
+    std::string_view sourceKind)
 {
-	if (pixelBytes == nullptr || width <= 0 || height <= 0)
+	if (pixels == nullptr || width <= 0 || height <= 0)
 	{
-		throw Diagnostics::Error("Decoded raster texture has invalid dimensions or no pixel data.");
+		throw Diagnostics::Error(std::format("Decoded {} texture has invalid dimensions or no pixel data.", sourceKind));
+	}
+
+	const std::uint64_t rowPitch = static_cast<std::uint64_t>(width) * 4u * sizeof(T);
+	if (rowPitch > (std::numeric_limits<std::uint32_t>::max)())
+	{
+		throw Diagnostics::Error("Decoded texture row pitch exceeds the supported surface size.");
+	}
+	const std::uint64_t slicePitch = rowPitch * static_cast<std::uint64_t>(height);
+	if (slicePitch > (std::numeric_limits<std::uint32_t>::max)())
+	{
+		throw Diagnostics::Error("Decoded texture payload exceeds the supported surface size.");
+	}
+	if (elementCount < slicePitch / sizeof(T))
+	{
+		throw Diagnostics::Error(
+		    std::format("Decoded {} texture payload is smaller than its RGBA{} surface.", sourceKind, sizeof(T) == 1 ? "" : " float"));
 	}
 
 	TextureMipLevelData baseMip;
 	baseMip.width = static_cast<std::uint32_t>(width);
 	baseMip.height = static_cast<std::uint32_t>(height);
-	baseMip.rowPitch = static_cast<std::uint32_t>(4u * baseMip.width);
-	baseMip.slicePitch = baseMip.rowPitch * baseMip.height;
-	if (pixelByteCount < baseMip.slicePitch)
-	{
-		throw Diagnostics::Error("Decoded raster texture payload is smaller than its RGBA surface.");
-	}
-
+	baseMip.rowPitch = static_cast<std::uint32_t>(rowPitch);
+	baseMip.slicePitch = static_cast<std::uint32_t>(slicePitch);
 	baseMip.data.resize(baseMip.slicePitch);
-	std::memcpy(baseMip.data.data(), pixelBytes, baseMip.data.size());
+	std::memcpy(baseMip.data.data(), pixels, baseMip.data.size());
 
 	TextureLoadResult loadResult;
 	loadResult.width = baseMip.width;
 	loadResult.height = baseMip.height;
 	loadResult.arraySize = 1;
 	loadResult.dimension = TextureResourceDimension::Texture2D;
-	loadResult.dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-	loadResult.formatIntent = TextureFormatIntent::Unknown;
+	loadResult.dxgiFormat = format;
+	loadResult.formatIntent = intent;
 	loadResult.arraySlices.resize(1);
 	loadResult.arraySlices.front().push_back(std::move(baseMip));
-
 	return loadResult;
 }
 
-TextureLoadResult TextureSourceLoadStages::BuildFloatTextureLoadResult(
-    int width,
-    int height,
-    const float* pixelBytes,
-    std::size_t pixelFloatCount)
+TextureLoadResult BuildByteTextureLoadResult(int width, int height, const std::uint8_t* pixels, std::size_t pixelByteCount)
 {
-	if (pixelBytes == nullptr || width <= 0 || height <= 0)
-	{
-		throw Diagnostics::Error("Decoded HDR texture has invalid dimensions or no pixel data.");
-	}
+	return BuildDecodedTexture(width, height, pixels, pixelByteCount, DXGI_FORMAT_R8G8B8A8_UNORM, TextureFormatIntent::Unknown, "raster");
+}
 
-	TextureMipLevelData baseMip;
-	baseMip.width = static_cast<std::uint32_t>(width);
-	baseMip.height = static_cast<std::uint32_t>(height);
-	baseMip.rowPitch = static_cast<std::uint32_t>(sizeof(float) * 4u * baseMip.width);
-	baseMip.slicePitch = baseMip.rowPitch * baseMip.height;
-	const std::size_t surfaceFloatCount = static_cast<std::size_t>(baseMip.width) * static_cast<std::size_t>(baseMip.height) * 4u;
-	if (pixelFloatCount < surfaceFloatCount)
-	{
-		throw Diagnostics::Error("Decoded HDR texture payload is smaller than its RGBA float surface.");
-	}
-
-	baseMip.data.resize(baseMip.slicePitch);
-	std::memcpy(baseMip.data.data(), pixelBytes, baseMip.data.size());
-
-	TextureLoadResult loadResult;
-	loadResult.width = baseMip.width;
-	loadResult.height = baseMip.height;
-	loadResult.arraySize = 1;
-	loadResult.dimension = TextureResourceDimension::Texture2D;
-	loadResult.dxgiFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	loadResult.formatIntent = TextureFormatIntent::DataLinear;
-	loadResult.arraySlices.resize(1);
-	loadResult.arraySlices.front().push_back(std::move(baseMip));
-
-	return loadResult;
+TextureLoadResult BuildFloatTextureLoadResult(int width, int height, const float* pixels, std::size_t pixelFloatCount)
+{
+	return BuildDecodedTexture(
+	    width,
+	    height,
+	    pixels,
+	    pixelFloatCount,
+	    DXGI_FORMAT_R32G32B32A32_FLOAT,
+	    TextureFormatIntent::DataLinear,
+	    "HDR");
 }

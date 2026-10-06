@@ -2,50 +2,49 @@
 
 #include "SourceSceneImporter.h"
 
-#include "SourceImportOutput.h"
-#include "SourceImporter.h"
 #include "Core/Public/Diagnostics/Error.h"
+#include "Core/Public/Paths/PathUtils.h"
+#include "Core/Public/Strings/StringUtils.h"
 #include "Fbx/FbxImporter.h"
 #include "Gltf/GltfImporter.h"
 #include "Ply/PlyImporter.h"
-#include "Core/Public/Paths/PathUtils.h"
-#include "Core/Public/Strings/StringUtils.h"
 
 #include <algorithm>
 #include <array>
-#include <filesystem>
 #include <format>
-#include <string>
+#include <string_view>
 
-bool SourceSceneImporter::SupportsSourceScenePath(const std::filesystem::path& filePath)
+struct SourceSceneFormat final
+{
+	std::wstring_view Extension;
+	std::string_view ImporterId;
+	SourceImportOutput (*Import)(const std::filesystem::path&);
+};
+
+static constexpr std::array SourceSceneFormats = {
+    SourceSceneFormat{L".gltf", "GltfImporter", ImportGltfScene},
+    SourceSceneFormat{L".glb", "GltfImporter", ImportGltfScene},
+    SourceSceneFormat{L".fbx", "FbxImporter", ImportFbxScene},
+    SourceSceneFormat{L".ply", "PlyImporter", ImportPlyScene}};
+
+bool SupportsSourceScenePath(const std::filesystem::path& filePath)
 {
 	const std::wstring extension = Paths::GetLowercaseExtension(filePath);
-	static const GltfImporter gltfImporter;
-	static const FbxImporter fbxImporter;
-	static const PlyImporter plyImporter;
-	const std::array<const SourceImporter*, 3> importers = {&gltfImporter, &fbxImporter, &plyImporter};
-
-	return std::ranges::any_of(importers, [&extension](const SourceImporter* importer) { return importer->SupportsExtension(extension); });
+	return std::ranges::any_of(SourceSceneFormats, [&extension](const SourceSceneFormat& format) { return format.Extension == extension; });
 }
 
-SourceImportOutput SourceSceneImporter::Import(const std::filesystem::path& filePath)
+SourceImportOutput ImportSourceScene(const std::filesystem::path& filePath)
 {
 	const std::wstring extension = Paths::GetLowercaseExtension(filePath);
-	static const GltfImporter gltfImporter;
-	static const FbxImporter fbxImporter;
-	static const PlyImporter plyImporter;
-	const std::array<const SourceImporter*, 3> importers = {&gltfImporter, &fbxImporter, &plyImporter};
-
-	for (const SourceImporter* importer : importers)
+	for (const SourceSceneFormat& format : SourceSceneFormats)
 	{
-		if (!importer->SupportsExtension(extension))
+		if (format.Extension == extension)
 		{
-			continue;
+			SourceImportOutput output = format.Import(filePath);
+			output.provenance.importerId = format.ImporterId;
+			return output;
 		}
-
-		return importer->Import(filePath);
 	}
-
 	throw Diagnostics::Error(
 	    std::format(
 	        "No source scene importer supports extension '{}' for '{}'.",

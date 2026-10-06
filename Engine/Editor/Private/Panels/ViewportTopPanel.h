@@ -31,7 +31,8 @@ public:
 private:
 	void BuildLevelName(bool compact) const noexcept;
 	void BuildViewModeCombo(bool disableInteraction, bool compact) noexcept;
-	void BuildRightControls(bool disableInteraction, bool compact) noexcept;
+	void BuildCameraControls(bool disableInteraction, bool compact) noexcept;
+	void BuildFrameStats() const noexcept;
 
 	LevelSession* m_levelSession = nullptr;
 	EngineRenderingSettingsController* m_renderingSettings = nullptr;

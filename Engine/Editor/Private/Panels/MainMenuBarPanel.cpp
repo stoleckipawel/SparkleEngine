@@ -110,6 +110,11 @@ void MainMenuBarPanel::SetViewportCaptureHandler(std::function<void()> handler)
 	m_viewportCaptureHandler = std::move(handler);
 }
 
+void MainMenuBarPanel::SetConsoleOpenHandler(std::function<void()> handler)
+{
+	m_consoleOpenHandler = std::move(handler);
+}
+
 void MainMenuBarPanel::BuildOpenLevelMenu() noexcept
 {
 	if (m_levelSession == nullptr)
@@ -167,6 +172,12 @@ void MainMenuBarPanel::BuildFileMenu() noexcept
 
 void MainMenuBarPanel::BuildWindowsMenu() noexcept
 {
+	const std::string consoleLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Console, "Console");
+	if (ImGui::MenuItem(consoleLabel.c_str(), "~", false, static_cast<bool>(m_consoleOpenHandler)))
+	{
+		m_consoleOpenHandler();
+	}
+
 	const std::string settingsLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Settings, "Settings");
 	if (ImGui::MenuItem(settingsLabel.c_str(), nullptr, false, static_cast<bool>(m_settingsOpenHandler)))
 	{
@@ -279,7 +290,7 @@ void MainMenuBarPanel::BuildUI() noexcept
 		ImGui::EndMenu();
 	}
 
-	if (ImGui::BeginMenu("Windows"))
+	if (ImGui::BeginMenu("Window"))
 	{
 		BuildWindowsMenu();
 		ImGui::EndMenu();

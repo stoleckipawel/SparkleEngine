@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "SourceLoading/HdrTextureSourceLoader.h"
+#include "SourceLoading/TextureSourceLoader.h"
 
 #include "SourceLoading/TextureSourceLoadStages.h"
 
@@ -11,14 +11,9 @@
 #include <format>
 #include <memory>
 
-bool HdrTextureSourceLoader::SupportsFormat(TextureSourceFormat format) const noexcept
+TextureLoadResult LoadHdrTextureSource(const std::filesystem::path& sourcePath)
 {
-	return format == TextureSourceFormat::RadianceHdr;
-}
-
-TextureLoadResult HdrTextureSourceLoader::Load(const std::filesystem::path& sourcePath) const
-{
-	const TextureSourceFile sourceFile = TextureSourceLoadStages::ReadSourceFile(sourcePath);
+	const TextureSourceFile sourceFile = ReadTextureSourceFile(sourcePath);
 
 	int width = 0;
 	int height = 0;
@@ -41,7 +36,7 @@ TextureLoadResult HdrTextureSourceLoader::Load(const std::filesystem::path& sour
 		        stbi_failure_reason() != nullptr ? stbi_failure_reason() : "unknown stb_image error"));
 	}
 
-	return TextureSourceLoadStages::BuildFloatTextureLoadResult(
+	return BuildFloatTextureLoadResult(
 	    width,
 	    height,
 	    pixels.get(),

@@ -9,21 +9,10 @@
 
 #include <assimp/Importer.hpp>
 
-std::string_view PlyImporter::GetImporterId() const noexcept
-{
-	return "PlyImporter";
-}
-
-bool PlyImporter::SupportsExtension(std::wstring_view extension) const noexcept
-{
-	return extension == L".ply";
-}
-
-SourceImportOutput PlyImporter::Import(const std::filesystem::path& filePath) const
+SourceImportOutput ImportPlyScene(const std::filesystem::path& filePath)
 {
 	SourceImportOutput output;
 	output.provenance.sourcePath = filePath;
-	output.provenance.importerId = std::string(GetImporterId());
 	// PLY does not declare physical units; the source-coordinate contract treats one unit as one metre.
 	output.provenance.sourceMetersPerUnit = 1.0f;
 

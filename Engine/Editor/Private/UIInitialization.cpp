@@ -181,6 +181,14 @@ void UI::Implementation::ConfigureMainMenuBarWindowActions()
 			    m_viewportPanel->RequestOutputAction(ViewportOutputAction::CapturePresentation);
 		    }
 	    });
+	m_mainMenuBar->SetConsoleOpenHandler(
+	    [this]()
+	    {
+		    if (m_editorConsoleSystem)
+		    {
+			    m_editorConsoleSystem->OpenConsole();
+		    }
+	    });
 }
 
 void UI::Implementation::SubscribeToWindowEvents(Window& window)
@@ -193,7 +201,7 @@ void UI::Implementation::SubscribeToWindowEvents(Window& window)
 			    return;
 		    }
 
-		    if (m_editorConsoleSystem != nullptr && ImGui::GetCurrentContext() != nullptr
+		    if (m_editorConsoleSystem != nullptr && ImGui::GetCurrentContext() != nullptr && (event.lParam & (LPARAM{1} << 30)) == 0
 		        && m_editorConsoleSystem->HandleShortcut(
 		            static_cast<std::uint32_t>(event.msg),
 		            static_cast<std::uintptr_t>(event.wParam),

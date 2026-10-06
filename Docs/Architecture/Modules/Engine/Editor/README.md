@@ -35,6 +35,8 @@ The Editor should expose owner commands and read models, not mutate Renderer/RHI
 
 ### UI Implementation Boundary
 
+The 2026-10-06 workspace refinement keeps camera projection, the current view mode, and Show together in the viewport toolbar. The view-mode menu exposes GBuffer and Lighting visualizations in submenus. The Console is a collapsed drawer by default: its footer button, `~` outside text input, or `Window > Console` opens it and focuses command input; focused `Esc` closes it. Closing retains the console session, scrollback, and command history and releases its height to the viewport. Existing panel and command owners remain unchanged. This describes the source contract; interactive and DPI acceptance require separate evidence. The presentation follows the grouping and progressive disclosure of Epic's [Viewport Toolbar](https://dev.epicgames.com/documentation/en-us/unreal-engine/viewport-toolbar) and [Editor Interface](https://dev.epicgames.com/documentation/unreal-engine/unreal-editor-interface).
+
 Source ownership reconciled on 2026-10-06: the public `UI` facade contains host services, diagnostics, viewport operations, and one private implementation owner. Panels, mutable controllers, scene/history state, ImGui lifecycle, and window subscriptions live in private `UIImplementation` sources. The implementation resets subscriptions before shutting down the Win32 backend and ImGui context. This preserves the existing lifetime order; it does not establish interactive or shutdown acceptance.
 
 ### Rendering Settings Ownership
