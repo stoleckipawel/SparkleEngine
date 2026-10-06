@@ -53,14 +53,6 @@ struct FrameGraphAliasingBarrier
 	FrameGraphPassIndex executeAfterPass = INVALID_FRAME_GRAPH_PASS_INDEX;
 };
 
-struct FrameGraphResourceVersion
-{
-	FrameGraphResourceHandle handle = FrameGraphResourceHandle::Invalid();
-	std::uint32_t version = 0;
-	FrameGraphPassIndex writerPass = INVALID_FRAME_GRAPH_PASS_INDEX;
-	std::vector<FrameGraphPassIndex> readerPasses;
-};
-
 struct FrameGraphProductRoot
 {
 	FrameGraphResourceHandle handle = FrameGraphResourceHandle::Invalid();
@@ -116,8 +108,8 @@ struct FrameGraphResourceNode
 	ResourceState currentState = ResourceState::Common;
 	std::string debugName;
 	bool pendingAccelerationStructureBarrier = false;
-	std::uint32_t currentVersion = 0;
-	std::vector<FrameGraphResourceVersion> versions;
+	FrameGraphPassIndex lastWriterPass = INVALID_FRAME_GRAPH_PASS_INDEX;
+	std::vector<FrameGraphPassIndex> readersSinceLastWrite;
 };
 
 struct FrameGraphTransientLifetime

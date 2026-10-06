@@ -193,7 +193,7 @@ void ExposureSettingsEditor::DrawSettings(
 	    "%.3f");
 	RenderingSettingsUi::DrawFloatInputRow(
 	    "##ExposureAdaptationSpeedUp",
-	    "Adapt speed up",
+	    "Adapt rate up (1/s)",
 	    settings.ExposureAdaptationSpeedUp,
 	    [&settingsController](float value) { settingsController.SetExposureAdaptationSpeedUp(value); },
 	    0.1f,
@@ -201,7 +201,7 @@ void ExposureSettingsEditor::DrawSettings(
 	    "%.3f");
 	RenderingSettingsUi::DrawFloatInputRow(
 	    "##ExposureAdaptationSpeedDown",
-	    "Adapt speed down",
+	    "Adapt rate down (1/s)",
 	    settings.ExposureAdaptationSpeedDown,
 	    [&settingsController](float value) { settingsController.SetExposureAdaptationSpeedDown(value); },
 	    0.1f,
@@ -326,7 +326,7 @@ bool ExposureSettingsEditor::DrawOverrides(ViewportExposureOverrides& exposure, 
 	changed |= ExposureOverrideTable::DrawFloat(
 	    ExposureFloatPropertyDesc{
 	        .Id = "AdaptUp",
-	        .Label = "Adapt speed up",
+	        .Label = "Adapt rate up (1/s)",
 	        .Speed = 0.1f,
 	        .Minimum = 0.0f,
 	        .Maximum = 100.0f,
@@ -341,7 +341,7 @@ bool ExposureSettingsEditor::DrawOverrides(ViewportExposureOverrides& exposure, 
 	changed |= ExposureOverrideTable::DrawFloat(
 	    ExposureFloatPropertyDesc{
 	        .Id = "AdaptDown",
-	        .Label = "Adapt speed down",
+	        .Label = "Adapt rate down (1/s)",
 	        .Speed = 0.1f,
 	        .Minimum = 0.0f,
 	        .Maximum = 100.0f,

@@ -9,28 +9,19 @@
 #include <algorithm>
 #include <cassert>
 
-static void ValidateResourceVersionGraph(const FrameGraphPlan& plan) noexcept
+static void ValidateResourceDependencies(const FrameGraphPlan& plan) noexcept
 {
 	for (const FrameGraphResourceNode& resource : plan.resources)
 	{
 		assert(resource.handle.IsValid());
-		assert(!resource.versions.empty());
-		assert(resource.currentVersion < resource.versions.size());
-
-		for (std::size_t versionIndex = 0; versionIndex < resource.versions.size(); ++versionIndex)
+		if (resource.lastWriterPass != INVALID_FRAME_GRAPH_PASS_INDEX)
 		{
-			const FrameGraphResourceVersion& version = resource.versions[versionIndex];
-			assert(version.handle == resource.handle);
-			assert(version.version == versionIndex);
-			if (version.writerPass != INVALID_FRAME_GRAPH_PASS_INDEX)
-			{
-				assert(version.writerPass < plan.passes.size());
-			}
+			assert(resource.lastWriterPass < plan.passes.size());
+		}
 
-			for (const FrameGraphPassIndex readerPass : version.readerPasses)
-			{
-				assert(readerPass < plan.passes.size());
-			}
+		for (const FrameGraphPassIndex readerPass : resource.readersSinceLastWrite)
+		{
+			assert(readerPass < plan.passes.size());
 		}
 	}
 }
@@ -49,6 +40,21 @@ FrameGraphCompiler::FrameGraphCompiler(
 
 void FrameGraphCompiler::Compile() noexcept
 {
+	InitializeCompilation();
+	BuildResourceDependencies();
+	ValidateResourceDependencies(m_plan);
+	FinalizePassDependencies();
+	AssignPassQueues();
+	BuildTransientResourceLifetimes();
+	BuildTransientPhysicalBlockAssignments();
+	BuildTransientAliasingBarriers();
+	BuildResourceBarriers();
+	BuildSubmissionBatches();
+	FrameGraphRecordingPlanCompiler(m_plan).Compile();
+}
+
+void FrameGraphCompiler::InitializeCompilation() noexcept
+{
 	BuildCompiledPlanResources();
 	m_plan.executionOrder.clear();
 	m_plan.executionOrder.reserve(m_plan.passes.size());
@@ -66,17 +72,6 @@ void FrameGraphCompiler::Compile() noexcept
 		passRecord.compiledReleaseBarriers.clear();
 		passRecord.synchronizationDependencies.clear();
 	}
-
-	BuildResourceVersionGraph();
-	ValidateResourceVersionGraph(m_plan);
-	FinalizePassDependencies();
-	AssignPassQueues();
-	BuildTransientResourceLifetimes();
-	BuildTransientPhysicalBlockAssignments();
-	BuildTransientAliasingBarriers();
-	BuildResourceBarriers();
-	BuildSubmissionBatches();
-	FrameGraphRecordingPlanCompiler(m_plan).Compile();
 }
 
 void FrameGraphCompiler::BuildCompiledPlanResources() noexcept
@@ -103,10 +98,7 @@ void FrameGraphCompiler::BuildCompiledPlanResources() noexcept
 		        .planningStartState = runtimeState,
 		        .finalState = entry.finalState,
 		        .currentState = runtimeState,
-		        .debugName = entry.debugName,
-		        .currentVersion = 0,
-		        .versions = {
-		            FrameGraphResourceVersion{.handle = entry.handle, .version = 0, .writerPass = INVALID_FRAME_GRAPH_PASS_INDEX}}});
+		        .debugName = entry.debugName});
 	}
 }
 
@@ -184,18 +176,6 @@ bool FrameGraphCompiler::ShouldRestoreFinalState(const FrameGraphResourceNode& r
 {
 	return resource.finalState != ResourceState::Undefined
 	    && (resource.ownership != FrameGraphResourceOwnership::Transient || resource.kind == FrameGraphResourceKind::DepthStencil);
-}
-
-FrameGraphResourceVersion& FrameGraphCompiler::GetCurrentResourceVersion(FrameGraphResourceNode& resource) noexcept
-{
-	assert(resource.currentVersion < resource.versions.size());
-	return resource.versions[resource.currentVersion];
-}
-
-const FrameGraphResourceVersion& FrameGraphCompiler::GetCurrentResourceVersion(const FrameGraphResourceNode& resource) const noexcept
-{
-	assert(resource.currentVersion < resource.versions.size());
-	return resource.versions[resource.currentVersion];
 }
 
 FrameGraphResourceNode& FrameGraphCompiler::GetCompiledResourceEntry(FrameGraphResourceHandle handle) noexcept

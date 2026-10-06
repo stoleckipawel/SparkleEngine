@@ -45,8 +45,6 @@ class TaskExecutor;
 class Window;
 class RenderHardwareInterface;
 class RasterPassRenderState;
-struct NativeTextureViewInfo;
-struct RhiNativeInteropRequest;
 class FrameGraph
 {
 	friend class FrameGraphRecordingChunkRecorder;
@@ -252,34 +250,8 @@ public:
 	PixelFormat GetTextureFormat(FrameGraphTextureHandle handle) const noexcept;
 	ResourceState GetTrackedResourceState(FrameGraphResourceHandle handle) const noexcept;
 	void UpdateTrackedResourceState(FrameGraphResourceHandle handle, ResourceState currentState) const noexcept;
-	void BindRenderTarget(
-	    RenderCommandContext& commandContext,
-	    FrameGraphTextureHandle renderTargetHandle,
-	    FrameGraphTextureHandle depthStencilHandle = FrameGraphTextureHandle::Invalid()) const noexcept;
-	void BindRenderTargets(
-	    RenderCommandContext& commandContext,
-	    std::span<const FrameGraphTextureHandle> renderTargetHandles,
-	    FrameGraphTextureHandle depthStencilHandle = FrameGraphTextureHandle::Invalid()) const noexcept;
-	void CopyTexture(
-	    RenderCommandContext& commandContext,
-	    FrameGraphTextureHandle destinationHandle,
-	    FrameGraphTextureHandle sourceHandle) const noexcept;
-	void CopyBuffer(
-	    RenderCommandContext& commandContext,
-	    FrameGraphBufferHandle destinationHandle,
-	    FrameGraphBufferHandle sourceHandle) const noexcept;
-	void ClearRenderTarget(RenderCommandContext& commandContext, FrameGraphTextureHandle handle) const noexcept;
-	void ClearDepthStencil(RenderCommandContext& commandContext, FrameGraphTextureHandle handle) const noexcept;
 	RhiResourceHandle ResolveResource(FrameGraphTextureHandle handle) const noexcept;
-	NativeTextureViewInfo ResolveNativeTextureView(
-	    FrameGraphTextureHandle handle,
-	    ResourceState state,
-	    const RhiNativeInteropRequest& request) const noexcept;
 	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphTextureHandle handle) const noexcept;
-	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphBufferHandle handle) const noexcept;
-	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphTextureHandle handle) const noexcept;
-	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphBufferHandle handle) const noexcept;
-	RhiResourceHandle ResolveAccelerationStructure(FrameGraphAccelerationStructureHandle handle) const noexcept;
 
 	template <typename TValue = void> ShaderTexture2D<TValue> CreateSRV(FrameGraphTextureHandle handle) const noexcept
 	{
@@ -360,21 +332,8 @@ private:
 		            { executeFn(context, typedParameters); })});
 	}
 
-	RhiCpuDescriptorHandle ResolveRenderTargetView(FrameGraphResourceHandle handle) const noexcept;
-	RhiCpuDescriptorHandle ResolveDepthStencilView(FrameGraphResourceHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphResourceHandle handle) const noexcept;
-	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphResourceHandle handle) const noexcept;
-	std::array<float, 4> GetClearColor(FrameGraphResourceHandle handle) const noexcept;
-	float GetClearDepth(FrameGraphResourceHandle handle) const noexcept;
 	RhiResourceHandle ResolveResource(FrameGraphResourceHandle handle) const noexcept;
-	NativeTextureViewInfo ResolveNativeTextureView(
-	    FrameGraphResourceHandle handle,
-	    ResourceState state,
-	    const RhiNativeInteropRequest& request) const noexcept;
-	void CopyResource(
-	    RenderCommandContext& commandContext,
-	    FrameGraphResourceHandle destinationHandle,
-	    FrameGraphResourceHandle sourceHandle) const noexcept;
 	void SyncImportedResourceAccesses() const noexcept;
 	void BuildTransientMaterializationPlan(FrameGraphPlan& plan) const noexcept;
 	FrameGraphTransientResourcePlan BuildTransientResourcePlan(

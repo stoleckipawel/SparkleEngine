@@ -548,14 +548,14 @@ Close uncertainty before code without creating speculative frozen contracts. The
 ### Ready-to-use implementation prompt
 
 ```text
-Execute the external part of Performance Diagnostics P0-GATE through Stage 0 of Docs/Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/Plan.md and its complete prompt. Close PIX-relevant EC-D01-08 first; inventory later Nsight/RenderDoc cells and close their delta before each adapter stage. Apply the Universal Execution Contract and retain exact installed-header/API/target/finalization/lifetime/budget/build decisions and artifacts. Preserve the parent baseline and all-map procedure for aggregate closure; a narrow Empty/Sponza control may establish the first PIX slice, and no internal metric/history/session implementation is required. A missing later tool or hardware remains BLOCKED for that cell and never silently rejects the feature or invalidates accepted PIX. Report exact commands, unsupported/unavailable distinctions and next permitted stage. Do not implement production code during discovery or start all adapters together.
+Execute the external part of Performance Diagnostics P0-GATE through Stage 0 of Docs/Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/Plan.md and its complete prompt. Close PIX-relevant EC-D01-09 first; inventory later Nsight/RenderDoc cells and close their delta before each adapter stage. Apply the Universal Execution Contract and retain exact installed-header/API/target/finalization/lifetime/budget/build decisions and artifacts. Preserve the parent baseline and all-map procedure for aggregate closure; a narrow Empty/Sponza control may establish the first PIX slice, and no internal metric/history/session implementation is required. A missing later tool or hardware remains BLOCKED for that cell and never silently rejects the feature or invalidates accepted PIX. Report exact commands, unsupported/unavailable distinctions and next permitted stage. Do not implement production code during discovery or start all adapters together.
 ```
 
 ## Phase 1 — Prove External Capture End To End
 
 ### Delivery Owner And Priority
 
-Execute the [External Capture staged plan](ExternalCapture/Plan.md), in user priority order **PIX -> Nsight -> RenderDoc -> specialist tools**. It owns Stage 0 discovery and bounded copy-ready prompts through final adoption; this parent plan owns only the phase transition. The [dossier](ExternalCapture/README.md) owns its support matrix, criteria/failures/checks, and individual provider delivery. Existing `EXT-*` identities are preserved even though their execution order changes.
+Execute the [External Capture staged plan](ExternalCapture/Plan.md), in user priority order **PIX -> Nsight -> RenderDoc -> specialist tools**. It owns Stage 0 discovery, engine-absorption prerequisites 0A/0B/0C, and bounded copy-ready prompts through final adoption; this parent plan owns only the phase transition. The [dossier](ExternalCapture/README.md) owns its support matrix, criteria/failures/checks, and individual provider delivery. Existing `EXT-*` identities are preserved even though their execution order changes.
 
 | External stage | Package | Observable result |
 | --- | --- | --- |
@@ -585,7 +585,7 @@ Individual PIX acceptance does not wait for missing later tooling. Internal Phas
 ### Ready-To-Use Entry Prompt
 
 ```text
-Execute only the earliest dependency-ready stage of Docs/Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/Plan.md. Begin at Stage 0 if EC-D0-PIX is absent or stale; otherwise paste that stage's complete prompt and verify its exact prerequisite artifacts. Preserve EXT identities and priority PIX, Nsight, RenderDoc, then specialist tools. Apply the delegated plan's Universal Execution Contract. Do not implement internal Performance phases 2-6 or complete all adapters in one change. Report individual provider evidence separately from aggregate P1-GATE; a missing tool/hardware/check stays BLOCKED, never an invented unsupported rejection.
+Execute only the earliest dependency-ready stage of Docs/Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/Plan.md. Begin at Stage 0 if EC-D0-PIX is absent or stale; otherwise paste that stage's complete prompt and verify its exact prerequisite artifacts. Preserve EXT identities and priority PIX, Nsight, RenderDoc, then specialist tools. Apply the delegated plan's Universal Execution Contract, including existing-consumer engine repairs and actual later-provider locality proof. Stage 1 requires EC-G0A/0B/0C; do not bolt capture onto the old blocking/separate-publication routes. Do not implement internal Performance phases 2-6 or complete all adapters in one change. Report individual provider evidence separately from aggregate P1-GATE; a missing tool/hardware/check stays BLOCKED, never an invented unsupported rejection.
 ```
 
 ## Phase 2 — Build The Bounded Data Spine

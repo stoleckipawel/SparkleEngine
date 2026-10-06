@@ -45,9 +45,11 @@ Process-start selection cannot change on a running graphics context. UI offers `
 | No requested/detected providers | No vendor capture group. |
 | Unavailable/unsupported/conflicting | Disabled named action, exact reason and setup/relaunch link; no selectable fallback. |
 | Ready | Enabled named action and containing target; no promise of viewport-only contents. |
+| Submitted/Queued | Acknowledge pending execution without claiming the SDK is Armed; no second click creates a backlog. |
 | Armed | Target and request preserved; cancellation offered only when the runtime can safely withdraw. |
 | Capturing/Finalizing | Text status; no blocking progress dialog, invented percentage, or implied cancel support. |
 | Busy | Names active provider; retain other capability entries. |
+| Queue full/closing | Immediate readable rejection; keep the viewport usable and existing result intact. Retry when capacity returns; closing follows existing shutdown behavior. This is distinct from a native capture being Busy. |
 | Timeout/draining | Request failure plus `Native capture still draining; relaunch required` when quiescence is unknown; no Retry action that can overlap. |
 | Target resized/destroyed/not presenting | Exact target failure; restore/reopen view and request again after safe settlement. |
 | Artifact not accessible/open failed | Distinguish capture result from open action failure; manual native-tool open when appropriate. |

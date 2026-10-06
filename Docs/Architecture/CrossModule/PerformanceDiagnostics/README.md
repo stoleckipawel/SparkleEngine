@@ -764,7 +764,7 @@ The console and UI issue the same typed requests. UI does not construct command 
 
 ### Attached External Frame Capture
 
-The [External Capture dossier](ExternalCapture/README.md) owns the source-backed external-capture package, in priority order PIX, Nsight, RenderDoc, then specialist tools. Its [Research](ExternalCapture/Research.md) adds Unreal, Unity and tagged Godot/vendor evidence; its [Discovery](ExternalCapture/Discovery.md) closes installed SDK and target/lifecycle gates. Internal `ProfileGpu` remains a separate timestamp product and is not a dependency of external capture.
+The [External Capture dossier](ExternalCapture/README.md) owns the source-backed external-capture package, in priority order PIX, Nsight, RenderDoc, then specialist tools. Its [Research](ExternalCapture/Research.md) adds Unreal, Unity and tagged Godot/vendor evidence; its [Discovery](ExternalCapture/Discovery.md) closes installed SDK and target/lifecycle gates. The [engine absorption scan](ExternalCapture/Research.md#engine-absorption-scan--2026-10-07) and [engine evolution contract](ExternalCapture/ExecutionArchitecture.md#engine-evolution-contract) require existing-consumer startup/admission/publication improvements before PIX, then actual provider-locality proof. Internal `ProfileGpu` remains a separate timestamp product and is not a dependency of external capture.
 
 #### Launch And Provider Selection
 

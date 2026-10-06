@@ -12,7 +12,4 @@ void AddExposureHistogramBuildPass(
     FrameGraphTextureHandle sceneColor,
     RenderViewportExtent extent,
     FrameGraphBufferHandle histogram);
-void AddExposureHistogramResolvePass(
-    FrameGraphBuilder& builder,
-    FrameGraphBufferHandle histogram,
-    const ExposureMomentTexture& output);
+void AddExposureHistogramResolvePass(FrameGraphBuilder& builder, FrameGraphBufferHandle histogram, const ExposureMomentTexture& output);

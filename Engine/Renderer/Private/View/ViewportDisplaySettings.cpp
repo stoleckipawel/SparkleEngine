@@ -3,8 +3,10 @@
 #include "View/ViewportDisplaySettings.h"
 
 #include "View/ViewportDisplayCVars.h"
+#include "Renderer/Public/Settings/EngineRenderingSettings.h"
 
 #include <algorithm>
+#include <cmath>
 
 EngineExposureMode ResolvedViewportDisplaySettings::ResolveMode(EngineExposureMode requested, EngineExposureMode fallback) noexcept
 {
@@ -106,11 +108,24 @@ ResolvedViewportDisplaySettings ResolvedViewportDisplaySettings::Resolve(const V
 		}
 	}
 
+	constexpr EngineRenderingSettingsState defaults;
+	const auto finiteOrDefault = [](float value, float fallback)
+	{
+		return std::isfinite(value) ? value : fallback;
+	};
+	resolved.ManualExposure = finiteOrDefault(resolved.ManualExposure, defaults.ManualExposure);
+	resolved.ExposureCompensation = finiteOrDefault(resolved.ExposureCompensation, defaults.ExposureCompensation);
+	resolved.ExposureTargetLuminance = finiteOrDefault(resolved.ExposureTargetLuminance, defaults.ExposureTargetLuminance);
+	resolved.ExposureMin = finiteOrDefault(resolved.ExposureMin, defaults.ExposureMin);
+	resolved.ExposureMax = finiteOrDefault(resolved.ExposureMax, defaults.ExposureMax);
+	resolved.ExposureAdaptationSpeedUp = finiteOrDefault(resolved.ExposureAdaptationSpeedUp, defaults.ExposureAdaptationSpeedUp);
+	resolved.ExposureAdaptationSpeedDown = finiteOrDefault(resolved.ExposureAdaptationSpeedDown, defaults.ExposureAdaptationSpeedDown);
+
 	resolved.ManualExposure = (std::max) (resolved.ManualExposure, 0.0f);
 	resolved.ExposureCompensation = std::clamp(resolved.ExposureCompensation, -16.0f, 16.0f);
 	resolved.ExposureTargetLuminance = (std::max) (resolved.ExposureTargetLuminance, 0.0001f);
-	resolved.ExposureMin = (std::max) (resolved.ExposureMin, 0.0f);
-	resolved.ExposureMax = (std::max) (resolved.ExposureMax, resolved.ExposureMin);
+	resolved.ExposureMin = std::clamp(resolved.ExposureMin, 0.0f, defaults.ExposureMax);
+	resolved.ExposureMax = std::clamp(resolved.ExposureMax, resolved.ExposureMin, defaults.ExposureMax);
 	resolved.ExposureAdaptationSpeedUp = (std::max) (resolved.ExposureAdaptationSpeedUp, 0.0f);
 	resolved.ExposureAdaptationSpeedDown = (std::max) (resolved.ExposureAdaptationSpeedDown, 0.0f);
 	return resolved;

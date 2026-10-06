@@ -28,10 +28,7 @@ void AddExposureHistogramBuildPass(
 	    EFrameGraphQueuePreference::AsyncCompute);
 }
 
-void AddExposureHistogramResolvePass(
-    FrameGraphBuilder& builder,
-    FrameGraphBufferHandle histogram,
-    const ExposureMomentTexture& output)
+void AddExposureHistogramResolvePass(FrameGraphBuilder& builder, FrameGraphBufferHandle histogram, const ExposureMomentTexture& output)
 {
 	auto& parameters = builder.AllocParameters<ExposureHistogramResolveCS>();
 	parameters->HistogramCounts = builder.CreateSRV(histogram);

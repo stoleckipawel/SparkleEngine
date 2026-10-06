@@ -7,39 +7,35 @@
 #include <string_view>
 #include <vector>
 
-class FrameGraphDependencyRegistrar final
+static void AddRawDependency(std::vector<FrameGraphPassIndex>& dependsOn, FrameGraphPassIndex dependency) noexcept
 {
-public:
-	static void AddRawDependency(std::vector<FrameGraphPassIndex>& dependsOn, FrameGraphPassIndex dependency) noexcept
+	if (dependency == INVALID_FRAME_GRAPH_PASS_INDEX)
 	{
-		if (dependency == INVALID_FRAME_GRAPH_PASS_INDEX)
-		{
-			return;
-		}
-
-		dependsOn.push_back(dependency);
+		return;
 	}
 
-	static void RegisterVersionReader(FrameGraphResourceVersion& version, FrameGraphPassIndex readerPass) noexcept
+	dependsOn.push_back(dependency);
+}
+
+static void RegisterResourceReader(FrameGraphResourceNode& resource, FrameGraphPassIndex readerPass) noexcept
+{
+	if (readerPass == INVALID_FRAME_GRAPH_PASS_INDEX)
 	{
-		if (readerPass == INVALID_FRAME_GRAPH_PASS_INDEX)
-		{
-			return;
-		}
-
-		const auto it = std::find(version.readerPasses.begin(), version.readerPasses.end(), readerPass);
-		if (it == version.readerPasses.end())
-		{
-			version.readerPasses.push_back(readerPass);
-		}
+		return;
 	}
-};
 
-void FrameGraphCompiler::BuildResourceVersionGraph() noexcept
+	const auto it = std::find(resource.readersSinceLastWrite.begin(), resource.readersSinceLastWrite.end(), readerPass);
+	if (it == resource.readersSinceLastWrite.end())
+	{
+		resource.readersSinceLastWrite.push_back(readerPass);
+	}
+}
+
+void FrameGraphCompiler::BuildResourceDependencies() noexcept
 {
 	for (FrameGraphPassNode& passRecord : m_plan.passes)
 	{
-		BuildPassResourceVersionDependencies(passRecord);
+		BuildPassResourceDependencies(passRecord);
 	}
 }
 
@@ -162,8 +158,7 @@ bool FrameGraphCompiler::WritesProductRoot(const FrameGraphPassNode& passRecord)
 		}
 
 		const FrameGraphResourceNode& resource = GetCompiledResourceEntry(productRoot.handle);
-		const FrameGraphResourceVersion& finalVersion = GetCurrentResourceVersion(resource);
-		if (finalVersion.writerPass == passRecord.index)
+		if (resource.lastWriterPass == passRecord.index)
 		{
 			return true;
 		}
@@ -288,8 +283,9 @@ void FrameGraphCompiler::ValidateExecutionOrder() const noexcept
 	}
 }
 
-void FrameGraphCompiler::BuildPassResourceVersionDependencies(FrameGraphPassNode& passRecord) noexcept
+void FrameGraphCompiler::BuildPassResourceDependencies(FrameGraphPassNode& passRecord) noexcept
 {
+	assert(passRecord.index < m_plan.passes.size());
 	for (const PassResourceDeclaration& declaration : passRecord.declarations)
 	{
 		if (!declaration.handle.IsValid())
@@ -320,34 +316,31 @@ void FrameGraphCompiler::BuildPassResourceVersionDependencies(FrameGraphPassNode
 
 void FrameGraphCompiler::RegisterReadDependency(FrameGraphPassNode& passRecord, FrameGraphResourceNode& resource) noexcept
 {
-	FrameGraphResourceVersion& currentVersion = GetCurrentResourceVersion(resource);
-	if (currentVersion.writerPass != INVALID_FRAME_GRAPH_PASS_INDEX && currentVersion.writerPass != passRecord.index)
+	if (resource.lastWriterPass != INVALID_FRAME_GRAPH_PASS_INDEX && resource.lastWriterPass != passRecord.index)
 	{
-		FrameGraphDependencyRegistrar::AddRawDependency(passRecord.dependsOn, currentVersion.writerPass);
+		AddRawDependency(passRecord.dependsOn, resource.lastWriterPass);
 	}
 
-	FrameGraphDependencyRegistrar::RegisterVersionReader(currentVersion, passRecord.index);
+	RegisterResourceReader(resource, passRecord.index);
 }
 
 void FrameGraphCompiler::RegisterWriteDependency(FrameGraphPassNode& passRecord, FrameGraphResourceNode& resource) noexcept
 {
-	const FrameGraphResourceVersion& currentVersion = GetCurrentResourceVersion(resource);
-	if (currentVersion.writerPass != INVALID_FRAME_GRAPH_PASS_INDEX && currentVersion.writerPass != passRecord.index)
+	if (resource.lastWriterPass != INVALID_FRAME_GRAPH_PASS_INDEX && resource.lastWriterPass != passRecord.index)
 	{
-		FrameGraphDependencyRegistrar::AddRawDependency(passRecord.dependsOn, currentVersion.writerPass);
+		AddRawDependency(passRecord.dependsOn, resource.lastWriterPass);
 	}
 
-	for (const FrameGraphPassIndex readerPass : currentVersion.readerPasses)
+	for (const FrameGraphPassIndex readerPass : resource.readersSinceLastWrite)
 	{
 		if (readerPass == passRecord.index)
 		{
 			continue;
 		}
 
-		FrameGraphDependencyRegistrar::AddRawDependency(passRecord.dependsOn, readerPass);
+		AddRawDependency(passRecord.dependsOn, readerPass);
 	}
 
-	resource.currentVersion = static_cast<std::uint32_t>(resource.versions.size());
-	resource.versions.push_back(
-	    FrameGraphResourceVersion{.handle = resource.handle, .version = resource.currentVersion, .writerPass = passRecord.index});
+	resource.lastWriterPass = passRecord.index;
+	resource.readersSinceLastWrite.clear();
 }

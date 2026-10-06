@@ -57,5 +57,12 @@ public:
 private:
 	friend class PassBinder;
 	RenderHardwareInterface& GetRenderHardwareInterface() const noexcept;
+	RhiCpuDescriptorHandle ResolveRenderTargetView(FrameGraphResourceHandle handle) const noexcept;
+	RhiCpuDescriptorHandle ResolveDepthStencilView(FrameGraphResourceHandle handle) const noexcept;
+	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphResourceHandle handle) const noexcept;
+	void CopyResource(
+	    RenderCommandContext& commandContext,
+	    FrameGraphResourceHandle destinationHandle,
+	    FrameGraphResourceHandle sourceHandle) const noexcept;
 	const FrameGraph& m_frameGraph;
 };

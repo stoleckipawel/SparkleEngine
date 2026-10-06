@@ -28,8 +28,9 @@ private:
 
 	using LastResourceAccessTable = std::vector<LastResourceAccess>;
 
+	void InitializeCompilation() noexcept;
 	void BuildCompiledPlanResources() noexcept;
-	void BuildResourceVersionGraph() noexcept;
+	void BuildResourceDependencies() noexcept;
 	void FinalizePassDependencies() noexcept;
 	void DeduplicatePassDependencies() noexcept;
 	void CullDeadPasses() noexcept;
@@ -75,11 +76,9 @@ private:
 	    const PassResourceDeclaration& declaration,
 	    const FrameGraphResourceNode& resource) const noexcept;
 	bool ShouldRestoreFinalState(const FrameGraphResourceNode& resource) const noexcept;
-	void BuildPassResourceVersionDependencies(FrameGraphPassNode& passRecord) noexcept;
+	void BuildPassResourceDependencies(FrameGraphPassNode& passRecord) noexcept;
 	void RegisterReadDependency(FrameGraphPassNode& passRecord, FrameGraphResourceNode& resource) noexcept;
 	void RegisterWriteDependency(FrameGraphPassNode& passRecord, FrameGraphResourceNode& resource) noexcept;
-	FrameGraphResourceVersion& GetCurrentResourceVersion(FrameGraphResourceNode& resource) noexcept;
-	const FrameGraphResourceVersion& GetCurrentResourceVersion(const FrameGraphResourceNode& resource) const noexcept;
 	FrameGraphResourceNode& GetCompiledResourceEntry(FrameGraphResourceHandle handle) noexcept;
 	const FrameGraphResourceNode& GetCompiledResourceEntry(FrameGraphResourceHandle handle) const noexcept;
 	FrameGraphTransientResourcePlan* FindTransientResourcePlan(FrameGraphResourceHandle handle) noexcept;
