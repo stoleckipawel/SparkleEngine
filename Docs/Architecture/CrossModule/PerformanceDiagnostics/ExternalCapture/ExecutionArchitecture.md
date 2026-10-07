@@ -96,11 +96,13 @@ The [single-truth/copy budget](../../../../Engineering/Foundations/DataAndMemory
 
 ### PIX First
 
-Use the official matched WinPixEventRuntime header/runtime package in eligible D3D12 builds; replace hand-declared marker exports and bare-name DLL loading in the touched owner. Backend-private code uses official event macros with safe literal formatting and retains stable marker storage. Resolve the GPU capturer from a validated installed PIX location, or recognize provider-native injection; never redistribute it as though it were the event runtime.
+Use the official matched WinPixEventRuntime header/runtime package in eligible D3D12 builds; replace hand-declared marker exports and bare-name DLL loading in the touched owner. The existing signatures match Microsoft's documented stable manual ABI; replacement improves package ownership and official encoding rather than repairing a demonstrated ABI defect. Backend-private code uses official event macros with safe literal formatting and retains stable marker storage. Stage 0 selects the matched desktop import library and OS-loader lifetime, not a new general module manager. Resolve the GPU capturer from a validated installed PIX location, or recognize provider-native injection; never redistribute it as though it were the event runtime.
 
 The proposed next-frame lowering is `PIXSetTargetWindow` followed by `PIXGpuCaptureNextFrames(..., 1)`. Only the containing native present window is a delimiter. Attachment/status/open facilities come from the pinned package's official headers. Stage 0 proves the installed completion signal before that signal can set Completed. If the API exposes only accepted scheduling or a saved growing file, keep finalization unconfirmed and block provider acceptance. These API constraints come from [Microsoft](https://devblogs.microsoft.com/pix/programmatic-capture/); the result contract is Sparkle's [EC-S10](Semantics.md#publication-and-artifact-truth).
 
 PIX Timing stays a separate bounded range workflow delivered with the PIX priority group in Stage 2, initially tool-managed. Its privilege/collector requirements cannot become an implicit frame-button behavior.
+
+**Stage 0 boundary blocker:** [D07](Discovery.md#stage-0-decision-record--2026-10-07) records that the binding [RHI standard](../../../../Engineering/Modules/RHI.md#boundary-decisions-at-a-glance) keeps capture requests destination-free, while the proposed PIX scheduling API takes an artifact filename. The target split above is conditional on an explicit owning boundary decision or a verified alternative SDK route. No public filepath, disguised artifact handle, filesystem service bag or implicit exception is authorized. Stage 1's exact public delta/allowlist remains blocked with native completion and quiescence; the prerequisite ledgers are frozen independently.
 
 ### Nsight Second
 
@@ -126,6 +128,6 @@ Reuse [Shader System](../../ShaderSystem/README.md) provenance: exact CPU binary
 
 ## Clean Break And Refinement
 
-Replace the marker loader/ABI in prerequisite Stage 0A; update all direct callsites, build membership, and documentation. Preserve screenshot/readback services, existing GPU resource lifetimes, parallel recording, Streamline intent, and normal presentation. No aliases, legacy provider paths, internal schema dispatch, second stat/session truth, or deferred deletion gate.
+Replace the marker loader and handwritten ABI path in prerequisite Stage 0A; update all direct callsites, build membership, and documentation. The selected optional matched event package is default-off, privately enabled only for eligible non-Shipping D3D12 profiles, with existing dependency/artifact staging and MIT notices. Those are target build decisions, not generated-membership or Shipping proof. Preserve screenshot/readback services, existing GPU resource lifetimes, parallel recording, Streamline intent, and normal presentation. No aliases, legacy provider paths, internal schema dispatch, second stat/session truth, or deferred deletion gate.
 
 Each stage ends with one responsibility sentence per substantive file/class/function, duplicate/switch/include audit, exact hook ledger, and `architecture_boundary_check`. Discovery may refine file placement from current source, but may not move these authorities into generic orchestrators to avoid the budget.

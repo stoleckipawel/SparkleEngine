@@ -31,6 +31,8 @@ The result distinguishes request time, armed time, first/last observed delimiter
 
 Provider capability and request execution are separate. A provider can be Ready while its latest request is Completed. `Busy` is a rejection of a new request, not a replacement for another provider's capability.
 
+An enabled, verified native activity is required for Ready: a disabled official wrapper returning success is not attachment or execution evidence. Shell-launch success is not confirmed native artifact handoff. [Stage 0](Discovery.md#stage-0-decision-record--2026-10-07) records the inspected API traps and unresolved completion/drain protocol; no provider may substitute these observations for finalized native proof.
+
 ```mermaid
 stateDiagram-v2
     [*] --> Queued

@@ -14,6 +14,8 @@
 
 ## Delivery Order And Existing Package Mapping
 
+**Stage 0 execution — 2026-10-07:** [Discovery decision record](Discovery.md#stage-0-decision-record--2026-10-07) freezes the inspected input identities, source graphs, engine bounds and prerequisite API/deletion/file ledgers. `EC-D0-PIX` remains blocked; Stage 0A is not authorized by this result. Resume discovery with the installed PIX capturer and native completion/drain/target/order controls, and resolve the owning RHI destination boundary before freezing Stage 1's public delta. Missing later-provider installations do not block PIX. No production stage or executable gate passed.
+
 ```mermaid
 flowchart LR
     S0[0 PIX and engine discovery] --> QA[0A Graphics startup and events]

@@ -10,7 +10,7 @@
 
 **Current readiness:** **0/100 — target only** for launch-to-native-artifact capture. Existing markers are separate foundations; this package adds no credit to the parent readiness projection.
 
-Start with [Plan Stage 0](Plan.md#stage-0--freeze-the-pix-discovery-cell). The design is documented and the prompts are ready to execute conditionally; no installed SDK/tool matrix or capture has passed yet. Existing code emits D3D12 PIX events and Vulkan debug labels but has no external capture provider, provider launch selector, or viewport capture action in the audited baseline.
+Read the [2026-10-07 Stage 0 decision record](Discovery.md#stage-0-decision-record--2026-10-07) before executing a prompt. Source/package inspection is recorded, but `EC-D0-PIX` is blocked by missing installed-capturer completion/quiescence and native target/order proof, plus the unresolved RHI destination boundary. Stage 0A cannot begin under the current prerequisite. Existing code emits D3D12 PIX events and Vulkan debug labels but has no external capture provider, provider launch selector, or viewport capture action in the audited baseline.
 
 ## Reader Route
 
