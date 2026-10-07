@@ -16,7 +16,9 @@ This standard owns RHI and backend change guardrails. The canonical [Renderer an
 | how is output presented? | output product and display intent | swapchain acquisition, resize, encoding-compatible native path, and present result |
 | why did native work fail? | preserves requesting feature/pass/resource identity | engine invariant rejection, API validation, device/driver diagnostics, and native error context |
 
-UI mode names, menu indices, labels, progress-widget state, editor selection, and Renderer feature identities never belong in RHI requests or results. Capture contracts identify resources, formats, extents, frame/generation identity, bytes, and native failure only. They are destination-free: output paths, codecs selected by a product workflow, staging, manifests, and publication policy remain with the Application/tool owner. A higher layer may join semantic provenance after readback without teaching RHI about the feature that requested it.
+UI mode names, menu indices, labels, progress-widget state, editor selection, and Renderer feature identities never belong in RHI requests or results. Pixel capture/readback contracts identify resources, formats, extents, frame/generation identity, bytes, and native failure only. They are destination-free: output paths, codecs selected by a product workflow, staging, manifests, and publication policy remain with the Application/tool owner. A higher layer may join semantic provenance after readback without teaching RHI about the feature that requested it.
+
+External native-tool diagnostics are distinct from pixel readback. When a supported SDK itself writes its native artifact, its focused diagnostics request may receive one bounded absolute destination selected and validated by Application/tool policy. RHI only lowers that supplied destination to the SDK; it does not choose directories, names, retention, codecs, sidecars or publication, and does not acquire a filesystem service or opaque path registry. Native observations do not themselves declare the product artifact Completed. The [architecture decision](../../Architecture/Decisions/RendererRhiBoundary.md#external-native-capture-artifacts) owns this narrow separation. Ordinary readback contracts stay unchanged and destination-free.
 
 If an implementation needs a vendor name, native handle, swapchain image, or API enum above this boundary, first prove that the public neutral contract cannot express the real semantic difference. If backend code chooses lighting, quality, graph topology, or fallback, the policy is already too low.
 
@@ -57,7 +59,7 @@ If an implementation needs a vendor name, native handle, swapchain image, or API
 ## RHI Review Questions
 
 - Is the request a neutral GPU contract rather than Renderer feature policy or a leaked native backend object?
-- Are capture/readback requests and results free of output paths, staging, manifests, and publication policy?
+- Are pixel capture/readback requests and results destination-free? Does external native-tool diagnostics receive only the SDK-required bounded destination, with artifact policy/publication retained above RHI?
 - Does each neutral format, layout, descriptor, state, and capability invariant have exactly one public RHI owner?
 - Are D3D12 and Vulkan limited to native translation and real capability differences instead of copied policy?
 - Are resources, descriptors, pipelines, command objects, submissions, and retirement tokens valid for every consumer lifetime?

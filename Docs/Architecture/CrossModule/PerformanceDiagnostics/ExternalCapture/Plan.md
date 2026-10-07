@@ -10,15 +10,16 @@
 
 **Authority boundary:** [dossier](README.md) owns scope/acceptance; [Discovery](Discovery.md) owns gates; [Semantics](Semantics.md) owns protocol; [Execution Architecture](ExecutionArchitecture.md) owns responsibility; [User Experience](UserExperience.md) owns interaction; [Research](Research.md) owns precedent. This page owns delivery order, stage bounds, estimates, deletions, prompts, and handoff.
 
-**Current readiness:** **0/100 — target only** for capture integration. No build, installed-tool, native capture, replay, performance or package result is asserted.
+**Current readiness:** **0/100 — target only** for capture integration. No engine implementation, capture acceptance, performance or package result is asserted. Disposable native SDK observations belong to Discovery.
 
 ## Delivery Order And Existing Package Mapping
 
-**Stage 0 execution — 2026-10-07:** [Discovery decision record](Discovery.md#stage-0-decision-record--2026-10-07) freezes the inspected input identities, source graphs, engine bounds and prerequisite API/deletion/file ledgers. `EC-D0-PIX` remains blocked; Stage 0A is not authorized by this result. Resume discovery with the installed PIX capturer and native completion/drain/target/order controls, and resolve the owning RHI destination boundary before freezing Stage 1's public delta. Missing later-provider installations do not block PIX. No production stage or executable gate passed.
+**Prerequisite repair — 2026-10-07:** [discovery continuation](Discovery.md#prerequisite-repair-and-native-probe--2026-10-07) closes `EC-D0-ENGINE` for the independent 0A/0B/0C repairs. Stage 0A may begin using the frozen Q01/Q02/Q07 ledger and matched official event package. PIX-only finalization/quiescence, engine target/generation, interposer-combination and native inspection acceptance stay under `EC-D0-PIX` and still precede Stage 1; they no longer block unrelated existing-consumer repair. This corrects the earlier aggregate gate dependency rather than claiming a native proof passed. `EC-G0A/0B/0C` remain implementation exits, not documentation outcomes.
 
 ```mermaid
 flowchart LR
-    S0[0 PIX and engine discovery] --> QA[0A Graphics startup and events]
+    S0[0 Engine discovery] --> QA[0A Graphics startup and events]
+    P0[0 PIX native discovery] --> S1
     QA --> QB[0B Nonblocking request admission]
     QB --> QC[0C Coherent viewport publication]
     QC --> S1[1 Real PIX vertical slice]
@@ -33,7 +34,7 @@ flowchart LR
 
 | Stage | Existing package / user outcome | Gate artifact / next permission |
 | --- | --- | --- |
-| 0 | PIX/environment and engine-absorption discovery with remaining cells inventoried | `EC-D0-PIX`, including D09; only then Stage 0A |
+| 0 | PIX/environment and engine-absorption discovery with remaining cells inventoried | `EC-D0-ENGINE` permits 0A; `EC-D0-PIX` permits Stage 1 after engine exits |
 | 0A | Explicit graphics launch/composition and official owned event support; existing backend/Streamline/marker consumers | `EC-G0A`; no GPU capture required, Stage 0B |
 | 0B | Nonblocking ordered queue admission, used by existing viewport readback | `EC-G0B`; no GPU capture required, Stage 0C |
 | 0C | Coherent viewport product/texture publication, used by existing Editor frame consumer | `EC-G0C`; no GPU capture required, Stage 1 |
@@ -52,7 +53,7 @@ Gate IDs denote required candidate artifacts, not completed reports. Keep them i
 
 | Stage | Engineering | Review/evidence | Largest uncertainty |
 | --- | --- | --- | --- |
-| 0 | 8–16 h | 4–8 h | PIX finalization/status API and current scene-to-present identity |
+| 0 | 8–16 h | 4–8 h | PIX PIX-only finalization/status API and current scene-to-present identity; independent engine gate does not wait for these |
 | 0A | 12–24 h | 6–12 h | Graphics input ownership/precedence and official event lifetime |
 | 0B | 8–16 h | 6–12 h | Admission rollback, accepted sequence and shutdown progress |
 | 0C | 12–24 h | 8–16 h | Complete consumer migration and publication lifetime |
@@ -65,7 +66,7 @@ Gate IDs denote required candidate artifacts, not completed reports. Keep them i
 | 7 | 8–20 h | 8–16 h | Specialist tools/hardware access, no SDK embedding assumed |
 | 8 | 8–16 h | 16–32 h | Full native-feature/map/package/adopter matrix |
 
-Assumptions: one engineer, available Windows D3D12/Vulkan environment, licensed installed tools, NVIDIA hardware for Nsight and AMD access for hardware-specific specialist proof, existing cooked Empty/Sponza, a code reviewer and clean-environment adopter. Ranges total 136–276 engineering hours plus 100–200 review/evidence hours before external waiting. Discovery re-estimates after probes; missing hardware/tool/reviewer is separately recorded waiting time, not hidden in effort. Critical path is PIX and engine discovery -> existing-consumer startup/admission/publication repairs -> PIX completion/target proof -> shared lifecycle -> real adapter locality -> aggregate acceptance. Do not consume the upper range by inventing framework scope; split a new prerequisite when evidence exposes one.
+Assumptions: one engineer, available Windows D3D12/Vulkan environment, licensed installed tools, NVIDIA hardware for Nsight and AMD access for hardware-specific specialist proof, existing cooked Empty/Sponza, a code reviewer and clean-environment adopter. Ranges total 136–276 engineering hours plus 100–200 review/evidence hours before external waiting. Discovery re-estimates after probes; missing hardware/tool/reviewer is separately recorded waiting time, not hidden in effort. Critical path is engine discovery -> existing-consumer startup/admission/publication repairs + PIX completion/target discovery -> shared lifecycle -> real adapter locality -> aggregate acceptance. Do not consume the upper range by inventing framework scope; split a new prerequisite when evidence exposes one.
 
 ## Universal Execution Contract
 
@@ -91,7 +92,7 @@ Apply this to every prompt below; each prompt is standalone when pasted with its
 
 **Non-goals:** product parser/controller/adapter/UI implementation, internal diagnostics, device-recreation support, permanent tests or new generic APIs.
 
-**Exit `EC-D0-PIX`:** all nine PIX rows have concrete decisions and artifacts; finalization, quiescence, target/generation and early interposer order are proved or the affected production stage is blocked. Review package traceability against dossier criteria and architecture budget. Documentation/static checks pass; executable provider acceptance remains unclaimed.
+**Exit:** `EC-D0-ENGINE` closes the applicable D01/D03/D04/D06/D07/D09 engine-repair decisions with exact package, launch, ownership, file and deletion ledgers; it does not require GPU-capturer completion or native scene correlation. `EC-D0-PIX` independently requires all nine PIX rows to have concrete decisions and artifacts; finalization, quiescence, target/generation and early interposer order are proved or the affected production stage is blocked. Review package traceability against dossier criteria and architecture budget. Documentation/static checks pass; executable provider acceptance remains unclaimed.
 
 ```text
 Execute only Stage 0 of Docs/Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/Plan.md. Apply its Universal Execution Contract. Do not change production code.
@@ -109,7 +110,7 @@ Do not implement adapters, UI, internal stats, compatibility shims or permanent 
 
 **Objective:** improve existing backend/Streamline startup and D3D12 event consumers before GPU capture, implementing Q01/Q02 and their configuration obligations from Q07.
 
-**Prerequisites:** `EC-D0-PIX` including D09; frozen backend default/environment/CLI precedence and existing option spellings; exact official event package/defines/license/lifetime route; approved producer/consumer/deletion ledger and existing build-profile authority.
+**Prerequisites:** `EC-D0-ENGINE` including D09; frozen backend default/environment/CLI precedence and existing option spellings; exact official event package/defines/license/lifetime route; approved producer/consumer/deletion ledger and existing build-profile authority.
 
 **Work:** move touched process policy out of RHI backend-value mechanics into the existing Application graphics launch owner; pass immutable resolved input to Renderer and ordered process integration composition. Preserve build-default/value parsing in RHI, explicit device API selection and all current consumers. Replace D3D12PixEvents manual exports/lazy bare-name load using official matched support under the private D3D12 lifetime owner, before recording. Update callsites, target membership/staging/notices and remove the replaced path immediately. No GPU capturer or provider-selection parser yet.
 
@@ -118,7 +119,7 @@ Do not implement adapters, UI, internal stats, compatibility shims or permanent 
 **Exit `EC-G0A`:** relevant EVOLUTION/BOOT/PACKAGE/ARCH controls prove backend precedence/errors and normal no-tool launch unchanged, explicit startup/teardown order, official literal marker labels (including percent signs), and eligible/Shipping membership. Exercise affected existing backend/Streamline routes with the smallest selected build/runtime checks. No first-use SDK load from command recording and no old manual marker ABI remain. Provider readiness is still 0/100. Missing official package behavior must match the frozen optional-capability contract.
 
 ```text
-Implement only Stage 0A of Docs/Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/Plan.md after verifying EC-D0-PIX and D09. Apply the Universal Execution Contract.
+Implement only Stage 0A of Docs/Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/Plan.md after verifying EC-D0-ENGINE and D09. Apply the Universal Execution Contract.
 
 Outcome: existing graphics launch/backend/Streamline and D3D12 event consumers have explicit policy/lifetime ownership without introducing GPU capture.
 

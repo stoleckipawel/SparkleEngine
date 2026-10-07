@@ -10,7 +10,7 @@
 
 **Current readiness:** **0/100 — target only** for launch-to-native-artifact capture. Existing markers are separate foundations; this package adds no credit to the parent readiness projection.
 
-Read the [2026-10-07 Stage 0 decision record](Discovery.md#stage-0-decision-record--2026-10-07) before executing a prompt. Source/package inspection is recorded, but `EC-D0-PIX` is blocked by missing installed-capturer completion/quiescence and native target/order proof, plus the unresolved RHI destination boundary. Stage 0A cannot begin under the current prerequisite. Existing code emits D3D12 PIX events and Vulkan debug labels but has no external capture provider, provider launch selector, or viewport capture action in the audited baseline.
+Read the [prerequisite repair and native probe](Discovery.md#prerequisite-repair-and-native-probe--2026-10-07). `EC-D0-ENGINE` is closed for the independently useful engine repairs, so Stage 0A may begin. The installed PIX 2603.25 produced a real disposable D3D12 capture that native PIX opened; this is SDK observation, not engine acceptance. Full `EC-D0-PIX` still gates Stage 1, alongside `EC-G0A/0B/0C`. Existing code has markers but no external capture provider or viewport action.
 
 ## Reader Route
 

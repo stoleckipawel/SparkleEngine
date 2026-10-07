@@ -49,6 +49,12 @@ The top boundary is also one way. Renderer owns the host-independent `RenderView
 - Render-owned primitives and tables are derived state, never a second gameplay authority.
 - CPU packet lifetime and GPU resource lifetime are distinct.
 
+## External Native Capture Artifacts
+
+Decision, 2026-10-07: preserve destination-free pixel readback and permit a separate focused external-tool diagnostics operation to lower one Application-selected bounded absolute artifact destination when the native SDK requires it. This resolves the PIX scheduling API's filename requirement without assigning filesystem/product policy to the backend. Application/tool owns canonical capture-root selection, collision/length checks, sidecars, retention and native-tool open policy; Renderer owns request identity, target validity, exclusive operation and terminal publication; private RHI diagnostics owns SDK calls and native observations. No native handle/vendor header, codec, manifest, directory selection, path registry or filesystem service crosses the contract. A written-file result never enters the existing readback path.
+
+The [External Capture dossier](../CrossModule/PerformanceDiagnostics/ExternalCapture/ExecutionArchitecture.md#pix-first) owns its implementation delta and hook budget. This decision authorizes the contract distinction, not an adapter or a completion claim. A native open/analysis observation must remain distinct from scheduling success and from SDK quiescence; callback/device/module retirement still needs its own lifetime proof. Existing Renderer/RHI implementation is unchanged by this documentation decision.
+
 ## Frame Graph Contract
 
 The frame graph is the only renderer scheduling, barrier, aliasing, history, and queue-dependency authority:
