@@ -34,6 +34,8 @@ flowchart LR
     Loop --> Shutdown[Settle and destroy in reverse dependency order]
 ```
 
+Graphics launch policy now belongs to the private [ApplicationGraphicsLaunch](../../../../../Engine/Application/Private/ApplicationGraphicsLaunch.cpp) owner: build default, then `SPARKLE_RHI_BACKEND`, then the first recognized `--renderer`/`--rhi`/`--graphics-api` selection. RuntimeApplication resolves once before Renderer construction and passes the API explicitly; RHI owns value/default/compiled-backend mechanics. Invalid or compiled-out selections stop before graphics initialization. The [Stage 0A record](../../../CrossModule/PerformanceDiagnostics/ExternalCapture/Discovery.md#stage-0a-implementation-handoff--2026-10-07) owns the scoped launch/event checks and remaining Shipping D3D12 runtime limitation; this update does not change the inventory's release readiness.
+
 The module is a composition root. Its quality depends on preserving the boundaries below rather than absorbing world, rendering, tool, or editor policy into the host loop.
 
 ## Product Split

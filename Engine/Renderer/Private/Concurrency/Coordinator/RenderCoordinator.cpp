@@ -161,28 +161,11 @@ void RenderCoordinator::SubmitThreadedFrame()
 	}
 }
 
-ViewportRenderProducts RenderCoordinator::GetViewportRenderProducts() const
+ViewportPresentationSnapshot RenderCoordinator::GetViewportPresentation() const
 {
 	m_producerOwner.AssertAccess();
-	if (!m_config.IsThreaded())
-	{
-		return GetSerialContext().GetViewportRenderProducts();
-	}
-
 	std::lock_guard lock(m_readStateMutex);
-	return m_publishedViewportProducts;
-}
-
-UiTextureHandle RenderCoordinator::GetViewportPresentationTexture() const
-{
-	m_producerOwner.AssertAccess();
-	if (!m_config.IsThreaded())
-	{
-		return GetSerialContext().GetViewportPresentationTexture();
-	}
-
-	std::lock_guard lock(m_readStateMutex);
-	return m_publishedViewportTexture;
+	return m_publishedViewportPresentation;
 }
 
 void RenderCoordinator::SubmitResize()

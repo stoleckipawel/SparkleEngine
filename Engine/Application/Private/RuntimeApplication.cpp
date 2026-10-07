@@ -243,16 +243,6 @@ void RuntimeApplication::SubmitViewportRenderRequest(ViewportRenderRequest reque
 	}
 }
 
-ViewportRenderProducts RuntimeApplication::GetViewportRenderProducts() const
-{
-	if (!m_renderer)
-	{
-		return {};
-	}
-
-	return m_renderer->GetViewportRenderProducts();
-}
-
 bool RuntimeApplication::Tick()
 {
 	switch (BeginFrame())

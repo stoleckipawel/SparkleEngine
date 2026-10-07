@@ -4,13 +4,12 @@
 
 #include "Editor/Public/UI.h"
 #include "Renderer.h"
-#include "RuntimeApplication.h"
 
-void EditorUiFrameRenderer::Render(RuntimeApplication& runtime, Renderer& renderer, UI& ui)
+void EditorUiFrameRenderer::Render(Renderer& renderer, UI& ui)
 {
-	const ViewportRenderProducts products = runtime.GetViewportRenderProducts();
-	ui.SetViewportRenderProducts(products);
-	ui.SetViewportFinalColorTexture(renderer.GetViewportPresentationTexture());
+	const ViewportPresentationSnapshot presentation = renderer.GetViewportPresentation();
+	ui.SetViewportRenderProducts(presentation.Products);
+	ui.SetViewportFinalColorTexture(presentation.Texture);
 	ui.Update();
 	renderer.SubmitUiRenderPacket(ui.ConsumeRenderPacket());
 	renderer.OnRender();

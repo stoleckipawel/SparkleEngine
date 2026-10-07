@@ -80,16 +80,25 @@ void ReferencePathTracerArtifactCoordinator::Begin(
 	m_mean.reset();
 	m_moment2.reset();
 	m_capturePrefix = mean->SamplePrefix;
-	if (!m_meanCapture.Request(renderer, ViewportCaptureRequest{.Output = RenderOutputFlags::Radiance}))
+	const ViewportCaptureAdmissionStatus meanAdmission =
+	    m_meanCapture.Request(renderer, ViewportCaptureRequest{.Output = RenderOutputFlags::Radiance});
+	if (meanAdmission != ViewportCaptureAdmissionStatus::Accepted)
 	{
-		Fail("The renderer did not accept the Reference radiance readback request.");
+		Fail(
+		    meanAdmission == ViewportCaptureAdmissionStatus::Full ? "Reference radiance readback rejected: render request capacity is full."
+		                                                          : "Reference radiance readback rejected: render owner is closed.");
 		return;
 	}
 	if (kind == ReferencePathTracerArtifactKind::Checkpoint)
 	{
-		if (!m_moment2Capture.Request(renderer, ViewportCaptureRequest{.Output = RenderOutputFlags::RadianceSecondMoment}))
+		const ViewportCaptureAdmissionStatus moment2Admission =
+		    m_moment2Capture.Request(renderer, ViewportCaptureRequest{.Output = RenderOutputFlags::RadianceSecondMoment});
+		if (moment2Admission != ViewportCaptureAdmissionStatus::Accepted)
 		{
-			Fail("The renderer did not accept the checkpoint M2 readback request.");
+			Fail(
+			    moment2Admission == ViewportCaptureAdmissionStatus::Full
+			        ? "Checkpoint M2 readback rejected: render request capacity is full."
+			        : "Checkpoint M2 readback rejected: render owner is closed.");
 		}
 	}
 }

@@ -148,6 +148,19 @@ struct SPARKLE_RENDERER_API ViewportCaptureId
 	explicit operator bool() const noexcept;
 };
 
+enum class ViewportCaptureAdmissionStatus : std::uint8_t
+{
+	Accepted,
+	Full,
+	Closed,
+};
+
+struct SPARKLE_RENDERER_API ViewportCaptureAdmission
+{
+	ViewportCaptureAdmissionStatus Status = ViewportCaptureAdmissionStatus::Closed;
+	ViewportCaptureId Id;
+};
+
 struct SPARKLE_RENDERER_API ViewportCaptureReadback
 {
 	ViewportCaptureResult Result;

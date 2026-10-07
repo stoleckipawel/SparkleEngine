@@ -30,14 +30,9 @@ void Renderer::SubmitViewportRenderRequest(ViewportRenderRequest request) noexce
 	m_state->Coordinator.SubmitViewportRequest(request);
 }
 
-ViewportRenderProducts Renderer::GetViewportRenderProducts() const
+ViewportPresentationSnapshot Renderer::GetViewportPresentation() const
 {
-	return m_state->Coordinator.GetViewportRenderProducts();
-}
-
-UiTextureHandle Renderer::GetViewportPresentationTexture() const
-{
-	return m_state->Coordinator.GetViewportPresentationTexture();
+	return m_state->Coordinator.GetViewportPresentation();
 }
 
 EngineRenderingSettingsState Renderer::CaptureRenderingSettings() const
@@ -105,7 +100,7 @@ void Renderer::EndSimulationFrame(std::uint64_t frameId) noexcept
 	m_state->ExternalRuntime.EndSimulationFrame(frameId);
 }
 
-ViewportCaptureId Renderer::RequestViewportCapture(ViewportCaptureRequest request) noexcept
+ViewportCaptureAdmission Renderer::RequestViewportCapture(ViewportCaptureRequest request) noexcept
 {
 	return m_state->Coordinator.RequestViewportCapture(std::move(request));
 }

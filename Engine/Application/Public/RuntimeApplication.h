@@ -51,7 +51,6 @@ public:
 	RuntimeApplicationFrameResult BeginFrame();
 	void UpdateRuntime() noexcept;
 	void SubmitViewportRenderRequest(ViewportRenderRequest request) noexcept;
-	ViewportRenderProducts GetViewportRenderProducts() const;
 	Timer& GetTimer() noexcept;
 	Window& GetWindow() noexcept;
 	InputSystem& GetInputSystem() noexcept;

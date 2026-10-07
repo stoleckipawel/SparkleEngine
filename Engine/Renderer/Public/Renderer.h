@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Viewport/ViewportPresentationSnapshot.h"
+
 #include "RendererAPI.h"
 #include "RHI/Public/Core/RhiBackendApi.h"
 #include "Diagnostics/RendererMemoryDiagnostics.h"
@@ -39,8 +41,7 @@ public:
 	void BeginSimulationFrame(std::uint64_t frameId) noexcept;
 	void EndSimulationFrame(std::uint64_t frameId) noexcept;
 
-	ViewportRenderProducts GetViewportRenderProducts() const;
-	UiTextureHandle GetViewportPresentationTexture() const;
+	ViewportPresentationSnapshot GetViewportPresentation() const;
 	EngineRenderingSettingsState CaptureRenderingSettings() const;
 	CVarControlResult ExecuteConsoleVariables(CVarControlRequest request);
 
@@ -50,7 +51,7 @@ public:
 	MeshPreviewGeometry CaptureMeshPreview(std::uintptr_t meshRuntimeId) const;
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics() const;
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
-	ViewportCaptureId RequestViewportCapture(ViewportCaptureRequest request) noexcept;
+	ViewportCaptureAdmission RequestViewportCapture(ViewportCaptureRequest request) noexcept;
 	bool TryTakeViewportCapture(ViewportCaptureId id, ViewportCaptureReadback& readback) noexcept;
 
 	void OnRender() noexcept;

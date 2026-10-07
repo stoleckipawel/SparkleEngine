@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Renderer/Public/Viewport/ViewportPresentationSnapshot.h"
+
 #include "Concurrency/Control/RenderThreadCommandQueue.h"
 #include "Concurrency/FrameQueue/RenderFrameQueue.h"
 #include "Host/RendererBackendConfiguration.h"
@@ -10,6 +12,7 @@
 #include "Core/Public/Events/ScopedEventHandle.h"
 #include "Core/Public/Threading/ThreadOwnership.h"
 
+#include <array>
 #include <cstddef>
 #include <atomic>
 #include <condition_variable>
@@ -41,15 +44,14 @@ public:
 	void SubmitViewportRequest(ViewportRenderRequest request);
 	void RenderFrame();
 
-	ViewportRenderProducts GetViewportRenderProducts() const;
-	UiTextureHandle GetViewportPresentationTexture() const;
+	ViewportPresentationSnapshot GetViewportPresentation() const;
 	void ReloadShaders();
 	std::uint64_t GetShaderGeneration() const noexcept;
 	MeshDiagnosticsSnapshot CaptureMeshDiagnostics();
 	MeshPreviewGeometry CaptureMeshPreview(std::uintptr_t meshRuntimeId);
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics();
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics();
-	ViewportCaptureId RequestViewportCapture(ViewportCaptureRequest request);
+	ViewportCaptureAdmission RequestViewportCapture(ViewportCaptureRequest request);
 	bool TryTakeViewportCapture(ViewportCaptureId id, ViewportCaptureReadback& readback);
 
 	RendererExecutionMode GetMode() const noexcept { return m_config.Mode; }
@@ -101,10 +103,9 @@ private:
 	bool m_started = false;
 	bool m_startSucceeded = false;
 	mutable std::mutex m_readStateMutex;
-	ViewportRenderProducts m_publishedViewportProducts;
-	UiTextureHandle m_publishedViewportTexture;
+	ViewportPresentationSnapshot m_publishedViewportPresentation;
 	std::atomic<std::uint64_t> m_shaderGeneration{0};
-	std::size_t m_outstandingViewportCaptureCount = 0;
+	std::array<ViewportCaptureId, MaximumOutstandingViewportCaptures> m_outstandingViewportCaptures{};
 	std::vector<ViewportCaptureCompletion> m_publishedViewportCaptures;
 	std::uint64_t m_nextViewportCaptureId = 1;
 };

@@ -3,6 +3,8 @@
 
 #include "Concurrency/Coordinator/RendererExecutionContext.h"
 
+#include <algorithm>
+
 SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_renderCoordinatorLogger, "Renderer.Coordinator");
 
 void RenderCoordinator::Initialize()
@@ -164,4 +166,23 @@ void RenderCoordinator::SettleAbandonedWork() noexcept
 		    *control);
 	}
 	m_frameQueue->SettleAll();
+	std::lock_guard lock(m_readStateMutex);
+	for (ViewportCaptureId id : m_outstandingViewportCaptures)
+	{
+		if (!id
+		    || std::any_of(
+		        m_publishedViewportCaptures.begin(),
+		        m_publishedViewportCaptures.end(),
+		        [id](const ViewportCaptureCompletion& completion) { return completion.Id.Value == id.Value; }))
+		{
+			continue;
+		}
+		m_publishedViewportCaptures.push_back(
+		    ViewportCaptureCompletion{
+		        .Id = id,
+		        .Readback = {
+		            .Result = {
+		                .Status = ViewportCaptureStatus::Failed,
+		                .FailureReason = "Render owner stopped before viewport readback completed"}}});
+	}
 }

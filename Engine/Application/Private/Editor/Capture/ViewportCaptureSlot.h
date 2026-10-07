@@ -9,7 +9,7 @@ class Renderer;
 class ViewportCaptureSlot final
 {
 public:
-	bool Request(Renderer& renderer, ViewportCaptureRequest request);
+	ViewportCaptureAdmissionStatus Request(Renderer& renderer, ViewportCaptureRequest request);
 	void Update(Renderer& renderer);
 	void Discard() noexcept;
 

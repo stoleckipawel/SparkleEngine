@@ -30,7 +30,7 @@ EditorViewportOutputCoordinator::~EditorViewportOutputCoordinator() noexcept = d
 void EditorViewportOutputCoordinator::Update(Renderer& renderer)
 {
 	m_state->PresentationCapture.Update(renderer);
-	m_state->ReferenceArtifacts.Update(renderer, renderer.GetViewportRenderProducts());
+	m_state->ReferenceArtifacts.Update(renderer, renderer.GetViewportPresentation().Products);
 }
 
 void EditorViewportOutputCoordinator::HandleAction(UI& ui, Renderer& renderer, std::uint64_t frameId)
@@ -41,5 +41,5 @@ void EditorViewportOutputCoordinator::HandleAction(UI& ui, Renderer& renderer, s
 		m_state->PresentationCapture.Request(renderer, frameId);
 		return;
 	}
-	ApplyReferencePathTracerArtifactAction(action, m_state->ReferenceArtifacts, renderer, renderer.GetViewportRenderProducts());
+	ApplyReferencePathTracerArtifactAction(action, m_state->ReferenceArtifacts, renderer, renderer.GetViewportPresentation().Products);
 }

@@ -177,7 +177,7 @@ void EditorApplication::UpdateEditorOperations(Renderer& renderer)
 
 void EditorApplication::RenderEditorFrame(Renderer& renderer)
 {
-	EditorUiFrameRenderer::Render(*m_state->Runtime, renderer, *m_state->Ui);
+	EditorUiFrameRenderer::Render(renderer, *m_state->Ui);
 	m_state->ViewportOutput->HandleAction(*m_state->Ui, renderer, m_state->Runtime->GetTimer().GetFrameCount());
 
 	m_state->Runtime->SubmitViewportRenderRequest(m_state->Ui->GetViewportRenderRequest());

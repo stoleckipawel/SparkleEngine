@@ -6,14 +6,15 @@
 
 #include <utility>
 
-bool ViewportCaptureSlot::Request(Renderer& renderer, ViewportCaptureRequest request)
+ViewportCaptureAdmissionStatus ViewportCaptureSlot::Request(Renderer& renderer, ViewportCaptureRequest request)
 {
 	if (!IsSettled())
 	{
-		return false;
+		return ViewportCaptureAdmissionStatus::Full;
 	}
-	m_capture = renderer.RequestViewportCapture(std::move(request));
-	return static_cast<bool>(m_capture);
+	const ViewportCaptureAdmission admission = renderer.RequestViewportCapture(std::move(request));
+	m_capture = admission.Id;
+	return admission.Status;
 }
 
 void ViewportCaptureSlot::Update(Renderer& renderer)

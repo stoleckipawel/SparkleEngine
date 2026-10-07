@@ -10,7 +10,7 @@
 
 **Authority boundary:** [dossier](README.md) owns scope/acceptance; [Discovery](Discovery.md) owns gates; [Semantics](Semantics.md) owns protocol; [Execution Architecture](ExecutionArchitecture.md) owns responsibility; [User Experience](UserExperience.md) owns interaction; [Research](Research.md) owns precedent. This page owns delivery order, stage bounds, estimates, deletions, prompts, and handoff.
 
-**Current readiness:** **0/100 — target only** for capture integration. No engine implementation, capture acceptance, performance or package result is asserted. Disposable native SDK observations belong to Discovery.
+**Current readiness:** **0/100 — target only** for capture integration. Capture providers remain unimplemented. Existing-consumer engine repairs and their bounded execution results are recorded in Discovery; they do not establish capture acceptance or release readiness.
 
 ## Delivery Order And Existing Package Mapping
 
@@ -108,6 +108,8 @@ Do not implement adapters, UI, internal stats, compatibility shims or permanent 
 
 ## Stage 0A — Make Graphics Startup And Event Lifetime Explicit
 
+**Execution — 2026-10-07:** [Stage 0A handoff](Discovery.md#stage-0a-implementation-handoff--2026-10-07) closes `EC-G0A` for the selected engine controls. Stage 0B is next. The record retains additional unresolved Shipping D3D12 runtime failures; package erasure and Development lifecycle evidence do not imply Shipping runtime acceptance.
+
 **Objective:** improve existing backend/Streamline startup and D3D12 event consumers before GPU capture, implementing Q01/Q02 and their configuration obligations from Q07.
 
 **Prerequisites:** `EC-D0-ENGINE` including D09; frozen backend default/environment/CLI precedence and existing option spellings; exact official event package/defines/license/lifetime route; approved producer/consumer/deletion ledger and existing build-profile authority.
@@ -131,6 +133,8 @@ Do not add provider capture adapters, provider selection, options/loader registr
 ```
 
 ## Stage 0B — Admit Requests Without Blocking The Producer
+
+**Execution - 2026-10-08:** [Stage 0B handoff](Discovery.md#stage-0b-implementation-handoff---2026-10-08) closes `EC-G0B` for its selected controls and enables the Stage 0C precheck. Typed readback admission, accounting and abandonment are implemented; the record retains contention and default long-path publication limits.
 
 **Objective:** make bounded nonblocking request admission an existing queue capability, first consumed by viewport image readback; implement Q03 without altering deliberate frame/synchronous-control backpressure.
 

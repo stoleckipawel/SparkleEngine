@@ -10,7 +10,7 @@
 
 **Current readiness:** **0/100 — target only** for launch-to-native-artifact capture. Existing markers are separate foundations; this package adds no credit to the parent readiness projection.
 
-Read the [prerequisite repair and native probe](Discovery.md#prerequisite-repair-and-native-probe--2026-10-07). `EC-D0-ENGINE` is closed for the independently useful engine repairs, so Stage 0A may begin. The installed PIX 2603.25 produced a real disposable D3D12 capture that native PIX opened; this is SDK observation, not engine acceptance. Full `EC-D0-PIX` still gates Stage 1, alongside `EC-G0A/0B/0C`. Existing code has markers but no external capture provider or viewport action.
+Read the [prerequisite repair and native probe](Discovery.md#prerequisite-repair-and-native-probe--2026-10-07). `EC-D0-ENGINE` is closed for the independently useful engine repairs, and [Stage 0A is implemented and its selected exit controls are closed](Discovery.md#stage-0a-implementation-handoff--2026-10-07). [Stage 0B is implemented and its selected controls are closed](Discovery.md#stage-0b-implementation-handoff---2026-10-08); Stage 0C is next after its publication-consumer precheck. The installed PIX 2603.25 produced a real disposable D3D12 capture that native PIX opened; this is SDK observation, not engine acceptance. Full `EC-D0-PIX` still gates Stage 1, alongside `EC-G0A/0B/0C`. Existing code has markers but no external capture provider or viewport action.
 
 ## Reader Route
 

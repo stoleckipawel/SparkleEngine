@@ -27,6 +27,24 @@ bool RenderThreadCommandQueue::WaitPush(RenderThreadCommand command)
 	return true;
 }
 
+RenderThreadCommandAdmission RenderThreadCommandQueue::TryPush(RenderThreadCommand command)
+{
+	{
+		std::lock_guard lock(m_mutex);
+		if (m_closed)
+		{
+			return RenderThreadCommandAdmission::Closed;
+		}
+		if (m_commands.size() == m_capacity)
+		{
+			return RenderThreadCommandAdmission::Full;
+		}
+		m_commands.push_back(std::move(command));
+	}
+	m_notEmpty.notify_one();
+	return RenderThreadCommandAdmission::Accepted;
+}
+
 std::optional<RenderThreadCommand> RenderThreadCommandQueue::WaitPop()
 {
 	std::unique_lock lock(m_mutex);

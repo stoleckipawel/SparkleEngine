@@ -9,12 +9,20 @@
 #include <optional>
 #include <vector>
 
+enum class RenderThreadCommandAdmission : std::uint8_t
+{
+	Accepted,
+	Full,
+	Closed,
+};
+
 class RenderThreadCommandQueue final
 {
 public:
 	explicit RenderThreadCommandQueue(std::size_t capacity);
 
 	bool WaitPush(RenderThreadCommand command);
+	RenderThreadCommandAdmission TryPush(RenderThreadCommand command);
 	std::optional<RenderThreadCommand> WaitPop();
 	std::vector<RenderThreadCommand> Drain();
 	void Close() noexcept;

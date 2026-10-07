@@ -19,7 +19,15 @@ void EditorViewportCaptureCoordinator::Request(Renderer& renderer, std::uint64_t
 		return;
 	}
 	m_outputPath = BuildOutputPath(frameId);
-	m_capture.Request(renderer, ViewportCaptureRequest{.Output = RenderOutputFlags::FinalColorLdr});
+	const ViewportCaptureAdmissionStatus admission =
+	    m_capture.Request(renderer, ViewportCaptureRequest{.Output = RenderOutputFlags::FinalColorLdr});
+	if (admission != ViewportCaptureAdmissionStatus::Accepted)
+	{
+		SPDLOG_WARN(
+		    "Viewport capture request rejected: {}.",
+		    admission == ViewportCaptureAdmissionStatus::Full ? "render request capacity is full" : "render owner is closed");
+		m_outputPath.clear();
+	}
 }
 
 void EditorViewportCaptureCoordinator::Update(Renderer& renderer)

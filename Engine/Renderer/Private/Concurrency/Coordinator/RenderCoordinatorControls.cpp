@@ -67,21 +67,45 @@ RendererMemoryDiagnosticsSnapshot RenderCoordinator::CaptureMemoryDiagnostics()
 	    ExecuteSynchronousControl(RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::Memory, 0, completion}));
 }
 
-ViewportCaptureId RenderCoordinator::RequestViewportCapture(ViewportCaptureRequest request)
+ViewportCaptureAdmission RenderCoordinator::RequestViewportCapture(ViewportCaptureRequest request)
 {
 	m_producerOwner.AssertAccess();
-	if (m_outstandingViewportCaptureCount >= MaximumOutstandingViewportCaptures)
+	std::unique_lock lock(m_readStateMutex);
+	const auto slot = std::find_if(
+	    m_outstandingViewportCaptures.begin(),
+	    m_outstandingViewportCaptures.end(),
+	    [](ViewportCaptureId candidate) { return !candidate; });
+	if (slot == m_outstandingViewportCaptures.end())
 	{
-		return {};
+		return {.Status = ViewportCaptureAdmissionStatus::Full};
 	}
-	const ViewportCaptureId id{m_nextViewportCaptureId++};
-	++m_outstandingViewportCaptureCount;
-	DispatchControl(RenderCaptureCommand{id, std::move(request)});
+	if (m_nextViewportCaptureId == 0)
+	{
+		Diagnostics::Fatal(g_renderCoordinatorLogger, __FILE__, __LINE__, "Viewport capture identity exhausted.");
+	}
+	const ViewportCaptureId id{m_nextViewportCaptureId};
+	if (m_config.IsThreaded())
+	{
+		const RenderThreadCommandAdmission admission = m_threadCommandQueue->TryPush(
+		    RenderThreadCommand{IssueThreadCommandSequence(), RendererExecutionControl{RenderCaptureCommand{id, std::move(request)}}});
+		if (admission == RenderThreadCommandAdmission::Full)
+		{
+			return {.Status = ViewportCaptureAdmissionStatus::Full};
+		}
+		if (admission == RenderThreadCommandAdmission::Closed)
+		{
+			return {.Status = ViewportCaptureAdmissionStatus::Closed};
+		}
+	}
+	*slot = id;
+	++m_nextViewportCaptureId;
+	lock.unlock();
 	if (!m_config.IsThreaded())
 	{
+		GetSerialContext().ExecuteControl(RenderCaptureCommand{id, std::move(request)});
 		PublishReadState();
 	}
-	return id;
+	return {.Status = ViewportCaptureAdmissionStatus::Accepted, .Id = id};
 }
 
 bool RenderCoordinator::TryTakeViewportCapture(ViewportCaptureId id, ViewportCaptureReadback& readback)
@@ -106,7 +130,15 @@ bool RenderCoordinator::TryTakeViewportCapture(ViewportCaptureId id, ViewportCap
 	}
 	readback = std::move(completion->Readback);
 	m_publishedViewportCaptures.erase(completion);
-	--m_outstandingViewportCaptureCount;
+	const auto slot = std::find_if(
+	    m_outstandingViewportCaptures.begin(),
+	    m_outstandingViewportCaptures.end(),
+	    [id](ViewportCaptureId candidate) { return candidate.Value == id.Value; });
+	if (slot == m_outstandingViewportCaptures.end())
+	{
+		Diagnostics::Fatal(g_renderCoordinatorLogger, __FILE__, __LINE__, "Viewport completion has no outstanding capture owner.");
+	}
+	*slot = {};
 	return true;
 }
 
@@ -119,8 +151,14 @@ void RenderCoordinator::PublishReadState()
 
 	{
 		std::lock_guard lock(m_readStateMutex);
-		m_publishedViewportProducts = m_context->GetViewportRenderProducts();
-		m_publishedViewportTexture = m_context->GetViewportPresentationTexture();
+		if (m_publishedViewportPresentation.PublicationSequence == (std::numeric_limits<std::uint64_t>::max)())
+		{
+			Diagnostics::Fatal(g_renderCoordinatorLogger, __FILE__, __LINE__, "Viewport publication identity exhausted.");
+		}
+		m_publishedViewportPresentation = ViewportPresentationSnapshot{
+		    .Products = m_context->GetViewportRenderProducts(),
+		    .Texture = m_context->GetViewportPresentationTexture(),
+		    .PublicationSequence = m_publishedViewportPresentation.PublicationSequence + 1};
 		std::vector<ViewportCaptureCompletion> captures = m_context->TakeCompletedViewportCaptures();
 		for (ViewportCaptureCompletion& capture : captures)
 		{
