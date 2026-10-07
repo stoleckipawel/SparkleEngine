@@ -1,5 +1,6 @@
 #include "PCH.h"
 #include "RuntimeApplication.h"
+#include "ApplicationGraphicsLaunch.h"
 
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/Verify.h"
@@ -125,6 +126,7 @@ void RuntimeApplication::InitializeGameRuntime()
 
 void RuntimeApplication::InitializeRenderer()
 {
+	const ERhiBackendApi backendApi = ResolveApplicationGraphicsBackendApi();
 	RendererExecutionConfig rendererConfig;
 	if (m_options.AllowThreadedRenderer && ConcurrencyLaunchCVars::UseThreadedRenderer())
 	{
@@ -144,7 +146,7 @@ void RuntimeApplication::InitializeRenderer()
 	rendererConfig.EnableUiRenderPackets = m_options.EnableUiRenderPackets || m_options.EnableRuntimeConsole;
 	rendererConfig.AssetTaskExecutor = &m_taskRuntime->GetExecutor();
 	rendererConfig.AssetTaskParentScope = &m_taskRuntime->GetApplicationScope();
-	m_renderer = std::make_unique<Renderer>(*m_timer, *m_window, rendererConfig);
+	m_renderer = std::make_unique<Renderer>(*m_timer, *m_window, backendApi, rendererConfig);
 }
 
 void RuntimeApplication::InitializeRuntimeConsole()

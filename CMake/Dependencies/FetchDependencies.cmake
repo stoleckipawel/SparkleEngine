@@ -1,4 +1,4 @@
-﻿# ============================================================================
+# ============================================================================
 # FetchDependencies.cmake - Unified Third-Party Dependency Management
 # ============================================================================
 #
@@ -1156,6 +1156,34 @@ if(_sparkle_fetch_nvidia_streamline AND (SPARKLE_ENABLE_NVIDIA_STREAMLINE OR NOT
     )
 
     sparkle_log_dependency_ready("NVIDIA Streamline SDK" "${SPARKLE_NVIDIA_STREAMLINE_ROOT}" "~217 MB release SDK")
+endif()
+
+# Official event instrumentation is optional; the PIX capturer remains external.
+option(SPARKLE_RHI_WITH_D3D12_PIX_EVENTS "Enable official PIX events for non-Shipping D3D12 builds" OFF)
+sparkle_source_dependency_selected("winpixeventruntime" _sparkle_pix_selected)
+if(_sparkle_pix_selected AND (SPARKLE_RHI_WITH_D3D12_PIX_EVENTS OR SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "winpixeventruntime"))
+    set(_sparkle_pix_root "${FETCHCONTENT_BASE_DIR}/winpixeventruntime-src")
+    sparkle_ensure_archive_dependency(
+        DISPLAY_NAME "WinPixEventRuntime"
+        URL "https://api.nuget.org/v3-flatcontainer/winpixeventruntime/1.0.240308001/winpixeventruntime.1.0.240308001.nupkg"
+        ARCHIVE_PATH "${FETCHCONTENT_BASE_DIR}/winpixeventruntime.1.0.240308001.nupkg"
+        ROOT_PATH "${_sparkle_pix_root}"
+        EXPECTED_HASH "SHA256=726acc93d6968e2146261a1e415521747d50ad69894c2b42b5d0d4c29fd66ec4"
+        REQUIRED_PATHS Include/WinPixEventRuntime/pix3.h bin/x64/WinPixEventRuntime.lib bin/x64/WinPixEventRuntime.dll license.txt
+    )
+    if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")
+        return()
+    endif()
+    if(NOT WIN32 OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8 OR CMAKE_SYSTEM_PROCESSOR MATCHES "[Aa][Rr][Mm]" OR CMAKE_GENERATOR_PLATFORM MATCHES "[Aa][Rr][Mm]")
+        message(FATAL_ERROR "The selected WinPixEventRuntime integration requires Windows x64.")
+    endif()
+    add_library(Microsoft::WinPixEventRuntime SHARED IMPORTED GLOBAL)
+    set_target_properties(Microsoft::WinPixEventRuntime PROPERTIES
+        IMPORTED_IMPLIB "${_sparkle_pix_root}/bin/x64/WinPixEventRuntime.lib"
+        IMPORTED_LOCATION "${_sparkle_pix_root}/bin/x64/WinPixEventRuntime.dll"
+        INTERFACE_INCLUDE_DIRECTORIES "${_sparkle_pix_root}/Include/WinPixEventRuntime"
+        SPARKLE_LICENSE_FILE "${_sparkle_pix_root}/license.txt"
+    )
 endif()
 
 if(NOT SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "")

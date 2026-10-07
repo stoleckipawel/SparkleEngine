@@ -230,6 +230,42 @@ function(sparkle_configure_project_artifacts target_name project_name product_ro
         ${target_name}
         "${_sparkle_project_artifact_root}/${project_name}/${product_role}"
         "projects/${project_name}/${product_role}")
+    sparkle_stage_d3d12_pix_event_runtime(${target_name})
+endfunction()
+
+function(sparkle_stage_d3d12_pix_event_runtime product_target)
+    if(NOT TARGET Microsoft::WinPixEventRuntime OR NOT TARGET SparkleRHI_D3D12)
+        add_custom_command(TARGET ${product_target} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E rm -f
+                "$<TARGET_FILE_DIR:${product_target}>/WinPixEventRuntime.dll"
+                "$<TARGET_FILE_DIR:${product_target}>/WinPixEventRuntime-LICENSE.txt"
+            VERBATIM
+        )
+        return()
+    endif()
+
+    get_target_property(_sparkle_pix_enabled SparkleRHI_D3D12 SPARKLE_PIX_EVENTS_ENABLED)
+    get_target_property(_sparkle_pix_license Microsoft::WinPixEventRuntime SPARKLE_LICENSE_FILE)
+    add_custom_command(TARGET ${product_target} POST_BUILD
+        COMMAND "$<${_sparkle_pix_enabled}:${CMAKE_COMMAND}>"
+            "$<${_sparkle_pix_enabled}:-E>"
+            "$<${_sparkle_pix_enabled}:copy_if_different>"
+            "$<${_sparkle_pix_enabled}:$<TARGET_FILE:Microsoft::WinPixEventRuntime>>"
+            "$<${_sparkle_pix_enabled}:$<TARGET_FILE_DIR:${product_target}>>"
+        COMMAND "$<${_sparkle_pix_enabled}:${CMAKE_COMMAND}>"
+            "$<${_sparkle_pix_enabled}:-E>"
+            "$<${_sparkle_pix_enabled}:copy_if_different>"
+            "$<${_sparkle_pix_enabled}:${_sparkle_pix_license}>"
+            "$<${_sparkle_pix_enabled}:$<TARGET_FILE_DIR:${product_target}>/WinPixEventRuntime-LICENSE.txt>"
+        COMMAND "$<$<NOT:${_sparkle_pix_enabled}>:${CMAKE_COMMAND}>"
+            "$<$<NOT:${_sparkle_pix_enabled}>:-E>"
+            "$<$<NOT:${_sparkle_pix_enabled}>:rm>"
+            "$<$<NOT:${_sparkle_pix_enabled}>:-f>"
+            "$<$<NOT:${_sparkle_pix_enabled}>:$<TARGET_FILE_DIR:${product_target}>/WinPixEventRuntime.dll>"
+            "$<$<NOT:${_sparkle_pix_enabled}>:$<TARGET_FILE_DIR:${product_target}>/WinPixEventRuntime-LICENSE.txt>"
+        COMMAND_EXPAND_LISTS
+        VERBATIM
+    )
 endfunction()
 
 function(sparkle_get_project_cooked_directory output_variable project_name)

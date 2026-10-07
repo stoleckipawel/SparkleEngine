@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RendererAPI.h"
+#include "RHI/Public/Core/RhiBackendApi.h"
 #include "Diagnostics/RendererMemoryDiagnostics.h"
 #include "Meshes/MeshDiagnostics.h"
 #include "Diagnostics/MeshPreviewGeometry.h"
@@ -23,7 +24,7 @@ struct RenderFrameSubmission;
 class SPARKLE_RENDERER_API Renderer final
 {
 public:
-	Renderer(Timer& timer, Window& window, RendererExecutionConfig config = {}) noexcept;
+	Renderer(Timer& timer, Window& window, ERhiBackendApi backendApi, RendererExecutionConfig config = {}) noexcept;
 	~Renderer() noexcept;
 
 	Renderer(const Renderer&) = delete;

@@ -71,11 +71,6 @@ RenderDeviceServices::RenderDeviceServices() noexcept :
 
 RenderDeviceServices::~RenderDeviceServices() noexcept = default;
 
-std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Window& window) noexcept
-{
-	return Create(window, ResolveDefaultRhiBackendApi(), RhiPresentationDefaults::DefaultBackBufferFormat);
-}
-
 std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Window& window, ERhiBackendApi backendApi) noexcept
 {
 	return Create(window, backendApi, RhiPresentationDefaults::DefaultBackBufferFormat);
@@ -87,11 +82,6 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
     RhiInterposerHooks interposerHooks) noexcept
 {
 	return Create(window, backendApi, CVarBackBufferFormat.Get(), interposerHooks);
-}
-
-std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Window& window, PixelFormat backBufferFormat) noexcept
-{
-	return Create(window, ResolveDefaultRhiBackendApi(), backBufferFormat);
 }
 
 std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(

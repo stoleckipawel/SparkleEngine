@@ -10,6 +10,9 @@ option(SPARKLE_RHI_WITH_D3D12_NVAPI "Enable NVIDIA NVAPI integration inside the 
 option(SPARKLE_RHI_D3D12_NVAPI_FETCH_FROM_GITHUB "Fetch the official NVIDIA NVAPI SDK when D3D12 NVAPI is enabled and no local SDK paths are provided" ON)
 set(SPARKLE_RHI_D3D12_NVAPI_INCLUDE_DIR "" CACHE PATH "Directory containing NVIDIA NVAPI headers, used only by SparkleRHI_D3D12")
 set(SPARKLE_RHI_D3D12_NVAPI_LIBRARY "" CACHE FILEPATH "NVIDIA NVAPI import library, used only by SparkleRHI_D3D12")
+if(SPARKLE_RHI_WITH_D3D12_PIX_EVENTS AND NOT SPARKLE_RHI_WITH_D3D12)
+    message(FATAL_ERROR "D3D12 PIX events require SPARKLE_RHI_WITH_D3D12.")
+endif()
 find_package(Vulkan QUIET)
 if(Vulkan_FOUND)
     set(SPARKLE_RHI_WITH_VULKAN_DEFAULT ON)
@@ -243,6 +246,8 @@ if(SPARKLE_RHI_WITH_D3D12)
         ${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.cpp
     )
 
+    list(FILTER SPARKLE_RHI_D3D12_SOURCES EXCLUDE REGEX "/D3D12PixEvents\\.cpp$")
+
     add_library(SparkleRHI_D3D12 STATIC
         ${SPARKLE_RHI_D3D12_SOURCES}
         ${SPARKLE_RHI_D3D12_HEADERS}
@@ -269,6 +274,21 @@ if(SPARKLE_RHI_WITH_D3D12)
         PRIVATE
             SPARKLE_RHI_WITH_D3D12_NVAPI=$<BOOL:${SPARKLE_RHI_WITH_D3D12_NVAPI}>
     )
+
+    set(_sparkle_pix_enabled "0")
+    if(SPARKLE_RHI_WITH_D3D12_PIX_EVENTS)
+        if(NOT TARGET Microsoft::WinPixEventRuntime)
+            message(FATAL_ERROR "Official WinPixEventRuntime is required when D3D12 PIX events are selected.")
+        endif()
+        string(JOIN "," _sparkle_pix_configurations ${SPARKLE_DEBUG_CONFIGURATIONS} ${SPARKLE_DEVELOPMENT_CONFIGURATIONS})
+        set(_sparkle_pix_enabled "$<CONFIG:${_sparkle_pix_configurations}>")
+        target_sources(SparkleRHI_D3D12 PRIVATE
+            "$<${_sparkle_pix_enabled}:${CMAKE_CURRENT_SOURCE_DIR}/Private/D3D12/Diagnostics/D3D12PixEvents.cpp>")
+        target_link_libraries(SparkleRHI_D3D12 PRIVATE "$<${_sparkle_pix_enabled}:Microsoft::WinPixEventRuntime>")
+        target_compile_definitions(SparkleRHI_D3D12 PRIVATE "$<${_sparkle_pix_enabled}:USE_PIX>")
+    endif()
+    set_property(TARGET SparkleRHI_D3D12 PROPERTY SPARKLE_PIX_EVENTS_ENABLED "${_sparkle_pix_enabled}")
+    target_compile_definitions(SparkleRHI_D3D12 PRIVATE SPARKLE_RHI_WITH_D3D12_PIX_EVENTS=${_sparkle_pix_enabled})
 
     if(SPARKLE_RHI_WITH_D3D12_NVAPI)
         target_include_directories(SparkleRHI_D3D12

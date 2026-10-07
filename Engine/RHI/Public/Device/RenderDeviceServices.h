@@ -20,13 +20,11 @@ struct RhiPresentationConfiguration;
 class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionService
 {
 public:
-	static std::unique_ptr<RenderDeviceServices> Create(Window& window) noexcept;
 	static std::unique_ptr<RenderDeviceServices> Create(Window& window, ERhiBackendApi backendApi) noexcept;
 	static std::unique_ptr<RenderDeviceServices> Create(
 	    Window& window,
 	    ERhiBackendApi backendApi,
 	    RhiInterposerHooks interposerHooks) noexcept;
-	static std::unique_ptr<RenderDeviceServices> Create(Window& window, PixelFormat backBufferFormat) noexcept;
 	static std::unique_ptr<RenderDeviceServices> Create(
 	    Window& window,
 	    ERhiBackendApi backendApi,

@@ -9,7 +9,6 @@
 #include "Frame/RhiFrameConstants.h"
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/D3D12TypeConversions.h"
-#include "D3D12/Diagnostics/D3D12PixEvents.h"
 #include "D3D12/Memory/D3D12GpuAllocation.h"
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 #include "Interop/RhiInteropService.h"
@@ -326,5 +325,5 @@ std::unique_ptr<RenderDiagnostics> CreateD3D12RenderDiagnostics(D3D12Rhi& rhi, s
 	    std::make_unique<D3D12RenderMessageDiagnostics>(rhi),
 	    std::make_unique<D3D12RenderFailureDiagnostics>(rhi),
 	    std::make_unique<D3D12RenderMemoryDiagnostics>(rhi.GetMemoryAllocator()),
-	    D3D12PixEvents::IsAvailable());
+	    SPARKLE_RHI_WITH_D3D12_PIX_EVENTS != 0);
 }

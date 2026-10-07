@@ -10,7 +10,7 @@
 class RendererExternalRuntime final
 {
 public:
-	RendererExternalRuntime() noexcept;
+	explicit RendererExternalRuntime(ERhiBackendApi backendApi) noexcept;
 	~RendererExternalRuntime() noexcept;
 
 	RendererExternalRuntime(const RendererExternalRuntime&) = delete;

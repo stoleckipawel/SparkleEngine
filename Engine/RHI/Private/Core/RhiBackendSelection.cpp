@@ -2,15 +2,9 @@
 
 #include "Core/RhiBackendSelection.h"
 
-#include "Core/Public/Environment/EnvironmentVariables.h"
 #include "Core/Public/Strings/StringUtils.h"
-#include "Core/Public/Process/CommandLineUtils.h"
 #include "Core/RhiBackendApi.h"
 
-#include <Windows.h>
-
-#include <cstddef>
-#include <string>
 #include <string_view>
 
 const char* RhiBackendApiToString(ERhiBackendApi api) noexcept
@@ -45,58 +39,7 @@ bool TryParseRhiBackendApi(std::string_view value, ERhiBackendApi& outApi) noexc
 	return false;
 }
 
-static bool TryParseSelectionTokenValue(std::string_view value, ERhiBackendApi& outApi) noexcept
-{
-	if (TryParseRhiBackendApi(value, outApi))
-	{
-		return true;
-	}
-
-	outApi = ERhiBackendApi::Unknown;
-	return true;
-}
-
-static bool TryResolveRhiBackendFromCommandLine(ERhiBackendApi& outApi) noexcept
-{
-	std::wstring_view commandLine{GetCommandLineW()};
-	std::size_t offset = 0;
-	while (offset < commandLine.size())
-	{
-		const std::wstring_view wideToken = CommandLine::ReadToken(commandLine, offset);
-		if (wideToken.empty())
-		{
-			continue;
-		}
-
-		const std::string token = Strings::ToNarrow(wideToken);
-		constexpr std::string_view rendererEqualsPrefix = "--renderer=";
-		constexpr std::string_view rhiEqualsPrefix = "--rhi=";
-		constexpr std::string_view graphicsApiEqualsPrefix = "--graphics-api=";
-		if (Strings::StartsWithIgnoreCase(token, rendererEqualsPrefix))
-		{
-			return TryParseSelectionTokenValue(std::string_view(token).substr(rendererEqualsPrefix.size()), outApi);
-		}
-		if (Strings::StartsWithIgnoreCase(token, rhiEqualsPrefix))
-		{
-			return TryParseSelectionTokenValue(std::string_view(token).substr(rhiEqualsPrefix.size()), outApi);
-		}
-		if (Strings::StartsWithIgnoreCase(token, graphicsApiEqualsPrefix))
-		{
-			return TryParseSelectionTokenValue(std::string_view(token).substr(graphicsApiEqualsPrefix.size()), outApi);
-		}
-
-		if (Strings::EqualsIgnoreCase(token, "--renderer") || Strings::EqualsIgnoreCase(token, "--rhi")
-		    || Strings::EqualsIgnoreCase(token, "--graphics-api"))
-		{
-			const std::wstring_view wideValue = CommandLine::ReadToken(commandLine, offset);
-			return TryParseSelectionTokenValue(Strings::ToNarrow(wideValue), outApi);
-		}
-	}
-
-	return false;
-}
-
-static ERhiBackendApi ResolveBuildDefaultRhiBackend() noexcept
+ERhiBackendApi ResolveBuildDefaultRhiBackendApi() noexcept
 {
 #if defined(SPARKLE_RHI_DEFAULT_BACKEND_VULKAN)
 	return ERhiBackendApi::Vulkan;
@@ -105,15 +48,16 @@ static ERhiBackendApi ResolveBuildDefaultRhiBackend() noexcept
 #endif
 }
 
-ERhiBackendApi ResolveDefaultRhiBackendApi() noexcept
+bool IsRhiBackendApiCompiled(ERhiBackendApi api) noexcept
 {
-	ERhiBackendApi api = ResolveBuildDefaultRhiBackend();
-	std::string configuredBackend;
-	if (Environment::TryGetVariable("SPARKLE_RHI_BACKEND", configuredBackend) && !TryParseRhiBackendApi(configuredBackend, api))
+	switch (api)
 	{
-		api = ERhiBackendApi::Unknown;
+		case ERhiBackendApi::D3D12:
+			return SPARKLE_RHI_WITH_D3D12 != 0;
+		case ERhiBackendApi::Vulkan:
+			return SPARKLE_RHI_WITH_VULKAN != 0;
+		case ERhiBackendApi::Unknown:
+		default:
+			return false;
 	}
-
-	TryResolveRhiBackendFromCommandLine(api);
-	return api;
 }

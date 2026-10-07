@@ -3,7 +3,9 @@
 #include "D3D12/Commands/D3D12RenderCommandList.h"
 
 #include "D3D12/D3D12RenderHardwareInterface.h"
-#include "D3D12/Diagnostics/D3D12PixEvents.h"
+#if SPARKLE_RHI_WITH_D3D12_PIX_EVENTS
+  #include "D3D12/Diagnostics/D3D12PixEvents.h"
+#endif
 #include "D3D12/Pipeline/D3D12BindingLayout.h"
 #include "D3D12/Pipeline/D3D12Pipeline.h"
 #include "Core/Public/Diagnostics/Verify.h"
@@ -78,11 +80,16 @@ NativeGraphicsCommandListHandle D3D12RenderCommandList::GetNativeHandle(const Rh
 
 bool D3D12RenderCommandList::SupportsDiagnosticScopes() const noexcept
 {
-	return m_commandList != nullptr && D3D12PixEvents::IsAvailable();
+#if SPARKLE_RHI_WITH_D3D12_PIX_EVENTS
+	return m_commandList != nullptr;
+#else
+	return false;
+#endif
 }
 
 void D3D12RenderCommandList::BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color) noexcept
 {
+#if SPARKLE_RHI_WITH_D3D12_PIX_EVENTS
 	if (!SupportsDiagnosticScopes() || label.empty())
 	{
 		return;
@@ -90,18 +97,22 @@ void D3D12RenderCommandList::BeginDiagnosticScope(std::string_view label, RhiDia
 
 	const std::string ownedLabel(label);
 	D3D12PixEvents::BeginEvent(m_commandList, D3D12PixEvents::ToColor(color), ownedLabel.c_str());
+#endif
 }
 
 void D3D12RenderCommandList::EndDiagnosticScope() noexcept
 {
+#if SPARKLE_RHI_WITH_D3D12_PIX_EVENTS
 	if (SupportsDiagnosticScopes())
 	{
 		D3D12PixEvents::EndEvent(m_commandList);
 	}
+#endif
 }
 
 void D3D12RenderCommandList::InsertDiagnosticMarker(std::string_view label, RhiDiagnosticLabelColor color) noexcept
 {
+#if SPARKLE_RHI_WITH_D3D12_PIX_EVENTS
 	if (!SupportsDiagnosticScopes() || label.empty())
 	{
 		return;
@@ -109,6 +120,7 @@ void D3D12RenderCommandList::InsertDiagnosticMarker(std::string_view label, RhiD
 
 	const std::string ownedLabel(label);
 	D3D12PixEvents::SetMarker(m_commandList, D3D12PixEvents::ToColor(color), ownedLabel.c_str());
+#endif
 }
 
 void D3D12RenderCommandList::SetShaderVisibleDescriptorHeaps(std::uint32_t heapCount, ID3D12DescriptorHeap* const* heaps) noexcept

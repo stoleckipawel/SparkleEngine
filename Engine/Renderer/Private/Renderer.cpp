@@ -8,7 +8,8 @@
 class RendererFacadeState final
 {
 public:
-	RendererFacadeState(Timer& timer, Window& window, RendererExecutionConfig config) :
+	RendererFacadeState(Timer& timer, Window& window, ERhiBackendApi backendApi, RendererExecutionConfig config) :
+	    ExternalRuntime(backendApi),
 	    Coordinator(timer, window, config, ExternalRuntime.GetBackendConfiguration())
 	{
 	}
@@ -17,8 +18,8 @@ public:
 	RenderCoordinator Coordinator;
 };
 
-Renderer::Renderer(Timer& timer, Window& window, RendererExecutionConfig config) noexcept :
-    m_state(std::make_unique<RendererFacadeState>(timer, window, config))
+Renderer::Renderer(Timer& timer, Window& window, ERhiBackendApi backendApi, RendererExecutionConfig config) noexcept :
+    m_state(std::make_unique<RendererFacadeState>(timer, window, backendApi, config))
 {
 }
 

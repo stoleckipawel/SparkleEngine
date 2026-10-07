@@ -1,12 +1,11 @@
 #include "PCH.h"
 #include "Integrations/RendererExternalRuntime.h"
 
-#include "RHI/Public/Core/RhiBackendSelection.h"
 #include "Streamline/StreamlineRuntimeSupport.h"
 
-RendererExternalRuntime::RendererExternalRuntime() noexcept
+RendererExternalRuntime::RendererExternalRuntime(ERhiBackendApi backendApi) noexcept
 {
-	m_backendConfiguration.BackendApi = ResolveDefaultRhiBackendApi();
+	m_backendConfiguration.BackendApi = backendApi;
 	m_backendConfiguration.InterposerHooks = InitializeSharedStreamlineRuntime(m_backendConfiguration.BackendApi);
 }
 
