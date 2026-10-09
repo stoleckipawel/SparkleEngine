@@ -104,7 +104,7 @@ void UI::Implementation::BuildCenterWorkspace(bool disableInteraction, float mai
 	{
 		m_viewportToolbar->SetGeometry(outlinerWidth, mainMenuBarHeight, viewportWidth);
 		const LevelAsset* activeLevel = m_levelSession != nullptr ? m_levelSession->GetActiveLevel() : nullptr;
-		m_viewportToolbar->Draw(activeLevel != nullptr ? activeLevel->GetName() : "<None>", disableInteraction);
+		m_viewportToolbar->Draw(activeLevel != nullptr ? activeLevel->GetName() : "<None>", *m_icons, disableInteraction);
 		viewportToolbarHeight = m_viewportToolbar->GetHeightPixels();
 	}
 

@@ -29,7 +29,7 @@ public:
 
 	void SetActions(std::unique_ptr<ViewportToolbarActions> actions) noexcept;
 	void SetGeometry(float leftPixels, float topPixels, float widthPixels) noexcept;
-	void Draw(std::string_view levelName, bool disableInteraction = false) noexcept;
+	void Draw(std::string_view levelName, EditorIconService& icons, bool disableInteraction = false) noexcept;
 	float GetHeightPixels() const noexcept { return m_heightPixels; }
 
 private:
@@ -37,7 +37,7 @@ private:
 	void DrawViewModeSelector(bool disableInteraction, bool compact) noexcept;
 	void DrawCameraControls(bool disableInteraction, bool compact) noexcept;
 	void DrawFrameStats(float actionWidth) const noexcept;
-	void DrawActions(float width, bool secondRow, bool disableInteraction) noexcept;
+	void DrawActions(EditorIconService& icons, float width, bool secondRow, bool disableInteraction) noexcept;
 
 	EditorViewportSession& m_viewportSession;
 	const EngineRenderingSettingsState& m_renderingDefaults;

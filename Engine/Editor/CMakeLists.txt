@@ -44,6 +44,9 @@ target_include_directories(SparkleEditor
 )
 
 target_compile_features(SparkleEditor PUBLIC cxx_std_20)
+
+include("${CMAKE_CURRENT_SOURCE_DIR}/EditorIconAssets.cmake")
+
 set(SPARKLE_EDITOR_CAPTURE_UI_CONFIG "$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DevelopmentEditor>>")
 target_sources(SparkleEditor PRIVATE
     "$<${SPARKLE_EDITOR_CAPTURE_UI_CONFIG}:${CMAKE_CURRENT_SOURCE_DIR}/Private/Viewport/ExternalCapture/ExternalCaptureToolbarActions.cpp>"

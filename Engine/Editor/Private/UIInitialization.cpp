@@ -1,6 +1,7 @@
 #include "PCH.h"
 
 #include "UIImplementation.h"
+#include "Editor/Public/Icons/EditorIconService.h"
 
 #include "EditorWorkspaceLayout.h"
 #include "Console/EditorConsoleSystem.h"
@@ -49,6 +50,7 @@ void UI::Implementation::InitializeImGuiContext()
 	ImGuiRenderPacketBuilder::ConfigureProducerContext();
 
 	SparkleUiTheme::ConfigureTypography();
+	m_icons = std::make_unique<EditorIconService>();
 }
 
 bool UI::Implementation::InitializeWin32Backend()

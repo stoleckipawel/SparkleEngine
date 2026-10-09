@@ -190,7 +190,7 @@ void ViewportToolbar::DrawCameraControls(bool disableInteraction, bool compact) 
 	ViewportCameraProperties::BuildPopup(m_viewportSession, m_renderingDefaults, disableInteraction);
 }
 
-void ViewportToolbar::DrawActions(float width, bool secondRow, bool disableInteraction) noexcept
+void ViewportToolbar::DrawActions(EditorIconService& icons, float width, bool secondRow, bool disableInteraction) noexcept
 {
 	if (m_actions == nullptr || width <= 0.0f)
 	{
@@ -205,7 +205,7 @@ void ViewportToolbar::DrawActions(float width, bool secondRow, bool disableInter
 	{
 		ImGui::SetCursorPosX((std::max) (ImGui::GetStyle().WindowPadding.x, rightAlignedX));
 	}
-	m_actions->Draw(disableInteraction);
+	m_actions->Draw(icons, disableInteraction);
 }
 
 void ViewportToolbar::DrawFrameStats(float actionWidth) const noexcept
@@ -228,7 +228,7 @@ void ViewportToolbar::DrawFrameStats(float actionWidth) const noexcept
 	}
 }
 
-void ViewportToolbar::Draw(std::string_view levelName, bool disableInteraction) noexcept
+void ViewportToolbar::Draw(std::string_view levelName, EditorIconService& icons, bool disableInteraction) noexcept
 {
 	if (m_widthPixels <= 0.0f)
 	{
@@ -292,7 +292,7 @@ void ViewportToolbar::Draw(std::string_view levelName, bool disableInteraction) 
 	{
 		DrawFrameStats(actionWidth);
 	}
-	DrawActions(actionWidth, actionsOnSecondRow, disableInteraction);
+	DrawActions(icons, actionWidth, actionsOnSecondRow, disableInteraction);
 
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
 	const ImVec2 windowMin = ImGui::GetWindowPos();

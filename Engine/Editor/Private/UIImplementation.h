@@ -6,6 +6,7 @@
 
 #include <string>
 
+class EditorIconService;
 class Timer;
 class MainMenuBarPanel;
 class EditorConsoleSystem;
@@ -76,6 +77,7 @@ private:
 	void ApplyDpiScale(float dpiScale) noexcept;
 
 	CVarControlExecutor m_consoleVariables;
+	std::unique_ptr<EditorIconService> m_icons;
 	std::unique_ptr<MainMenuBarPanel> m_mainMenuBar;
 	std::unique_ptr<EditorConsoleSystem> m_editorConsoleSystem;
 	std::unique_ptr<SceneOutlinerPanel> m_sceneOutlinerPanel;

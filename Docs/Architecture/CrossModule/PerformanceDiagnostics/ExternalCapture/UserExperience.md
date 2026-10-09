@@ -10,7 +10,7 @@
 
 ## Implemented Requested-Control Visibility
 
-DevelopmentEditor and DebugEditor recognize `-AttachPix`, `-AttachNSight` and `-AttachRenderDoc` (case-insensitive). Each requested entry appears at the viewport upper right in PIX, Nsight, RenderDoc order. No flags means no capture group. Compact headers place the group on a second row. Duplicate requests and unknown `-Attach*` spellings reject before graphics startup.
+DevelopmentEditor and DebugEditor recognize `-AttachPix`, `-AttachNSight` and `-AttachRenderDoc` (case-insensitive). Each requested entry appears as its actual application icon at the viewport upper right in PIX, Nsight Graphics, RenderDoc order, with equal square hit areas and named setup tooltips. No flags means no capture group. Compact headers place the group on a second row. Duplicate requests and unknown `-Attach*` spellings reject before graphics startup. The [shared-service icon handoff](Discovery.md#shared-editor-icon-service-handoff) records artwork provenance and exercised UI limits.
 
 These flags currently express attachment **requests**; they do not attach or load any tool. Buttons remain disabled with hover guidance to [External Profiling](../../../../Engineering/Verification/ExternalProfiling.md#current-installed-workflow-readiness). Successful external captures cannot enable an unimplemented engine request route. Shipping excludes the parser body and capture presenter source/calls; Game does not acquire this Editor-only presentation. Multiple requested entries only display unavailable entries, without claiming simultaneous injection support.
 

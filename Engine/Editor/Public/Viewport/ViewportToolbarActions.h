@@ -1,5 +1,7 @@
 #pragma once
 
+class EditorIconService;
+
 // One optional action group in the viewport toolbar. UI installation transfers
 // ownership; measurement, drawing, replacement and destruction run on the Editor
 // thread with live ImGui. Destruction precedes backend/context teardown.
@@ -13,7 +15,7 @@ public:
 	ViewportToolbarActions& operator=(ViewportToolbarActions&&) = delete;
 
 	virtual float MeasureWidth() const noexcept = 0;
-	virtual void Draw(bool disableInteraction) noexcept = 0;
+	virtual void Draw(EditorIconService& icons, bool disableInteraction) noexcept = 0;
 
 protected:
 	ViewportToolbarActions() noexcept = default;

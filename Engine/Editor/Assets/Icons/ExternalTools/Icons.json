@@ -1,0 +1,24 @@
+{
+  "namespace": "ExternalTools",
+  "profiles": [
+    "DebugEditor",
+    "DevelopmentEditor"
+  ],
+  "icons": [
+    {
+      "name": "Pix",
+      "extent": 32,
+      "file": "pix.rgba"
+    },
+    {
+      "name": "NsightGraphics",
+      "extent": 32,
+      "file": "nsight.rgba"
+    },
+    {
+      "name": "RenderDoc",
+      "extent": 32,
+      "file": "renderdoc.rgba"
+    }
+  ]
+}

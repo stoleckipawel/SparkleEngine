@@ -1,6 +1,7 @@
 #include "PCH.h"
 
 #include "UIImplementation.h"
+#include "Editor/Public/Icons/EditorIconService.h"
 
 #include "Console/EditorConsoleSystem.h" // IWYU pragma: keep
 #include "GameFramework/Public/Rendering/RenderViewCameraData.h"
@@ -183,6 +184,7 @@ UI::Implementation::~Implementation() noexcept
 	m_windowDpiScaleHandle.Reset();
 	m_windowMessageHandle.Reset();
 	m_viewportToolbar.reset();
+	m_icons.reset();
 
 	if (m_isWin32BackendInitialized)
 	{
