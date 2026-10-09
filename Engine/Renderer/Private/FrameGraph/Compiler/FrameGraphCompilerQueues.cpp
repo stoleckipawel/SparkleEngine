@@ -10,7 +10,7 @@ void FrameGraphCompiler::AssignPassQueues() noexcept
 	for (FrameGraphPassNode& passRecord : m_plan.passes)
 	{
 		passRecord.queue = ERhiQueueType::Graphics;
-		if (!passRecord.alive)
+		if (!passRecord.alive || WritesBackBuffer(passRecord))
 		{
 			continue;
 		}

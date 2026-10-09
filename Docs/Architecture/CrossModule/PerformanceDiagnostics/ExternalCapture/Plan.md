@@ -186,6 +186,8 @@ Do not introduce native targets, provider state, internal history, UI registry o
 
 ## Stage 1 — Deliver One Real PIX Capture
 
+**Entry execution - 2026-10-09:** [native entry work](Discovery.md#stage-1-native-entry-work---2026-10-09) delivers three analyzed Sponza Editor captures and normal serial retirement, but detects an unaccepted native queue association and leaves target-generation/Busy/outstanding-shutdown proofs open. The Stage 1 stop condition applies; no adapter/presenter/Launcher implementation or `EC-G1` exit is claimed.
+
 **Objective:** existing Launcher and direct CLI both produce a D3D12 Editor launch that captures a confirmed Sponza host interval from the requested viewport context and hands off to PIX.
 
 **Prerequisites:** `EC-D0-PIX`, `EC-G0A/0B/0C`, an implementation request, installed PIX/pinned event package, existing ready Sponza content and exact capture finalization oracle.
