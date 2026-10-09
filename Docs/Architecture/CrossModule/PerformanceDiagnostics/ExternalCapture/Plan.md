@@ -12,6 +12,62 @@
 
 **Current readiness:** **0/100 — target only** for capture integration. Capture providers remain unimplemented. Existing-consumer engine repairs and their bounded execution results are recorded in Discovery; they do not establish capture acceptance or release readiness.
 
+## Viewport Toolbar Boundary Refinement - 2026-10-10
+
+`ITER-EXTCAP-UI-03`, owner agent, starting at `7d342a6448031aeae36e05eb84e76d4b18d8a201` plus the dirty requested-control/refactor slices. User requests fewer forwarded parameters, precise vocabulary and coherent module edges. Preserve native readiness/PGE evidence; advance NS-OWNERSHIP/NS-SIMPLIFY and Q06 structure only. This supersedes UI-02's constructor-injection shape, retaining its underlying unique ownership and pre-ImGui destruction invariant.
+
+Freeze before edits: rename the actual header widget to private `Viewport/ViewportToolbar`; expose only `ViewportToolbarActions` (measure/draw/owned destruction). Application creates requested capture actions before graphics initialization, then installs them through `UI::SetViewportToolbarActions` after UI construction. No optional widget parameter in EditorApplication/UI/Implementation constructors or panel-initialization stages. Installation/replacement/clear and destruction occur on the Editor thread with live ImGui; no retained intermediate ownership or additional registry. Toolbar retains exactly three required references: EditorViewportSession, read-only EngineRenderingSettingsState, and existing CVarControlExecutor. UI supplies only the current level-name view at draw; toolbar cannot load levels or commit global settings. Read-only settings refer to the stable controller member (refresh assigns in place), not a copied snapshot.
+
+Vocabulary/placement: Application `Private/Editor/ExternalCapture/ExternalCaptureLaunch.{h,cpp}` composes `CreateRequestedCaptureToolbarActions`; Editor `Public/ExternalCapture/ExternalCaptureToolbar.h` owns the request/factory boundary; concrete `ExternalCaptureToolbarActions` is file-local under `Private/Viewport/ExternalCapture/`. Delete old Content/TopPanel/EditorViewportToolbar/EditorCaptureToolbar/presenter declarations, paths and names without aliases. Generic UI installation is a focused capability, not a public panel API. No changes to native SDK mechanics, queue/publication, screenshots, other controls or optional package requirements.
+
+Allowlist: Application EditorApplication.{h,cpp}, old/new Editor composition files and CMake; Editor UI.h/UI.cpp/UIImplementation.{h,cpp}/UIInitialization.cpp/UIWorkspace.cpp, old/new toolbar/action/capture files and CMake. Nearest ExternalCapture architecture/README/research/discovery plus live Editor, PerformanceDiagnostics, DebugViews and ReferencePathTracer plan source references; dated candidate evidence retains old names as historical. No unrelated panel/renderer/RHI refactor.
+
+| Control | Frozen requirement / selected check |
+| --- | --- |
+| AC-UI03-EDGE / CHK-UI03-ARCH | No optional contribution parameter forwarded through constructors/initialization; three real required toolbar dependencies, no LevelSession/settings-controller/UI-host dependency in toolbar. Full definition/use/lifetime audit; stale names/aliases absent from live source. |
+| AC-UI03-OWN / CHK-UI03-LIFE | One owned action group, explicit install/replace/clear; replaced group and shutdown group destroyed with live ImGui on Editor thread. Disposable alternate implementation exercises replacement/clear/destruction, then removed; source restoration checked by hash. |
+| AC-UI03-UX / CHK-UI03-UX | No-flag/each/all/compact requests retain exact visibility/order and level/camera/viewmode/Show toolbar. Actual DevelopmentEditor D3D12 Empty launches/screenshots, ordinary shutdown, duplicate/unknown pregraphics rejection. Owning ShowcaseEditor build. |
+| AC-UI03-PROFILE / CHK-UI03-PACKAGE | Capture action implementation/private composition body only DebugEditor/DevelopmentEditor; no public feature defines/SDK dependency. Generated six-profile membership audit, narrow build, formatting/docs/diff checks. Complete Shipping/Debug-native claims remain unrun. |
+| FM-UI03-LIFE / RISK-UI03-BORROW | Replacing owned controller/session or premature context teardown would dangle three references or destroy widgets unsafely; medium structural risk, UI owns stable collaborators and destroys toolbar before them/ImGui. Check actual members/refresh/destruction and disposable replacement/shutdown assertions; repair owner ordering in place. Owner agent; retire after selected lifetime checks. |
+
+Performance classification: no renderer/frame topology change, same single width measurement/draw per UI frame, no new retained values/caches/threads. One immutable process intent copied once into action lifetime; only unique_ptr moves at the installation boundary, level-name view borrowed for the synchronous draw. No dependency bag is introduced to conceal parameter count. Record exact evidence/limits in Discovery; native capture gates remain unchanged.
+
+## Capture UI Decoupling Iteration - 2026-10-10
+
+`ITER-EXTCAP-UI-02`, owner agent, implementing at `7d342a6448031aeae36e05eb84e76d4b18d8a201` with the prior visibility slice and documentation dirty; preserve that behavior and unrelated changes. User explicitly requests responsibility/injection refinement. North Star: isolated feature implementation with an inspectable composition/lifetime owner; preserve graphics/PGE evidence. Q06/ARCH advance structurally, provider acceptance remains unchanged.
+
+Scope/budget: one Editor-owned `ViewportToolbarContent` contract, two real UI operations (measure/draw) and owned destruction; one optional right-side contribution injected during UI construction. Application composes it before Runtime initialization through `EditorViewportToolbar`, with private eligible-profile policy. Capture intent, labels and disabled guidance stay in the feature factory/presenter. No registry, dynamic discovery, service locator, general application-options framework, native provider facade or new SDK/controller.
+
+Allowlist: Application `Public/EditorApplication.h`, `Private/EditorApplication.cpp`, old `Private/Editor/EditorCaptureLaunch.{h,cpp}` replaced by `EditorViewportToolbar.{h,cpp}`, owning CMake. Editor `Public/UI.h`, new `Public/Viewport/ViewportToolbarContent.h` and `Public/Capture/EditorCaptureToolbar.h`, old `Public/Viewport/ViewportCaptureTools.h` deleted; `Private/UI.{h,cpp}` counterparts as present (`UI.cpp`, `UIImplementation.{h,cpp}`, `UIInitialization.cpp`), `Panels/ViewportTopPanel.{h,cpp}`, capture presenter moved into `Private/Viewport/ExternalCapture/`, owning CMake. RHI audit finding: narrow D3D12PixEvents.h from RenderHardwareInterface to its actual diagnostics color contract; no SDK/lifetime/API behavior changes or Renderer production changes.
+
+| Control | Required result / falsifier |
+| --- | --- |
+| AC-UI02-BOUNDARY / CHK-UI02-ARCH | Generic UI/host/init/top-panel files contain no capture tool type, vendor selector or capture build guard; one move-only toolbar dependency. Source searches and scoped ownership diff. |
+| AC-UI02-PRESERVE / CHK-UI02-UX | Existing no-flag/each/all flag visibility, order, right alignment and compact second row retained on actual DevelopmentEditor Empty. Duplicate/unknown fail before graphics. Owning build plus native window screenshots/exits. |
+| AC-UI02-LIFETIME / CHK-UI02-LIFE | Contribution transfers ownership once into top panel and is destroyed before ImGui backend/context teardown; no Application mirror or duplicate mutable authority. Complete constructor/destructor path audit and normal shutdown. |
+| AC-UI02-PROFILE / CHK-UI02-PACKAGE | Only eligible Editor profiles contain capture presenter/calls; no feature PUBLIC compile define propagates into clients. Six-profile generated membership/definition audit; complete Shipping/native provider acceptance unclaimed. |
+| RISK-UI02-OWNER | Widget leaked/destroyed after context due to moved ownership: plausible across three constructors, medium workflow failure impact; UI owner moves unique_ptr and explicitly destroys toolbar owner before teardown; detect at ownership/source/shutdown checks; repair ordering rather than shared ownership. |
+| RISK-UI02-SHIPPING | Removing broad guards exposes capture payload in Shipping: compiler/config-specific risk; owning targets retain eligible source membership/private composition define; detect in generated profile audits; revert erroneous membership in place, never add a fallback tool. |
+
+Data: parse launch requests once in Application Editor composition (immutable process-local three-byte value), copy once into the presenter for UI lifetime; transit unique_ptr moves only, generic host has no provider fields. Measure width once per UI frame; one virtual draw/measure edge replaces knowledge of concrete feature types. Source refinement must justify this actual presentation boundary rather than speculative provider interfaces. Delete old request plumbing/paths/guards in the same change. Handoff records actual commands/results and primary-source precedent in Discovery/Research; no native capture readiness increase.
+
+## Requested Viewport Controls Iteration - 2026-10-10
+
+`ITER-EXTCAP-UI-01`: implementation owner agent; start `7d342a6448031aeae36e05eb84e76d4b18d8a201`, preserving five dirty capture/runbook documents. User requests flag-driven viewport controls in DebugEditor/DevelopmentEditor. Scope: truthful requested/unavailable presentation, Q06, preserving existing graphics/PGE evidence. No EC-G1 native acceptance or readiness increase.
+
+| Control | Outcome / cheapest falsifier |
+| --- | --- |
+| AC-EC-UI-01 / CHK-EC-UI-VIS | Each corresponding flag shows its entry, fixed PIX/Nsight/RenderDoc order; no flags hides group. Actual DevelopmentEditor D3D12 Empty launch/header screenshots; compact header second-row control. |
+| AC-EC-UI-02 / CHK-EC-UI-TRUTH | Unavailable controls submit no work and never claim attachment/capture success. Source audit of disabled buttons, no native loader/callback, guidance and launch warning. |
+| AC-EC-UI-03 / CHK-EC-UI-PROFILE | Parser/presenter compile only in DebugEditor/DevelopmentEditor; generated membership/defines across six profiles, owning build and ordinary no-tool shutdown. |
+| FM-EC-UI-01 / CHK-EC-UI-INPUT | Duplicate/misspelled attachment input fails before graphics with readable error; correct input and relaunch. Actual duplicate mixed-case and misspelled Nsight process exits/logs. |
+| RISK-EC-UI-01 | Tool-managed success mistaken for button readiness: plausible due to installed names, false result impact. Capture owner prevents with disabled controls/warnings; detect any submitted request/native load/success; keep external workflow; retire only with native adapter acceptance. |
+| RISK-EC-UI-02 | Narrow viewport clips controls: layout owner allocates second row before Begin; detect through compact-window screenshot; retire through visibility check. |
+
+Architecture allowlist: Application `Private/Editor/EditorCaptureLaunch.{h,cpp}` owns CLI normalization; `EditorApplication.cpp` composes its immutable three-boolean result before Runtime initialization. Editor `Public/Viewport/ViewportCaptureTools.h` owns requested-control input, not capability/result; `Public/UI.h`, `Private/UIImplementation.{h,cpp}` and `UIInitialization.cpp` forward only during construction. `Private/Viewport/ViewportCapturePresenter.{h,cpp}` owns labels/width/unavailable guidance; `Private/Panels/ViewportTopPanel.{h,cpp}` places it beside stats and owns row height. Owning Application/Editor CMake excludes optional sources/calls from Shipping. No Renderer/RHI boundary, SDK, native loading, command queue, mutable capture authority, worker or permanent harness is added. Application retains three bytes for UI reconstruction; presenter retains an immutable three-byte lifetime projection, with no frame-hot publication/copy. Removing these composition edges removes visibility without changing rendering/readback. No replaced production path exists; forward contracts replace the unimplemented `--capture-provider` spelling, while historical discovery preserves original commands.
+
+Results/limits: [requested-control handoff](Discovery.md#requested-viewport-controls-handoff). Provider gates remain open.
+
 ## Delivery Order And Existing Package Mapping
 
 **Prerequisite repair — 2026-10-07:** [discovery continuation](Discovery.md#prerequisite-repair-and-native-probe--2026-10-07) closes `EC-D0-ENGINE` for the independent 0A/0B/0C repairs. Stage 0A may begin using the frozen Q01/Q02/Q07 ledger and matched official event package. PIX-only finalization/quiescence, engine target/generation, interposer-combination and native inspection acceptance stay under `EC-D0-PIX` and still precede Stage 1; they no longer block unrelated existing-consumer repair. This corrects the earlier aggregate gate dependency rather than claiming a native proof passed. `EC-G0A/0B/0C` remain implementation exits, not documentation outcomes.
@@ -44,10 +100,12 @@ flowchart LR
 | 4 | `EXT-05` Nsight Graphics Capture Vulkan plus separate GPU Trace/Systems handoff | `EC-G4`; Stage 5 |
 | 5 | `EXT-02` RenderDoc D3D12 | `EC-G5`; Stage 6 |
 | 6 | `EXT-03` RenderDoc Vulkan | `EC-G6`; parent Phase 1 adapter set now eligible for aggregate proof |
-| 7 | Specialist timing/system/hardware/memory/RT/shader/crash handoff | `EC-G7`; no invented generic provider |
+| 7 | Selected Windows/NVIDIA timing/system/pacing/crash handoff | `EC-G7`; no invented generic provider |
 | 8 | Adoption, all-map/combination/package evidence and parent `P1-GATE` | `EC-G8` and candidate report; internal Performance Phase 2 may then start under its own plan |
 
 Gate IDs denote required candidate artifacts, not completed reports. Keep them in the existing change/report with revision/hash and exact checks. `Accepted` or evidence-backed unsupported/rejected disposition closes a cell; missing tools, hardware, review or measurements leave it blocked. A blocked later provider does not revoke a valid PIX result. Preserve numbering of the existing `EXT-*` IDs even though execution order differs.
+
+**Current environment delivery selection, 2026-10-10:** deliver usable operations from installed software/current hardware and skip unavailable local lanes without new investment, as requested by the user. Bounded tool-managed launch/capture/open results belong in [Discovery](Discovery.md#installed-tool-workflow-results); the [runbook](../../../../Engineering/Verification/ExternalProfiling.md#current-installed-workflow-readiness) owns ready commands. This permits independent prerequisite evidence collection, but does not waive production stage prerequisites, turn missing/unrun providers into unsupported ones, or convert native tool workflows into controller/UI/lifecycle/Shipping acceptance. AMD remains excluded by the earlier selection. `EC-G8` and parent closure still require the declared product/adopter proof.
 
 ## Estimates And Capacity Envelope
 
@@ -66,7 +124,7 @@ Gate IDs denote required candidate artifacts, not completed reports. Keep them i
 | 7 | 8–20 h | 8–16 h | Specialist tools/hardware access, no SDK embedding assumed |
 | 8 | 8–16 h | 16–32 h | Full native-feature/map/package/adopter matrix |
 
-Assumptions: one engineer, available Windows D3D12/Vulkan environment, licensed installed tools, NVIDIA hardware for Nsight and AMD access for hardware-specific specialist proof, existing cooked Empty/Sponza, a code reviewer and clean-environment adopter. Ranges total 136–276 engineering hours plus 100–200 review/evidence hours before external waiting. Discovery re-estimates after probes; missing hardware/tool/reviewer is separately recorded waiting time, not hidden in effort. Critical path is engine discovery -> existing-consumer startup/admission/publication repairs + PIX completion/target discovery -> shared lifecycle -> real adapter locality -> aggregate acceptance. Do not consume the upper range by inventing framework scope; split a new prerequisite when evidence exposes one.
+Assumptions: one engineer, available Windows D3D12/Vulkan environment, licensed installed tools, NVIDIA hardware for Nsight; AMD specialist lanes are excluded by the 2026-10-09 user scope decision, existing cooked Empty/Sponza, a code reviewer and clean-environment adopter. Ranges total 136–276 engineering hours plus 100–200 review/evidence hours before external waiting. Discovery re-estimates after probes; missing hardware/tool/reviewer is separately recorded waiting time, not hidden in effort. Critical path is engine discovery -> existing-consumer startup/admission/publication repairs + PIX completion/target discovery -> shared lifecycle -> real adapter locality -> aggregate acceptance. Do not consume the upper range by inventing framework scope; split a new prerequisite when evidence exposes one.
 
 ## Universal Execution Contract
 
@@ -201,7 +259,7 @@ Do not introduce native targets, provider state, internal history, UI registry o
 ```text
 Implement only Stage 1 of Docs/Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/Plan.md after verifying EC-D0-PIX and EC-G0A/0B/0C. Apply the Universal Execution Contract.
 
-Outcome: Launcher and --capture-provider pix direct launch reach a real D3D12 DevelopmentEditor PIX capture from the intended scene context, with confirmed native artifact/handoff and honest frame/target limitation.
+Outcome: Launcher and -AttachPix direct launch reach a real D3D12 DevelopmentEditor PIX capture from the intended scene context, with confirmed native artifact/handoff and honest frame/target limitation.
 
 Inspect first: current startup/interposer order, neutral diagnostics composition, capture control/read-state, scene product-to-present ownership, viewport presenter seam, Launcher process producer and profile-specific build/staging. Implement EXT-00 only as required by real EXT-01. Verify Stage 0A removed D3D12PixEvents' hand-declared ABI/lazy load; reuse that official owned route. Use Stage 0B admission and Stage 0C publication. Add the smallest real scene/present binding and composed capture presenter required by Q05/Q06; no provider policy in generic hosts/clients.
 
@@ -322,24 +380,26 @@ Do not create headless/multi-platform product support, internal GPU visualizer, 
 
 ## Stage 7 — Deliver The Remaining Specialist Routes
 
+**Selected scope, 2026-10-09:** the user excludes AMD RGP/RMV/RRA/RGA/uProf/RGD and related hardware/tool investment. Historical research remains reference; these lanes require no implementation, installation, artifact, adoption or Stage 8 evidence. This is product exclusion, not an unsupported-hardware result. Selected specialist lanes are WPR/WPA, PresentMon, PIX Timing, Nsight GPU Trace/Systems and separate Aftermath crash guidance.
+
 **Objective:** users can choose the correct deeper tool and reproduce its actual activity/artifact using Sparkle identities, without fictional frame-provider APIs.
 
 **Prerequisites:** `EC-G6` disposition; named investigation questions, tools/hardware and refreshed runbook cells. If a selected lane is unavailable, keep that lane blocked; already accepted providers remain usable.
 
-**Work:** preserve the PIX Timing and Nsight GPU Trace/Systems handoffs delivered in their priority stages; finish WPR/WPA and PresentMon workflows; AMD RGP/RMV/RRA/RGA/uProf workflows on supported hardware; Aftermath/RGD crash guidance with explicit SDK/handler/privacy scope outside this frame plan. Reuse exact executable/working directory/argv/env/settings, markers/thread names/symbols. Extend guidance/context action only where it serves the existing user; do not embed SDKs to make all rows look automated. Each lane records activity, setup, capture or analysis action, native artifact, question, evidence limits and support matrix. GPU Trace uses a distinct process/activity from Graphics Capture.
+**Work:** preserve the PIX Timing and Nsight GPU Trace/Systems handoffs delivered in their priority stages; finish WPR/WPA and PresentMon workflows and NVIDIA Aftermath crash guidance with explicit SDK/handler/privacy scope outside this frame plan. Reuse exact executable/working directory/argv/env/settings, markers/thread names/symbols. Extend guidance/context action only where it serves the existing user; do not embed SDKs to make all rows look automated. Each lane records activity, setup, capture or analysis action, native artifact, question, evidence limits and support matrix. GPU Trace uses a distinct process/activity from Graphics Capture.
 
 **Exit `EC-G7`:** one repeatable transcript/artifact per available selected lane, unavailable lanes named with prerequisites; no universal “Capture next frame” success for timing/system/crash/static analysis. Newly necessary SDK instrumentation requires separate discovery and bounded future stage, not hidden additions to this stage.
 
 ```text
 Execute only Stage 7 of Docs/Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/Plan.md after EC-G6. Apply the Universal Execution Contract.
 
-Outcome: reproducible remaining specialist handoff for WPR/WPA, PresentMon and supported AMD profiling/memory/RT/shader/CPU lanes, plus honest Aftermath/RGD crash setup guidance; preserve earlier PIX Timing and Nsight GPU Trace/Systems lanes.
+Outcome: reproducible remaining specialist handoff for WPR/WPA, PresentMon and honest NVIDIA Aftermath crash setup guidance; preserve earlier PIX Timing and Nsight GPU Trace/Systems lanes.
 
 Inspect first: current ExternalProfiling runbook, real product launch request, marker/thread/ETW and binary/shader identities, native tool manuals/help and available hardware. Implement only small guidance/launch-composition improvements justified by a current consumer; update the owning runbook and capture context UI. Keep activity-specific output and limitations visible.
 
 NON-NEGOTIABLE: trace, replay, crash, memory and static shader outputs are different products; GPU Trace is not initialized beside Graphics Capture; native host/target artifact namespaces remain explicit; no unsupported hardware/tool result is a pass; no embedded viewer/counter or crash SDK is smuggled into the frame adapter. Shared startup, nonblocking admission and coherent publication remain owned once; no provider state/policy grows in generic orchestrators or clients; replaced touched paths are deleted. Quote each clause with proof or BLOCKED.
 
-Validate ADOPT/SYMBOL/OBSERVER and ARCH for actual changed boundaries, retain a transcript and native artifact or exact unavailable reason per lane. Do not run broad builds for documentation-only guidance. Stop and split discovery if the selected workflow needs new crash-handler/SDK/privacy/telemetry ownership. Handoff EC-G7 lane matrix, exact commands/artifacts, bounded changes/deletions and Stage 8 prerequisites.
+Validate ADOPT/SYMBOL/OBSERVER and ARCH for actual changed boundaries, retain a transcript and native artifact or exact unavailable reason per lane. Do not run broad builds for documentation-only guidance. Do not install, integrate, capture or require evidence for the excluded AMD lanes. Stop and split discovery if the selected workflow needs new crash-handler/SDK/privacy/telemetry ownership. Handoff EC-G7 lane matrix, exact commands/artifacts, bounded changes/deletions and Stage 8 prerequisites.
 ```
 
 ## Stage 8 — Close Matrix, Adoption And Parent Gate
@@ -374,6 +434,6 @@ Run final MATRIX/COMBINATION/PACKAGE/OBSERVER/ADOPT and remaining failure checks
 | Request/lifetime | D04/05/07/09 | Installed native status/teardown contracts | S07–10/13; controller/adapter + recovery UX | 0B, 1–6 | AC04/09/10/12; FM03/04/07; LIFE/COMBINATION/ARCH |
 | Artifact/symbols | D05/06/08 | Vendor artifact and Shader System provenance | S10/11; native artifact + explicit Open | 1–8 | AC05/11; FM05/06; NATIVE/SYMBOL/UX/ADOPT |
 | Markers/observer/package | D04/06/08/09 | Godot backend, official event runtime, tool limits | S12/bounds; eligible membership + observer text | 0A, 1–8 | AC08/09/10/12; FM07/08; PACKAGE/OBSERVER/EVOLUTION/ARCH |
-| Specialist activities | D01/05/08 per lane | Systems/AMD/ETW/PresentMon sources and runbook | S04/11; separate activity/handoff UX | 2, 4, 7–8 | AC07/11; FM01/06; MATRIX/SYMBOL/ADOPT |
+| Specialist activities | D01/05/08 per lane | Selected Systems/NVIDIA/ETW/PresentMon sources and runbook | S04/11; separate activity/handoff UX | 2, 4, 7–8 | AC07/11; FM01/06; MATRIX/SYMBOL/ADOPT |
 
 Abbreviated IDs refer to the complete `EC-D*`, `EC-S*`, `AC-EC-*`, `FM-EC-*`, and `CHK-EC-*` rows in their owners. Candidate report links supply result ownership; this plan is never a parallel PASS diary. Update/supersede completed transition instructions under Documentation Organization after adopted evidence, preserving research/design authorities.

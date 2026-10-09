@@ -3,19 +3,20 @@
 
 #include "EditorAPI.h"
 #include "Renderer/Public/Diagnostics/MeshPreviewGeometry.h"
-#include "../../Renderer/Public/Diagnostics/RendererMemoryDiagnostics.h"
-#include "../../Renderer/Public/UI/UiRenderPacket.h"
-#include "../../Renderer/Public/Settings/EngineRenderingSettings.h"
-#include "../../Renderer/Public/Meshes/MeshDiagnostics.h"
-#include "../../Renderer/Public/Resources/Textures/TextureDiagnostics.h"
-#include "../../Renderer/Public/Viewport/ViewportContracts.h"
+#include "Renderer/Public/Diagnostics/RendererMemoryDiagnostics.h"
+#include "Renderer/Public/UI/UiRenderPacket.h"
+#include "Renderer/Public/Settings/EngineRenderingSettings.h"
+#include "Renderer/Public/Meshes/MeshDiagnostics.h"
+#include "Renderer/Public/Resources/Textures/TextureDiagnostics.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "Panels/ViewportOutputAction.h"
-#include "../../GameFramework/Public/Rendering/RenderViewCameraData.h"
-#include "../../GameFramework/Public/Scene/Camera/CameraInputIntent.h"
-#include "../../GameFramework/Public/World/WorldChange.h"
-#include "../../GameFramework/Public/World/WorldEditCommand.h"
-#include "../../GameFramework/Public/World/WorldMaterialVariantView.h"
-#include "../../GameFramework/Public/World/WorldReadView.h"
+#include "Viewport/ViewportToolbarActions.h"
+#include "GameFramework/Public/Rendering/RenderViewCameraData.h"
+#include "GameFramework/Public/Scene/Camera/CameraInputIntent.h"
+#include "GameFramework/Public/World/WorldChange.h"
+#include "GameFramework/Public/World/WorldEditCommand.h"
+#include "GameFramework/Public/World/WorldMaterialVariantView.h"
+#include "GameFramework/Public/World/WorldReadView.h"
 
 #include <cstdint>
 #include <functional>
@@ -68,6 +69,8 @@ public:
 
 	const ViewportRenderRequest& GetViewportRenderRequest() const noexcept;
 	RenderViewCameraData UpdateViewportCamera(const CameraInputIntent& intent, float deltaSeconds) noexcept;
+	// Set, replace or clear the toolbar action group after UI construction, on the Editor thread.
+	void SetViewportToolbarActions(std::unique_ptr<ViewportToolbarActions> actions) noexcept;
 	void SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept;
 	void SetViewportFinalColorTexture(UiTextureHandle texture) noexcept;
 	void SetDiagnosticsProviders(EditorDiagnosticsProviders providers);

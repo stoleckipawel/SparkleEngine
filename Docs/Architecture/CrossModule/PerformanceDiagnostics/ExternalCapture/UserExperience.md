@@ -6,7 +6,13 @@
 
 **Authority boundary:** runtime truth belongs to [Semantics](Semantics.md) and [Execution Architecture](ExecutionArchitecture.md); this page owns interaction. The parent [Visual Design](../VisualDesign.md) supplies layout precedent, not provider capability proof.
 
-**Current readiness:** **0/100 — target only**; no capture action exists in the audited baseline.
+**Current readiness:** **0/100** for engine-integrated native capture. Requested-control visibility is implemented; native attachment, requests and finalization remain target work.
+
+## Implemented Requested-Control Visibility
+
+DevelopmentEditor and DebugEditor recognize `-AttachPix`, `-AttachNSight` and `-AttachRenderDoc` (case-insensitive). Each requested entry appears at the viewport upper right in PIX, Nsight, RenderDoc order. No flags means no capture group. Compact headers place the group on a second row. Duplicate requests and unknown `-Attach*` spellings reject before graphics startup.
+
+These flags currently express attachment **requests**; they do not attach or load any tool. Buttons remain disabled with hover guidance to [External Profiling](../../../../Engineering/Verification/ExternalProfiling.md#current-installed-workflow-readiness). Successful external captures cannot enable an unimplemented engine request route. Shipping excludes the parser body and capture presenter source/calls; Game does not acquire this Editor-only presentation. Multiple requested entries only display unavailable entries, without claiming simultaneous injection support.
 
 ## First Use: PIX
 
@@ -24,14 +30,14 @@ Install/update the external tool through its normal vendor workflow. Sparkle doe
 
 The same context action and authoritative operation apply to Nsight Graphics Capture and RenderDoc on supported backends. Nsight carries an `Experimental SDK` label even when its local cell is accepted. Their setup instructions name actual tool/activity/API prerequisites and explain that Graphics Capture differs from GPU Trace or Systems.
 
-For specialist investigations, use `Open profiling guidance` with a selected question/marker: CPU scheduling -> WPA/Systems; D3D12 multi-frame timing -> PIX Timing; NVIDIA GPU pressure -> GPU Trace; AMD queue/wave analysis -> RGP; memory -> RMV; RT structure -> RRA; shader ISA -> RGA; crash -> Aftermath/RGD; pacing -> PresentMon. These entries open guidance or a supported external workflow, not an in-engine claim of readiness/capture completion. Tool-managed launch must preserve the actual product executable, working directory, level/API/settings and candidate identity, rather than launch the Launcher and assume child-process injection works.
+For specialist investigations, use `Open profiling guidance` with a selected question/marker: CPU scheduling -> WPA/Systems; D3D12 multi-frame timing -> PIX Timing; NVIDIA GPU pressure -> GPU Trace; crash -> Aftermath; pacing -> PresentMon. AMD RGP/RMV/RRA/RGA/uProf/RGD are excluded by the user scope decision on 2026-10-09 and are not guidance/context actions in this delivery. These entries open guidance or a supported external workflow, not an in-engine claim of readiness/capture completion. Tool-managed launch must preserve the actual product executable, working directory, level/API/settings and candidate identity, rather than launch the Launcher and assume child-process injection works.
 
 ## UI, CLI, And Game Equivalence
 
 | Entry | Intent | Authority and observable output |
 | --- | --- | --- |
 | Launcher optional tools | Typed process-start provider set | Same normalization as direct CLI; startup capability/reason comes from launched process. |
-| Direct CLI | Repeat `--capture-provider pix`, `--capture-provider nsight-graphics`, or `--capture-provider renderdoc` for distinct requested entries | These are target flags, not current implemented commands. Invalid/duplicate/conflicting input rejects; no tool-specific string command from Editor. |
+| Direct CLI | `-AttachPix`, `-AttachNSight`, `-AttachRenderDoc` | Requested-control visibility is implemented in DebugEditor/DevelopmentEditor; native attachment/capture remain target. Duplicate/unknown attachment flags reject. No tool-specific string command comes from Editor. |
 | Editor viewport icon | Named provider + current stable scene-view target + next eligible frame | Existing Renderer control route, one request ID, immutable result model. |
 | DevelopmentGame | Same launch intent, existing typed development console/control operation for capture and current game target | Stage 2 freezes concise command grammar in existing command owner; no new game panel. Provider-native UI/hotkey capture is an additional explicit external workflow. |
 | Automation | Same typed request and observed result; explicit readiness precondition and deadline | No script clicks a vendor icon or scrapes filename existence to infer completion. Nonzero rejection/failure result and retained native artifact identity. |

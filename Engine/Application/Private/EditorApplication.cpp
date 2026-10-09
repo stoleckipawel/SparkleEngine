@@ -2,6 +2,7 @@
 #include "EditorApplication.h"
 
 #include "Editor/EditorUiFrameRenderer.h"
+#include "Editor/ExternalCapture/ExternalCaptureLaunch.h"
 #include "Editor/Public/UI.h"
 #include "Editor/Viewport/EditorViewportOutputCoordinator.h"
 #include "EditorOperations/EditorOperationRuntime.h"
@@ -44,9 +45,11 @@ void EditorApplication::Initialize()
 		m_state = std::make_unique<State>();
 	}
 
+	auto captureActions = CreateRequestedCaptureToolbarActions();
 	InitializeRuntimeApplication();
 	InitializeEditorOperations();
 	InitializeUi();
+	m_state->Ui->SetViewportToolbarActions(std::move(captureActions));
 	m_isEditorSessionActive = true;
 }
 

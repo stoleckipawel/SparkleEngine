@@ -74,7 +74,7 @@ Renderer Public contains only the generic `RenderViewMode` enum and the ordinary
 
 ### Editor
 
-Editor uses `RenderViewMode` directly. `EditorViewportSession` owns the selected value, `ViewportTopPanel` owns labels/icons/menu layout, and `ViewportPanel` owns the request plus its generation. There is no `EditorViewportViewMode`, preset resolver, or Application callback translation.
+Editor uses `RenderViewMode` directly. `EditorViewportSession` owns the selected value, `ViewportToolbar` owns labels/icons/menu layout, and `ViewportPanel` owns the request plus its generation. There is no `EditorViewportViewMode`, preset resolver, or Application callback translation.
 
 ### RHI
 

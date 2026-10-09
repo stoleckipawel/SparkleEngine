@@ -20,6 +20,11 @@ RenderViewCameraData UI::UpdateViewportCamera(const CameraInputIntent& intent, f
 	return m_implementation->UpdateViewportCamera(intent, deltaSeconds);
 }
 
+void UI::SetViewportToolbarActions(std::unique_ptr<ViewportToolbarActions> actions) noexcept
+{
+	m_implementation->SetViewportToolbarActions(std::move(actions));
+}
+
 void UI::SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept
 {
 	m_implementation->SetViewportRenderProducts(products);

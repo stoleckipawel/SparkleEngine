@@ -8,6 +8,18 @@
 
 **Current readiness:** **0/100 — target only**; marker emission is an existing adjacent capability, not an external-capture provider.
 
+The [requested-control visibility slice](Discovery.md#requested-viewport-controls-handoff) implements the Application/Editor construction and right-side presenter seam for unavailable requests. It introduces no native bootstrap/controller/adapter or capture authority; the production route below remains the target for enabled buttons.
+
+## Implemented Editor Toolbar Composition
+
+The viewport header widget is private `Viewport/ViewportToolbar`; its optional action-group boundary is `Public/Viewport/ViewportToolbarActions.h`. UI exposes one `SetViewportToolbarActions` installation/replacement/clear operation after construction. Optional actions no longer appear in EditorApplication/UI/Implementation constructors or workspace-initialization signatures. UI owns the toolbar and destroys it before ImGui teardown and before its borrowed collaborators.
+
+Toolbar requires only EditorViewportSession, read-only EngineRenderingSettingsState and the existing CVarControlExecutor. UI supplies a transient level-name view when drawing; toolbar has no LevelSession, settings-controller or host-services dependency. It owns camera/view-mode/Show/statistic layout and measures the optional action group once per frame. Alignment and compact reflow are layout details, never the semantic name of a second panel.
+
+Application `Private/Editor/ExternalCapture/ExternalCaptureLaunch.cpp` resolves requested tool intent once and creates optional actions before graphics initialization; after UI initialization, composition installs them directly. Its private eligible-profile guard contains tool policy. `Public/ExternalCapture/ExternalCaptureToolbar.h` owns the request/factory contract, while concrete `ExternalCaptureToolbarActions` and tool labels/guidance are confined to `Private/Viewport/ExternalCapture/`. No native provider state/policy enters the generic toolbar or UI. The [boundary refinement handoff](Discovery.md#viewport-toolbar-boundary-handoff) supersedes [the prior constructor-injection refactor](Discovery.md#capture-ui-decoupling-handoff); [research](Research.md#editor-injection-and-lifetime-review---2026-10-10) retains the selected precedent.
+
+There is no registry, dependency bag, callback list, SDK-facing base class or duplicated capture authority. Adding real readiness/request state later changes capture-owned composition/actions and existing neutral Renderer authority, not UI constructors or workspace initialization.
+
 ## Production Route
 
 ```mermaid

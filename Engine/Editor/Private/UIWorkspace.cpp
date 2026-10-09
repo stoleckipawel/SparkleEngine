@@ -6,6 +6,7 @@
 #include "Console/EditorConsoleSystem.h"
 #include "Input/InputSystem.h"
 #include "Level/LevelSession.h"
+#include "Level/Level.h"
 #include "Panels/MainMenuBarPanel.h"
 #include "Panels/SceneInspectorPanel.h"
 #include "Panels/SceneOutlinerPanel.h"
@@ -14,7 +15,7 @@
 #include "Panels/UsedShadersPanel.h"
 #include "Panels/UsedTexturesPanel.h"
 #include "Panels/ViewportPanel.h"
-#include "Panels/ViewportTopPanel.h"
+#include "Viewport/ViewportToolbar.h"
 #include "Timer.h"
 
 #include <backends/imgui_impl_win32.h>
@@ -98,17 +99,18 @@ void UI::Implementation::BuildCenterWorkspace(bool disableInteraction, float mai
 	const float viewportWidth =
 	    (std::max) (EditorWorkspaceLayout::MinimumViewportExtent, io.DisplaySize.x - outlinerWidth - inspectorWidth);
 
-	float viewportTopPanelHeight = 0.0f;
-	if (m_viewportTopPanel)
+	float viewportToolbarHeight = 0.0f;
+	if (m_viewportToolbar)
 	{
-		m_viewportTopPanel->SetGeometry(outlinerWidth, mainMenuBarHeight, viewportWidth);
-		m_viewportTopPanel->BuildUI(disableInteraction);
-		viewportTopPanelHeight = m_viewportTopPanel->GetHeight();
+		m_viewportToolbar->SetGeometry(outlinerWidth, mainMenuBarHeight, viewportWidth);
+		const LevelAsset* activeLevel = m_levelSession != nullptr ? m_levelSession->GetActiveLevel() : nullptr;
+		m_viewportToolbar->Draw(activeLevel != nullptr ? activeLevel->GetName() : "<None>", disableInteraction);
+		viewportToolbarHeight = m_viewportToolbar->GetHeightPixels();
 	}
 
-	const float availableViewportHeight = (std::max) (0.0f, availableCenterHeight - viewportTopPanelHeight);
+	const float availableViewportHeight = (std::max) (0.0f, availableCenterHeight - viewportToolbarHeight);
 	const float consoleDockHeight = m_editorConsoleSystem ? m_editorConsoleSystem->GetDockHeight(availableViewportHeight) : 0.0f;
-	BuildViewport(disableInteraction, mainMenuBarHeight + viewportTopPanelHeight, consoleDockHeight, outlinerWidth, inspectorWidth);
+	BuildViewport(disableInteraction, mainMenuBarHeight + viewportToolbarHeight, consoleDockHeight, outlinerWidth, inspectorWidth);
 
 	if (m_editorConsoleSystem)
 	{

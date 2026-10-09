@@ -15,7 +15,7 @@
 #include "Panels/UsedShadersPanel.h"
 #include "Panels/UsedTexturesPanel.h"
 #include "Panels/ViewportPanel.h"
-#include "Panels/ViewportTopPanel.h"
+#include "Viewport/ViewportToolbar.h"
 #include "Settings/EngineRenderingSettingsController.h"
 #include "Renderer/Public/UI/ImGuiRenderPacketBuilder.h"
 #include "Scene/Model/EditorSceneModel.h"
@@ -64,10 +64,10 @@ bool UI::Implementation::InitializeWin32Backend()
 	return true;
 }
 
-void UI::Implementation::InitializeDefaultPanels()
+void UI::Implementation::InitializeWorkspace()
 {
 	InitializeCorePanels();
-	InitializeViewportPanels();
+	InitializeViewport();
 	InitializeAssetPanels();
 	InitializeScenePanels();
 }
@@ -89,11 +89,10 @@ void UI::Implementation::InitializeCorePanels()
 	    });
 }
 
-void UI::Implementation::InitializeViewportPanels()
+void UI::Implementation::InitializeViewport()
 {
 	m_viewportSession = std::make_unique<EditorViewportSession>();
-	m_viewportTopPanel =
-	    std::make_unique<ViewportTopPanel>(m_levelSession, m_renderingSettings.get(), m_viewportSession.get(), &m_consoleVariables);
+	m_viewportToolbar = std::make_unique<ViewportToolbar>(*m_viewportSession, m_renderingSettings->GetState(), m_consoleVariables);
 	m_viewportPanel =
 	    std::make_unique<ViewportPanel>(EditorWorkspaceLayout::SceneOutlinerWidth, EditorWorkspaceLayout::SceneInspectorWidth);
 	m_viewportPanel->SetExposureOverrides(m_viewportSession->GetSettings().Exposure);

@@ -97,7 +97,7 @@ This is the reconciled 2026-09-29 starting inventory. Revalidate it rather than 
 
 | Concept | Current overlap/candidate | Required outcome |
 | --- | --- | --- |
-| Frame interval and FPS | `ViewportTopPanel::BuildRightControls` reads ImGui `Framerate`/`DeltaTime`, while `Timer` is the host timing authority. | `ReplaceAndDelete`: derive FPS only from the valid Application-owned unscaled interval and remove the ImGui-derived product path. ImGui may retain its internal timing for ImGui itself, never as Sparkle performance truth. |
+| Frame interval and FPS | `ViewportToolbar::DrawFrameStats` reads ImGui `Framerate`/`DeltaTime`, while `Timer` is the host timing authority. | `ReplaceAndDelete`: derive FPS only from the valid Application-owned unscaled interval and remove the ImGui-derived product path. ImGui may retain its internal timing for ImGui itself, never as Sparkle performance truth. |
 | Diagnostics session and history | No accepted session exists yet; future groups, graphs, workspaces, and export could each be tempted to retain samples. | `Extend` Application once: one demand/generation/join/ring/snapshot authority. `UnitGraph`, workspace views, compact presenters, and export read that ring; none owns a second history. No Core global profiler singleton. |
 | Console command semantics | Core `ConsoleCommandRegistry` is hosted separately by `EditorConsoleSystem` and `RuntimeConsoleOverlay`. | `KeepSeparateWithBoundary` for product-local registry/session/presentation lifetimes; `Merge` performance command registration and parsing into one Application-owned registration function that produces the same typed request for both. No UI-formatted command strings. |
 | Renderer request and publication transport | `RenderCoordinator`, its bounded control queue, and `PublishReadState` already cross the Renderer thread boundary. | `Extend` the existing route. Reject a second diagnostics mailbox, synchronous query facade, event bus, or UI callback channel. |
@@ -743,7 +743,7 @@ Render the existing joined ring. Do not allocate another history, resample away 
 
 #### `ORI-05` Editor Quick Check
 
-Replace the ImGui-derived FPS/delta block in `ViewportTopPanel::BuildRightControls` as the source of truth. Implement the task-first Performance menu and compact summary from the wireframes, including Basic/Detailed, sample/loss, and invalid/stale states. The UI receives an immutable presentation model and submits semantic requests.
+Replace the ImGui-derived FPS/delta block in `ViewportToolbar::DrawFrameStats` as the source of truth. Implement the task-first Performance menu and compact summary from the wireframes, including Basic/Detailed, sample/loss, and invalid/stale states. The UI receives an immutable presentation model and submits semantic requests.
 
 #### `ORI-06` DevelopmentGame presenter
 

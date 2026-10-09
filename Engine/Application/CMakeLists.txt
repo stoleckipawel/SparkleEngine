@@ -119,6 +119,9 @@ target_include_directories(SparkleApplicationEditor
 )
 
 target_compile_features(SparkleApplicationEditor PUBLIC cxx_std_20)
+target_compile_definitions(SparkleApplicationEditor PRIVATE
+    SPARKLE_APPLICATION_WITH_EXTERNAL_CAPTURE_UI=$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DevelopmentEditor>>
+)
 
 sparkle_target_precompile_headers(SparkleApplicationEditor
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h

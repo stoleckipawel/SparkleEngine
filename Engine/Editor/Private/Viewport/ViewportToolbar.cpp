@@ -1,11 +1,8 @@
 #include "PCH.h"
-#include "Panels/ViewportTopPanel.h"
+#include "Viewport/ViewportToolbar.h"
 
-#include "Level/Level.h"
-#include "Level/LevelSession.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 #include "Renderer/Public/Viewport/RenderViewMode.h"
-#include "Settings/EngineRenderingSettingsController.h"
 #include "Style/SparkleUiPalette.h"
 #include "Util/UiUtil.h"
 #include "Viewport/ViewportCameraProperties.h"
@@ -20,6 +17,7 @@
 #include <cstdio>
 #include <string>
 #include <string_view>
+#include <utility>
 
 struct ViewModePresentation final
 {
@@ -57,26 +55,24 @@ static const ViewModePresentation& DescribeViewMode(RenderViewMode viewMode) noe
 	return found != viewModePresentations.end() ? *found : viewModePresentations.front();
 }
 
-ViewportTopPanel::ViewportTopPanel(
-    LevelSession* levelSession,
-    EngineRenderingSettingsController* renderingSettings,
-    EditorViewportSession* viewportSession,
-    const CVarControlExecutor* consoleVariables) noexcept :
-    m_renderingSettings(renderingSettings),
+ViewportToolbar::ViewportToolbar(
+    EditorViewportSession& viewportSession,
+    const EngineRenderingSettingsState& renderingDefaults,
+    const CVarControlExecutor& consoleVariables) noexcept :
     m_viewportSession(viewportSession),
+    m_renderingDefaults(renderingDefaults),
     m_consoleVariables(consoleVariables)
 {
-	SetLevelSession(levelSession);
 }
 
-ViewportTopPanel::~ViewportTopPanel() noexcept = default;
+ViewportToolbar::~ViewportToolbar() noexcept = default;
 
-void ViewportTopPanel::SetLevelSession(LevelSession* levelSession) noexcept
+void ViewportToolbar::SetActions(std::unique_ptr<ViewportToolbarActions> actions) noexcept
 {
-	m_levelSession = levelSession;
+	m_actions = std::move(actions);
 }
 
-void ViewportTopPanel::SetGeometry(float leftPixels, float topPixels, float widthPixels) noexcept
+void ViewportToolbar::SetGeometry(float leftPixels, float topPixels, float widthPixels) noexcept
 {
 	m_leftPixels = leftPixels;
 	m_topPixels = topPixels;
@@ -84,7 +80,7 @@ void ViewportTopPanel::SetGeometry(float leftPixels, float topPixels, float widt
 }
 
 static void DrawViewModeOption(
-    EditorViewportSession* viewportSession,
+    EditorViewportSession& viewportSession,
     const ViewModePresentation& option,
     RenderViewMode currentViewMode) noexcept
 {
@@ -92,10 +88,7 @@ static void DrawViewModeOption(
 	const UiUtil::MenuCheckState checkState = selected ? UiUtil::MenuCheckState::Checked : UiUtil::MenuCheckState::Unchecked;
 	if (UiUtil::DrawMenuItem(option.Label, option.Icon, checkState))
 	{
-		if (viewportSession != nullptr)
-		{
-			viewportSession->SetViewMode(option.Mode);
-		}
+		viewportSession.SetViewMode(option.Mode);
 	}
 
 	if (selected)
@@ -104,10 +97,9 @@ static void DrawViewModeOption(
 	}
 }
 
-void ViewportTopPanel::BuildLevelName(bool compact) const noexcept
+void ViewportToolbar::DrawLevelName(std::string_view levelName, bool compact) const noexcept
 {
-	const LevelAsset* activeLevel = m_levelSession != nullptr ? m_levelSession->GetActiveLevel() : nullptr;
-	const std::string activeLevelName = activeLevel != nullptr ? std::string(activeLevel->GetName()) : std::string("<None>");
+	const std::string activeLevelName(levelName);
 
 	ImGui::AlignTextToFramePadding();
 	if (compact)
@@ -124,9 +116,9 @@ void ViewportTopPanel::BuildLevelName(bool compact) const noexcept
 	ImGui::TextUnformatted(activeLevelName.c_str());
 }
 
-void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction, bool compact) noexcept
+void ViewportToolbar::DrawViewModeSelector(bool disableInteraction, bool compact) noexcept
 {
-	RenderViewMode currentViewMode = m_viewportSession != nullptr ? m_viewportSession->GetViewMode() : RenderViewMode::Lit;
+	RenderViewMode currentViewMode = m_viewportSession.GetViewMode();
 	if (currentViewMode >= RenderViewMode::Count)
 	{
 		currentViewMode = RenderViewMode::Lit;
@@ -177,16 +169,15 @@ void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction, bool compact)
 	ImGui::EndDisabled();
 }
 
-void ViewportTopPanel::BuildCameraControls(bool disableInteraction, bool compact) noexcept
+void ViewportToolbar::DrawCameraControls(bool disableInteraction, bool compact) noexcept
 {
-	const CameraProjectionKind projectionKind =
-	    m_viewportSession != nullptr ? m_viewportSession->GetSettings().ProjectionKind : CameraProjectionKind::Perspective;
+	const CameraProjectionKind projectionKind = m_viewportSession.GetSettings().ProjectionKind;
 	const char* projectionLabel = projectionKind == CameraProjectionKind::Orthographic ? "Orthographic" : "Perspective";
 	const std::string cameraText = compact ? UiUtil::GetEditorIconGlyph(UiUtil::EditorIcon::Camera)
 	                                       : UiUtil::MakeIconLabel(UiUtil::EditorIcon::Camera, projectionLabel);
 	const std::string cameraLabel = cameraText + "##ViewportCameraPropertiesButton";
 
-	ImGui::BeginDisabled(disableInteraction || m_viewportSession == nullptr || m_renderingSettings == nullptr);
+	ImGui::BeginDisabled(disableInteraction);
 	if (ImGui::Button(cameraLabel.c_str()))
 	{
 		ViewportCameraProperties::OpenPopup();
@@ -196,18 +187,35 @@ void ViewportTopPanel::BuildCameraControls(bool disableInteraction, bool compact
 		ImGui::SetTooltip("Camera properties (%s)", projectionLabel);
 	}
 	ImGui::EndDisabled();
-	if (m_viewportSession != nullptr && m_renderingSettings != nullptr)
-	{
-		ViewportCameraProperties::BuildPopup(*m_viewportSession, m_renderingSettings->GetState(), disableInteraction);
-	}
+	ViewportCameraProperties::BuildPopup(m_viewportSession, m_renderingDefaults, disableInteraction);
 }
 
-void ViewportTopPanel::BuildFrameStats() const noexcept
+void ViewportToolbar::DrawActions(float width, bool secondRow, bool disableInteraction) noexcept
+{
+	if (m_actions == nullptr || width <= 0.0f)
+	{
+		return;
+	}
+	const float rightAlignedX = ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x - width;
+	if (!secondRow)
+	{
+		ImGui::SameLine(rightAlignedX);
+	}
+	else
+	{
+		ImGui::SetCursorPosX((std::max) (ImGui::GetStyle().WindowPadding.x, rightAlignedX));
+	}
+	m_actions->Draw(disableInteraction);
+}
+
+void ViewportToolbar::DrawFrameStats(float actionWidth) const noexcept
 {
 	const ImGuiIO& io = ImGui::GetIO();
 	char statsText[64] = {};
 	std::snprintf(statsText, sizeof(statsText), "%.1f FPS  %.2f ms", io.Framerate, io.DeltaTime * 1000.0f);
-	const float rightAlignedX = ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x - ImGui::CalcTextSize(statsText).x;
+	const float actionSpacing = actionWidth > 0.0f ? ImGui::GetStyle().ItemSpacing.x : 0.0f;
+	const float rightAlignedX =
+	    ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x - ImGui::CalcTextSize(statsText).x - actionWidth - actionSpacing;
 	if (rightAlignedX > ImGui::GetCursorPosX() + ImGui::GetStyle().ItemSpacing.x)
 	{
 		ImGui::SameLine(rightAlignedX);
@@ -220,7 +228,7 @@ void ViewportTopPanel::BuildFrameStats() const noexcept
 	}
 }
 
-void ViewportTopPanel::BuildUI(bool disableInteraction) noexcept
+void ViewportToolbar::Draw(std::string_view levelName, bool disableInteraction) noexcept
 {
 	if (m_widthPixels <= 0.0f)
 	{
@@ -230,6 +238,13 @@ void ViewportTopPanel::BuildUI(bool disableInteraction) noexcept
 
 	const ImVec2 windowPadding(10.0f, 4.0f);
 	m_heightPixels = ImGui::GetFrameHeight() + (windowPadding.y * 2.0f);
+	const bool compactToolbar = m_widthPixels < 760.0f;
+	const float actionWidth = m_actions != nullptr ? m_actions->MeasureWidth() : 0.0f;
+	const bool actionsOnSecondRow = compactToolbar && actionWidth > 0.0f;
+	if (actionsOnSecondRow)
+	{
+		m_heightPixels += ImGui::GetFrameHeightWithSpacing();
+	}
 
 	ImGui::SetNextWindowPos(ImVec2(m_leftPixels, m_topPixels), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(m_widthPixels, m_heightPixels), ImGuiCond_Always);
@@ -251,7 +266,7 @@ void ViewportTopPanel::BuildUI(bool disableInteraction) noexcept
 	windowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
 	windowFlags |= ImGuiWindowFlags_NoSavedSettings;
 
-	if (!ImGui::Begin("Viewport Top Panel", nullptr, windowFlags))
+	if (!ImGui::Begin("Viewport Toolbar", nullptr, windowFlags))
 	{
 		ImGui::End();
 		ImGui::PopStyleColor(7);
@@ -259,25 +274,25 @@ void ViewportTopPanel::BuildUI(bool disableInteraction) noexcept
 		return;
 	}
 
-	const bool compactHeader = m_widthPixels < 760.0f;
 	const bool showLevel = m_widthPixels >= 480.0f;
 	if (showLevel)
 	{
-		BuildLevelName(compactHeader);
-		ImGui::SameLine(0.0f, compactHeader ? 8.0f : 14.0f);
+		DrawLevelName(levelName, compactToolbar);
+		ImGui::SameLine(0.0f, compactToolbar ? 8.0f : 14.0f);
 		ImGui::AlignTextToFramePadding();
 		ImGui::TextDisabled("|");
-		ImGui::SameLine(0.0f, compactHeader ? 8.0f : 14.0f);
+		ImGui::SameLine(0.0f, compactToolbar ? 8.0f : 14.0f);
 	}
-	BuildCameraControls(disableInteraction, compactHeader);
+	DrawCameraControls(disableInteraction, compactToolbar);
 	ImGui::SameLine();
-	BuildViewModeCombo(disableInteraction, compactHeader);
+	DrawViewModeSelector(disableInteraction, compactToolbar);
 	ImGui::SameLine();
-	DrawViewportShowMenu(m_consoleVariables, disableInteraction, m_showControlError);
-	if (!compactHeader)
+	DrawViewportShowMenu(&m_consoleVariables, disableInteraction, m_showControlError);
+	if (!compactToolbar)
 	{
-		BuildFrameStats();
+		DrawFrameStats(actionWidth);
 	}
+	DrawActions(actionWidth, actionsOnSecondRow, disableInteraction);
 
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
 	const ImVec2 windowMin = ImGui::GetWindowPos();

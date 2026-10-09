@@ -13,7 +13,7 @@
 #include "Panels/UsedShadersPanel.h"
 #include "Panels/UsedTexturesPanel.h"
 #include "Panels/ViewportPanel.h"
-#include "Panels/ViewportTopPanel.h"
+#include "Viewport/ViewportToolbar.h"
 #include "Renderer/Public/Diagnostics/RendererMemoryDiagnostics.h"
 #include "Renderer/Public/UI/UiTextureHandle.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
@@ -64,6 +64,11 @@ RenderViewCameraData UI::Implementation::UpdateViewportCamera(const CameraInputI
 		m_viewportPanel->SetExposureOverrides(m_viewportSession->GetSettings().Exposure);
 	}
 	return camera;
+}
+
+void UI::Implementation::SetViewportToolbarActions(std::unique_ptr<ViewportToolbarActions> actions) noexcept
+{
+	m_viewportToolbar->SetActions(std::move(actions));
 }
 
 void UI::Implementation::SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept
@@ -165,7 +170,7 @@ UI::Implementation::Implementation(EditorHostServices hostServices) :
 		return;
 	}
 
-	InitializeDefaultPanels();
+	InitializeWorkspace();
 	if (m_viewportSession && m_viewportPanel)
 	{
 		m_viewportSession->SetViewModeChangedHandler([this](RenderViewMode viewMode) { m_viewportPanel->SetViewMode(viewMode); });
@@ -177,6 +182,7 @@ UI::Implementation::~Implementation() noexcept
 {
 	m_windowDpiScaleHandle.Reset();
 	m_windowMessageHandle.Reset();
+	m_viewportToolbar.reset();
 
 	if (m_isWin32BackendInitialized)
 	{

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Device/RenderHardwareInterface.h"
+#include "Diagnostics/RhiDiagnostics.h"
 
 #include <d3d12.h>
 

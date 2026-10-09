@@ -6,6 +6,8 @@
 
 **Scope:** profiling-build preparation, current external-tool capabilities, marker interoperability, capture provenance, operational capture checks, input/display measurement options, and revalidation triggers
 
+**Selected ExternalCapture delivery, 2026-10-09:** WPR/WPA, PresentMon, PIX Timing, Nsight GPU Trace/Systems and separate NVIDIA Aftermath guidance. The user explicitly excludes AMD RGP/RMV/RRA/RGA/uProf/RGD and associated hardware/tool investment. AMD references below remain background research, not setup, implementation or acceptance obligations for this delivery. CPU investigations use WPR/WPA. The [specialist preflight](../../Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/Discovery.md#stage-7-specialist-preflight---2026-10-09) records installed inputs and missing native evidence; it does not close EC-G7.
+
 ## Quick Route
 
 ```mermaid
@@ -142,7 +144,7 @@ RenderDoc is a frame debugger, not the CPU profiler for this design. Nsight Grap
 
 ## Attached Frame-Capture Provider Operations
 
-The architecture selects one combinable provider-set launch intent. The target Launcher exposes it as a typed level-run option and direct launches use repeatable `--capture-provider <id>` arguments with stable IDs `pix`, `renderdoc`, and `nsight-graphics`. This runbook owns the changing provider mechanics, pairwise/multi-provider compatibility evidence, and readiness checks. The option and viewport icon group are target behavior, not proof that the current Sparkle executable implements them.
+The architecture selects one combinable provider-set launch intent. The target Launcher exposes it as a typed level-run option and direct launches request `-AttachPix`, `-AttachRenderDoc` or `-AttachNSight`, corresponding to stable IDs `pix`, `renderdoc`, and `nsight-graphics`. This runbook owns the changing provider mechanics, pairwise/multi-provider compatibility evidence, and readiness checks. The DebugEditor/DevelopmentEditor flags and unavailable viewport group are implemented; the flags do not yet inject a tool. Native attachment/capture and Launcher selection remain target behavior. Use the external workflows below for actual captures.
 
 ### Common Bootstrap And Capture Sequence
 
@@ -217,7 +219,7 @@ Every imported measurement uses the architecture provenance vocabulary:
 
 ### WPA / ETW
 
-- Use a checked-in narrow WPR profile with sampled CPU stacks, precise scheduling/context switches, process/thread/image data, `SparkleTasks`, and the minimal Application/Renderer frame provider when implemented.
+- Start with the installed built-in CPU profile for sampled/precise scheduling and process/thread/image data. No checked-in `.wprp` currently exists. A future narrow custom profile must explicitly enable `SparkleTasks`; a built-in CPU trace does not imply those events were collected. Application/Renderer frame-provider coverage remains unimplemented/unproved.
 - Confirm symbols resolve before interpreting source hotspots.
 - Filter to the editor process and exact route interval, then group sampled CPU by `Sparkle.EditorThread`, `Sparkle.RenderThread`, and named task lanes.
 - Inspect `CPU Usage (Precise)` for running, ready, and waiting intervals on the critical thread. Join task begin/end/dependency events by run/task identity and `FrameId` where present.
@@ -225,6 +227,128 @@ Every imported measurement uses the architecture provenance vocabulary:
 - Save the ETL, WPA profile/view, selected range identity, and one annotated screenshot. Report lost buffers/events.
 
 A high RenderThread wall duration with low sampled CPU can be a wait. A worker at 100% does not prove it is on the frame critical path. Ready time may expose oversubscription even when task bodies are individually fast.
+
+### Current Installed Workflow Readiness
+
+**Local delivery, 2026-10-10:** use installed tools and the NVIDIA hardware already present; skip unavailable collection lanes without installations, purchases or privilege changes. These tool-managed workflows are independent of the unimplemented engine provider/button. The [native results](../../Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/Discovery.md#installed-tool-workflow-results) bind commands and artifacts to the candidate. They do not close engine lifecycle, Shipping, observer or adoption gates.
+
+| Operation | Current observed result | Limits |
+| --- | --- | --- |
+| Retail PIX GPU Capture | Correct native CLI quoting plus F11 after warm-up saved/opened a full Sponza GPU capture and screenshot. | Explicit tested D3D12 tuple; immediate startup capture lacked viewport output and was superseded. No engine request/controller acceptance. |
+| Retail PIX Timing | Native capture saved; retail WinPix opened it for ShowcaseEditor. | Separate timing activity; no PIX events in this build. Source correlation and observer acceptance remain unproved. |
+| Nsight Graphics D3D12 | F11 workflow saved a capture; matched replay succeeded and embedded screenshot shows Sponza. | Explicit linear/RR-off/classic-TLAS tuple only. Timed routes did not produce artifacts. |
+| Nsight Graphics Vulkan | Timed, hotkey and standalone frame-index attempts did not finalize a capture. | Skip current workflow; this is not a hardware/API-unsupported disposition. RenderDoc Vulkan remains usable independently. |
+| RenderDoc D3D12 / Vulkan | Finalized native captures replayed; full 5120x1392 Sponza Editor outputs exported. Vulkan includes named frame-graph passes. | Tool-selected containing present, not engine viewport/generation/FrameId authority. No Game or combination acceptance. |
+| WPR/WPA | CPU start failed with profiling-policy error `0xc5585011`; no ETL. | Skip current collection; does not invalidate PIX Timing. |
+| Bundled PresentMon | Both FrameView and FrameViewSDK collectors exited 1 without diagnostics or CSV. | Skip current collection; exact cause is unknown. |
+| Nsight GPU Trace / Systems | Earlier metrics-permission prerequisite remains open; Systems is absent from bounded inventory. | Skip these current lanes; neither becomes Graphics Capture evidence. |
+| Aftermath | Separate setup guidance; monitor/control/formatter installed. | No named crash reproducer or dump; no SDK/handler or crash acceptance. |
+| AMD specialist tools | Excluded by explicit user scope. | No investment or artifact obligation. |
+
+Use these inputs from the repository root. Set child environment `SPARKLE_STARTUP_LEVEL=Sponza` for launch; when using an interactive shell, preserve and restore its previous value afterwards. The renderer arguments select the tested experiment and do not change normal defaults. Keep the Editor maximized and Sponza visible. A validation focus helper restored it to 320x240 and captured the Details panel; those results were superseded by native control requests that left window size unchanged.
+
+```powershell
+$profilingRepo = (Get-Location).Path
+$profilingEditor = Join-Path $profilingRepo 'artifacts/dev/projects/Showcase/editor/DevelopmentEditor/ShowcaseEditor.exe'
+$profilingWorkingDirectory = Join-Path $profilingRepo 'Projects/Showcase'
+$profilingArguments = '--graphics-api d3d12 --cvar=r.Upscaler.Provider=0 --cvar=r.RayReconstruction.Mode=0 --cvar=r.RayTracing.PreferPartitionedTlas=false'
+$profilingCaptureRoot = Join-Path $env:LOCALAPPDATA 'SparkleEngine/Development/SparkleEngine-736b042528ba48b3/Showcase/Captures/ExternalCaptureReady-20261009'
+```
+
+The last path is this local workspace's **observed** canonical capture root; another workspace/product must resolve its own user-state capture root. Create the selected destination before collection. Launch one provider/process at a time.
+
+**Retail PIX GPU Capture:** the installed CLI's custom parser requires quoting option **values**, rather than quoting the complete `--option=value` argument. This tested native command-line form preserves that grammar without invoking a shell:
+
+```powershell
+$profilingPixStart = New-Object System.Diagnostics.ProcessStartInfo
+$profilingPixStart.FileName = 'C:/Program Files/Microsoft PIX/2603.25/pixtool.exe'
+$profilingPixStart.UseShellExecute = $false
+$profilingPixStart.CreateNoWindow = $true
+$profilingPixStart.Arguments = 'launch "{0}" --working-directory="{1}" --command-line="{2}" --setenv="SPARKLE_STARTUP_LEVEL=Sponza" set-gpu-capture-parameters --frames=1 --capture-key=F11 programmatic-capture --open save-capture "{3}" save-screenshot "{4}"' -f $profilingEditor, $profilingWorkingDirectory, $profilingArguments, (Join-Path $profilingCaptureRoot 'pix-warm-sponza.wpix'), (Join-Path $profilingCaptureRoot 'pix-warm-sponza.png')
+$profilingPixProcess = [System.Diagnostics.Process]::Start($profilingPixStart)
+```
+
+Keep the maximized Editor in the foreground. Wait until Sponza is visibly rendered (the retained run waited ten seconds), then press **F11**. Wait for native open/save completion and process exit 0; inspect the screenshot before claiming scene contribution. The retained warm file/screenshot shows the full Sponza Editor output. Immediate `take-capture` after launch instead captured `Waiting for viewport output`; do not use that startup result as a Sponza pass. Do not start another injected provider while this request is pending. Open GPU `.wpix` files in retail WinPix, or use the tested CLI inspection:
+
+```powershell
+& 'C:/Program Files/Microsoft PIX/2603.25/pixtool.exe' open-capture (Join-Path $profilingCaptureRoot 'pix-warm-sponza.wpix') save-event-list (Join-Path $profilingCaptureRoot 'pix-warm-sponza-events.csv')
+```
+
+**PIX Timing:** launch a fresh ordinary Editor using those inputs, preserving the shell's startup environment:
+
+```powershell
+$profilingPreviousStartupLevel = $env:SPARKLE_STARTUP_LEVEL
+try {
+    $env:SPARKLE_STARTUP_LEVEL = 'Sponza'
+    $profilingEditorProcess = Start-Process -FilePath $profilingEditor -WorkingDirectory $profilingWorkingDirectory -ArgumentList $profilingArguments -PassThru
+} finally {
+    $env:SPARKLE_STARTUP_LEVEL = $profilingPreviousStartupLevel
+}
+$profilingEditorPid = $profilingEditorProcess.Id
+```
+
+Wait for Sponza to load, then run:
+
+```powershell
+& 'C:/Program Files/Microsoft PIX/2603.25/pixtool.exe' attach $profilingEditorPid take-new-timing-capture (Join-Path $profilingCaptureRoot 'pix-timing.wpix') --duration=1000
+& 'C:/Program Files/Microsoft PIX/2603.25/WinPix.exe' (Join-Path $profilingCaptureRoot 'pix-timing.wpix')
+```
+
+This run used CLI defaults: requested CPU sampling 1000 Hz, context-switch callstacks and GPU timings, without elevation. WinPix displayed target PID 30636, duration 1046.39 ms, Sparkle thread rows and named GPU resources, but no PIX events. Check actual collector/symbol availability before interpreting costs. `pixtool open-capture` accepts GPU captures only and rejected this timing file with PIXTOOL6; use **WinPix** for timing. Retail PIX suffices for this operation; Preview is not required.
+
+**Nsight Graphics D3D12:** use the installed Graphics Capture activity:
+
+```powershell
+& 'C:/Program Files/NVIDIA Corporation/Nsight Graphics 2026.3.1/host/windows-desktop-nomad-x64/ngfx.exe' --activity 'Graphics Capture' --exe $profilingEditor --dir $profilingWorkingDirectory --args $profilingArguments --env 'SPARKLE_STARTUP_LEVEL=Sponza' --frame-count 1 --hotkey-capture --verbose
+```
+
+Wait for native session/activity startup, bring the maximized Editor to the foreground, confirm Sponza, and press **F11**. Wait for `Capture saved to:`; use that exact returned path. The tested host saved under `Documents/NVIDIA Nsight Graphics/GraphicsCaptures` despite `--output-dir`, then terminated its target. Set `$profilingNsightCapture` to the returned `.ngfx-capture` file:
+
+```powershell
+& 'C:/Program Files/NVIDIA Corporation/Nsight Graphics 2026.3.1/host/windows-desktop-nomad-x64/ngfx-replay.exe' --loop-count 1 $profilingNsightCapture
+& 'C:/Program Files/NVIDIA Corporation/Nsight Graphics 2026.3.1/host/windows-desktop-nomad-x64/ngfx-replay.exe' --metadata-screenshot (Join-Path $profilingCaptureRoot 'nsight-d3d12.png') $profilingNsightCapture
+```
+
+Replay succeeded with nonfatal NvAPI profile-registration/application-driver-state warnings. Replay cost is not native performance evidence. Do not apply incompatibility bypasses or recommend failed timed routes as verified equivalents.
+
+**RenderDoc:** use qrenderdoc **File -> Launch Application** with the same executable, working directory, arguments and temporary Sponza environment. For Vulkan replace only `--graphics-api d3d12` with `--graphics-api vulkan`. Request capture from the tool's connected-process controls while leaving the maximized viewport visible. The tested CLI launch equivalent is:
+
+```powershell
+& 'C:/Program Files/RenderDoc/renderdoccmd.exe' capture --working-dir $profilingWorkingDirectory --capture-file (Join-Path $profilingCaptureRoot 'renderdoc-d3d12') $profilingEditor --graphics-api d3d12 --cvar=r.Upscaler.Provider=0 --cvar=r.RayReconstruction.Mode=0 --cvar=r.RayTracing.PreferPartitionedTlas=false
+```
+
+Set the Sponza environment before this CLI call too. `renderdoccmd capture` returned positive connection identifier **38920**, not conventional exit-zero success. Connect to the exact launched process in RenderDoc. The retained native control experiment checked PID before `TriggerCapture`, waited for `NewCapture`, then opened/replayed each artifact and exported its final Present resource. A request alone is not completion. [RenderDoc's quick start](https://github.com/baldurk/renderdoc/blob/v1.46/docs/getting_started/quick_start.rst) describes its separate launch/capture/inspection workflow. Open finalized `.rdc` files in qrenderdoc; `renderdoccmd replay --loops 1 <file.rdc>` is the verified D3D12 CLI replay alternative. Native tool frame numbers are not Sparkle FrameIds.
+
+### Selected Specialist Collection Procedures
+
+For every lane, preserve the actual Launcher `LevelRunOperationPlan`/`ProcessRequest` executable, working directory, arguments and environment, or their direct-launch equivalents. The current producer passes `--graphics-api` and the selected API; no capture-provider option is assumed implemented. Record level, camera, render settings, renderer/thread/recording topology, validation and interposer settings, tool/driver/device identities, executable/PDB and actual cooked shader hashes. Launch the product rather than the Launcher under a collector. Warm the declared scene; distinguish a startup experiment from a settled interval. Keep the no-collector comparison and selected collector settings in the same experiment card.
+
+The collector host owns its output path; the target is the exact process/device/window/swapchain. On a remote session these are different machines and namespaces. Retain finalized outputs under the existing product user-state Captures root; do not assume a host path is a target path or introduce an output-root override. In the examples below, set `$specialistCaptureRoot` from that existing root, `$targetProcessId` to the launched product PID, and `$captureSeconds` from the predeclared bounded experiment interval. These are collection procedures, not commands executed by the current preflight.
+
+**WPR/WPA — is the critical thread running, ready or blocked?** Use an elevated collection shell. First inspect `wpr -status`; if another recording exists, do not stop or overwrite it. Confirm the selected profile with `wpr -profiles` and `wpr -profiledetails CPU`. The currently installed WPR is `10.0.26100.9444`; WPA is `11.7.395.48728`.
+
+```powershell
+wpr -start CPU -filemode
+# Exercise only the predeclared interval in the already launched product.
+wpr -stop (Join-Path $specialistCaptureRoot 'cpu-scheduling.etl')
+& 'C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit/wpa.exe' (Join-Path $specialistCaptureRoot 'cpu-scheduling.etl')
+```
+
+Retain start/stop exit codes, actual range timestamps and ETL hash. In WPA select that PID/range, inspect CPU Usage (Sampled) and CPU Usage (Precise), image loading, stacks, ready/wait intervals and event-loss diagnostics; save the analysis view and one annotated result. Resolve the candidate's exact PDBs before source conclusions. Only a recording started by this workflow may be cancelled on failure. Custom task collection must enable `SparkleTasks` GUID `{109d07d6-b67d-4e26-9fa2-4796eae81483}` and prove TaskBegin/TaskEnd/TaskDependency events. Their Run/Task/Worker/Lane fields are existing identities; Run is not implicitly FrameId. Follow the [WPR command reference](https://learn.microsoft.com/en-us/windows-hardware/test/wpt/wpr-command-line-options) and [TraceLogging collection guide](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/capture-and-view-tracelogging-data) when adding the narrow profile in its own authorized slice.
+
+**PresentMon — is the host presenting evenly?** Pin the executable actually used and its `--help`, not the upstream version label. Two local NVIDIA bundles were found: FrameViewSDK `1.7.12119.0` and FrameView `1.8.12325.0`; both help commands print options and exit 1. That is help behavior, not native collection success. The following flags are present in the inspected FrameView help:
+
+```powershell
+& 'C:/Program Files/NVIDIA Corporation/FrameView/bin/PresentMon_x64.exe' --process_id $targetProcessId --session_name SparkleSpecialistPacing --output_file (Join-Path $specialistCaptureRoot 'present-pacing.csv') --timed $captureSeconds --terminate_after_timed --no_console_stats
+```
+
+If ETW permissions or that session name are unavailable, record the native error; do not stop another session or silently relaunch elevated. Retain stdout/stderr, exit code, CSV header/hash and nonempty rows for the selected PID and exact native swapchain; keep dropped presents visible. Inspect Runtime, presentation mode, display and GPU fields actually supplied by this build. Record HWS, VSync, refresh rate, fullscreen/window mode and frame-generation settings. PresentMon observes the containing host present, not a scene-view FrameId or optical input-to-display identity. Bundled columns must be revalidated against their own binary; the [upstream console guide](https://github.com/GameTechDev/PresentMon/blob/main/README-ConsoleApplication.md) is reference, not proof that these older bundles implement all current metrics.
+
+**Aftermath — what native context accompanies a reproducible GPU fault?** First verify the installed NVIDIA Crash Dump Monitor's hardware/driver/API support and settings in its [official guide](https://docs.nvidia.com/nsight-graphics/UserGuide/gpu-crash-dump-monitor.html). Use a fresh crash-reproduction process; record selected applications and dump/debug-information destinations on the collector host, then reproduce only the named defect. Retain the native dump, paired shader-debug information, exact candidate symbols, settings and opened native analysis. A monitor-enabled run does not prove Sparkle SDK callbacks or stable engine breadcrumb correlation. No deliberate fault is injected by this frame-delivery preflight.
+
+If the investigation requires embedded [Aftermath SDK callbacks](https://docs.nvidia.com/nsight-aftermath/), stop this lane and open separate discovery for device/API initialization order, callback concurrency, device-loss/shutdown drain, handler ownership, shader-debug lookup and bounded artifact storage. Declare local retention, sensitive shader/resource/path content, access, redaction and any upload consent explicitly; no telemetry/upload is implied. This stage introduces no crash SDK or handler. A last/in-flight marker is context, not a root-cause verdict.
+
+PIX Timing and Nsight GPU Trace/Systems keep separate procedures; neither uses the Graphics Capture frame action. Native ETL, pacing CSV, timing report, GPU trace, system trace and GPU crash dump are separate products. Require an opened native artifact, symbol availability and observer comparison before acceptance. The earlier preflight collected help/status/source evidence only; current results above additionally retain PIX Timing and frame-debugger artifacts. Other specialist lanes remain separate.
 
 ### CPU Scheduling, Source, And Microarchitecture
 

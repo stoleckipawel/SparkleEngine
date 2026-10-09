@@ -26,7 +26,7 @@ Sparkle has one host-independent `RenderViewMode` contract:
 
 The ordinary `ViewportRenderRequest` carries one selected mode. `RenderViewBuilder` freezes it into `RenderView`; frame composition, raster GBuffer, and debug resolve consume that same value at their owning decisions. The HLSL constant contract mirrors the C++ values for shader consumers.
 
-Editor uses the same enum directly while retaining presentation ownership in `ViewportTopPanel`. Game/runtime viewport owners may submit the same rendering semantic without importing Editor. RHI remains unaware.
+Editor uses the same enum directly while retaining presentation ownership in `ViewportToolbar`. Game/runtime viewport owners may submit the same rendering semantic without importing Editor. RHI remains unaware.
 
 The former process-global visualization selection, Editor mirror enum/preset resolver, proposed visualization-target/show-flag split, and Reference selector CVar are clean-break deletions. They are not compatibility routes.
 

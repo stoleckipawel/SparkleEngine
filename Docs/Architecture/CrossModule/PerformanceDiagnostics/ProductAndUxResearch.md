@@ -10,6 +10,8 @@
 
 **Related current readiness:** **20/100.** Local instrumentation foundations exist, but the product described here is not implemented and this research adds no score. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
 
+**2026-10-10 naming reconciliation:** the dated ViewportTopPanel/BuildRightControls baseline below remains historical. Its current counterpart is `ViewportToolbar::DrawFrameStats`, with capture-owned actions installed at the UI boundary; see [current ownership](ExternalCapture/ExecutionArchitecture.md#implemented-editor-toolbar-composition). Native provider acceptance remains unchanged.
+
 ## Purpose And Authority Boundary
 
 The [External Capture Research](ExternalCapture/Research.md) is the 2026-10-06 provider/API and Unreal/Unity/Godot source study; this page retains the broader diagnostics product/visual precedent. Provider delivery follows the delegated [PIX-first plan](ExternalCapture/Plan.md).

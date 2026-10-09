@@ -354,7 +354,7 @@ The exact 57-path manifest, classifications, commands, generated-product hashes,
 | `Engine/Renderer/Private/Passes/Lighting/ReferencePathTracer/` | complete Stage-1 feature capsule | Owns the only feature recognition and truthful unavailable result; no allocation, dispatch, pseudo-session generation, or copied Scene/View truth. Delete this folder to remove the feature mechanism. |
 | Historical Editor mirror definition | superseded transition | The ordering lesson is retained: Reference is value `1` immediately after Lit. The duplicate Editor type and translation are deleted; Stage 6 uses one `RenderViewMode` across hosts. |
 | `ViewportRenderRequest` -> `RenderViewBuilder` -> `RenderView` | existing ordinary view transport | Now carries the one view-intrinsic `RenderViewMode` beside identity, camera, extent, selection, display overrides, and requested products. The builder derives the focused shader scalar; no CVar, target/flag pair, or RHI copy remains. |
-| `EditorViewportSession` -> `UI` -> `ViewportPanel`/`ViewportTopPanel` | existing viewport selection and minimal presentation | Session owns the selected Renderer mode, the panel owns request generation, and the top panel owns labels/icons/menu layout. The dormant Reference item is not listed in the combo before Stage 7. |
+| `EditorViewportSession` -> `UI` -> `ViewportPanel`/`ViewportToolbar` | existing viewport selection and minimal presentation | Session owns the selected Renderer mode, the panel owns request generation, and the top panel owns labels/icons/menu layout. The dormant Reference item is not listed in the combo before Stage 7. |
 | `FramePipeline` plus `AddSceneRenderingPasses` | persistent feature lifetime and one concrete scene-rendering composition hook | `FramePipeline` owns one private incomplete feature member plus narrow preparation/submission calls; `AddSceneRenderingPasses` owns the direct mode branch and shared exposure/denoising/upscaling placement. Removing the Reference sites leaves ordinary Lit pass composition and the generic frame architecture unchanged. |
 | `ViewportRenderProgress` and `ViewportRenderProducts` | proved feature-neutral Editor observation boundary | Contains only mode/state/completed/target and has one real Editor reader. No session generation or feature taxonomy is prepaid. If no other progressive view remains after feature deletion, the payload/getter/setter/overlay delete as one bounded hook. |
 | Lighting/frame graph/history/settings/configuration edits | clean-break deletion sites | Restore ReSTIR as the ordinary Lit middle and delete the old GBuffer-seeded route, selector, settings row, CVar, persistence, history, uniforms, passes, shaders, and registrations. These are removal edits, not new feature hooks. |
@@ -677,7 +677,7 @@ Migrate every existing mode to the ordinary per-view request/View route and dele
 1. Replace the mixed `Visualization` contract with `RenderViewMode` on `ViewportRenderRequest` and immutable `RenderView`.
 2. Preserve one focused HLSL numeric mirror and View-derived shader scalar for existing debug consumers.
 3. Let raster GBuffer consume Wireframe and let the GBuffer, lighting, and GPU-scene visualization families consume their explicitly owned modes.
-4. Make `EditorViewportSession`, `ViewportPanel`, and `ViewportTopPanel` use `RenderViewMode` directly. Keep labels, icons, menu grouping, and interaction in Editor.
+4. Make `EditorViewportSession`, `ViewportPanel`, and `ViewportToolbar` use `RenderViewMode` directly. Keep labels, icons, menu grouping, and interaction in Editor.
 5. Clean-break `CVarVisualization`, `Renderer::SubmitVisualization`, `VisualizationCommand`, Application callback/translation, `EditorViewportViewMode`, its preset resolver, duplicate shader resolver, and orphan APIs/includes.
 6. Keep Reference unavailable until Stage 7. Add no show flags, overrides, registry, settings bag, diagnostics, capture field, or RHI field.
 
@@ -702,7 +702,7 @@ Stage 6B is **IMPLEMENTED / VALIDATION DEFERRED** in committed source revision `
 | Evidence field | Retained result |
 | --- | --- |
 | Per-view contract | `ViewportRenderRequest::ViewMode` is the one submitted value; `RenderViewBuilder` freezes it into `RenderView::viewMode` and derives `ViewUniformData::RenderViewModeIndex` for shader consumers. |
-| Editor route | `EditorViewportSession` stores the same mode, `ViewportTopPanel` owns presentation, and `ViewportPanel::SetViewMode` alone advances request generation when it changes. |
+| Editor route | `EditorViewportSession` stores the same mode, `ViewportToolbar` owns presentation, and `ViewportPanel::SetViewMode` alone advances request generation when it changes. |
 | Consumers | Raster GBuffer reads Wireframe; the GBuffer and lighting visualization families read the focused View-uniform index, while instance identity generation and its focused resolve own `GpuSceneInstances`. |
 | Clean break | Global visualization CVar/command/application translation, `Visualization`, `EditorViewportViewMode`, preset translation, and duplicate shader visualization helpers are deleted without aliases. |
 | Boundary | Renderer Public adds only the generic enum and request field. RHI and Renderer settings remain unaware. |

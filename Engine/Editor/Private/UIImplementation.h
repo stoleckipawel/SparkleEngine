@@ -12,7 +12,7 @@ class EditorConsoleSystem;
 class SceneOutlinerPanel;
 class SceneInspectorPanel;
 class ViewportPanel;
-class ViewportTopPanel;
+class ViewportToolbar;
 class SettingsPanel;
 class UsedShadersPanel;
 class UsedMeshesPanel;
@@ -31,6 +31,7 @@ public:
 
 	const ViewportRenderRequest& GetViewportRenderRequest() const noexcept;
 	RenderViewCameraData UpdateViewportCamera(const CameraInputIntent& intent, float deltaSeconds) noexcept;
+	void SetViewportToolbarActions(std::unique_ptr<ViewportToolbarActions> actions) noexcept;
 	void SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept;
 	void SetViewportFinalColorTexture(UiTextureHandle texture) noexcept;
 	void SetDiagnosticsProviders(EditorDiagnosticsProviders providers);
@@ -61,9 +62,9 @@ private:
 
 	bool InitializeWin32Backend();
 
-	void InitializeDefaultPanels();
+	void InitializeWorkspace();
 	void InitializeCorePanels();
-	void InitializeViewportPanels();
+	void InitializeViewport();
 	void InitializeAssetPanels();
 	void InitializeScenePanels();
 	void UpdateSceneModel();
@@ -79,7 +80,7 @@ private:
 	std::unique_ptr<EditorConsoleSystem> m_editorConsoleSystem;
 	std::unique_ptr<SceneOutlinerPanel> m_sceneOutlinerPanel;
 	std::unique_ptr<SceneInspectorPanel> m_sceneInspectorPanel;
-	std::unique_ptr<ViewportTopPanel> m_viewportTopPanel;
+	std::unique_ptr<ViewportToolbar> m_viewportToolbar;
 	std::unique_ptr<ViewportPanel> m_viewportPanel;
 	std::unique_ptr<class EditorViewportSession> m_viewportSession;
 	std::unique_ptr<SettingsPanel> m_settingsPanel;
