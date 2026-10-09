@@ -160,6 +160,8 @@ Do not add external provider state, general command bus, worker thread, permanen
 
 ## Stage 0C — Publish One Coherent Viewport Observation
 
+**Execution - 2026-10-08:** [Stage 0C handoff](Discovery.md#stage-0c-implementation-handoff---2026-10-08) closes `EC-G0C` for its selected publication/retirement/native Editor/output controls. All three independent engine prerequisite exits are delivered; Stage 1 still requires full native `EC-D0-PIX` proof.
+
 **Objective:** make the existing Editor frame consume matching products and presentation texture from one publication; implement Q04 without a universal Renderer snapshot.
 
 **Prerequisites:** `EC-G0B`; D09 freezes publication identity/capacity/copy/lifetime and exact affected consumers; current product/texture/retirement/generation paths and serial/threaded publication cadence inspected.

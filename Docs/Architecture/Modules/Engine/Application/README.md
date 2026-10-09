@@ -38,6 +38,8 @@ Graphics launch policy now belongs to the private [ApplicationGraphicsLaunch](..
 
 The module is a composition root. Its quality depends on preserving the boundaries below rather than absorbing world, rendering, tool, or editor policy into the host loop.
 
+The Editor frame now acquires products and presentation texture once through Renderer.GetViewportPresentation and projects that bounded observation to UI. RuntimeApplication no longer forwards an independent products getter. [Stage 0C publication handoff](../../../CrossModule/PerformanceDiagnostics/ExternalCapture/Discovery.md#stage-0c-implementation-handoff---2026-10-08) records serial/threaded runtime controls and retained evidence limits.
+
 ## Product Split
 
 | ID | Capability | State | Exact current coverage and limit | Evidence |

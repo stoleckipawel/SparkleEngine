@@ -55,7 +55,7 @@ The stage ledger distinguishes a shared engine repair from a capture hook; neith
 
 ## Engine Evolution Contract
 
-**Implementation update - 2026-10-08:** the existing-consumer Q01/Q02 startup/events and Q03 queue admission repairs are implemented. [Stage 0B handoff](Discovery.md#stage-0b-implementation-handoff---2026-10-08) records the producer/consumer/lock/identity/deletion budget and scoped controls. Q04 publication and native capture/provider contracts remain target work.
+**Implementation update - 2026-10-08:** the existing-consumer Q01/Q02 startup/events and Q03 queue admission repairs are implemented. [Stage 0B handoff](Discovery.md#stage-0b-implementation-handoff---2026-10-08) records the producer/consumer/lock/identity/deletion budget and scoped controls. [Stage 0C handoff](Discovery.md#stage-0c-implementation-handoff---2026-10-08) records implemented Q04: one 600-byte fixed viewport observation, monotonic independent publication sequence, migrated consumers and removal of the independent public getters/caches. Native capture/provider contracts remain target work.
 
 The [dated absorption scan](Research.md#engine-absorption-scan--2026-10-07) identifies the existing responsibilities that must improve as this feature lands. Shared engine mechanism stays with its existing owner; capture policy stays within the feature envelope. Preparatory stages must have an existing consumer and an independently observable benefit before a capturer is added. They cannot create dormant extensibility scaffolding.
 

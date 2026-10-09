@@ -38,6 +38,8 @@ Renderer exposes bounded observations of the frame it actually prepared/submitte
 | Async capture | public request -> coordinator -> `ViewportCaptureService` -> RHI readback -> ticket-addressed completion | requested viewport/intermediate product read back without blocking submission or host-level feature dispatch |
 | Mesh preview | Renderer preview product/handle route -> editor | editor-consumable mesh preview; fidelity/usability unproved |
 
+Renderer now exposes `GetViewportPresentation()` as one fixed `ViewportPresentationSnapshot` containing Products, Texture and an independent PublicationSequence. Coordinator publishes under its existing read-state lock; serial/threaded Editor consumers acquire once and project matching products/texture. The actual x64 value is 600 bytes, bounded at compile time to <=2 KiB. Texture is borrowed and generation/retirement validation remains with the existing owners; publication identity is not native surface identity. [Stage 0C](../../../../../CrossModule/PerformanceDiagnostics/ExternalCapture/Discovery.md#stage-0c-implementation-handoff---2026-10-08) records current scoped implementation and controls without changing whole-feature release readiness.
+
 ## Capture Lifecycle
 
 ```text
