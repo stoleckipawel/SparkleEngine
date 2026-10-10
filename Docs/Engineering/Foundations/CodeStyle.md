@@ -55,16 +55,25 @@ C++ `Check` also uses a read-only `InsertBraces: true` projection to reject unbr
 
 ### Repository Commands
 
-The repository entry point builds its manifest from tracked owned C++, headers, HLSL, and HLSLI under `Engine`, `Tools`, and `Projects`. It excludes only `Engine/RHI/Private/D3D12/ThirdParty`; build, artifact, generated, cache, and fetched-dependency trees are not tracked inputs.
+The repository entry point builds its manifest from tracked files and nonignored untracked files. It selects owned C++, headers, HLSL, and HLSLI under `CMake`, `Engine`, `Tools`, and `Projects`, including the owned ImGui integration sources in `CMake`. It excludes `Engine/RHI/Private/D3D12/ThirdParty`. Git-ignored untracked build, artifact, cache, and fetched-dependency files are excluded; tracked files remain candidates even if an ignore rule matches. File discovery does not depend on CMake target membership, so dormant source and new files are included.
 
-The Windows [batch entry point](../../../CMake/CodeStyle.bat) forwards arguments and the exit code to the existing [PowerShell implementation](../../../CMake/CodeStyle.ps1). Run from the repository root:
+The declared extensions are `.c`, `.cc`, `.cpp`, `.cxx`, `.h`, `.hh`, `.hpp`, `.hxx`, `.hlsl`, and `.hlsli`. Other languages follow their own tooling. The command prints selected source-family counts, exclusion counts/reasons, and processing progress. It rejects tool errors and incomplete formatting, visits the complete selected manifest rather than stopping at the first style violation, and rejects a source-set change during execution. Keep the workspace stable during a run; this does not freeze file contents against concurrent edits.
+
+The Windows [batch entry point](../../../CMake/CodeStyle.bat) displays a menu when started without arguments, including by double-click: check or format the entire owned codebase, check or format staged check-in files, or exit. Nothing runs before selection. Interactive runs pause afterward so results remain visible. With explicit arguments, it forwards them and the exit code to the existing [PowerShell implementation](../../../CMake/CodeStyle.ps1) without a menu or pause. Run from the repository root:
 
 ```powershell
 .\CMake\CodeStyle.bat -Mode Check
 .\CMake\CodeStyle.bat -Mode Format
 ```
 
-Use `-Staged` to select source files staged for the next check-in, or `-Path` for one repository-relative tracked source file:
+To retain the exact selected source paths and excluded source candidates, add `-ManifestPath`. The JSON records selection, scope, and limitations; it is not a successful check result. Retain the console log and exit code alongside it. For a whole-repository formatting pass, always follow `Format` with `Check`:
+
+```powershell
+.\CMake\CodeStyle.bat -Mode Format -ManifestPath "build/validation/code-style/format-manifest.json"
+.\CMake\CodeStyle.bat -Mode Check -ManifestPath "build/validation/code-style/check-manifest.json"
+```
+
+Use `-Staged` to select source files staged for the next check-in, or `-Path` for one repository-relative owned source file, including an untracked file:
 
 ```powershell
 .\CMake\CodeStyle.bat -Mode Check -Staged
