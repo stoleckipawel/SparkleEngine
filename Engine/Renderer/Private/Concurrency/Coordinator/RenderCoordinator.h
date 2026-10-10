@@ -4,7 +4,7 @@
 
 #include "Concurrency/Control/RenderThreadCommandQueue.h"
 #include "Concurrency/FrameQueue/RenderFrameQueue.h"
-#include "Host/RendererBackendConfiguration.h"
+#include "RHI/Public/Device/RhiDeviceLaunch.h"
 #include "Renderer/Public/Concurrency/RendererExecutionConfig.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "Renderer/Public/UI/UiTextureHandle.h"
@@ -30,7 +30,7 @@ class Window;
 class RenderCoordinator final
 {
 public:
-	RenderCoordinator(Timer& timer, Window& window, RendererExecutionConfig config, RendererBackendConfiguration backendConfiguration);
+	RenderCoordinator(Timer& timer, Window& window, RendererExecutionConfig config, RhiDeviceLaunch deviceLaunch);
 	~RenderCoordinator() noexcept;
 
 	RenderCoordinator(const RenderCoordinator&) = delete;
@@ -53,6 +53,8 @@ public:
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics();
 	ViewportCaptureAdmission RequestViewportCapture(ViewportCaptureRequest request);
 	bool TryTakeViewportCapture(ViewportCaptureId id, ViewportCaptureReadback& readback);
+
+	ExternalCaptureAdmission RequestExternalCapture(std::uint64_t viewportGeneration) noexcept;
 
 	RendererExecutionMode GetMode() const noexcept { return m_config.Mode; }
 
@@ -87,7 +89,7 @@ private:
 	Timer* m_timer = nullptr;
 	Window* m_window = nullptr;
 	RendererExecutionConfig m_config;
-	RendererBackendConfiguration m_backendConfiguration;
+	RhiDeviceLaunch m_deviceLaunch;
 	Threading::OwnerThread m_producerOwner{"RenderCoordinator producer"};
 	std::unique_ptr<RenderFrameQueue> m_frameQueue;
 	std::unique_ptr<RenderThreadCommandQueue> m_threadCommandQueue;

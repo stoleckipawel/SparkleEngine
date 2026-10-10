@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RHI/Public/Diagnostics/ExternalCaptureProvider.h"
+
 #include "RHI/Public/Presentation/RhiPresentationDefaults.h"
 #include "Renderer/Public/Settings/EngineRenderingDisplayTypes.h"
 #include "Renderer/Public/Settings/EngineRenderingRayReconstructionTypes.h"
@@ -36,4 +38,8 @@ struct EngineRenderingSettingsState final
 	RayTracingPtlasPartitionUpdateMode PtlasPartitionUpdateMode = RayTracingPtlasPartitionUpdateMode::AlwaysUpdatePartition;
 	bool PtlasMarkAllDynamicInPartition = false;
 	float PtlasModeChangeDistance = 100.0f;
+#if SPARKLE_TARGET_EDITOR && !SPARKLE_BUILD_SHIPPING
+	ExternalCaptureProvider StartupCaptureProvider = ExternalCaptureProvider::None;
+	bool CaptureToolsInstalled = false;
+#endif
 };

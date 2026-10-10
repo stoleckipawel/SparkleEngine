@@ -6,43 +6,41 @@
 
 **Authority boundary:** [Semantics](Semantics.md) owns protocol; [User Experience](UserExperience.md) owns interaction; [Plan](Plan.md) owns sequence; [Research](Research.md) owns dated current findings.
 
-**Current readiness:** **0/100 — target only**; marker emission is an existing adjacent capability, not an external-capture provider.
+**Current readiness:** implemented Editor launch/button route with scoped native D3D12 results; provider-wide lifecycle, matrix, Shipping product and adoption acceptance remain open. The parent readiness projection is unchanged.
 
-The [requested-control visibility slice](Discovery.md#requested-viewport-controls-handoff) implements the Application/Editor construction and right-side presenter seam for unavailable requests. It introduces no native bootstrap/controller/adapter or capture authority; the production route below remains the target for enabled buttons.
+The [requested-control visibility slice](Discovery.md#requested-viewport-controls-handoff) implements the Application/Editor construction and right-side presenter seam for unavailable requests. That historical slice is superseded by the implemented native route below; its shared UI/icon ownership is preserved.
 
-## Implemented Editor Toolbar Composition
+## Implemented Editor Viewport Composition
 
-The viewport header widget is private `Viewport/ViewportToolbar`; its optional action-group boundary is `Public/Viewport/ViewportToolbarActions.h`. UI exposes one `SetViewportToolbarActions` installation/replacement/clear operation after construction. Optional actions no longer appear in EditorApplication/UI/Implementation constructors or workspace-initialization signatures. UI owns the toolbar and destroys it before ImGui teardown and before its borrowed collaborators.
+`ViewportPanel` owns the generic `Public/Viewport/ViewportOverlay.h` client and places it at the scene surface's upper right. `UI::SetViewportOverlay` installs/replaces/clears it after ordinary UI construction. Application's private `Editor/ExternalCapture/ExternalCaptureUiComposition` binds one focused Renderer Observe/Request client; concrete `Viewport/ExternalCapture/ExternalCaptureOverlay` selects artwork, draws a two-font-height button and presents concise status. No provider state, SDK call or capture policy enters the viewport host or shared icon service. The overlay dies before the icon service and ImGui context.
 
-The shared [Editor icon service](../../../Modules/Engine/Editor/Icons.md) owns image registration, pixel transfer into the atlas and current UV/texture lookup. UI composes its lifetime independently of capture; the toolbar/action draw boundary borrows it transiently. Capture owns only request flags, selected catalog assets, enabled state, order and tooltips. Declarative Editor assets replace feature-local artwork/generation; eligible per-profile catalogs contain actual tool art, Shipping/Game catalogs omit it. Existing ImGui texture packets alone publish uploads. No tool policy enters the service or generic UI/toolbar. The [shared-service handoff](Discovery.md#shared-editor-icon-service-handoff) supersedes the [initial feature-owned icon mechanism](Discovery.md#capture-application-icon-handoff).
+The private `ViewportToolbar` retains camera/view-mode/Show/statistic header controls, the viewport session, read-only rendering defaults and console executor. Its replaced optional action API/layout is deleted. No capture service is forwarded through UI constructors or workspace initialization.
 
-Toolbar requires only EditorViewportSession, read-only EngineRenderingSettingsState and the existing CVarControlExecutor. UI supplies a transient level-name view when drawing; toolbar has no LevelSession, settings-controller or host-services dependency. It owns camera/view-mode/Show/statistic layout and measures the optional action group once per frame. Alignment and compact reflow are layout details, never the semantic name of a second panel.
-
-Application `Private/Editor/ExternalCapture/ExternalCaptureLaunch.cpp` resolves requested tool intent once and creates optional actions before graphics initialization; after UI initialization, composition installs them directly. Its private eligible-profile guard contains tool policy. `Public/ExternalCapture/ExternalCaptureToolbar.h` owns the request/factory contract, while concrete `ExternalCaptureToolbarActions` and tool labels/guidance are confined to `Private/Viewport/ExternalCapture/`. No native provider state/policy enters the generic toolbar or UI. The [boundary refinement handoff](Discovery.md#viewport-toolbar-boundary-handoff) supersedes [the prior constructor-injection refactor](Discovery.md#capture-ui-decoupling-handoff); [research](Research.md#editor-injection-and-lifetime-review---2026-10-10) retains the selected precedent.
-
-There is no registry, dependency bag, callback list, SDK-facing base class or duplicated capture authority. Adding real readiness/request state later changes capture-owned composition/actions and existing neutral Renderer authority, not UI constructors or workspace initialization.
+Rendering Settings persists one `ExternalCaptureProvider` enum ordered None/Nsight/PIX/RenderDoc as `r.ExternalCapture.StartupProvider`. Private Application startup policy resolves explicit CLI intent first, then that saved enum; no auto-pick branch remains. One SDK-independent public value header owns identities, labels and wire tokens. Launcher uses it without RHI binary or SDK dependencies. Private Launcher capture discovery observes installed files and existing host GPU capabilities; a focused UI model projects supported/available options. Footer composition contributes one dropdown beside Graphics API. The existing typed level-run request/planner/process producer owns preflight and argv; SDK injection/readiness stays in RHI. Selecting None explicitly overrides a saved tool on eligible Editor launches. Game/Shipping cannot enable the route.
 
 ## Production Route
 
 ```mermaid
 flowchart TD
-    Launch[Launcher typed intent or Application CLI] --> Runtime[RendererExternalRuntime composition]
+    Launch[Application graphics CLI intent] --> Runtime[RendererExternalRuntime composition]
     Runtime --> Bootstrap[RHI external-capture bootstrap<br/>before graphics/interposer initialization]
     Bootstrap --> Backend[Private PIX / NGFX / RenderDoc adapters]
     Click[Editor capture presenter] --> Control[Existing Renderer control route]
-    Control --> Capture[Renderer capture controller<br/>request and target authority]
-    Capture --> Native[Existing RHI diagnostics composition]
+    Control --> Capture[Renderer feature target validation]
+    Capture --> Native[RHI native activity lease and observation]
     Native --> Backend
     Backend --> Capture
-    Capture --> Read[Existing immutable Renderer read state]
+    Native --> Read[Immutable native observation through Renderer]
     Read --> App[Application-to-Editor projection]
     App --> Click
     Backend --> Artifact[Provider-native artifact / handoff]
 ```
 
-Bootstrap and capture are related but have different thread lifetimes. `RendererExternalRuntime` continues to compose process integration on the application thread. It invokes a neutral RHI-owned bootstrap before any API call that an injected tool must intercept, including Streamline's affected initialization. It retains the bootstrap lifetime until render/device shutdown. `RendererBackendConfiguration` carries only the narrow immutable bootstrap value needed by device construction; no provider algorithm or native handle becomes Renderer policy.
+Bootstrap and capture are related but have different thread lifetimes. `RendererExternalRuntime` continues to compose process integration on the application thread. It invokes a neutral RHI-owned bootstrap before any API call that an injected tool must intercept, including Streamline's affected initialization. It retains the bootstrap lifetime until render/device shutdown. `RhiDeviceLaunch` replaces the redundant RendererBackendConfiguration and carries backend/interposer input plus a borrowed capture authority for private device construction; no provider algorithm or native handle becomes Renderer policy.
 
-The render owner extends existing control/read-state publication with a feature-local capture controller. That controller owns the single request ID sequence, exclusive lease, target/generation validation, deadlines, and exactly-once terminal publication. Native adapters own only SDK activity, native handles/callbacks, and native quiescence/finalization observations. Application and Editor never reproduce these state machines. No internal Performance session, joined history, stat collector, timestamp query, or benchmark exporter is required.
+The existing ordered queue admits `RenderExternalCaptureCommand` containing only the request ID. Renderer feature helpers validate the requested product generation and invalidate a changed scene. RHI `RhiExternalCapture` owns the single identity sequence, exclusive native lease, 5-second arm/120-second finalization deadlines and terminal snapshot; concrete adapters implement SDK lowering and native finalization. This avoids a second Renderer state machine or snapshot. UI Observe takes only the short state mutex; no SDK or disk operation occurs under it. Native calls execute on the render owner; finalization polling never waits for a file or child process. The Nsight desktop-shell handoff is an OS IPC operation after native finalization, not a replay-completion oracle; no worker or UI/render wait loop is added.
+
+Backend services bind their actual API root and host HWND privately. RenderDoc Vulkan uses the instance's dispatch-table root, never VkDevice. Scene products stay offscreen; the captured host interval includes the Editor UI. The recorded host frame ID is the scheduling boundary, not an invented tool frame ID. Pending activity survives as Quarantined on deadline/target loss; hooks remain loaded through process exit, and overlap is forbidden. Native shutdown/hotkey stress remains unaccepted.
 
 ## Feature Homes And Integration-Hook Budget
 
@@ -50,10 +48,10 @@ The feature has one documented ownership envelope with three necessary private h
 
 | Home / hook | Responsibility | Budget / architecture falsifier |
 | --- | --- | --- |
-| Renderer `Private/Diagnostics/ExternalCapture/` (proposed; search before creating) | Neutral request arbitration, scene/present identity resolution, immutable result composition. | One private subsystem; no provider APIs or runtime loading here. |
-| RHI `Private/Diagnostics/ExternalCapture/` and backend `Private/{D3D12,Vulkan}/Diagnostics/ExternalCapture/` (proposed) | Shared native lifecycle policy and concrete SDK lowering; bootstrap is available before device creation. | One common owner plus backend adapters; no Renderer/Editor includes. |
+| Renderer `Private/Diagnostics/ExternalCapture/` (implemented) | Coherent scene-generation validation and typed queue control; no duplicated lease/result state. | One private subsystem; no provider APIs or runtime loading here. |
+| RHI `Private/Diagnostics/ExternalCapture/` and backend `Private/{D3D12,Vulkan}/Diagnostics/ExternalCapture/` (implemented) | Shared native lifecycle policy and concrete SDK lowering; bootstrap is available before device creation. | One common owner plus backend adapters; no Renderer/Editor includes. |
 | Editor `Private/Viewport/` capture presenter beside `EditorViewportSession` | Presentation of capability/results and submission of typed intent. | One presenter, no native headers or mutable capture authority. |
-| RHI `Public/Diagnostics/` | Narrow neutral launch/capability/request/observation contract through existing diagnostics composition, plus pre-device bootstrap entry. | At most one cohesive contract header; no public plugin registry, SDK version structs, raw native handles, or universal native accessor. |
+| RHI `Public/Diagnostics/` | Narrow neutral launch/capability/request/observation contract through existing diagnostics composition, plus pre-device bootstrap entry. | One operation contract plus a standalone identity/token value header reused by Launcher without binary linkage; no public plugin registry, SDK version structs, raw native handles, or universal native accessor. |
 | Renderer public control/read-state and private coordinator composition | One request edge and one immutable provider projection. | Extend existing owners; no second mailbox, polling bus, or service locator. |
 | `RendererExternalRuntime` / backend configuration | Startup ordering and lifetime composition. | Invoke bootstrap, compose Streamline, retain owner; no provider switches or loading mechanics. |
 | RHI device/presentation factories and diagnostics composition | Attach a bootstrap-selected adapter and notify recording/submission/present boundaries. | One composition hook per backend and existing diagnostics owner; no feature loops in device services. |
@@ -149,3 +147,14 @@ Reuse [Shader System](../../ShaderSystem/README.md) provenance: exact CPU binary
 Replace the marker loader and handwritten ABI path in prerequisite Stage 0A; update all direct callsites, build membership, and documentation. The selected optional matched event package is default-off, privately enabled only for eligible non-Shipping D3D12 profiles, with existing dependency/artifact staging and MIT notices. Those are target build decisions, not generated-membership or Shipping proof. Preserve screenshot/readback services, existing GPU resource lifetimes, parallel recording, Streamline intent, and normal presentation. No aliases, legacy provider paths, internal schema dispatch, second stat/session truth, or deferred deletion gate.
 
 Each stage ends with one responsibility sentence per substantive file/class/function, duplicate/switch/include audit, exact hook ledger, and `architecture_boundary_check`. Discovery may refine file placement from current source, but may not move these authorities into generic orchestrators to avoid the budget.
+
+
+### Refined Implementation Responsibilities - 2026-10-10
+
+Application startup separates attachment-token parsing from the exactly-one-provider selection and persisted fallback. Renderer composition retains one immutable `RhiDeviceLaunch`; named fields/parameters use `deviceLaunch` consistently. No provider-specific system reaches a generic Editor/Launcher client.
+
+RHI private `ExternalCaptureBootstrap.cpp` validates existing injected activities and selects the native adapter before device creation. `RhiExternalCapture.cpp` remains the single request/lease/publication owner; it does not enumerate injected module names. Native start claims the request under the publication mutex, performs SDK/filesystem work outside that mutex, and publishes only against the same still-active identity. Deadline values and quarantine meanings are unchanged. `CanRequestExternalCapture` is the neutral admission-state predicate consumed by the authority and the Editor projection. Installed-tool observation now returns the boolean actually used by settings (`HasInstalledExternalCaptureProvider`); the unused public bitmask query is deleted.
+
+Each native adapter owns its API-specific completion oracle. PIX separates asynchronous inspector launch and native exit polling; RenderDoc separates artifact retrieval and replay handoff; Nsight owns an RAII installation enumeration, ordered injection/activity initialization and a separate private `NsightCaptureViewer.cpp` desktop-shell handoff. Those private additions stay inside the existing enclosure and add no external integration hook, public native API or library dependency. The settings controller owns startup-selection mutation; the settings section draws it. Launcher discovery separates installed-file lookup and declared context restrictions from the Qt option projection. The overlay composes one presentation record, a disabled-state projection and a focused tooltip; it retains no provider state.
+
+[Refactor handoff](Discovery.md#external-capture-readability-and-ownership-refactor---2026-10-10) binds checks and limits to this candidate; earlier native artifacts keep their original candidate identities.

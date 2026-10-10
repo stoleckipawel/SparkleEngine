@@ -84,6 +84,8 @@ namespace SparkleLauncher::LauncherUi
 		inline constexpr int IdeComboMaxWidth = 150;
 		inline constexpr int CompilerComboMinWidth = 100;
 		inline constexpr int CompilerComboMaxWidth = 130;
+		inline constexpr int CaptureComboMinWidth = 130;
+		inline constexpr int CaptureComboMaxWidth = 200;
 		inline constexpr int GraphicsApiComboMinWidth = 92;
 		inline constexpr int GraphicsApiComboMaxWidth = 116;
 		inline constexpr int ShaderBackendComboMinWidth = 82;

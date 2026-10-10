@@ -7,6 +7,10 @@
 #include "Input/Dispatch/InputLayer.h"
 
 #include <cstdint>
+#include <memory>
+
+class EditorIconService;
+class ViewportOverlay;
 
 class SPARKLE_EDITOR_API ViewportPanel final
 {
@@ -29,10 +33,13 @@ public:
 	void SetFinalColorTexture(UiTextureHandle texture) noexcept;
 	const ViewportRenderRequest& GetRenderRequest() const noexcept;
 	void RequestOutputAction(ViewportOutputAction action) noexcept { m_outputAction = action; }
+
 	ViewportOutputAction ConsumeOutputAction() noexcept;
 	InputLayer GetTargetInputLayer() const noexcept { return InputLayer::Gameplay; }
+
 	bool GetInputBounds(float& left, float& top, float& right, float& bottom) const noexcept;
-	void BuildUI(bool disableInteraction = false);
+	void SetOverlay(std::unique_ptr<ViewportOverlay> overlay) noexcept;
+	void BuildUI(EditorIconService& icons, bool disableInteraction = false);
 
 private:
 	void BeginViewportWindow() const;
@@ -41,6 +48,7 @@ private:
 	void UpdateRequestedExtent(float availableWidth, float availableHeight) noexcept;
 	void BuildEmptyState() noexcept;
 	void BuildProgressOverlay() noexcept;
+	void BuildOverlay(EditorIconService& icons, bool disableInteraction) noexcept;
 
 	ViewportRenderRequest m_renderRequest = {};
 	ViewportRenderProducts m_renderProducts = {};
@@ -55,4 +63,5 @@ private:
 	float m_inputBottom = 0.0f;
 	bool m_hasInputBounds = false;
 	ViewportOutputAction m_outputAction = ViewportOutputAction::None;
+	std::unique_ptr<ViewportOverlay> m_overlay;
 };

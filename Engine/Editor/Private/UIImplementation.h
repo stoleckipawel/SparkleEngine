@@ -32,12 +32,13 @@ public:
 
 	const ViewportRenderRequest& GetViewportRenderRequest() const noexcept;
 	RenderViewCameraData UpdateViewportCamera(const CameraInputIntent& intent, float deltaSeconds) noexcept;
-	void SetViewportToolbarActions(std::unique_ptr<ViewportToolbarActions> actions) noexcept;
+	void SetViewportOverlay(std::unique_ptr<ViewportOverlay> overlay) noexcept;
 	void SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept;
 	void SetViewportFinalColorTexture(UiTextureHandle texture) noexcept;
 	void SetDiagnosticsProviders(EditorDiagnosticsProviders providers);
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
 	EditorConsoleSystem* GetEditorConsoleSystem() noexcept { return m_editorConsoleSystem.get(); }
+
 	bool ConsumeShaderReloadRequest() noexcept;
 	bool ConsumeShaderRecookRequest() noexcept;
 	ViewportOutputAction ConsumeViewportOutputAction() noexcept;

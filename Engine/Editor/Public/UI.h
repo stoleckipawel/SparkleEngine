@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Core/Public/Console/CVarControl.h"
 
 #include "EditorAPI.h"
@@ -10,7 +11,7 @@
 #include "Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "Panels/ViewportOutputAction.h"
-#include "Viewport/ViewportToolbarActions.h"
+#include "Viewport/ViewportOverlay.h"
 #include "GameFramework/Public/Rendering/RenderViewCameraData.h"
 #include "GameFramework/Public/Scene/Camera/CameraInputIntent.h"
 #include "GameFramework/Public/World/WorldChange.h"
@@ -69,8 +70,8 @@ public:
 
 	const ViewportRenderRequest& GetViewportRenderRequest() const noexcept;
 	RenderViewCameraData UpdateViewportCamera(const CameraInputIntent& intent, float deltaSeconds) noexcept;
-	// Set, replace or clear the toolbar action group after UI construction, on the Editor thread.
-	void SetViewportToolbarActions(std::unique_ptr<ViewportToolbarActions> actions) noexcept;
+	// Install, replace or clear the viewport overlay after UI construction on the Editor thread.
+	void SetViewportOverlay(std::unique_ptr<ViewportOverlay> overlay) noexcept;
 	void SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept;
 	void SetViewportFinalColorTexture(UiTextureHandle texture) noexcept;
 	void SetDiagnosticsProviders(EditorDiagnosticsProviders providers);

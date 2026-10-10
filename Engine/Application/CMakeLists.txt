@@ -20,6 +20,9 @@ file(GLOB_RECURSE SPARKLE_APPLICATION_PRIVATE_HEADERS CONFIGURE_DEPENDS
 )
 
 set(SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES ${SPARKLE_APPLICATION_PRIVATE_SOURCES})
+set(SPARKLE_APPLICATION_CAPTURE_SOURCES ${SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES})
+list(FILTER SPARKLE_APPLICATION_CAPTURE_SOURCES INCLUDE REGEX "/Private/ExternalCapture/")
+list(FILTER SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES EXCLUDE REGEX "/Private/ExternalCapture/")
 list(FILTER SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES EXCLUDE REGEX "/Private/EditorApplication\\.cpp$")
 list(FILTER SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES EXCLUDE REGEX "/Private/EditorApplicationLaunch\\.cpp$")
 list(FILTER SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES EXCLUDE REGEX "/Private/Editor/")
@@ -40,6 +43,9 @@ list(APPEND SPARKLE_APPLICATION_EDITOR_PRIVATE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/EditorApplication.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/EditorApplicationLaunch.cpp
 )
+set(SPARKLE_APPLICATION_CAPTURE_UI_SOURCES ${SPARKLE_APPLICATION_EDITOR_PRIVATE_SOURCES})
+list(FILTER SPARKLE_APPLICATION_CAPTURE_UI_SOURCES INCLUDE REGEX "/Private/Editor/ExternalCapture/")
+list(FILTER SPARKLE_APPLICATION_EDITOR_PRIVATE_SOURCES EXCLUDE REGEX "/Private/Editor/ExternalCapture/")
 
 file(GLOB_RECURSE SPARKLE_APPLICATION_EDITOR_PRIVATE_HEADERS CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Editor/*.h
@@ -120,7 +126,7 @@ target_include_directories(SparkleApplicationEditor
 
 target_compile_features(SparkleApplicationEditor PUBLIC cxx_std_20)
 target_compile_definitions(SparkleApplicationEditor PRIVATE
-    SPARKLE_APPLICATION_WITH_EXTERNAL_CAPTURE_UI=$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DevelopmentEditor>>
+    SPARKLE_APPLICATION_WITH_EXTERNAL_CAPTURE_UI=$<AND:$<BOOL:${SPARKLE_RHI_WITH_EXTERNAL_CAPTURE}>,$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DevelopmentEditor>>>
 )
 
 sparkle_target_precompile_headers(SparkleApplicationEditor
@@ -149,3 +155,16 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${S
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES
     ${SPARKLE_APPLICATION_EDITOR_PRIVATE_SOURCES}
     ${SPARKLE_APPLICATION_EDITOR_PRIVATE_HEADERS})
+
+target_compile_definitions(SparkleApplication PRIVATE SPARKLE_WITH_EXTERNAL_CAPTURE=$<AND:$<BOOL:${SPARKLE_RHI_WITH_EXTERNAL_CAPTURE}>,$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DevelopmentEditor>>>)
+
+if(SPARKLE_RHI_WITH_EXTERNAL_CAPTURE)
+    foreach(capture_source IN LISTS SPARKLE_APPLICATION_CAPTURE_UI_SOURCES)
+        target_sources(SparkleApplicationEditor PRIVATE
+            "$<$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DevelopmentEditor>>:${capture_source}>")
+    endforeach()
+    foreach(capture_source IN LISTS SPARKLE_APPLICATION_CAPTURE_SOURCES)
+        target_sources(SparkleApplication PRIVATE
+            "$<$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DevelopmentEditor>>:${capture_source}>")
+    endforeach()
+endif()

@@ -7,15 +7,11 @@
 
 SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_renderCoordinatorLogger, "Renderer.Coordinator");
 
-RenderCoordinator::RenderCoordinator(
-    Timer& timer,
-    Window& window,
-    RendererExecutionConfig config,
-    RendererBackendConfiguration backendConfiguration) :
+RenderCoordinator::RenderCoordinator(Timer& timer, Window& window, RendererExecutionConfig config, RhiDeviceLaunch deviceLaunch) :
     m_timer(&timer),
     m_window(&window),
     m_config(config),
-    m_backendConfiguration(backendConfiguration)
+    m_deviceLaunch(deviceLaunch)
 {
 	if (!m_config.HasAssetTaskRuntime())
 	{

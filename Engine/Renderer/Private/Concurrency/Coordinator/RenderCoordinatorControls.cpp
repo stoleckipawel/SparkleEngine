@@ -25,6 +25,7 @@ template <typename TResult> TResult RenderCoordinator::ExtractControlResult(Rend
 void RenderCoordinator::ReloadShaders()
 {
 	m_producerOwner.AssertAccess();
+
 	(void) ExtractControlResult<std::monostate>(
 	    ExecuteSynchronousControl(RenderReloadShadersCommand{std::make_shared<RenderControlCompletion>()}));
 }
@@ -39,6 +40,7 @@ MeshDiagnosticsSnapshot RenderCoordinator::CaptureMeshDiagnostics()
 {
 	m_producerOwner.AssertAccess();
 	auto completion = std::make_shared<RenderControlCompletion>();
+
 	return ExtractControlResult<MeshDiagnosticsSnapshot>(
 	    ExecuteSynchronousControl(RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::Meshes, 0, completion}));
 }
@@ -47,6 +49,7 @@ MeshPreviewGeometry RenderCoordinator::CaptureMeshPreview(std::uintptr_t meshRun
 {
 	m_producerOwner.AssertAccess();
 	auto completion = std::make_shared<RenderControlCompletion>();
+
 	return ExtractControlResult<MeshPreviewGeometry>(
 	    ExecuteSynchronousControl(RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::MeshPreview, meshRuntimeId, completion}));
 }
@@ -55,6 +58,7 @@ TextureDiagnosticsSnapshot RenderCoordinator::CaptureTextureDiagnostics()
 {
 	m_producerOwner.AssertAccess();
 	auto completion = std::make_shared<RenderControlCompletion>();
+
 	return ExtractControlResult<TextureDiagnosticsSnapshot>(
 	    ExecuteSynchronousControl(RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::Textures, 0, completion}));
 }
@@ -63,6 +67,7 @@ RendererMemoryDiagnosticsSnapshot RenderCoordinator::CaptureMemoryDiagnostics()
 {
 	m_producerOwner.AssertAccess();
 	auto completion = std::make_shared<RenderControlCompletion>();
+
 	return ExtractControlResult<RendererMemoryDiagnosticsSnapshot>(
 	    ExecuteSynchronousControl(RenderDiagnosticsCommand{RenderDiagnosticsRequestKind::Memory, 0, completion}));
 }
@@ -71,10 +76,12 @@ ViewportCaptureAdmission RenderCoordinator::RequestViewportCapture(ViewportCaptu
 {
 	m_producerOwner.AssertAccess();
 	std::unique_lock lock(m_readStateMutex);
+
 	const auto slot = std::find_if(
 	    m_outstandingViewportCaptures.begin(),
 	    m_outstandingViewportCaptures.end(),
 	    [](ViewportCaptureId candidate) { return !candidate; });
+
 	if (slot == m_outstandingViewportCaptures.end())
 	{
 		return {.Status = ViewportCaptureAdmissionStatus::Full};
@@ -88,6 +95,7 @@ ViewportCaptureAdmission RenderCoordinator::RequestViewportCapture(ViewportCaptu
 	{
 		const RenderThreadCommandAdmission admission = m_threadCommandQueue->TryPush(
 		    RenderThreadCommand{IssueThreadCommandSequence(), RendererExecutionControl{RenderCaptureCommand{id, std::move(request)}}});
+
 		if (admission == RenderThreadCommandAdmission::Full)
 		{
 			return {.Status = ViewportCaptureAdmissionStatus::Full};
@@ -119,21 +127,26 @@ bool RenderCoordinator::TryTakeViewportCapture(ViewportCaptureId id, ViewportCap
 	{
 		PublishReadState();
 	}
+
 	std::lock_guard lock(m_readStateMutex);
+
 	const auto completion = std::find_if(
 	    m_publishedViewportCaptures.begin(),
 	    m_publishedViewportCaptures.end(),
 	    [id](const ViewportCaptureCompletion& candidate) { return candidate.Id.Value == id.Value; });
+
 	if (completion == m_publishedViewportCaptures.end())
 	{
 		return false;
 	}
 	readback = std::move(completion->Readback);
 	m_publishedViewportCaptures.erase(completion);
+
 	const auto slot = std::find_if(
 	    m_outstandingViewportCaptures.begin(),
 	    m_outstandingViewportCaptures.end(),
 	    [id](ViewportCaptureId candidate) { return candidate.Value == id.Value; });
+
 	if (slot == m_outstandingViewportCaptures.end())
 	{
 		Diagnostics::Fatal(g_renderCoordinatorLogger, __FILE__, __LINE__, "Viewport completion has no outstanding capture owner.");
@@ -159,6 +172,7 @@ void RenderCoordinator::PublishReadState()
 		    .Products = m_context->GetViewportRenderProducts(),
 		    .Texture = m_context->GetViewportPresentationTexture(),
 		    .PublicationSequence = m_publishedViewportPresentation.PublicationSequence + 1};
+
 		std::vector<ViewportCaptureCompletion> captures = m_context->TakeCompletedViewportCaptures();
 		for (ViewportCaptureCompletion& capture : captures)
 		{
@@ -183,16 +197,21 @@ void RenderCoordinator::DispatchControl(RendererExecutionControl control)
 CVarControlResult RenderCoordinator::ExecuteConsoleVariables(CVarControlRequest request)
 {
 	m_producerOwner.AssertAccess();
+
 	RenderControlResult result =
 	    ExecuteSynchronousControl(RenderCVarCommand{std::move(request), std::make_shared<RenderControlCompletion>()});
+
 	if (auto* error = std::get_if<RenderControlError>(&result))
+	{
 		return {.Error = std::move(error->Message)};
+	}
 	return std::get<CVarControlResult>(std::move(result));
 }
 
 EngineRenderingSettingsState RenderCoordinator::CaptureRenderingSettings()
 {
 	m_producerOwner.AssertAccess();
+
 	return ExtractControlResult<EngineRenderingSettingsState>(
 	    ExecuteSynchronousControl(RenderSettingsCaptureCommand{std::make_shared<RenderControlCompletion>()}));
 }
@@ -206,24 +225,31 @@ void RenderCoordinator::SubmitThreadCommand(RenderThreadCommandPayload payload)
 	if (const auto* control = std::get_if<RendererExecutionControl>(&payload))
 	{
 		shutdown = std::holds_alternative<RenderShutdownCommand>(*control);
+
 		std::visit(
 		    [&completion](const auto& command)
 		    {
 			    if constexpr (requires { command.Completion; })
+			    {
 				    completion = command.Completion;
+			    }
 		    },
 		    *control);
 	}
 	if (!m_threadCommandQueue->WaitPush(RenderThreadCommand{sequenceNumber, std::move(payload)}))
 	{
 		if (completion)
+		{
 			completion->Cancel();
+		}
 		else if (!shutdown)
+		{
 			Diagnostics::Fatal(
 			    g_renderCoordinatorLogger,
 			    __FILE__,
 			    __LINE__,
 			    "Render-thread command queue rejected submission after closing.");
+		}
 	}
 }
 
@@ -248,4 +274,44 @@ std::uint64_t RenderCoordinator::IssueThreadCommandSequence() noexcept
 	const std::uint64_t sequenceNumber = m_nextThreadCommandSequence;
 	m_nextThreadCommandSequence = sequenceNumber == (std::numeric_limits<std::uint64_t>::max)() ? 0 : sequenceNumber + 1;
 	return sequenceNumber;
+}
+
+ExternalCaptureAdmission RenderCoordinator::RequestExternalCapture(std::uint64_t viewportGeneration) noexcept
+{
+	m_producerOwner.AssertAccess();
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+	RhiExternalCapture* capture = m_deviceLaunch.ExternalCapture;
+	if (!capture)
+	{
+		return {};
+	}
+	const auto admission = capture->Reserve(viewportGeneration);
+	if (admission.Status != ExternalCaptureAdmissionStatus::Accepted)
+	{
+		return admission;
+	}
+	RenderExternalCaptureCommand command{admission.RequestId};
+	if (m_config.IsThreaded())
+	{
+		const auto result =
+		    m_threadCommandQueue->TryPush(RenderThreadCommand{IssueThreadCommandSequence(), RendererExecutionControl{command}});
+
+		if (result != RenderThreadCommandAdmission::Accepted)
+		{
+			capture->Reject(admission.RequestId, "Render command queue rejected capture admission.");
+
+			return {
+			    .Status = result == RenderThreadCommandAdmission::Full ? ExternalCaptureAdmissionStatus::Full
+			                                                           : ExternalCaptureAdmissionStatus::Closed};
+		}
+	}
+	else
+	{
+		GetSerialContext().ExecuteControl(command);
+	}
+	return admission;
+#else
+	(void) viewportGeneration;
+	return {};
+#endif
 }

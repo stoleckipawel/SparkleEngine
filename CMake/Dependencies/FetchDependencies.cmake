@@ -1159,9 +1159,10 @@ if(_sparkle_fetch_nvidia_streamline AND (SPARKLE_ENABLE_NVIDIA_STREAMLINE OR NOT
 endif()
 
 # Official event instrumentation is optional; the PIX capturer remains external.
+option(SPARKLE_RHI_WITH_EXTERNAL_CAPTURE "Enable development Editor native GPU capture integration" ON)
 option(SPARKLE_RHI_WITH_D3D12_PIX_EVENTS "Enable official PIX events for non-Shipping D3D12 builds" OFF)
 sparkle_source_dependency_selected("winpixeventruntime" _sparkle_pix_selected)
-if(_sparkle_pix_selected AND (SPARKLE_RHI_WITH_D3D12_PIX_EVENTS OR SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "winpixeventruntime"))
+if(_sparkle_pix_selected AND (SPARKLE_RHI_WITH_D3D12_PIX_EVENTS OR SPARKLE_RHI_WITH_EXTERNAL_CAPTURE OR SPARKLE_SYNC_SOURCE_DEPENDENCY STREQUAL "winpixeventruntime"))
     set(_sparkle_pix_root "${FETCHCONTENT_BASE_DIR}/winpixeventruntime-src")
     sparkle_ensure_archive_dependency(
         DISPLAY_NAME "WinPixEventRuntime"

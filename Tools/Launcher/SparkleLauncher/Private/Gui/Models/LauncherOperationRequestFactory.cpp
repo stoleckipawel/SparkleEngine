@@ -104,6 +104,7 @@ namespace SparkleLauncher
 		request.SelectedTargets = settings.SelectedTargets();
 		request.ShaderBackend = settings.ShaderBackend();
 		request.GraphicsApi = settings.GraphicsApi();
+		request.CaptureProvider = settings.CaptureProvider();
 		request.ShaderEnableDebugInfo = settings.ShaderEnableDebugInfo();
 		request.ShaderEnableOptimizations = settings.ShaderEnableOptimizations();
 		request.ShaderWarningsAsErrors = settings.ShaderWarningsAsErrors();

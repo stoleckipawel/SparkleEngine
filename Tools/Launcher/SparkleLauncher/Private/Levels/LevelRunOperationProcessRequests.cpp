@@ -20,6 +20,11 @@ namespace SparkleLauncher
 		request.Environment = plan.Environment;
 		request.LogPath = ResolveLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "RunLevel.txt");
 		request.Arguments = {"--graphics-api", plan.Request.GraphicsApi};
+		if (plan.Request.ProductProfile == "DebugEditor" || plan.Request.ProductProfile == "DevelopmentEditor")
+		{
+			request.Arguments.emplace_back("--capture-provider");
+			request.Arguments.emplace_back(ExternalCaptureProviderToString(plan.Request.CaptureProvider));
+		}
 		request.ReadinessValue = plan.Request.LevelId;
 
 		LevelRunOperationProcessStep step;

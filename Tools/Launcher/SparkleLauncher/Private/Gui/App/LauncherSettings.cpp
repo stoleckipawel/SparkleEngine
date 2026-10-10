@@ -98,6 +98,23 @@ namespace SparkleLauncher
 		return m_graphicsApi;
 	}
 
+	ExternalCaptureProvider LauncherSettings::CaptureProvider() const
+	{
+		return m_captureProvider;
+	}
+
+	void LauncherSettings::SetCaptureProvider(const QString& value)
+	{
+		ExternalCaptureProvider provider;
+		if (!TryParseExternalCaptureProvider(value.toStdString(), provider) || provider == m_captureProvider)
+		{
+			return;
+		}
+
+		m_captureProvider = provider;
+		emit SettingsChanged();
+	}
+
 	const QString& LauncherSettings::CleanScope() const
 	{
 		return m_cleanScope;

@@ -3,10 +3,17 @@
 
 #include "Streamline/StreamlineRuntimeSupport.h"
 
-RendererExternalRuntime::RendererExternalRuntime(ERhiBackendApi backendApi) noexcept
+RendererExternalRuntime::RendererExternalRuntime(RendererGraphicsLaunch graphicsLaunch) noexcept
 {
-	m_backendConfiguration.BackendApi = backendApi;
-	m_backendConfiguration.InterposerHooks = InitializeSharedStreamlineRuntime(m_backendConfiguration.BackendApi);
+	m_deviceLaunch.BackendApi = graphicsLaunch.BackendApi;
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+	if (graphicsLaunch.CaptureProvider != ExternalCaptureProvider::None)
+	{
+		m_externalCapture = std::make_unique<RhiExternalCapture>(graphicsLaunch.BackendApi, graphicsLaunch.CaptureProvider);
+		m_deviceLaunch.ExternalCapture = m_externalCapture.get();
+	}
+#endif
+	m_deviceLaunch.InterposerHooks = InitializeSharedStreamlineRuntime(m_deviceLaunch.BackendApi);
 }
 
 RendererExternalRuntime::~RendererExternalRuntime() noexcept
@@ -15,10 +22,10 @@ RendererExternalRuntime::~RendererExternalRuntime() noexcept
 	ShutdownSharedStreamlineRuntime();
 }
 
-const RendererBackendConfiguration& RendererExternalRuntime::GetBackendConfiguration() const noexcept
+const RhiDeviceLaunch& RendererExternalRuntime::GetDeviceLaunch() const noexcept
 {
 	m_owner.AssertAccess();
-	return m_backendConfiguration;
+	return m_deviceLaunch;
 }
 
 void RendererExternalRuntime::BeginSimulationFrame(std::uint64_t frameId) noexcept

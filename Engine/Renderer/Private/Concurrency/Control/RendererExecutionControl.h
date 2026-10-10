@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Concurrency/Control/RenderControlCompletion.h"
+#include "Diagnostics/ExternalCapture/ExternalCaptureControl.h"
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
@@ -74,4 +75,9 @@ using RendererExecutionControl = std::variant<
     RenderSettingsChangedCommand,
     RenderShutdownCommand,
     RenderCVarCommand,
-    RenderSettingsCaptureCommand>;
+    RenderSettingsCaptureCommand
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+    ,
+    RenderExternalCaptureCommand
+#endif
+    >;

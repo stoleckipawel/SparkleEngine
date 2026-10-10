@@ -1,6 +1,9 @@
 #include "PCH.h"
 
 #include "Device/RenderDeviceBackendFactory.h"
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+  #include "Diagnostics/ExternalCapture/ExternalCaptureAdapter.h"
+#endif
 
 #include "D3D12/D3D12RenderHardwareInterface.h"
 #include "D3D12/Commands/D3D12CommandRecordingContext.h"
@@ -35,6 +38,9 @@ public:
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept override;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept override;
 	void SettleForShutdown() noexcept override;
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+	void BindExternalCapture(RhiExternalCapture& capture) noexcept override;
+#endif
 	void ResizeSwapChain() noexcept override;
 	void BeginFrame(std::uint64_t frameId) noexcept override;
 	void PrepareCommandRecording() noexcept override;
@@ -306,3 +312,11 @@ void D3D12RenderDeviceServices::AdvanceFrameInFlight() noexcept
 	m_swapChain->UpdateCurrentBackBufferIndex();
 	m_currentFrameIndex = (m_currentFrameIndex + 1u) % m_swapChain->GetMaximumFramesInFlight();
 }
+
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+void D3D12RenderDeviceServices::BindExternalCapture(RhiExternalCapture& capture) noexcept
+{
+	// Bind the native device and the window owned by its presentation swapchain.
+	RhiExternalCaptureBinding::Bind(capture, m_rhi->GetDevice().Get(), m_swapChain->GetHostWindow().GetHWND());
+}
+#endif

@@ -31,6 +31,9 @@ std::filesystem::path EngineRenderingSettingsPersistence::GetUserConfigPath()
 std::span<const std::string_view> EngineRenderingSettingsPersistence::GetPersistedNames() noexcept
 {
 	static constexpr std::string_view persistedNames[] = {
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+	    "r.ExternalCapture.StartupProvider",
+#endif
 	    "r.VSync",
 	    "r.BackBufferFormat",
 	    "r.PreferHighPerformanceAdapter",
@@ -148,6 +151,9 @@ void EngineRenderingSettingsPersistence::Write(const EngineRenderingSettingsStat
 		sectionLines.emplace_back(std::string(key) + "=" + persistedValue);
 	};
 	appendConfigValue("r.VSync", state.VSync);
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+	appendConfigValue("r.ExternalCapture.StartupProvider", state.StartupCaptureProvider);
+#endif
 	appendConfigValue("r.BackBufferFormat", state.BackBufferFormat);
 	appendConfigValue("r.PreferHighPerformanceAdapter", state.PreferHighPerformanceAdapter);
 	appendConfigValue("r.ToneMapper", state.ToneMapper);

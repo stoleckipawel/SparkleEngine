@@ -137,7 +137,9 @@ namespace SparkleLauncher
 	{
 		combo.addItem(option.DisplayName, option.Value);
 		const int row = combo.count() - 1;
-		const QString availability = option.Available ? QStringLiteral("Available") : QStringLiteral("Supported, setup required");
+		const QString availability = option.Available
+		    ? QStringLiteral("Available")
+		    : (option.Supported ? QStringLiteral("Supported, setup required") : QStringLiteral("Unavailable in this configuration"));
 		const QString detail = option.Detail.isEmpty() ? availability : availability + ". " + option.Detail;
 		combo.setItemData(row, detail, Qt::ToolTipRole);
 		combo.setItemData(row, option.DisplayName, Qt::AccessibleTextRole);
@@ -161,11 +163,11 @@ namespace SparkleLauncher
 
 		int selectedIndex = -1;
 		int firstAvailableIndex = -1;
-		const auto appendOptions = [&](bool available)
+		const auto appendOptions = [&](bool available, bool supported)
 		{
 			for (const LauncherSelectionOption& option : options)
 			{
-				if (option.Available != available)
+				if (option.Available != available || (!available && option.Supported != supported))
 				{
 					continue;
 				}
@@ -183,14 +185,27 @@ namespace SparkleLauncher
 		};
 
 		AppendGroupHeading(combo, "Available");
-		appendOptions(true);
-		const bool hasSupportedOptions =
-		    std::any_of(options.begin(), options.end(), [](const LauncherSelectionOption& option) { return !option.Available; });
+		appendOptions(true, true);
+		const bool hasSupportedOptions = std::any_of(
+		    options.begin(),
+		    options.end(),
+		    [](const LauncherSelectionOption& option) { return !option.Available && option.Supported; });
 		if (hasSupportedOptions)
 		{
 			combo.insertSeparator(combo.count());
 			AppendGroupHeading(combo, "Supported");
-			appendOptions(false);
+			appendOptions(false, true);
+		}
+
+		const bool hasUnsupportedOptions = std::any_of(
+		    options.begin(),
+		    options.end(),
+		    [](const LauncherSelectionOption& option) { return !option.Available && !option.Supported; });
+		if (hasUnsupportedOptions)
+		{
+			combo.insertSeparator(combo.count());
+			AppendGroupHeading(combo, "Unavailable for selection");
+			appendOptions(false, false);
 		}
 
 		selectedIndex = selectedIndex >= 0 ? selectedIndex : firstAvailableIndex;
@@ -199,7 +214,7 @@ namespace SparkleLauncher
 		const int availableCount = static_cast<int>(
 		    std::count_if(options.begin(), options.end(), [](const LauncherSelectionOption& option) { return option.Available; }));
 		combo.setAccessibleDescription(
-		    QStringLiteral("%1 available; %2 supported but unavailable.").arg(availableCount).arg(options.size() - availableCount));
+		    QStringLiteral("%1 available; %2 known but unavailable.").arg(availableCount).arg(options.size() - availableCount));
 		const int contentWidth = combo.view()->sizeHintForColumn(0) + LauncherUi::Selector::PopupHorizontalPadding;
 		combo.view()->setMinimumWidth(qBound(combo.minimumWidth(), contentWidth, LauncherUi::Selector::PopupMaxWidth));
 		return selectedIndex < 0 ? QString() : combo.currentData().toString();

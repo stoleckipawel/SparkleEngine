@@ -10,7 +10,9 @@ file(GLOB_RECURSE SPARKLE_EDITOR_PRIVATE_HEADERS CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/*.h
 )
 
-list(FILTER SPARKLE_EDITOR_PRIVATE_SOURCES EXCLUDE REGEX "/Private/Viewport/ExternalCapture/ExternalCaptureToolbarActions\\.cpp$")
+set(_sparkle_editor_capture_sources ${SPARKLE_EDITOR_PRIVATE_SOURCES})
+list(FILTER _sparkle_editor_capture_sources INCLUDE REGEX "/Private/Viewport/ExternalCapture/")
+list(FILTER SPARKLE_EDITOR_PRIVATE_SOURCES EXCLUDE REGEX "/Private/Viewport/ExternalCapture/")
 
 if(SPARKLE_BUILD_SHARED)
     add_library(SparkleEditor SHARED
@@ -48,9 +50,9 @@ target_compile_features(SparkleEditor PUBLIC cxx_std_20)
 include("${CMAKE_CURRENT_SOURCE_DIR}/EditorIconAssets.cmake")
 
 set(SPARKLE_EDITOR_CAPTURE_UI_CONFIG "$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DevelopmentEditor>>")
-target_sources(SparkleEditor PRIVATE
-    "$<${SPARKLE_EDITOR_CAPTURE_UI_CONFIG}:${CMAKE_CURRENT_SOURCE_DIR}/Private/Viewport/ExternalCapture/ExternalCaptureToolbarActions.cpp>"
-)
+foreach(_source IN LISTS _sparkle_editor_capture_sources)
+    target_sources(SparkleEditor PRIVATE "$<${SPARKLE_EDITOR_CAPTURE_UI_CONFIG}:${_source}>")
+endforeach()
 
 # Precompiled header (per-module PCH)
 sparkle_target_precompile_headers(SparkleEditor

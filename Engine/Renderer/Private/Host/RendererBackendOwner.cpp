@@ -3,9 +3,9 @@
 
 #include "RHI/Public/Device/RenderDeviceServices.h"
 
-RendererBackendOwner::RendererBackendOwner(Window& window, const RendererBackendConfiguration& configuration)
+RendererBackendOwner::RendererBackendOwner(Window& window, const RhiDeviceLaunch& deviceLaunch)
 {
-	m_deviceServices = RenderDeviceServices::Create(window, configuration.BackendApi, configuration.InterposerHooks);
+	m_deviceServices = RenderDeviceServices::Create(window, deviceLaunch);
 }
 
 RendererBackendOwner::~RendererBackendOwner() noexcept

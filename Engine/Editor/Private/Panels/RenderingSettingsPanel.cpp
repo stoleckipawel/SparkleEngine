@@ -12,6 +12,9 @@
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 #include "Settings/EngineRenderingSettingsController.h"
 #include "Style/SparkleUiPalette.h"
+#if SPARKLE_TARGET_EDITOR && !SPARKLE_BUILD_SHIPPING
+  #include "Viewport/ExternalCapture/ExternalCaptureSettingsSection.h"
+#endif
 
 #include <imgui.h>
 
@@ -69,6 +72,9 @@ void RenderingSettingsPanel::BuildUI(bool disableInteraction, const char* filter
 	DrawRayReconstructionSettingsSection(*m_settings, settings, filterText);
 	DrawUpscalingSettingsSection(*m_settings, settings, filterText);
 	DrawRayTracingSceneSettingsSection(*m_settings, settings, filterText);
+#if SPARKLE_TARGET_EDITOR && !SPARKLE_BUILD_SHIPPING
+	DrawExternalCaptureSettingsSection(*m_settings, filterText);
+#endif
 
 	ImGui::EndDisabled();
 }

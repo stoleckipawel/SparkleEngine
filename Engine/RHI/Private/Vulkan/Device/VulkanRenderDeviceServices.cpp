@@ -1,6 +1,9 @@
 #include "Vulkan/VulkanPCH.h"
 
 #include "Device/RenderDeviceBackendFactory.h"
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+  #include "Diagnostics/ExternalCapture/ExternalCaptureAdapter.h"
+#endif
 
 #include "Frame/RhiFrameConstants.h"
 #include "Vulkan/Commands/VulkanCommandRecordingContext.h"
@@ -35,6 +38,9 @@ public:
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept override;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept override;
 	void SettleForShutdown() noexcept override;
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+	void BindExternalCapture(RhiExternalCapture& capture) noexcept override;
+#endif
 	void ResizeSwapChain() noexcept override;
 	void BeginFrame(std::uint64_t frameId) noexcept override;
 	void PrepareCommandRecording() noexcept override;
@@ -447,3 +453,12 @@ void VulkanRenderDeviceServices::AdvanceFrameInFlight() noexcept
 	m_currentFrameIndex = (m_currentFrameIndex + 1u) % m_swapChain->GetMaximumFramesInFlight();
 	m_renderHardwareInterface->SetCurrentFrameIndex(m_currentFrameIndex);
 }
+
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+void VulkanRenderDeviceServices::BindExternalCapture(RhiExternalCapture& capture) noexcept
+{
+	// Vulkan uses the dispatch-table root inside VkInstance, as specified by
+	// RenderDoc's RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE, never VkDevice.
+	RhiExternalCaptureBinding::Bind(capture, *reinterpret_cast<void**>(m_rhi->GetInstance()), m_swapChain->GetHostWindow().GetHWND());
+}
+#endif

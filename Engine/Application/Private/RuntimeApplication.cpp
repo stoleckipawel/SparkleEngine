@@ -126,7 +126,7 @@ void RuntimeApplication::InitializeGameRuntime()
 
 void RuntimeApplication::InitializeRenderer()
 {
-	const ERhiBackendApi backendApi = ResolveApplicationGraphicsBackendApi();
+	const RendererGraphicsLaunch graphicsLaunch = ResolveApplicationGraphicsLaunch();
 	RendererExecutionConfig rendererConfig;
 	if (m_options.AllowThreadedRenderer && ConcurrencyLaunchCVars::UseThreadedRenderer())
 	{
@@ -146,7 +146,7 @@ void RuntimeApplication::InitializeRenderer()
 	rendererConfig.EnableUiRenderPackets = m_options.EnableUiRenderPackets || m_options.EnableRuntimeConsole;
 	rendererConfig.AssetTaskExecutor = &m_taskRuntime->GetExecutor();
 	rendererConfig.AssetTaskParentScope = &m_taskRuntime->GetApplicationScope();
-	m_renderer = std::make_unique<Renderer>(*m_timer, *m_window, backendApi, rendererConfig);
+	m_renderer = std::make_unique<Renderer>(*m_timer, *m_window, graphicsLaunch, rendererConfig);
 }
 
 void RuntimeApplication::InitializeRuntimeConsole()

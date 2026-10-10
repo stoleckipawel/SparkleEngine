@@ -231,6 +231,7 @@ function(sparkle_configure_project_artifacts target_name project_name product_ro
         "${_sparkle_project_artifact_root}/${project_name}/${product_role}"
         "projects/${project_name}/${product_role}")
     sparkle_stage_d3d12_pix_event_runtime(${target_name})
+    sparkle_stage_external_capture_notices(${target_name})
 endfunction()
 
 function(sparkle_stage_d3d12_pix_event_runtime product_target)
@@ -327,3 +328,25 @@ message(STATUS
     "Sparkle roots: build=${_sparkle_configured_build_root}; artifacts=${_sparkle_active_artifact_root}; "
     "dev=${_sparkle_development_artifact_root}")
 message(STATUS "Sparkle artifact variant: ${SPARKLE_ARTIFACT_VARIANT}")
+
+function(sparkle_stage_external_capture_notices product_target)
+    if(NOT TARGET SparkleRHI)
+        return()
+    endif()
+    get_target_property(_capture_notices SparkleRHI SPARKLE_EXTERNAL_CAPTURE_NOTICES)
+    if(NOT _capture_notices)
+        return()
+    endif()
+    set(_capture_profile "$<AND:$<BOOL:${SPARKLE_RHI_WITH_EXTERNAL_CAPTURE}>,$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DevelopmentEditor>>>")
+    foreach(_notice IN LISTS _capture_notices)
+        string(REPLACE "|" ";" _notice_parts "${_notice}")
+        list(GET _notice_parts 0 _notice_source)
+        list(GET _notice_parts 1 _notice_name)
+        add_custom_command(TARGET ${product_target} POST_BUILD
+            COMMAND "$<${_capture_profile}:${CMAKE_COMMAND}>" "$<${_capture_profile}:-E>" "$<${_capture_profile}:copy_if_different>"
+                "$<${_capture_profile}:${_notice_source}>" "$<${_capture_profile}:$<TARGET_FILE_DIR:${product_target}>/${_notice_name}>"
+            COMMAND "$<$<NOT:${_capture_profile}>:${CMAKE_COMMAND}>" "$<$<NOT:${_capture_profile}>:-E>" "$<$<NOT:${_capture_profile}>:rm>" "$<$<NOT:${_capture_profile}>:-f>"
+                "$<$<NOT:${_capture_profile}>:$<TARGET_FILE_DIR:${product_target}>/${_notice_name}>"
+            COMMAND_EXPAND_LISTS VERBATIM)
+    endforeach()
+endfunction()

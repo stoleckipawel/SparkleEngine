@@ -104,7 +104,7 @@ void UI::Implementation::BuildCenterWorkspace(bool disableInteraction, float mai
 	{
 		m_viewportToolbar->SetGeometry(outlinerWidth, mainMenuBarHeight, viewportWidth);
 		const LevelAsset* activeLevel = m_levelSession != nullptr ? m_levelSession->GetActiveLevel() : nullptr;
-		m_viewportToolbar->Draw(activeLevel != nullptr ? activeLevel->GetName() : "<None>", *m_icons, disableInteraction);
+		m_viewportToolbar->Draw(activeLevel != nullptr ? activeLevel->GetName() : "<None>", disableInteraction);
 		viewportToolbarHeight = m_viewportToolbar->GetHeightPixels();
 	}
 
@@ -138,7 +138,7 @@ void UI::Implementation::BuildViewport(
 	m_viewportPanel->SetTopInset(topInset);
 	m_viewportPanel->SetBottomInset(bottomInset);
 	m_viewportPanel->SetSideInsets(outlinerWidth, inspectorWidth);
-	m_viewportPanel->BuildUI(disableInteraction);
+	m_viewportPanel->BuildUI(*m_icons, disableInteraction);
 	RegisterViewportInputRegion();
 }
 

@@ -182,6 +182,9 @@ sparkle_target_precompile_headers(SparkleRendererNvidiaStreamlineProviders
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 
+set(_sparkle_capture_controls ${SPARKLE_RENDERER_PRIVATE_SOURCES})
+list(FILTER _sparkle_capture_controls INCLUDE REGEX "/Private/Diagnostics/ExternalCapture/")
+list(FILTER SPARKLE_RENDERER_PRIVATE_SOURCES EXCLUDE REGEX "/Private/Diagnostics/ExternalCapture/")
 if(SPARKLE_BUILD_SHARED)
     add_library(SparkleRenderer SHARED
         ${SPARKLE_RENDERER_PUBLIC_HEADERS}
@@ -243,3 +246,9 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private/Upscaling/NvidiaDlss PREFI
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private/RayReconstruction/NvidiaDlssRayReconstruction PREFIX "Private\\RayReconstruction\\NvidiaDlssRayReconstruction" FILES ${SPARKLE_RENDERER_NVIDIA_RAY_RECONSTRUCTION_SOURCES} ${SPARKLE_RENDERER_NVIDIA_RAY_RECONSTRUCTION_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private/Streamline PREFIX "Private\\Streamline" FILES ${SPARKLE_RENDERER_STREAMLINE_SHARED_SOURCES} ${SPARKLE_RENDERER_STREAMLINE_SHARED_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/ShaderRegistrations PREFIX "ShaderRegistrations" FILES ${SPARKLE_RENDERER_SHADER_REGISTRATION_SOURCES} ${SPARKLE_RENDERER_SHADER_REGISTRATION_HEADERS})
+
+target_compile_definitions(SparkleRenderer PRIVATE SPARKLE_WITH_EXTERNAL_CAPTURE=$<AND:$<BOOL:${SPARKLE_RHI_WITH_EXTERNAL_CAPTURE}>,$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DevelopmentEditor>>>)
+
+foreach(_capture_source IN LISTS _sparkle_capture_controls)
+ target_sources(SparkleRenderer PRIVATE "$<$<AND:$<BOOL:${SPARKLE_RHI_WITH_EXTERNAL_CAPTURE}>,$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DevelopmentEditor>>>:${_capture_source}>")
+endforeach()

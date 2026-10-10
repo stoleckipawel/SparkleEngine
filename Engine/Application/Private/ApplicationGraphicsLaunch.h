@@ -1,5 +1,4 @@
 #pragma once
 
-#include "RHI/Public/Core/RhiBackendApi.h"
-
-ERhiBackendApi ResolveApplicationGraphicsBackendApi() noexcept;
+#include "Renderer/Public/ExternalCapture/RendererGraphicsLaunch.h"
+RendererGraphicsLaunch ResolveApplicationGraphicsLaunch() noexcept;

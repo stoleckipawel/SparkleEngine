@@ -14,6 +14,8 @@
 
 Source ownership reconciled on 2026-10-06: maintenance core `BuildLevelCleanPaths` selects extracted level cleanup paths, walks parent packs, deduplicates targets, and retains parents used by other selected levels. Qt converts those path specifications for preview and submits the existing maintenance operation. Cached source archives remain outside the selected paths; catalog validation and maintenance containment still guard the paths before removal. This is source ownership evidence, not destructive-operation acceptance.
 
+The 2026-10-10 external-capture change adds **GPU Capture** beside **Graphics API** in the footer: None, Nsight Graphics, PIX, RenderDoc. Private capture discovery scans standard installed tool locations without SDK loading and reuses cached host GPU discovery. Known options remain visible with setup or unsupported-context reasons. Existing typed level-run preflight and process lowering recheck one selection and emit its explicit startup token for eligible Editor; Game/Shipping cannot enable it. The [capture owner](../../../CrossModule/PerformanceDiagnostics/ExternalCapture/ExecutionArchitecture.md#implemented-editor-viewport-composition) defines the boundary and retained proof limits. This does not increase the Launcher readiness projection.
+
 ## At A Glance
 
 | User intent | Launcher responsibility | Success boundary |

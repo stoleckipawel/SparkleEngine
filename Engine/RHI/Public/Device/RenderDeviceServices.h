@@ -3,7 +3,7 @@
 #include "../Core/RhiBackendSelection.h"
 #include "../Commands/RhiCommandSubmissionService.h"
 #include "../Formats/PixelFormat.h"
-#include "../Interop/RhiInterposerHooks.h"
+#include "RhiDeviceLaunch.h"
 #include "../RHIAPI.h"
 #include "RenderHardwareInterface.h"
 
@@ -20,16 +20,7 @@ struct RhiPresentationConfiguration;
 class SPARKLE_RHI_API RenderDeviceServices final : public RhiCommandSubmissionService
 {
 public:
-	static std::unique_ptr<RenderDeviceServices> Create(Window& window, ERhiBackendApi backendApi) noexcept;
-	static std::unique_ptr<RenderDeviceServices> Create(
-	    Window& window,
-	    ERhiBackendApi backendApi,
-	    RhiInterposerHooks interposerHooks) noexcept;
-	static std::unique_ptr<RenderDeviceServices> Create(
-	    Window& window,
-	    ERhiBackendApi backendApi,
-	    PixelFormat backBufferFormat,
-	    RhiInterposerHooks interposerHooks = {}) noexcept;
+	static std::unique_ptr<RenderDeviceServices> Create(Window& window, const RhiDeviceLaunch& launch) noexcept;
 
 	~RenderDeviceServices() noexcept;
 
@@ -73,4 +64,7 @@ private:
 	static RhiPresentationConfiguration ResolvePresentationConfiguration() noexcept;
 
 	std::unique_ptr<RenderDeviceServicesState> m_state;
+#if SPARKLE_TARGET_EDITOR && !SPARKLE_BUILD_SHIPPING
+	RhiExternalCapture* m_externalCapture = nullptr;
+#endif
 };

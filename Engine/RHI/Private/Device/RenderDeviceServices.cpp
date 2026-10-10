@@ -1,6 +1,7 @@
 #include "PCH.h"
 
 #include "Device/RenderDeviceServices.h"
+#include "Diagnostics/RhiExternalCapture.h"
 #include "Device/RenderDeviceBackendFactory.h"
 #include "Device/RenderDeviceBackendServices.h"
 #include "Device/RenderDeviceServicesState.h"
@@ -65,31 +66,18 @@ RhiPresentationConfiguration RenderDeviceServices::ResolvePresentationConfigurat
 }
 
 RenderDeviceServices::RenderDeviceServices() noexcept :
+
     m_state(std::make_unique<RenderDeviceServicesState>())
 {
 }
 
 RenderDeviceServices::~RenderDeviceServices() noexcept = default;
 
-std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Window& window, ERhiBackendApi backendApi) noexcept
+std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Window& window, const RhiDeviceLaunch& launch) noexcept
 {
-	return Create(window, backendApi, RhiPresentationDefaults::DefaultBackBufferFormat);
-}
-
-std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
-    Window& window,
-    ERhiBackendApi backendApi,
-    RhiInterposerHooks interposerHooks) noexcept
-{
-	return Create(window, backendApi, CVarBackBufferFormat.Get(), interposerHooks);
-}
-
-std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
-    Window& window,
-    ERhiBackendApi backendApi,
-    PixelFormat backBufferFormat,
-    RhiInterposerHooks interposerHooks) noexcept
-{
+	const ERhiBackendApi backendApi = launch.BackendApi;
+	const RhiInterposerHooks interposerHooks = launch.InterposerHooks;
+	const PixelFormat backBufferFormat = CVarBackBufferFormat.Get();
 	ValidateBackBufferFormat(backBufferFormat);
 	const RhiPresentationConfiguration presentationConfiguration = ResolvePresentationConfiguration();
 
@@ -122,6 +110,13 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(
 			FailUnsupportedBackend(backendApi);
 	}
 
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+	services->m_externalCapture = launch.ExternalCapture;
+	if (launch.ExternalCapture)
+	{
+		services->m_state->GetBackendServices().BindExternalCapture(*launch.ExternalCapture);
+	}
+#endif
 	return services;
 }
 
@@ -149,17 +144,35 @@ RhiImGuiRenderer& RenderDeviceServices::GetImGuiRenderer() noexcept
 
 void RenderDeviceServices::SettleForShutdown() noexcept
 {
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+	if (m_externalCapture)
+	{
+		m_externalCapture->Shutdown();
+	}
+#endif
 	m_state->GetBackendServices().SettleForShutdown();
 }
 
 void RenderDeviceServices::ResizeSwapChain() noexcept
 {
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+	if (m_externalCapture)
+	{
+		m_externalCapture->InvalidateTarget();
+	}
+#endif
 	m_state->GetBackendServices().ResizeSwapChain();
 }
 
 void RenderDeviceServices::BeginFrame(std::uint64_t frameId) noexcept
 {
 	RenderDeviceBackendServices& backendServices = m_state->GetBackendServices();
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+	if (m_externalCapture)
+	{
+		m_externalCapture->BeginFrame(frameId);
+	}
+#endif
 	backendServices.BeginFrame(frameId);
 	RenderHardwareInterface& renderHardwareInterface = backendServices.GetRenderHardwareInterface();
 	renderHardwareInterface.GetDescriptorService().BeginFrame(renderHardwareInterface.GetCurrentFrameIndex());
@@ -239,6 +252,12 @@ RhiSubmissionToken RenderDeviceServices::GetLastSubmittedToken(ERhiQueueType que
 void RenderDeviceServices::SubmitFrame(std::uint64_t frameId) noexcept
 {
 	m_state->GetBackendServices().SubmitFrame(frameId);
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+	if (m_externalCapture)
+	{
+		m_externalCapture->EndFrame();
+	}
+#endif
 }
 
 void RenderDeviceServices::AdvanceFrameInFlight() noexcept

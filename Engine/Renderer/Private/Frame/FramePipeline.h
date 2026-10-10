@@ -68,8 +68,12 @@ private:
 	    bool enableUiRenderPackets);
 
 	void SubmitViewportRenderRequest(ViewportRenderRequest request) noexcept { m_viewportRenderRequest = std::move(request); }
+
 	void RequestResize(RenderViewportExtent extent, bool minimized) noexcept;
+	std::uint64_t GetViewportRequestGeneration() const noexcept { return m_viewportRenderRequest.Generation; }
+
 	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept { return m_viewportRenderProducts; }
+
 	UiTextureHandle GetViewportPresentationTexture() const noexcept;
 
 	void OnRender(RenderFrameSubmission submission, const RenderFrameTime& time, const UiRenderPacket& ui) noexcept;

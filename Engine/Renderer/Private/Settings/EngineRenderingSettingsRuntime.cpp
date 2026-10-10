@@ -8,6 +8,8 @@
 #include "Renderer/Public/Settings/EngineRenderingSettings.h"
 #include "RHI/Public/CVars/RHICVars.h"
 #include "Upscaling/UpscalerSettings.h"
+#include "Renderer/Public/ExternalCapture/ExternalCaptureStartup.h"
+#include "RHI/Public/Diagnostics/RhiExternalCapture.h"
 
 EngineRenderingSettingsState EngineRenderingSettingsRuntime::Capture() noexcept
 {
@@ -37,6 +39,10 @@ EngineRenderingSettingsState EngineRenderingSettingsRuntime::Capture() noexcept
 	state.PtlasPartitionUpdateMode = CVarRayTracingPtlasPartitionUpdateMode.Get();
 	state.PtlasMarkAllDynamicInPartition = CVarRayTracingPtlasMarkAllDynamicInPartition.Get();
 	state.PtlasModeChangeDistance = CVarRayTracingPtlasModeChangeDistance.Get();
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+	state.StartupCaptureProvider = CVarExternalCaptureStartupProvider.Get();
+	state.CaptureToolsInstalled = HasInstalledExternalCaptureProvider();
+#endif
 	return state;
 }
 
@@ -74,4 +80,7 @@ void EngineRenderingSettingsRuntime::Apply(const EngineRenderingSettingsState& s
 	setCVarIfChanged(CVarRayTracingPtlasPartitionUpdateMode, state.PtlasPartitionUpdateMode);
 	setCVarIfChanged(CVarRayTracingPtlasMarkAllDynamicInPartition, state.PtlasMarkAllDynamicInPartition);
 	setCVarIfChanged(CVarRayTracingPtlasModeChangeDistance, state.PtlasModeChangeDistance);
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+	setCVarIfChanged(CVarExternalCaptureStartupProvider, state.StartupCaptureProvider);
+#endif
 }

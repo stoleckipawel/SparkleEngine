@@ -3,6 +3,7 @@
 #include "LauncherLayoutWidgets.h"
 #include "LauncherContentModel.h"
 #include "LauncherContextUiModel.h"
+#include "LauncherExternalCaptureUiModel.h"
 #include "LauncherOperationRequestFactory.h"
 #include "LauncherSelectionWidgets.h"
 #include "LauncherSettings.h"
@@ -156,6 +157,15 @@ namespace SparkleLauncher
 		    LauncherUi::ContextSelector::GraphicsApiComboMinWidth,
 		    LauncherUi::ContextSelector::GraphicsApiComboMaxWidth);
 
+		m_captureProviderCombo = CreateContextCombo(&LauncherSettings::SetCaptureProvider);
+		m_captureProviderCombo->setAccessibleName("GPU Capture");
+		m_captureProviderCombo->setToolTip("Attach a capture tool when the Editor starts.");
+		addContextItem(
+		    "GPU Capture",
+		    *m_captureProviderCombo,
+		    LauncherUi::ContextSelector::CaptureComboMinWidth,
+		    LauncherUi::ContextSelector::CaptureComboMaxWidth);
+
 		m_shaderBackendCombo = CreateContextCombo(&LauncherSettings::SetShaderBackend);
 		m_shaderBackendCombo->setAccessibleName("Shader Compiler");
 		m_shaderBackendCombo->setToolTip("DXC or Slang backend passed to shader cook operations.");
@@ -229,6 +239,14 @@ namespace SparkleLauncher
 		    m_settings.GraphicsApi(),
 		    m_settings,
 		    &LauncherSettings::SetGraphicsApi);
+		const QString profile = m_settings.RunMode() == "editor" ? m_settings.EditorProfile() : m_settings.RuntimeProfile();
+		PopulateBoundContextCombo(
+		    m_captureProviderCombo,
+		    BuildExternalCaptureOptions(m_settings.GraphicsApi().toStdString(), profile.toStdString()),
+		    QString::fromUtf8(ExternalCaptureProviderToString(m_settings.CaptureProvider()).data()),
+		    m_settings,
+		    &LauncherSettings::SetCaptureProvider);
+
 		PopulateBoundContextCombo(
 		    m_shaderBackendCombo,
 		    model.ShaderBackends,

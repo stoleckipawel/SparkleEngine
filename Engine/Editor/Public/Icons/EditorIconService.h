@@ -19,9 +19,9 @@ public:
 	EditorIconService(EditorIconService&&) = delete;
 	EditorIconService& operator=(EditorIconService&&) = delete;
 
-	// Square current-font-sized image with ordinary frame-height hit area. The
+	// Square image; zero size uses the current font height. The
 	// caller owns ID, layout, enabled state and tooltip; returns actual activation.
-	bool DrawButton(const EditorIconAsset& asset, const char* id) noexcept;
+	bool DrawButton(const EditorIconAsset& asset, const char* id, float imageSize = 0.0f) noexcept;
 
 private:
 	class Implementation;

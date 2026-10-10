@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Host/RendererBackendConfiguration.h"
+#include "RHI/Public/Device/RhiDeviceLaunch.h"
 #include <memory>
 
 class RenderDeviceServices;
@@ -12,7 +12,7 @@ class Window;
 class RendererBackendOwner final
 {
 public:
-	RendererBackendOwner(Window& window, const RendererBackendConfiguration& configuration);
+	RendererBackendOwner(Window& window, const RhiDeviceLaunch& deviceLaunch);
 	~RendererBackendOwner() noexcept;
 
 	RendererBackendOwner(const RendererBackendOwner&) = delete;

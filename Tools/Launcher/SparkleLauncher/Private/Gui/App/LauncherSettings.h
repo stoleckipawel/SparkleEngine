@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RHI/Public/Diagnostics/ExternalCaptureProvider.h"
+
 #include <QtCore/QObject>
 #include <QtCore/QString>
 
@@ -23,6 +25,7 @@ namespace SparkleLauncher
 		const QString& SelectedTargets() const;
 		const QString& ShaderBackend() const;
 		const QString& GraphicsApi() const;
+		ExternalCaptureProvider CaptureProvider() const;
 		const QString& CleanScope() const;
 		bool ShaderEnableDebugInfo() const;
 		bool ShaderEnableOptimizations() const;
@@ -45,6 +48,7 @@ namespace SparkleLauncher
 		void SetSelectedTargets(const QString& targets);
 		void SetShaderBackend(const QString& backend);
 		void SetGraphicsApi(const QString& graphicsApi);
+		void SetCaptureProvider(const QString& provider);
 		void SetShaderEnableDebugInfo(bool enabled);
 		void SetShaderEnableOptimizations(bool enabled);
 		void SetShaderWarningsAsErrors(bool enabled);
@@ -68,6 +72,7 @@ namespace SparkleLauncher
 		QString m_selectedTargets;
 		QString m_shaderBackend = "dxc";
 		QString m_graphicsApi = "d3d12";
+		ExternalCaptureProvider m_captureProvider = ExternalCaptureProvider::None;
 		QString m_cleanScope = "cooked";
 		bool m_shaderEnableDebugInfo = false;
 		bool m_shaderEnableOptimizations = true;

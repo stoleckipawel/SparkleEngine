@@ -2,7 +2,7 @@
 
 **Status:** implemented path; bounded DevelopmentEditor validation recorded in the [handoff](../../../CrossModule/PerformanceDiagnostics/ExternalCapture/Discovery.md#shared-editor-icon-service-handoff)
 
-Editor clients select immutable artwork and ask a UI-owned icon service to draw it. Clients do not register atlas rectangles, copy pixels or retain texture coordinates. The first consumer is the external-tool toolbar; the service contains no capture/tool policy.
+Editor clients select immutable artwork and ask a UI-owned icon service to draw it. Clients do not register atlas rectangles, copy pixels or retain texture coordinates. The first consumer is the external-capture viewport overlay; the service contains no capture/tool policy.
 
 | Responsibility | Owner |
 | --- | --- |
@@ -11,7 +11,7 @@ Editor clients select immutable artwork and ask a UI-owned icon service to draw 
 | Immutable borrowed descriptor / drawing contract | `Public/Icons/EditorIconAsset.h`, `Public/Icons/EditorIconService.h` |
 | Registration, deduplication, coordinates, lifetime | Private `Icons/EditorIconService.cpp` |
 | Create after typography, destroy after clients/before ImGui | `UI::Implementation` |
-| Selection, interaction, tooltip, layout | Individual Editor clients, currently ExternalCaptureToolbarActions |
+| Selection, interaction, tooltip, layout | Individual Editor clients, currently ExternalCaptureOverlay |
 
 ```mermaid
 flowchart LR
@@ -23,13 +23,13 @@ flowchart LR
     Atlas --> Packet[Existing owned render packet]
 ```
 
-The resource service is shared; client selection and enabled state remain local. Public contracts expose no ImGui/native handle and no provider IDs. The generic viewport action boundary borrows the service during drawing; it does not retain it or forward it through Application startup constructors. There is no singleton or callback/loader registry.
+The resource service is shared; client selection and enabled state remain local. Public contracts expose no ImGui/native handle and no provider IDs. The generic viewport overlay boundary borrows the service during drawing; it does not retain it or forward it through Application startup constructors. There is no singleton or callback/loader registry.
 
 ## Add An Icon
 
 1. Add a square top-down unpremultiplied RGBA8 source under an owning `Assets/Icons/<collection>/` folder, retaining provenance and usage attribution. Extent is an integer from 1 through 512; byte count is exactly `extent * extent * 4`.
 2. Add an entry to that collection's `Icons.json`. Collection namespace and asset names use UpperCamelCase identifiers. Declare the exact existing build profiles that may contain the collection. A new collection needs no generator or service edit.
-3. Include the private generated catalog at the selecting client and call `icons.DrawButton(EditorIconAssets::<collection>::<name>, id)`. The client owns stable widget identity, disabled scope, tooltip and layout. The button uses current font size and ordinary frame-height square hit geometry.
+3. Include the private generated catalog at the selecting client and call `icons.DrawButton(EditorIconAssets::<collection>::<name>, id)`. The client owns stable widget identity, disabled scope, tooltip and layout. The button defaults to current font size; clients may pass an explicit image size for larger square buttons.
 
 Example manifest:
 

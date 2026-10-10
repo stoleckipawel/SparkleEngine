@@ -114,6 +114,7 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 			mapped.LevelId = requestedLevels.front();
 		}
 		mapped.GraphicsApi = request.GraphicsApi.toStdString();
+		mapped.CaptureProvider = request.CaptureProvider;
 		return mapped;
 	}
 

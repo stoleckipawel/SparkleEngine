@@ -3,6 +3,7 @@
 
 #include "Panels/ReferencePathTracer/ReferencePathTracerOverlay.h"
 #include "Util/UiUtil.h"
+#include "Editor/Public/Viewport/ViewportOverlay.h"
 
 #include <algorithm>
 #include <utility>
@@ -144,13 +145,36 @@ void ViewportPanel::BuildProgressOverlay() noexcept
 	DrawReferencePathTracerOverlay(progress, m_renderRequest, m_outputAction);
 }
 
-void ViewportPanel::BuildUI(bool disableInteraction)
+void ViewportPanel::SetOverlay(std::unique_ptr<ViewportOverlay> overlay) noexcept
+{
+	m_overlay = std::move(overlay);
+}
+
+void ViewportPanel::BuildOverlay(EditorIconService& icons, bool disableInteraction) noexcept
+{
+	if (!m_overlay)
+	{
+		return;
+	}
+	const float margin = ImGui::GetFontSize() * 0.75f;
+	const ImVec2 origin = ImGui::GetWindowPos();
+	const float width = m_overlay->MeasureWidth();
+	ImGui::SetCursorScreenPos(ImVec2(origin.x + (std::max) (margin, ImGui::GetWindowWidth() - width - margin), origin.y + margin));
+	m_overlay->Draw(icons, disableInteraction);
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+	{
+		m_hasInputBounds = false;
+	}
+}
+
+void ViewportPanel::BuildUI(EditorIconService& icons, bool disableInteraction)
 {
 	BeginViewportWindow();
 	ImGui::BeginDisabled(disableInteraction);
 	BeginViewportSurface();
 	BuildViewportImage();
 	BuildProgressOverlay();
+	BuildOverlay(icons, disableInteraction);
 	ImGui::EndChild();
 	ImGui::EndDisabled();
 	ImGui::End();

@@ -74,12 +74,14 @@ set(SPARKLE_LAUNCHER_CORE_LEVEL_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/LevelRunOperationExecutor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/LevelRunOperationProcessRequests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/LevelRunOperations.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/ExternalCapture/ExternalCaptureDiscovery.cpp
 )
 
 set(SPARKLE_LAUNCHER_CORE_LEVEL_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/AssetPackSyncPlanner.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/LevelOperationProcessRequests.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels/LevelRunOperationProcessRequests.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/ExternalCapture/ExternalCaptureDiscovery.h
 )
 
 set(SPARKLE_LAUNCHER_CORE_COOK_SOURCES
@@ -116,6 +118,7 @@ set(SPARKLE_LAUNCHER_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Operations/LauncherProgressStreamDecoder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherCleanUiModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherContextUiModel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherExternalCaptureUiModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherDependencyUiModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherLevelUiModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherOperationRequestFactory.cpp
@@ -167,6 +170,7 @@ set(SPARKLE_LAUNCHER_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Operations/LauncherProgressStreamDecoder.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherCleanUiModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherContextUiModel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherExternalCaptureUiModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherDependencyUiModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherLevelUiModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherOperationResult.h
@@ -233,6 +237,7 @@ target_include_directories(SparkleLauncherCore
         ${CMAKE_CURRENT_SOURCE_DIR}/Public
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/ExternalCapture
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Levels
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cook
@@ -282,6 +287,7 @@ qt_add_resources(SparkleLauncher SparkleLauncherFontResources
 target_include_directories(SparkleLauncher
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/ExternalCapture
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models

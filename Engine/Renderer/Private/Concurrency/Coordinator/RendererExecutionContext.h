@@ -13,7 +13,7 @@ class FramePipeline;
 class RenderCoordinator;
 class RendererHost;
 class Window;
-struct RendererBackendConfiguration;
+struct RhiDeviceLaunch;
 struct RendererExecutionConfig;
 struct RenderExecutionRequest;
 struct ViewportRenderProducts;
@@ -21,10 +21,7 @@ struct ViewportRenderProducts;
 class RendererExecutionContext final
 {
 public:
-	RendererExecutionContext(
-	    Window& window,
-	    const RendererBackendConfiguration& backendConfiguration,
-	    const RendererExecutionConfig& executionConfig);
+	RendererExecutionContext(Window& window, const RhiDeviceLaunch& deviceLaunch, const RendererExecutionConfig& executionConfig);
 	~RendererExecutionContext() noexcept;
 
 private:
@@ -37,6 +34,7 @@ private:
 	UiTextureHandle GetViewportPresentationTexture() const noexcept;
 	std::vector<ViewportCaptureCompletion> TakeCompletedViewportCaptures();
 	std::uint64_t GetShaderGeneration() const noexcept;
+	void CompleteShaderReload(const RenderReloadShadersCommand& command) noexcept;
 	void CompleteDiagnostics(const RenderDiagnosticsCommand& command);
 	void SettleRendererBeforeDestruction() noexcept;
 
@@ -44,4 +42,7 @@ private:
 	std::unique_ptr<RendererHost> m_rendererHost;
 	std::unique_ptr<FramePipeline> m_pipeline;
 	bool m_shutdownSettled = false;
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+	RhiExternalCapture* m_externalCapture = nullptr;
+#endif
 };

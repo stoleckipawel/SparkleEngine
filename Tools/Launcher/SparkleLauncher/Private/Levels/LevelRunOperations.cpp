@@ -2,6 +2,7 @@
 
 #include "CookedContentReadiness.h"
 #include "LevelRunOperationProcessRequests.h"
+#include "ExternalCaptureDiscovery.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "LauncherStatePaths.h"
 #include "SparkleLauncher/ToolResolver.h"
@@ -119,7 +120,8 @@ namespace SparkleLauncher
 		    {"runMode", std::string(ToString(plan.Request.RunMode))},
 		    {"profile", plan.Request.ProductProfile},
 		    {"level", plan.Request.LevelId},
-		    {"graphicsApi", plan.Request.GraphicsApi}};
+		    {"graphicsApi", plan.Request.GraphicsApi},
+		    {"captureProvider", std::string(ExternalCaptureProviderToString(plan.Request.CaptureProvider))}};
 		plan.Operation.LogPath = ResolveLauncherOperationLogPath(plan.Request.RepositoryRoot, definition->Id, "Latest.txt");
 		if (plan.Request.LevelId.empty())
 		{
@@ -129,6 +131,14 @@ namespace SparkleLauncher
 		if (plan.Request.GraphicsApi != "d3d12" && plan.Request.GraphicsApi != "vulkan")
 		{
 			AddReadiness(plan, "Unknown graphics API: " + plan.Request.GraphicsApi);
+			return plan;
+		}
+
+		const auto capture =
+		    InspectExternalCaptureProvider(plan.Request.CaptureProvider, plan.Request.GraphicsApi, plan.Request.ProductProfile);
+		if (!capture.Available())
+		{
+			AddReadiness(plan, capture.Detail);
 			return plan;
 		}
 

@@ -53,7 +53,9 @@ public:
 	ID3D12Resource* GetCurrentResource() const noexcept { return m_buffers[m_currentBackBufferIndex].Get(); }
 
 	UINT GetCurrentBackBufferIndex() const noexcept { return m_currentBackBufferIndex; }
+
 	UINT GetBackBufferCount() const noexcept { return m_backBufferCount; }
+
 	UINT GetMaximumFramesInFlight() const noexcept { return m_maximumFramesInFlight; }
 
 	void UpdateCurrentBackBufferIndex() { m_currentBackBufferIndex = GetPresentationInterface()->GetCurrentBackBufferIndex(); }
@@ -69,6 +71,8 @@ public:
 	UINT GetFrameLatencyWaitableFlag() const;
 
 	UINT ComputeSwapChainFlags() const;
+
+	Window& GetHostWindow() noexcept { return *m_window; }
 
 private:
 	UINT GetWindowWidth() const noexcept;

@@ -14,6 +14,12 @@ DevelopmentEditor and DebugEditor recognize `-AttachPix`, `-AttachNSight` and `-
 
 These flags currently express attachment **requests**; they do not attach or load any tool. Buttons remain disabled with hover guidance to [External Profiling](../../../../Engineering/Verification/ExternalProfiling.md#current-installed-workflow-readiness). Successful external captures cannot enable an unimplemented engine request route. Shipping excludes the parser body and capture presenter source/calls; Game does not acquire this Editor-only presentation. Multiple requested entries only display unavailable entries, without claiming simultaneous injection support.
 
+## Current Startup Selection
+
+Select **GPU Capture** beside **Graphics API** in the Sparkle Launcher footer: **None ? Nsight Graphics ? PIX ? RenderDoc**. Installed eligible tools are selectable; supported missing tools remain visible with setup details, and incompatible API/profile/hardware choices remain disabled with reasons. Default None launches without optional hooks. Installation detection performs no injection and does not imply native readiness. Nsight's experimental status stays visible.
+
+Direct IDE/shortcut launches may persist the same enum under **Window ? Settings ? GPU Capture ? Capture tool on startup** and restart. Explicit attachment flags or Launcher intent override that preference for one launch. One active provider owns capture; the larger icon overlays the viewport surface at its top right. Click it after the desired scene is ready. Capture applies to the containing host interval and includes Editor UI. Native finalization determines completion; pending/quarantined controls remain disabled. Rendering Settings, Launcher and UI never own a second native session.
+
 ## First Use: PIX
 
 1. Select the existing optimized Development Editor or Game product and D3D12 in Launcher. Choose PIX under optional capture tools; no tool is selected by default. The preflight names external installation/compiled-capability prerequisites, while runtime remains the readiness authority.

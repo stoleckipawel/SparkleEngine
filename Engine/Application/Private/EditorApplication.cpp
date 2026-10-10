@@ -2,7 +2,9 @@
 #include "EditorApplication.h"
 
 #include "Editor/EditorUiFrameRenderer.h"
-#include "Editor/ExternalCapture/ExternalCaptureLaunch.h"
+#if SPARKLE_APPLICATION_WITH_EXTERNAL_CAPTURE_UI
+  #include "Editor/ExternalCapture/ExternalCaptureUiComposition.h"
+#endif
 #include "Editor/Public/UI.h"
 #include "Editor/Viewport/EditorViewportOutputCoordinator.h"
 #include "EditorOperations/EditorOperationRuntime.h"
@@ -45,11 +47,12 @@ void EditorApplication::Initialize()
 		m_state = std::make_unique<State>();
 	}
 
-	auto captureActions = CreateRequestedCaptureToolbarActions();
 	InitializeRuntimeApplication();
 	InitializeEditorOperations();
 	InitializeUi();
-	m_state->Ui->SetViewportToolbarActions(std::move(captureActions));
+#if SPARKLE_APPLICATION_WITH_EXTERNAL_CAPTURE_UI
+	m_state->Ui->SetViewportOverlay(CreateEditorExternalCaptureOverlay(m_state->Runtime->GetRenderer()));
+#endif
 	m_isEditorSessionActive = true;
 }
 

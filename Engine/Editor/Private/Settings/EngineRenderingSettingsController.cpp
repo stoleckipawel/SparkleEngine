@@ -16,6 +16,9 @@ EngineRenderingSettingsController::EngineRenderingSettingsController(
     m_commitHandler(std::move(commitHandler)),
     m_refreshHandler(std::move(refreshHandler))
 {
+#if SPARKLE_TARGET_EDITOR && !SPARKLE_BUILD_SHIPPING
+	m_sessionStartupCaptureProvider = m_state.StartupCaptureProvider;
+#endif
 }
 
 void EngineRenderingSettingsController::RefreshFromRuntimeState() noexcept
@@ -56,6 +59,13 @@ void EngineRenderingSettingsController::SetBackBufferFormat(PixelFormat format)
 {
 	SetValue(m_state.BackBufferFormat, format);
 }
+
+#if SPARKLE_TARGET_EDITOR && !SPARKLE_BUILD_SHIPPING
+void EngineRenderingSettingsController::SetStartupCaptureProvider(ExternalCaptureProvider provider)
+{
+	SetValue(m_state.StartupCaptureProvider, provider);
+}
+#endif
 
 void EngineRenderingSettingsController::SetPreferHighPerformanceAdapter(bool enabled)
 {
@@ -174,6 +184,12 @@ void EngineRenderingSettingsController::SetPtlasModeChangeDistance(float distanc
 
 bool EngineRenderingSettingsController::ComputePendingRestart() const noexcept
 {
+#if SPARKLE_TARGET_EDITOR && !SPARKLE_BUILD_SHIPPING
+	if (m_sessionStartupCaptureProvider != m_state.StartupCaptureProvider)
+	{
+		return true;
+	}
+#endif
 	return m_sessionPreferHighPerformanceAdapter != m_state.PreferHighPerformanceAdapter
 	    || m_sessionBackBufferFormat != m_state.BackBufferFormat;
 }
@@ -181,6 +197,12 @@ bool EngineRenderingSettingsController::ComputePendingRestart() const noexcept
 std::string EngineRenderingSettingsController::DescribePendingRestart() const
 {
 	std::vector<std::string> reasons;
+#if SPARKLE_TARGET_EDITOR && !SPARKLE_BUILD_SHIPPING
+	if (m_sessionStartupCaptureProvider != m_state.StartupCaptureProvider)
+	{
+		reasons.emplace_back("capture startup provider");
+	}
+#endif
 	if (m_sessionPreferHighPerformanceAdapter != m_state.PreferHighPerformanceAdapter)
 	{
 		reasons.emplace_back("GPU adapter preference");

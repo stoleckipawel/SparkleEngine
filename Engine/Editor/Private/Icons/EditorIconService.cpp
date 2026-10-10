@@ -35,7 +35,7 @@ public:
 		}
 	}
 
-	bool DrawButton(const EditorIconAsset& asset, const char* id) noexcept;
+	bool DrawButton(const EditorIconAsset& asset, const char* id, float imageSize) noexcept;
 
 private:
 	struct RegisteredIcon final
@@ -55,6 +55,7 @@ private:
 			    "EditorIconService used outside its owning thread/context/atlas lifetime");
 		}
 	}
+
 	ImFontAtlasRect Resolve(const EditorIconAsset& asset) noexcept;
 
 	ImGuiContext* const m_context;
@@ -102,11 +103,14 @@ ImFontAtlasRect EditorIconService::Implementation::Resolve(const EditorIconAsset
 	return rectangle;
 }
 
-bool EditorIconService::Implementation::DrawButton(const EditorIconAsset& asset, const char* id) noexcept
+bool EditorIconService::Implementation::DrawButton(const EditorIconAsset& asset, const char* id, float imageSize) noexcept
 {
 	// Resolve every draw: packing/growth can change both coordinates and TexRef.
 	const ImFontAtlasRect rectangle = Resolve(asset);
-	const float imageSize = ImGui::GetFontSize();
+	if (imageSize <= 0.0f)
+	{
+		imageSize = ImGui::GetFontSize();
+	}
 	const float padding = ImGui::GetStyle().FramePadding.y;
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(padding, padding));
 	const bool pressed = ImGui::ImageButton(id, m_atlas->TexRef, ImVec2(imageSize, imageSize), rectangle.uv0, rectangle.uv1);
@@ -121,7 +125,7 @@ EditorIconService::EditorIconService() :
 
 EditorIconService::~EditorIconService() noexcept = default;
 
-bool EditorIconService::DrawButton(const EditorIconAsset& asset, const char* id) noexcept
+bool EditorIconService::DrawButton(const EditorIconAsset& asset, const char* id, float imageSize) noexcept
 {
-	return m_implementation->DrawButton(asset, id);
+	return m_implementation->DrawButton(asset, id, imageSize);
 }

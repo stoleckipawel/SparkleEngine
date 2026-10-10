@@ -67,11 +67,6 @@ ViewportToolbar::ViewportToolbar(
 
 ViewportToolbar::~ViewportToolbar() noexcept = default;
 
-void ViewportToolbar::SetActions(std::unique_ptr<ViewportToolbarActions> actions) noexcept
-{
-	m_actions = std::move(actions);
-}
-
 void ViewportToolbar::SetGeometry(float leftPixels, float topPixels, float widthPixels) noexcept
 {
 	m_leftPixels = leftPixels;
@@ -190,32 +185,12 @@ void ViewportToolbar::DrawCameraControls(bool disableInteraction, bool compact) 
 	ViewportCameraProperties::BuildPopup(m_viewportSession, m_renderingDefaults, disableInteraction);
 }
 
-void ViewportToolbar::DrawActions(EditorIconService& icons, float width, bool secondRow, bool disableInteraction) noexcept
-{
-	if (m_actions == nullptr || width <= 0.0f)
-	{
-		return;
-	}
-	const float rightAlignedX = ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x - width;
-	if (!secondRow)
-	{
-		ImGui::SameLine(rightAlignedX);
-	}
-	else
-	{
-		ImGui::SetCursorPosX((std::max) (ImGui::GetStyle().WindowPadding.x, rightAlignedX));
-	}
-	m_actions->Draw(icons, disableInteraction);
-}
-
-void ViewportToolbar::DrawFrameStats(float actionWidth) const noexcept
+void ViewportToolbar::DrawFrameStats() const noexcept
 {
 	const ImGuiIO& io = ImGui::GetIO();
 	char statsText[64] = {};
 	std::snprintf(statsText, sizeof(statsText), "%.1f FPS  %.2f ms", io.Framerate, io.DeltaTime * 1000.0f);
-	const float actionSpacing = actionWidth > 0.0f ? ImGui::GetStyle().ItemSpacing.x : 0.0f;
-	const float rightAlignedX =
-	    ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x - ImGui::CalcTextSize(statsText).x - actionWidth - actionSpacing;
+	const float rightAlignedX = ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x - ImGui::CalcTextSize(statsText).x;
 	if (rightAlignedX > ImGui::GetCursorPosX() + ImGui::GetStyle().ItemSpacing.x)
 	{
 		ImGui::SameLine(rightAlignedX);
@@ -228,7 +203,7 @@ void ViewportToolbar::DrawFrameStats(float actionWidth) const noexcept
 	}
 }
 
-void ViewportToolbar::Draw(std::string_view levelName, EditorIconService& icons, bool disableInteraction) noexcept
+void ViewportToolbar::Draw(std::string_view levelName, bool disableInteraction) noexcept
 {
 	if (m_widthPixels <= 0.0f)
 	{
@@ -239,12 +214,6 @@ void ViewportToolbar::Draw(std::string_view levelName, EditorIconService& icons,
 	const ImVec2 windowPadding(10.0f, 4.0f);
 	m_heightPixels = ImGui::GetFrameHeight() + (windowPadding.y * 2.0f);
 	const bool compactToolbar = m_widthPixels < 760.0f;
-	const float actionWidth = m_actions != nullptr ? m_actions->MeasureWidth() : 0.0f;
-	const bool actionsOnSecondRow = compactToolbar && actionWidth > 0.0f;
-	if (actionsOnSecondRow)
-	{
-		m_heightPixels += ImGui::GetFrameHeightWithSpacing();
-	}
 
 	ImGui::SetNextWindowPos(ImVec2(m_leftPixels, m_topPixels), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(m_widthPixels, m_heightPixels), ImGuiCond_Always);
@@ -290,9 +259,8 @@ void ViewportToolbar::Draw(std::string_view levelName, EditorIconService& icons,
 	DrawViewportShowMenu(&m_consoleVariables, disableInteraction, m_showControlError);
 	if (!compactToolbar)
 	{
-		DrawFrameStats(actionWidth);
+		DrawFrameStats();
 	}
-	DrawActions(icons, actionWidth, actionsOnSecondRow, disableInteraction);
 
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
 	const ImVec2 windowMin = ImGui::GetWindowPos();

@@ -8,9 +8,9 @@
 class RendererFacadeState final
 {
 public:
-	RendererFacadeState(Timer& timer, Window& window, ERhiBackendApi backendApi, RendererExecutionConfig config) :
-	    ExternalRuntime(backendApi),
-	    Coordinator(timer, window, config, ExternalRuntime.GetBackendConfiguration())
+	RendererFacadeState(Timer& timer, Window& window, RendererGraphicsLaunch graphicsLaunch, RendererExecutionConfig config) :
+	    ExternalRuntime(graphicsLaunch),
+	    Coordinator(timer, window, config, ExternalRuntime.GetDeviceLaunch())
 	{
 	}
 
@@ -18,8 +18,8 @@ public:
 	RenderCoordinator Coordinator;
 };
 
-Renderer::Renderer(Timer& timer, Window& window, ERhiBackendApi backendApi, RendererExecutionConfig config) noexcept :
-    m_state(std::make_unique<RendererFacadeState>(timer, window, backendApi, config))
+Renderer::Renderer(Timer& timer, Window& window, RendererGraphicsLaunch graphicsLaunch, RendererExecutionConfig config) noexcept :
+    m_state(std::make_unique<RendererFacadeState>(timer, window, graphicsLaunch, config))
 {
 }
 
@@ -113,4 +113,19 @@ bool Renderer::TryTakeViewportCapture(ViewportCaptureId id, ViewportCaptureReadb
 void Renderer::OnRender() noexcept
 {
 	m_state->Coordinator.RenderFrame();
+}
+
+ExternalCaptureSnapshot Renderer::ObserveExternalCapture() const
+{
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+	const RhiExternalCapture* capture = m_state->ExternalRuntime.GetDeviceLaunch().ExternalCapture;
+	return capture ? capture->Observe() : ExternalCaptureSnapshot{};
+#else
+	return {};
+#endif
+}
+
+ExternalCaptureAdmission Renderer::RequestExternalCapture(std::uint64_t viewportGeneration) noexcept
+{
+	return m_state->Coordinator.RequestExternalCapture(viewportGeneration);
 }

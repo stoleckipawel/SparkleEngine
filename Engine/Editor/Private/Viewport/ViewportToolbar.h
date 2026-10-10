@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Core/Public/Console/CVarControl.h"
-#include "Editor/Public/Viewport/ViewportToolbarActions.h"
 
 #include <memory>
 #include <string>
@@ -10,7 +9,7 @@
 class EditorViewportSession;
 struct EngineRenderingSettingsState;
 
-// Owns viewport controls, toolbar layout and the optional action group.
+// Owns viewport controls and toolbar layout.
 // UI owns the borrowed session, rendering defaults and console executor; all
 // three outlive this widget. Level names are borrowed only during Draw.
 class ViewportToolbar final
@@ -27,22 +26,19 @@ public:
 	ViewportToolbar& operator=(const ViewportToolbar&) = delete;
 	ViewportToolbar& operator=(ViewportToolbar&&) = delete;
 
-	void SetActions(std::unique_ptr<ViewportToolbarActions> actions) noexcept;
 	void SetGeometry(float leftPixels, float topPixels, float widthPixels) noexcept;
-	void Draw(std::string_view levelName, EditorIconService& icons, bool disableInteraction = false) noexcept;
+	void Draw(std::string_view levelName, bool disableInteraction = false) noexcept;
 	float GetHeightPixels() const noexcept { return m_heightPixels; }
 
 private:
 	void DrawLevelName(std::string_view levelName, bool compact) const noexcept;
 	void DrawViewModeSelector(bool disableInteraction, bool compact) noexcept;
 	void DrawCameraControls(bool disableInteraction, bool compact) noexcept;
-	void DrawFrameStats(float actionWidth) const noexcept;
-	void DrawActions(EditorIconService& icons, float width, bool secondRow, bool disableInteraction) noexcept;
+	void DrawFrameStats() const noexcept;
 
 	EditorViewportSession& m_viewportSession;
 	const EngineRenderingSettingsState& m_renderingDefaults;
 	const CVarControlExecutor& m_consoleVariables;
-	std::unique_ptr<ViewportToolbarActions> m_actions;
 	std::string m_showControlError;
 	float m_leftPixels = 0.0f;
 	float m_topPixels = 0.0f;

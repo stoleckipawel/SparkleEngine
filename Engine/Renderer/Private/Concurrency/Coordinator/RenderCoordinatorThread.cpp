@@ -21,7 +21,7 @@ void RenderCoordinator::Initialize()
 
 void RenderCoordinator::InitializeSerial()
 {
-	m_context = std::make_unique<RendererExecutionContext>(*m_window, m_backendConfiguration, m_config);
+	m_context = std::make_unique<RendererExecutionContext>(*m_window, m_deviceLaunch, m_config);
 	SubmitResize();
 	PublishReadState();
 }
@@ -68,7 +68,7 @@ void RenderCoordinator::RenderThreadMain()
 	Threading::SetCurrentThreadRole("Sparkle.RenderThread");
 	try
 	{
-		m_context = std::make_unique<RendererExecutionContext>(*m_window, m_backendConfiguration, m_config);
+		m_context = std::make_unique<RendererExecutionContext>(*m_window, m_deviceLaunch, m_config);
 		{
 			std::lock_guard lock(m_startMutex);
 			m_startSucceeded = true;
@@ -158,10 +158,21 @@ void RenderCoordinator::SettleAbandonedWork() noexcept
 			continue;
 		}
 		std::visit(
-		    [](auto& pending)
+		    [this](auto& pending)
 		    {
 			    if constexpr (requires { pending.Completion; })
+			    {
 				    pending.Completion->Cancel();
+			    }
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+			    else if constexpr (std::is_same_v<std::decay_t<decltype(pending)>, RenderExternalCaptureCommand>)
+			    {
+				    if (m_deviceLaunch.ExternalCapture)
+				    {
+					    m_deviceLaunch.ExternalCapture->Reject(pending.RequestId, "Render owner stopped before capture began.");
+				    }
+			    }
+#endif
 		    },
 		    *control);
 	}

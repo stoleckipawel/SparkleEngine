@@ -8,6 +8,7 @@ UI::UI(EditorHostServices hostServices) :
     m_implementation(std::make_unique<Implementation>(std::move(hostServices)))
 {
 }
+
 UI::~UI() noexcept = default;
 
 const ViewportRenderRequest& UI::GetViewportRenderRequest() const noexcept
@@ -20,9 +21,9 @@ RenderViewCameraData UI::UpdateViewportCamera(const CameraInputIntent& intent, f
 	return m_implementation->UpdateViewportCamera(intent, deltaSeconds);
 }
 
-void UI::SetViewportToolbarActions(std::unique_ptr<ViewportToolbarActions> actions) noexcept
+void UI::SetViewportOverlay(std::unique_ptr<ViewportOverlay> overlay) noexcept
 {
-	m_implementation->SetViewportToolbarActions(std::move(actions));
+	m_implementation->SetViewportOverlay(std::move(overlay));
 }
 
 void UI::SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept

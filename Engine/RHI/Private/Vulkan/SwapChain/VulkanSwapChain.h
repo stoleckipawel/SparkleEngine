@@ -33,6 +33,7 @@ public:
 	bool ConsumeResizeRequest() noexcept;
 
 	std::uint32_t GetCurrentBackBufferIndex() const noexcept { return m_currentBackBufferIndex; }
+
 	RhiResourceHandle GetCurrentBackBufferResource() const noexcept;
 	VkImage GetCurrentBackBufferImage() const noexcept;
 	VkImageView GetCurrentBackBufferImageView() const noexcept;
@@ -41,12 +42,18 @@ public:
 	VkImage GetBackBufferImage(std::uint32_t index) const noexcept;
 	VkImageView GetBackBufferImageView(std::uint32_t index) const noexcept;
 	std::uint32_t GetBackBufferCount() const noexcept { return static_cast<std::uint32_t>(m_backBuffers.size()); }
+
 	std::uint32_t GetMaximumFramesInFlight() const noexcept { return m_maximumFramesInFlight; }
+
 	VkExtent3D GetBackBufferExtent() const noexcept { return VkExtent3D{m_extent.width, m_extent.height, 1u}; }
+
 	RhiViewport GetDefaultViewport() const noexcept;
 	RhiRect GetDefaultScissorRect() const noexcept;
 	PixelFormat GetBackBufferFormat() const noexcept { return m_backBufferFormat; }
+
 	VkFormat GetNativeBackBufferFormat() const noexcept { return m_surfaceFormat.format; }
+
+	Window& GetHostWindow() noexcept { return *m_window; }
 
 private:
 	struct BackBufferRecord final

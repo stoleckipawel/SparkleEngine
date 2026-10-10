@@ -223,6 +223,7 @@ namespace SparkleLauncher
 		QComboBox* m_workspaceCompilerCombo = nullptr;
 		QComboBox* m_workspaceIdeCombo = nullptr;
 		QComboBox* m_graphicsApiCombo = nullptr;
+		QComboBox* m_captureProviderCombo = nullptr;
 		QComboBox* m_shaderBackendCombo = nullptr;
 		QStackedWidget* m_optionsStack = nullptr;
 		QHash<QString, int> m_optionsPageByOperation;

@@ -100,6 +100,7 @@ function(sparkle_configure_rhi_implementation_target target_name)
     target_compile_definitions(${target_name}
         PRIVATE
             SPARKLE_RHI_WITH_D3D12=$<BOOL:${SPARKLE_RHI_WITH_D3D12}>
+            SPARKLE_WITH_EXTERNAL_CAPTURE=$<AND:$<BOOL:${SPARKLE_RHI_WITH_EXTERNAL_CAPTURE}>,$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DevelopmentEditor>>>
             SPARKLE_RHI_WITH_VULKAN=$<BOOL:${SPARKLE_RHI_WITH_VULKAN}>
             SPARKLE_RHI_DEFAULT_BACKEND_${SPARKLE_RHI_DEFAULT_BACKEND_UPPER}=1
             "$<$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DebugGame>,$<CONFIG:DevelopmentEditor>,$<CONFIG:DevelopmentGame>>:ENGINE_GPU_VALIDATION=1>"
@@ -144,6 +145,9 @@ sparkle_target_precompile_headers(SparkleRHICommon
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 
+set(_sparkle_native_capture_sources ${SPARKLE_RHI_DIAGNOSTICS_SOURCES})
+list(FILTER _sparkle_native_capture_sources INCLUDE REGEX "/Private/Diagnostics/ExternalCapture/")
+list(FILTER SPARKLE_RHI_DIAGNOSTICS_SOURCES EXCLUDE REGEX "/Private/Diagnostics/ExternalCapture/")
 add_library(SparkleRHIDiagnostics STATIC
     ${SPARKLE_RHI_DIAGNOSTICS_SOURCES}
     ${SPARKLE_RHI_DIAGNOSTICS_HEADERS}
@@ -248,6 +252,9 @@ if(SPARKLE_RHI_WITH_D3D12)
 
     list(FILTER SPARKLE_RHI_D3D12_SOURCES EXCLUDE REGEX "/D3D12PixEvents\\.cpp$")
 
+    set(_sparkle_d3d12_capture_sources ${SPARKLE_RHI_D3D12_SOURCES})
+    list(FILTER _sparkle_d3d12_capture_sources INCLUDE REGEX "/Diagnostics/ExternalCapture/")
+    list(FILTER SPARKLE_RHI_D3D12_SOURCES EXCLUDE REGEX "/Diagnostics/ExternalCapture/")
     add_library(SparkleRHI_D3D12 STATIC
         ${SPARKLE_RHI_D3D12_SOURCES}
         ${SPARKLE_RHI_D3D12_HEADERS}
@@ -433,3 +440,5 @@ if(SPARKLE_RHI_WITH_VULKAN)
     source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private/Vulkan PREFIX "Private\\Vulkan" FILES ${SPARKLE_RHI_VULKAN_SOURCES} ${SPARKLE_RHI_VULKAN_HEADERS})
     source_group("ThirdParty\\ImGui\\Vulkan" FILES ${SPARKLE_RHI_VULKAN_THIRD_PARTY_SOURCES})
 endif()
+
+include("${CMAKE_CURRENT_SOURCE_DIR}/ExternalCapture.cmake")

@@ -7,6 +7,9 @@
 #include "Core/Public/Strings/StringUtils.h"
 #include "Core/Public/Diagnostics/Verify.h"
 #include "RHI/Public/Core/RhiBackendSelection.h"
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+  #include "ExternalCapture/ExternalCaptureStartupPolicy.h"
+#endif
 
 #include <Windows.h>
 
@@ -59,7 +62,7 @@ namespace ApplicationGraphicsLaunch
 	}
 }
 
-ERhiBackendApi ResolveApplicationGraphicsBackendApi() noexcept
+RendererGraphicsLaunch ResolveApplicationGraphicsLaunch() noexcept
 {
 	ERhiBackendApi api = ResolveBuildDefaultRhiBackendApi();
 	std::string configuredBackend;
@@ -84,5 +87,10 @@ ERhiBackendApi ResolveApplicationGraphicsBackendApi() noexcept
 		    __LINE__,
 		    std::string("Graphics backend '") + RhiBackendApiToString(api) + "' is not compiled into this product.");
 	}
-	return api;
+
+	RendererGraphicsLaunch launch{.BackendApi = api};
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+	launch.CaptureProvider = ResolveExternalCaptureStartupProvider();
+#endif
+	return launch;
 }

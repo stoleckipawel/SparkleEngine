@@ -67,9 +67,9 @@ RenderViewCameraData UI::Implementation::UpdateViewportCamera(const CameraInputI
 	return camera;
 }
 
-void UI::Implementation::SetViewportToolbarActions(std::unique_ptr<ViewportToolbarActions> actions) noexcept
+void UI::Implementation::SetViewportOverlay(std::unique_ptr<ViewportOverlay> overlay) noexcept
 {
-	m_viewportToolbar->SetActions(std::move(actions));
+	m_viewportPanel->SetOverlay(std::move(overlay));
 }
 
 void UI::Implementation::SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept
@@ -183,6 +183,7 @@ UI::Implementation::~Implementation() noexcept
 {
 	m_windowDpiScaleHandle.Reset();
 	m_windowMessageHandle.Reset();
+	m_viewportPanel.reset();
 	m_viewportToolbar.reset();
 	m_icons.reset();
 

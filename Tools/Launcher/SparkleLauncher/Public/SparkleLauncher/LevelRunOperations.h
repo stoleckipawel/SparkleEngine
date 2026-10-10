@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RHI/Public/Diagnostics/ExternalCaptureProvider.h"
+
 #include "SparkleLauncher/BuildProfileCatalog.h"
 #include "SparkleLauncher/LauncherContentDefaults.h"
 #include "SparkleLauncher/OperationModel.h"
@@ -36,6 +38,7 @@ namespace SparkleLauncher
 		std::string ProductProfile = "DevelopmentEditor";
 		std::string LevelId;
 		std::string GraphicsApi = "d3d12";
+		ExternalCaptureProvider CaptureProvider = ExternalCaptureProvider::None;
 	};
 
 	struct LevelRunOperationStep

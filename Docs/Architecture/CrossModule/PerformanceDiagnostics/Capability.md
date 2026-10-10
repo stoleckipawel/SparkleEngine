@@ -16,7 +16,7 @@ This inventory records current source/build surfaces and the reconciliation gaps
 
 **Current readiness:** **20/100** — useful timing, marker, and memory seams exist; they are not yet one bounded, consumer-visible diagnostics/evidence product. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
 
-**2026-10-10 source-pointer refresh:** the historical ViewportTopPanel widget is now private `Viewport/ViewportToolbar`, and its FPS text is `DrawFrameStats`; optional actions enter through `UI::SetViewportToolbarActions`. Earlier snapshot rows retain their dated vocabulary/evidence. [Boundary refinement](ExternalCapture/Discovery.md#viewport-toolbar-boundary-handoff) records the actual bounded current UI checks, without increasing diagnostics readiness.
+**2026-10-10 source-pointer refresh:** the historical ViewportTopPanel widget is now private `Viewport/ViewportToolbar`, and its FPS text is `DrawFrameStats`; optional surface overlays enter through `UI::SetViewportOverlay`. Earlier snapshot rows retain their dated vocabulary/evidence. [Boundary refinement](ExternalCapture/Discovery.md#viewport-toolbar-boundary-handoff) records the actual bounded current UI checks, without increasing diagnostics readiness.
 
 ## Capability At A Glance
 

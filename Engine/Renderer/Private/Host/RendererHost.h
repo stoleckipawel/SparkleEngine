@@ -12,12 +12,12 @@ class TaskExecutor;
 class TaskScope;
 class Window;
 struct RendererMemoryDiagnosticsSnapshot;
-struct RendererBackendConfiguration;
+struct RhiDeviceLaunch;
 
 class RendererHost final
 {
 public:
-	RendererHost(Window& window, const RendererBackendConfiguration& backendConfiguration);
+	RendererHost(Window& window, const RhiDeviceLaunch& deviceLaunch);
 	~RendererHost() noexcept;
 
 	RendererHost(const RendererHost&) = delete;

@@ -4,16 +4,16 @@
 #include "Diagnostics/RendererMemoryMonitor.h"
 #include "Frame/FramePipeline.h"
 #include "Host/RendererBackendOwner.h"
-#include "Host/RendererBackendConfiguration.h"
+#include "RHI/Public/Device/RhiDeviceLaunch.h"
 #include "Pipeline/RenderPassRuntimeCache.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Window/Window.h"
 
-RendererHost::RendererHost(Window& window, const RendererBackendConfiguration& backendConfiguration) :
+RendererHost::RendererHost(Window& window, const RhiDeviceLaunch& deviceLaunch) :
     m_window(window)
 {
-	m_backendOwner = std::make_unique<RendererBackendOwner>(m_window, backendConfiguration);
+	m_backendOwner = std::make_unique<RendererBackendOwner>(m_window, deviceLaunch);
 	RenderDeviceServices& deviceServices = m_backendOwner->GetDeviceServices();
 	RenderHardwareInterface& renderHardwareInterface = deviceServices.GetRenderHardwareInterface();
 	m_renderPassRuntimeCache = std::make_unique<RenderPassRuntimeCache>(deviceServices);

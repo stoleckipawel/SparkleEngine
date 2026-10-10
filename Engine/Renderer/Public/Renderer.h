@@ -3,6 +3,7 @@
 #include "Viewport/ViewportPresentationSnapshot.h"
 
 #include "RendererAPI.h"
+#include "ExternalCapture/RendererGraphicsLaunch.h"
 #include "RHI/Public/Core/RhiBackendApi.h"
 #include "Diagnostics/RendererMemoryDiagnostics.h"
 #include "Meshes/MeshDiagnostics.h"
@@ -26,7 +27,7 @@ struct RenderFrameSubmission;
 class SPARKLE_RENDERER_API Renderer final
 {
 public:
-	Renderer(Timer& timer, Window& window, ERhiBackendApi backendApi, RendererExecutionConfig config = {}) noexcept;
+	Renderer(Timer& timer, Window& window, RendererGraphicsLaunch graphicsLaunch, RendererExecutionConfig config = {}) noexcept;
 	~Renderer() noexcept;
 
 	Renderer(const Renderer&) = delete;
@@ -55,6 +56,8 @@ public:
 	bool TryTakeViewportCapture(ViewportCaptureId id, ViewportCaptureReadback& readback) noexcept;
 
 	void OnRender() noexcept;
+	ExternalCaptureSnapshot ObserveExternalCapture() const;
+	ExternalCaptureAdmission RequestExternalCapture(std::uint64_t viewportGeneration) noexcept;
 
 private:
 	std::unique_ptr<RendererFacadeState> m_state;

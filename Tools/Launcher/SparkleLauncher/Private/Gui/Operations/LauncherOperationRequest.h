@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RHI/Public/Diagnostics/ExternalCaptureProvider.h"
+
 #include <QtCore/QString>
 #include <QtCore/QVector>
 
@@ -33,6 +35,7 @@ namespace SparkleLauncher
 		QString HostToolId;
 		QString ShaderBackend;
 		QString GraphicsApi;
+		ExternalCaptureProvider CaptureProvider = ExternalCaptureProvider::None;
 		QString CleanScope = "cooked";
 		QVector<LauncherCleanTarget> CleanTargets;
 		QVector<QString> PreservedPaths;

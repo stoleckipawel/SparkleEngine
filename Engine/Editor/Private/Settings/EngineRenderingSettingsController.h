@@ -14,6 +14,7 @@ public:
 	EngineRenderingSettingsController(EngineRenderingSettingsState state, CommitHandler commitHandler, RefreshHandler refreshHandler);
 
 	const EngineRenderingSettingsState& GetState() const noexcept { return m_state; }
+
 	void RefreshFromRuntimeState() noexcept;
 	bool HasPendingRestart() const noexcept;
 	std::string BuildPendingRestartMessage() const;
@@ -43,6 +44,9 @@ public:
 	void SetPtlasPartitionUpdateMode(RayTracingPtlasPartitionUpdateMode mode);
 	void SetPtlasMarkAllDynamicInPartition(bool enabled);
 	void SetPtlasModeChangeDistance(float distance);
+#if SPARKLE_TARGET_EDITOR && !SPARKLE_BUILD_SHIPPING
+	void SetStartupCaptureProvider(ExternalCaptureProvider provider);
+#endif
 
 private:
 	template <typename TValue> void SetValue(TValue& destination, TValue value)
@@ -62,6 +66,9 @@ private:
 	EngineRenderingSettingsState m_state{};
 	PixelFormat m_sessionBackBufferFormat = RhiPresentationDefaults::DefaultBackBufferFormat;
 	bool m_sessionPreferHighPerformanceAdapter = true;
+#if SPARKLE_TARGET_EDITOR && !SPARKLE_BUILD_SHIPPING
+	ExternalCaptureProvider m_sessionStartupCaptureProvider = ExternalCaptureProvider::None;
+#endif
 	CommitHandler m_commitHandler;
 	RefreshHandler m_refreshHandler;
 };

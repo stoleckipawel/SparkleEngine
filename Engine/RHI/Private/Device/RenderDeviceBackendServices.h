@@ -8,6 +8,7 @@
 class RenderCommandList;
 class RenderHardwareInterface;
 class RhiImGuiRenderer;
+class RhiExternalCapture;
 
 class RenderDeviceBackendServices
 {
@@ -22,6 +23,9 @@ public:
 	virtual const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept = 0;
 	virtual RhiImGuiRenderer& GetImGuiRenderer() noexcept = 0;
 	virtual void SettleForShutdown() noexcept = 0;
+#if SPARKLE_WITH_EXTERNAL_CAPTURE
+	virtual void BindExternalCapture(RhiExternalCapture& capture) noexcept = 0;
+#endif
 	virtual void ResizeSwapChain() noexcept = 0;
 	virtual void BeginFrame(std::uint64_t frameId) noexcept = 0;
 	virtual void PrepareCommandRecording() noexcept;
