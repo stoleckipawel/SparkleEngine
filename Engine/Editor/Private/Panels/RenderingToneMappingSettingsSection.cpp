@@ -8,18 +8,15 @@
 
 #include <imgui.h>
 
-void DrawToneMappingSettingsSection(
-    EngineRenderingSettingsController& settingsController,
-    const EngineRenderingSettingsState& settings,
-    const char* filterText)
+void DrawToneMappingSettingsSection(EngineRenderingSettingsController& settingsController, const EngineRenderingSettingsState& settings, const char* filterText)
 {
 	static constexpr RenderingSettingsUi::ComboOption<EngineToneMapper> toneMapperOptions[] = {
 	    {"Reinhard", EngineToneMapper::Reinhard},
 	    {"ACES approximate", EngineToneMapper::AcesApprox},
 	    {"ACES fitted filmic", EngineToneMapper::AcesFilmic},
 	};
-	if (!RenderingSettingsUi::MatchesFilter(filterText, "Tone Mapping", "tone mapper aces reinhard filmic")
-	    || !RenderingSettingsUi::BeginSettingsCategory("Tone Mapping"))
+
+	if (!RenderingSettingsUi::MatchesFilter(filterText, "Tone Mapping", "tone mapper aces reinhard filmic") || !RenderingSettingsUi::BeginSettingsCategory("Tone Mapping"))
 	{
 		return;
 	}
@@ -32,6 +29,7 @@ void DrawToneMappingSettingsSection(
 		    settings.ToneMapper,
 		    toneMapperOptions,
 		    [&settingsController](EngineToneMapper value) { settingsController.SetToneMapper(value); });
+
 		ImGui::EndTable();
 	}
 }

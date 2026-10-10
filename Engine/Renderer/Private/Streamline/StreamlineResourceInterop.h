@@ -23,6 +23,7 @@ public:
 
 private:
 	sl::Resource m_resource = {};
+
 	sl::SubresourceRange m_subresourceRange = {};
 };
 

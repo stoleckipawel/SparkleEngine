@@ -8,8 +8,8 @@ SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_externalCaptureBootstrapLogger, "RHI.Extern
 
 static bool HasInjectedCaptureHooks() noexcept
 {
-	return GetModuleHandleW(L"WinPixGpuCapturer.dll") != nullptr || GetModuleHandleW(L"renderdoc.dll") != nullptr
-	    || GetModuleHandleW(L"ngfx-capture-injection.dll") != nullptr || GetModuleHandleW(L"ngfx-capture-interception.dll") != nullptr;
+	return GetModuleHandleW(L"WinPixGpuCapturer.dll") != nullptr || GetModuleHandleW(L"renderdoc.dll") != nullptr || GetModuleHandleW(L"ngfx-capture-injection.dll") != nullptr
+	    || GetModuleHandleW(L"ngfx-capture-interception.dll") != nullptr;
 }
 
 static bool ValidateInjectedCaptureActivity(ExternalCaptureProvider provider, std::string& error)
@@ -33,10 +33,7 @@ static bool ValidateInjectedCaptureActivity(ExternalCaptureProvider provider, st
 	return true;
 }
 
-static std::unique_ptr<ExternalCaptureAdapter> BootstrapCaptureProvider(
-    ERhiBackendApi api,
-    ExternalCaptureProvider provider,
-    std::string& error)
+static std::unique_ptr<ExternalCaptureAdapter> BootstrapCaptureProvider(ERhiBackendApi api, ExternalCaptureProvider provider, std::string& error)
 {
 	if (provider == ExternalCaptureProvider::RenderDoc)
 	{
@@ -64,10 +61,7 @@ static std::unique_ptr<ExternalCaptureAdapter> BootstrapCaptureProvider(
 	return {};
 }
 
-std::unique_ptr<ExternalCaptureAdapter> CreateExternalCaptureAdapter(
-    ERhiBackendApi api,
-    ExternalCaptureProvider provider,
-    std::string& error)
+std::unique_ptr<ExternalCaptureAdapter> CreateExternalCaptureAdapter(ERhiBackendApi api, ExternalCaptureProvider provider, std::string& error)
 {
 	if (!ValidateInjectedCaptureActivity(provider, error))
 	{

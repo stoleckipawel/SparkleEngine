@@ -8,10 +8,7 @@
 
 #include <utility>
 
-RenderBindingSet::RenderBindingSet(
-    const RhiCapabilities& capabilities,
-    RhiDescriptorService& descriptorService,
-    const RenderBindingSetDesc& desc) noexcept :
+RenderBindingSet::RenderBindingSet(const RhiCapabilities& capabilities, RhiDescriptorService& descriptorService, const RenderBindingSetDesc& desc) noexcept :
     m_descriptorService(&descriptorService)
 {
 	if (!RhiContract::IsBindingSetDescUsable(capabilities, desc))
@@ -56,8 +53,7 @@ RhiCpuDescriptorHandle RenderBindingSet::GetCpuDescriptorHandle(std::uint32_t de
 		return {};
 	}
 
-	return m_descriptorService != nullptr ? m_descriptorService->GetDescriptorTableCpuHandle(m_tableHandle, descriptorIndex)
-	                                      : RhiCpuDescriptorHandle{};
+	return m_descriptorService != nullptr ? m_descriptorService->GetDescriptorTableCpuHandle(m_tableHandle, descriptorIndex) : RhiCpuDescriptorHandle{};
 }
 
 RhiDescriptorTableBinding RenderBindingSet::GetTableBinding(std::uint32_t descriptorIndex) const noexcept

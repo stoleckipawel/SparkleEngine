@@ -8,6 +8,7 @@ class FrameGraphResourceStateTracker final
 {
 public:
 	FrameGraphResourceStateTracker() = default;
+
 	~FrameGraphResourceStateTracker() = default;
 
 	FrameGraphResourceStateTracker(const FrameGraphResourceStateTracker&) = delete;

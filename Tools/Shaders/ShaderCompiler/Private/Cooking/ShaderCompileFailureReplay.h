@@ -18,8 +18,5 @@ public:
 
 private:
 	static std::string BoundText(std::string_view text, std::size_t maximumBytes);
-	static std::vector<std::string> BoundStrings(
-	    std::span<const std::string> values,
-	    std::size_t maximumCount,
-	    std::size_t maximumBytesPerValue);
+	static std::vector<std::string> BoundStrings(std::span<const std::string> values, std::size_t maximumCount, std::size_t maximumBytesPerValue);
 };

@@ -14,12 +14,7 @@ bool IsMorphedMeshInstance(const MeshInstanceData meshInstance)
 	return (meshInstance.Flags & MeshInstanceFlag_Morphed) != 0u;
 }
 
-MorphedVertexAttributes ApplyMorphing(const MeshInstanceData meshInstance,
-                                      const uint morphTargetDeltaOffset,
-                                      const uint vertexId,
-                                      const float3 position,
-                                      const float3 normal,
-                                      const float3 tangent)
+MorphedVertexAttributes ApplyMorphing(const MeshInstanceData meshInstance, const uint morphTargetDeltaOffset, const uint vertexId, const float3 position, const float3 normal, const float3 tangent)
 {
 	MorphedVertexAttributes attributes;
 	attributes.Position = position;

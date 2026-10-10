@@ -24,19 +24,14 @@ static void InvalidateReservoir(FrameGraph& frameGraph, const FrameGraphReservoi
 
 FrameHistoryResourceLayout DeclareFrameHistoryResources(FrameGraphBuilder& builder)
 {
-	return FrameHistoryResourceLayout{
-	    .Exposure = builder.CreateTextureHistory(FrameGraphTextureDesc::CreateColor("Exposure", 1u, 1u, PixelFormat::R32G32B32A32_Float))};
+	return FrameHistoryResourceLayout{.Exposure = builder.CreateTextureHistory(FrameGraphTextureDesc::CreateColor("Exposure", 1u, 1u, PixelFormat::R32G32B32A32_Float))};
 }
 
-FrameGraphReservoirHistoryHandles DeclareLightingReservoirHistory(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent renderExtent,
-    std::string_view name)
+FrameGraphReservoirHistoryHandles DeclareLightingReservoirHistory(FrameGraphBuilder& builder, RenderViewportExtent renderExtent, std::string_view name)
 {
 	const auto declare = [&](std::string_view suffix, PixelFormat format)
 	{
-		return builder.CreateTextureHistory(
-		    FrameGraphTextureDesc::CreateColor(std::string(name) + std::string(suffix), renderExtent.Width, renderExtent.Height, format));
+		return builder.CreateTextureHistory(FrameGraphTextureDesc::CreateColor(std::string(name) + std::string(suffix), renderExtent.Width, renderExtent.Height, format));
 	};
 	return FrameGraphReservoirHistoryHandles{
 	    .Sample = declare("Sample", PixelFormat::R32G32B32A32_Float),
@@ -64,8 +59,7 @@ void UpdateFrameHistory(
     RenderViewState& viewState,
     RendererImageProviderStack& imageProviders)
 {
-	if ((IsDirectLightingAdmitted() || IsIndirectLightingAdmitted())
-	    && viewState.UpdateRestirLightingHistory(BuildRestirLightingHistoryInvalidationHash(preparedScene)))
+	if ((IsDirectLightingAdmitted() || IsIndirectLightingAdmitted()) && viewState.UpdateRestirLightingHistory(BuildRestirLightingHistoryInvalidationHash(preparedScene)))
 	{
 		InvalidateRestirLightingHistory(frameGraph, history);
 		imageProviders.ResetHistory();

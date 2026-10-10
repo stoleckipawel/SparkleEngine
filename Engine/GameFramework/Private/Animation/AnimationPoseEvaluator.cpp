@@ -8,8 +8,7 @@
 
 static inline DirectX::XMMATRIX ComposeJointTransform(const ECS::AnimationJointTransform& transform) noexcept
 {
-	return DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(&transform.Scale))
-	    * DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&transform.Rotation))
+	return DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(&transform.Scale)) * DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&transform.Rotation))
 	    * DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&transform.Translation));
 }
 
@@ -22,8 +21,7 @@ namespace AnimationPoseEvaluator
 	    std::span<ECS::AnimationJointTransform> localTransforms,
 	    std::span<DirectX::XMFLOAT4X4> modelSpaceTransforms) noexcept
 	{
-		if (!skeleton.IsValid() || localTransforms.size() != skeleton.Resource->joints.size()
-		    || modelSpaceTransforms.size() != skeleton.Resource->joints.size())
+		if (!skeleton.IsValid() || localTransforms.size() != skeleton.Resource->joints.size() || modelSpaceTransforms.size() != skeleton.Resource->joints.size())
 			return false;
 		std::copy(skeleton.BindLocalTransforms.begin(), skeleton.BindLocalTransforms.end(), localTransforms.begin());
 		for (const AnimationChannel& channel : clip.channels)
@@ -34,14 +32,10 @@ namespace AnimationPoseEvaluator
 			switch (channel.targetPath)
 			{
 				case Assets::CookedAnimationTargetPath::Translation:
-					DirectX::XMStoreFloat3(
-					    &transform.Translation,
-					    AnimationSampler::SampleVectorChannel(clip, channel, playbackTimeSeconds));
+					DirectX::XMStoreFloat3(&transform.Translation, AnimationSampler::SampleVectorChannel(clip, channel, playbackTimeSeconds));
 					break;
 				case Assets::CookedAnimationTargetPath::Rotation:
-					DirectX::XMStoreFloat4(
-					    &transform.Rotation,
-					    AnimationSampler::SampleRotationChannel(clip, channel, playbackTimeSeconds));
+					DirectX::XMStoreFloat4(&transform.Rotation, AnimationSampler::SampleRotationChannel(clip, channel, playbackTimeSeconds));
 					break;
 				case Assets::CookedAnimationTargetPath::Scale:
 					DirectX::XMStoreFloat3(&transform.Scale, AnimationSampler::SampleVectorChannel(clip, channel, playbackTimeSeconds));
@@ -54,8 +48,7 @@ namespace AnimationPoseEvaluator
 		}
 		for (const std::uint32_t jointIndex : skeleton.EvaluationOrder)
 		{
-			DirectX::XMMATRIX model = ComposeJointTransform(localTransforms[jointIndex])
-			    * DirectX::XMLoadFloat4x4(&skeleton.Resource->joints[jointIndex].parentSpaceTransform);
+			DirectX::XMMATRIX model = ComposeJointTransform(localTransforms[jointIndex]) * DirectX::XMLoadFloat4x4(&skeleton.Resource->joints[jointIndex].parentSpaceTransform);
 			const std::uint32_t parent = skeleton.Resource->joints[jointIndex].parentJointIndex;
 			if (parent < modelSpaceTransforms.size())
 				model *= DirectX::XMLoadFloat4x4(&modelSpaceTransforms[parent]);

@@ -11,8 +11,4 @@ struct RenderFrame;
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
 
-void AddSkyPass(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources);
+void AddSkyPass(FrameGraphBuilder& builder, const RenderFrame& frame, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources);

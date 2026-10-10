@@ -46,7 +46,9 @@ struct TextureCookPolicy final
 	TextureChannelMask channelMask = TextureChannelMask::Rgba;
 
 	bool IsSrgb() const noexcept { return colorSpace == TextureColorSpace::Srgb; }
+
 	bool IsCube() const noexcept { return dimension == TextureDimension::TextureCube; }
+
 	bool operator==(const TextureCookPolicy&) const noexcept = default;
 };
 
@@ -58,7 +60,9 @@ struct TextureCookRequest final
 	TextureCookPolicy policy;
 
 	bool IsSrgb() const noexcept { return policy.IsSrgb(); }
+
 	bool IsCube() const noexcept { return policy.IsCube(); }
+
 	bool operator==(const TextureCookRequest&) const noexcept = default;
 };
 
@@ -68,6 +72,7 @@ public:
 	void Clear() noexcept;
 	void Add(const TextureCookRequest& request);
 	std::vector<TextureCookRequest> ReleaseRequests() noexcept;
+
 	const std::vector<TextureCookRequest>& Requests() const noexcept { return m_requests; }
 
 private:

@@ -14,10 +14,7 @@
 
 namespace Assets
 {
-	void SceneAssetPayloadAnimationAppender::AppendAnimations(
-	    const LoadedSceneManifest& sceneManifest,
-	    CookedAssetFileSet& files,
-	    SceneAssetPayload& sceneAssetPayload)
+	void SceneAssetPayloadAnimationAppender::AppendAnimations(const LoadedSceneManifest& sceneManifest, CookedAssetFileSet& files, SceneAssetPayload& sceneAssetPayload)
 	{
 		AnimationAssetLoader animationAssetLoader;
 		sceneAssetPayload.animations.reserve(sceneAssetPayload.animations.size() + sceneManifest.animationReferences.size());

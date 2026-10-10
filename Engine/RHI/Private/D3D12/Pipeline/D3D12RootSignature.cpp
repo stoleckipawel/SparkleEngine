@@ -16,11 +16,7 @@ void D3D12RootSignature::Create(const RootSignatureDesc& desc)
 	ID3DBlob* signature = nullptr;
 	ID3DBlob* error = nullptr;
 	CHECK(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error));
-	CHECK(m_rhi.GetDevice()->CreateRootSignature(
-	    0,
-	    signature->GetBufferPointer(),
-	    signature->GetBufferSize(),
-	    IID_PPV_ARGS(m_rootSignature.ReleaseAndGetAddressOf())));
+	CHECK(m_rhi.GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(m_rootSignature.ReleaseAndGetAddressOf())));
 	m_rootSignature->SetName(desc.DebugName);
 }
 

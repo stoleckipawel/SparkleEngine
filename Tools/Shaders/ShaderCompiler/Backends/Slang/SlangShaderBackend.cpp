@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "Slang/SlangShaderBackend.h"
 
@@ -95,17 +95,12 @@ CompiledShader SlangShaderBackend::Compile(const ShaderCompileRequest& request)
 
 	std::array<slang::CompilerOptionEntry, 4> targetOptions = {{
 	    {slang::CompilerOptionName::Optimization,
-	        {slang::CompilerOptionValueKind::Int,
-	            static_cast<std::int32_t>(request.EnableOptimizations ? SLANG_OPTIMIZATION_LEVEL_MAXIMAL : SLANG_OPTIMIZATION_LEVEL_NONE),
-	            0,
-	            nullptr,
-	            nullptr}},
+	        {slang::CompilerOptionValueKind::Int, static_cast<std::int32_t>(request.EnableOptimizations ? SLANG_OPTIMIZATION_LEVEL_MAXIMAL : SLANG_OPTIMIZATION_LEVEL_NONE), 0, nullptr, nullptr}},
 	    {slang::CompilerOptionName::EmitSpirvDirectly, {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}},
-	    {slang::CompilerOptionName::ForceDXLayout,
-	        {slang::CompilerOptionValueKind::Int, ShaderCompileProfile::SpirVUseDirectXBufferLayout, 0, nullptr, nullptr}},
-	    {slang::CompilerOptionName::DefaultImageFormatUnknown,
-	        {slang::CompilerOptionValueKind::Int, ShaderCompileProfile::SpirVUseUnknownStorageImageFormat, 0, nullptr, nullptr}},
+	    {slang::CompilerOptionName::ForceDXLayout, {slang::CompilerOptionValueKind::Int, ShaderCompileProfile::SpirVUseDirectXBufferLayout, 0, nullptr, nullptr}},
+	    {slang::CompilerOptionName::DefaultImageFormatUnknown, {slang::CompilerOptionValueKind::Int, ShaderCompileProfile::SpirVUseUnknownStorageImageFormat, 0, nullptr, nullptr}},
 	}};
+
 	targetDesc.compilerOptionEntries = targetOptions.data();
 	targetDesc.compilerOptionEntryCount = IsSpirVTarget(request.Target) ? static_cast<std::uint32_t>(targetOptions.size()) : 1u;
 
@@ -127,8 +122,7 @@ CompiledShader SlangShaderBackend::Compile(const ShaderCompileRequest& request)
 	Slang::ComPtr<slang::IBlob> diagnosticBlob;
 	constexpr std::string_view moduleName = "SparkleShader";
 	const std::string& modulePath = request.VirtualSourcePath;
-	slang::IModule* module =
-	    session->loadModuleFromSourceString(moduleName.data(), modulePath.c_str(), sourceText.c_str(), diagnosticBlob.writeRef());
+	slang::IModule* module = session->loadModuleFromSourceString(moduleName.data(), modulePath.c_str(), sourceText.c_str(), diagnosticBlob.writeRef());
 	diagnostics += BlobToString(diagnosticBlob);
 	if (module == nullptr)
 	{
@@ -138,8 +132,7 @@ CompiledShader SlangShaderBackend::Compile(const ShaderCompileRequest& request)
 	Slang::ComPtr<slang::IEntryPoint> entryPoint;
 	diagnosticBlob.setNull();
 	const SlangStage stage = MapStage(request.Stage);
-	SlangResult entryResult =
-	    module->findAndCheckEntryPoint(request.EntryPoint.c_str(), stage, entryPoint.writeRef(), diagnosticBlob.writeRef());
+	SlangResult entryResult = module->findAndCheckEntryPoint(request.EntryPoint.c_str(), stage, entryPoint.writeRef(), diagnosticBlob.writeRef());
 	diagnostics += BlobToString(diagnosticBlob);
 	if (SLANG_FAILED(entryResult) || !entryPoint)
 	{
@@ -149,8 +142,7 @@ CompiledShader SlangShaderBackend::Compile(const ShaderCompileRequest& request)
 	std::array<slang::IComponentType*, 2> components = {module, entryPoint.get()};
 	Slang::ComPtr<slang::IComponentType> composedProgram;
 	diagnosticBlob.setNull();
-	SlangResult composeResult =
-	    session->createCompositeComponentType(components.data(), components.size(), composedProgram.writeRef(), diagnosticBlob.writeRef());
+	SlangResult composeResult = session->createCompositeComponentType(components.data(), components.size(), composedProgram.writeRef(), diagnosticBlob.writeRef());
 	diagnostics += BlobToString(diagnosticBlob);
 	if (SLANG_FAILED(composeResult) || !composedProgram)
 	{
@@ -192,8 +184,8 @@ CompiledShader SlangShaderBackend::Compile(const ShaderCompileRequest& request)
 		if (layout == nullptr)
 		{
 			throw Diagnostics::Error(
-			    "Slang failed to produce reflection layout for target '" + std::string{GetShaderTargetName(request.Target)} + "' source '"
-			    + request.VirtualSourcePath + "' entry '" + request.EntryPoint + "' - " + diagnostics);
+			    "Slang failed to produce reflection layout for target '" + std::string{GetShaderTargetName(request.Target)} + "' source '" + request.VirtualSourcePath + "' entry '"
+			    + request.EntryPoint + "' - " + diagnostics);
 		}
 		reflection = SlangReflectionExtractor::Extract(*layout, request.Stage);
 	}
@@ -272,10 +264,7 @@ std::vector<std::string> SlangShaderBackend::BuildDebugArgumentStrings(const Sha
 	return args;
 }
 
-ShaderDebugArtifactSet SlangShaderBackend::CaptureDebugArtifacts(
-    const ShaderCompileRequest& request,
-    std::string_view sourceText,
-    std::string_view diagnostics)
+ShaderDebugArtifactSet SlangShaderBackend::CaptureDebugArtifacts(const ShaderCompileRequest& request, std::string_view sourceText, std::string_view diagnostics)
 {
 	ShaderDebugArtifactSet artifacts;
 	artifacts.CompileArguments = BuildDebugArgumentStrings(request);

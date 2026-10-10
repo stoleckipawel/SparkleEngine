@@ -54,10 +54,7 @@ namespace DirectLightReservoir
 
 	bool AreSurfacesCompatible(Surface surface, float4 packedSurface)
 	{
-		return RestirReservoirCommon::AreSurfacesCompatible(surface.Valid,
-		                                                    surface.GBuffer.NormalWorld,
-		                                                    surface.ViewDistance,
-		                                                    packedSurface);
+		return RestirReservoirCommon::AreSurfacesCompatible(surface.Valid, surface.GBuffer.NormalWorld, surface.ViewDistance, packedSurface);
 	}
 
 	float3 EvaluateRawContribution(Surface surface, Reservoir reservoir)
@@ -71,6 +68,7 @@ namespace DirectLightReservoir
 		float3 diffuse = 0.0f;
 		float3 specular = 0.0f;
 		float3 subsurface = 0.0f;
+
 		SurfaceLighting::AccumulateDirectLightSample(surface.ViewDirWorld,
 		                                             surface.GBuffer.NormalWorld,
 		                                             surface.GBuffer.BaseColor,
@@ -87,6 +85,7 @@ namespace DirectLightReservoir
 		                                             diffuse,
 		                                             specular,
 		                                             subsurface);
+
 		return max(diffuse + specular + subsurface, 0.0f.xxx);
 	}
 
@@ -106,12 +105,7 @@ namespace DirectLightReservoir
 		return max(candidate.SelectionPdf * sample.PdfW, 0.0f);
 	}
 
-	bool StreamWeightedSample(inout Reservoir reservoir,
-	                          DirectLightSampling::LightCandidate candidate,
-	                          float2 shapeSample,
-	                          float targetPdf,
-	                          float sourcePdf,
-	                          float random)
+	bool StreamWeightedSample(inout Reservoir reservoir, DirectLightSampling::LightCandidate candidate, float2 shapeSample, float targetPdf, float sourcePdf, float random)
 	{
 		reservoir.M += 1.0f;
 		if (!DirectLightSampling::IsValid(candidate) || targetPdf <= MinPdf || sourcePdf <= MinPdf)
@@ -187,8 +181,7 @@ namespace DirectLightReservoir
 		[unroll]
 		for (uint candidateIndex = 0u; candidateIndex < RestirReservoirCommon::InitialCandidateCount; ++candidateIndex)
 		{
-			const DirectLightSampling::LightCandidate candidate =
-			    DirectLightSampling::SampleUniformLightCandidate(CommonRandom::Random01(rng));
+			const DirectLightSampling::LightCandidate candidate = DirectLightSampling::SampleUniformLightCandidate(CommonRandom::Random01(rng));
 			const float2 shapeSample = CommonRandom::Random02(rng);
 			Reservoir candidateReservoir = EmptyReservoir();
 			candidateReservoir.Candidate = candidate;

@@ -21,8 +21,7 @@ namespace SparkleLauncher
 	{
 		const LauncherOperationRequest request = context.Request;
 		const BuildWorkspaceOperationRequest workspaceRequest = LauncherOperationRequestMapping::BuildWorkspace(request);
-		const BuildToolchainStatus toolchain =
-		    DetectBuildToolchain(workspaceRequest.RepositoryRoot, workspaceRequest.PreferredIde, workspaceRequest.Compiler);
+		const BuildToolchainStatus toolchain = DetectBuildToolchain(workspaceRequest.RepositoryRoot, workspaceRequest.PreferredIde, workspaceRequest.Compiler);
 		std::vector<std::string> requiredCapabilityIds;
 		std::string error;
 		for (const ToolchainItemStatus& item : toolchain.Items)
@@ -34,6 +33,7 @@ namespace SparkleLauncher
 
 			const std::string capabilityId = HostToolCapabilityId(item.Id);
 			requiredCapabilityIds.push_back(capabilityId);
+
 			error = registry.Register(
 			    {capabilityId,
 			        {},
@@ -45,20 +45,17 @@ namespace SparkleLauncher
 				        }
 				        if (item.CanInstall)
 				        {
-					        LauncherOperationRequest installRequest =
-					            BuildQuickStartOperationRequest(request, "workspace.install-host-tool");
+					        LauncherOperationRequest installRequest = BuildQuickStartOperationRequest(request, "workspace.install-host-tool");
 					        installRequest.HostToolId = QString::fromStdString(item.Id);
-					        const BuildWorkspaceOperationPlan installPlan = PlanBuildWorkspaceOperation(
-					            "workspace.install-host-tool",
-					            LauncherOperationRequestMapping::BuildWorkspace(installRequest));
+					        const BuildWorkspaceOperationPlan installPlan = PlanBuildWorkspaceOperation("workspace.install-host-tool", LauncherOperationRequestMapping::BuildWorkspace(installRequest));
 					        if (installPlan.CanRun)
 					        {
 						        return LauncherCapabilityEvaluation::RunOperation(std::move(installRequest));
 					        }
 				        }
-				        return LauncherCapabilityEvaluation::Blocked(
-				            item.Detail.empty() ? item.DisplayName + " is unavailable." : item.Detail);
+				        return LauncherCapabilityEvaluation::Blocked(item.Detail.empty() ? item.DisplayName + " is unavailable." : item.Detail);
 			        }});
+
 			if (!error.empty())
 			{
 				return error;
@@ -70,9 +67,8 @@ namespace SparkleLauncher
 		        std::move(requiredCapabilityIds),
 		        [toolchain]()
 		        {
-			        return toolchain.RequiredToolsAvailable && toolchain.ConfigurePrerequisitesAvailable
-			            ? LauncherCapabilityEvaluation::Ready()
-			            : LauncherCapabilityEvaluation::DependenciesRequired("Required host tools are incomplete.");
+			        return toolchain.RequiredToolsAvailable && toolchain.ConfigurePrerequisitesAvailable ? LauncherCapabilityEvaluation::Ready()
+			                                                                                             : LauncherCapabilityEvaluation::DependenciesRequired("Required host tools are incomplete.");
 		        }});
 	}
 }

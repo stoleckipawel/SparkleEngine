@@ -8,8 +8,4 @@ struct RenderFrameGraphSettings;
 
 bool CanPublishPresentationOutput(const RenderFrameGraphResources& resources) noexcept;
 
-void AddPresentationOutputPass(
-    FrameGraphBuilder& builder,
-    const RenderFrameGraphSettings& settings,
-    FrameGraphTextureHandle encodedColor,
-    RenderFrameGraphResources& resources);
+void AddPresentationOutputPass(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings, FrameGraphTextureHandle encodedColor, RenderFrameGraphResources& resources);

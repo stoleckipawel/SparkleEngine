@@ -42,6 +42,7 @@ class SPARKLE_PLATFORM_API IInputBackend
 {
 public:
 	virtual ~IInputBackend() = default;
+
 	IInputBackend(const IInputBackend&) = delete;
 	IInputBackend& operator=(const IInputBackend&) = delete;
 	IInputBackend(IInputBackend&&) = delete;

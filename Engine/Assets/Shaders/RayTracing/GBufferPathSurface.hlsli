@@ -29,6 +29,7 @@ namespace RayTracingGBufferPathSurface
 		const float3 cameraToSurface = positionWorld - Position;
 		surface.ViewDistance = length(cameraToSurface);
 		const float3 viewDirWorld = surface.ViewDistance > 1.0e-5f ? -cameraToSurface / surface.ViewDistance : surface.GBuffer.NormalWorld;
+
 		surface.PathSurface = BuildPrimaryRayTracingPathSurface(positionWorld,
 		                                                        surface.GBuffer.NormalWorld,
 		                                                        viewDirWorld,
@@ -36,6 +37,7 @@ namespace RayTracingGBufferPathSurface
 		                                                        surface.GBuffer.Roughness,
 		                                                        surface.GBuffer.Metallic,
 		                                                        surface.GBuffer.DielectricF0);
+
 		surface.Valid = true;
 		return surface;
 	}

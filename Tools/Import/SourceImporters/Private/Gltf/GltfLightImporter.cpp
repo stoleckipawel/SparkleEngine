@@ -65,8 +65,7 @@ void GltfLightImporter::ImportLights(const cgltf_data* data, SourceImportOutput&
 		}
 
 		const cgltf_light& sourceLight = *node.light;
-		const DirectX::XMMATRIX worldTransform =
-		    GltfCoordinateConverter::ConvertCameraOrLightWorldTransform(GltfCoordinateConverter::ComputeNodeWorldTransform(&node));
+		const DirectX::XMMATRIX worldTransform = GltfCoordinateConverter::ConvertCameraOrLightWorldTransform(GltfCoordinateConverter::ComputeNodeWorldTransform(&node));
 
 		ImportedLight light;
 		light.name = GltfLightTranslation::ResolveLightName(node, sourceLight);
@@ -88,9 +87,7 @@ void GltfLightImporter::ImportLights(const cgltf_data* data, SourceImportOutput&
 		light.innerAngleRadians = sourceLight.spot_inner_cone_angle;
 		light.outerAngleRadians = sourceLight.spot_outer_cone_angle;
 		light.sourceNodeIndex = static_cast<std::uint32_t>(nodeIndex);
-		light.direction = GltfCoordinateConverter::TransformDirection(
-		    worldTransform,
-		    {WorldCoordinates::kForwardX, WorldCoordinates::kForwardY, WorldCoordinates::kForwardZ});
+		light.direction = GltfCoordinateConverter::TransformDirection(worldTransform, {WorldCoordinates::kForwardX, WorldCoordinates::kForwardY, WorldCoordinates::kForwardZ});
 		DirectX::XMStoreFloat4x4(&light.worldTransform, worldTransform);
 		output.scene.lights.push_back(std::move(light));
 	}

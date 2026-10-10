@@ -13,11 +13,7 @@
 #include <utility>
 #include <vector>
 
-AssetCookerService::AssetCookerService(
-    const char* repositoryRoot,
-    const char* projectName,
-    const char* configuration,
-    const char* toolProfile)
+AssetCookerService::AssetCookerService(const char* repositoryRoot, const char* projectName, const char* configuration, const char* toolProfile)
 {
 	if (HasText(repositoryRoot))
 	{
@@ -56,9 +52,7 @@ AssetCookerServiceResult AssetCookerService::Cook(const char* projectName, const
 	const std::string resolvedToolProfile = ResolveToolProfile(*expectedToolProfile);
 	if (resolvedToolProfile != *expectedToolProfile)
 	{
-		diagnostics.AddError(
-		    AssetCookerCategory::All,
-		    "Tool profile '" + resolvedToolProfile + "' does not match runtime profile '" + resolvedConfiguration + "'.");
+		diagnostics.AddError(AssetCookerCategory::All, "Tool profile '" + resolvedToolProfile + "' does not match runtime profile '" + resolvedConfiguration + "'.");
 		return Finish(false, diagnostics);
 	}
 
@@ -74,11 +68,7 @@ AssetCookerServiceResult AssetCookerService::Cook(const char* projectName, const
 	return Finish(succeeded, diagnostics, std::move(outputs));
 }
 
-bool AssetCookerService::ResolveProjects(
-    const std::filesystem::path& repositoryRoot,
-    std::string_view projectName,
-    AssetCookerDiagnostics& diagnostics,
-    std::vector<std::string>& outProjects) const
+bool AssetCookerService::ResolveProjects(const std::filesystem::path& repositoryRoot, std::string_view projectName, AssetCookerDiagnostics& diagnostics, std::vector<std::string>& outProjects) const
 {
 	if (!IsAllProjects(projectName))
 	{
@@ -136,10 +126,7 @@ bool AssetCookerService::IsAllProjects(std::string_view projectName) noexcept
 	return projectName.empty() || projectName == "ALL" || projectName == "All" || projectName == "all";
 }
 
-AssetCookerServiceResult AssetCookerService::Finish(
-    bool succeeded,
-    AssetCookerDiagnostics& diagnostics,
-    std::vector<AssetCookerOutputRecord> outputs)
+AssetCookerServiceResult AssetCookerService::Finish(bool succeeded, AssetCookerDiagnostics& diagnostics, std::vector<AssetCookerOutputRecord> outputs)
 {
 	AssetCookerServiceResult result;
 	result.exitCode = succeeded ? 0 : 1;

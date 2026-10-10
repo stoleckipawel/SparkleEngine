@@ -8,8 +8,4 @@ struct RenderFrame;
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
 
-FrameGraphTextureHandle AddToneMappingPass(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderViewportExtent outputExtent,
-    const RenderFrameGraphResources& resources);
+FrameGraphTextureHandle AddToneMappingPass(FrameGraphBuilder& builder, const RenderFrame& frame, RenderViewportExtent outputExtent, const RenderFrameGraphResources& resources);

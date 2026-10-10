@@ -8,13 +8,10 @@
 
 #include <vector>
 
-void AddLightingTargetClearPass(
-    FrameGraphBuilder& builder,
-    std::string_view name,
-    RenderViewportExtent extent,
-    std::span<const FrameGraphTextureHandle> targets)
+void AddLightingTargetClearPass(FrameGraphBuilder& builder, std::string_view name, RenderViewportExtent extent, std::span<const FrameGraphTextureHandle> targets)
 {
 	const std::vector<FrameGraphTextureHandle> ownedTargets(targets.begin(), targets.end());
+
 	builder.AddPass(
 	    name,
 	    EFrameGraphPassKind::Raster,

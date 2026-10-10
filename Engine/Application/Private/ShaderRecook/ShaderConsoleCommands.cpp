@@ -33,8 +33,7 @@ void ShaderConsoleCommands::Register(ConsoleCommandRegistry& commandRegistry, co
 	        .Help = "Queues an out-of-process shader recook. Targets: Global, Changed, or Shader <shader-id>.",
 	        .ArgumentSyntax = "Global|Changed|Shader <shader-id>",
 	        .Scope = ConsoleCommandScope::Editor,
-	        .Execute = [handlers](ConsoleCommandScope, std::span<const std::string_view> arguments)
-	        { return ExecuteRecompileShaders(handlers, arguments); },
+	        .Execute = [handlers](ConsoleCommandScope, std::span<const std::string_view> arguments) { return ExecuteRecompileShaders(handlers, arguments); },
 	        .Complete = [](ConsoleCommandScope, const ConsoleAutocompleteRequest& request) { return CompleteRecompileShaders(request); },
 	    });
 
@@ -126,8 +125,7 @@ ConsoleCommandResult ShaderConsoleCommands::ExecuteRecompileShaders(const Handle
 	}
 
 	handlers.RequestRecook(request);
-	return ConsoleCommandResult::Success(
-	    "queued " + ShaderRecookCoordinator::DescribeRequest(request) + " through out-of-process ShaderCompiler.exe cook");
+	return ConsoleCommandResult::Success("queued " + ShaderRecookCoordinator::DescribeRequest(request) + " through out-of-process ShaderCompiler.exe cook");
 }
 
 ConsoleCommandResult ShaderConsoleCommands::ExecuteReloadShaders(const Handlers& handlers)
@@ -200,8 +198,7 @@ std::string ShaderConsoleCommands::BuildShaderList()
 	std::string output;
 	for (const ShaderRegistrationDesc& shader : GlobalShaderRegistry::GetRegistrations())
 	{
-		const ShaderParameterStructDescriptor parameters =
-		    shader.BuildParameterStructDescriptor != nullptr ? shader.BuildParameterStructDescriptor() : ShaderParameterStructDescriptor{};
+		const ShaderParameterStructDescriptor parameters = shader.BuildParameterStructDescriptor != nullptr ? shader.BuildParameterStructDescriptor() : ShaderParameterStructDescriptor{};
 
 		if (!output.empty())
 		{

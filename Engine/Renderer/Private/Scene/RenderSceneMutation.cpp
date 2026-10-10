@@ -71,8 +71,7 @@ void RenderScene::ApplyValidatedDelta(const RenderSceneDelta& delta)
 		m_primitives.clear();
 		ResetContinuity();
 	}
-	if (delta.ResetScene || !delta.Creates.empty() || !delta.Updates.empty() || !delta.Destroys.empty() || delta.InstanceGroups.Published
-	    || delta.Sky.Published)
+	if (delta.ResetScene || !delta.Creates.empty() || !delta.Updates.empty() || !delta.Destroys.empty() || delta.InstanceGroups.Published || delta.Sky.Published)
 	{
 		++m_structuralRevision;
 	}
@@ -120,6 +119,7 @@ void RenderScene::ApplyDestroys(const RenderSceneDelta& delta)
 		    m_primitives.end(),
 		    primitiveId,
 		    [](const RenderPrimitive& candidate, RenderObjectId identity) { return candidate.Object < identity; });
+
 		if (primitive == m_primitives.end() || primitive->Object != primitiveId)
 		{
 			continue;
@@ -130,10 +130,7 @@ void RenderScene::ApplyDestroys(const RenderSceneDelta& delta)
 	}
 }
 
-void RenderScene::ResolveGpuMeshes(
-    const RenderSceneDelta& delta,
-    std::vector<GpuMeshHandle>& createMeshes,
-    std::vector<GpuMeshHandle>& updateMeshes)
+void RenderScene::ResolveGpuMeshes(const RenderSceneDelta& delta, std::vector<GpuMeshHandle>& createMeshes, std::vector<GpuMeshHandle>& updateMeshes)
 {
 	createMeshes.reserve(delta.Creates.size());
 	updateMeshes.reserve(delta.Updates.size());
@@ -153,11 +150,13 @@ void RenderScene::ApplyCreates(const RenderSceneDelta& delta, std::span<const Gp
 	for (std::size_t index = 0; index < delta.Creates.size(); ++index)
 	{
 		const RenderObjectCreate& create = delta.Creates[index];
+
 		const auto insertion = std::lower_bound(
 		    m_primitives.begin(),
 		    m_primitives.end(),
 		    create.Object,
 		    [](const RenderPrimitive& candidate, RenderObjectId identity) { return candidate.Object < identity; });
+
 		m_primitives.insert(
 		    insertion,
 		    RenderPrimitive{
@@ -231,11 +230,7 @@ void RenderScene::RetainReferencedGpuMeshes() noexcept
 
 bool RenderScene::IsObjectAvailable(RenderObjectId primitiveId, const RenderSceneDelta& delta) const noexcept
 {
-	const auto created = std::lower_bound(
-	    delta.Creates.begin(),
-	    delta.Creates.end(),
-	    primitiveId,
-	    [](const RenderObjectCreate& create, RenderObjectId identity) { return create.Object < identity; });
+	const auto created = std::lower_bound(delta.Creates.begin(), delta.Creates.end(), primitiveId, [](const RenderObjectCreate& create, RenderObjectId identity) { return create.Object < identity; });
 	if (created != delta.Creates.end() && created->Object == primitiveId)
 	{
 		return true;
@@ -257,6 +252,7 @@ const RenderPrimitive* RenderScene::Find(RenderObjectId primitiveId) const noexc
 	    m_primitives.end(),
 	    primitiveId,
 	    [](const RenderPrimitive& candidate, RenderObjectId identity) { return candidate.Object < identity; });
+
 	return primitive == m_primitives.end() || primitive->Object != primitiveId ? nullptr : &*primitive;
 }
 

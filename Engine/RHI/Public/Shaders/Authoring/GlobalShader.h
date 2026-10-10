@@ -122,8 +122,7 @@ public:
 	static ShaderRef Resolve(const GlobalShaderMap& map, const CookedShaderLibrary& library, ShaderTarget target) noexcept
 	{
 		const ShaderRegistrationDesc& registration = GlobalShader<TShader>::GetRegistration();
-		const GlobalShaderMapEntry* const entry =
-		    map.GetPublicationHash() == library.GetPublicationHash() ? map.Find(registration.TypeId, target) : nullptr;
+		const GlobalShaderMapEntry* const entry = map.GetPublicationHash() == library.GetPublicationHash() ? map.Find(registration.TypeId, target) : nullptr;
 		const CookedShaderCodeRecord* const code = entry != nullptr ? library.Find(entry->CodeHash) : nullptr;
 		ShaderRef ref;
 		ref.m_shader = ResolvedShader{.Map = &map, .Library = &library, .Entry = entry, .Code = code};
@@ -131,6 +130,7 @@ public:
 	}
 
 	const ResolvedShader& GetResolvedShader() const noexcept { return m_shader; }
+
 	explicit operator bool() const noexcept { return m_shader.IsValid(); }
 
 private:

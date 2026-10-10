@@ -33,11 +33,7 @@ D3D12SwapChain::D3D12SwapChain(
 	m_waitableObject = GetPresentationInterface()->GetFrameLatencyWaitableObject();
 	if (m_waitableObject == nullptr)
 	{
-		Diagnostics::Fatal(
-		    g_d3d12SwapChainLogger,
-		    __FILE__,
-		    __LINE__,
-		    "D3D12 swap chain did not expose its frame-latency waitable object.");
+		Diagnostics::Fatal(g_d3d12SwapChainLogger, __FILE__, __LINE__, "D3D12 swap chain did not expose its frame-latency waitable object.");
 	}
 
 	UpdateCurrentBackBufferIndex();
@@ -93,12 +89,10 @@ void D3D12SwapChain::Create()
 	swapChainFullsceenDesc.Windowed = true;
 
 	ComPtr<IDXGIFactory7> externalFactory;
-	if (m_rhi.TryUpgradeInterposerInterface(
-	        ERhiInterposerInterfaceKind::PresentationFactory,
-	        m_rhi.GetDxgiFactory().Get(),
-	        IID_PPV_ARGS(externalFactory.ReleaseAndGetAddressOf())))
+	if (m_rhi.TryUpgradeInterposerInterface(ERhiInterposerInterfaceKind::PresentationFactory, m_rhi.GetDxgiFactory().Get(), IID_PPV_ARGS(externalFactory.ReleaseAndGetAddressOf())))
 	{
 		ComPtr<IDXGISwapChain1> externalSwapChain;
+
 		const HRESULT createResult = externalFactory->CreateSwapChainForHwnd(
 		    m_rhi.GetPresentationCommandQueue(),
 		    m_window->GetHWND(),
@@ -106,11 +100,9 @@ void D3D12SwapChain::Create()
 		    &swapChainFullsceenDesc,
 		    nullptr,
 		    externalSwapChain.ReleaseAndGetAddressOf());
+
 		if (SUCCEEDED(createResult) && SUCCEEDED(externalSwapChain.As(&m_externalSwapChain))
-		    && m_rhi.TryResolveNativeInterface(
-		        ERhiInterposerInterfaceKind::PresentationSurface,
-		        m_externalSwapChain.Get(),
-		        IID_PPV_ARGS(m_swapChain.ReleaseAndGetAddressOf())))
+		    && m_rhi.TryResolveNativeInterface(ERhiInterposerInterfaceKind::PresentationSurface, m_externalSwapChain.Get(), IID_PPV_ARGS(m_swapChain.ReleaseAndGetAddressOf())))
 		{
 			m_rhi.NotifyInterposerPresentationReady(true);
 			return;
@@ -120,13 +112,7 @@ void D3D12SwapChain::Create()
 	}
 
 	ComPtr<IDXGISwapChain1> swapChain;
-	CHECK(m_rhi.GetDxgiFactory()->CreateSwapChainForHwnd(
-	    m_rhi.GetCommandQueue().Get(),
-	    m_window->GetHWND(),
-	    &swapChainDesc,
-	    &swapChainFullsceenDesc,
-	    nullptr,
-	    swapChain.ReleaseAndGetAddressOf()));
+	CHECK(m_rhi.GetDxgiFactory()->CreateSwapChainForHwnd(m_rhi.GetCommandQueue().Get(), m_window->GetHWND(), &swapChainDesc, &swapChainFullsceenDesc, nullptr, swapChain.ReleaseAndGetAddressOf()));
 	CHECK(swapChain.As(&m_swapChain));
 	m_rhi.NotifyInterposerPresentationReady(false);
 }
@@ -147,13 +133,7 @@ void D3D12SwapChain::Resize()
 
 void D3D12SwapChain::ResizeBuffersToWindow()
 {
-	CHECK(
-	    GetPresentationInterface()->ResizeBuffers(
-	        m_backBufferCount,
-	        GetWindowWidth(),
-	        GetWindowHeight(),
-	        D3D12TypeConversions::ToDxgiFormat(m_backBufferFormat),
-	        ComputeSwapChainFlags()));
+	CHECK(GetPresentationInterface()->ResizeBuffers(m_backBufferCount, GetWindowWidth(), GetWindowHeight(), D3D12TypeConversions::ToDxgiFormat(m_backBufferFormat), ComputeSwapChainFlags()));
 }
 
 void D3D12SwapChain::AllocateHandles()
@@ -163,6 +143,7 @@ void D3D12SwapChain::AllocateHandles()
 		m_rtvHandles[i] = m_descriptorHeapManager->GetAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_RTV)->Allocate();
 	}
 }
+
 void D3D12SwapChain::CreateRenderTargetViews()
 {
 	for (UINT i = 0; i < m_backBufferCount; i++)
@@ -204,22 +185,12 @@ UINT D3D12SwapChain::ComputeSwapChainFlags() const
 
 RhiViewport D3D12SwapChain::GetDefaultViewport() const
 {
-	return RhiViewport{
-	    .X = 0.0f,
-	    .Y = 0.0f,
-	    .Width = static_cast<float>(GetWindowWidth()),
-	    .Height = static_cast<float>(GetWindowHeight()),
-	    .MinDepth = 0.0f,
-	    .MaxDepth = 1.0f};
+	return RhiViewport{.X = 0.0f, .Y = 0.0f, .Width = static_cast<float>(GetWindowWidth()), .Height = static_cast<float>(GetWindowHeight()), .MinDepth = 0.0f, .MaxDepth = 1.0f};
 }
 
 RhiRect D3D12SwapChain::GetDefaultScissorRect() const
 {
-	return RhiRect{
-	    .Left = 0,
-	    .Top = 0,
-	    .Right = static_cast<std::int32_t>(GetWindowWidth()),
-	    .Bottom = static_cast<std::int32_t>(GetWindowHeight())};
+	return RhiRect{.Left = 0, .Top = 0, .Right = static_cast<std::int32_t>(GetWindowWidth()), .Bottom = static_cast<std::int32_t>(GetWindowHeight())};
 }
 
 void D3D12SwapChain::Present()
@@ -241,11 +212,7 @@ void D3D12SwapChain::WaitForPresentationSlot() const noexcept
 	const DWORD waitResult = WaitForSingleObject(m_waitableObject, INFINITE);
 	if (waitResult != WAIT_OBJECT_0)
 	{
-		Diagnostics::Fatal(
-		    g_d3d12SwapChainLogger,
-		    __FILE__,
-		    __LINE__,
-		    std::format("D3D12 frame-latency wait failed with result 0x{:08X}.", waitResult));
+		Diagnostics::Fatal(g_d3d12SwapChainLogger, __FILE__, __LINE__, std::format("D3D12 frame-latency wait failed with result 0x{:08X}.", waitResult));
 	}
 }
 

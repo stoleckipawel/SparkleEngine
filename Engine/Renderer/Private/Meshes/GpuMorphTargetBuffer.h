@@ -25,20 +25,20 @@ public:
 	GpuMorphTargetBuffer(GpuMorphTargetBuffer&&) = delete;
 	GpuMorphTargetBuffer& operator=(GpuMorphTargetBuffer&&) = delete;
 
-	void Upload(
-	    RenderHardwareInterface& renderHardwareInterface,
-	    RenderCommandList& commandList,
-	    std::vector<MorphTargetDeltaData> deltas,
-	    std::uint32_t targetCount);
+	void Upload(RenderHardwareInterface& renderHardwareInterface, RenderCommandList& commandList, std::vector<MorphTargetDeltaData> deltas, std::uint32_t targetCount);
 	void Release() noexcept;
 
 	RhiGpuDescriptorHandle GetShaderResourceView() const noexcept { return m_shaderResourceView; }
+
 	std::span<const MorphTargetDeltaData> GetDeltas() const noexcept { return m_deltas; }
+
 	std::uint32_t GetTargetCount() const noexcept { return m_targetCount; }
+
 	bool HasTargets() const noexcept { return m_targetCount > 0u; }
 
 private:
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
+
 	RhiOwnedResourceHandle m_buffer = {};
 	RhiResourceViewHandle m_view = {};
 	RhiGpuDescriptorHandle m_shaderResourceView = {};

@@ -69,6 +69,7 @@ namespace SparkleLauncher
 		{
 			status.Detail = "Vulkan SDK was not detected. Install it or define VULKAN_SDK so the enabled ShaderCompiler feature can "
 			                "find DXC, Slang and SPIRV-Tools.";
+
 			return status;
 		}
 
@@ -102,8 +103,7 @@ namespace SparkleLauncher
 			missingEntryViews.push_back(entry);
 		}
 		std::ostringstream detail;
-		detail << "Detected Vulkan SDK root " << status.Root.string()
-		       << ", but the shader compiler runtime bundle is missing: " << Strings::Join(missingEntryViews, ", ") << ".";
+		detail << "Detected Vulkan SDK root " << status.Root.string() << ", but the shader compiler runtime bundle is missing: " << Strings::Join(missingEntryViews, ", ") << ".";
 		status.Detail = detail.str();
 		return status;
 	}

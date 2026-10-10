@@ -61,11 +61,7 @@ namespace Assets
 				}
 				case CookedSceneLightKind::Unknown:
 				default:
-					Diagnostics::Fatal(
-					    g_sceneAssetLightTranslatorLogger,
-					    __FILE__,
-					    __LINE__,
-					    "Validated cooked scene contains an unsupported light kind.");
+					Diagnostics::Fatal(g_sceneAssetLightTranslatorLogger, __FILE__, __LINE__, "Validated cooked scene contains an unsupported light kind.");
 			}
 		}
 	};

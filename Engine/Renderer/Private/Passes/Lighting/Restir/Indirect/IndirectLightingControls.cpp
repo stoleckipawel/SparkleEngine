@@ -6,10 +6,7 @@
 
 ConsoleVariable<bool> CVarIndirectDiffuse("r.Lighting.Indirect.Diffuse", true, "Evaluate primary indirect diffuse lighting.");
 ConsoleVariable<bool> CVarIndirectSpecular("r.Lighting.Indirect.Specular", true, "Evaluate primary indirect specular lighting.");
-ConsoleVariable<bool> CVarIndirectShadows(
-    "r.Lighting.Shadows.Indirect",
-    true,
-    "Trace secondary-hit direct-light visibility in Lit indirect transport.");
+ConsoleVariable<bool> CVarIndirectShadows("r.Lighting.Shadows.Indirect", true, "Trace secondary-hit direct-light visibility in Lit indirect transport.");
 
 bool IsIndirectShadowsActive() noexcept
 {
@@ -26,11 +23,7 @@ static void RequireIndirectLightingProduct(FrameGraphTextureHandle input, FrameG
 	if (!input.IsValid() || !output.IsValid())
 	{
 		SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogIndirectLighting, "Renderer.IndirectLighting");
-		Diagnostics::Fatal(
-		    LogIndirectLighting,
-		    __FILE__,
-		    __LINE__,
-		    std::format("Enabled indirect {} requires its GBuffer input and lighting output.", lobe));
+		Diagnostics::Fatal(LogIndirectLighting, __FILE__, __LINE__, std::format("Enabled indirect {} requires its GBuffer input and lighting output.", lobe));
 	}
 }
 

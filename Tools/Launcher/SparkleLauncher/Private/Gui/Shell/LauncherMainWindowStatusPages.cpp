@@ -74,8 +74,7 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::InstallHostTool(const ToolchainItemStatus& item)
 	{
-		LauncherOperationRequest request =
-		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, "workspace.install-host-tool");
+		LauncherOperationRequest request = BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, "workspace.install-host-tool");
 		request.HostToolId = QString::fromStdString(item.Id);
 		StartOperation(std::move(request), "Install " + QString::fromStdString(item.DisplayName));
 	}
@@ -99,10 +98,9 @@ namespace SparkleLauncher
 		QPushButton* button = new QPushButton(this);
 		ApplyStatusActionButtonPresentation(*button, label, install ? QStringLiteral("warning") : QStringLiteral("neutral"));
 		button->setAccessibleName(label + " " + displayName);
-		button->setToolTip(
-		    install ? "Install " + displayName + ". It becomes selectable after detection confirms the installation."
-		            : "Select " + displayName + " for launcher builds.");
+		button->setToolTip(install ? "Install " + displayName + ". It becomes selectable after detection confirms the installation." : "Select " + displayName + " for launcher builds.");
 		RegisterFocusable(button);
+
 		connect(
 		    button,
 		    &QPushButton::clicked,
@@ -118,6 +116,7 @@ namespace SparkleLauncher
 				    SelectWorkspaceCompiler(*compiler);
 			    }
 		    });
+
 		return button;
 	}
 
@@ -134,15 +133,14 @@ namespace SparkleLauncher
 		const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation(operationId.toStdString(), request);
 		const QString workspaceIdeName = ResolveSelectedWorkspaceIdeName(m_settings);
 		const bool isSetupWorkflow = operationId == "workspace.sync-code" || operationId == "workspace.generate-build-files";
-		const bool isBuildWorkflow =
-		    operationId.startsWith("workspace.build") || operationId == "cook.tools.prepare" || operationId == "launcher.build.self";
+		const bool isBuildWorkflow = operationId.startsWith("workspace.build") || operationId == "cook.tools.prepare" || operationId == "launcher.build.self";
 		if (isSetupWorkflow)
 		{
 			const bool isSourceSyncWorkflow = operationId == "workspace.sync-code";
-			const QString configurePrerequisiteDetail =
-			    !plan.CanRun && !plan.ReadinessMessages.empty() ? QString::fromStdString(plan.ReadinessMessages.back()) : QString();
+			const QString configurePrerequisiteDetail = !plan.CanRun && !plan.ReadinessMessages.empty() ? QString::fromStdString(plan.ReadinessMessages.back()) : QString();
 
 			QVBoxLayout* machineLayout = AddOptionGroup(layout, "Dependencies", QString());
+
 			const auto addToolchainItems = [this, machineLayout, &plan](bool requiredOnly)
 			{
 				for (const ToolchainItemStatus& item : plan.Toolchain.Items)
@@ -160,18 +158,17 @@ namespace SparkleLauncher
 					    CreateHostToolActionButton(item));
 				}
 			};
+
 			addToolchainItems(true);
+
 			AddStatusRow(
 			    *machineLayout,
 			    "Selected IDE",
 			    workspaceIdeName,
 			    request.PreferredIde == WorkspaceIde::Rider
-			        ? (plan.Toolchain.RiderPath.empty() ? "Rider executable was not found."
-			                                            : QString::fromStdString(plan.Toolchain.RiderPath.string()))
-			        : (plan.Toolchain.VisualStudioIdePath.empty() ? "Visual Studio IDE was not found."
-			                                                      : QString::fromStdString(plan.Toolchain.VisualStudioIdePath.string())),
-			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "warning" : "ok")
-			                                                : (plan.Toolchain.VisualStudioIdePath.empty() ? "warning" : "ok"));
+			        ? (plan.Toolchain.RiderPath.empty() ? "Rider executable was not found." : QString::fromStdString(plan.Toolchain.RiderPath.string()))
+			        : (plan.Toolchain.VisualStudioIdePath.empty() ? "Visual Studio IDE was not found." : QString::fromStdString(plan.Toolchain.VisualStudioIdePath.string())),
+			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "warning" : "ok") : (plan.Toolchain.VisualStudioIdePath.empty() ? "warning" : "ok"));
 
 			if (!isSourceSyncWorkflow)
 			{
@@ -223,14 +220,12 @@ namespace SparkleLauncher
 			if (operationId == "workspace.build")
 			{
 				QVBoxLayout* issueLayout = nullptr;
+
 				const auto ensureIssueLayout = [&]() -> QVBoxLayout*
 				{
 					if (issueLayout == nullptr)
 					{
-						issueLayout = AddOptionGroup(
-						    layout,
-						    "Setup needed",
-						    "Only prerequisites that need attention are shown here. Resolve them once, then run the selected build.");
+						issueLayout = AddOptionGroup(layout, "Setup needed", "Only prerequisites that need attention are shown here. Resolve them once, then run the selected build.");
 					}
 					return issueLayout;
 				};
@@ -263,51 +258,47 @@ namespace SparkleLauncher
 
 				if (!plan.CanRun && issueLayout == nullptr && !request.SelectedScopes.empty())
 				{
-					const QString detail = plan.ReadinessMessages.empty()
-					    ? QStringLiteral("The selected build cannot run with the current workspace configuration.")
-					    : QString::fromStdString(plan.ReadinessMessages.back());
+					const QString detail = plan.ReadinessMessages.empty() ? QStringLiteral("The selected build cannot run with the current workspace configuration.")
+					                                                      : QString::fromStdString(plan.ReadinessMessages.back());
+
 					AddStatusRow(*ensureIssueLayout(), "Build selection", "Unavailable", detail, "bad");
 				}
 				return;
 			}
 
 			QVBoxLayout* buildLayout = AddOptionGroup(layout, "Readiness", QString());
+
 			AddStatusRow(
 			    *buildLayout,
 			    "Required tools",
 			    plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Blocked",
 			    plan.Toolchain.RequiredToolsAvailable ? BuildGeneratorSummary(plan.Toolchain) : RequiredToolProblemSummary(plan.Toolchain),
 			    plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad",
-			    plan.Toolchain.RequiredToolsAvailable
-			        ? nullptr
-			        : CreateStatusActionButton("workspace.sync-code", "Review", "Review Sync Code", true));
+			    plan.Toolchain.RequiredToolsAvailable ? nullptr : CreateStatusActionButton("workspace.sync-code", "Review", "Review Sync Code", true));
+
 			AddStatusRow(
 			    *buildLayout,
 			    "Build files",
 			    plan.Freshness.Current ? "Ready" : "Needs refresh",
 			    CombineStatusDetail(QString::fromStdString(plan.Freshness.Summary), BuildFilesExpectedAction(plan.Freshness)),
 			    plan.Freshness.Current ? "ok" : "warning",
-			    plan.Freshness.Current ? nullptr
-			                           : CreateStatusActionButton("workspace.generate-build-files", "Generate", "Generate Build Files"));
+			    plan.Freshness.Current ? nullptr : CreateStatusActionButton("workspace.generate-build-files", "Generate", "Generate Build Files"));
+
 			return;
 		}
 	}
 
 	void LauncherMainWindow::AddCookEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)
 	{
-		const LauncherOperationRequest operationRequest =
-		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, operationId);
-		const CookOperationPlan cookPlan =
-		    PlanCookOperation(operationId.toStdString(), LauncherOperationRequestMapping::Cook(operationRequest));
+		const LauncherOperationRequest operationRequest = BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, operationId);
+		const CookOperationPlan cookPlan = PlanCookOperation(operationId.toStdString(), LauncherOperationRequestMapping::Cook(operationRequest));
 		QVBoxLayout* issueLayout = nullptr;
+
 		const auto ensureIssueLayout = [&]() -> QVBoxLayout*
 		{
 			if (issueLayout == nullptr)
 			{
-				issueLayout = AddOptionGroup(
-				    layout,
-				    "Setup needed",
-				    "Only prerequisites that need attention are shown here. Resolve them once, then cook the selected outputs.");
+				issueLayout = AddOptionGroup(layout, "Setup needed", "Only prerequisites that need attention are shown here. Resolve them once, then cook the selected outputs.");
 			}
 			return issueLayout;
 		};
@@ -359,15 +350,12 @@ namespace SparkleLauncher
 			    CreateStatusActionButton("cook.tools.prepare", "Build", "Build Cooking Tools"));
 		}
 
-		if (!cookPlan.CanRun && issueLayout == nullptr && !cookPlan.Request.SelectedScopes.empty()
-		    && !(cookPlan.Request.Mode == CookMode::Force && !cookPlan.Request.ForceRecookConfirmed))
+		if (!cookPlan.CanRun && issueLayout == nullptr && !cookPlan.Request.SelectedScopes.empty() && !(cookPlan.Request.Mode == CookMode::Force && !cookPlan.Request.ForceRecookConfirmed))
 		{
-			const QString detail = cookPlan.ReadinessMessages.empty()
-			    ? QStringLiteral("The selected cooking stages cannot run with the current workspace configuration.")
-			    : QString::fromStdString(cookPlan.ReadinessMessages.back());
-			QWidget* recoveryAction = detail.contains("Cook tool", Qt::CaseInsensitive)
-			    ? CreateStatusActionButton("cook.tools.prepare", "Build", "Build Cooking Tools")
-			    : nullptr;
+			const QString detail = cookPlan.ReadinessMessages.empty() ? QStringLiteral("The selected cooking stages cannot run with the current workspace configuration.")
+			                                                          : QString::fromStdString(cookPlan.ReadinessMessages.back());
+
+			QWidget* recoveryAction = detail.contains("Cook tool", Qt::CaseInsensitive) ? CreateStatusActionButton("cook.tools.prepare", "Build", "Build Cooking Tools") : nullptr;
 			AddStatusRow(*ensureIssueLayout(), "Cook selection", "Unavailable", detail, "bad", recoveryAction);
 		}
 	}
@@ -383,12 +371,12 @@ namespace SparkleLauncher
 		if (operationId == "workspace.clean")
 		{
 			QVBoxLayout* maintenanceLayout = AddOptionGroup(layout, "Readiness", QString());
+
 			AddStatusRow(
 			    *maintenanceLayout,
 			    "Confirmation",
 			    m_settings.ConfirmClean() ? "Enabled" : "Required on run",
-			    m_settings.ConfirmClean() ? "Clean confirmation is enabled in settings."
-			                              : "The launcher will ask for confirmation before destructive clean actions run.",
+			    m_settings.ConfirmClean() ? "Clean confirmation is enabled in settings." : "The launcher will ask for confirmation before destructive clean actions run.",
 			    m_settings.ConfirmClean() ? "ok" : "warning");
 		}
 	}

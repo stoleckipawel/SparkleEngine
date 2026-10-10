@@ -44,9 +44,8 @@ std::vector<std::string> ShaderSourceChangeTracker::RefreshSnapshot(bool detectC
 		std::filesystem::path PhysicalPath;
 		std::string_view VirtualPath;
 	};
-	const std::array<WatchedRoot, 2> shaderRoots{
-	    WatchedRoot{Filesystem::GetShaderPath(PathRoot::Project), "/Project"},
-	    WatchedRoot{Filesystem::GetShaderPath(PathRoot::Engine), "/Engine"}};
+
+	const std::array<WatchedRoot, 2> shaderRoots{WatchedRoot{Filesystem::GetShaderPath(PathRoot::Project), "/Project"}, WatchedRoot{Filesystem::GetShaderPath(PathRoot::Engine), "/Engine"}};
 
 	for (const WatchedRoot& shaderRoot : shaderRoots)
 	{
@@ -61,8 +60,7 @@ std::vector<std::string> ShaderSourceChangeTracker::RefreshSnapshot(bool detectC
 			continue;
 		}
 
-		for (std::filesystem::recursive_directory_iterator it(shaderRoot.PhysicalPath, errorCode), end; it != end && !errorCode;
-		    it.increment(errorCode))
+		for (std::filesystem::recursive_directory_iterator it(shaderRoot.PhysicalPath, errorCode), end; it != end && !errorCode; it.increment(errorCode))
 		{
 			if (!it->is_regular_file(errorCode) || errorCode || !IsWatchedShaderSource(it->path()))
 			{
@@ -111,10 +109,7 @@ std::vector<std::string> ShaderSourceChangeTracker::RefreshSnapshot(bool detectC
 	return changedVirtualPaths;
 }
 
-std::string ShaderSourceChangeTracker::BuildVirtualPath(
-    const std::filesystem::path& shaderRoot,
-    const std::filesystem::path& sourcePath,
-    std::string_view virtualRoot) noexcept
+std::string ShaderSourceChangeTracker::BuildVirtualPath(const std::filesystem::path& shaderRoot, const std::filesystem::path& sourcePath, std::string_view virtualRoot) noexcept
 {
 	std::error_code errorCode;
 	const std::filesystem::path relativePath = std::filesystem::relative(sourcePath, shaderRoot, errorCode);

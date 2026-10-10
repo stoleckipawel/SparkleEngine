@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "Core/Public/Console/ConsoleCommandRegistry.h"
 
@@ -115,6 +115,7 @@ std::vector<std::string> ConsoleCommandRegistry::CompleteLine(std::string_view i
 
 	const std::vector<std::string_view> argumentViews = BuildArgumentViews(parsedInput.Arguments);
 	const std::string_view currentToken = argumentViews.empty() ? std::string_view{} : argumentViews.back();
+
 	return descriptor->Complete(
 	    scope,
 	    ConsoleAutocompleteRequest{

@@ -37,9 +37,7 @@ FrameGraphBufferHandle FrameGraphBuilder::CreateBuffer(const FrameGraphBufferDes
 	return m_frameGraph.CreateBuffer(desc);
 }
 
-FrameGraphAccelerationStructureHandle FrameGraphBuilder::ReservePersistentAccelerationStructure(
-    std::string_view name,
-    ResourceState initialState) noexcept
+FrameGraphAccelerationStructureHandle FrameGraphBuilder::ReservePersistentAccelerationStructure(std::string_view name, ResourceState initialState) noexcept
 {
 	return m_frameGraph.ReservePersistentAccelerationStructure(name, initialState);
 }
@@ -49,27 +47,20 @@ void FrameGraphBuilder::ExportTexture(FrameGraphTextureHandle handle, std::strin
 	m_frameGraph.ExportTexture(handle, name);
 }
 
-ShaderAccelerationStructure FrameGraphBuilder::CreateAccelerationStructureBinding(
-    FrameGraphAccelerationStructureHandle handle) const noexcept
+ShaderAccelerationStructure FrameGraphBuilder::CreateAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) const noexcept
 {
 	return m_frameGraph.CreateAccelerationStructureBinding(handle);
 }
 
-ShaderRenderTarget FrameGraphBuilder::CreateRenderTarget(
-    FrameGraphTextureHandle handle,
-    FrameGraphAttachmentLoadAction load,
-    FrameGraphAttachmentStoreAction store) const noexcept
+ShaderRenderTarget FrameGraphBuilder::CreateRenderTarget(FrameGraphTextureHandle handle, FrameGraphAttachmentLoadAction load, FrameGraphAttachmentStoreAction store) const noexcept
 {
 	ShaderRenderTarget result;
 	result = FrameGraphAttachmentBinding{.Handle = handle, .Load = load, .Store = store};
 	return result;
 }
 
-ShaderDepthTarget FrameGraphBuilder::CreateDepthTarget(
-    FrameGraphTextureHandle handle,
-    FrameGraphAttachmentLoadAction load,
-    FrameGraphAttachmentStoreAction store,
-    FrameGraphDepthStencilAccess access) const noexcept
+ShaderDepthTarget FrameGraphBuilder::CreateDepthTarget(FrameGraphTextureHandle handle, FrameGraphAttachmentLoadAction load, FrameGraphAttachmentStoreAction store, FrameGraphDepthStencilAccess access)
+    const noexcept
 {
 	ShaderDepthTarget result;
 	result = FrameGraphAttachmentBinding{.Handle = handle, .Load = load, .Store = store, .DepthStencilAccess = access};

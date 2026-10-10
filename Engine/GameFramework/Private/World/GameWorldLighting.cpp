@@ -56,11 +56,8 @@ public:
 		switch (light.Kind)
 		{
 			case SceneLightKind::Directional:
-				return SceneDirectionalLightDesc{
-				    .direction = light.Direction,
-				    .illuminance = light.Illuminance,
-				    .angularSizeRadians = light.AngularSizeRadians,
-				    .castShadow = light.CastShadow};
+				return SceneDirectionalLightDesc{.direction = light.Direction, .illuminance = light.Illuminance, .angularSizeRadians = light.AngularSizeRadians, .castShadow = light.CastShadow};
+
 			case SceneLightKind::Point:
 				return PointLightDesc{
 				    .luminousIntensity = light.LuminousIntensity,
@@ -68,6 +65,7 @@ public:
 				    .radius = light.Radius,
 				    .distanceAttenuationCoefficients = light.DistanceAttenuationCoefficients,
 				    .castShadow = light.CastShadow};
+
 			case SceneLightKind::Spot:
 				return SpotLightDesc{
 				    .direction = light.Direction,
@@ -78,6 +76,7 @@ public:
 				    .innerAngleRadians = light.InnerAngleRadians,
 				    .outerAngleRadians = light.OuterAngleRadians,
 				    .castShadow = light.CastShadow};
+
 			case SceneLightKind::Rect:
 				return RectLightDesc{
 				    .direction = light.Direction,
@@ -86,6 +85,7 @@ public:
 				    .tangent = light.Tangent,
 				    .height = light.AreaSize.y,
 				    .castShadow = light.CastShadow};
+
 			case SceneLightKind::Unknown:
 			default:
 				return std::monostate{};
@@ -104,12 +104,11 @@ namespace ECS
 		}
 		const Transform transform(DirectX::XMLoadFloat4x4(&desc.common.worldTransform));
 		const LocalTransform local = WorldTransformConversion::ToLocal(transform);
-		const bool added = m_registry.Add(entity, local) && m_registry.Add(entity, WorldTransform{})
-		    && m_registry.Add(entity, LightComponentTranslation::ToLightComponent(desc))
-		    && m_registry.Add(entity, Visibility{.Visible = desc.common.visible})
-		    && m_registry.Add(entity, Name{std::move(desc.common.name)})
-		    && m_registry.Add(entity, AuthoredIdentity{.SourceObjectId = ++m_nextLightIdentity, .Kind = AuthoredObjectKind::Light})
-		    && m_registry.Add(entity, EditorMetadata{});
+
+		const bool added = m_registry.Add(entity, local) && m_registry.Add(entity, WorldTransform{}) && m_registry.Add(entity, LightComponentTranslation::ToLightComponent(desc))
+		    && m_registry.Add(entity, Visibility{.Visible = desc.common.visible}) && m_registry.Add(entity, Name{std::move(desc.common.name)})
+		    && m_registry.Add(entity, AuthoredIdentity{.SourceObjectId = ++m_nextLightIdentity, .Kind = AuthoredObjectKind::Light}) && m_registry.Add(entity, EditorMetadata{});
+
 		if (!added)
 		{
 			m_registry.Destroy(entity);
@@ -126,6 +125,7 @@ namespace ECS
 	{
 		return Count<Light>();
 	}
+
 	EntityId GameWorldState::GetLightEntity(std::size_t index) const noexcept
 	{
 		return EntityAt<Light>(index);
@@ -160,9 +160,10 @@ namespace ECS
 			return false;
 		}
 		const Transform transform(DirectX::XMLoadFloat4x4(&desc.common.worldTransform));
-		const bool written = WriteTransform(entity, transform)
-		    && m_registry.Replace(entity, LightComponentTranslation::ToLightComponent(desc))
+
+		const bool written = WriteTransform(entity, transform) && m_registry.Replace(entity, LightComponentTranslation::ToLightComponent(desc))
 		    && m_registry.Replace(entity, Name{std::move(desc.common.name)}) && WriteVisibility(entity, desc.common.visible);
+
 		if (written)
 		{
 			RecordChange(entity, WorldChangeKind::ValueChanged, WorldDataKind::Light);

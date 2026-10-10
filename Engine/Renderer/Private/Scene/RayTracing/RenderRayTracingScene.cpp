@@ -26,10 +26,7 @@ static RayTracingExecutionFrontend SelectExecutionFrontend(const RayTracingCapab
 	return RayTracingExecutionFrontend::None;
 }
 
-RenderRayTracingScene::RenderRayTracingScene(
-    RenderHardwareInterface& renderHardwareInterface,
-    const GpuMeshCache& meshes,
-    const RayTracingCapabilityReport& capabilityReport) noexcept :
+RenderRayTracingScene::RenderRayTracingScene(RenderHardwareInterface& renderHardwareInterface, const GpuMeshCache& meshes, const RayTracingCapabilityReport& capabilityReport) noexcept :
     m_capabilityReport(capabilityReport),
     m_executionFrontend(SelectExecutionFrontend(capabilityReport))
 {
@@ -44,23 +41,16 @@ RenderRayTracingScene::RenderRayTracingScene(
 	}
 
 	m_blasCache = std::make_unique<RayTracingBlasCache>(renderHardwareInterface, meshes);
-	m_topLevelAccelerationStructureStrategy =
-	    CreateRayTracingTopLevelAccelerationStructureStrategy(renderHardwareInterface, m_capabilityReport);
+	m_topLevelAccelerationStructureStrategy = CreateRayTracingTopLevelAccelerationStructureStrategy(renderHardwareInterface, m_capabilityReport);
 }
 
 RenderRayTracingScene::~RenderRayTracingScene() noexcept = default;
 
-RenderRayTracingFrameBindings RenderRayTracingScene::Prepare(
-    const PreparedRenderScene& preparedScene,
-    const RayTracingPtlasPartitionPlan& viewPlan) noexcept
+RenderRayTracingFrameBindings RenderRayTracingScene::Prepare(const PreparedRenderScene& preparedScene, const RayTracingPtlasPartitionPlan& viewPlan) noexcept
 {
 	if (m_topLevelAccelerationStructureStrategy == nullptr)
 	{
-		Diagnostics::Fatal(
-		    g_renderRayTracingSceneLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Ray-tracing scene has no top-level acceleration-structure strategy.");
+		Diagnostics::Fatal(g_renderRayTracingSceneLogger, __FILE__, __LINE__, "Ray-tracing scene has no top-level acceleration-structure strategy.");
 	}
 	return m_topLevelAccelerationStructureStrategy->Prepare(preparedScene, viewPlan);
 }
@@ -75,17 +65,14 @@ void RenderRayTracingScene::Build(
 
 	if (m_blasCache == nullptr || m_topLevelAccelerationStructureStrategy == nullptr)
 	{
-		Diagnostics::Fatal(
-		    g_renderRayTracingSceneLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Ray-tracing scene build has no BLAS cache or top-level strategy.");
+		Diagnostics::Fatal(g_renderRayTracingSceneLogger, __FILE__, __LINE__, "Ray-tracing scene build has no BLAS cache or top-level strategy.");
 	}
 
 	m_blasCache->BeginFrame();
-	const RayTracingTopLevelAccelerationStructureBuildResult topLevelBuild =
-	    m_topLevelAccelerationStructureStrategy
-	        ->Build(commandContext, preparedScene, *m_blasCache, m_shaderTablePlan, viewPlan, &performanceDiagnostics);
+
+	const RayTracingTopLevelAccelerationStructureBuildResult topLevelBuild = m_topLevelAccelerationStructureStrategy
+	                                                                             ->Build(commandContext, preparedScene, *m_blasCache, m_shaderTablePlan, viewPlan, &performanceDiagnostics);
+
 	const RayTracingBlasCache::BuildStats blasStats = m_blasCache->EndFrame();
 
 	m_performanceMetrics.Providers.TopLevelProvider = topLevelBuild.ActiveProvider;
@@ -113,9 +100,7 @@ void RenderRayTracingScene::Clear() noexcept
 	}
 }
 
-void RenderRayTracingScene::SynchronizeShaderTablePlan(
-    std::span<const RenderPrimitive> primitives,
-    const RenderMaterialTable& materials) noexcept
+void RenderRayTracingScene::SynchronizeShaderTablePlan(std::span<const RenderPrimitive> primitives, const RenderMaterialTable& materials) noexcept
 {
 	m_shaderTablePlan.Synchronize(primitives, materials);
 }

@@ -34,40 +34,20 @@ public:
 	void BeginFrame(std::uint32_t frameIndex) noexcept;
 	void ReleaseDescriptor(ERhiDescriptorAllocatorType descriptorType, const RhiDescriptorAllocation& allocation) noexcept;
 	RhiDescriptorTableHandle AllocateDescriptorTable(ERhiDescriptorAllocatorType descriptorType, std::uint32_t descriptorCount);
-	RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(
-	    RhiDescriptorTableHandle tableHandle,
-	    std::uint32_t descriptorIndex = 0) const noexcept;
+	RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0) const noexcept;
 	void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept;
 
 	RhiGpuDescriptorHandle RegisterImageDescriptor(ERhiResourceViewKind viewKind, VkImageView imageView);
-	RhiGpuDescriptorHandle RegisterBufferDescriptor(
-	    ERhiResourceViewKind viewKind,
-	    VkBuffer buffer,
-	    std::uint64_t offsetInBytes,
-	    std::uint64_t sizeInBytes);
+	RhiGpuDescriptorHandle RegisterBufferDescriptor(ERhiResourceViewKind viewKind, VkBuffer buffer, std::uint64_t offsetInBytes, std::uint64_t sizeInBytes);
 	void ReleaseRegisteredDescriptor(RhiGpuDescriptorHandle handle) noexcept;
 	void WriteSamplerDescriptor(RhiCpuDescriptorHandle destination, VkSampler sampler) noexcept;
 	bool WriteRegisteredDescriptor(RhiCpuDescriptorHandle destination, RhiGpuDescriptorHandle source) noexcept;
 
-	void WriteDescriptorTable(
-	    VkDescriptorSet descriptorSet,
-	    const CompiledBinding& binding,
-	    RhiDescriptorTableBinding tableBinding) noexcept;
+	void WriteDescriptorTable(VkDescriptorSet descriptorSet, const CompiledBinding& binding, RhiDescriptorTableBinding tableBinding) noexcept;
 	void WriteDescriptorHandle(VkDescriptorSet descriptorSet, const CompiledBinding& binding, RhiGpuDescriptorHandle handle) noexcept;
-	void WriteBufferDescriptor(
-	    VkDescriptorSet descriptorSet,
-	    const CompiledBinding& binding,
-	    VkBuffer buffer,
-	    VkDeviceSize offset,
-	    VkDeviceSize range) noexcept;
-	void WriteAccelerationStructureDescriptor(
-	    VkDescriptorSet descriptorSet,
-	    const CompiledBinding& binding,
-	    VkAccelerationStructureKHR accelerationStructure) noexcept;
-	void WritePartitionedAccelerationStructureDescriptor(
-	    VkDescriptorSet descriptorSet,
-	    const CompiledBinding& binding,
-	    VkDeviceAddress accelerationStructureAddress) noexcept;
+	void WriteBufferDescriptor(VkDescriptorSet descriptorSet, const CompiledBinding& binding, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range) noexcept;
+	void WriteAccelerationStructureDescriptor(VkDescriptorSet descriptorSet, const CompiledBinding& binding, VkAccelerationStructureKHR accelerationStructure) noexcept;
+	void WritePartitionedAccelerationStructureDescriptor(VkDescriptorSet descriptorSet, const CompiledBinding& binding, VkDeviceAddress accelerationStructureAddress) noexcept;
 
 private:
 	friend class VulkanDescriptorService;
@@ -83,6 +63,7 @@ private:
 		AccelerationStructure,
 		PartitionedAccelerationStructure,
 	};
+
 	struct DescriptorEntry final
 	{
 		EntryKind Kind = EntryKind::Empty;

@@ -14,10 +14,7 @@ static constexpr std::size_t kMaximumFailureSourceBytes = 1024u * 1024u;
 static constexpr std::size_t kMaximumFailureListEntries = 1024u;
 static constexpr std::size_t kMaximumFailureListEntryBytes = 1024u;
 
-void ShaderCompileFailureReplay::Write(
-    const std::filesystem::path& cookedShaderRoot,
-    const ShaderCompileJob& job,
-    std::string_view diagnostic) noexcept
+void ShaderCompileFailureReplay::Write(const std::filesystem::path& cookedShaderRoot, const ShaderCompileJob& job, std::string_view diagnostic) noexcept
 {
 	try
 	{
@@ -28,12 +25,9 @@ void ShaderCompileFailureReplay::Write(
 		{
 			descriptorBindingRemaps.push_back(std::format("{}:{}:{}", remap.Name, remap.Set, remap.Binding));
 		}
-		const std::vector<std::string> replayDependencies =
-		    BoundStrings(job.VirtualDependencies, kMaximumFailureListEntries, kMaximumFailureListEntryBytes);
-		const std::vector<std::string> replayDefines =
-		    BoundStrings(job.Request.Defines, kMaximumFailureListEntries, kMaximumFailureListEntryBytes);
-		const std::vector<std::string> replayRemaps =
-		    BoundStrings(descriptorBindingRemaps, kMaximumFailureListEntries, kMaximumFailureListEntryBytes);
+		const std::vector<std::string> replayDependencies = BoundStrings(job.VirtualDependencies, kMaximumFailureListEntries, kMaximumFailureListEntryBytes);
+		const std::vector<std::string> replayDefines = BoundStrings(job.Request.Defines, kMaximumFailureListEntries, kMaximumFailureListEntryBytes);
+		const std::vector<std::string> replayRemaps = BoundStrings(descriptorBindingRemaps, kMaximumFailureListEntries, kMaximumFailureListEntryBytes);
 		writer.WriteString("shaderType", job.Request.ShaderTypeName);
 		writer.WriteHexUInt64("shaderTypeId", job.Request.ShaderType);
 		writer.WriteString("virtualSource", job.Request.VirtualSourcePath);
@@ -85,10 +79,7 @@ std::string ShaderCompileFailureReplay::BoundText(std::string_view text, std::si
 	return bounded;
 }
 
-std::vector<std::string> ShaderCompileFailureReplay::BoundStrings(
-    std::span<const std::string> values,
-    std::size_t maximumCount,
-    std::size_t maximumBytesPerValue)
+std::vector<std::string> ShaderCompileFailureReplay::BoundStrings(std::span<const std::string> values, std::size_t maximumCount, std::size_t maximumBytesPerValue)
 {
 	const std::size_t retainedCount = std::min(values.size(), maximumCount);
 	std::vector<std::string> bounded;

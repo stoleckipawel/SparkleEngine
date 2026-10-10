@@ -81,12 +81,7 @@ namespace LightSampling
 		return pdfA * distanceToLight * distanceToLight / max(abs(cosLight), 1.0e-4f);
 	}
 
-	DirectLightSample AreaDirectLightSample(float3 positionWorld,
-	                                        float3 samplePositionWorld,
-	                                        float3 emitterNormalWorld,
-	                                        float3 emittedRadiance,
-	                                        float pdfA,
-	                                        float rangeCutoff)
+	DirectLightSample AreaDirectLightSample(float3 positionWorld, float3 samplePositionWorld, float3 emitterNormalWorld, float3 emittedRadiance, float pdfA, float rangeCutoff)
 	{
 		const float3 surfaceToLight = samplePositionWorld - positionWorld;
 		const float distanceToLight = length(surfaceToLight);
@@ -174,12 +169,7 @@ namespace LightSampling
 		return result;
 	}
 
-	DirectLightSample RadiometricAreaLightSample(float3 positionWorld,
-	                                             float3 samplePositionWorld,
-	                                             float3 emitterNormalWorld,
-	                                             float3 emittedRadiance,
-	                                             float pdfA,
-	                                             bool twoSided)
+	DirectLightSample RadiometricAreaLightSample(float3 positionWorld, float3 samplePositionWorld, float3 emitterNormalWorld, float3 emittedRadiance, float pdfA, bool twoSided)
 	{
 		DirectLightSample result = (DirectLightSample)0;
 		const float3 toLight = samplePositionWorld - positionWorld;

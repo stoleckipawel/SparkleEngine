@@ -49,12 +49,16 @@ namespace SparkleLauncher
 		{
 			case KnownTool::CMake:
 				return {"cmake.exe", "cmake"};
+
 			case KnownTool::MSBuild:
 				return {"MSBuild.exe", "msbuild.exe", "MSBuild"};
+
 			case KnownTool::Ninja:
 				return {"ninja.exe", "ninja"};
+
 			case KnownTool::Rider:
 				return {"rider64.exe", "rider.exe", "rider.bat", "rider"};
+
 			case KnownTool::Git:
 				return {"git.exe", "git"};
 		}
@@ -68,12 +72,16 @@ namespace SparkleLauncher
 		{
 			case KnownTool::CMake:
 				return {"SPARKLE_CMAKE_EXE"};
+
 			case KnownTool::MSBuild:
 				return {"SPARKLE_MSBUILD_EXE"};
+
 			case KnownTool::Ninja:
 				return {"SPARKLE_NINJA_EXE"};
+
 			case KnownTool::Rider:
 				return {"SPARKLE_RIDER_EXE"};
+
 			case KnownTool::Git:
 				return {"SPARKLE_GIT_EXE"};
 		}
@@ -81,10 +89,7 @@ namespace SparkleLauncher
 		return {};
 	}
 
-	static void AddProgramFilesCandidate(
-	    std::vector<std::filesystem::path>& candidates,
-	    const char* environmentName,
-	    const std::filesystem::path& relativePath)
+	static void AddProgramFilesCandidate(std::vector<std::filesystem::path>& candidates, const char* environmentName, const std::filesystem::path& relativePath)
 	{
 		const std::optional<std::string> root = TryGetEnvironmentVariable(environmentName);
 		if (root.has_value())
@@ -137,10 +142,7 @@ namespace SparkleLauncher
 			errorCode.clear();
 		}
 
-		std::ranges::sort(
-		    matches,
-		    [](const std::filesystem::path& left, const std::filesystem::path& right)
-		    { return BuildPathSortKey(left) < BuildPathSortKey(right); });
+		std::ranges::sort(matches, [](const std::filesystem::path& left, const std::filesystem::path& right) { return BuildPathSortKey(left) < BuildPathSortKey(right); });
 		candidates.insert(candidates.end(), matches.begin(), matches.end());
 	}
 
@@ -153,10 +155,7 @@ namespace SparkleLauncher
 		}
 	}
 
-	static void AddEnvironmentRootIfPresent(
-	    std::vector<std::filesystem::path>& roots,
-	    const char* environmentName,
-	    const std::filesystem::path& relativePath = {})
+	static void AddEnvironmentRootIfPresent(std::vector<std::filesystem::path>& roots, const char* environmentName, const std::filesystem::path& relativePath = {})
 	{
 		const std::optional<std::string> root = TryGetEnvironmentVariable(environmentName);
 		if (root.has_value())
@@ -169,16 +168,8 @@ namespace SparkleLauncher
 	{
 		std::string pathFilename = path.filename().string();
 		std::string expected(filename);
-		std::transform(
-		    pathFilename.begin(),
-		    pathFilename.end(),
-		    pathFilename.begin(),
-		    [](unsigned char value) { return static_cast<char>(std::tolower(value)); });
-		std::transform(
-		    expected.begin(),
-		    expected.end(),
-		    expected.begin(),
-		    [](unsigned char value) { return static_cast<char>(std::tolower(value)); });
+		std::transform(pathFilename.begin(), pathFilename.end(), pathFilename.begin(), [](unsigned char value) { return static_cast<char>(std::tolower(value)); });
+		std::transform(expected.begin(), expected.end(), expected.begin(), [](unsigned char value) { return static_cast<char>(std::tolower(value)); });
 		return pathFilename == expected;
 	}
 
@@ -189,11 +180,7 @@ namespace SparkleLauncher
 		return key;
 	}
 
-	static void AddRecursiveExecutableMatches(
-	    std::vector<std::filesystem::path>& candidates,
-	    const std::filesystem::path& root,
-	    std::string_view filename,
-	    int maxDepth)
+	static void AddRecursiveExecutableMatches(std::vector<std::filesystem::path>& candidates, const std::filesystem::path& root, std::string_view filename, int maxDepth)
 	{
 		std::error_code errorCode;
 		if (!std::filesystem::is_directory(root, errorCode))
@@ -227,10 +214,7 @@ namespace SparkleLauncher
 			iterator.increment(errorCode);
 		}
 
-		std::ranges::sort(
-		    matches,
-		    [](const std::filesystem::path& left, const std::filesystem::path& right)
-		    { return BuildPathSortKey(left) < BuildPathSortKey(right); });
+		std::ranges::sort(matches, [](const std::filesystem::path& left, const std::filesystem::path& right) { return BuildPathSortKey(left) < BuildPathSortKey(right); });
 		candidates.insert(candidates.end(), matches.begin(), matches.end());
 	}
 
@@ -242,10 +226,7 @@ namespace SparkleLauncher
 		{
 			for (const std::string& edition : editions)
 			{
-				AddProgramFilesCandidate(
-				    candidates,
-				    "ProgramFiles",
-				    std::filesystem::path("Microsoft Visual Studio") / version / edition / "MSBuild" / "Current" / "Bin" / "MSBuild.exe");
+				AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("Microsoft Visual Studio") / version / edition / "MSBuild" / "Current" / "Bin" / "MSBuild.exe");
 			}
 		}
 	}
@@ -254,14 +235,8 @@ namespace SparkleLauncher
 	{
 		AddLocalAppDataCandidate(candidates, std::filesystem::path("Programs") / "Rider" / "bin" / "rider64.exe");
 		AddLocalAppDataCandidate(candidates, std::filesystem::path("JetBrains") / "Toolbox" / "scripts" / "rider.cmd");
-		AddProgramFilesCandidate(
-		    candidates,
-		    "ProgramFiles",
-		    std::filesystem::path("JetBrains") / "JetBrains Rider" / "bin" / "rider64.exe");
-		AddProgramFilesCandidate(
-		    candidates,
-		    "ProgramFiles(x86)",
-		    std::filesystem::path("JetBrains") / "JetBrains Rider" / "bin" / "rider64.exe");
+		AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("JetBrains") / "JetBrains Rider" / "bin" / "rider64.exe");
+		AddProgramFilesCandidate(candidates, "ProgramFiles(x86)", std::filesystem::path("JetBrains") / "JetBrains Rider" / "bin" / "rider64.exe");
 		AddProgramFilesDirectoryMatches(candidates, "ProgramFiles", "JetBrains Rider", std::filesystem::path("bin") / "rider64.exe");
 		AddProgramFilesDirectoryMatches(candidates, "ProgramFiles(x86)", "JetBrains Rider", std::filesystem::path("bin") / "rider64.exe");
 
@@ -416,10 +391,7 @@ namespace SparkleLauncher
 		return result;
 	}
 
-	std::filesystem::path ResolveSparkleToolPath(
-	    const std::filesystem::path& repositoryRoot,
-	    std::string_view profileName,
-	    std::string_view executableName)
+	std::filesystem::path ResolveSparkleToolPath(const std::filesystem::path& repositoryRoot, std::string_view profileName, std::string_view executableName)
 	{
 		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
 		std::filesystem::path fileName(executableName);
@@ -429,9 +401,9 @@ namespace SparkleLauncher
 			fileName += ".exe";
 		}
 #endif
-		const Filesystem::WorkspaceTargetOutputPaths targetOutputs = executableName == "SparkleLauncher"
-		    ? outputs.LauncherTargetOutputs(profileName)
-		    : outputs.ToolTargetOutputs(executableName, profileName);
+		const Filesystem::WorkspaceTargetOutputPaths targetOutputs = executableName == "SparkleLauncher" ? outputs.LauncherTargetOutputs(profileName)
+		                                                                                                 : outputs.ToolTargetOutputs(executableName, profileName);
+
 		return targetOutputs.BinaryDirectory / fileName;
 	}
 }

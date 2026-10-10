@@ -15,10 +15,7 @@
 
 #include <imgui.h>
 
-SceneOutlinerPanel::SceneOutlinerPanel(
-    SceneObjectSelection& selection,
-    EditorTransactionHistory& transactionHistory,
-    float widthPixels) noexcept :
+SceneOutlinerPanel::SceneOutlinerPanel(SceneObjectSelection& selection, EditorTransactionHistory& transactionHistory, float widthPixels) noexcept :
     m_transactionHistory(&transactionHistory),
     m_selection(&selection),
     m_widthPixels(widthPixels)
@@ -77,8 +74,7 @@ void SceneOutlinerPanel::BuildToolbar() noexcept
 
 void SceneOutlinerPanel::BuildFooter() noexcept
 {
-	const std::size_t totalCount =
-	    m_model ? 1u + m_model->GetCameras().size() + m_model->GetLights().size() + m_model->GetMeshes().size() : 0u;
+	const std::size_t totalCount = m_model ? 1u + m_model->GetCameras().size() + m_model->GetLights().size() + m_model->GetMeshes().size() : 0u;
 	const std::size_t displayedCount = CountVisibleEntries();
 	const bool hasValidSelection = IsSelectionValid();
 	ImGui::Separator();
@@ -104,8 +100,7 @@ void SceneOutlinerPanel::EnsureValidSelection() noexcept
 
 	if (!IsSelectionValid())
 	{
-		*m_selection = m_model && !m_model->GetCameras().empty() ? SceneObjectSelection::Camera(m_model->GetCameras().front().Entity)
-		                                                         : SceneObjectSelection::None();
+		*m_selection = m_model && !m_model->GetCameras().empty() ? SceneObjectSelection::Camera(m_model->GetCameras().front().Entity) : SceneObjectSelection::None();
 	}
 }
 
@@ -150,11 +145,7 @@ void SceneOutlinerPanel::BuildMeshSection() noexcept
 	DrawEntrySection("Meshes", "Meshes", "No meshes in scene", m_model->GetMeshEntries());
 }
 
-void SceneOutlinerPanel::DrawEntrySection(
-    const char* id,
-    const char* label,
-    const char* emptyText,
-    const std::vector<EditorSceneEntry>& entries) noexcept
+void SceneOutlinerPanel::DrawEntrySection(const char* id, const char* label, const char* emptyText, const std::vector<EditorSceneEntry>& entries) noexcept
 {
 	bool open = true;
 	DrawSectionRow(id, label, entries.size(), open);
@@ -201,6 +192,7 @@ bool SceneOutlinerPanel::MatchesSearch(const char* label, const char* typeLabel)
 std::size_t SceneOutlinerPanel::CountVisibleEntries() const noexcept
 {
 	std::size_t count = 0;
+
 	const auto countVisible = [this](const std::vector<EditorSceneEntry>& entries) noexcept
 	{
 		std::size_t visibleCount = 0;
@@ -239,11 +231,7 @@ void SceneOutlinerPanel::ToggleEntryVisibility(const SceneObjectSelection& selec
 	auto commands = SceneObjectCommandFactory::SetVisibility(*m_model, selection, !IsEntryVisible(selection));
 	if (!commands)
 		return;
-	(void) m_transactionHistory->Execute(
-	    std::move(commands->Forward),
-	    std::move(commands->Inverse),
-	    m_model->GetWorldGeneration(),
-	    std::move(commands->CoalescingKey));
+	(void) m_transactionHistory->Execute(std::move(commands->Forward), std::move(commands->Inverse), m_model->GetWorldGeneration(), std::move(commands->CoalescingKey));
 }
 
 void SceneOutlinerPanel::SelectEntry(const SceneObjectSelection& selection) noexcept
@@ -301,10 +289,7 @@ void SceneOutlinerPanel::DrawSelectionEntry(const char* label, const char* typeL
 	ImGui::TableSetColumnIndex(1);
 	ImGui::Indent(16.0f);
 	const EditorSceneEntry* entry = m_model ? m_model->FindEntry(selection) : nullptr;
-	UiUtil::DrawEditorIcon(
-	    SceneObjectPresentation::BuildSelectionIcon(selection, entry ? entry->LightKind : SceneLightKind::Unknown),
-	    typeLabel,
-	    !isSelected);
+	UiUtil::DrawEditorIcon(SceneObjectPresentation::BuildSelectionIcon(selection, entry ? entry->LightKind : SceneLightKind::Unknown), typeLabel, !isSelected);
 	if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
 	{
 		SelectEntry(selection);
@@ -371,10 +356,7 @@ void SceneOutlinerPanel::BuildUI(bool disableInteraction)
 	ImGui::SetNextWindowSizeConstraints(ImVec2(kMinWidth, panelHeight), ImVec2(kMaxWidth, panelHeight));
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	ImGui::Begin(
-	    "Scene Outliner",
-	    nullptr,
-	    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings);
+	ImGui::Begin("Scene Outliner", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings);
 	ImGui::PopStyleVar();
 
 	m_widthPixels = ImGui::GetWindowWidth();
@@ -396,8 +378,7 @@ void SceneOutlinerPanel::BuildUI(bool disableInteraction)
 	if (ImGui::BeginTable(
 	        "##OutlinerTable",
 	        3,
-	        ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_ScrollY
-	            | ImGuiTableFlags_NoPadOuterX,
+	        ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoPadOuterX,
 	        ImVec2(0.0f, -28.0f)))
 	{
 		ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 20.0f);

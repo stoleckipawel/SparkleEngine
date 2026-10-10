@@ -10,9 +10,5 @@ struct cgltf_primitive;
 class GltfPrimitiveMaterialResolver final
 {
 public:
-	static ImportedMaterialIndex Resolve(
-	    const cgltf_primitive& primitive,
-	    const cgltf_data* data,
-	    std::string_view primitiveLabel,
-	    SourceImportOutput& output);
+	static ImportedMaterialIndex Resolve(const cgltf_primitive& primitive, const cgltf_data* data, std::string_view primitiveLabel, SourceImportOutput& output);
 };

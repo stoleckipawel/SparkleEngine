@@ -12,10 +12,7 @@ SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_externalCaptureLaunchLogger, "Application.E
 
 namespace ExternalCaptureStartupPolicy
 {
-	static std::optional<ExternalCaptureProvider> ParseAttachmentToken(
-	    std::string_view token,
-	    std::wstring_view commandLine,
-	    std::size_t& offset)
+	static std::optional<ExternalCaptureProvider> ParseAttachmentToken(std::string_view token, std::wstring_view commandLine, std::size_t& offset)
 	{
 		if (Strings::EqualsIgnoreCase(token, "-AttachPix"))
 		{
@@ -33,18 +30,13 @@ namespace ExternalCaptureStartupPolicy
 		constexpr std::string_view providerOption = "--capture-provider";
 		if (Strings::EqualsIgnoreCase(token, providerOption) || Strings::StartsWithIgnoreCase(token, "--capture-provider="))
 		{
-			const std::string value = Strings::EqualsIgnoreCase(token, providerOption)
-			    ? Strings::ToNarrow(CommandLine::ReadToken(commandLine, offset))
-			    : std::string(token.substr(providerOption.size() + 1));
+			const std::string value = Strings::EqualsIgnoreCase(token, providerOption) ? Strings::ToNarrow(CommandLine::ReadToken(commandLine, offset))
+			                                                                           : std::string(token.substr(providerOption.size() + 1));
 
 			ExternalCaptureProvider provider = ExternalCaptureProvider::None;
 			if (!TryParseExternalCaptureProvider(value, provider))
 			{
-				Diagnostics::Fatal(
-				    g_externalCaptureLaunchLogger,
-				    __FILE__,
-				    __LINE__,
-				    "Invalid capture provider. Use none, nsight-graphics, pix or renderdoc.");
+				Diagnostics::Fatal(g_externalCaptureLaunchLogger, __FILE__, __LINE__, "Invalid capture provider. Use none, nsight-graphics, pix or renderdoc.");
 			}
 
 			return provider;
@@ -52,11 +44,7 @@ namespace ExternalCaptureStartupPolicy
 
 		if (Strings::StartsWithIgnoreCase(token, "-Attach"))
 		{
-			Diagnostics::Fatal(
-			    g_externalCaptureLaunchLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Unknown capture attachment request. Use -AttachPix, -AttachNSight or -AttachRenderDoc.");
+			Diagnostics::Fatal(g_externalCaptureLaunchLogger, __FILE__, __LINE__, "Unknown capture attachment request. Use -AttachPix, -AttachNSight or -AttachRenderDoc.");
 		}
 
 		return std::nullopt;
@@ -78,11 +66,7 @@ namespace ExternalCaptureStartupPolicy
 
 			if (selected.has_value())
 			{
-				Diagnostics::Fatal(
-				    g_externalCaptureLaunchLogger,
-				    __FILE__,
-				    __LINE__,
-				    "Select exactly one capture provider; duplicates and injected combinations are unverified.");
+				Diagnostics::Fatal(g_externalCaptureLaunchLogger, __FILE__, __LINE__, "Select exactly one capture provider; duplicates and injected combinations are unverified.");
 			}
 
 			selected = requested;

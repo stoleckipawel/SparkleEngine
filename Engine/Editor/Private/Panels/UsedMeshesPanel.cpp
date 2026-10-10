@@ -56,11 +56,7 @@ void UsedMeshesPanel::BuildUI(bool disableInteraction)
 		DrawMeshTable(disableInteraction);
 		ImGui::EndChild();
 		ImGui::TableSetColumnIndex(1);
-		ImGui::BeginChild(
-		    "##MeshPreviewPane",
-		    ImVec2(0.0f, 0.0f),
-		    ImGuiChildFlags_None,
-		    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+		ImGui::BeginChild("##MeshPreviewPane", ImVec2(0.0f, 0.0f), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 		DrawSelectedMeshInspector(disableInteraction);
 		ImGui::EndChild();
 		ImGui::EndTable();
@@ -94,6 +90,7 @@ void UsedMeshesPanel::DrawToolbar()
 	const std::string filterHint = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Search, "Filter mesh/source/id/material");
 	ImGui::InputTextWithHint("##UsedMeshesFilter", filterHint.c_str(), m_filterBuffer.data(), m_filterBuffer.size());
 	ImGui::SameLine();
+
 	ImGui::TextDisabled(
 	    "%zu mesh(es), %zu resident, instances %u, groups %u (authored %u, shared %u), batches %u (authored %u, preserved %u, auto %u, "
 	    "single %u), saved %u",
@@ -109,6 +106,7 @@ void UsedMeshesPanel::DrawToolbar()
 	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.AutoBatchCount),
 	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.SingleInstanceBatchCount),
 	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.EstimatedGBufferDrawCallsSaved));
+
 	ImGui::TextDisabled(
 	    "instances/batch %u..%u, rejected %u (gpu %u, material %u, group %u, incompatible %u), GPU %s, CPU %s estimated",
 	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.MinInstancesPerBatch),
@@ -124,8 +122,7 @@ void UsedMeshesPanel::DrawToolbar()
 
 void UsedMeshesPanel::DrawMeshTable(bool disableInteraction)
 {
-	const ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable
-	    | ImGuiTableFlags_Reorderable | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY;
+	const ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY;
 	if (!ImGui::BeginTable("##UsedMeshesTable", 9, tableFlags, ImVec2(0.0f, 0.0f)))
 	{
 		return;
@@ -213,11 +210,7 @@ void UsedMeshesPanel::DrawPreviewControls(bool disableInteraction)
 {
 	ImGui::BeginDisabled(disableInteraction);
 	ImGui::SetNextItemWidth(150.0f);
-	ImGui::Combo(
-	    "Mode",
-	    &m_previewModeIndex,
-	    MeshDiagnosticsPresentation::PreviewModes.data(),
-	    static_cast<int>(MeshDiagnosticsPresentation::PreviewModes.size()));
+	ImGui::Combo("Mode", &m_previewModeIndex, MeshDiagnosticsPresentation::PreviewModes.data(), static_cast<int>(MeshDiagnosticsPresentation::PreviewModes.size()));
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(120.0f);
 	ImGui::SliderFloat("Yaw", &m_previewYaw, -MeshDiagnosticsPresentation::Pi, MeshDiagnosticsPresentation::Pi, "%.2f");
@@ -250,10 +243,7 @@ void UsedMeshesPanel::DrawPreview(const MeshDiagnosticsRow& row) const
 
 	if (!m_previewGeometry.IsValid())
 	{
-		drawList->AddText(
-		    ImVec2(canvasMin.x + 12.0f, canvasMin.y + 12.0f),
-		    IM_COL32(160, 166, 176, 255),
-		    "Preview geometry is unavailable.");
+		drawList->AddText(ImVec2(canvasMin.x + 12.0f, canvasMin.y + 12.0f), IM_COL32(160, 166, 176, 255), "Preview geometry is unavailable.");
 		ImGui::EndChild();
 		return;
 	}
@@ -265,10 +255,7 @@ void UsedMeshesPanel::DrawPreview(const MeshDiagnosticsRow& row) const
 		return;
 	}
 
-	const MeshPreviewVertex center{
-	    (bounds.Min.X + bounds.Max.X) * 0.5f,
-	    (bounds.Min.Y + bounds.Max.Y) * 0.5f,
-	    (bounds.Min.Z + bounds.Max.Z) * 0.5f};
+	const MeshPreviewVertex center{(bounds.Min.X + bounds.Max.X) * 0.5f, (bounds.Min.Y + bounds.Max.Y) * 0.5f, (bounds.Min.Z + bounds.Max.Z) * 0.5f};
 	float projectedMinX = (std::numeric_limits<float>::max)();
 	float projectedMinY = (std::numeric_limits<float>::max)();
 	float projectedMaxX = (std::numeric_limits<float>::lowest)();
@@ -286,6 +273,7 @@ void UsedMeshesPanel::DrawPreview(const MeshDiagnosticsRow& row) const
 	const float projectedHeight = (std::max) (projectedMaxY - projectedMinY, 0.001f);
 	const float scale = 0.86f * (std::min) (canvasSize.x / projectedWidth, canvasSize.y / projectedHeight);
 	const ImVec2 canvasCenter(canvasMin.x + (canvasSize.x * 0.5f), canvasMin.y + (canvasSize.y * 0.5f));
+
 	const auto projectVertex = [&](const MeshPreviewVertex& vertex) noexcept
 	{
 		const MeshPreviewVertex rotated = MeshDiagnosticsPresentation::RotatePreviewVertex(vertex, center, m_previewYaw, m_previewPitch);
@@ -296,6 +284,7 @@ void UsedMeshesPanel::DrawPreview(const MeshDiagnosticsRow& row) const
 	const bool drawWire = m_previewModeIndex == 0 || m_previewModeIndex == 2;
 	const std::size_t triangleCount = m_previewGeometry.Indices.size() / 3;
 	const std::size_t previewTriangleCount = (std::min) (triangleCount, MeshDiagnosticsPresentation::MaxPreviewTriangles);
+
 	const auto forEachProjectedTriangle = [&](const auto& callback)
 	{
 		for (std::size_t triangleIndex = 0; triangleIndex < previewTriangleCount; ++triangleIndex)
@@ -303,17 +292,12 @@ void UsedMeshesPanel::DrawPreview(const MeshDiagnosticsRow& row) const
 			const std::uint32_t index0 = m_previewGeometry.Indices[(triangleIndex * 3) + 0];
 			const std::uint32_t index1 = m_previewGeometry.Indices[(triangleIndex * 3) + 1];
 			const std::uint32_t index2 = m_previewGeometry.Indices[(triangleIndex * 3) + 2];
-			if (index0 >= m_previewGeometry.Vertices.size() || index1 >= m_previewGeometry.Vertices.size()
-			    || index2 >= m_previewGeometry.Vertices.size())
+			if (index0 >= m_previewGeometry.Vertices.size() || index1 >= m_previewGeometry.Vertices.size() || index2 >= m_previewGeometry.Vertices.size())
 			{
 				continue;
 			}
 
-			callback(
-			    std::array{
-			        projectVertex(m_previewGeometry.Vertices[index0]),
-			        projectVertex(m_previewGeometry.Vertices[index1]),
-			        projectVertex(m_previewGeometry.Vertices[index2])});
+			callback(std::array{projectVertex(m_previewGeometry.Vertices[index0]), projectVertex(m_previewGeometry.Vertices[index1]), projectVertex(m_previewGeometry.Vertices[index2])});
 		}
 	};
 
@@ -325,16 +309,15 @@ void UsedMeshesPanel::DrawPreview(const MeshDiagnosticsRow& row) const
 			drawList->Flags &= ~ImDrawListFlags_AntiAliasedFill;
 		}
 
-		const ImU32 solidColor = row.GpuResident ? (drawWire ? IM_COL32(89, 142, 199, 84) : IM_COL32(89, 142, 199, 230))
-		                                         : (drawWire ? IM_COL32(128, 128, 128, 72) : IM_COL32(128, 128, 128, 220));
-		forEachProjectedTriangle(
-		    [&](const std::array<ImVec2, 3>& triangle) { drawList->AddTriangleFilled(triangle[0], triangle[1], triangle[2], solidColor); });
+		const ImU32 solidColor = row.GpuResident ? (drawWire ? IM_COL32(89, 142, 199, 84) : IM_COL32(89, 142, 199, 230)) : (drawWire ? IM_COL32(128, 128, 128, 72) : IM_COL32(128, 128, 128, 220));
+		forEachProjectedTriangle([&](const std::array<ImVec2, 3>& triangle) { drawList->AddTriangleFilled(triangle[0], triangle[1], triangle[2], solidColor); });
 		drawList->Flags = previousDrawListFlags;
 	}
 
 	if (drawWire)
 	{
 		const ImU32 wireColor = row.GpuResident ? IM_COL32(176, 212, 255, 220) : IM_COL32(184, 184, 184, 210);
+
 		forEachProjectedTriangle(
 		    [&](const std::array<ImVec2, 3>& triangle)
 		    {
@@ -346,10 +329,7 @@ void UsedMeshesPanel::DrawPreview(const MeshDiagnosticsRow& row) const
 
 	if (triangleCount > previewTriangleCount)
 	{
-		drawList->AddText(
-		    ImVec2(canvasMin.x + 12.0f, canvasMin.y + 12.0f),
-		    IM_COL32(192, 196, 204, 255),
-		    "Preview truncated for large mesh.");
+		drawList->AddText(ImVec2(canvasMin.x + 12.0f, canvasMin.y + 12.0f), IM_COL32(192, 196, 204, 255), "Preview truncated for large mesh.");
 	}
 
 	ImGui::EndChild();
@@ -358,10 +338,8 @@ void UsedMeshesPanel::DrawPreview(const MeshDiagnosticsRow& row) const
 void UsedMeshesPanel::DrawSelectedMeshDetails(const MeshDiagnosticsRow& row) const
 {
 	const std::string meshRuntimeId = MeshDiagnosticsPresentation::FormatRuntimeId(row.MeshRuntimeId);
-	const std::string gpuRuntimeId =
-	    row.GpuMeshRuntimeId != 0 ? MeshDiagnosticsPresentation::FormatRuntimeId(row.GpuMeshRuntimeId) : std::string("none");
-	const std::string meshAssetId =
-	    row.MeshAssetId != 0 ? MeshDiagnosticsPresentation::FormatAssetId(row.MeshAssetId) : std::string("none");
+	const std::string gpuRuntimeId = row.GpuMeshRuntimeId != 0 ? MeshDiagnosticsPresentation::FormatRuntimeId(row.GpuMeshRuntimeId) : std::string("none");
+	const std::string meshAssetId = row.MeshAssetId != 0 ? MeshDiagnosticsPresentation::FormatAssetId(row.MeshAssetId) : std::string("none");
 	const std::string vertices = std::to_string(row.VertexCount);
 	const std::string indices = std::to_string(row.IndexCount);
 	const std::string triangles = std::to_string(row.TriangleCount);
@@ -372,10 +350,8 @@ void UsedMeshesPanel::DrawSelectedMeshDetails(const MeshDiagnosticsRow& row) con
 	const std::string vertexStride = std::to_string(row.VertexStrideBytes);
 	const std::string indexStride = std::to_string(row.IndexStrideBytes);
 	const std::string material = MeshDiagnosticsPresentation::FormatMaterial(row);
-	const std::string boundsMin =
-	    row.Bounds.IsValid ? MeshDiagnosticsPresentation::FormatBoundsPoint(row.Bounds.Min) : std::string("unknown");
-	const std::string boundsMax =
-	    row.Bounds.IsValid ? MeshDiagnosticsPresentation::FormatBoundsPoint(row.Bounds.Max) : std::string("unknown");
+	const std::string boundsMin = row.Bounds.IsValid ? MeshDiagnosticsPresentation::FormatBoundsPoint(row.Bounds.Min) : std::string("unknown");
+	const std::string boundsMax = row.Bounds.IsValid ? MeshDiagnosticsPresentation::FormatBoundsPoint(row.Bounds.Max) : std::string("unknown");
 	const std::string boundsExtent = MeshDiagnosticsPresentation::FormatBoundsExtent(row.Bounds);
 
 	if (const std::optional<std::string> sourcePath = MeshDiagnosticsPresentation::FindAuthoredSourcePath(row))
@@ -424,15 +400,13 @@ bool UsedMeshesPanel::MatchesFilter(const MeshDiagnosticsRow& row) const
 
 	const std::string displayName = MeshDiagnosticsPresentation::FormatMeshDisplayName(row);
 	const std::string meshRuntimeId = MeshDiagnosticsPresentation::FormatRuntimeId(row.MeshRuntimeId);
-	const std::string gpuRuntimeId =
-	    row.GpuMeshRuntimeId != 0 ? MeshDiagnosticsPresentation::FormatRuntimeId(row.GpuMeshRuntimeId) : std::string("none");
-	const std::string meshAssetId =
-	    row.MeshAssetId != 0 ? MeshDiagnosticsPresentation::FormatAssetId(row.MeshAssetId) : std::string("none");
+	const std::string gpuRuntimeId = row.GpuMeshRuntimeId != 0 ? MeshDiagnosticsPresentation::FormatRuntimeId(row.GpuMeshRuntimeId) : std::string("none");
+	const std::string meshAssetId = row.MeshAssetId != 0 ? MeshDiagnosticsPresentation::FormatAssetId(row.MeshAssetId) : std::string("none");
 	const std::string sourcePath = MeshDiagnosticsPresentation::FormatMeshSourcePath(row);
 	const std::string material = MeshDiagnosticsPresentation::FormatMaterial(row);
 	const std::string memory = MeshDiagnosticsPresentation::FormatMemorySummary(row);
-	return Strings::ContainsIgnoreCase(displayName, filter) || Strings::ContainsIgnoreCase(sourcePath, filter)
-	    || Strings::ContainsIgnoreCase(meshAssetId, filter) || Strings::ContainsIgnoreCase(meshRuntimeId, filter)
-	    || Strings::ContainsIgnoreCase(gpuRuntimeId, filter) || Strings::ContainsIgnoreCase(material, filter)
+
+	return Strings::ContainsIgnoreCase(displayName, filter) || Strings::ContainsIgnoreCase(sourcePath, filter) || Strings::ContainsIgnoreCase(meshAssetId, filter)
+	    || Strings::ContainsIgnoreCase(meshRuntimeId, filter) || Strings::ContainsIgnoreCase(gpuRuntimeId, filter) || Strings::ContainsIgnoreCase(material, filter)
 	    || Strings::ContainsIgnoreCase(memory, filter);
 }

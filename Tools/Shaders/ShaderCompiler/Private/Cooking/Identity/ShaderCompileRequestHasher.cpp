@@ -9,6 +9,7 @@ std::uint64_t ShaderCompileRequestHasher::Compute(const ShaderCompileRequest& re
 {
 	std::string canonical;
 	canonical.reserve(256);
+
 	const auto appendString = [&canonical](std::string_view value)
 	{
 		canonical += std::to_string(value.size());
@@ -16,6 +17,7 @@ std::uint64_t ShaderCompileRequestHasher::Compute(const ShaderCompileRequest& re
 		canonical += value;
 		canonical += ';';
 	};
+
 	appendString("Sparkle.ShaderCompileRequest");
 	appendString(request.VirtualSourcePath);
 	appendString(ShaderCompileProfile::BuildTargetProfile(request));

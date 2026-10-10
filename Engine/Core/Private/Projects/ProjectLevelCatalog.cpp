@@ -15,8 +15,7 @@ bool ProjectLevelCatalog::IsAssetPackPayloadPresent(const ProjectAssetPack& pack
 		return false;
 	}
 
-	const std::filesystem::path requiredPath =
-	    pack.requiredRelativePath.empty() ? pack.rootPath : pack.rootPath / pack.requiredRelativePath;
+	const std::filesystem::path requiredPath = pack.requiredRelativePath.empty() ? pack.rootPath : pack.rootPath / pack.requiredRelativePath;
 	std::error_code error;
 	return std::filesystem::exists(requiredPath, error) && !error;
 }
@@ -65,8 +64,7 @@ bool ProjectLevelCatalog::IsAssetPackReady(std::string_view packId) const
 bool ProjectLevelCatalog::IsLevelReady(const ProjectLevelCatalogEntry& level) const
 {
 	std::error_code error;
-	return !level.id.empty() && !level.sourcePath.empty() && std::filesystem::exists(level.sourcePath, error) && !error
-	    && IsAssetPackReady(level.assetPackId);
+	return !level.id.empty() && !level.sourcePath.empty() && std::filesystem::exists(level.sourcePath, error) && !error && IsAssetPackReady(level.assetPackId);
 }
 
 ProjectLevelCatalog ProjectLevelCatalogFile::Load(const std::filesystem::path& projectRoot)
@@ -74,20 +72,12 @@ ProjectLevelCatalog ProjectLevelCatalogFile::Load(const std::filesystem::path& p
 	return ProjectLevelCatalogReader::Read(projectRoot);
 }
 
-bool ProjectLevelCatalogFile::SetLevelSelected(
-    const std::filesystem::path& projectRoot,
-    std::string_view levelId,
-    bool selected,
-    std::string& outErrorMessage)
+bool ProjectLevelCatalogFile::SetLevelSelected(const std::filesystem::path& projectRoot, std::string_view levelId, bool selected, std::string& outErrorMessage)
 {
 	return ProjectLevelCatalogEditor::SetLevelSelected(projectRoot, levelId, selected, outErrorMessage);
 }
 
-bool ProjectLevelCatalogFile::SetLevelsSelected(
-    const std::filesystem::path& projectRoot,
-    const std::vector<std::string>& levelIds,
-    bool selected,
-    std::string& outErrorMessage)
+bool ProjectLevelCatalogFile::SetLevelsSelected(const std::filesystem::path& projectRoot, const std::vector<std::string>& levelIds, bool selected, std::string& outErrorMessage)
 {
 	return ProjectLevelCatalogEditor::SetLevelsSelected(projectRoot, levelIds, selected, outErrorMessage);
 }

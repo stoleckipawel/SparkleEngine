@@ -7,8 +7,5 @@
 
 namespace Assets
 {
-	SkeletonResource BuildSceneAssetSkeleton(
-	    const LoadedSkeletonAsset& skeletonAsset,
-	    CookedAssetId skeletonAssetId,
-	    std::uint32_t sourceSkinIndex);
+	SkeletonResource BuildSceneAssetSkeleton(const LoadedSkeletonAsset& skeletonAsset, CookedAssetId skeletonAssetId, std::uint32_t sourceSkinIndex);
 }

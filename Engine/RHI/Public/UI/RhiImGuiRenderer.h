@@ -12,6 +12,7 @@ class SPARKLE_RHI_API RhiImGuiRenderer
 {
 public:
 	virtual ~RhiImGuiRenderer() noexcept = default;
+
 	RhiImGuiRenderer(const RhiImGuiRenderer&) = delete;
 	RhiImGuiRenderer& operator=(const RhiImGuiRenderer&) = delete;
 	RhiImGuiRenderer(RhiImGuiRenderer&&) = delete;

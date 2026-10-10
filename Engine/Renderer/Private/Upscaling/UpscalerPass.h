@@ -15,9 +15,4 @@ struct UpscalerPassResources final
 	FrameGraphTextureHandle Exposure = FrameGraphTextureHandle::Invalid();
 };
 
-void AddUpscalerPass(
-    FrameGraphBuilder& builder,
-    IUpscalerProvider& provider,
-    RenderViewportExtent renderExtent,
-    RenderViewportExtent outputExtent,
-    const UpscalerPassResources& inputs);
+void AddUpscalerPass(FrameGraphBuilder& builder, IUpscalerProvider& provider, RenderViewportExtent renderExtent, RenderViewportExtent outputExtent, const UpscalerPassResources& inputs);

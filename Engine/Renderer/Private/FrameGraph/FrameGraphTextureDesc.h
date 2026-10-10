@@ -23,11 +23,7 @@ struct FrameGraphTextureDesc
 	std::uint8_t sampleCount = 1;
 	std::array<float, 4> clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
 
-	static FrameGraphTextureDesc CreateDepthTarget(
-	    std::string_view name,
-	    std::uint32_t width,
-	    std::uint32_t height,
-	    PixelFormat format) noexcept;
+	static FrameGraphTextureDesc CreateDepthTarget(std::string_view name, std::uint32_t width, std::uint32_t height, PixelFormat format) noexcept;
 
 	static FrameGraphTextureDesc CreateColor(std::string_view name, std::uint32_t width, std::uint32_t height, PixelFormat format) noexcept;
 };

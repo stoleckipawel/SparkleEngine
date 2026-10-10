@@ -59,6 +59,7 @@ namespace Process
 	{
 	public:
 		ChildProcess() = delete;
+
 		static ChildProcessResult Run(const ChildProcessRequest& request);
 	};
 }

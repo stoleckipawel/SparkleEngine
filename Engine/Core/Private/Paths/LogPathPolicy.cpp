@@ -18,11 +18,9 @@ namespace Paths::Private
 {
 	static std::filesystem::path DefaultLogDirectory(const std::filesystem::path& logsRoot, std::string_view executableStem)
 	{
-		const std::string sanitizedExecutableStem =
-		    PathFormatting::SanitizePathSegment(executableStem.empty() ? "Sparkle" : executableStem);
+		const std::string sanitizedExecutableStem = PathFormatting::SanitizePathSegment(executableStem.empty() ? "Sparkle" : executableStem);
 		std::filesystem::path logDirectory;
-		if (PathFormatting::EndsWithIgnoreCase(sanitizedExecutableStem, "Editor")
-		    || PathFormatting::EndsWithIgnoreCase(sanitizedExecutableStem, "Runtime"))
+		if (PathFormatting::EndsWithIgnoreCase(sanitizedExecutableStem, "Editor") || PathFormatting::EndsWithIgnoreCase(sanitizedExecutableStem, "Runtime"))
 		{
 			std::string projectName = Filesystem::Private::InferProjectNameFromExecutableStem(sanitizedExecutableStem);
 			if (projectName.empty())

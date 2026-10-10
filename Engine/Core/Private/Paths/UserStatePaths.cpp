@@ -103,6 +103,7 @@ namespace Filesystem::Private
 	ProductUserStatePaths BuildProductUserStatePaths(const std::filesystem::path& root)
 	{
 		const std::filesystem::path normalizedRoot = Paths::Normalize(root);
+
 		return ProductUserStatePaths{
 		    .Root = normalizedRoot,
 		    .SettingsRoot = normalizedRoot / "Settings",
@@ -119,9 +120,7 @@ namespace Filesystem
 	{
 		const std::filesystem::path root = Private::ResolveSparkleUserStateRoot();
 		const std::string workspaceKey = Private::MakeWorkspaceStateKey(workspaceRoot);
-		return WorkspaceUserStatePaths{
-		    .DevelopmentProductsRoot = root / "Development" / workspaceKey,
-		    .LauncherRoot = root / "LauncherState" / workspaceKey};
+		return WorkspaceUserStatePaths{.DevelopmentProductsRoot = root / "Development" / workspaceKey, .LauncherRoot = root / "LauncherState" / workspaceKey};
 	}
 
 	ProductUserStatePaths ResolveDevelopmentProductUserStatePaths(const std::filesystem::path& workspaceRoot, std::string_view productName)
@@ -140,15 +139,13 @@ namespace Filesystem
 		if (const auto packageRoot = Private::DiscoverPackageRoot())
 		{
 			const auto projectRoot = Private::DiscoverPackageProjectRoot(*packageRoot);
+
 			return Private::BuildProductUserStatePaths(
-			    Private::ResolveSparkleUserStateRoot() / Private::ResolveProductName(projectRoot.value_or(std::filesystem::path{}))
-			    / Private::FirstReleaseStateVersion);
+			    Private::ResolveSparkleUserStateRoot() / Private::ResolveProductName(projectRoot.value_or(std::filesystem::path{})) / Private::FirstReleaseStateVersion);
 		}
 
 		const std::filesystem::path workspaceRoot = ResolveWorkspaceRootPath();
 		const auto projectRoot = DiscoverProjectRoot();
-		return ResolveDevelopmentProductUserStatePaths(
-		    workspaceRoot,
-		    Private::ResolveProductName(projectRoot.value_or(std::filesystem::path{})));
+		return ResolveDevelopmentProductUserStatePaths(workspaceRoot, Private::ResolveProductName(projectRoot.value_or(std::filesystem::path{})));
 	}
 }

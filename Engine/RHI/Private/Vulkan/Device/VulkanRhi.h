@@ -142,10 +142,7 @@ private:
 	static bool IsLayerAvailable(const char* layerName) noexcept;
 	static bool IsInstanceExtensionAvailable(const char* extensionName) noexcept;
 	static bool IsDeviceExtensionAvailable(VkPhysicalDevice device, const char* extensionName) noexcept;
-	static bool AppendAvailableDeviceExtension(
-	    VkPhysicalDevice physicalDevice,
-	    std::vector<const char*>& extensions,
-	    const char* extensionName) noexcept;
+	static bool AppendAvailableDeviceExtension(VkPhysicalDevice physicalDevice, std::vector<const char*>& extensions, const char* extensionName) noexcept;
 	static std::uint32_t ScorePhysicalDevice(const VkPhysicalDeviceProperties& properties) noexcept;
 	static VulkanAdapterInfo BuildAdapterInfo(const VkPhysicalDeviceProperties& properties);
 	static std::string FormatApiVersion(std::uint32_t version);

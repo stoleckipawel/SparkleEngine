@@ -17,8 +17,7 @@ namespace SparkleLauncher
 		for (const QString& part : settings.BuildScopes().split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
 		{
 			BuildWorkspaceScope scope = BuildWorkspaceScope::Editor;
-			if (TryParseBuildWorkspaceScope(part.trimmed().toStdString(), scope)
-			    && std::find(scopes.begin(), scopes.end(), scope) == scopes.end())
+			if (TryParseBuildWorkspaceScope(part.trimmed().toStdString(), scope) && std::find(scopes.begin(), scopes.end(), scope) == scopes.end())
 			{
 				scopes.push_back(scope);
 			}
@@ -45,10 +44,7 @@ namespace SparkleLauncher
 		return compiler;
 	}
 
-	BuildWorkspaceOperationRequest BuildWorkspacePlanRequest(
-	    const std::filesystem::path& repositoryRoot,
-	    const LauncherContentModel& contentModel,
-	    const LauncherSettings& settings)
+	BuildWorkspaceOperationRequest BuildWorkspacePlanRequest(const std::filesystem::path& repositoryRoot, const LauncherContentModel& contentModel, const LauncherSettings& settings)
 	{
 		BuildWorkspaceOperationRequest request;
 		request.RepositoryRoot = repositoryRoot;
@@ -62,10 +58,7 @@ namespace SparkleLauncher
 		return request;
 	}
 
-	LauncherOperationRequest BuildQuickStartOperationRequest(
-	    const LauncherOperationRequest& goalRequest,
-	    const QString& operationId,
-	    const QStringList& requestedLevelIds)
+	LauncherOperationRequest BuildQuickStartOperationRequest(const LauncherOperationRequest& goalRequest, const QString& operationId, const QStringList& requestedLevelIds)
 	{
 		LauncherOperationRequest request = goalRequest;
 		request.RunId.clear();
@@ -145,8 +138,7 @@ namespace SparkleLauncher
 	    const QString& operationId)
 	{
 		LauncherOperationRequest request = BuildLauncherOperationRequest(repositoryRoot, contentModel, settings, "workspace.clean");
-		request.CleanTargets = BuildActionSpecificCleanTargets(
-		    BuildActionCleanTargetContext(repositoryRoot, contentModel, settings, runningLauncherPath, operationId));
+		request.CleanTargets = BuildActionSpecificCleanTargets(BuildActionCleanTargetContext(repositoryRoot, contentModel, settings, runningLauncherPath, operationId));
 		request.ConfirmClean = false;
 		return request;
 	}

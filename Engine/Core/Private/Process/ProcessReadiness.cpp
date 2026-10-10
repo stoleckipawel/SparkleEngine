@@ -12,8 +12,8 @@ void Process::SignalParentReadiness(std::string_view value) noexcept
 #if defined(_WIN32)
 	std::string expectedValue;
 	std::string eventName;
-	if (!Environment::TryGetVariable(Detail::ReadinessValueEnvironmentVariable, expectedValue)
-	    || !Environment::TryGetVariable(Detail::ReadinessEventEnvironmentVariable, eventName) || value != expectedValue)
+	if (!Environment::TryGetVariable(Detail::ReadinessValueEnvironmentVariable, expectedValue) || !Environment::TryGetVariable(Detail::ReadinessEventEnvironmentVariable, eventName)
+	    || value != expectedValue)
 	{
 		return;
 	}

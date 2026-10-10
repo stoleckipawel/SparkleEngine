@@ -42,11 +42,7 @@ public:
 	    RhiMemoryCategory category,
 	    RhiMemoryResidencyClass residencyClass,
 	    std::wstring_view debugName) noexcept;
-	std::unique_ptr<D3D12GpuHeapRecord> CreateTransientHeap(
-	    RhiTransientAllocationPool pool,
-	    std::uint64_t sizeInBytes,
-	    std::uint64_t alignment,
-	    std::wstring_view debugName) noexcept;
+	std::unique_ptr<D3D12GpuHeapRecord> CreateTransientHeap(RhiTransientAllocationPool pool, std::uint64_t sizeInBytes, std::uint64_t alignment, std::wstring_view debugName) noexcept;
 	std::unique_ptr<D3D12GpuAllocationRecord> CreateAliasingTexture(
 	    D3D12GpuHeapRecord& heap,
 	    std::uint64_t heapOffset,

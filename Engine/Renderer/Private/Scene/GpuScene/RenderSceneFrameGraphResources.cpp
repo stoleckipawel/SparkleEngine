@@ -14,16 +14,10 @@
 
 template <typename TValue> static FrameGraphBufferHandle DeclareRenderSceneGpuBuffer(FrameGraphBuilder& builder, const char* name)
 {
-	return builder.ReservePersistentBuffer(
-	    FrameGraphBufferDesc::Create(name, sizeof(TValue), static_cast<std::uint32_t>(sizeof(TValue))),
-	    ResourceState::ShaderResource);
+	return builder.ReservePersistentBuffer(FrameGraphBufferDesc::Create(name, sizeof(TValue), static_cast<std::uint32_t>(sizeof(TValue))), ResourceState::ShaderResource);
 }
 
-static void BindRenderSceneGpuBuffer(
-    FrameGraph& graph,
-    FrameGraphBufferHandle handle,
-    const RenderSceneGpuBufferBinding& buffer,
-    const char* name) noexcept
+static void BindRenderSceneGpuBuffer(FrameGraph& graph, FrameGraphBufferHandle handle, const RenderSceneGpuBufferBinding& buffer, const char* name) noexcept
 {
 	if (!buffer)
 	{
@@ -31,11 +25,7 @@ static void BindRenderSceneGpuBuffer(
 		Diagnostics::Fatal(logger, __FILE__, __LINE__, "Render-scene GPU buffer publication is incomplete.");
 	}
 
-	graph.BindPersistentBuffer(
-	    handle,
-	    buffer.Resource,
-	    FrameGraphBufferDesc::Create(name, buffer.SizeInBytes, buffer.StrideInBytes),
-	    ResourceState::ShaderResource);
+	graph.BindPersistentBuffer(handle, buffer.Resource, FrameGraphBufferDesc::Create(name, buffer.SizeInBytes, buffer.StrideInBytes), ResourceState::ShaderResource);
 }
 
 RenderSceneGpuResources DeclareRenderSceneGpuResources(FrameGraphBuilder& builder)
@@ -64,10 +54,7 @@ RenderSceneGpuResources DeclareRenderSceneGpuResources(FrameGraphBuilder& builde
 	        .Materials = DeclareRenderSceneGpuBuffer<RayTracingHitMaterial>(builder, "RayTracingHitMaterials")}};
 }
 
-void BindRenderSceneGpuResources(
-    FrameGraph& graph,
-    const RenderSceneGpuResources& resources,
-    const RenderSceneGpuBindings& sceneGpuBindings) noexcept
+void BindRenderSceneGpuResources(FrameGraph& graph, const RenderSceneGpuResources& resources, const RenderSceneGpuBindings& sceneGpuBindings) noexcept
 {
 	BindRenderSceneGpuBuffer(graph, resources.Lighting.DirectionalLights, sceneGpuBindings.Lighting.DirectionalLights, "DirectionalLights");
 	BindRenderSceneGpuBuffer(graph, resources.Lighting.PointLights, sceneGpuBindings.Lighting.PointLights, "PointLights");
@@ -78,33 +65,17 @@ void BindRenderSceneGpuResources(
 	BindRenderSceneGpuBuffer(graph, resources.Geometry.MeshInstanceSlots, sceneGpuBindings.Geometry.MeshInstanceSlots, "MeshInstanceSlots");
 	BindRenderSceneGpuBuffer(graph, resources.Geometry.JointMatrices, sceneGpuBindings.Geometry.JointMatrices, "JointMatrices");
 
-	BindRenderSceneGpuBuffer(
-	    graph,
-	    resources.Geometry.PreviousJointMatrices,
-	    sceneGpuBindings.Geometry.PreviousJointMatrices,
-	    "PreviousJointMatrices");
+	BindRenderSceneGpuBuffer(graph, resources.Geometry.PreviousJointMatrices, sceneGpuBindings.Geometry.PreviousJointMatrices, "PreviousJointMatrices");
 
 	BindRenderSceneGpuBuffer(graph, resources.Geometry.MorphWeights, sceneGpuBindings.Geometry.MorphWeights, "MorphWeights");
 
-	BindRenderSceneGpuBuffer(
-	    graph,
-	    resources.Geometry.PreviousMorphWeights,
-	    sceneGpuBindings.Geometry.PreviousMorphWeights,
-	    "PreviousMorphWeights");
+	BindRenderSceneGpuBuffer(graph, resources.Geometry.PreviousMorphWeights, sceneGpuBindings.Geometry.PreviousMorphWeights, "PreviousMorphWeights");
 
 	BindRenderSceneGpuBuffer(graph, resources.RayTracing.Vertices, sceneGpuBindings.RayTracing.Vertices, "RayTracingHitVertices");
 
-	BindRenderSceneGpuBuffer(
-	    graph,
-	    resources.RayTracing.SkinInfluences,
-	    sceneGpuBindings.RayTracing.SkinInfluences,
-	    "RayTracingHitSkinInfluences");
+	BindRenderSceneGpuBuffer(graph, resources.RayTracing.SkinInfluences, sceneGpuBindings.RayTracing.SkinInfluences, "RayTracingHitSkinInfluences");
 
-	BindRenderSceneGpuBuffer(
-	    graph,
-	    resources.RayTracing.MorphTargetDeltas,
-	    sceneGpuBindings.RayTracing.MorphTargetDeltas,
-	    "RayTracingHitMorphTargetDeltas");
+	BindRenderSceneGpuBuffer(graph, resources.RayTracing.MorphTargetDeltas, sceneGpuBindings.RayTracing.MorphTargetDeltas, "RayTracingHitMorphTargetDeltas");
 
 	BindRenderSceneGpuBuffer(graph, resources.RayTracing.Indices, sceneGpuBindings.RayTracing.Indices, "RayTracingHitIndices");
 	BindRenderSceneGpuBuffer(graph, resources.RayTracing.Instances, sceneGpuBindings.RayTracing.Instances, "RayTracingHitInstances");

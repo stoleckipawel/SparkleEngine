@@ -19,7 +19,9 @@ public:
 	void Reset() noexcept;
 
 	const RenderGpuGeometryPayloads& GetPayloads() const noexcept { return m_payloads; }
+
 	std::uint64_t GetMeshInstanceRevision() const noexcept { return m_meshInstanceRevision; }
+
 	std::uint64_t GetMeshInstanceSlotRevision() const noexcept { return m_meshInstanceSlotRevision; }
 
 private:

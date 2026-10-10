@@ -60,11 +60,7 @@ void RenderCommandContext::BindConstantBuffer(std::uint32_t bindingIndex, RhiGpu
 	m_commandList->BindGraphicsConstantBuffer(bindingIndex, gpuAddress);
 }
 
-void RenderCommandContext::SetPushConstants(
-    std::uint32_t bindingIndex,
-    std::uint32_t num32BitValues,
-    const void* data,
-    std::uint32_t destOffsetIn32BitValues) noexcept
+void RenderCommandContext::SetPushConstants(std::uint32_t bindingIndex, std::uint32_t num32BitValues, const void* data, std::uint32_t destOffsetIn32BitValues) noexcept
 {
 	m_commandList->SetGraphicsPushConstants(bindingIndex, num32BitValues, data, destOffsetIn32BitValues);
 }
@@ -109,11 +105,7 @@ void RenderCommandContext::BindComputeDescriptorTable(std::uint32_t bindingIndex
 	m_commandList->BindComputeDescriptorTable(bindingIndex, tableBinding);
 }
 
-void RenderCommandContext::SetComputePushConstants(
-    std::uint32_t bindingIndex,
-    std::uint32_t num32BitValues,
-    const void* data,
-    std::uint32_t destOffsetIn32BitValues) noexcept
+void RenderCommandContext::SetComputePushConstants(std::uint32_t bindingIndex, std::uint32_t num32BitValues, const void* data, std::uint32_t destOffsetIn32BitValues) noexcept
 {
 	m_commandList->SetComputePushConstants(bindingIndex, num32BitValues, data, destOffsetIn32BitValues);
 }
@@ -148,11 +140,7 @@ void RenderCommandContext::BindRayTracingDescriptorTable(std::uint32_t bindingIn
 	m_commandList->BindRayTracingDescriptorTable(bindingIndex, tableBinding);
 }
 
-void RenderCommandContext::SetRayTracingPushConstants(
-    std::uint32_t bindingIndex,
-    std::uint32_t num32BitValues,
-    const void* data,
-    std::uint32_t destOffsetIn32BitValues) noexcept
+void RenderCommandContext::SetRayTracingPushConstants(std::uint32_t bindingIndex, std::uint32_t num32BitValues, const void* data, std::uint32_t destOffsetIn32BitValues) noexcept
 {
 	m_commandList->SetRayTracingPushConstants(bindingIndex, num32BitValues, data, destOffsetIn32BitValues);
 }
@@ -177,10 +165,7 @@ void RenderCommandContext::SetRenderTarget(RhiCpuDescriptorHandle renderTarget, 
 	m_commandList->SetRenderTarget(renderTarget, depthStencil);
 }
 
-void RenderCommandContext::SetRenderTargets(
-    std::uint32_t renderTargetCount,
-    const RhiCpuDescriptorHandle* renderTargets,
-    const RhiCpuDescriptorHandle* depthStencil) noexcept
+void RenderCommandContext::SetRenderTargets(std::uint32_t renderTargetCount, const RhiCpuDescriptorHandle* renderTargets, const RhiCpuDescriptorHandle* depthStencil) noexcept
 {
 	m_commandList->SetRenderTargets(renderTargetCount, renderTargets, depthStencil);
 }
@@ -245,15 +230,10 @@ void RenderCommandContext::DrawIndexedInstanced(
 	{
 		EmitDrawMarker();
 	}
-	m_commandList
-	    ->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
+	m_commandList->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
 }
 
-void RenderCommandContext::DrawInstanced(
-    std::uint32_t vertexCountPerInstance,
-    std::uint32_t instanceCount,
-    std::uint32_t startVertexLocation,
-    std::uint32_t startInstanceLocation) noexcept
+void RenderCommandContext::DrawInstanced(std::uint32_t vertexCountPerInstance, std::uint32_t instanceCount, std::uint32_t startVertexLocation, std::uint32_t startInstanceLocation) noexcept
 {
 	if (m_drawDispatchDiagnosticsEnabled)
 	{
@@ -280,10 +260,7 @@ void RenderCommandContext::TraceRays(const TraceRaysDesc& desc) noexcept
 	m_commandList->TraceRays(desc);
 }
 
-void RenderCommandContext::BuildBottomLevelAccelerationStructure(
-    const RhiRayTracingGeometryDesc& geometry,
-    RhiGpuVirtualAddress scratchGpuAddress,
-    RhiGpuVirtualAddress resultGpuAddress) noexcept
+void RenderCommandContext::BuildBottomLevelAccelerationStructure(const RhiRayTracingGeometryDesc& geometry, RhiGpuVirtualAddress scratchGpuAddress, RhiGpuVirtualAddress resultGpuAddress) noexcept
 {
 	if (m_commandList != nullptr)
 	{
@@ -302,8 +279,7 @@ void RenderCommandContext::BuildTopLevelAccelerationStructure(
 {
 	if (m_commandList != nullptr)
 	{
-		m_commandList
-		    ->BuildTopLevelAccelerationStructure(instanceDescsGpuAddress, instanceCount, scratchGpuAddress, resultGpuAddress, buildMode);
+		m_commandList->BuildTopLevelAccelerationStructure(instanceDescsGpuAddress, instanceCount, scratchGpuAddress, resultGpuAddress, buildMode);
 		return;
 	}
 	Diagnostics::Fatal(g_renderCommandContextLogger, __FILE__, __LINE__, "Classic TLAS build has no active render command list.");

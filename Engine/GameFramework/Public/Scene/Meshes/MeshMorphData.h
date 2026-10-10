@@ -28,6 +28,7 @@ struct MeshMorphData
 	std::vector<MeshMorphTarget> targets;
 
 	bool HasTargets() const noexcept { return !targets.empty(); }
+
 	std::uint32_t GetTargetCount() const noexcept { return static_cast<std::uint32_t>(targets.size()); }
 };
 

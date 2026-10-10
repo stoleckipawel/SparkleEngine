@@ -7,9 +7,5 @@
 
 namespace SparkleLauncher
 {
-	void ReportOperationProgress(
-	    const ProcessOutputCallback& outputCallback,
-	    std::string_view phase,
-	    std::size_t completed = 0,
-	    std::size_t total = 0);
+	void ReportOperationProgress(const ProcessOutputCallback& outputCallback, std::string_view phase, std::size_t completed = 0, std::size_t total = 0);
 }

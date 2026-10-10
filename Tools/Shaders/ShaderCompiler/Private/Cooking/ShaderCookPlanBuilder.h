@@ -11,10 +11,7 @@ class ShaderCookPlanBuilder final
 public:
 	ShaderCookPlanBuilder() = delete;
 
-	static ShaderCookPipelinePlan Build(
-	    const ShaderCookSettings& settings,
-	    ShaderBackendPool& backendPool,
-	    const ToolWorkProgressCallback& progress);
+	static ShaderCookPipelinePlan Build(const ShaderCookSettings& settings, ShaderBackendPool& backendPool, const ToolWorkProgressCallback& progress);
 
 private:
 	static void BuildDependencyManifest(ShaderCookPipelinePlan& plan);

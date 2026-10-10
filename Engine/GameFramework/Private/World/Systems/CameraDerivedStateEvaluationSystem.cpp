@@ -13,6 +13,7 @@ namespace ECS
 		const DirectX::XMVECTOR forward = DirectX::XMVector3Rotate(
 		    DirectX::XMVectorSet(WorldCoordinates::kForwardX, WorldCoordinates::kForwardY, WorldCoordinates::kForwardZ, 0.0f),
 		    DirectX::XMLoadFloat4(&local.Rotation));
+
 		DirectX::XMStoreFloat3(&derived.Direction, DirectX::XMVector3Normalize(forward));
 	}
 }

@@ -7,7 +7,5 @@
 class ReferencePathTracerArtifactWriter final
 {
 public:
-	static ReferencePathTracerArtifactWriteResult Write(
-	    ReferencePathTracerArtifactWriteRequest request,
-	    std::stop_token cancellationToken) noexcept;
+	static ReferencePathTracerArtifactWriteResult Write(ReferencePathTracerArtifactWriteRequest request, std::stop_token cancellationToken) noexcept;
 };

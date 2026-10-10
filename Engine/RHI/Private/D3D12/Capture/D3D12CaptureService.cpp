@@ -15,11 +15,7 @@
 class D3D12CaptureCommands final
 {
 public:
-	static void RecordTransition(
-	    ID3D12GraphicsCommandList* commandList,
-	    ID3D12Resource* resource,
-	    ResourceState before,
-	    ResourceState after) noexcept
+	static void RecordTransition(ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource, ResourceState before, ResourceState after) noexcept
 	{
 		if (commandList == nullptr || resource == nullptr || before == after)
 		{
@@ -78,8 +74,7 @@ RhiCaptureTicket D3D12CaptureService::BeginTextureReadback(const RhiTextureCaptu
 	}
 
 	const D3D12_RESOURCE_DESC sourceDesc = sourceResource->GetDesc();
-	if (sourceDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE2D || sourceDesc.Width == 0 || sourceDesc.Height == 0
-	    || !IsRhiCaptureFormatSupported(request.SourceFormat)
+	if (sourceDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE2D || sourceDesc.Width == 0 || sourceDesc.Height == 0 || !IsRhiCaptureFormatSupported(request.SourceFormat)
 	    || sourceDesc.Format != D3D12TypeConversions::ToDxgiFormat(request.SourceFormat))
 	{
 		return {};
@@ -109,20 +104,9 @@ RhiCaptureTicket D3D12CaptureService::BeginTextureReadback(const RhiTextureCaptu
 	readbackDesc.MipLevels = 1;
 	readbackDesc.SampleDesc.Count = 1;
 	readbackDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	if (FAILED(device->CreateCommittedResource(
-	        &heapProperties,
-	        D3D12_HEAP_FLAG_NONE,
-	        &readbackDesc,
-	        D3D12_RESOURCE_STATE_COPY_DEST,
-	        nullptr,
-	        IID_PPV_ARGS(&pending->Buffer)))
+	if (FAILED(device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &readbackDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&pending->Buffer)))
 	    || FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&pending->CommandAllocator)))
-	    || FAILED(device->CreateCommandList(
-	        0,
-	        D3D12_COMMAND_LIST_TYPE_DIRECT,
-	        pending->CommandAllocator.Get(),
-	        nullptr,
-	        IID_PPV_ARGS(&pending->CommandList))))
+	    || FAILED(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, pending->CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&pending->CommandList))))
 	{
 		return {};
 	}
@@ -157,10 +141,12 @@ RhiCaptureTicket D3D12CaptureService::BeginTextureReadback(const RhiTextureCaptu
 bool D3D12CaptureService::TryTakeTextureReadback(RhiCaptureTicket ticket, RhiCaptureReadback& readback) noexcept
 {
 	DrainCancelledReadbacks();
+
 	const auto pendingIterator = std::find_if(
 	    m_pendingReadbacks.begin(),
 	    m_pendingReadbacks.end(),
 	    [ticket](const std::unique_ptr<PendingReadback>& candidate) { return candidate && candidate->Ticket.Value == ticket.Value; });
+
 	if (pendingIterator == m_pendingReadbacks.end() || !m_rhi.IsSubmissionComplete((*pendingIterator)->Submission))
 	{
 		return false;
@@ -176,12 +162,12 @@ bool D3D12CaptureService::TryTakeTextureReadback(RhiCaptureTicket ticket, RhiCap
 		    .BackendApi = ERhiBackendApi::D3D12,
 		    .FrameId = pending.Request.FrameId,
 		    .FailureReason = "D3D12 texture readback could not be mapped"};
+
 		m_pendingReadbacks.erase(pendingIterator);
 		return true;
 	}
 
-	readback.Result =
-	    RhiCaptureResult{.Status = ERhiCaptureStatus::Succeeded, .BackendApi = ERhiBackendApi::D3D12, .FrameId = pending.Request.FrameId};
+	readback.Result = RhiCaptureResult{.Status = ERhiCaptureStatus::Succeeded, .BackendApi = ERhiBackendApi::D3D12, .FrameId = pending.Request.FrameId};
 	readback.Width = pending.Footprint.Footprint.Width;
 	readback.Height = pending.Footprint.Footprint.Height;
 	readback.RowPitch = pending.Footprint.Footprint.RowPitch;
@@ -202,6 +188,7 @@ void D3D12CaptureService::CancelTextureReadback(RhiCaptureTicket ticket) noexcep
 	    m_pendingReadbacks.begin(),
 	    m_pendingReadbacks.end(),
 	    [ticket](const std::unique_ptr<PendingReadback>& candidate) { return candidate && candidate->Ticket.Value == ticket.Value; });
+
 	if (iterator == m_pendingReadbacks.end())
 	{
 		return;

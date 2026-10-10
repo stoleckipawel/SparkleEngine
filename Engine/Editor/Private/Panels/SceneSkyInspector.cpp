@@ -7,15 +7,10 @@
 
 #include <algorithm>
 
-void SceneSkyInspector::Build(
-    const std::optional<SkyEnvironment>& current,
-    EditorTransactionHistory& transactionHistory,
-    std::uint64_t generation,
-    const std::string& filter) noexcept
+void SceneSkyInspector::Build(const std::optional<SkyEnvironment>& current, EditorTransactionHistory& transactionHistory, std::uint64_t generation, const std::string& filter) noexcept
 {
 	bool hasSky = current.has_value();
-	if (UiUtil::MatchesDetailsFilter(filter, "Sky", "override default texture color brightness enabled visible")
-	    && UiUtil::BeginDetailsCategory("Sky"))
+	if (UiUtil::MatchesDetailsFilter(filter, "Sky", "override default texture color brightness enabled visible") && UiUtil::BeginDetailsCategory("Sky"))
 	{
 		const bool defaultHasSky = false;
 		if (UiUtil::EditDetailsCheckbox("Override Default", hasSky, &defaultHasSky))
@@ -32,8 +27,7 @@ void SceneSkyInspector::Build(
 
 	SceneSkyDesc after = current->Description;
 	bool changed = false;
-	if (UiUtil::MatchesDetailsFilter(filter, "Rendering", "sky texture color brightness enabled visible")
-	    && UiUtil::BeginDetailsCategory("Rendering"))
+	if (UiUtil::MatchesDetailsFilter(filter, "Rendering", "sky texture color brightness enabled visible") && UiUtil::BeginDetailsCategory("Rendering"))
 	{
 		const bool defaultEnabled = true;
 		changed |= UiUtil::EditDetailsCheckbox("Enabled", after.enabled, &defaultEnabled);
@@ -59,9 +53,5 @@ void SceneSkyInspector::Build(
 		UiUtil::EndDetailsCategory();
 	}
 	if (changed)
-		(void) transactionHistory.Execute(
-		    {0, SetSkyEnvironmentCommand{SkyEnvironment{after}}},
-		    {0, SetSkyEnvironmentCommand{current}},
-		    generation,
-		    "sky-environment");
+		(void) transactionHistory.Execute({0, SetSkyEnvironmentCommand{SkyEnvironment{after}}}, {0, SetSkyEnvironmentCommand{current}}, generation, "sky-environment");
 }

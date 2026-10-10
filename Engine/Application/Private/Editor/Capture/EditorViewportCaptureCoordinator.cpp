@@ -19,13 +19,10 @@ void EditorViewportCaptureCoordinator::Request(Renderer& renderer, std::uint64_t
 		return;
 	}
 	m_outputPath = BuildOutputPath(frameId);
-	const ViewportCaptureAdmissionStatus admission =
-	    m_capture.Request(renderer, ViewportCaptureRequest{.Output = RenderOutputFlags::FinalColorLdr});
+	const ViewportCaptureAdmissionStatus admission = m_capture.Request(renderer, ViewportCaptureRequest{.Output = RenderOutputFlags::FinalColorLdr});
 	if (admission != ViewportCaptureAdmissionStatus::Accepted)
 	{
-		SPDLOG_WARN(
-		    "Viewport capture request rejected: {}.",
-		    admission == ViewportCaptureAdmissionStatus::Full ? "render request capacity is full" : "render owner is closed");
+		SPDLOG_WARN("Viewport capture request rejected: {}.", admission == ViewportCaptureAdmissionStatus::Full ? "render request capacity is full" : "render owner is closed");
 		m_outputPath.clear();
 	}
 }
@@ -39,16 +36,14 @@ void EditorViewportCaptureCoordinator::Update(Renderer& renderer)
 		if (readback.Result)
 		{
 			std::string errorMessage;
+
 			m_writeOperation.Start(
 			    TaskName("Write viewport capture"),
 			    "A viewport capture is already being written.",
-			    [readback = std::move(readback),
-			        outputPath = m_outputPath](ViewportCaptureResult& result, TaskExecutionContext& context) mutable
+			    [readback = std::move(readback), outputPath = m_outputPath](ViewportCaptureResult& result, TaskExecutionContext& context) mutable
 			    {
 				    result = ViewportCaptureWriter::Write(std::move(readback), outputPath, context.GetCancellationToken());
-				    return result ? TaskResult::Success()
-				                  : (context.IsCancellationRequested() ? TaskResult::Cancelled(result.FailureReason)
-				                                                       : TaskResult::Failure(result.FailureReason));
+				    return result ? TaskResult::Success() : (context.IsCancellationRequested() ? TaskResult::Cancelled(result.FailureReason) : TaskResult::Failure(result.FailureReason));
 			    },
 			    errorMessage);
 		}

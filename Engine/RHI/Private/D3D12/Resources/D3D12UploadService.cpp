@@ -28,10 +28,7 @@ void D3D12UploadService::BeginFrame() noexcept
 	DrainCompletedUploads();
 }
 
-RhiGpuVirtualAddress D3D12UploadService::AllocateUniformConstantBuffer(
-    RenderCommandList& commandList,
-    const void* data,
-    std::uint32_t sizeInBytes)
+RhiGpuVirtualAddress D3D12UploadService::AllocateUniformConstantBuffer(RenderCommandList& commandList, const void* data, std::uint32_t sizeInBytes)
 {
 	if (commandList.GetBackendApi() != ERhiBackendApi::D3D12 || data == nullptr || sizeInBytes == 0)
 	{
@@ -42,12 +39,7 @@ RhiGpuVirtualAddress D3D12UploadService::AllocateUniformConstantBuffer(
 	return uploadPage != nullptr ? uploadPage->AllocateAndCopy(data, sizeInBytes) : 0;
 }
 
-bool D3D12UploadService::UploadBuffer(
-    RenderCommandList& commandList,
-    RhiOwnedResourceHandle destination,
-    std::span<const std::byte> data,
-    ResourceState finalState,
-    std::wstring_view debugName)
+bool D3D12UploadService::UploadBuffer(RenderCommandList& commandList, RhiOwnedResourceHandle destination, std::span<const std::byte> data, ResourceState finalState, std::wstring_view debugName)
 {
 	D3D12GpuAllocationRecord* const destinationRecord = GetD3D12GpuAllocationRecord(destination);
 	if (!ValidateBufferUploadRequest(commandList, destinationRecord, data))
@@ -92,8 +84,7 @@ bool D3D12UploadService::UploadTexture(
 	}
 
 	const UINT subresourceCount = textureUpload.GetSubresourceCount();
-	std::unique_ptr<D3D12GpuAllocationRecord> stagingResource =
-	    CreateTextureStagingResource(*destinationRecord, subresourceCount, debugName);
+	std::unique_ptr<D3D12GpuAllocationRecord> stagingResource = CreateTextureStagingResource(*destinationRecord, subresourceCount, debugName);
 	if (stagingResource == nullptr)
 	{
 		return false;
@@ -112,21 +103,15 @@ bool D3D12UploadService::UploadTexture(
 	return true;
 }
 
-bool D3D12UploadService::ValidateBufferUploadRequest(
-    const RenderCommandList& commandList,
-    const D3D12GpuAllocationRecord* destination,
-    std::span<const std::byte> data) const noexcept
+bool D3D12UploadService::ValidateBufferUploadRequest(const RenderCommandList& commandList, const D3D12GpuAllocationRecord* destination, std::span<const std::byte> data) const noexcept
 {
-	const auto* d3dCommandList =
-	    commandList.GetBackendApi() == ERhiBackendApi::D3D12 ? static_cast<const D3D12RenderCommandList*>(&commandList) : nullptr;
-	return m_rhi != nullptr && m_memoryAllocator != nullptr && destination != nullptr && destination->Resource != nullptr && !data.empty()
-	    && data.size() <= destination->Resource->GetDesc().Width && d3dCommandList != nullptr
-	    && d3dCommandList->GetD3D12CommandList() != nullptr && d3dCommandList->IsCoordinatorRecording();
+	const auto* d3dCommandList = commandList.GetBackendApi() == ERhiBackendApi::D3D12 ? static_cast<const D3D12RenderCommandList*>(&commandList) : nullptr;
+
+	return m_rhi != nullptr && m_memoryAllocator != nullptr && destination != nullptr && destination->Resource != nullptr && !data.empty() && data.size() <= destination->Resource->GetDesc().Width
+	    && d3dCommandList != nullptr && d3dCommandList->GetD3D12CommandList() != nullptr && d3dCommandList->IsCoordinatorRecording();
 }
 
-std::unique_ptr<D3D12GpuAllocationRecord> D3D12UploadService::CreateBufferStagingResource(
-    std::span<const std::byte> data,
-    std::wstring_view debugName)
+std::unique_ptr<D3D12GpuAllocationRecord> D3D12UploadService::CreateBufferStagingResource(std::span<const std::byte> data, std::wstring_view debugName)
 {
 	auto stagingResource = m_memoryAllocator->CreateBuffer(
 	    CD3DX12_RESOURCE_DESC::Buffer(data.size()),
@@ -134,6 +119,7 @@ std::unique_ptr<D3D12GpuAllocationRecord> D3D12UploadService::CreateBufferStagin
 	    RhiMemoryCategory::Upload,
 	    RhiMemoryResidencyClass::HostUpload,
 	    debugName.empty() ? L"BufferUpload" : debugName);
+
 	if (stagingResource == nullptr || stagingResource->Resource == nullptr)
 	{
 		return {};
@@ -163,26 +149,22 @@ void D3D12UploadService::RecordBufferUpload(
 	nativeCommandList->CopyBufferRegion(destination.Resource.Get(), 0, stagingResource.Resource.Get(), 0, sizeInBytes);
 
 	const ResourceState submittedFinalState = commandList.GetQueueType() == ERhiQueueType::Copy ? ResourceState::Common : finalState;
+
 	const D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
 	    destination.Resource.Get(),
 	    D3D12_RESOURCE_STATE_COPY_DEST,
 	    D3D12TypeConversions::ToResourceStates(submittedFinalState));
+
 	nativeCommandList->ResourceBarrier(1, &barrier);
 }
 
-bool D3D12UploadService::ValidateTextureUploadRequest(
-    const RenderCommandList& commandList,
-    const D3D12GpuAllocationRecord* destination,
-    const RhiTextureUploadDesc& textureUpload) const noexcept
+bool D3D12UploadService::ValidateTextureUploadRequest(const RenderCommandList& commandList, const D3D12GpuAllocationRecord* destination, const RhiTextureUploadDesc& textureUpload) const noexcept
 {
-	return m_rhi != nullptr && m_memoryAllocator != nullptr && destination != nullptr && destination->Resource != nullptr
-	    && textureUpload.IsValid() && commandList.GetBackendApi() == ERhiBackendApi::D3D12;
+	return m_rhi != nullptr && m_memoryAllocator != nullptr && destination != nullptr && destination->Resource != nullptr && textureUpload.IsValid()
+	    && commandList.GetBackendApi() == ERhiBackendApi::D3D12;
 }
 
-std::unique_ptr<D3D12GpuAllocationRecord> D3D12UploadService::CreateTextureStagingResource(
-    const D3D12GpuAllocationRecord& destination,
-    std::uint32_t subresourceCount,
-    std::wstring_view debugName)
+std::unique_ptr<D3D12GpuAllocationRecord> D3D12UploadService::CreateTextureStagingResource(const D3D12GpuAllocationRecord& destination, std::uint32_t subresourceCount, std::wstring_view debugName)
 {
 	const UINT64 uploadBufferSize = GetRequiredIntermediateSize(destination.Resource.Get(), 0, subresourceCount);
 	if (uploadBufferSize == 0)
@@ -196,6 +178,7 @@ std::unique_ptr<D3D12GpuAllocationRecord> D3D12UploadService::CreateTextureStagi
 	    RhiMemoryCategory::Upload,
 	    RhiMemoryResidencyClass::HostUpload,
 	    debugName.empty() ? L"TextureUpload" : debugName);
+
 	if (stagingResource == nullptr || stagingResource->Resource == nullptr)
 	{
 		return {};
@@ -221,31 +204,22 @@ bool D3D12UploadService::RecordTextureUpload(
 		for (const RhiTextureMipUploadData& mipLevel : arraySlice)
 		{
 			subresources.push_back(
-			    D3D12_SUBRESOURCE_DATA{
-			        .pData = mipLevel.Data.data(),
-			        .RowPitch = static_cast<LONG_PTR>(mipLevel.RowPitch),
-			        .SlicePitch = static_cast<LONG_PTR>(mipLevel.SlicePitch)});
+			    D3D12_SUBRESOURCE_DATA{.pData = mipLevel.Data.data(), .RowPitch = static_cast<LONG_PTR>(mipLevel.RowPitch), .SlicePitch = static_cast<LONG_PTR>(mipLevel.SlicePitch)});
 		}
 	}
 
-	if (UpdateSubresources(
-	        nativeCommandList,
-	        destination.Resource.Get(),
-	        stagingResource.Resource.Get(),
-	        0,
-	        0,
-	        subresourceCount,
-	        subresources.data())
-	    == 0)
+	if (UpdateSubresources(nativeCommandList, destination.Resource.Get(), stagingResource.Resource.Get(), 0, 0, subresourceCount, subresources.data()) == 0)
 	{
 		return false;
 	}
 
 	const ResourceState submittedFinalState = commandList.GetQueueType() == ERhiQueueType::Copy ? ResourceState::Common : finalState;
+
 	const D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
 	    destination.Resource.Get(),
 	    D3D12_RESOURCE_STATE_COPY_DEST,
 	    D3D12TypeConversions::ToResourceStates(submittedFinalState));
+
 	nativeCommandList->ResourceBarrier(1, &barrier);
 	return true;
 }
@@ -273,10 +247,7 @@ void D3D12UploadService::DrainCompletedUploads() noexcept
 	    m_pendingUploads.begin(),
 	    m_pendingUploads.end(),
 	    [&completedValues](const std::unique_ptr<D3D12GpuAllocationRecord>& stagingResource)
-	    {
-		    return stagingResource == nullptr
-		        || (stagingResource->RecordingReferenceCount.load(std::memory_order_relaxed) == 0
-		            && stagingResource->LastUse.IsComplete(completedValues));
-	    });
+	    { return stagingResource == nullptr || (stagingResource->RecordingReferenceCount.load(std::memory_order_relaxed) == 0 && stagingResource->LastUse.IsComplete(completedValues)); });
+
 	m_pendingUploads.erase(firstPending, m_pendingUploads.end());
 }

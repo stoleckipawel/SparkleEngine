@@ -22,6 +22,7 @@ class FrameGraphResourceResolver final
 {
 public:
 	FrameGraphResourceResolver() = default;
+
 	~FrameGraphResourceResolver() = default;
 
 	FrameGraphResourceResolver(const FrameGraphResourceResolver&) = delete;

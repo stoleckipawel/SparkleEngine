@@ -45,46 +45,26 @@ public:
 		}
 	}
 
-	static void ImportPrimitiveMappings(
-	    const cgltf_data* data,
-	    const cgltf_primitive& primitive,
-	    std::uint32_t sourceMeshIndex,
-	    std::uint32_t sourcePrimitiveIndex,
-	    SourceImportOutput& output)
+	static void ImportPrimitiveMappings(const cgltf_data* data, const cgltf_primitive& primitive, std::uint32_t sourceMeshIndex, std::uint32_t sourcePrimitiveIndex, SourceImportOutput& output)
 	{
 		for (cgltf_size mappingIndex = 0; mappingIndex < primitive.mappings_count; ++mappingIndex)
 		{
 			const cgltf_material_mapping& mapping = primitive.mappings[mappingIndex];
 			if (mapping.material == nullptr)
 			{
-				throw Diagnostics::Error(
-				    std::format(
-				        "glTF mesh {} primitive {} material-variant mapping {} has no material.",
-				        sourceMeshIndex,
-				        sourcePrimitiveIndex,
-				        mappingIndex));
+				throw Diagnostics::Error(std::format("glTF mesh {} primitive {} material-variant mapping {} has no material.", sourceMeshIndex, sourcePrimitiveIndex, mappingIndex));
 			}
 
 			const ImportedMaterialIndex materialIndex = ResolveImportedMaterialIndex(data, mapping.material);
 			if (materialIndex == kInvalidImportedMaterialIndex || materialIndex >= output.scene.materials.size())
 			{
-				throw Diagnostics::Error(
-				    std::format(
-				        "glTF mesh {} primitive {} material-variant mapping {} references an unknown material.",
-				        sourceMeshIndex,
-				        sourcePrimitiveIndex,
-				        mappingIndex));
+				throw Diagnostics::Error(std::format("glTF mesh {} primitive {} material-variant mapping {} references an unknown material.", sourceMeshIndex, sourcePrimitiveIndex, mappingIndex));
 			}
 
 			const cgltf_size sourceVariantIndex = mapping.variant;
 			if (sourceVariantIndex >= output.scene.materialVariants.size())
 			{
-				throw Diagnostics::Error(
-				    std::format(
-				        "glTF mesh {} primitive {} material-variant mapping {} references an unknown variant.",
-				        sourceMeshIndex,
-				        sourcePrimitiveIndex,
-				        mappingIndex));
+				throw Diagnostics::Error(std::format("glTF mesh {} primitive {} material-variant mapping {} references an unknown variant.", sourceMeshIndex, sourcePrimitiveIndex, mappingIndex));
 			}
 
 			ImportedMaterialVariantMapping importedMapping;
@@ -110,12 +90,7 @@ void GltfMaterialVariantImporter::ImportMaterialVariants(const cgltf_data* data,
 		const cgltf_mesh& mesh = data->meshes[meshIndex];
 		for (cgltf_size primitiveIndex = 0; primitiveIndex < mesh.primitives_count; ++primitiveIndex)
 		{
-			GltfMaterialVariantTranslation::ImportPrimitiveMappings(
-			    data,
-			    mesh.primitives[primitiveIndex],
-			    static_cast<std::uint32_t>(meshIndex),
-			    static_cast<std::uint32_t>(primitiveIndex),
-			    output);
+			GltfMaterialVariantTranslation::ImportPrimitiveMappings(data, mesh.primitives[primitiveIndex], static_cast<std::uint32_t>(meshIndex), static_cast<std::uint32_t>(primitiveIndex), output);
 		}
 	}
 }

@@ -35,9 +35,5 @@ TextureLoadResult LoadExrTextureSource(const std::filesystem::path& sourcePath)
 	}
 
 	std::unique_ptr<float, decltype(&std::free)> pixels(decodedPixels, &std::free);
-	return BuildFloatTextureLoadResult(
-	    width,
-	    height,
-	    pixels.get(),
-	    static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 4u);
+	return BuildFloatTextureLoadResult(width, height, pixels.get(), static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 4u);
 }

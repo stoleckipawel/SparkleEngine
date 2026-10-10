@@ -9,19 +9,11 @@
 
 SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_persistentStructuredBufferLogger, "Renderer.PersistentStructuredBuffer");
 
-void PersistentStructuredBuffer::Update(
-    RhiResourceService& resourceService,
-    std::span<const std::byte> payload,
-    std::uint32_t strideInBytes,
-    std::wstring_view debugName)
+void PersistentStructuredBuffer::Update(RhiResourceService& resourceService, std::span<const std::byte> payload, std::uint32_t strideInBytes, std::wstring_view debugName)
 {
 	if (strideInBytes == 0 || payload.size_bytes() % strideInBytes != 0)
 	{
-		Diagnostics::Fatal(
-		    g_persistentStructuredBufferLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Persistent structured-buffer update has an invalid stride or payload size.");
+		Diagnostics::Fatal(g_persistentStructuredBufferLogger, __FILE__, __LINE__, "Persistent structured-buffer update has an invalid stride or payload size.");
 	}
 	if (payload.empty())
 	{
@@ -38,11 +30,7 @@ void PersistentStructuredBuffer::Update(
 	WriteDirtyRanges(payload);
 }
 
-void PersistentStructuredBuffer::Replace(
-    RhiResourceService& resourceService,
-    std::span<const std::byte> payload,
-    std::uint32_t strideInBytes,
-    std::wstring_view debugName)
+void PersistentStructuredBuffer::Replace(RhiResourceService& resourceService, std::span<const std::byte> payload, std::uint32_t strideInBytes, std::wstring_view debugName)
 {
 	Reset();
 	Grow(resourceService, payload, strideInBytes, debugName);
@@ -57,11 +45,7 @@ void PersistentStructuredBuffer::UpdateRanges(
 {
 	if (strideInBytes == 0u || payload.size_bytes() % strideInBytes != 0u)
 	{
-		Diagnostics::Fatal(
-		    g_persistentStructuredBufferLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Persistent structured-buffer range update has an invalid stride or payload size.");
+		Diagnostics::Fatal(g_persistentStructuredBufferLogger, __FILE__, __LINE__, "Persistent structured-buffer range update has an invalid stride or payload size.");
 	}
 	if (payload.empty())
 	{
@@ -80,10 +64,7 @@ void PersistentStructuredBuffer::UpdateRanges(
 
 RenderSceneGpuBufferBinding PersistentStructuredBuffer::GetBinding() const noexcept
 {
-	return RenderSceneGpuBufferBinding{
-	    .Resource = m_buffer.GetResource(),
-	    .SizeInBytes = m_shadow.size(),
-	    .StrideInBytes = m_strideInBytes};
+	return RenderSceneGpuBufferBinding{.Resource = m_buffer.GetResource(), .SizeInBytes = m_shadow.size(), .StrideInBytes = m_strideInBytes};
 }
 
 void PersistentStructuredBuffer::Reset() noexcept
@@ -93,32 +74,19 @@ void PersistentStructuredBuffer::Reset() noexcept
 	m_strideInBytes = 0;
 }
 
-void PersistentStructuredBuffer::Grow(
-    RhiResourceService& resourceService,
-    std::span<const std::byte> payload,
-    std::uint32_t strideInBytes,
-    std::wstring_view debugName)
+void PersistentStructuredBuffer::Grow(RhiResourceService& resourceService, std::span<const std::byte> payload, std::uint32_t strideInBytes, std::wstring_view debugName)
 {
 	if (strideInBytes == 0u || payload.size_bytes() % strideInBytes != 0u)
 	{
-		Diagnostics::Fatal(
-		    g_persistentStructuredBufferLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Persistent structured-buffer allocation has an invalid stride or payload size.");
+		Diagnostics::Fatal(g_persistentStructuredBufferLogger, __FILE__, __LINE__, "Persistent structured-buffer allocation has an invalid stride or payload size.");
 	}
 	const std::size_t capacity = ResolveCapacity(payload.size_bytes(), strideInBytes);
 	std::vector<std::byte> shadow(capacity);
 	std::copy(payload.begin(), payload.end(), shadow.begin());
-	OwnedStructuredBuffer replacement =
-	    OwnedStructuredBuffer::Upload(resourceService, shadow.data(), shadow.size(), strideInBytes, debugName);
+	OwnedStructuredBuffer replacement = OwnedStructuredBuffer::Upload(resourceService, shadow.data(), shadow.size(), strideInBytes, debugName);
 	if (!replacement)
 	{
-		Diagnostics::Fatal(
-		    g_persistentStructuredBufferLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Persistent structured-buffer allocation or upload failed.");
+		Diagnostics::Fatal(g_persistentStructuredBufferLogger, __FILE__, __LINE__, "Persistent structured-buffer allocation or upload failed.");
 	}
 
 	// ReleaseOwnedResource retires the replaced allocation against its recorded GPU submissions; growth never requires device idle.
@@ -135,8 +103,7 @@ void PersistentStructuredBuffer::UpdateEmpty(RhiResourceService& resourceService
 		return;
 	}
 
-	const auto firstNonZero =
-	    std::find_if(m_shadow.begin(), m_shadow.begin() + strideInBytes, [](std::byte value) { return value != std::byte{}; });
+	const auto firstNonZero = std::find_if(m_shadow.begin(), m_shadow.begin() + strideInBytes, [](std::byte value) { return value != std::byte{}; });
 	if (firstNonZero == m_shadow.begin() + strideInBytes)
 	{
 		return;
@@ -145,11 +112,7 @@ void PersistentStructuredBuffer::UpdateEmpty(RhiResourceService& resourceService
 	std::vector<std::byte> zeroElement(strideInBytes);
 	if (!m_buffer.Write(0u, zeroElement.data(), zeroElement.size()))
 	{
-		Diagnostics::Fatal(
-		    g_persistentStructuredBufferLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Persistent structured-buffer zero-element update failed.");
+		Diagnostics::Fatal(g_persistentStructuredBufferLogger, __FILE__, __LINE__, "Persistent structured-buffer zero-element update failed.");
 	}
 	std::copy(zeroElement.begin(), zeroElement.end(), m_shadow.begin());
 }
@@ -186,11 +149,7 @@ void PersistentStructuredBuffer::WriteDirtyRanges(std::span<const std::byte> pay
 		const std::size_t dirtySize = (elementIndex - firstDirtyElement) * m_strideInBytes;
 		if (!m_buffer.Write(dirtyOffset, payload.data() + dirtyOffset, dirtySize))
 		{
-			Diagnostics::Fatal(
-			    g_persistentStructuredBufferLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Persistent structured-buffer dirty-range update failed.");
+			Diagnostics::Fatal(g_persistentStructuredBufferLogger, __FILE__, __LINE__, "Persistent structured-buffer dirty-range update failed.");
 		}
 		std::memcpy(m_shadow.data() + dirtyOffset, payload.data() + dirtyOffset, dirtySize);
 	}
@@ -203,11 +162,7 @@ void PersistentStructuredBuffer::WriteRanges(std::span<const std::byte> payload,
 	{
 		if (range.ElementCount == 0u || range.FirstElement > elementCount || range.ElementCount > elementCount - range.FirstElement)
 		{
-			Diagnostics::Fatal(
-			    g_persistentStructuredBufferLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Persistent structured-buffer update range exceeds the payload.");
+			Diagnostics::Fatal(g_persistentStructuredBufferLogger, __FILE__, __LINE__, "Persistent structured-buffer update range exceeds the payload.");
 		}
 
 		const std::size_t dirtyOffset = static_cast<std::size_t>(range.FirstElement) * m_strideInBytes;

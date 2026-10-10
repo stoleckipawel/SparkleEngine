@@ -20,10 +20,7 @@ struct ReferencePathTracerEncodedArtifact final
 class ReferencePathTracerArtifactEncoding final
 {
 public:
-	static bool Encode(
-	    const ReferencePathTracerArtifactWriteRequest& request,
-	    ReferencePathTracerEncodedArtifact& artifact,
-	    std::string& errorMessage);
+	static bool Encode(const ReferencePathTracerArtifactWriteRequest& request, ReferencePathTracerEncodedArtifact& artifact, std::string& errorMessage);
 	static std::string BuildManifest(
 	    const ReferencePathTracerArtifactWriteRequest& request,
 	    const ReferencePathTracerEncodedArtifact& artifact,

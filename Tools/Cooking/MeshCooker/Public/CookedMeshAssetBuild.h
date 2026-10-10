@@ -21,7 +21,9 @@ struct CookedMeshAssetBuild
 	std::vector<Assets::CookedMeshMorphTargetDelta> morphTargetDeltas;
 
 	bool HasSkinInfluences() const noexcept { return !skinInfluences.empty(); }
+
 	bool HasMorphTargets() const noexcept { return !morphTargets.empty(); }
+
 	bool IsSkeletal() const noexcept { return assetKind == Assets::CookedMeshAssetKind::Skeletal; }
 };
 

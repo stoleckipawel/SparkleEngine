@@ -8,10 +8,7 @@
 
 #include <imgui.h>
 
-void DrawUpscalingSettingsSection(
-    EngineRenderingSettingsController& settingsController,
-    const EngineRenderingSettingsState& settings,
-    const char* filterText)
+void DrawUpscalingSettingsSection(EngineRenderingSettingsController& settingsController, const EngineRenderingSettingsState& settings, const char* filterText)
 {
 	static constexpr RenderingSettingsUi::ComboOption<EUpscalerProviderKind> upscalerProviderOptions[] = {
 	    {"Linear", EUpscalerProviderKind::Linear},
@@ -24,10 +21,8 @@ void DrawUpscalingSettingsSection(
 	    {"Performance", EUpscalerQualityMode::Performance},
 	    {"Ultra performance", EUpscalerQualityMode::UltraPerformance},
 	};
-	if (!RenderingSettingsUi::MatchesFilter(
-	        filterText,
-	        "Upscaling",
-	        "upscaler upscaling linear bilinear dlss quality native aa balanced performance")
+
+	if (!RenderingSettingsUi::MatchesFilter(filterText, "Upscaling", "upscaler upscaling linear bilinear dlss quality native aa balanced performance")
 	    || !RenderingSettingsUi::BeginSettingsCategory("Upscaling"))
 	{
 		return;
@@ -41,12 +36,14 @@ void DrawUpscalingSettingsSection(
 		    settings.UpscalerProvider,
 		    upscalerProviderOptions,
 		    [&settingsController](EUpscalerProviderKind value) { settingsController.SetUpscalerProvider(value); });
+
 		RenderingSettingsUi::DrawComboOptionRow(
 		    "##UpscalerQualityMode",
 		    "Quality mode",
 		    settings.UpscalerQualityMode,
 		    upscalerQualityOptions,
 		    [&settingsController](EUpscalerQualityMode value) { settingsController.SetUpscalerQualityMode(value); });
+
 		ImGui::EndTable();
 	}
 	ImGui::Dummy(ImVec2(0.0f, 4.0f));

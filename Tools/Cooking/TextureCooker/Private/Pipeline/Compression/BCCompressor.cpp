@@ -34,35 +34,44 @@ namespace TextureCookPipeline
 		{
 			case CompressionTarget::BC1:
 				result = CreateOptionsBC1(&options_);
+
 				if (result == 0)
 				{
 					SetQualityBC1(options_, kBlockCompressionQuality);
 				}
 				break;
+
 			case CompressionTarget::BC4:
 				result = CreateOptionsBC4(&options_);
+
 				if (result == 0)
 				{
 					SetQualityBC4(options_, kBlockCompressionQuality);
 				}
 				break;
+
 			case CompressionTarget::BC5:
 				result = CreateOptionsBC5(&options_);
+
 				if (result == 0)
 				{
 					SetQualityBC5(options_, kBlockCompressionQuality);
 				}
 				break;
+
 			case CompressionTarget::BC6H:
 				result = CreateOptionsBC6(&options_);
+
 				if (result == 0)
 				{
 					SetQualityBC6(options_, kBlockCompressionQuality);
 					SetSignedBC6(options_, false);
 				}
 				break;
+
 			case CompressionTarget::BC7:
 				result = CreateOptionsBC7(&options_);
+
 				if (result == 0)
 				{
 					SetQualityBC7(options_, kBlockCompressionQuality);
@@ -103,8 +112,7 @@ namespace TextureCookPipeline
 			for (std::uint32_t blockX = 0; blockX < blockCountX; ++blockX)
 			{
 				std::uint8_t* destinationBlock = outMip.data.data() + (static_cast<std::size_t>(blockY) * outMip.rowPitch)
-				    + (static_cast<std::size_t>(blockX)
-				        * (target_ == CompressionTarget::BC1 || target_ == CompressionTarget::BC4 ? 8u : 16u));
+				    + (static_cast<std::size_t>(blockX) * (target_ == CompressionTarget::BC1 || target_ == CompressionTarget::BC4 ? 8u : 16u));
 
 				if (target_ == CompressionTarget::BC1 || target_ == CompressionTarget::BC7)
 				{
@@ -124,9 +132,9 @@ namespace TextureCookPipeline
 						}
 					}
 
-					const int result = target_ == CompressionTarget::BC1
-					    ? CompressBlockBC1(rgbaBlock.data(), 16u, destinationBlock, options_)
-					    : CompressBlockBC7(rgbaBlock.data(), 16u, destinationBlock, options_);
+					const int result = target_ == CompressionTarget::BC1 ? CompressBlockBC1(rgbaBlock.data(), 16u, destinationBlock, options_)
+					                                                     : CompressBlockBC7(rgbaBlock.data(), 16u, destinationBlock, options_);
+
 					if (result != 0)
 					{
 						throw Diagnostics::Error("CMP_Core failed to compress an RGBA block.");

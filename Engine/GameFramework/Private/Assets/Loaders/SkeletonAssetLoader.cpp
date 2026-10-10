@@ -24,13 +24,9 @@ namespace Assets
 		LoadedSkeletonAsset skeletonAsset;
 		skeletonAsset.header = reader.Read<CookedSkeletonAssetHeader>();
 
-		if (!skeletonAsset.header.fileHeader.HasMagic(kCookedSkeletonAssetMagic)
-		    || skeletonAsset.header.jointStride != sizeof(CookedSkeletonJointRecord))
+		if (!skeletonAsset.header.fileHeader.HasMagic(kCookedSkeletonAssetMagic) || skeletonAsset.header.jointStride != sizeof(CookedSkeletonJointRecord))
 		{
-			throw diagnostics.MakeError(
-			    "header",
-			    "skeleton magic and current joint stride",
-			    "Invalid cooked skeleton asset header; recook the asset");
+			throw diagnostics.MakeError("header", "skeleton magic and current joint stride", "Invalid cooked skeleton asset header; recook the asset");
 		}
 
 		skeletonAsset.joints = reader.ReadArray<CookedSkeletonJointRecord>(skeletonAsset.header.jointCount);
@@ -39,25 +35,14 @@ namespace Assets
 		for (std::size_t jointIndex = 0; jointIndex < skeletonAsset.joints.size(); ++jointIndex)
 		{
 			const CookedSkeletonJointRecord& joint = skeletonAsset.joints[jointIndex];
-			const DirectX::XMFLOAT4X4* parentBindModel = joint.parentJointIndex < skeletonAsset.joints.size()
-			    ? &skeletonAsset.joints[joint.parentJointIndex].bindModelTransform
-			    : nullptr;
-			if (!Strings::IsNullTerminated(std::span(joint.name)) || joint.sourceNodeIndex == (std::numeric_limits<std::uint32_t>::max)()
-			    || !sourceNodeIndices.insert(joint.sourceNodeIndex).second
-			    || (joint.parentJointIndex != kInvalidCookedSkeletonJointIndex
-			        && (joint.parentJointIndex >= skeletonAsset.joints.size() || joint.parentJointIndex == jointIndex))
-			    || !SkeletonTransformContract::IsFinite(joint.inverseBindMatrix)
-			    || !SkeletonTransformContract::IsFinite(joint.bindLocalTransform)
-			    || !SkeletonTransformContract::IsFinite(joint.parentSpaceTransform)
-			    || !SkeletonTransformContract::IsFinite(joint.bindModelTransform)
-			    || !SkeletonTransformContract::IsInvertible(joint.inverseBindMatrix)
-			    || !SkeletonTransformContract::IsInvertible(joint.bindLocalTransform)
+			const DirectX::XMFLOAT4X4* parentBindModel = joint.parentJointIndex < skeletonAsset.joints.size() ? &skeletonAsset.joints[joint.parentJointIndex].bindModelTransform : nullptr;
+			if (!Strings::IsNullTerminated(std::span(joint.name)) || joint.sourceNodeIndex == (std::numeric_limits<std::uint32_t>::max)() || !sourceNodeIndices.insert(joint.sourceNodeIndex).second
+			    || (joint.parentJointIndex != kInvalidCookedSkeletonJointIndex && (joint.parentJointIndex >= skeletonAsset.joints.size() || joint.parentJointIndex == jointIndex))
+			    || !SkeletonTransformContract::IsFinite(joint.inverseBindMatrix) || !SkeletonTransformContract::IsFinite(joint.bindLocalTransform)
+			    || !SkeletonTransformContract::IsFinite(joint.parentSpaceTransform) || !SkeletonTransformContract::IsFinite(joint.bindModelTransform)
+			    || !SkeletonTransformContract::IsInvertible(joint.inverseBindMatrix) || !SkeletonTransformContract::IsInvertible(joint.bindLocalTransform)
 			    || !SkeletonTransformContract::IsTrsDecomposable(joint.bindLocalTransform)
-			    || !SkeletonTransformContract::SatisfiesBindInvariant(
-			        joint.bindLocalTransform,
-			        joint.parentSpaceTransform,
-			        parentBindModel,
-			        joint.bindModelTransform))
+			    || !SkeletonTransformContract::SatisfiesBindInvariant(joint.bindLocalTransform, joint.parentSpaceTransform, parentBindModel, joint.bindModelTransform))
 			{
 				throw diagnostics.MakeError(
 				    "joints",
@@ -68,18 +53,12 @@ namespace Assets
 		std::vector<std::uint32_t> evaluationOrder;
 		if (skeletonAsset.joints.empty() || !SkeletonTransformContract::BuildEvaluationOrder(skeletonAsset.joints, evaluationOrder))
 		{
-			throw diagnostics.MakeError(
-			    "joints",
-			    "one or more joints in an acyclic hierarchy",
-			    "Cooked skeleton has an empty or cyclic hierarchy; recook the spatial asset");
+			throw diagnostics.MakeError("joints", "one or more joints in an acyclic hierarchy", "Cooked skeleton has an empty or cyclic hierarchy; recook the spatial asset");
 		}
 
 		if (reader.GetRemainingByteCount() != 0)
 		{
-			throw diagnostics.MakeError(
-			    "payload",
-			    "no trailing bytes after declared skeleton records",
-			    "Cooked skeleton asset contains unexpected trailing bytes");
+			throw diagnostics.MakeError("payload", "no trailing bytes after declared skeleton records", "Cooked skeleton asset contains unexpected trailing bytes");
 		}
 
 		return skeletonAsset;

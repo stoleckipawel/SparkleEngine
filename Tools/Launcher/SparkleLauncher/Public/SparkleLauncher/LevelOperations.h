@@ -59,8 +59,5 @@ namespace SparkleLauncher
 	const std::vector<LevelOperationDefinition>& GetLevelOperationDefinitions();
 	std::optional<LevelOperationDefinition> FindLevelOperationDefinition(std::string_view operationId);
 	LevelOperationPlan PlanLevelOperation(std::string_view operationId, const LevelOperationRequest& request);
-	OperationRecord RunLevelOperationPlan(
-	    LevelOperationPlan plan,
-	    IProcessRunner& processRunner,
-	    const ProcessOutputCallback& outputCallback = {});
+	OperationRecord RunLevelOperationPlan(LevelOperationPlan plan, IProcessRunner& processRunner, const ProcessOutputCallback& outputCallback = {});
 }

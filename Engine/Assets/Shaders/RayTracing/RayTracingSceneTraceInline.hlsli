@@ -4,13 +4,7 @@
 #include "/Engine/RayTracing/RayTracingMaterialAlpha.hlsli"
 #include "/Engine/RayTracing/RayTracingSceneTrace.hlsli"
 
-RayTracingTraceResult TraceSceneRay(RaytracingAccelerationStructure sceneTlas,
-                                    float3 originWorld,
-                                    float3 directionWorld,
-                                    float tMin,
-                                    float tMax,
-                                    uint rayFlags,
-                                    uint instanceMask)
+RayTracingTraceResult TraceSceneRay(RaytracingAccelerationStructure sceneTlas, float3 originWorld, float3 directionWorld, float tMin, float tMax, uint rayFlags, uint instanceMask)
 {
 	RayDesc ray;
 	ray.Direction = directionWorld;
@@ -23,10 +17,7 @@ RayTracingTraceResult TraceSceneRay(RaytracingAccelerationStructure sceneTlas,
 	while (query.Proceed())
 	{
 		if (query.CandidateType() == CANDIDATE_NON_OPAQUE_TRIANGLE
-		    && ResolveRayTracingCandidateAlpha(query.CandidateInstanceID(),
-		                                       query.CandidatePrimitiveIndex(),
-		                                       query.CandidateTriangleBarycentrics(),
-		                                       query.CandidateTriangleFrontFace()))
+		    && ResolveRayTracingCandidateAlpha(query.CandidateInstanceID(), query.CandidatePrimitiveIndex(), query.CandidateTriangleBarycentrics(), query.CandidateTriangleFrontFace()))
 		{
 			query.CommitNonOpaqueTriangleHit();
 		}

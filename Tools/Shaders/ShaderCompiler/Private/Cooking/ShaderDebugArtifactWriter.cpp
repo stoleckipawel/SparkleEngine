@@ -31,20 +31,14 @@ void ShaderDebugArtifactWriter::Write(
 	WriteCompilerOutputs(bundleDirectory, debugArtifacts, compiledStage);
 }
 
-void ShaderDebugArtifactWriter::WriteCompileInputs(
-    const std::filesystem::path& bundleDirectory,
-    const ShaderCompileRequest& request,
-    const CookedStageBuild& compiledStage)
+void ShaderDebugArtifactWriter::WriteCompileInputs(const std::filesystem::path& bundleDirectory, const ShaderCompileRequest& request, const CookedStageBuild& compiledStage)
 {
 	WriteText(bundleDirectory / "compile-request.json", BuildCompileRequestJson(request, compiledStage));
 	WriteText(bundleDirectory / "compile-identity.json", BuildCompileIdentityJson(request, compiledStage));
 	WriteText(bundleDirectory / "defines.json", Json::WriteStringArray(request.Defines));
 }
 
-void ShaderDebugArtifactWriter::WriteCompilerOutputs(
-    const std::filesystem::path& bundleDirectory,
-    const ShaderDebugArtifactSet& debugArtifacts,
-    const CookedStageBuild& compiledStage)
+void ShaderDebugArtifactWriter::WriteCompilerOutputs(const std::filesystem::path& bundleDirectory, const ShaderDebugArtifactSet& debugArtifacts, const CookedStageBuild& compiledStage)
 {
 	WriteText(bundleDirectory / "preprocessed-source.hlsl", debugArtifacts.PreprocessedSource);
 	WriteText(bundleDirectory / "reflection.json", BuildReflectionJson(compiledStage.reflection));
@@ -60,6 +54,7 @@ void ShaderDebugArtifactWriter::WriteCompilerOutputs(
 std::string ShaderDebugArtifactWriter::BuildBundleDirectoryName(const ShaderCompileRequest& request, const CookedStageBuild& compiledStage)
 {
 	const std::string shaderId = Paths::MakeSafePathComponent(request.ShaderTypeName);
+
 	return std::format(
 	    "{}__{}__{}__{}",
 	    shaderId,
@@ -106,8 +101,7 @@ std::string ShaderDebugArtifactWriter::BuildReflectionJson(const ShaderReflectio
 {
 	std::ostringstream stream;
 	stream << "{\n";
-	stream << "  \"threadGroupSize\": [" << reflection.ThreadGroupSize[0] << ", " << reflection.ThreadGroupSize[1] << ", "
-	       << reflection.ThreadGroupSize[2] << "],\n";
+	stream << "  \"threadGroupSize\": [" << reflection.ThreadGroupSize[0] << ", " << reflection.ThreadGroupSize[1] << ", " << reflection.ThreadGroupSize[2] << "],\n";
 	stream << "  \"entryFlags\": " << reflection.EntryFlags << ",\n";
 	stream << "  \"waveSize\": " << reflection.WaveSize << ",\n";
 	stream << "  \"bindings\": [\n";
@@ -135,11 +129,7 @@ std::string ShaderDebugArtifactWriter::BuildReflectionJson(const ShaderReflectio
 	for (std::size_t index = 0; index < reflection.ConstantBuffers.size(); ++index)
 	{
 		const ShaderReflectionConstantBuffer& cb = reflection.ConstantBuffers[index];
-		stream << std::format(
-		    "    {{ \"name\": {}, \"sizeInBytes\": {}, \"memberCount\": {} }}",
-		    Json::QuoteString(cb.Name),
-		    cb.SizeInBytes,
-		    cb.Members.size());
+		stream << std::format("    {{ \"name\": {}, \"sizeInBytes\": {}, \"memberCount\": {} }}", Json::QuoteString(cb.Name), cb.SizeInBytes, cb.Members.size());
 		if (index + 1 < reflection.ConstantBuffers.size())
 		{
 			stream << ',';
@@ -168,11 +158,7 @@ std::string ShaderDebugArtifactWriter::BuildReflectionJson(const ShaderReflectio
 	for (std::size_t index = 0; index < reflection.PushConstants.size(); ++index)
 	{
 		const ShaderReflectionPushConstantRange& range = reflection.PushConstants[index];
-		stream << std::format(
-		    "    {{ \"offsetInBytes\": {}, \"sizeInBytes\": {}, \"visibilityMask\": {} }}",
-		    range.OffsetInBytes,
-		    range.SizeInBytes,
-		    static_cast<unsigned>(range.VisibilityMask));
+		stream << std::format("    {{ \"offsetInBytes\": {}, \"sizeInBytes\": {}, \"visibilityMask\": {} }}", range.OffsetInBytes, range.SizeInBytes, static_cast<unsigned>(range.VisibilityMask));
 		if (index + 1 < reflection.PushConstants.size())
 		{
 			stream << ',';
@@ -184,11 +170,7 @@ std::string ShaderDebugArtifactWriter::BuildReflectionJson(const ShaderReflectio
 	for (std::size_t index = 0; index < reflection.SpecializationConstants.size(); ++index)
 	{
 		const ShaderReflectionSpecializationConstant& spec = reflection.SpecializationConstants[index];
-		stream << std::format(
-		    "    {{ \"name\": {}, \"constantId\": {}, \"defaultValueBits\": {} }}",
-		    Json::QuoteString(spec.Name),
-		    spec.ConstantId,
-		    spec.DefaultValueBits);
+		stream << std::format("    {{ \"name\": {}, \"constantId\": {}, \"defaultValueBits\": {} }}", Json::QuoteString(spec.Name), spec.ConstantId, spec.DefaultValueBits);
 		if (index + 1 < reflection.SpecializationConstants.size())
 		{
 			stream << ',';

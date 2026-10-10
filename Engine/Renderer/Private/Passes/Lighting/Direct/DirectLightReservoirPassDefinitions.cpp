@@ -11,11 +11,7 @@
 #include "Passes/Lighting/Direct/DirectLightReservoirTemporalShader.h"
 #include "ShaderData/SceneShaderParameters.h"
 
-template <typename Parameters> static void BindDirectLightReservoirSurface(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    Parameters& parameters,
-    const RenderFrameGraphResources& resources)
+template <typename Parameters> static void BindDirectLightReservoirSurface(FrameGraphBuilder& builder, const RenderFrame& frame, Parameters& parameters, const RenderFrameGraphResources& resources)
 {
 	const GBufferRenderTargets& gbuffer = resources.Transient.GBuffer;
 	parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
@@ -25,20 +21,13 @@ template <typename Parameters> static void BindDirectLightReservoirSurface(
 	parameters->SceneDepth = builder.CreateSRV(resources.Transient.Scene.SceneDepth);
 	BindSceneShaderParameters(builder, frame, parameters, resources);
 
-	parameters->DirectLightingEvaluateDiffuse =
-	    IsDirectDiffuseActive(gbuffer.BaseColor, resources.Transient.Lighting.DirectDiffuse) ? 1u : 0u;
-	parameters->DirectLightingEvaluateSpecular =
-	    IsDirectSpecularActive(gbuffer.Material, resources.Transient.Lighting.DirectSpecular) ? 1u : 0u;
-	parameters->DirectLightingEvaluateSubsurface =
-	    IsDirectSubsurfaceActive(gbuffer.Subsurface, resources.Transient.Lighting.DirectSubsurface) ? 1u : 0u;
+	parameters->DirectLightingEvaluateDiffuse = IsDirectDiffuseActive(gbuffer.BaseColor, resources.Transient.Lighting.DirectDiffuse) ? 1u : 0u;
+	parameters->DirectLightingEvaluateSpecular = IsDirectSpecularActive(gbuffer.Material, resources.Transient.Lighting.DirectSpecular) ? 1u : 0u;
+	parameters->DirectLightingEvaluateSubsurface = IsDirectSubsurfaceActive(gbuffer.Subsurface, resources.Transient.Lighting.DirectSubsurface) ? 1u : 0u;
 	parameters->DirectLightingEvaluateShadows = IsDirectShadowsActive() ? 1u : 0u;
 }
 
-void AddDirectLightReservoirTemporalPass(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources)
+void AddDirectLightReservoirTemporalPass(FrameGraphBuilder& builder, const RenderFrame& frame, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
 	auto& parameters = builder.AllocParameters<DirectLightReservoirTemporalCS>();
 	parameters->TemporalReservoirSample = builder.CreateUAV(resources.Transient.DirectLightTemporalReservoirSample);
@@ -50,8 +39,7 @@ void AddDirectLightReservoirTemporalPass(
 
 	BindDirectLightReservoirSurface(builder, frame, parameters, resources);
 
-	if (!builder.IsTextureHistoryValid(resources.History.DirectLightReservoir.Sample)
-	    || !builder.IsTextureHistoryValid(resources.History.DirectLightReservoir.Weight)
+	if (!builder.IsTextureHistoryValid(resources.History.DirectLightReservoir.Sample) || !builder.IsTextureHistoryValid(resources.History.DirectLightReservoir.Weight)
 	    || !builder.IsTextureHistoryValid(resources.History.DirectLightReservoir.Surface))
 	{
 		ViewTemporalUniformData temporal = frame.View.temporalUniform;
@@ -59,16 +47,10 @@ void AddDirectLightReservoirTemporalPass(
 		parameters->ViewTemporal = temporal;
 	}
 
-	builder.Dispatch<DirectLightReservoirTemporalCS>(
-	    parameters,
-	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
+	builder.Dispatch<DirectLightReservoirTemporalCS>(parameters, ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 }
 
-void AddDirectLightReservoirSpatialPass(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources)
+void AddDirectLightReservoirSpatialPass(FrameGraphBuilder& builder, const RenderFrame& frame, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
 	auto& parameters = builder.AllocParameters<DirectLightReservoirSpatialCS>();
 	parameters->TemporalReservoirSample = builder.CreateSRV(resources.Transient.DirectLightTemporalReservoirSample);
@@ -79,7 +61,5 @@ void AddDirectLightReservoirSpatialPass(
 
 	BindDirectLightReservoirSurface(builder, frame, parameters, resources);
 
-	builder.Dispatch<DirectLightReservoirSpatialCS>(
-	    parameters,
-	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
+	builder.Dispatch<DirectLightReservoirSpatialCS>(parameters, ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 }

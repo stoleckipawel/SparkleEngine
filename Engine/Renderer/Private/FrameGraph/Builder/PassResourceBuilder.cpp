@@ -69,28 +69,19 @@ FrameGraphBufferHandle PassResourceBuilder::Use(FrameGraphBufferHandle handle, R
 	return FrameGraphBufferHandle{Use(handle.GetResourceHandle(), usage, label)};
 }
 
-FrameGraphAccelerationStructureHandle PassResourceBuilder::Read(
-    FrameGraphAccelerationStructureHandle handle,
-    ResourceUsage usage,
-    std::string_view label) noexcept
+FrameGraphAccelerationStructureHandle PassResourceBuilder::Read(FrameGraphAccelerationStructureHandle handle, ResourceUsage usage, std::string_view label) noexcept
 {
 	assert(handle.IsValid());
 	return FrameGraphAccelerationStructureHandle{Read(handle.GetResourceHandle(), usage, label)};
 }
 
-FrameGraphAccelerationStructureHandle PassResourceBuilder::Write(
-    FrameGraphAccelerationStructureHandle handle,
-    ResourceUsage usage,
-    std::string_view label) noexcept
+FrameGraphAccelerationStructureHandle PassResourceBuilder::Write(FrameGraphAccelerationStructureHandle handle, ResourceUsage usage, std::string_view label) noexcept
 {
 	assert(handle.IsValid());
 	return FrameGraphAccelerationStructureHandle{Write(handle.GetResourceHandle(), usage, label)};
 }
 
-FrameGraphAccelerationStructureHandle PassResourceBuilder::Use(
-    FrameGraphAccelerationStructureHandle handle,
-    ResourceUsage usage,
-    std::string_view label) noexcept
+FrameGraphAccelerationStructureHandle PassResourceBuilder::Use(FrameGraphAccelerationStructureHandle handle, ResourceUsage usage, std::string_view label) noexcept
 {
 	assert(handle.IsValid());
 	return FrameGraphAccelerationStructureHandle{Use(handle.GetResourceHandle(), usage, label)};

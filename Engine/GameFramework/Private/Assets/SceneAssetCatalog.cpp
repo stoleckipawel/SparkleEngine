@@ -3,6 +3,7 @@
 #include "Assets/SceneAssetCatalog.h"
 
 #include "Assets/SceneAssetRegistry.h"
+
 namespace Assets
 {
 	std::optional<std::filesystem::path> SceneAssetCatalog::Resolve(std::string_view sceneAssetId) const

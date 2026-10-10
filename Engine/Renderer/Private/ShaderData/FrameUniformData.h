@@ -14,6 +14,7 @@ struct alignas(256) FrameUniformData
 	float ScaledTotalTimeSeconds = 0.0f;
 	float ScaledDeltaTimeSeconds = 0.0f;
 };
+
 static_assert(std::is_standard_layout_v<FrameUniformData>);
 static_assert(std::is_trivially_copyable_v<FrameUniformData>);
 static_assert(alignof(FrameUniformData) >= 256);

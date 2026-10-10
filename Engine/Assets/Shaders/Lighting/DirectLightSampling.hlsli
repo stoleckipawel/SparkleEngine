@@ -6,6 +6,7 @@
 
 #include "/Engine/Common/Color.hlsli"
 #include "/Engine/Lighting/AreaLights.hlsli"
+
 namespace DirectLightSampling
 {
 	struct LightId
@@ -63,8 +64,7 @@ namespace DirectLightSampling
 
 	uint GetDirectLightCount()
 	{
-		return SceneLighting.DirectionalLightCount + SceneLighting.PointLightCount + SceneLighting.SpotLightCount
-		    + SceneLighting.RectLightCount;
+		return SceneLighting.DirectionalLightCount + SceneLighting.PointLightCount + SceneLighting.SpotLightCount + SceneLighting.RectLightCount;
 	}
 
 	LightId GetDirectLightId(uint linearIndex)
@@ -149,8 +149,7 @@ namespace DirectLightSampling
 	{
 		const float3 directionWorld = PunctualLights::GetDirectionalLightDirection(lightIndex);
 		const float noL = max(dot(normalWorld, directionWorld), 0.0f);
-		return CommonColor::LuminanceRec709(max(DirectionalLights[lightIndex].Color * DirectionalLights[lightIndex].Illuminance, 0.0f.xxx))
-		    * noL;
+		return CommonColor::LuminanceRec709(max(DirectionalLights[lightIndex].Color * DirectionalLights[lightIndex].Illuminance, 0.0f.xxx)) * noL;
 	}
 
 	float EstimatePointLightWeight(uint lightIndex, float3 positionWorld, float3 normalWorld)
@@ -159,8 +158,7 @@ namespace DirectLightSampling
 		const float3 directionWorld = PunctualLights::GetPointLightDirection(positionWorld, lightIndex, distanceToLight);
 		const float noL = max(dot(normalWorld, directionWorld), 0.0f);
 		const PointLightGpuData light = PointLights[lightIndex];
-		const float distanceAttenuation =
-		    PunctualLights::ComputePunctualDistanceAttenuation(distanceToLight, light.Range, light.DistanceAttenuationCoefficients);
+		const float distanceAttenuation = PunctualLights::ComputePunctualDistanceAttenuation(distanceToLight, light.Range, light.DistanceAttenuationCoefficients);
 		return CommonColor::LuminanceRec709(max(light.Color * light.LuminousIntensity * distanceAttenuation, 0.0f.xxx)) * noL;
 	}
 
@@ -170,12 +168,9 @@ namespace DirectLightSampling
 		const float3 directionWorld = PunctualLights::GetSpotLightDirection(positionWorld, lightIndex, distanceToLight);
 		const float noL = max(dot(normalWorld, directionWorld), 0.0f);
 		const SpotLightGpuData light = SpotLights[lightIndex];
-		const float distanceAttenuation =
-		    PunctualLights::ComputePunctualDistanceAttenuation(distanceToLight, light.Range, light.DistanceAttenuationCoefficients);
-		const float angularAttenuation =
-		    PunctualLights::ComputeSpotAngularAttenuation(-directionWorld, light.Direction, light.InnerAngleCosine, light.OuterAngleCosine);
-		return CommonColor::LuminanceRec709(max(light.Color * light.LuminousIntensity * distanceAttenuation * angularAttenuation, 0.0f.xxx))
-		    * noL;
+		const float distanceAttenuation = PunctualLights::ComputePunctualDistanceAttenuation(distanceToLight, light.Range, light.DistanceAttenuationCoefficients);
+		const float angularAttenuation = PunctualLights::ComputeSpotAngularAttenuation(-directionWorld, light.Direction, light.InnerAngleCosine, light.OuterAngleCosine);
+		return CommonColor::LuminanceRec709(max(light.Color * light.LuminousIntensity * distanceAttenuation * angularAttenuation, 0.0f.xxx)) * noL;
 	}
 
 	float EstimateRectLightWeight(uint lightIndex, float3 positionWorld, float3 normalWorld)

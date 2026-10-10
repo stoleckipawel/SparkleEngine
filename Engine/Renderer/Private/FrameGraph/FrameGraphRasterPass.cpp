@@ -9,9 +9,8 @@ namespace FrameGraphRasterPassValidation
 	bool StencilWrites(const RhiStencilState& stencil) noexcept
 	{
 		return stencil.StencilEnable && stencil.StencilWriteMask != 0
-		    && (stencil.FrontFaceStencilFailOp != RhiStencilOp::Keep || stencil.FrontFaceStencilDepthFailOp != RhiStencilOp::Keep
-		        || stencil.FrontFaceStencilPassOp != RhiStencilOp::Keep || stencil.BackFaceStencilFailOp != RhiStencilOp::Keep
-		        || stencil.BackFaceStencilDepthFailOp != RhiStencilOp::Keep || stencil.BackFaceStencilPassOp != RhiStencilOp::Keep);
+		    && (stencil.FrontFaceStencilFailOp != RhiStencilOp::Keep || stencil.FrontFaceStencilDepthFailOp != RhiStencilOp::Keep || stencil.FrontFaceStencilPassOp != RhiStencilOp::Keep
+		        || stencil.BackFaceStencilFailOp != RhiStencilOp::Keep || stencil.BackFaceStencilDepthFailOp != RhiStencilOp::Keep || stencil.BackFaceStencilPassOp != RhiStencilOp::Keep);
 	}
 }
 
@@ -108,8 +107,7 @@ FrameGraphRasterPass FrameGraph::BuildRasterPass(const PassParameterSet& paramet
 	{
 		throw Diagnostics::Error("Raster depth writes require depth testing to be enabled.");
 	}
-	if (result.Compatibility.SampleCount != 1 && result.Compatibility.SampleCount != 2 && result.Compatibility.SampleCount != 4
-	    && result.Compatibility.SampleCount != 8)
+	if (result.Compatibility.SampleCount != 1 && result.Compatibility.SampleCount != 2 && result.Compatibility.SampleCount != 4 && result.Compatibility.SampleCount != 8)
 	{
 		throw Diagnostics::Error("Raster pass attachments use an unsupported sample count.");
 	}

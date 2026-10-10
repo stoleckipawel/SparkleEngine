@@ -29,8 +29,7 @@ MaterialCache::~MaterialCache() noexcept = default;
 void MaterialCache::BuildMaterials(const RenderMaterialTable& materials, std::uint64_t sourceRevision, PreparedRenderScene& preparedScene)
 {
 	const std::uint64_t textureRevision = m_textureCache.GetBindingRevision();
-	const bool rebuildRequired = m_currentGeneration == nullptr || m_currentGeneration->GetSourceRevision() != sourceRevision
-	    || m_currentGeneration->GetTextureRevision() != textureRevision;
+	const bool rebuildRequired = m_currentGeneration == nullptr || m_currentGeneration->GetSourceRevision() != sourceRevision || m_currentGeneration->GetTextureRevision() != textureRevision;
 	if (rebuildRequired)
 	{
 		Rebuild(materials, sourceRevision, textureRevision);
@@ -69,11 +68,7 @@ void MaterialCache::Rebuild(const RenderMaterialTable& materials, std::uint64_t 
 	m_textureCache.CommitBindingRevision(textureRevision);
 }
 
-void MaterialCache::BuildMaterial(
-    const MaterialDesc& desc,
-    std::uint32_t materialIndex,
-    std::uint64_t generation,
-    RenderMaterialGeneration& output)
+void MaterialCache::BuildMaterial(const MaterialDesc& desc, std::uint32_t materialIndex, std::uint64_t generation, RenderMaterialGeneration& output)
 {
 	MaterialData material = MaterialData::FromDesc(desc);
 	material.gpuHandle = MaterialGpuHandle{.Index = materialIndex, .Generation = generation};
@@ -83,21 +78,14 @@ void MaterialCache::BuildMaterial(
 	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(desc.FindTextureReference(TextureGroup::NormalMap), DefaultTexture::Normal),
 	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(desc.FindTextureReference(TextureGroup::Roughness), DefaultTexture::White),
 	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(desc.FindTextureReference(TextureGroup::Metallic), DefaultTexture::Black),
-	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(
-	        desc.FindTextureReference(TextureGroup::AmbientOcclusion),
-	        DefaultTexture::White),
+	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(desc.FindTextureReference(TextureGroup::AmbientOcclusion), DefaultTexture::White),
 	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(desc.FindTextureReference(TextureGroup::Emissive), DefaultTexture::Black),
-	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(
-	        desc.FindTextureReference(TextureGroup::SubsurfaceColor),
-	        DefaultTexture::Black),
-	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(
-	        desc.FindTextureReference(TextureGroup::SubsurfaceStrength),
-	        DefaultTexture::Black)};
+	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(desc.FindTextureReference(TextureGroup::SubsurfaceColor), DefaultTexture::Black),
+	    m_textureCache.ResolveTextureReferenceOrSemanticDefault(desc.FindTextureReference(TextureGroup::SubsurfaceStrength), DefaultTexture::Black)};
 
 	auto textureBindingSet = m_renderHardwareInterface.GetDescriptorService().CreateBindingSet(
-	    RenderBindingSetDesc{
-	        .DescriptorType = ERhiDescriptorAllocatorType::ShaderResource,
-	        .DescriptorCount = MaterialTextureSlots::Count});
+	    RenderBindingSetDesc{.DescriptorType = ERhiDescriptorAllocatorType::ShaderResource, .DescriptorCount = MaterialTextureSlots::Count});
+
 	if (!textureBindingSet || !*textureBindingSet)
 	{
 		Diagnostics::Fatal(g_materialCacheLogger, __FILE__, __LINE__, "Raster material texture-table allocation failed.");
@@ -143,10 +131,7 @@ void MaterialCache::PublishMaterialTextureTable(PreparedRenderScene& preparedSce
 	{
 		Diagnostics::Fatal(g_materialCacheLogger, __FILE__, __LINE__, "Material texture table publication contract is incomplete.");
 	}
-	preparedScene.materialTextureTable = ResolvedMaterialTextureTable{
-	    .Binding = binding,
-	    .DescriptorCount = descriptorCount,
-	    .Generation = m_currentGeneration->GetGeneration()};
+	preparedScene.materialTextureTable = ResolvedMaterialTextureTable{.Binding = binding, .DescriptorCount = descriptorCount, .Generation = m_currentGeneration->GetGeneration()};
 }
 
 std::uint64_t MaterialCache::GetNextGeneration() const noexcept

@@ -32,9 +32,13 @@ namespace ECS
 		};
 
 		bool Prepare(const EntityRegistry& registry);
+
 		std::span<MeshSlot> GetMeshSlots() noexcept { return m_meshSlots; }
+
 		void CommitMeshes(std::span<const SceneMeshInstanceGroupData> groups);
+
 		std::span<const MeshSlot> GetExtractedMeshes() const noexcept { return m_extractedMeshes; }
+
 		std::span<const SceneMeshInstanceGroupData> GetMeshGroups() const noexcept { return m_meshGroups; }
 
 	private:

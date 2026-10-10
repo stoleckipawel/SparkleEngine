@@ -128,7 +128,6 @@ namespace CommonRandom
 
 	float2 InterleavedGradientNoise2(float2 pixelCoord, uint frameIndex, float2 offset)
 	{
-		return float2(InterleavedGradientNoise(pixelCoord, frameIndex, offset),
-		              InterleavedGradientNoise(pixelCoord, frameIndex, offset + float2(19.19f, 73.73f)));
+		return float2(InterleavedGradientNoise(pixelCoord, frameIndex, offset), InterleavedGradientNoise(pixelCoord, frameIndex, offset + float2(19.19f, 73.73f)));
 	}
 }

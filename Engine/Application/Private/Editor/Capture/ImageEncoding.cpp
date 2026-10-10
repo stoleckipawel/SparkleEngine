@@ -37,17 +37,24 @@ static bool ResolvePixelFormat(PixelFormat format, ImagePixelFormat& imageFormat
 	{
 		case PixelFormat::R32G32B32A32_Float:
 			imageFormat.Encoding = ImagePixelEncoding::Rgba32Float;
+
 			return true;
+
 		case PixelFormat::R16G16B16A16_Float:
 			imageFormat.Encoding = ImagePixelEncoding::Rgba16Float;
+
 			return true;
+
 		case PixelFormat::R8G8B8A8_UNorm:
 		case PixelFormat::R8G8B8A8_UNorm_Srgb:
 			imageFormat.Encoding = ImagePixelEncoding::Rgba8Unorm;
+
 			return true;
+
 		case PixelFormat::B8G8R8A8_UNorm:
 		case PixelFormat::B8G8R8A8_UNorm_Srgb:
 			imageFormat.Encoding = ImagePixelEncoding::Bgra8Unorm;
+
 			return true;
 		default:
 			return false;
@@ -85,6 +92,7 @@ static void ConvertPixel(const std::byte* source, ImagePixelEncoding encoding, s
 		}
 		case ImagePixelEncoding::Rgba8Unorm:
 			destination[0] = source[2];
+
 			destination[1] = source[1];
 			destination[2] = source[0];
 			destination[3] = source[3];
@@ -100,8 +108,7 @@ bool ImageEncoding::DecodeLinearRgb(const ImageBufferView& source, LinearRgbImag
 	constexpr std::uint32_t bytesPerPixel = sizeof(float) * 4u;
 	const std::uint64_t minimumRowPitch = static_cast<std::uint64_t>(source.Width) * bytesPerPixel;
 	const std::uint64_t requiredBytes = static_cast<std::uint64_t>(source.RowPitch) * source.Height;
-	if (source.Format != PixelFormat::R32G32B32A32_Float || source.Width == 0u || source.Height == 0u || source.RowPitch < minimumRowPitch
-	    || source.Pixels.size() < requiredBytes)
+	if (source.Format != PixelFormat::R32G32B32A32_Float || source.Width == 0u || source.Height == 0u || source.RowPitch < minimumRowPitch || source.Pixels.size() < requiredBytes)
 	{
 		errorMessage = "Image is not a complete RGBA32_FLOAT buffer.";
 		return false;
@@ -136,6 +143,7 @@ bool ImageEncoding::DecodeLinearRgb(const ImageBufferView& source, LinearRgbImag
 bool ImageEncoding::EncodeBmp(const ImageBufferView& image, std::vector<std::byte>& encodedBytes, std::string& errorMessage)
 {
 #pragma pack(push, 1)
+
 	struct BmpFileHeader final
 	{
 		std::uint16_t Type = 0x4D42;
@@ -144,6 +152,7 @@ bool ImageEncoding::EncodeBmp(const ImageBufferView& image, std::vector<std::byt
 		std::uint16_t Reserved2 = 0;
 		std::uint32_t OffBits = 54;
 	};
+
 	struct BmpInfoHeader final
 	{
 		std::uint32_t Size = sizeof(BmpInfoHeader);
@@ -158,13 +167,14 @@ bool ImageEncoding::EncodeBmp(const ImageBufferView& image, std::vector<std::byt
 		std::uint32_t ClrUsed = 0;
 		std::uint32_t ClrImportant = 0;
 	};
+
 #pragma pack(pop)
 
 	ImagePixelFormat imageFormat;
 	const std::uint32_t bytesPerPixel = PixelFormatBytesPerTexel(image.Format);
 	const std::uint64_t requiredBytes = static_cast<std::uint64_t>(image.RowPitch) * image.Height;
-	if (!ResolvePixelFormat(image.Format, imageFormat) || image.Width == 0u || image.Height == 0u
-	    || image.RowPitch < static_cast<std::uint64_t>(image.Width) * bytesPerPixel || image.Pixels.size() < requiredBytes)
+	if (!ResolvePixelFormat(image.Format, imageFormat) || image.Width == 0u || image.Height == 0u || image.RowPitch < static_cast<std::uint64_t>(image.Width) * bytesPerPixel
+	    || image.Pixels.size() < requiredBytes)
 	{
 		errorMessage = "Image cannot be encoded as BMP.";
 		return false;
@@ -178,10 +188,7 @@ bool ImageEncoding::EncodeBmp(const ImageBufferView& image, std::vector<std::byt
 		std::byte* outputRow = outputPixels.data() + static_cast<std::size_t>(outputRowPitch) * y;
 		for (std::uint32_t x = 0; x < image.Width; ++x)
 		{
-			ConvertPixel(
-			    sourceRow + static_cast<std::size_t>(x) * bytesPerPixel,
-			    imageFormat.Encoding,
-			    outputRow + static_cast<std::size_t>(x) * 4u);
+			ConvertPixel(sourceRow + static_cast<std::size_t>(x) * bytesPerPixel, imageFormat.Encoding, outputRow + static_cast<std::size_t>(x) * 4u);
 		}
 	}
 
@@ -228,10 +235,12 @@ bool ImageEncoding::EncodeExr(const LinearRgbImage& image, std::vector<std::byte
 	exrImage.num_channels = 3;
 	exrImage.width = static_cast<int>(image.Width);
 	exrImage.height = static_cast<int>(image.Height);
+
 	std::array<unsigned char*, 3> imagePointers = {
 	    reinterpret_cast<unsigned char*>(channels[0].data()),
 	    reinterpret_cast<unsigned char*>(channels[1].data()),
 	    reinterpret_cast<unsigned char*>(channels[2].data())};
+
 	exrImage.images = imagePointers.data();
 
 	EXRHeader header;

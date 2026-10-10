@@ -81,6 +81,7 @@ void UI::Implementation::InitializeCorePanels()
 	m_restartService = std::make_unique<EditorRestartService>();
 	m_settingsPanel = std::make_unique<SettingsPanel>();
 	m_settingsPanel->SetRenderingSettings(m_renderingSettings.get());
+
 	m_settingsPanel->SetRestartHandler(
 	    [this]()
 	    {
@@ -95,8 +96,7 @@ void UI::Implementation::InitializeViewport()
 {
 	m_viewportSession = std::make_unique<EditorViewportSession>();
 	m_viewportToolbar = std::make_unique<ViewportToolbar>(*m_viewportSession, m_renderingSettings->GetState(), m_consoleVariables);
-	m_viewportPanel =
-	    std::make_unique<ViewportPanel>(EditorWorkspaceLayout::SceneOutlinerWidth, EditorWorkspaceLayout::SceneInspectorWidth);
+	m_viewportPanel = std::make_unique<ViewportPanel>(EditorWorkspaceLayout::SceneOutlinerWidth, EditorWorkspaceLayout::SceneInspectorWidth);
 	m_viewportPanel->SetExposureOverrides(m_viewportSession->GetSettings().Exposure);
 }
 
@@ -111,6 +111,7 @@ void UI::Implementation::InitializeAssetPanels()
 	m_usedTexturesPanel->SetDiagnosticsProvider(m_textureDiagnosticsProvider);
 	m_usedShadersPanel->SetReloadHandler([this]() { m_shaderReloadRequested = true; });
 	m_usedShadersPanel->SetRecookAllHandler([this]() { m_shaderRecookRequested = true; });
+
 	m_usedShadersPanel->SetRecookHandler(
 	    [this](const std::string& shaderId)
 	    {
@@ -129,10 +130,8 @@ void UI::Implementation::InitializeScenePanels()
 		m_sceneSelection = SceneObjectSelection::Camera(m_sceneModel->GetCameras().front().Entity);
 	}
 
-	m_sceneOutlinerPanel =
-	    std::make_unique<SceneOutlinerPanel>(m_sceneSelection, *m_transactionHistory, EditorWorkspaceLayout::SceneOutlinerWidth);
-	m_sceneInspectorPanel =
-	    std::make_unique<SceneInspectorPanel>(m_sceneSelection, *m_transactionHistory, EditorWorkspaceLayout::SceneInspectorWidth);
+	m_sceneOutlinerPanel = std::make_unique<SceneOutlinerPanel>(m_sceneSelection, *m_transactionHistory, EditorWorkspaceLayout::SceneOutlinerWidth);
+	m_sceneInspectorPanel = std::make_unique<SceneInspectorPanel>(m_sceneSelection, *m_transactionHistory, EditorWorkspaceLayout::SceneInspectorWidth);
 }
 
 void UI::Implementation::ConfigureMainMenuBarWindowActions()
@@ -150,6 +149,7 @@ void UI::Implementation::ConfigureMainMenuBarWindowActions()
 			    m_usedShadersPanel->SetOpen(true);
 		    }
 	    });
+
 	m_mainMenuBar->SetTextureToolsOpenHandler(
 	    [this]()
 	    {
@@ -158,6 +158,7 @@ void UI::Implementation::ConfigureMainMenuBarWindowActions()
 			    m_usedTexturesPanel->SetOpen(true);
 		    }
 	    });
+
 	m_mainMenuBar->SetMeshToolsOpenHandler(
 	    [this]()
 	    {
@@ -166,6 +167,7 @@ void UI::Implementation::ConfigureMainMenuBarWindowActions()
 			    m_usedMeshesPanel->SetOpen(true);
 		    }
 	    });
+
 	m_mainMenuBar->SetSettingsOpenHandler(
 	    [this]()
 	    {
@@ -174,6 +176,7 @@ void UI::Implementation::ConfigureMainMenuBarWindowActions()
 			    m_settingsPanel->SetOpen(true);
 		    }
 	    });
+
 	m_mainMenuBar->SetViewportCaptureHandler(
 	    [this]()
 	    {
@@ -182,6 +185,7 @@ void UI::Implementation::ConfigureMainMenuBarWindowActions()
 			    m_viewportPanel->RequestOutputAction(ViewportOutputAction::CapturePresentation);
 		    }
 	    });
+
 	m_mainMenuBar->SetConsoleOpenHandler(
 	    [this]()
 	    {
@@ -203,10 +207,7 @@ void UI::Implementation::SubscribeToWindowEvents(Window& window)
 		    }
 
 		    if (m_editorConsoleSystem != nullptr && ImGui::GetCurrentContext() != nullptr && (event.lParam & (LPARAM{1} << 30)) == 0
-		        && m_editorConsoleSystem->HandleShortcut(
-		            static_cast<std::uint32_t>(event.msg),
-		            static_cast<std::uintptr_t>(event.wParam),
-		            ImGui::GetIO().WantTextInput))
+		        && m_editorConsoleSystem->HandleShortcut(static_cast<std::uint32_t>(event.msg), static_cast<std::uintptr_t>(event.wParam), ImGui::GetIO().WantTextInput))
 		    {
 			    event.handled = true;
 			    return;
@@ -217,6 +218,7 @@ void UI::Implementation::SubscribeToWindowEvents(Window& window)
 			    event.handled = true;
 		    }
 	    });
+
 	m_windowMessageHandle = ScopedEventHandle(window.OnWindowMessage, handle);
 
 	auto dpiScaleHandle = window.OnDpiScaleChanged.Add([this](float dpiScale) { ApplyDpiScale(dpiScale); });

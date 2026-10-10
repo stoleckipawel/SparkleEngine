@@ -23,6 +23,7 @@ class ExternalCaptureAdapter
 {
 public:
 	virtual ~ExternalCaptureAdapter() noexcept = default;
+
 	virtual bool Begin(const ExternalCaptureNativeTarget& target, const std::filesystem::path& path, std::string& error) = 0;
 	virtual void End(const ExternalCaptureNativeTarget& target) noexcept = 0;
 	virtual ExternalCaptureNativeResult Poll() = 0;
@@ -31,10 +32,7 @@ public:
 std::unique_ptr<ExternalCaptureAdapter> CreatePixCaptureAdapter(std::string& error);
 std::unique_ptr<ExternalCaptureAdapter> CreateNsightCaptureAdapter(std::string& error);
 std::unique_ptr<ExternalCaptureAdapter> CreateRenderDocCaptureAdapter(std::string& error);
-std::unique_ptr<ExternalCaptureAdapter> CreateExternalCaptureAdapter(
-    ERhiBackendApi api,
-    ExternalCaptureProvider provider,
-    std::string& error);
+std::unique_ptr<ExternalCaptureAdapter> CreateExternalCaptureAdapter(ERhiBackendApi api, ExternalCaptureProvider provider, std::string& error);
 
 bool IsPixCaptureInstalled() noexcept;
 bool IsNsightCaptureInstalled() noexcept;

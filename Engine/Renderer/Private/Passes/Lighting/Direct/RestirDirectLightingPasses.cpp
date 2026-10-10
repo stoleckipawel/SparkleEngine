@@ -8,12 +8,7 @@
 #include "Passes/Lighting/Direct/DirectLightingResources.h"
 #include "Passes/Lighting/Shadows/DirectShadowSignal.h"
 
-void AddRestirDirectLightingPasses(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderViewportExtent sceneExtent,
-    RenderRayTracingScene& rayTracingScene,
-    RenderFrameGraphResources& resources)
+void AddRestirDirectLightingPasses(FrameGraphBuilder& builder, const RenderFrame& frame, RenderViewportExtent sceneExtent, RenderRayTracingScene& rayTracingScene, RenderFrameGraphResources& resources)
 {
 	CreateDirectLightingResources(builder, sceneExtent, resources);
 	if (!IsDirectLightingAdmitted())

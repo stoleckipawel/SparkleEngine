@@ -16,33 +16,21 @@ void VulkanRenderCommandList::SetRayTracingPipeline(const RayTracingPipeline& pi
 	const auto* nativePipeline = dynamic_cast<const VulkanRayTracingPipeline*>(&pipeline);
 	if (m_commandBuffer == VK_NULL_HANDLE || nativePipeline == nullptr)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan ray-tracing pipeline binding received no command buffer or a foreign pipeline.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan ray-tracing pipeline binding received no command buffer or a foreign pipeline.");
 	}
 	m_rayTracingBindings.PipelineLayout = nativePipeline->GetPipelineLayout();
 	vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, nativePipeline->GetPipeline());
 	m_boundRayTracingPipeline = &pipeline;
 }
 
-void VulkanRenderCommandList::BuildBottomLevelAccelerationStructure(
-    const RhiRayTracingGeometryDesc& geometry,
-    RhiGpuVirtualAddress scratchGpuAddress,
-    RhiGpuVirtualAddress resultGpuAddress) noexcept
+void VulkanRenderCommandList::BuildBottomLevelAccelerationStructure(const RhiRayTracingGeometryDesc& geometry, RhiGpuVirtualAddress scratchGpuAddress, RhiGpuVirtualAddress resultGpuAddress) noexcept
 {
 	const VkDeviceAddress vertexBufferAddress = ResolveRayTracingBufferAddress(geometry.VertexBuffer);
 	const VkDeviceAddress indexBufferAddress = ResolveRayTracingBufferAddress(geometry.IndexBuffer);
-	if (m_commandBuffer == VK_NULL_HANDLE || m_rhi == nullptr || m_memoryAllocator == nullptr
-	    || m_rhi->GetCmdBuildAccelerationStructures() == nullptr || !RhiContract::IsRayTracingGeometryDescUsable(geometry)
-	    || vertexBufferAddress == 0 || indexBufferAddress == 0 || scratchGpuAddress == 0 || resultGpuAddress == 0)
+	if (m_commandBuffer == VK_NULL_HANDLE || m_rhi == nullptr || m_memoryAllocator == nullptr || m_rhi->GetCmdBuildAccelerationStructures() == nullptr
+	    || !RhiContract::IsRayTracingGeometryDescUsable(geometry) || vertexBufferAddress == 0 || indexBufferAddress == 0 || scratchGpuAddress == 0 || resultGpuAddress == 0)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan BLAS build received incomplete geometry, device, command-buffer, or GPU-address inputs.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan BLAS build received incomplete geometry, device, command-buffer, or GPU-address inputs.");
 	}
 	EndDynamicRenderingIfNeeded();
 
@@ -53,11 +41,7 @@ void VulkanRenderCommandList::BuildBottomLevelAccelerationStructure(
 	if (!ResolveAddress(resultGpuAddress, resultResource) || resultResource.AccelerationStructure == VK_NULL_HANDLE
 	    || resultResource.AccelerationStructureType != VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan BLAS destination does not resolve to a bottom-level acceleration structure.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan BLAS destination does not resolve to a bottom-level acceleration structure.");
 	}
 
 	const VkAccelerationStructureGeometryTrianglesDataKHR triangles{
@@ -70,12 +54,14 @@ void VulkanRenderCommandList::BuildBottomLevelAccelerationStructure(
 	    .indexType = VulkanTypeConversions::ToVkIndexType(geometry.IndexFormat),
 	    .indexData = VkDeviceOrHostAddressConstKHR{.deviceAddress = indexBufferAddress},
 	    .transformData = VkDeviceOrHostAddressConstKHR{.deviceAddress = 0}};
+
 	const VkAccelerationStructureGeometryKHR nativeGeometry{
 	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR,
 	    .pNext = nullptr,
 	    .geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR,
 	    .geometry = VkAccelerationStructureGeometryDataKHR{.triangles = triangles},
 	    .flags = geometry.Opaque ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0u};
+
 	const VkAccelerationStructureBuildGeometryInfoKHR buildInfo{
 	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR,
 	    .pNext = nullptr,
@@ -88,12 +74,9 @@ void VulkanRenderCommandList::BuildBottomLevelAccelerationStructure(
 	    .pGeometries = &nativeGeometry,
 	    .ppGeometries = nullptr,
 	    .scratchData = VkDeviceOrHostAddressKHR{.deviceAddress = scratchGpuAddress}};
+
 	const std::uint32_t primitiveCount = geometry.IndexCount / 3u;
-	const VkAccelerationStructureBuildRangeInfoKHR rangeInfo{
-	    .primitiveCount = primitiveCount,
-	    .primitiveOffset = 0,
-	    .firstVertex = 0,
-	    .transformOffset = 0};
+	const VkAccelerationStructureBuildRangeInfoKHR rangeInfo{.primitiveCount = primitiveCount, .primitiveOffset = 0, .firstVertex = 0, .transformOffset = 0};
 	const VkAccelerationStructureBuildRangeInfoKHR* rangeInfos[] = {&rangeInfo};
 	m_rhi->GetCmdBuildAccelerationStructures()(m_commandBuffer, 1, &buildInfo, rangeInfos);
 
@@ -102,9 +85,9 @@ void VulkanRenderCommandList::BuildBottomLevelAccelerationStructure(
 	    .pNext = nullptr,
 	    .srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
 	    .srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
-	    .dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
-	        | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+	    .dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
 	    .dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR};
+
 	const VkDependencyInfo dependencyInfo{
 	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 	    .pNext = nullptr,
@@ -115,6 +98,7 @@ void VulkanRenderCommandList::BuildBottomLevelAccelerationStructure(
 	    .pBufferMemoryBarriers = nullptr,
 	    .imageMemoryBarrierCount = 0,
 	    .pImageMemoryBarriers = nullptr};
+
 	vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
 }
 
@@ -125,15 +109,10 @@ void VulkanRenderCommandList::BuildTopLevelAccelerationStructure(
     RhiGpuVirtualAddress resultGpuAddress,
     ERhiClassicTlasBuildMode buildMode) noexcept
 {
-	if (m_commandBuffer == VK_NULL_HANDLE || m_rhi == nullptr || m_memoryAllocator == nullptr
-	    || m_rhi->GetCmdBuildAccelerationStructures() == nullptr || instanceDescsGpuAddress == 0 || scratchGpuAddress == 0
-	    || resultGpuAddress == 0)
+	if (m_commandBuffer == VK_NULL_HANDLE || m_rhi == nullptr || m_memoryAllocator == nullptr || m_rhi->GetCmdBuildAccelerationStructures() == nullptr || instanceDescsGpuAddress == 0
+	    || scratchGpuAddress == 0 || resultGpuAddress == 0)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan classic TLAS build received no device, command buffer, build entry point, or GPU address.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan classic TLAS build received no device, command buffer, build entry point, or GPU address.");
 	}
 	EndDynamicRenderingIfNeeded();
 
@@ -141,11 +120,7 @@ void VulkanRenderCommandList::BuildTopLevelAccelerationStructure(
 	if (!ResolveAddress(resultGpuAddress, resultResource) || resultResource.AccelerationStructure == VK_NULL_HANDLE
 	    || resultResource.AccelerationStructureType != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan classic TLAS destination does not resolve to a top-level acceleration structure.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan classic TLAS destination does not resolve to a top-level acceleration structure.");
 	}
 
 	const VkAccelerationStructureGeometryInstancesDataKHR instances{
@@ -153,22 +128,23 @@ void VulkanRenderCommandList::BuildTopLevelAccelerationStructure(
 	    .pNext = nullptr,
 	    .arrayOfPointers = VK_FALSE,
 	    .data = VkDeviceOrHostAddressConstKHR{.deviceAddress = instanceDescsGpuAddress}};
+
 	const VkAccelerationStructureGeometryKHR geometry{
 	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR,
 	    .pNext = nullptr,
 	    .geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR,
 	    .geometry = VkAccelerationStructureGeometryDataKHR{.instances = instances},
 	    .flags = VK_GEOMETRY_OPAQUE_BIT_KHR};
+
 	const VkBuildAccelerationStructureFlagsKHR nativeBuildFlags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR
-	    | (buildMode != ERhiClassicTlasBuildMode::Build ? VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR
-	                                                    : static_cast<VkBuildAccelerationStructureFlagsKHR>(0));
+	    | (buildMode != ERhiClassicTlasBuildMode::Build ? VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR : static_cast<VkBuildAccelerationStructureFlagsKHR>(0));
+
 	const VkAccelerationStructureBuildGeometryInfoKHR buildInfo{
 	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR,
 	    .pNext = nullptr,
 	    .type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR,
 	    .flags = nativeBuildFlags,
-	    .mode = buildMode == ERhiClassicTlasBuildMode::Update ? VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR
-	                                                          : VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR,
+	    .mode = buildMode == ERhiClassicTlasBuildMode::Update ? VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR : VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR,
 	    .srcAccelerationStructure = buildMode == ERhiClassicTlasBuildMode::Update ? resultResource.AccelerationStructure : VK_NULL_HANDLE,
 	    .dstAccelerationStructure = resultResource.AccelerationStructure,
 	    .geometryCount = 1,
@@ -176,11 +152,8 @@ void VulkanRenderCommandList::BuildTopLevelAccelerationStructure(
 	    .ppGeometries = nullptr,
 
 	    .scratchData = VkDeviceOrHostAddressKHR{.deviceAddress = scratchGpuAddress}};
-	const VkAccelerationStructureBuildRangeInfoKHR rangeInfo{
-	    .primitiveCount = instanceCount,
-	    .primitiveOffset = 0,
-	    .firstVertex = 0,
-	    .transformOffset = 0};
+
+	const VkAccelerationStructureBuildRangeInfoKHR rangeInfo{.primitiveCount = instanceCount, .primitiveOffset = 0, .firstVertex = 0, .transformOffset = 0};
 	const VkAccelerationStructureBuildRangeInfoKHR* rangeInfos[] = {&rangeInfo};
 	m_rhi->GetCmdBuildAccelerationStructures()(m_commandBuffer, 1, &buildInfo, rangeInfos);
 
@@ -191,6 +164,7 @@ void VulkanRenderCommandList::BuildTopLevelAccelerationStructure(
 	    .srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
 	    .dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
 	    .dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR};
+
 	const VkDependencyInfo dependencyInfo{
 	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 	    .pNext = nullptr,
@@ -201,20 +175,17 @@ void VulkanRenderCommandList::BuildTopLevelAccelerationStructure(
 	    .pBufferMemoryBarriers = nullptr,
 	    .imageMemoryBarrierCount = 0,
 	    .pImageMemoryBarriers = nullptr};
+
 	vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
 }
 
 void VulkanRenderCommandList::BuildPartitionedTopLevelAccelerationStructure(const RhiPartitionedTlasBuildCommandDesc& desc) noexcept
 {
-	if (m_commandBuffer == VK_NULL_HANDLE || m_rhi == nullptr || m_rhi->GetCmdBuildPartitionedAccelerationStructures() == nullptr
-	    || !desc.DestinationResource || desc.DestinationAccelerationStructure == 0 || desc.Scratch == 0 || desc.OperationHeaders == 0
-	    || desc.OperationCount == 0 || desc.Layout.InstanceCapacity == 0 || desc.Layout.PartitionCount == 0)
+	if (m_commandBuffer == VK_NULL_HANDLE || m_rhi == nullptr || m_rhi->GetCmdBuildPartitionedAccelerationStructures() == nullptr || !desc.DestinationResource
+	    || desc.DestinationAccelerationStructure == 0 || desc.Scratch == 0 || desc.OperationHeaders == 0 || desc.OperationCount == 0 || desc.Layout.InstanceCapacity == 0
+	    || desc.Layout.PartitionCount == 0)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan partitioned TLAS build received incomplete device, command-buffer, layout, or GPU-address inputs.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan partitioned TLAS build received incomplete device, command-buffer, layout, or GPU-address inputs.");
 	}
 	EndDynamicRenderingIfNeeded();
 
@@ -225,6 +196,7 @@ void VulkanRenderCommandList::BuildPartitionedTopLevelAccelerationStructure(cons
 	    .srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
 	    .dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
 	    .dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR};
+
 	const VkDependencyInfo operationDataDependency{
 	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 	    .pNext = nullptr,
@@ -235,11 +207,13 @@ void VulkanRenderCommandList::BuildPartitionedTopLevelAccelerationStructure(cons
 	    .pBufferMemoryBarriers = nullptr,
 	    .imageMemoryBarrierCount = 0,
 	    .pImageMemoryBarriers = nullptr};
+
 	vkCmdPipelineBarrier2(m_commandBuffer, &operationDataDependency);
 
 	VkPartitionedAccelerationStructureFlagsNV partitionedTlasFlags{};
 	VkPartitionedAccelerationStructureInstancesInputNV input{};
 	VulkanTypeConversions::ConfigurePartitionedTlasInput(desc.Layout, input, partitionedTlasFlags);
+
 	const VkBuildPartitionedAccelerationStructureInfoNV buildInfo{
 	    .sType = VK_STRUCTURE_TYPE_BUILD_PARTITIONED_ACCELERATION_STRUCTURE_INFO_NV,
 	    .pNext = nullptr,
@@ -249,6 +223,7 @@ void VulkanRenderCommandList::BuildPartitionedTopLevelAccelerationStructure(cons
 	    .scratchData = desc.Scratch,
 	    .srcInfos = desc.OperationHeaders,
 	    .srcInfosCount = desc.OperationCount};
+
 	m_rhi->GetCmdBuildPartitionedAccelerationStructures()(m_commandBuffer, &buildInfo);
 
 	const VkMemoryBarrier2 buildBarrier{
@@ -256,10 +231,9 @@ void VulkanRenderCommandList::BuildPartitionedTopLevelAccelerationStructure(cons
 	    .pNext = nullptr,
 	    .srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
 	    .srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
-	    .dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
-	        | VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-	    .dstAccessMask =
-	        VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT};
+	    .dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+	    .dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT};
+
 	const VkDependencyInfo dependencyInfo{
 	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 	    .pNext = nullptr,
@@ -270,6 +244,7 @@ void VulkanRenderCommandList::BuildPartitionedTopLevelAccelerationStructure(cons
 	    .pBufferMemoryBarriers = nullptr,
 	    .imageMemoryBarrierCount = 0,
 	    .pImageMemoryBarriers = nullptr};
+
 	vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
 }
 
@@ -285,32 +260,22 @@ void VulkanRenderCommandList::TraceRays(const TraceRaysDesc& desc) noexcept
 	}
 	const auto* pipeline = dynamic_cast<const VulkanRayTracingPipeline*>(desc.Pipeline);
 	const auto* table = dynamic_cast<const VulkanRayTracingShaderTable*>(desc.ShaderTable);
-	if (m_commandBuffer == VK_NULL_HANDLE || m_rhi == nullptr || m_rhi->GetCmdTraceRays() == nullptr || pipeline == nullptr
-	    || table == nullptr)
+	if (m_commandBuffer == VK_NULL_HANDLE || m_rhi == nullptr || m_rhi->GetCmdTraceRays() == nullptr || pipeline == nullptr || table == nullptr)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan TraceRays requires a command buffer, loaded function, and matching native objects.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan TraceRays requires a command buffer, loaded function, and matching native objects.");
 	}
 	if (m_boundRayTracingPipeline != desc.Pipeline)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan TraceRays requires its exact pipeline to be bound first.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan TraceRays requires its exact pipeline to be bound first.");
 	}
 	TrackResource(table->GetResource());
 	const VkDeviceAddress baseAddress = table->GetDeviceAddress();
+
 	const auto nativeRegion = [baseAddress](const RhiRayTracingShaderTableRegion& region)
 	{
-		return VkStridedDeviceAddressRegionKHR{
-		    .deviceAddress = region.SizeInBytes != 0 ? baseAddress + region.OffsetInBytes : 0,
-		    .stride = region.StrideInBytes,
-		    .size = region.SizeInBytes};
+		return VkStridedDeviceAddressRegionKHR{.deviceAddress = region.SizeInBytes != 0 ? baseAddress + region.OffsetInBytes : 0, .stride = region.StrideInBytes, .size = region.SizeInBytes};
 	};
+
 	const VkStridedDeviceAddressRegionKHR rayGeneration = nativeRegion(desc.RayGeneration);
 	const VkStridedDeviceAddressRegionKHR miss = nativeRegion(desc.Miss);
 	const VkStridedDeviceAddressRegionKHR hitGroup = nativeRegion(desc.HitGroup);

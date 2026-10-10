@@ -175,10 +175,7 @@ namespace Strings
 	std::string ToLowerCopy(std::string_view str)
 	{
 		std::string lowered(str);
-		std::ranges::transform(
-		    lowered,
-		    lowered.begin(),
-		    [](const unsigned char character) { return static_cast<char>(std::tolower(character)); });
+		std::ranges::transform(lowered, lowered.begin(), [](const unsigned char character) { return static_cast<char>(std::tolower(character)); });
 		return lowered;
 	}
 
@@ -211,18 +208,27 @@ namespace Strings
 			{
 				case '\\':
 					result += "\\\\";
+
 					break;
+
 				case '"':
 					result += "\\\"";
+
 					break;
+
 				case '\n':
 					result += "\\n";
+
 					break;
+
 				case '\r':
 					result += "\\r";
+
 					break;
+
 				case '\t':
 					result += "\\t";
+
 					break;
 				default:
 					result.push_back(character);

@@ -8,17 +8,12 @@
 
 namespace PathVisibility
 {
-	bool IsUnoccluded(RaytracingAccelerationStructure sceneTlas,
-	                  RayTracingPathSurface surface,
-	                  LightSampling::DirectLightSample lightSample)
+	bool IsUnoccluded(RaytracingAccelerationStructure sceneTlas, RayTracingPathSurface surface, LightSampling::DirectLightSample lightSample)
 	{
 		RayEndpoints::Ray ray;
 		if (lightSample.IsDirectional)
 		{
-			ray = RayEndpoints::Continuation(surface.PositionWorld,
-			                                 surface.GeometricNormalWorld,
-			                                 surface.PositionError,
-			                                 lightSample.DirectionWorld);
+			ray = RayEndpoints::Continuation(surface.PositionWorld, surface.GeometricNormalWorld, surface.PositionError, lightSample.DirectionWorld);
 		}
 		else
 		{
@@ -31,8 +26,7 @@ namespace PathVisibility
 			                               lightSample.EmitterEndpointTraversalSensitivity);
 		}
 
-		const RayTracingTraceResult trace =
-		    TraceSceneRay(sceneTlas, ray.Origin, ray.Direction, ray.TMin, ray.TMax, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFFu);
+		const RayTracingTraceResult trace = TraceSceneRay(sceneTlas, ray.Origin, ray.Direction, ray.TMin, ray.TMax, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFFu);
 		return !trace.Hit || (trace.InstanceId == lightSample.TargetInstanceId && trace.PrimitiveIndex == lightSample.TargetPrimitiveIndex);
 	}
 }

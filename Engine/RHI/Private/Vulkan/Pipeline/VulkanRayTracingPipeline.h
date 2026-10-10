@@ -19,12 +19,15 @@ public:
 	~VulkanRayTracingPipeline() noexcept override;
 
 	VkPipeline GetPipeline() const noexcept { return m_pipeline; }
+
 	VkPipelineLayout GetPipelineLayout() const noexcept;
 	std::uint32_t FindShaderGroup(std::string_view exportName) const noexcept;
+
 	std::uint32_t GetShaderGroupCount() const noexcept { return static_cast<std::uint32_t>(m_groupNames.size()); }
 
 private:
 	VkDevice m_device = VK_NULL_HANDLE;
+
 	VkPipeline m_pipeline = VK_NULL_HANDLE;
 	std::unique_ptr<VulkanPipelineLayout> m_pipelineLayout;
 	std::vector<std::string> m_groupNames;

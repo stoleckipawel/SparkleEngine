@@ -65,9 +65,7 @@ void NvidiaDlssRayReconstructionProvider::Shutdown() noexcept
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
 	if (m_initialized)
 	{
-		(void) slFreeResources(
-		    sl::kFeatureDLSS_RR,
-		    sl::ViewportHandle{NvidiaDlssRayReconstructionProviderConstants::kRayReconstructionViewportId});
+		(void) slFreeResources(sl::kFeatureDLSS_RR, sl::ViewportHandle{NvidiaDlssRayReconstructionProviderConstants::kRayReconstructionViewportId});
 	}
 #endif
 	m_initialized = false;

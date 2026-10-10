@@ -51,17 +51,11 @@ void ShaderRecookCoordinator::RequestRecook(ShaderRecookRequest request) noexcep
 
 void ShaderRecookCoordinator::QueueRecook(ShaderRecookRequest request) noexcept
 {
-	if (m_queuedRequest.has_value() && m_queuedRequest->Type == ShaderRecookRequestType::Changed
-	    && request.Type == ShaderRecookRequestType::Changed)
+	if (m_queuedRequest.has_value() && m_queuedRequest->Type == ShaderRecookRequestType::Changed && request.Type == ShaderRecookRequestType::Changed)
 	{
-		m_queuedRequest->ChangedVirtualPaths.insert(
-		    m_queuedRequest->ChangedVirtualPaths.end(),
-		    request.ChangedVirtualPaths.begin(),
-		    request.ChangedVirtualPaths.end());
+		m_queuedRequest->ChangedVirtualPaths.insert(m_queuedRequest->ChangedVirtualPaths.end(), request.ChangedVirtualPaths.begin(), request.ChangedVirtualPaths.end());
 		std::ranges::sort(m_queuedRequest->ChangedVirtualPaths);
-		m_queuedRequest->ChangedVirtualPaths.erase(
-		    std::unique(m_queuedRequest->ChangedVirtualPaths.begin(), m_queuedRequest->ChangedVirtualPaths.end()),
-		    m_queuedRequest->ChangedVirtualPaths.end());
+		m_queuedRequest->ChangedVirtualPaths.erase(std::unique(m_queuedRequest->ChangedVirtualPaths.begin(), m_queuedRequest->ChangedVirtualPaths.end()), m_queuedRequest->ChangedVirtualPaths.end());
 	}
 	else if (!m_queuedRequest.has_value() || m_queuedRequest->Type != ShaderRecookRequestType::Global)
 	{
@@ -128,10 +122,7 @@ void ShaderRecookCoordinator::DetectShaderSourceChanges() noexcept
 	std::vector<std::string> changedVirtualPaths = m_shaderSourceChangeTracker.CollectChangedVirtualPaths();
 	if (!changedVirtualPaths.empty())
 	{
-		PublishStatus(
-		    std::format(
-		        "Detected {} changed shader source path(s); scheduling dependency-directed compilation.",
-		        changedVirtualPaths.size()));
+		PublishStatus(std::format("Detected {} changed shader source path(s); scheduling dependency-directed compilation.", changedVirtualPaths.size()));
 		RequestRecook(ShaderRecookRequest{.Type = ShaderRecookRequestType::Changed, .ChangedVirtualPaths = std::move(changedVirtualPaths)});
 	}
 }
@@ -155,20 +146,14 @@ void ShaderRecookCoordinator::StartRecook(ShaderRecookRequest request) noexcept
 		        {
 			        return TaskResult::Success();
 		        }
-		        return context.IsCancellationRequested() ? TaskResult::Cancelled("Editor shader recook was cancelled.")
-		                                                 : TaskResult::Failure("Shader compiler process failed.");
+		        return context.IsCancellationRequested() ? TaskResult::Cancelled("Editor shader recook was cancelled.") : TaskResult::Failure("Shader compiler process failed.");
 	        },
 	        errorMessage))
 	{
 		PublishStatus("Shader recook failed before launch: " + errorMessage);
 		return;
 	}
-	PublishStatus(
-	    std::format(
-	        "Shader recook #{} started for {} through the shader compiler process (baselinePublicationId={}).",
-	        requestId,
-	        requestDescription,
-	        baselinePublicationId));
+	PublishStatus(std::format("Shader recook #{} started for {} through the shader compiler process (baselinePublicationId={}).", requestId, requestDescription, baselinePublicationId));
 }
 
 void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ExecutionResult result) noexcept
@@ -180,11 +165,7 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ExecutionResult
 	}
 	if (result.Process.NoWork())
 	{
-		PublishStatus(
-		    std::format(
-		        "Shader recook #{} ({}) found no affected registered shader types; no compilation or publication was performed.",
-		        result.RequestId,
-		        DescribeRequest(result.Request)));
+		PublishStatus(std::format("Shader recook #{} ({}) found no affected registered shader types; no compilation or publication was performed.", result.RequestId, DescribeRequest(result.Request)));
 		return;
 	}
 
@@ -204,6 +185,7 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ExecutionResult
 			        publicationDiagnostic,
 			        result.Process.CommandLine,
 			        result.Process.Output));
+
 			return;
 		}
 
@@ -225,6 +207,7 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ExecutionResult
 			        error.what(),
 			        result.Process.CommandLine,
 			        result.Process.Output));
+
 			return;
 		}
 
@@ -239,6 +222,7 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ExecutionResult
 		        publication->PublicationId,
 		        result.Process.CommandLine,
 		        result.Process.Output));
+
 		return;
 	}
 
@@ -264,15 +248,11 @@ void ShaderRecookCoordinator::HandleManualReload(Renderer& renderer) noexcept
 	try
 	{
 		ReloadShaders(renderer);
-		PublishStatus(
-		    std::format("Manual shader reload activated generation {} without a device-idle drain.", renderer.GetShaderGeneration()));
+		PublishStatus(std::format("Manual shader reload activated generation {} without a device-idle drain.", renderer.GetShaderGeneration()));
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		PublishStatus(
-		    std::format(
-		        "Manual shader reload was rejected by runtime validation; the previous shader map remains active. {}",
-		        error.what()));
+		PublishStatus(std::format("Manual shader reload was rejected by runtime validation; the previous shader map remains active. {}", error.what()));
 	}
 }
 
@@ -332,22 +312,20 @@ void ShaderRecookCoordinator::HandleExternalRecookPublication(Renderer& renderer
 	{
 		m_lastObservedPublicationId = publication->PublicationId;
 		m_lastPublicationDiagnostic.clear();
+
 		PublishStatus(
 		    std::format(
 		        "External shader recook publication {} was fresh, but runtime validation rejected the replacement set; previous cooked "
 		        "shader map remains active. {}",
 		        publication->PublicationId,
 		        error.what()));
+
 		return;
 	}
 
 	m_lastObservedPublicationId = publication->PublicationId;
 	m_lastPublicationDiagnostic.clear();
-	PublishStatus(
-	    std::format(
-	        "External shader recook publication {} accepted and activated without a device-idle drain (generation={}).",
-	        publication->PublicationId,
-	        renderer.GetShaderGeneration()));
+	PublishStatus(std::format("External shader recook publication {} accepted and activated without a device-idle drain (generation={}).", publication->PublicationId, renderer.GetShaderGeneration()));
 }
 
 void ShaderRecookCoordinator::PublishStatus(std::string status) noexcept
@@ -406,8 +384,7 @@ const ShaderRecookPublication* ShaderRecookCoordinator::FindFreshPublication(
 {
 	if (readResult.Missing)
 	{
-		outDiagnostic =
-		    "Shader compiler process succeeded, but no recook publication file was found; reload rejected before touching active shaders.";
+		outDiagnostic = "Shader compiler process succeeded, but no recook publication file was found; reload rejected before touching active shaders.";
 		return nullptr;
 	}
 
@@ -431,6 +408,7 @@ const ShaderRecookPublication* ShaderRecookCoordinator::FindFreshPublication(
 		    "Shader recook publication {} is stale; expected a publication newer than {}. Reload rejected before touching active shaders.",
 		    publication.PublicationId,
 		    freshnessFloor);
+
 		return nullptr;
 	}
 

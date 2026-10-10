@@ -11,10 +11,7 @@ class RenderHardwareInterface;
 
 namespace PipelineRuntimeLibrary
 {
-	void ValidateShaderCapabilities(
-	    RenderHardwareInterface& renderHardwareInterface,
-	    std::string_view shaderName,
-	    const ResolvedShader& shader);
+	void ValidateShaderCapabilities(RenderHardwareInterface& renderHardwareInterface, std::string_view shaderName, const ResolvedShader& shader);
 
 	std::unique_ptr<RenderBindingLayout> CreateBindingLayout(
 	    RenderHardwareInterface& renderHardwareInterface,
@@ -23,11 +20,7 @@ namespace PipelineRuntimeLibrary
 	    bool allowInputAssemblerInputLayout,
 	    const wchar_t* debugName);
 
-	std::unique_ptr<RenderPipeline> CreateGraphicsPipeline(
-	    RenderHardwareInterface& renderHardwareInterface,
-	    const GraphicsPipelineDesc& pipelineDesc);
+	std::unique_ptr<RenderPipeline> CreateGraphicsPipeline(RenderHardwareInterface& renderHardwareInterface, const GraphicsPipelineDesc& pipelineDesc);
 
-	std::unique_ptr<RenderPipeline> CreateComputePipeline(
-	    RenderHardwareInterface& renderHardwareInterface,
-	    const ComputePipelineDesc& pipelineDesc);
+	std::unique_ptr<RenderPipeline> CreateComputePipeline(RenderHardwareInterface& renderHardwareInterface, const ComputePipelineDesc& pipelineDesc);
 }

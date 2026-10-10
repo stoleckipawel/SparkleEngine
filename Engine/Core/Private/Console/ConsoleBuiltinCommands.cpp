@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "Core/Public/Console/ConsoleBuiltinCommands.h"
 
@@ -12,14 +12,14 @@
 void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry, CVarControlExecutor executor)
 {
 	auto& cvarRegistry = ConsoleVariableRegistry::Get();
+
 	commandRegistry.Register(
 	    ConsoleCommandDescriptor{
 	        .Name = "Help",
 	        .Help = "Lists console commands or filters command help.",
 	        .ArgumentSyntax = "[filter]",
 	        .Scope = ConsoleCommandScope::Runtime,
-	        .Execute = [&commandRegistry](ConsoleCommandScope scope, std::span<const std::string_view> arguments)
-	        { return ExecuteHelp(commandRegistry, scope, arguments); },
+	        .Execute = [&commandRegistry](ConsoleCommandScope scope, std::span<const std::string_view> arguments) { return ExecuteHelp(commandRegistry, scope, arguments); },
 	    });
 
 	commandRegistry.Register(
@@ -28,10 +28,8 @@ void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry, C
 	        .Help = "Lists registered console variables.",
 	        .ArgumentSyntax = "[filter]",
 	        .Scope = ConsoleCommandScope::Runtime,
-	        .Execute = [executor](ConsoleCommandScope, std::span<const std::string_view> arguments)
-	        { return ExecuteListCVars(executor, arguments); },
-	        .Complete = [&cvarRegistry](ConsoleCommandScope, const ConsoleAutocompleteRequest& request)
-	        { return CompleteCVarName(cvarRegistry, request.CurrentToken); },
+	        .Execute = [executor](ConsoleCommandScope, std::span<const std::string_view> arguments) { return ExecuteListCVars(executor, arguments); },
+	        .Complete = [&cvarRegistry](ConsoleCommandScope, const ConsoleAutocompleteRequest& request) { return CompleteCVarName(cvarRegistry, request.CurrentToken); },
 	    });
 
 	commandRegistry.Register(
@@ -40,10 +38,8 @@ void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry, C
 	        .Help = "Prints a console variable value.",
 	        .ArgumentSyntax = "<name>",
 	        .Scope = ConsoleCommandScope::Runtime,
-	        .Execute = [executor](ConsoleCommandScope, std::span<const std::string_view> arguments)
-	        { return ExecuteGetCVar(executor, arguments); },
-	        .Complete = [&cvarRegistry](ConsoleCommandScope, const ConsoleAutocompleteRequest& request)
-	        { return CompleteCVarName(cvarRegistry, request.CurrentToken); },
+	        .Execute = [executor](ConsoleCommandScope, std::span<const std::string_view> arguments) { return ExecuteGetCVar(executor, arguments); },
+	        .Complete = [&cvarRegistry](ConsoleCommandScope, const ConsoleAutocompleteRequest& request) { return CompleteCVarName(cvarRegistry, request.CurrentToken); },
 	    });
 
 	commandRegistry.Register(
@@ -52,17 +48,12 @@ void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry, C
 	        .Help = "Sets a console variable value.",
 	        .ArgumentSyntax = "<name> <value>",
 	        .Scope = ConsoleCommandScope::Runtime,
-	        .Execute = [executor](ConsoleCommandScope, std::span<const std::string_view> arguments)
-	        { return ExecuteSetCVar(executor, arguments); },
-	        .Complete = [&cvarRegistry](ConsoleCommandScope, const ConsoleAutocompleteRequest& request)
-	        { return CompleteCVarName(cvarRegistry, request.CurrentToken); },
+	        .Execute = [executor](ConsoleCommandScope, std::span<const std::string_view> arguments) { return ExecuteSetCVar(executor, arguments); },
+	        .Complete = [&cvarRegistry](ConsoleCommandScope, const ConsoleAutocompleteRequest& request) { return CompleteCVarName(cvarRegistry, request.CurrentToken); },
 	    });
 }
 
-ConsoleCommandResult ConsoleBuiltinCommands::ExecuteHelp(
-    const ConsoleCommandRegistry& commandRegistry,
-    ConsoleCommandScope scope,
-    std::span<const std::string_view> arguments)
+ConsoleCommandResult ConsoleBuiltinCommands::ExecuteHelp(const ConsoleCommandRegistry& commandRegistry, ConsoleCommandScope scope, std::span<const std::string_view> arguments)
 {
 	if (arguments.size() > 1)
 		return ConsoleCommandResult::Error("usage: Help [filter]");
@@ -93,21 +84,16 @@ ConsoleCommandResult ConsoleBuiltinCommands::ExecuteHelp(
 	return ConsoleCommandResult::Success(output);
 }
 
-ConsoleCommandResult ConsoleBuiltinCommands::ExecuteListCVars(
-    const CVarControlExecutor& executor,
-    std::span<const std::string_view> arguments)
+ConsoleCommandResult ConsoleBuiltinCommands::ExecuteListCVars(const CVarControlExecutor& executor, std::span<const std::string_view> arguments)
 {
 	if (arguments.size() > 1)
 		return ConsoleCommandResult::Error("usage: ListCVars [filter]");
 	if (!executor)
 		return ConsoleCommandResult::Error("CVar control owner is unavailable.");
-	return FormatControlResult(
-	    executor({.Operation = CVarControlOperation::List, .Filter = arguments.empty() ? std::string{} : std::string(arguments.front())}));
+	return FormatControlResult(executor({.Operation = CVarControlOperation::List, .Filter = arguments.empty() ? std::string{} : std::string(arguments.front())}));
 }
 
-ConsoleCommandResult ConsoleBuiltinCommands::ExecuteGetCVar(
-    const CVarControlExecutor& executor,
-    std::span<const std::string_view> arguments)
+ConsoleCommandResult ConsoleBuiltinCommands::ExecuteGetCVar(const CVarControlExecutor& executor, std::span<const std::string_view> arguments)
 {
 	if (arguments.size() != 1)
 	{
@@ -119,9 +105,7 @@ ConsoleCommandResult ConsoleBuiltinCommands::ExecuteGetCVar(
 	return FormatControlResult(executor({.Operation = CVarControlOperation::Query, .Entries = {{std::string(arguments.front()), {}}}}));
 }
 
-ConsoleCommandResult ConsoleBuiltinCommands::ExecuteSetCVar(
-    const CVarControlExecutor& executor,
-    std::span<const std::string_view> arguments)
+ConsoleCommandResult ConsoleBuiltinCommands::ExecuteSetCVar(const CVarControlExecutor& executor, std::span<const std::string_view> arguments)
 {
 	if (arguments.size() < 2)
 	{
@@ -130,8 +114,7 @@ ConsoleCommandResult ConsoleBuiltinCommands::ExecuteSetCVar(
 
 	if (!executor)
 		return ConsoleCommandResult::Error("CVar control owner is unavailable.");
-	return FormatControlResult(executor(
-	    {.Operation = CVarControlOperation::Set, .Entries = {{std::string(arguments.front()), Strings::Join(arguments, " ", 1)}}}));
+	return FormatControlResult(executor({.Operation = CVarControlOperation::Set, .Entries = {{std::string(arguments.front()), Strings::Join(arguments, " ", 1)}}}));
 }
 
 ConsoleCommandResult ConsoleBuiltinCommands::FormatControlResult(CVarControlResult result)

@@ -52,6 +52,7 @@ public:
 	{
 		++m_state.WaiterCount;
 	}
+
 	~WaitRegistration() { --m_state.WaiterCount; }
 
 	WaitRegistration(const WaitRegistration&) = delete;
@@ -129,13 +130,7 @@ TaskResult TaskEvent::Wait(TaskEventToken token, TaskExecutionContext& context)
 	    });
 	std::unique_lock lock(state->Mutex);
 	State::WaitRegistration waiterRegistration(*state);
-	state->Condition.wait(
-	    lock,
-	    [&]
-	    {
-		    return context.IsCancellationRequested() || token.m_identity != state->Identity || token.m_generation != state->Generation
-		        || state->Signalled;
-	    });
+	state->Condition.wait(lock, [&] { return context.IsCancellationRequested() || token.m_identity != state->Identity || token.m_generation != state->Generation || state->Signalled; });
 
 	if (context.IsCancellationRequested())
 	{

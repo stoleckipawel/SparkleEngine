@@ -9,15 +9,9 @@
 
 #include <imgui.h>
 
-void DrawRayTracingSceneSettingsSection(
-    EngineRenderingSettingsController& settingsController,
-    const EngineRenderingSettingsState& settings,
-    const char* filterText)
+void DrawRayTracingSceneSettingsSection(EngineRenderingSettingsController& settingsController, const EngineRenderingSettingsState& settings, const char* filterText)
 {
-	if (!RenderingSettingsUi::MatchesFilter(
-	        filterText,
-	        "Ray Tracing Scene",
-	        "ray tracing scene tlas refit ptlas active partition update mode partitions dynamic distance acceleration structure")
+	if (!RenderingSettingsUi::MatchesFilter(filterText, "Ray Tracing Scene", "ray tracing scene tlas refit ptlas active partition update mode partitions dynamic distance acceleration structure")
 	    || !RenderingSettingsUi::BeginSettingsCategory("Ray Tracing Scene"))
 	{
 		return;
@@ -26,11 +20,7 @@ void DrawRayTracingSceneSettingsSection(
 	if (RenderingSettingsUi::BeginSettingsTable("##RenderingRayTracingSceneSettings"))
 	{
 		ImGui::BeginDisabled(settings.PtlasActive);
-		RenderingSettingsUi::DrawBooleanRow(
-		    "##RefitTlas",
-		    "Refit TLAS",
-		    settings.RefitTlas,
-		    [&settingsController](bool value) { settingsController.SetRefitTlas(value); });
+		RenderingSettingsUi::DrawBooleanRow("##RefitTlas", "Refit TLAS", settings.RefitTlas, [&settingsController](bool value) { settingsController.SetRefitTlas(value); });
 		ImGui::EndDisabled();
 		ImGui::EndTable();
 	}

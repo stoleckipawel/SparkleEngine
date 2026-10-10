@@ -25,9 +25,8 @@ int InspectShader(std::span<const std::string_view> args)
 		const ShaderContract& shader = catalog.front();
 		const CookedShaderLibrary library = CookedShaderLibrary::Open(Filesystem::GetCookedShaderLibraryPath());
 		const GlobalShaderMap map = GlobalShaderMap::Open(Filesystem::GetGlobalShaderMapPath(), library);
-		std::cout << shader.shaderName << " type=" << Formatting::FormatPrefixedHexUInt64(shader.shaderTypeId)
-		          << " stage=" << GetShaderStagePrefix(shader.stage) << " source=" << shader.sourcePath << " entry=" << shader.entryPoint
-		          << " parameters=" << shader.parameterStruct.Fields.size() << "\n";
+		std::cout << shader.shaderName << " type=" << Formatting::FormatPrefixedHexUInt64(shader.shaderTypeId) << " stage=" << GetShaderStagePrefix(shader.stage) << " source=" << shader.sourcePath
+		          << " entry=" << shader.entryPoint << " parameters=" << shader.parameterStruct.Fields.size() << "\n";
 		for (const ShaderTarget target : {ShaderTarget::DxilSm66, ShaderTarget::SpirV16})
 		{
 			const GlobalShaderMapEntry* const entry = map.Find(shader.shaderTypeId, target);
@@ -40,10 +39,8 @@ int InspectShader(std::span<const std::string_view> args)
 			          << " compileInputHash=" << Formatting::FormatPrefixedHexUInt64(entry->CompileInputHash);
 			if (IsRayTracingShaderStage(entry->Stage))
 			{
-				std::cout << " payloadBytes=" << entry->RayPayloadSizeInBytes << " attributeBytes=" << entry->RayAttributeSizeInBytes
-				          << " minimumRecursion=" << entry->MinimumRayRecursionDepth
-				          << " localRecordBytes=" << entry->LocalRecordSizeInBytes
-				          << " localRecordSignature=" << Formatting::FormatPrefixedHexUInt64(entry->LocalRecordSignature);
+				std::cout << " payloadBytes=" << entry->RayPayloadSizeInBytes << " attributeBytes=" << entry->RayAttributeSizeInBytes << " minimumRecursion=" << entry->MinimumRayRecursionDepth
+				          << " localRecordBytes=" << entry->LocalRecordSizeInBytes << " localRecordSignature=" << Formatting::FormatPrefixedHexUInt64(entry->LocalRecordSignature);
 			}
 			std::cout << "\n";
 		}

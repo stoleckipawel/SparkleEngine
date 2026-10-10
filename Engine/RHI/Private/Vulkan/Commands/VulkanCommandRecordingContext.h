@@ -25,13 +25,10 @@ class VulkanCommandRecordingContext final
 {
 public:
 	static constexpr std::uint32_t MaximumContextsPerFrameQueue = 8;
+
 	static constexpr std::uint64_t UploadPageCapacityInBytes = 256 * 1024;
 
-	VulkanCommandRecordingContext(
-	    VulkanRhi& rhi,
-	    VulkanGpuMemoryAllocator& memoryAllocator,
-	    VulkanDescriptorService& descriptorService,
-	    std::uint32_t maximumFramesInFlight) noexcept;
+	VulkanCommandRecordingContext(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator, VulkanDescriptorService& descriptorService, std::uint32_t maximumFramesInFlight) noexcept;
 	~VulkanCommandRecordingContext() noexcept;
 
 	VulkanCommandRecordingContext(const VulkanCommandRecordingContext&) = delete;

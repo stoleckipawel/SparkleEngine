@@ -15,17 +15,11 @@ public:
 		}
 
 		const VulkanAdapterInfo& adapter = rhi->GetAdapterInfo();
-		return RhiAdapterIdentity{
-		    .Name = adapter.Name,
-		    .DriverDescription = adapter.Driver,
-		    .VendorId = adapter.VendorId,
-		    .DeviceId = adapter.DeviceId};
+		return RhiAdapterIdentity{.Name = adapter.Name, .DriverDescription = adapter.Driver, .VendorId = adapter.VendorId, .DeviceId = adapter.DeviceId};
 	}
 };
 
-RhiExternalFeatureInteropCapabilities BuildVulkanExternalFeatureInteropCapabilities(
-    const VulkanRhi* rhi,
-    bool hasGraphicsCommandContext) noexcept
+RhiExternalFeatureInteropCapabilities BuildVulkanExternalFeatureInteropCapabilities(const VulkanRhi* rhi, bool hasGraphicsCommandContext) noexcept
 {
 	RhiExternalFeatureInteropCapabilities capabilities{};
 	capabilities.BridgeKind = ERhiExternalFeatureBridgeKind::None;

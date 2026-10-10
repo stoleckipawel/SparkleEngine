@@ -28,6 +28,7 @@ public:
 	void SetConsoleOpenHandler(std::function<void()> handler);
 	void SetViewportCaptureHandler(std::function<void()> handler);
 	void BuildUI() noexcept;
+
 	float GetHeight() const noexcept { return m_heightPixels; }
 
 private:
@@ -35,12 +36,7 @@ private:
 	void BuildWindowsMenu() noexcept;
 	void BuildOpenLevelMenu() noexcept;
 	void BuildWindowControls() noexcept;
-	bool DrawTitleBarButton(
-	    const char* id,
-	    const ImVec2& size,
-	    const ImVec4& baseColor,
-	    const ImVec4& hoveredColor,
-	    const ImVec4& activeColor) noexcept;
+	bool DrawTitleBarButton(const char* id, const ImVec2& size, const ImVec4& baseColor, const ImVec4& hoveredColor, const ImVec4& activeColor) noexcept;
 	void DrawMinimizeIcon() const noexcept;
 	void DrawMaximizeIcon() const noexcept;
 	void DrawCloseIcon() const noexcept;

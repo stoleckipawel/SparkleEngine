@@ -27,8 +27,6 @@ namespace Assets
 	};
 }
 
-static_assert(
-    std::is_trivially_copyable_v<Assets::CookedTextureReferenceRecord>,
-    "CookedTextureReferenceRecord must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Assets::CookedTextureReferenceRecord>, "CookedTextureReferenceRecord must stay trivially copyable.");
 static_assert(sizeof(TextureCoordinateMapping) == 36u, "TextureCoordinateMapping is part of the cooked-material ABI.");
 static_assert(sizeof(Assets::CookedTextureReferenceRecord) == 44u, "CookedTextureReferenceRecord layout changed unexpectedly.");

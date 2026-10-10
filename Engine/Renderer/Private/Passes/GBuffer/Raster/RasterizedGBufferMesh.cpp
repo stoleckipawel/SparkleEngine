@@ -15,40 +15,25 @@
 
 #include <cstdint>
 
-static TypedPassParameterInstance<GBufferGraphParameters>& BuildGBufferRasterParameters(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    const RenderFrameGraphResources& resources)
+static TypedPassParameterInstance<GBufferGraphParameters>& BuildGBufferRasterParameters(FrameGraphBuilder& builder, const RenderFrame& frame, const RenderFrameGraphResources& resources)
 {
 	const GBufferRenderTargets& targets = resources.Transient.GBuffer;
 	const RenderFrameGraphImportedSceneResources& externalResources = resources.ImportedScene;
 
 	auto& parameters = builder.AllocGraphParameters<GBufferGraphParameters>("GBuffer");
-	parameters->BaseColor =
-	    builder.CreateRenderTarget(targets.BaseColor, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
-	parameters->WorldNormal =
-	    builder.CreateRenderTarget(targets.WorldNormal, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
-	parameters->WorldTangent =
-	    builder.CreateRenderTarget(targets.WorldTangent, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
-	parameters->Material =
-	    builder.CreateRenderTarget(targets.Material, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
-	parameters->Emissive =
-	    builder.CreateRenderTarget(targets.Emissive, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
-	parameters->Subsurface =
-	    builder.CreateRenderTarget(targets.Subsurface, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
-	parameters->MotionVector =
-	    builder.CreateRenderTarget(targets.MotionVector, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
-	parameters->DeviceZ = builder.CreateDepthTarget(
-	    targets.DeviceZ,
-	    FrameGraphAttachmentLoadAction::Clear,
-	    FrameGraphAttachmentStoreAction::Store,
-	    FrameGraphDepthStencilAccess::ReadWrite);
+	parameters->BaseColor = builder.CreateRenderTarget(targets.BaseColor, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
+	parameters->WorldNormal = builder.CreateRenderTarget(targets.WorldNormal, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
+	parameters->WorldTangent = builder.CreateRenderTarget(targets.WorldTangent, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
+	parameters->Material = builder.CreateRenderTarget(targets.Material, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
+	parameters->Emissive = builder.CreateRenderTarget(targets.Emissive, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
+	parameters->Subsurface = builder.CreateRenderTarget(targets.Subsurface, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
+	parameters->MotionVector = builder.CreateRenderTarget(targets.MotionVector, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store);
+	parameters->DeviceZ = builder.CreateDepthTarget(targets.DeviceZ, FrameGraphAttachmentLoadAction::Clear, FrameGraphAttachmentStoreAction::Store, FrameGraphDepthStencilAccess::ReadWrite);
 
 	parameters->Shader.Vertex.MeshInstances = builder.CreateSRV<MeshInstanceData>(externalResources.Scene.Geometry.MeshInstances);
 	parameters->Shader.Vertex.MeshInstanceSlots = builder.CreateSRV<std::uint32_t>(externalResources.Scene.Geometry.MeshInstanceSlots);
 	parameters->Shader.Vertex.JointMatrices = builder.CreateSRV<JointMatrixData>(externalResources.Scene.Geometry.JointMatrices);
-	parameters->Shader.Vertex.PreviousJointMatrices =
-	    builder.CreateSRV<JointMatrixData>(externalResources.Scene.Geometry.PreviousJointMatrices);
+	parameters->Shader.Vertex.PreviousJointMatrices = builder.CreateSRV<JointMatrixData>(externalResources.Scene.Geometry.PreviousJointMatrices);
 	parameters->Shader.Vertex.MorphWeights = builder.CreateSRV<float>(externalResources.Scene.Geometry.MorphWeights);
 	parameters->Shader.Vertex.PreviousMorphWeights = builder.CreateSRV<float>(externalResources.Scene.Geometry.PreviousMorphWeights);
 	parameters->Shader.Pixel.SamplerAniso16xWrap = RhiSamplerDesc{.MaxAnisotropy = RhiSamplerAnisotropy::X16};
@@ -73,11 +58,7 @@ static RasterPassRenderState CreateGBufferRasterState()
 	return renderState;
 }
 
-void AddRasterizedGBufferMeshPass(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    GpuMeshCache& gpuMeshCache,
-    const RenderFrameGraphResources& resources)
+void AddRasterizedGBufferMeshPass(FrameGraphBuilder& builder, const RenderFrame& frame, GpuMeshCache& gpuMeshCache, const RenderFrameGraphResources& resources)
 {
 	auto& parameters = BuildGBufferRasterParameters(builder, frame, resources);
 	const RasterPassRenderState renderState = CreateGBufferRasterState();

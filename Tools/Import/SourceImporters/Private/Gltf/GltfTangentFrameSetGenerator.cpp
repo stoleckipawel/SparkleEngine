@@ -30,9 +30,7 @@ GltfGeneratedTangentFrameSet GltfTangentFrameSetGenerator::Generate(const Import
 	return frames;
 }
 
-std::vector<ImportedVertex> GltfTangentFrameSetGenerator::BuildMorphVertices(
-    const ImportedMeshGeometry& geometry,
-    const ImportedMorphTarget& morphTarget)
+std::vector<ImportedVertex> GltfTangentFrameSetGenerator::BuildMorphVertices(const ImportedMeshGeometry& geometry, const ImportedMorphTarget& morphTarget)
 {
 	if (morphTarget.deltas.size() != geometry.vertices.size())
 	{
@@ -80,11 +78,7 @@ std::vector<DirectX::XMFLOAT3> GltfTangentFrameSetGenerator::BuildMorphTangentDe
 		if (target.w != base.w)
 		{
 			throw Diagnostics::Error(
-			    std::format(
-			        "glTF morph target {} changes tangent handedness at triangle {}, corner {}; split or repair the source mesh.",
-			        targetIndex,
-			        cornerIndex / 3u,
-			        cornerIndex % 3u));
+			    std::format("glTF morph target {} changes tangent handedness at triangle {}, corner {}; split or repair the source mesh.", targetIndex, cornerIndex / 3u, cornerIndex % 3u));
 		}
 		deltas[cornerIndex] = {target.x - base.x, target.y - base.y, target.z - base.z};
 	}

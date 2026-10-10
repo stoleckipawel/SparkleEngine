@@ -36,10 +36,7 @@ class MaterialCookPipeline final
 {
 public:
 	static std::string BuildCookedTextureReferencePath(const TextureCookRequest& request);
-	static CookedMaterialAssetBuild BuildMaterialAsset(
-	    const ImportedMaterial& importedMaterial,
-	    std::string_view sceneAssetId,
-	    std::size_t materialIndex);
+	static CookedMaterialAssetBuild BuildMaterialAsset(const ImportedMaterial& importedMaterial, std::string_view sceneAssetId, std::size_t materialIndex);
 	static void AppendTextureReference(const ImportedTextureSource& textureSource, CookedMaterialAssetBuild& materialAsset);
 	static void AppendTextureRequest(const ImportedTextureSource& textureSource, TextureCookRequestSet& requestSet);
 	static void StageMaterialAsset(const CookedMaterialAssetBuild& materialAsset, std::vector<Files::FilePublication>& outPublication);
@@ -53,8 +50,7 @@ public:
 
 std::string MaterialCookPipeline::BuildCookedTextureReferencePath(const TextureCookRequest& request)
 {
-	const std::optional<std::filesystem::path> relativePath =
-	    Paths::TryMakeRelativeUnderRoot(request.outputPath, Filesystem::GetCookedAssetRootPath());
+	const std::optional<std::filesystem::path> relativePath = Paths::TryMakeRelativeUnderRoot(request.outputPath, Filesystem::GetCookedAssetRootPath());
 	if (!relativePath)
 	{
 		throw Diagnostics::Error("Cooked texture output path is outside the cooked asset root: '" + request.outputPath.string() + "'.");
@@ -63,10 +59,7 @@ std::string MaterialCookPipeline::BuildCookedTextureReferencePath(const TextureC
 	return relativePath->generic_string();
 }
 
-CookedMaterialAssetBuild MaterialCookPipeline::BuildMaterialAsset(
-    const ImportedMaterial& importedMaterial,
-    std::string_view sceneAssetId,
-    std::size_t materialIndex)
+CookedMaterialAssetBuild MaterialCookPipeline::BuildMaterialAsset(const ImportedMaterial& importedMaterial, std::string_view sceneAssetId, std::size_t materialIndex)
 {
 	CookedMaterialAssetBuild materialAsset;
 	materialAsset.assetId = BuildMaterialAssetId(sceneAssetId, materialIndex);
@@ -99,11 +92,9 @@ void MaterialCookPipeline::AppendTextureReference(const ImportedTextureSource& t
 		return;
 	}
 
-	const TextureCookRequest request =
-	    TextureCookRequestBuilder::Build(textureSource.sourcePath, textureSource.textureGroup, textureSource.channelMask);
+	const TextureCookRequest request = TextureCookRequestBuilder::Build(textureSource.sourcePath, textureSource.textureGroup, textureSource.channelMask);
 
-	materialAsset.textureReferences.push_back(
-	    {BuildCookedTextureReferencePath(request), textureSource.textureGroup, textureSource.mapping});
+	materialAsset.textureReferences.push_back({BuildCookedTextureReferencePath(request), textureSource.textureGroup, textureSource.mapping});
 }
 
 void MaterialCookPipeline::AppendTextureRequest(const ImportedTextureSource& textureSource, TextureCookRequestSet& requestSet)
@@ -113,14 +104,11 @@ void MaterialCookPipeline::AppendTextureRequest(const ImportedTextureSource& tex
 		return;
 	}
 
-	const TextureCookRequest request =
-	    TextureCookRequestBuilder::Build(textureSource.sourcePath, textureSource.textureGroup, textureSource.channelMask);
+	const TextureCookRequest request = TextureCookRequestBuilder::Build(textureSource.sourcePath, textureSource.textureGroup, textureSource.channelMask);
 	requestSet.Add(request);
 }
 
-void MaterialCookPipeline::StageMaterialAsset(
-    const CookedMaterialAssetBuild& materialAsset,
-    std::vector<Files::FilePublication>& outPublication)
+void MaterialCookPipeline::StageMaterialAsset(const CookedMaterialAssetBuild& materialAsset, std::vector<Files::FilePublication>& outPublication)
 {
 	const std::filesystem::path outputPath = Paths::CookedMaterialAsset(materialAsset.assetId);
 	const std::filesystem::path stagedOutputPath = Files::BuildTemporaryPath(outputPath, ".cook-generation");
@@ -171,8 +159,7 @@ void MaterialCookPipeline::WriteMaterialName(std::ofstream& output, const Cooked
 	}
 }
 
-std::vector<Assets::CookedTextureReferenceRecord> MaterialCookPipeline::BuildTextureReferenceRecords(
-    const CookedMaterialAssetBuild& materialAsset)
+std::vector<Assets::CookedTextureReferenceRecord> MaterialCookPipeline::BuildTextureReferenceRecords(const CookedMaterialAssetBuild& materialAsset)
 {
 	std::vector<Assets::CookedTextureReferenceRecord> records;
 	records.reserve(materialAsset.textureReferences.size());
@@ -183,10 +170,7 @@ std::vector<Assets::CookedTextureReferenceRecord> MaterialCookPipeline::BuildTex
 			throw Diagnostics::Error("Cooked material texture reference path is too large to serialize.");
 		}
 
-		records.push_back(
-		    {.texturePathByteCount = static_cast<std::uint32_t>(reference.texturePath.size()),
-		     .textureGroup = reference.textureGroup,
-		     .mapping = reference.mapping});
+		records.push_back({.texturePathByteCount = static_cast<std::uint32_t>(reference.texturePath.size()), .textureGroup = reference.textureGroup, .mapping = reference.mapping});
 	}
 
 	return records;
@@ -232,8 +216,7 @@ MaterialCookOutput MaterialCooker::BuildMaterialAssets(const SourceImportOutput&
 
 	for (std::size_t materialIndex = 0; materialIndex < importOutput.scene.materials.size(); ++materialIndex)
 	{
-		CookedMaterialAssetBuild materialAsset =
-		    MaterialCookPipeline::BuildMaterialAsset(importOutput.scene.materials[materialIndex], sceneAssetId, materialIndex);
+		CookedMaterialAssetBuild materialAsset = MaterialCookPipeline::BuildMaterialAsset(importOutput.scene.materials[materialIndex], sceneAssetId, materialIndex);
 		output.assetReferences.push_back({materialAsset.assetId});
 		output.assets.push_back(std::move(materialAsset));
 	}
@@ -256,9 +239,7 @@ std::vector<TextureCookRequest> MaterialCooker::CollectTextureCookRequests(const
 	return requestSet.ReleaseRequests();
 }
 
-void MaterialCooker::StageMaterialAssets(
-    const std::vector<CookedMaterialAssetBuild>& materialAssets,
-    std::vector<Files::FilePublication>& outPublication)
+void MaterialCooker::StageMaterialAssets(const std::vector<CookedMaterialAssetBuild>& materialAssets, std::vector<Files::FilePublication>& outPublication)
 {
 	for (const CookedMaterialAssetBuild& materialAsset : materialAssets)
 	{

@@ -15,10 +15,7 @@ struct EngineRenderingSettingsState;
 class ViewportToolbar final
 {
 public:
-	ViewportToolbar(
-	    EditorViewportSession& viewportSession,
-	    const EngineRenderingSettingsState& renderingDefaults,
-	    const CVarControlExecutor& consoleVariables) noexcept;
+	ViewportToolbar(EditorViewportSession& viewportSession, const EngineRenderingSettingsState& renderingDefaults, const CVarControlExecutor& consoleVariables) noexcept;
 	~ViewportToolbar() noexcept;
 
 	ViewportToolbar(const ViewportToolbar&) = delete;
@@ -28,6 +25,7 @@ public:
 
 	void SetGeometry(float leftPixels, float topPixels, float widthPixels) noexcept;
 	void Draw(std::string_view levelName, bool disableInteraction = false) noexcept;
+
 	float GetHeightPixels() const noexcept { return m_heightPixels; }
 
 private:

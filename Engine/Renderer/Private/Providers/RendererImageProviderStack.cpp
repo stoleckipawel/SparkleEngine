@@ -20,9 +20,7 @@
 
 SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_rendererImageProviderStackLogger, "Renderer.ImageProviders");
 
-RendererImageProviderStack::RendererImageProviderStack(
-    RenderHardwareInterface& renderHardwareInterface,
-    RenderDeviceServices& deviceServices) :
+RendererImageProviderStack::RendererImageProviderStack(RenderHardwareInterface& renderHardwareInterface, RenderDeviceServices& deviceServices) :
     m_renderHardwareInterface(renderHardwareInterface),
     m_deviceServices(deviceServices)
 {
@@ -43,10 +41,7 @@ void RendererImageProviderStack::Initialize()
 	if (m_upscaler != nullptr
 	    && !m_upscaler->Initialize(
 	        capabilities,
-	        interop.GetDeviceQueueInterop(
-	            RhiNativeInteropRequest{
-	                .Consumer = ERhiNativeInteropConsumer::ExternalProvider,
-	                .Reason = "Renderer upscaler provider initialization"})))
+	        interop.GetDeviceQueueInterop(RhiNativeInteropRequest{.Consumer = ERhiNativeInteropConsumer::ExternalProvider, .Reason = "Renderer upscaler provider initialization"})))
 	{
 		Diagnostics::Fatal(
 		    g_rendererImageProviderStackLogger,
@@ -60,10 +55,7 @@ void RendererImageProviderStack::Initialize()
 	if (m_rayReconstruction != nullptr
 	    && !m_rayReconstruction->Initialize(
 	        capabilities,
-	        interop.GetDeviceQueueInterop(
-	            RhiNativeInteropRequest{
-	                .Consumer = ERhiNativeInteropConsumer::ExternalProvider,
-	                .Reason = "Renderer ray-reconstruction provider initialization"})))
+	        interop.GetDeviceQueueInterop(RhiNativeInteropRequest{.Consumer = ERhiNativeInteropConsumer::ExternalProvider, .Reason = "Renderer ray-reconstruction provider initialization"})))
 	{
 		Diagnostics::Fatal(
 		    g_rendererImageProviderStackLogger,
@@ -86,9 +78,7 @@ void RendererImageProviderStack::Shutdown() noexcept
 	m_retiredGenerations.clear();
 }
 
-void RendererImageProviderStack::ShutdownProviders(
-    std::unique_ptr<IUpscalerProvider>& upscaler,
-    std::unique_ptr<IRayReconstructionProvider>& rayReconstruction) noexcept
+void RendererImageProviderStack::ShutdownProviders(std::unique_ptr<IUpscalerProvider>& upscaler, std::unique_ptr<IRayReconstructionProvider>& rayReconstruction) noexcept
 {
 	if (upscaler != nullptr)
 	{
@@ -115,8 +105,7 @@ void RendererImageProviderStack::Refresh() noexcept
 		lastUse.MarkUsed(m_deviceServices.GetLastSubmittedToken(static_cast<ERhiQueueType>(queueIndex)));
 	}
 
-	m_retiredGenerations.push_back(
-	    RetiredGeneration{.LastUse = lastUse, .Upscaler = std::move(m_upscaler), .RayReconstruction = std::move(m_rayReconstruction)});
+	m_retiredGenerations.push_back(RetiredGeneration{.LastUse = lastUse, .Upscaler = std::move(m_upscaler), .RayReconstruction = std::move(m_rayReconstruction)});
 
 	Initialize();
 	++m_generation;
@@ -160,6 +149,7 @@ void RendererImageProviderStack::SetupFrame(const RenderView& view, const Render
 	    .Camera = view.cameraUniform,
 	    .Temporal = view.temporalUniform,
 	    .ResetHistory = view.temporalUniform.HistoryValid == 0u || m_resetHistoryPending};
+
 	m_resetHistoryPending = false;
 
 	if (m_upscaler != nullptr)
@@ -186,7 +176,5 @@ RenderViewportExtent RendererImageProviderStack::ResolveRenderExtent(RenderViewp
 
 ImageProviderGraphKey RendererImageProviderStack::GetFrameGraphKey() const noexcept
 {
-	return ImageProviderGraphKey{
-	    .UpscalerProvider = GetUpscalerProviderSelectionKey(),
-	    .RayReconstructionMode = static_cast<std::uint32_t>(CVarRayReconstructionMode.Get())};
+	return ImageProviderGraphKey{.UpscalerProvider = GetUpscalerProviderSelectionKey(), .RayReconstructionMode = static_cast<std::uint32_t>(CVarRayReconstructionMode.Get())};
 }

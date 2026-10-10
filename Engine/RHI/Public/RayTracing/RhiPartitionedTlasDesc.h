@@ -79,9 +79,7 @@ enum class RhiPartitionedTlasInstanceFlags : std::uint32_t
 	EnableExplicitBoundingBox = 1u << 4u,
 };
 
-SPARKLE_RHI_API RhiPartitionedTlasInstanceFlags operator|(
-    RhiPartitionedTlasInstanceFlags lhs,
-    RhiPartitionedTlasInstanceFlags rhs) noexcept;
+SPARKLE_RHI_API RhiPartitionedTlasInstanceFlags operator|(RhiPartitionedTlasInstanceFlags lhs, RhiPartitionedTlasInstanceFlags rhs) noexcept;
 SPARKLE_RHI_API bool HasFlag(RhiPartitionedTlasInstanceFlags flags, RhiPartitionedTlasInstanceFlags flag) noexcept;
 
 struct RhiPartitionedTlasOperationHeader

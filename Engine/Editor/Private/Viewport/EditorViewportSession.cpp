@@ -51,20 +51,13 @@ void EditorViewportSession::SynchronizeWorld(std::span<const WorldCameraReadData
 	m_cameraInitialized = true;
 }
 
-RenderViewCameraData EditorViewportSession::UpdateCamera(
-    const CameraInputIntent& intent,
-    float deltaSeconds,
-    RenderViewportExtent extent) noexcept
+RenderViewCameraData EditorViewportSession::UpdateCamera(const CameraInputIntent& intent, float deltaSeconds, RenderViewportExtent extent) noexcept
 {
 	if (intent.SpeedStepCount != 0.0f)
 	{
 		const CameraNavigationSettings& navigation = m_settings.GetState().Navigation;
 		(void) m_settings.SetMoveSpeed(
-		    CameraNavigation::ApplySpeedSteps(
-		        navigation.MoveSpeedMetersPerSecond,
-		        intent.SpeedStepCount,
-		        navigation.MinimumMoveSpeedMetersPerSecond,
-		        navigation.MaximumMoveSpeedMetersPerSecond));
+		    CameraNavigation::ApplySpeedSteps(navigation.MoveSpeedMetersPerSecond, intent.SpeedStepCount, navigation.MinimumMoveSpeedMetersPerSecond, navigation.MaximumMoveSpeedMetersPerSecond));
 	}
 
 	(void) CameraNavigation::Apply(intent, m_settings.GetState().Navigation, deltaSeconds, m_navigationState);

@@ -15,11 +15,14 @@ public:
 	void Reset() noexcept;
 
 	bool IsValid() const noexcept { return m_frameValid; }
+
 	EUpscalerQualityMode GetQualityMode() const noexcept { return m_qualityMode; }
+
 	const ImageProviderFrameInput& GetFrameInput() const noexcept { return m_frameInput; }
 
 private:
 	ImageProviderFrameInput m_frameInput = {};
+
 	RenderViewportExtent m_resolvedOutputExtent = {};
 	RenderViewportExtent m_resolvedRenderExtent = {};
 	EUpscalerQualityMode m_qualityMode = EUpscalerQualityMode::Quality;

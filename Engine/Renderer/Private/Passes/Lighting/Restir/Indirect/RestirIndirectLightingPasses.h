@@ -7,8 +7,4 @@ struct RenderFrame;
 
 class FrameGraphBuilder;
 
-void AddRestirIndirectLightingPasses(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderViewportExtent sceneExtent,
-    RenderFrameGraphResources& resources);
+void AddRestirIndirectLightingPasses(FrameGraphBuilder& builder, const RenderFrame& frame, RenderViewportExtent sceneExtent, RenderFrameGraphResources& resources);

@@ -18,6 +18,7 @@ class RestirIndirectResolveCS final : public GlobalShader<RestirIndirectResolveC
 {
 public:
 	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::InlineRayQuery;
+
 	BEGIN_SHADER_PARAMETER_STRUCT(Parameters, RestirIndirectResolveCS)
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, CurrentReservoirSampleTexture)
 	SHADER_PARAMETER_TEXTURE_SRV(Texture2D, CurrentReservoirWeightTexture)

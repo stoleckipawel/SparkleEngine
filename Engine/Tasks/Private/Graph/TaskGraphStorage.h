@@ -32,11 +32,6 @@ struct TaskGraphAccess final
 	static std::uint64_t GetBuilderIdentity(TaskNodeHandle handle) noexcept;
 	static std::uint32_t GetBuilderGeneration(TaskNodeHandle handle) noexcept;
 	static std::uint32_t GetIndex(TaskNodeHandle handle) noexcept;
-	static bool Decode(
-	    TaskNodeHandle handle,
-	    std::uint64_t builderIdentity,
-	    std::uint32_t builderGeneration,
-	    std::uint32_t taskCount,
-	    std::uint32_t& outIndex) noexcept;
+	static bool Decode(TaskNodeHandle handle, std::uint64_t builderIdentity, std::uint32_t builderGeneration, std::uint32_t taskCount, std::uint32_t& outIndex) noexcept;
 	static void RecordError(TaskGraphBuilder& builder, TaskGraphErrorCode code, std::string message);
 };

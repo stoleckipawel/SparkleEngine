@@ -10,8 +10,5 @@ class ShaderArtifactPublication final
 public:
 	ShaderArtifactPublication() = delete;
 
-	static ShaderCookOutput Publish(
-	    const ShaderCookPipelinePlan& plan,
-	    const std::filesystem::path& outputDirectory,
-	    bool replaceCompleteCatalog);
+	static ShaderCookOutput Publish(const ShaderCookPipelinePlan& plan, const std::filesystem::path& outputDirectory, bool replaceCompleteCatalog);
 };

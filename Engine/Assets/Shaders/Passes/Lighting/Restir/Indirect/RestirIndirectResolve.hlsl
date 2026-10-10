@@ -9,7 +9,8 @@ RWTexture2D<float4> IndirectDiffuse;
 RWTexture2D<float4> IndirectSpecular;
 #include "/Engine/Lighting/RayReconstructionGuides.hlsli"
 
-[numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
+[numthreads(8, 8, 1)]
+void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
 	uint width = 0u;
 	uint height = 0u;
@@ -20,9 +21,9 @@ RWTexture2D<float4> IndirectSpecular;
 		return;
 	}
 	const RestirIndirectReservoir::Surface surface = RestirIndirectReservoir::LoadSurface(pixelCoord);
-	const RestirIndirectReservoir::Reservoir reservoir =
-	    RestirIndirectReservoir::UnpackReservoir(CurrentReservoirSampleTexture.Load(int3(pixelCoord, 0)),
-	                                             CurrentReservoirWeightTexture.Load(int3(pixelCoord, 0)));
+
+	const RestirIndirectReservoir::Reservoir reservoir = RestirIndirectReservoir::UnpackReservoir(CurrentReservoirSampleTexture.Load(int3(pixelCoord, 0)),
+	                                                                                              CurrentReservoirWeightTexture.Load(int3(pixelCoord, 0)));
 
 	if (!surface.Valid)
 	{
@@ -46,8 +47,7 @@ RWTexture2D<float4> IndirectSpecular;
 		return;
 	}
 
-	RayTracingPathLighting::Result path =
-	    RestirIndirectReservoir::EvaluateCandidate(surface, reservoir.Selected, SkyTexture, SamplerLinearClamp);
+	RayTracingPathLighting::Result path = RestirIndirectReservoir::EvaluateCandidate(surface, reservoir.Selected, SkyTexture, SamplerLinearClamp);
 	const float reservoirWeight = RestirIndirectReservoir::GetFinalWeight(reservoir);
 	if (RestirIndirectEvaluateDiffuse != 0u)
 	{
@@ -63,9 +63,6 @@ RWTexture2D<float4> IndirectSpecular;
 	}
 	if (RestirIndirectWriteReconstructionGuides != 0u)
 	{
-		RayReconstructionGuides::WriteSpecularHitDistance(pixelCoord,
-		                                                  path.FirstLighting.HitPositionWorld,
-		                                                  surface.PathSurface.PositionWorld,
-		                                                  hasSpecular && path.FirstLighting.Hit);
+		RayReconstructionGuides::WriteSpecularHitDistance(pixelCoord, path.FirstLighting.HitPositionWorld, surface.PathSurface.PositionWorld, hasSpecular && path.FirstLighting.Hit);
 	}
 }

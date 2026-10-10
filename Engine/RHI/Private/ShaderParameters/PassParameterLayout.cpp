@@ -36,10 +36,7 @@ PassParameterLayout::PassParameterLayout(const char* debugName) :
 
 const PassParameterDesc* PassParameterLayout::FindParameter(std::string_view name) const noexcept
 {
-	const auto it = std::find_if(
-	    m_parameters.begin(),
-	    m_parameters.end(),
-	    [name](const PassParameterDesc& parameter) { return parameter.Name == name; });
+	const auto it = std::find_if(m_parameters.begin(), m_parameters.end(), [name](const PassParameterDesc& parameter) { return parameter.Name == name; });
 
 	return it != m_parameters.end() ? &(*it) : nullptr;
 }
@@ -58,9 +55,8 @@ bool PassParameterLayout::Matches(const PassParameterLayout& other) const noexce
 		{
 			return false;
 		}
-		if (lhs.Kind != rhs->Kind || lhs.ResourceDomain != rhs->ResourceDomain || lhs.Access != rhs->Access
-		    || lhs.Visibility != rhs->Visibility || lhs.ArrayCount != rhs->ArrayCount || lhs.ValueSizeInBytes != rhs->ValueSizeInBytes
-		    || lhs.ValueLayoutHash != rhs->ValueLayoutHash)
+		if (lhs.Kind != rhs->Kind || lhs.ResourceDomain != rhs->ResourceDomain || lhs.Access != rhs->Access || lhs.Visibility != rhs->Visibility || lhs.ArrayCount != rhs->ArrayCount
+		    || lhs.ValueSizeInBytes != rhs->ValueSizeInBytes || lhs.ValueLayoutHash != rhs->ValueLayoutHash)
 		{
 			return false;
 		}
@@ -81,8 +77,7 @@ std::uint32_t PassParameterLayout::AddParameter(PassParameterDesc parameter)
 {
 	assert(!parameter.Name.empty());
 	assert(parameter.ArrayCount > 0);
-	const auto existing =
-	    std::ranges::find_if(m_parameters, [&parameter](const PassParameterDesc& candidate) { return candidate.Name == parameter.Name; });
+	const auto existing = std::ranges::find_if(m_parameters, [&parameter](const PassParameterDesc& candidate) { return candidate.Name == parameter.Name; });
 	if (existing != m_parameters.end())
 	{
 		assert(existing->Kind == parameter.Kind);

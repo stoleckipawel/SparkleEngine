@@ -73,11 +73,7 @@ namespace TextureCookPipeline
 				case DXGI_FORMAT_BC7_UNORM:
 					return DXGI_FORMAT_BC7_UNORM_SRGB;
 				default:
-					Diagnostics::Fatal(
-					    g_textureFormatPolicyLogger,
-					    __FILE__,
-					    __LINE__,
-					    "sRGB-capable texture format has no sRGB conversion.");
+					Diagnostics::Fatal(g_textureFormatPolicyLogger, __FILE__, __LINE__, "sRGB-capable texture format has no sRGB conversion.");
 			}
 		}
 
@@ -96,11 +92,7 @@ namespace TextureCookPipeline
 			case DXGI_FORMAT_BC7_UNORM_SRGB:
 				return DXGI_FORMAT_BC7_UNORM;
 			default:
-				Diagnostics::Fatal(
-				    g_textureFormatPolicyLogger,
-				    __FILE__,
-				    __LINE__,
-				    "sRGB-capable texture format has no linear conversion.");
+				Diagnostics::Fatal(g_textureFormatPolicyLogger, __FILE__, __LINE__, "sRGB-capable texture format has no linear conversion.");
 		}
 	}
 

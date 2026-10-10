@@ -17,6 +17,7 @@
 #endif
 
 static constexpr std::array<std::string_view, 1> kDxcSourceExtensions = {{".hlsl"}};
+
 static constexpr std::array<ShaderTarget, 11> kDxcCodegenTargets = {{
     ShaderTarget::DxilSm60,
     ShaderTarget::DxilSm61,
@@ -30,7 +31,9 @@ static constexpr std::array<ShaderTarget, 11> kDxcCodegenTargets = {{
     ShaderTarget::SpirV15,
     ShaderTarget::SpirV16,
 }};
+
 static constexpr std::array<std::string_view, 2> kDxcBinaryFormats = {{"Dxil", "SpirV"}};
+
 static constexpr std::array<std::string_view, 3> kDxcDependencyLocations = {{
     "include=" SPARKLE_SHADER_COMPILER_DXC_INCLUDE_DIR,
     "importLibrary=" SPARKLE_SHADER_COMPILER_DXC_IMPORT_LIBRARY,

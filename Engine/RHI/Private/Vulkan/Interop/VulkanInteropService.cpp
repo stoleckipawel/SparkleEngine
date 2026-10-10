@@ -21,11 +21,7 @@ RhiNativeDeviceQueueInterop VulkanInteropService::GetDeviceQueueInterop(RhiNativ
 	    .Request = request};
 }
 
-NativeTextureViewInfo VulkanInteropService::GetNativeTextureViewInfo(
-    RhiResourceViewHandle view,
-    RhiResourceHandle resource,
-    ResourceState state,
-    const RhiNativeInteropRequest& request) const noexcept
+NativeTextureViewInfo VulkanInteropService::GetNativeTextureViewInfo(RhiResourceViewHandle view, RhiResourceHandle resource, ResourceState state, const RhiNativeInteropRequest& request) const noexcept
 {
 	if (!IsRhiNativeInteropRequestValid(request) || m_owner == nullptr || m_owner->m_descriptorService == nullptr)
 	{

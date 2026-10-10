@@ -20,11 +20,7 @@ public:
 
 private:
 	void ResolvePrimitives(const RenderScene& scene, RenderScenePreparationRun& run);
-	ResolvedRenderPrimitive ResolvePrimitive(
-	    const RenderScene& scene,
-	    const RenderPrimitive& primitive,
-	    std::uint32_t materialGeneration,
-	    PreparedRenderScene& preparedScene);
+	ResolvedRenderPrimitive ResolvePrimitive(const RenderScene& scene, const RenderPrimitive& primitive, std::uint32_t materialGeneration, PreparedRenderScene& preparedScene);
 	void ResolveInstanceGroups(const RenderScene& scene, RenderScenePreparationRun& run) const;
 	void ResolveSky(const RenderScene& scene, PreparedRenderScene& preparedScene) const;
 

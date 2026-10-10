@@ -45,8 +45,4 @@ public:
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
 
-void AddDirectLightingPass(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources);
+void AddDirectLightingPass(FrameGraphBuilder& builder, const RenderFrame& frame, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources);

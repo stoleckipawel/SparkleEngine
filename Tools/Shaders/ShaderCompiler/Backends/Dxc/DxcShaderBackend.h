@@ -34,6 +34,7 @@ public:
 	DxcShaderBackend& operator=(DxcShaderBackend&&) = delete;
 
 	bool IsValid() const noexcept { return m_compiler != nullptr && m_utils != nullptr; }
+
 	static ShaderBackendCapabilities GetStaticCapabilities() noexcept;
 	static std::uint64_t QueryBackendVersion();
 
@@ -57,11 +58,7 @@ private:
 
 	static std::string ExtractErrorMessage(IDxcResult* result);
 	static std::string ExtractTextOutput(IDxcResult* result, DXC_OUT_KIND kind);
-	static std::string ExtractPreprocessedSource(
-	    IDxcUtils& utils,
-	    IDxcCompiler3& compiler,
-	    const DxcBuffer& sourceBuffer,
-	    const std::vector<LPCWSTR>& compileArgs);
+	static std::string ExtractPreprocessedSource(IDxcUtils& utils, IDxcCompiler3& compiler, const DxcBuffer& sourceBuffer, const std::vector<LPCWSTR>& compileArgs);
 	static std::string ExtractDisassembly(IDxcUtils& utils, IDxcCompiler3& compiler, std::span<const std::uint8_t> bytecode);
 	static ShaderDebugArtifactSet CaptureDebugArtifacts(
 	    const ShaderCompileRequest& request,

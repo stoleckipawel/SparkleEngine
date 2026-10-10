@@ -82,9 +82,7 @@ static_assert(offsetof(PointLightGpuData, Position) == 0, "PointLightGpuData::Po
 static_assert(offsetof(PointLightGpuData, Range) == 12, "PointLightGpuData::Range must be at c0.w");
 static_assert(offsetof(PointLightGpuData, Color) == 16, "PointLightGpuData::Color must start at c1.xyz");
 static_assert(offsetof(PointLightGpuData, LuminousIntensity) == 28, "PointLightGpuData::LuminousIntensity must be at c1.w");
-static_assert(
-    offsetof(PointLightGpuData, DistanceAttenuationCoefficients) == 32,
-    "PointLightGpuData::DistanceAttenuationCoefficients must start at c2.xyz");
+static_assert(offsetof(PointLightGpuData, DistanceAttenuationCoefficients) == 32, "PointLightGpuData::DistanceAttenuationCoefficients must start at c2.xyz");
 static_assert(offsetof(PointLightGpuData, Radius) == 44, "PointLightGpuData::Radius must be at c2.w");
 static_assert(offsetof(PointLightGpuData, CastShadow) == 48, "PointLightGpuData::CastShadow must start at c3.x");
 static_assert(sizeof(SpotLightGpuData) == 80, "Spot light GPU data must be 80 bytes");
@@ -94,9 +92,7 @@ static_assert(offsetof(SpotLightGpuData, Direction) == 16, "SpotLightGpuData::Di
 static_assert(offsetof(SpotLightGpuData, InnerAngleCosine) == 28, "SpotLightGpuData::InnerAngleCosine must be at c1.w");
 static_assert(offsetof(SpotLightGpuData, Color) == 32, "SpotLightGpuData::Color must start at c2.xyz");
 static_assert(offsetof(SpotLightGpuData, LuminousIntensity) == 44, "SpotLightGpuData::LuminousIntensity must be at c2.w");
-static_assert(
-    offsetof(SpotLightGpuData, DistanceAttenuationCoefficients) == 48,
-    "SpotLightGpuData::DistanceAttenuationCoefficients must start at c3.xyz");
+static_assert(offsetof(SpotLightGpuData, DistanceAttenuationCoefficients) == 48, "SpotLightGpuData::DistanceAttenuationCoefficients must start at c3.xyz");
 static_assert(offsetof(SpotLightGpuData, Radius) == 60, "SpotLightGpuData::Radius must be at c3.w");
 static_assert(offsetof(SpotLightGpuData, OuterAngleCosine) == 64, "SpotLightGpuData::OuterAngleCosine must start at c4.x");
 static_assert(offsetof(SpotLightGpuData, CastShadow) == 68, "SpotLightGpuData::CastShadow must be at c4.y");

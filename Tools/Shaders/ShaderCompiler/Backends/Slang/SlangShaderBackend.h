@@ -22,6 +22,7 @@ public:
 	SlangShaderBackend& operator=(SlangShaderBackend&&) = delete;
 
 	bool IsValid() const noexcept { return m_globalSession != nullptr; }
+
 	static ShaderBackendCapabilities GetStaticCapabilities() noexcept;
 	static std::uint64_t QueryBackendVersion();
 
@@ -35,10 +36,7 @@ private:
 	static SlangCompileTarget MapTarget(ShaderTarget target);
 	static std::string BlobToString(slang::IBlob* blob);
 	static std::vector<std::string> BuildDebugArgumentStrings(const ShaderCompileRequest& request);
-	static ShaderDebugArtifactSet CaptureDebugArtifacts(
-	    const ShaderCompileRequest& request,
-	    std::string_view sourceText,
-	    std::string_view diagnostics);
+	static ShaderDebugArtifactSet CaptureDebugArtifacts(const ShaderCompileRequest& request, std::string_view sourceText, std::string_view diagnostics);
 	static std::uint64_t QueryBackendVersion(slang::IGlobalSession& globalSession);
 
 	Slang::ComPtr<slang::IGlobalSession> m_globalSession;

@@ -80,8 +80,7 @@ private:
 		const auto ticks = std::chrono::steady_clock::now().time_since_epoch().count();
 		for (std::uint32_t attempt = 0; attempt < 64; ++attempt)
 		{
-			const std::filesystem::path signalDirectory = temporaryDirectory
-			    / std::format("SparkleShaderCookCancellation-{}-{}", ticks, sequence.fetch_add(1, std::memory_order_relaxed));
+			const std::filesystem::path signalDirectory = temporaryDirectory / std::format("SparkleShaderCookCancellation-{}-{}", ticks, sequence.fetch_add(1, std::memory_order_relaxed));
 			errorCode.clear();
 			if (std::filesystem::create_directory(signalDirectory, errorCode))
 			{
@@ -141,10 +140,8 @@ std::filesystem::path ShaderCompilerProcess::ResolveExecutable() noexcept
 {
 	const std::filesystem::path executableDirectory = Filesystem::GetExecutableDirectory();
 	const std::string profileName = executableDirectory.filename().string();
-	const Filesystem::WorkspaceOutputPaths outputs =
-	    Filesystem::ResolveWorkspaceOutputPaths(Filesystem::GetWorkspaceRootPath());
-	const std::filesystem::path executablePath =
-	    outputs.ToolTargetOutputs("ShaderCompiler", profileName).BinaryDirectory / "ShaderCompiler.exe";
+	const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(Filesystem::GetWorkspaceRootPath());
+	const std::filesystem::path executablePath = outputs.ToolTargetOutputs("ShaderCompiler", profileName).BinaryDirectory / "ShaderCompiler.exe";
 	std::error_code error;
 	return std::filesystem::is_regular_file(executablePath, error) && !error ? executablePath : std::filesystem::path{};
 }
@@ -156,10 +153,7 @@ std::filesystem::path ShaderCompilerProcess::ResolveProjectDirectory() noexcept
 	return std::filesystem::exists(projectDirectory, error) && !error ? projectDirectory : std::filesystem::path{};
 }
 
-ShaderCompilerProcessResult ShaderCompilerProcess::RunCommand(
-    const std::filesystem::path& executablePath,
-    const std::filesystem::path& workingDirectory,
-    std::vector<std::string> arguments) noexcept
+ShaderCompilerProcessResult ShaderCompilerProcess::RunCommand(const std::filesystem::path& executablePath, const std::filesystem::path& workingDirectory, std::vector<std::string> arguments) noexcept
 {
 	ShaderCompilerProcessResult result;
 	if (executablePath.empty())
@@ -175,11 +169,10 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunCommand(
 
 	result.ExecutablePath = executablePath;
 	result.CommandLine = ShaderCompilerCommandPresentation::BuildDisplayCommand(executablePath, arguments);
+
 	Process::ChildProcessResult process = Process::ChildProcess::Run(
-	    Process::ChildProcessRequest{
-	        .ExecutablePath = executablePath,
-	        .Arguments = std::move(arguments),
-	        .WorkingDirectory = workingDirectory});
+	    Process::ChildProcessRequest{.ExecutablePath = executablePath, .Arguments = std::move(arguments), .WorkingDirectory = workingDirectory});
+
 	result.ExitCode = process.ExitCode;
 	result.Output = std::move(process.CapturedOutput);
 	if (!process.FailureReason.empty())

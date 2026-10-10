@@ -24,19 +24,29 @@ namespace SparkleLauncher
 		{
 			case LauncherWorkflowPageKind::Home:
 				icon = LauncherIcon::Start;
+
 				break;
+
 			case LauncherWorkflowPageKind::Sync:
 				icon = LauncherIcon::Sync;
+
 				break;
+
 			case LauncherWorkflowPageKind::Build:
 				icon = LauncherIcon::Build;
+
 				break;
+
 			case LauncherWorkflowPageKind::Cook:
 				icon = LauncherIcon::Cook;
+
 				break;
+
 			case LauncherWorkflowPageKind::Clean:
 				icon = LauncherIcon::Clean;
+
 				break;
+
 			case LauncherWorkflowPageKind::Unknown:
 				return {};
 		}
@@ -123,11 +133,8 @@ namespace SparkleLauncher
 
 		groupLayout->addStretch(1);
 		railLayout->addLayout(groupLayout, 1);
-		connect(
-		    m_workflowGroupButtons,
-		    &QButtonGroup::buttonClicked,
-		    this,
-		    [this](QAbstractButton* button) { SelectWorkflowGroup(button); });
+		connect(m_workflowGroupButtons, &QButtonGroup::buttonClicked, this, [this](QAbstractButton* button) { SelectWorkflowGroup(button); });
+
 		connect(
 		    m_operationButtons,
 		    &QButtonGroup::buttonClicked,

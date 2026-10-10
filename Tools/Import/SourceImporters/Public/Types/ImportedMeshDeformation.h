@@ -11,5 +11,6 @@ struct ImportedMeshDeformation
 	std::vector<ImportedMorphTarget> morphTargets;
 
 	bool HasSkinInfluences() const noexcept { return !skinInfluences.empty(); }
+
 	bool HasMorphTargets() const noexcept { return !morphTargets.empty(); }
 };

@@ -6,10 +6,7 @@
 #include <utility>
 #include <vector>
 
-EngineRenderingSettingsController::EngineRenderingSettingsController(
-    EngineRenderingSettingsState state,
-    CommitHandler commitHandler,
-    RefreshHandler refreshHandler) :
+EngineRenderingSettingsController::EngineRenderingSettingsController(EngineRenderingSettingsState state, CommitHandler commitHandler, RefreshHandler refreshHandler) :
     m_state(std::move(state)),
     m_sessionBackBufferFormat(m_state.BackBufferFormat),
     m_sessionPreferHighPerformanceAdapter(m_state.PreferHighPerformanceAdapter),
@@ -190,8 +187,7 @@ bool EngineRenderingSettingsController::ComputePendingRestart() const noexcept
 		return true;
 	}
 #endif
-	return m_sessionPreferHighPerformanceAdapter != m_state.PreferHighPerformanceAdapter
-	    || m_sessionBackBufferFormat != m_state.BackBufferFormat;
+	return m_sessionPreferHighPerformanceAdapter != m_state.PreferHighPerformanceAdapter || m_sessionBackBufferFormat != m_state.BackBufferFormat;
 }
 
 std::string EngineRenderingSettingsController::DescribePendingRestart() const

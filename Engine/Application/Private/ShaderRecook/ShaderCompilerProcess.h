@@ -18,7 +18,9 @@ struct ShaderCompilerProcessResult final
 	std::string Output;
 
 	bool Succeeded() const noexcept { return ExitCode == 0; }
+
 	bool NoWork() const noexcept { return ExitCode == kShaderCompilerNoWorkExitCode; }
+
 	bool SettledSuccessfully() const noexcept { return Succeeded() || NoWork(); }
 };
 
@@ -33,8 +35,5 @@ public:
 private:
 	static std::filesystem::path ResolveExecutable() noexcept;
 	static std::filesystem::path ResolveProjectDirectory() noexcept;
-	static ShaderCompilerProcessResult RunCommand(
-	    const std::filesystem::path& executablePath,
-	    const std::filesystem::path& workingDirectory,
-	    std::vector<std::string> arguments) noexcept;
+	static ShaderCompilerProcessResult RunCommand(const std::filesystem::path& executablePath, const std::filesystem::path& workingDirectory, std::vector<std::string> arguments) noexcept;
 };

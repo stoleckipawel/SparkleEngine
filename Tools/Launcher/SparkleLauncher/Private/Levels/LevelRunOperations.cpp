@@ -83,16 +83,14 @@ namespace SparkleLauncher
 		static const std::vector<LevelRunOperationDefinition> definitions = {
 		    {"levels.run", "Levels", "Run Level", "Open a catalog level in the selected product after its prerequisites are ready."},
 		};
+
 		return definitions;
 	}
 
 	std::optional<LevelRunOperationDefinition> FindLevelRunOperationDefinition(std::string_view operationId)
 	{
 		const std::vector<LevelRunOperationDefinition>& definitions = GetLevelRunOperationDefinitions();
-		const auto found = std::find_if(
-		    definitions.begin(),
-		    definitions.end(),
-		    [operationId](const LevelRunOperationDefinition& definition) { return definition.Id == operationId; });
+		const auto found = std::find_if(definitions.begin(), definitions.end(), [operationId](const LevelRunOperationDefinition& definition) { return definition.Id == operationId; });
 		return found == definitions.end() ? std::nullopt : std::optional<LevelRunOperationDefinition>(*found);
 	}
 
@@ -103,11 +101,7 @@ namespace SparkleLauncher
 		if (!definition.has_value())
 		{
 			plan.Operation = MakeOperationRecord(std::string(operationId), "Unknown level run operation");
-			SetOperationFailure(
-			    plan.Operation,
-			    OperationProblemKind::Planning,
-			    "Unknown level run operation id.",
-			    "Choose the registered Run Level operation, then retry.");
+			SetOperationFailure(plan.Operation, OperationProblemKind::Planning, "Unknown level run operation id.", "Choose the registered Run Level operation, then retry.");
 			AddReadiness(plan, plan.Operation.Failure->Summary);
 			return plan;
 		}
@@ -115,6 +109,7 @@ namespace SparkleLauncher
 		plan.RepositoryRoot = request.RepositoryRoot;
 		plan.Request = request;
 		plan.Operation = MakeOperationRecord(definition->Id, definition->DisplayName);
+
 		plan.Operation.Inputs = {
 		    {"content", plan.Request.ContentId},
 		    {"runMode", std::string(ToString(plan.Request.RunMode))},
@@ -122,6 +117,7 @@ namespace SparkleLauncher
 		    {"level", plan.Request.LevelId},
 		    {"graphicsApi", plan.Request.GraphicsApi},
 		    {"captureProvider", std::string(ExternalCaptureProviderToString(plan.Request.CaptureProvider))}};
+
 		plan.Operation.LogPath = ResolveLauncherOperationLogPath(plan.Request.RepositoryRoot, definition->Id, "Latest.txt");
 		if (plan.Request.LevelId.empty())
 		{
@@ -134,23 +130,18 @@ namespace SparkleLauncher
 			return plan;
 		}
 
-		const auto capture =
-		    InspectExternalCaptureProvider(plan.Request.CaptureProvider, plan.Request.GraphicsApi, plan.Request.ProductProfile);
+		const auto capture = InspectExternalCaptureProvider(plan.Request.CaptureProvider, plan.Request.GraphicsApi, plan.Request.ProductProfile);
 		if (!capture.Available())
 		{
 			AddReadiness(plan, capture.Detail);
 			return plan;
 		}
 
-		const BuildProfileTarget expectedTarget =
-		    plan.Request.RunMode == LevelRunMode::Editor ? BuildProfileTarget::Editor : BuildProfileTarget::Game;
+		const BuildProfileTarget expectedTarget = plan.Request.RunMode == LevelRunMode::Editor ? BuildProfileTarget::Editor : BuildProfileTarget::Game;
 		const std::optional<BuildProfile> profile = FindBuildProfile(plan.Request.ProductProfile);
 		if (!profile.has_value() || profile->Target != expectedTarget)
 		{
-			AddReadiness(
-			    plan,
-			    "Profile does not match the selected " + std::string(ToString(plan.Request.RunMode))
-			        + " run mode: " + plan.Request.ProductProfile);
+			AddReadiness(plan, "Profile does not match the selected " + std::string(ToString(plan.Request.RunMode)) + " run mode: " + plan.Request.ProductProfile);
 			return plan;
 		}
 
@@ -163,39 +154,27 @@ namespace SparkleLauncher
 		}
 #endif
 		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(plan.Request.RepositoryRoot);
+
 		plan.ExecutablePath = FirstExistingOrPreferred({
-		    outputs.ProjectTargetOutputs(
-		               plan.Request.ContentId,
-		               plan.Request.RunMode == LevelRunMode::Editor ? "editor" : "runtime",
-		               plan.Request.ProductProfile)
-		            .BinaryDirectory
-		        / fileName,
+		    outputs.ProjectTargetOutputs(plan.Request.ContentId, plan.Request.RunMode == LevelRunMode::Editor ? "editor" : "runtime", plan.Request.ProductProfile).BinaryDirectory / fileName,
 		    ResolveSparkleToolPath(plan.Request.RepositoryRoot, plan.Request.ProductProfile, plan.TargetName),
 		});
+
 		plan.WorkingDirectory = plan.Request.RepositoryRoot / "Projects" / plan.Request.ContentId;
 		AddEnvironment(plan, "SPARKLE_STARTUP_LEVEL", plan.Request.LevelId);
 
 		std::error_code errorCode;
 		plan.Readiness.ExecutableReady = std::filesystem::is_regular_file(plan.ExecutablePath, errorCode);
 		errorCode.clear();
-		plan.Readiness.ContentDirectoryReady =
-		    std::filesystem::exists(plan.WorkingDirectory / std::string(Filesystem::kProjectMarker), errorCode);
+		plan.Readiness.ContentDirectoryReady = std::filesystem::exists(plan.WorkingDirectory / std::string(Filesystem::kProjectMarker), errorCode);
 		const CookedContentReadiness cookedContent = InspectCookedContentReadiness(plan.Request.RepositoryRoot, plan.Request.ContentId);
 		plan.Readiness.CookedMeshesReady = cookedContent.MeshesReady;
 		plan.Readiness.CookedTexturesReady = cookedContent.TexturesReady;
 		plan.Readiness.CookedShadersReady = cookedContent.Shaders == CookedShaderPublicationState::Ready;
 
-		AddReadiness(
-		    plan,
-		    plan.Readiness.ExecutableReady ? "Selected product executable is ready."
-		                                   : "Selected product executable is missing; compile " + plan.TargetName + " first.");
-		AddReadiness(
-		    plan,
-		    plan.Readiness.ContentDirectoryReady ? "Content working directory is valid."
-		                                         : "Content working directory is missing or invalid: " + plan.WorkingDirectory.string());
-		AddReadiness(
-		    plan,
-		    plan.Readiness.CookedMeshesReady ? "Cooked scenes and meshes are ready." : "Cooked scenes and meshes are missing.");
+		AddReadiness(plan, plan.Readiness.ExecutableReady ? "Selected product executable is ready." : "Selected product executable is missing; compile " + plan.TargetName + " first.");
+		AddReadiness(plan, plan.Readiness.ContentDirectoryReady ? "Content working directory is valid." : "Content working directory is missing or invalid: " + plan.WorkingDirectory.string());
+		AddReadiness(plan, plan.Readiness.CookedMeshesReady ? "Cooked scenes and meshes are ready." : "Cooked scenes and meshes are missing.");
 		AddReadiness(plan, plan.Readiness.CookedTexturesReady ? "Cooked textures are ready." : "Cooked textures are missing.");
 		switch (cookedContent.Shaders)
 		{
@@ -209,13 +188,12 @@ namespace SparkleLauncher
 				AddReadiness(plan, "The complete cooked shader generation is missing.");
 				break;
 		}
-		AddPlannedEffect(
-		    plan,
-		    "Run level " + plan.Request.LevelId + " in " + plan.ExecutablePath.string() + " from " + plan.WorkingDirectory.string() + ".");
+		AddPlannedEffect(plan, "Run level " + plan.Request.LevelId + " in " + plan.ExecutablePath.string() + " from " + plan.WorkingDirectory.string() + ".");
 		AddPlannedEffect(plan, "Use graphics API: " + plan.Request.GraphicsApi + ".");
 
-		plan.CanRun = plan.Readiness.ExecutableReady && plan.Readiness.ContentDirectoryReady && plan.Readiness.CookedMeshesReady
-		    && plan.Readiness.CookedTexturesReady && plan.Readiness.CookedShadersReady;
+		plan.CanRun = plan.Readiness.ExecutableReady && plan.Readiness.ContentDirectoryReady && plan.Readiness.CookedMeshesReady && plan.Readiness.CookedTexturesReady
+		    && plan.Readiness.CookedShadersReady;
+
 		PopulateRunStep(plan);
 
 		std::ostringstream dryRun;

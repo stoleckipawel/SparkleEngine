@@ -15,10 +15,7 @@
 #include "Scene/RayTracing/RenderRayTracingScene.h"
 #include "ShaderData/SceneShaderParameters.h"
 
-template <typename TShader> static auto& BuildDirectShadowSignalParameters(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    const RenderFrameGraphResources& resources)
+template <typename TShader> static auto& BuildDirectShadowSignalParameters(FrameGraphBuilder& builder, const RenderFrame& frame, const RenderFrameGraphResources& resources)
 {
 	auto& parameters = builder.AllocParameters<TShader>();
 	parameters->ShadowVisibilitySignal = builder.CreateUAV(resources.Transient.ShadowVisibilitySignal);
@@ -33,12 +30,7 @@ template <typename TShader> static auto& BuildDirectShadowSignalParameters(
 	return parameters;
 }
 
-void AddDirectShadowSignalPass(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderViewportExtent sceneExtent,
-    RenderFrameGraphResources& resources,
-    RenderRayTracingScene& rayTracingScene)
+void AddDirectShadowSignalPass(FrameGraphBuilder& builder, const RenderFrame& frame, RenderViewportExtent sceneExtent, RenderFrameGraphResources& resources, RenderRayTracingScene& rayTracingScene)
 {
 	CreateDirectShadowSignalResources(builder, sceneExtent, resources);
 	if (!IsDirectShadowsActive())

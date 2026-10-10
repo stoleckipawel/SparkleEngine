@@ -29,20 +29,13 @@ public:
 	RhiDescriptorAllocation AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType) override;
 	void ReleaseDescriptor(ERhiDescriptorAllocatorType descriptorType, const RhiDescriptorAllocation& allocation) noexcept override;
 	RhiDescriptorTableHandle AllocateDescriptorTable(ERhiDescriptorAllocatorType descriptorType, std::uint32_t descriptorCount) override;
-	RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(
-	    RhiDescriptorTableHandle tableHandle,
-	    std::uint32_t descriptorIndex = 0) const noexcept override;
-	RhiGpuDescriptorHandle GetDescriptorTableGpuHandle(
-	    RhiDescriptorTableHandle tableHandle,
-	    std::uint32_t descriptorIndex = 0) const noexcept;
+	RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0) const noexcept override;
+	RhiGpuDescriptorHandle GetDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0) const noexcept;
 	void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept override;
 	RhiDescriptorTableBinding GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept override;
 	void SetSamplerTableHandle(RhiDescriptorTableHandle samplerTableHandle) noexcept;
 	RhiResourceViewHandle CreateResourceView(const RhiResourceViewDesc& desc) override;
-	bool WriteResourceView(
-	    RhiDescriptorTableHandle tableHandle,
-	    std::uint32_t descriptorIndex,
-	    RhiResourceViewHandle view) noexcept override;
+	bool WriteResourceView(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex, RhiResourceViewHandle view) noexcept override;
 	void ReleaseResourceView(RhiResourceViewHandle view) noexcept override;
 	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept override;
 	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept override;
@@ -50,10 +43,7 @@ public:
 private:
 	friend class D3D12InteropService;
 
-	NativeTextureViewInfo ResolveNativeTextureViewInfo(
-	    RhiResourceViewHandle view,
-	    RhiResourceHandle resource,
-	    ResourceState state) const noexcept;
+	NativeTextureViewInfo ResolveNativeTextureViewInfo(RhiResourceViewHandle view, RhiResourceHandle resource, ResourceState state) const noexcept;
 
 	struct DescriptorTableRecord
 	{
@@ -103,10 +93,7 @@ private:
 	ResourceViewRecord* FindResourceViewRecord(RhiResourceViewHandle view) noexcept;
 	const ResourceViewRecord* FindResourceViewRecord(RhiResourceViewHandle view) const noexcept;
 	void DestroyDescriptorAllocation(ERhiDescriptorAllocatorType descriptorType, const RhiDescriptorAllocation& allocation) noexcept;
-	void DestroyDescriptorTable(
-	    ERhiDescriptorAllocatorType descriptorType,
-	    const D3D12DescriptorHandle& nativeHandle,
-	    std::uint32_t descriptorCount) noexcept;
+	void DestroyDescriptorTable(ERhiDescriptorAllocatorType descriptorType, const D3D12DescriptorHandle& nativeHandle, std::uint32_t descriptorCount) noexcept;
 	void RecycleDescriptorTableRecord(std::uint32_t recordIndex) noexcept;
 	void DestroyResourceView(ResourceViewRecord& record) noexcept;
 	void RecycleResourceViewRecord(std::uint32_t recordIndex) noexcept;

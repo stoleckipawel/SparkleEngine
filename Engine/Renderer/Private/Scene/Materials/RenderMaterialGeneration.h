@@ -22,9 +22,13 @@ public:
 	RenderMaterialGeneration& operator=(RenderMaterialGeneration&&) = delete;
 
 	std::span<const MaterialData> GetMaterials() const noexcept { return m_materials; }
+
 	const MaterialTextureTable& GetTextureTable() const noexcept { return m_textureTable; }
+
 	std::uint64_t GetSourceRevision() const noexcept { return m_sourceRevision; }
+
 	std::uint64_t GetTextureRevision() const noexcept { return m_textureRevision; }
+
 	std::uint64_t GetGeneration() const noexcept { return m_generation; }
 
 private:

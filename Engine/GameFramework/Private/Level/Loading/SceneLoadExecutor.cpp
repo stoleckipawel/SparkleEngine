@@ -58,11 +58,7 @@ namespace Assets
 	{
 		if (m_control->Scope)
 		{
-			Diagnostics::Fatal(
-			    g_sceneLoadExecutorLogger,
-			    __FILE__,
-			    __LINE__,
-			    "A scene-load task graph was started before the previous graph settled.");
+			Diagnostics::Fatal(g_sceneLoadExecutorLogger, __FILE__, __LINE__, "A scene-load task graph was started before the previous graph settled.");
 		}
 		if (level.sceneAssetIds.size() > SceneLoadLimits::kMaximumAssetsPerRequest)
 		{
@@ -88,19 +84,13 @@ namespace Assets
 		{
 			if (id.IsEmpty() || !identities.insert(id.value).second)
 			{
-				throw Diagnostics::Error(
-				    id.IsEmpty() ? "Level contains an empty scene asset identity."
-				                 : std::format("Level contains duplicate scene asset identity '{}'.", id.value));
+				throw Diagnostics::Error(id.IsEmpty() ? "Level contains an empty scene asset identity." : std::format("Level contains duplicate scene asset identity '{}'.", id.value));
 			}
 			const std::optional<std::filesystem::path> manifest = m_control->Catalog->Resolve(id.GetCatalogValue());
 			if (!manifest)
 			{
 				throw Diagnostics::Error(
-				    std::format(
-				        "Scene asset catalog ID '{}' for instance '{}' is absent from catalog generation {}.",
-				        id.GetCatalogValue(),
-				        id.value,
-				        m_control->Catalog->GetGeneration()));
+				    std::format("Scene asset catalog ID '{}' for instance '{}' is absent from catalog generation {}.", id.GetCatalogValue(), id.value, m_control->Catalog->GetGeneration()));
 			}
 			shared->Assets.push_back(SceneAssetLoadWork{.Id = id, .ManifestPath = *manifest});
 		}
@@ -111,9 +101,7 @@ namespace Assets
 			Diagnostics::Fatal(g_sceneLoadExecutorLogger, __FILE__, __LINE__, graph.GetError().Message);
 		}
 
-		m_control->Scope = std::make_unique<TaskScope>(
-		    TaskScopeDesc{TaskScopeKind::Document, std::format("Load level {}", shared->Package->Level.name)},
-		    &m_control->ApplicationScope);
+		m_control->Scope = std::make_unique<TaskScope>(TaskScopeDesc{TaskScopeKind::Document, std::format("Load level {}", shared->Package->Level.name)}, &m_control->ApplicationScope);
 		m_control->RequestId = requestId;
 		m_control->Shared = shared;
 		m_control->Execution = m_control->Executor.Launch(*m_control->Scope, graph, TaskExecutionContext(shared));
@@ -143,19 +131,13 @@ namespace Assets
 		SceneLoadCompletion completion;
 		completion.RequestId = m_control->RequestId;
 		const TaskResult result = m_control->Execution.GetResult();
-		completion.Stage = result.Succeeded()
-		    ? LevelLoadOperationStage::Ready
-		    : (result.WasCancelled() ? LevelLoadOperationStage::Cancelled : LevelLoadOperationStage::Failed);
+		completion.Stage = result.Succeeded() ? LevelLoadOperationStage::Ready : (result.WasCancelled() ? LevelLoadOperationStage::Cancelled : LevelLoadOperationStage::Failed);
 		completion.Diagnostic = std::string(result.GetMessage());
 		if (result.Succeeded())
 		{
 			if (!m_control->Shared || !m_control->Shared->Package)
 			{
-				Diagnostics::Fatal(
-				    g_sceneLoadExecutorLogger,
-				    __FILE__,
-				    __LINE__,
-				    "A successful scene-load task graph produced no package.");
+				Diagnostics::Fatal(g_sceneLoadExecutorLogger, __FILE__, __LINE__, "A successful scene-load task graph produced no package.");
 			}
 			completion.Package = std::move(m_control->Shared->Package);
 		}

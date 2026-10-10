@@ -114,9 +114,7 @@ namespace SparkleLauncher
 		const LauncherLevelUiModel model = LauncherLevelUiModel::Build(*content);
 		if (!model.Loaded)
 		{
-			AddNoOptionsMessage(
-			    *catalogLayout,
-			    model.LoadError.isEmpty() ? QStringLiteral("The repository has no readable Levels.catalog.") : model.LoadError);
+			AddNoOptionsMessage(*catalogLayout, model.LoadError.isEmpty() ? QStringLiteral("The repository has no readable Levels.catalog.") : model.LoadError);
 			return;
 		}
 
@@ -132,6 +130,7 @@ namespace SparkleLauncher
 		    LauncherUi::MapCatalog::HorizontalSpacing,
 		    LauncherUi::MapCatalog::VerticalSpacing,
 		    this);
+
 		for (const LauncherLevelUiEntry& level : model.Levels)
 		{
 			AddSyncLevelRow(*grid, content, level);
@@ -139,10 +138,7 @@ namespace SparkleLauncher
 		layout.addWidget(grid);
 	}
 
-	void LauncherMainWindow::AddSyncLevelRow(
-	    ResponsiveCardGridWidget& grid,
-	    const LauncherContentSummary& content,
-	    const LauncherLevelUiEntry& level)
+	void LauncherMainWindow::AddSyncLevelRow(ResponsiveCardGridWidget& grid, const LauncherContentSummary& content, const LauncherLevelUiEntry& level)
 	{
 		ProportionalCardFrame* card = new ProportionalCardFrame(LauncherUi::MapCatalog::CardAspectRatio, this);
 		card->setObjectName("MapCatalogCard");
@@ -204,11 +200,7 @@ namespace SparkleLauncher
 			sourceButton->setFixedSize(LauncherUi::Row::StatusActionWidth, LauncherUi::Row::StatusActionHeight);
 			sourceButton->setToolTip(QStringLiteral("Open the publisher's preview and download page."));
 			RegisterFocusable(sourceButton);
-			connect(
-			    sourceButton,
-			    &QPushButton::clicked,
-			    this,
-			    [sourcePageUrl = level.SourcePageUrl]() { QDesktopServices::openUrl(QUrl(sourcePageUrl)); });
+			connect(sourceButton, &QPushButton::clicked, this, [sourcePageUrl = level.SourcePageUrl]() { QDesktopServices::openUrl(QUrl(sourcePageUrl)); });
 			actions->addWidget(sourceButton);
 		}
 
@@ -218,6 +210,7 @@ namespace SparkleLauncher
 		m_levelStatusLabels.insert(level.Id, statusLabel);
 		m_levelActionButtons.insert(level.Id, actionButton);
 		RegisterFocusable(actionButton);
+
 		connect(
 		    actionButton,
 		    &QPushButton::clicked,
@@ -231,8 +224,7 @@ namespace SparkleLauncher
 			    }
 			    else if (actionIntent == QStringLiteral("sync"))
 			    {
-				    LauncherOperationRequest request =
-				        BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, QStringLiteral("levels.sync"));
+				    LauncherOperationRequest request = BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, QStringLiteral("levels.sync"));
 				    request.RequestedLevelIds = level.Id;
 				    StartOperation(std::move(request), QStringLiteral("Sync %1").arg(level.DisplayName));
 			    }
@@ -241,6 +233,7 @@ namespace SparkleLauncher
 				    QMessageBox::information(this, level.DisplayName, actionButton->toolTip());
 			    }
 		    });
+
 		actions->addWidget(actionButton);
 		bodyLayout->addLayout(actions);
 		cardLayout->addWidget(body, 3);
@@ -251,30 +244,22 @@ namespace SparkleLauncher
 	void LauncherMainWindow::ApplyLevelActionButtonState(QLabel& statusLabel, QPushButton& button, const LauncherLevelUiEntry& level)
 	{
 		ApplyInlineStatusLabel(statusLabel, level.Status, level.State);
-		const bool preparing = m_quickStartExecution.has_value()
-		    && m_quickStartExecution->GoalRequest().RequestedLevelIds.section(',', 0, 0).trimmed() == level.Id;
+		const bool preparing = m_quickStartExecution.has_value() && m_quickStartExecution->GoalRequest().RequestedLevelIds.section(',', 0, 0).trimmed() == level.Id;
 		button.setObjectName("MapCardActionButton");
 		button.setFixedSize(LauncherUi::Row::StatusActionWidth, LauncherUi::Row::StatusActionHeight);
 		const bool syncAvailable = !level.SourceReady && level.CanSync && level.RuntimeSupported;
 		const bool explainBlocker = !level.RuntimeSupported || !level.CanSelect;
-		button.setProperty(
-		    "ActionIntent",
-		    preparing            ? QStringLiteral("none")
-		        : syncAvailable  ? QStringLiteral("sync")
-		        : explainBlocker ? QStringLiteral("details")
-		                         : QStringLiteral("run"));
+		button.setProperty("ActionIntent", preparing ? QStringLiteral("none") : syncAvailable ? QStringLiteral("sync") : explainBlocker ? QStringLiteral("details") : QStringLiteral("run"));
 		const bool editorMode = m_settings.RunMode() != QStringLiteral("game");
 		const QString actionName = editorMode ? QStringLiteral("Open") : QStringLiteral("Run");
-		button.setText(
-		    preparing            ? QStringLiteral("Preparing...")
-		        : syncAvailable  ? QStringLiteral("Sync")
-		        : explainBlocker ? QStringLiteral("Details")
-		                         : actionName);
+		button.setText(preparing ? QStringLiteral("Preparing...") : syncAvailable ? QStringLiteral("Sync") : explainBlocker ? QStringLiteral("Details") : actionName);
+
 		button.setAccessibleName(
 		    preparing            ? QStringLiteral("Preparing ") + level.DisplayName
 		        : syncAvailable  ? QStringLiteral("Sync ") + level.DisplayName
 		        : explainBlocker ? QStringLiteral("Why ") + level.DisplayName + QStringLiteral(" is unavailable")
 		                         : actionName + QStringLiteral(" ") + level.DisplayName);
+
 		button.setEnabled(!m_quickStartExecution.has_value());
 		if (preparing)
 		{
@@ -321,11 +306,7 @@ namespace SparkleLauncher
 		}
 	}
 
-	bool LauncherMainWindow::SetLevelsSelected(
-	    const std::filesystem::path& contentRoot,
-	    const std::vector<std::string>& levelIds,
-	    bool selected,
-	    const QString& actionName)
+	bool LauncherMainWindow::SetLevelsSelected(const std::filesystem::path& contentRoot, const std::vector<std::string>& levelIds, bool selected, const QString& actionName)
 	{
 		std::string errorMessage;
 		if (ProjectLevelCatalogFile::SetLevelsSelected(contentRoot, levelIds, selected, errorMessage))
@@ -333,24 +314,16 @@ namespace SparkleLauncher
 			return true;
 		}
 
-		QMessageBox::warning(
-		    this,
-		    actionName + QStringLiteral(" could not update the level catalog"),
-		    QString::fromStdString(errorMessage));
+		QMessageBox::warning(this, actionName + QStringLiteral(" could not update the level catalog"), QString::fromStdString(errorMessage));
 		return false;
 	}
 
-	QVector<LauncherCleanTarget> LauncherMainWindow::BuildLevelCleanTargets(
-	    const LauncherContentSummary& content,
-	    const QString& levelId) const
+	QVector<LauncherCleanTarget> LauncherMainWindow::BuildLevelCleanTargets(const LauncherContentSummary& content, const QString& levelId) const
 	{
 		QVector<LauncherCleanTarget> targets;
 		for (const auto& path : BuildLevelCleanPaths(content.RootPath, levelId.toStdString()))
 		{
-			targets.push_back(
-			    {QString::fromStdString(path.DisplayName),
-			        QString::fromStdString(path.Path.string()),
-			        QString::fromStdString(path.Detail)});
+			targets.push_back({QString::fromStdString(path.DisplayName), QString::fromStdString(path.Path.string()), QString::fromStdString(path.Detail)});
 		}
 		return targets;
 	}
@@ -384,8 +357,7 @@ namespace SparkleLauncher
 			return;
 		}
 
-		LauncherOperationRequest request =
-		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, QStringLiteral("levels.sync"));
+		LauncherOperationRequest request = BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, QStringLiteral("levels.sync"));
 		request.RequestedLevelIds = levelIdsToSync.join(',');
 		const QString runId = StartOperation(std::move(request), QStringLiteral("Sync Available Levels"));
 		m_pendingLevelSelectionUpdates.insert(runId, {content->RootPath, std::move(levelIdsToSelect), true});
@@ -429,8 +401,7 @@ namespace SparkleLauncher
 			return;
 		}
 
-		LauncherOperationRequest request =
-		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, QStringLiteral("workspace.clean"));
+		LauncherOperationRequest request = BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, QStringLiteral("workspace.clean"));
 		request.CleanTargets = targets;
 		request.ConfirmClean = false;
 		if (!ConfirmRunRequest(request))

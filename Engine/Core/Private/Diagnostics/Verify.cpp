@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "Verify.h"
 
 #include "Logger.h"
@@ -51,14 +51,9 @@ namespace Diagnostics
 		constexpr DWORD systemMessageCapacity = 512;
 		std::array<char, systemMessageCapacity> systemMessage{};
 		constexpr DWORD flags = FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
-		const DWORD length = ::FormatMessageA(
-		    flags,
-		    nullptr,
-		    static_cast<DWORD>(result),
-		    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		    systemMessage.data(),
-		    static_cast<DWORD>(systemMessage.size()),
-		    nullptr);
+
+		const DWORD
+		    length = ::FormatMessageA(flags, nullptr, static_cast<DWORD>(result), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), systemMessage.data(), static_cast<DWORD>(systemMessage.size()), nullptr);
 
 		std::string suffix;
 		if (length != 0)
@@ -89,12 +84,7 @@ namespace Diagnostics
 		return prefix;
 	}
 
-	void WriteRecord(
-	    const std::shared_ptr<spdlog::logger>& logger,
-	    const char* file,
-	    std::uint32_t line,
-	    std::string_view message,
-	    spdlog::level::level_enum level) noexcept
+	void WriteRecord(const std::shared_ptr<spdlog::logger>& logger, const char* file, std::uint32_t line, std::string_view message, spdlog::level::level_enum level) noexcept
 	{
 		try
 		{
@@ -172,11 +162,7 @@ namespace Diagnostics
 		return record;
 	}
 
-	[[noreturn]] void Fatal(
-	    const std::shared_ptr<spdlog::logger>& logger,
-	    const char* file,
-	    std::uint32_t line,
-	    std::string_view message) noexcept
+	[[noreturn]] void Fatal(const std::shared_ptr<spdlog::logger>& logger, const char* file, std::uint32_t line, std::string_view message) noexcept
 	{
 		WriteRecord(logger, file, line, message, spdlog::level::critical);
 		BreakAttachedDebugger();

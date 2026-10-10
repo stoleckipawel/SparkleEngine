@@ -2,12 +2,7 @@
 #include "D3D12/Descriptors/D3D12DescriptorHandle.h"
 #include "D3D12/Device/D3D12Rhi.h"
 
-D3D12DescriptorHandle::D3D12DescriptorHandle(
-    D3D12Rhi& rhi,
-    UINT idx,
-    D3D12_DESCRIPTOR_HEAP_TYPE type,
-    D3D12_CPU_DESCRIPTOR_HANDLE cpuStartHandle,
-    D3D12_GPU_DESCRIPTOR_HANDLE gpuStartHandle) :
+D3D12DescriptorHandle::D3D12DescriptorHandle(D3D12Rhi& rhi, UINT idx, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_CPU_DESCRIPTOR_HANDLE cpuStartHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuStartHandle) :
     m_index(idx),
     m_descriptorType(type)
 {

@@ -15,9 +15,7 @@ void RenderGpuGeometryState::Update(const PreparedRenderScene& preparedScene, co
 	UpdateDeformation(preparedScene);
 }
 
-void RenderGpuGeometryState::CollectMeshInstanceWriteRanges(
-    std::uint64_t appliedRevision,
-    std::vector<StructuredBufferElementRange>& ranges) const
+void RenderGpuGeometryState::CollectMeshInstanceWriteRanges(std::uint64_t appliedRevision, std::vector<StructuredBufferElementRange>& ranges) const
 {
 	ranges.clear();
 	if (appliedRevision >= m_meshInstanceRevision)
@@ -40,10 +38,7 @@ void RenderGpuGeometryState::CollectMeshInstanceWriteRanges(
 			++index;
 		} while (index < m_meshInstanceElementRevisions.size() && m_meshInstanceElementRevisions[index] > appliedRevision);
 
-		ranges.push_back(
-		    StructuredBufferElementRange{
-		        .FirstElement = static_cast<std::uint32_t>(firstElement),
-		        .ElementCount = static_cast<std::uint32_t>(index - firstElement)});
+		ranges.push_back(StructuredBufferElementRange{.FirstElement = static_cast<std::uint32_t>(firstElement), .ElementCount = static_cast<std::uint32_t>(index - firstElement)});
 	}
 }
 
@@ -144,9 +139,9 @@ void RenderGpuGeometryState::UpdateDeformation(const PreparedRenderScene& prepar
 			m_payloads.JointMatrices.push_back(JointMatrixData{.Matrix = matrix});
 		}
 
-		const std::vector<DirectX::XMFLOAT4X4>& previousMatrices =
-		    preparedScene.previousJointMatrices.size() == preparedScene.jointMatrices.size() ? preparedScene.previousJointMatrices
-		                                                                                     : preparedScene.jointMatrices;
+		const std::vector<DirectX::XMFLOAT4X4>& previousMatrices = preparedScene.previousJointMatrices.size() == preparedScene.jointMatrices.size() ? preparedScene.previousJointMatrices
+		                                                                                                                                            : preparedScene.jointMatrices;
+
 		for (const DirectX::XMFLOAT4X4& matrix : previousMatrices)
 		{
 			m_payloads.PreviousJointMatrices.push_back(JointMatrixData{.Matrix = matrix});
@@ -154,9 +149,7 @@ void RenderGpuGeometryState::UpdateDeformation(const PreparedRenderScene& prepar
 	}
 
 	m_payloads.MorphWeights.assign(preparedScene.morphWeights.begin(), preparedScene.morphWeights.end());
-	m_payloads.PreviousMorphWeights = preparedScene.previousMorphWeights.size() == preparedScene.morphWeights.size()
-	    ? preparedScene.previousMorphWeights
-	    : preparedScene.morphWeights;
+	m_payloads.PreviousMorphWeights = preparedScene.previousMorphWeights.size() == preparedScene.morphWeights.size() ? preparedScene.previousMorphWeights : preparedScene.morphWeights;
 	if (m_payloads.MorphWeights.empty())
 	{
 		m_payloads.MorphWeights.push_back(0.0f);
@@ -170,18 +163,15 @@ MeshInstanceData RenderGpuGeometryState::BuildMeshInstance(const MeshDraw& draw)
 	DirectX::XMStoreFloat4x4(&worldInverse, DirectX::XMMatrixInverse(nullptr, DirectX::XMLoadFloat4x4(&draw.Transform.WorldMatrix)));
 	DirectX::XMFLOAT3X4 worldInverseTranspose;
 	DirectX::XMStoreFloat3x4(&worldInverseTranspose, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&worldInverse)));
+
 	return MeshInstanceData{
 	    .WorldMatrix = draw.Transform.WorldMatrix,
 	    .PreviousWorldMatrix = draw.Transform.PreviousWorldMatrix,
 	    .WorldInverseMatrix = worldInverse,
 	    .WorldInverseTranspose = worldInverseTranspose,
 	    .MaterialSlot = draw.MaterialSlot,
-	    .Flags =
-	        (draw.Geometry.MeshKind == RenderMeshKind::Skeletal && draw.Skinning.JointMatrixOffset != kInvalidMeshInstanceJointMatrixOffset
-	                ? MeshInstanceFlag_Skinned
-	                : 0u)
-	        | (draw.Morph.TargetCount > 0u && draw.Morph.WeightOffset != kInvalidMeshInstanceMorphWeightOffset ? MeshInstanceFlag_Morphed
-	                                                                                                           : 0u),
+	    .Flags = (draw.Geometry.MeshKind == RenderMeshKind::Skeletal && draw.Skinning.JointMatrixOffset != kInvalidMeshInstanceJointMatrixOffset ? MeshInstanceFlag_Skinned : 0u)
+	        | (draw.Morph.TargetCount > 0u && draw.Morph.WeightOffset != kInvalidMeshInstanceMorphWeightOffset ? MeshInstanceFlag_Morphed : 0u),
 	    .JointMatrixOffset = draw.Skinning.JointMatrixOffset,
 	    .MorphWeightOffset = draw.Morph.WeightOffset,
 	    .MorphTargetCount = draw.Morph.TargetCount,
@@ -194,8 +184,7 @@ bool RenderGpuGeometryState::HasSameMeshInstance(const MeshInstanceData& left, c
 	return std::memcmp(&left.WorldMatrix, &right.WorldMatrix, sizeof(left.WorldMatrix)) == 0
 	    && std::memcmp(&left.PreviousWorldMatrix, &right.PreviousWorldMatrix, sizeof(left.PreviousWorldMatrix)) == 0
 	    && std::memcmp(&left.WorldInverseMatrix, &right.WorldInverseMatrix, sizeof(left.WorldInverseMatrix)) == 0
-	    && std::memcmp(&left.WorldInverseTranspose, &right.WorldInverseTranspose, sizeof(left.WorldInverseTranspose)) == 0
-	    && left.MaterialSlot == right.MaterialSlot && left.Flags == right.Flags && left.JointMatrixOffset == right.JointMatrixOffset
-	    && left.MorphWeightOffset == right.MorphWeightOffset && left.MorphTargetCount == right.MorphTargetCount
+	    && std::memcmp(&left.WorldInverseTranspose, &right.WorldInverseTranspose, sizeof(left.WorldInverseTranspose)) == 0 && left.MaterialSlot == right.MaterialSlot && left.Flags == right.Flags
+	    && left.JointMatrixOffset == right.JointMatrixOffset && left.MorphWeightOffset == right.MorphWeightOffset && left.MorphTargetCount == right.MorphTargetCount
 	    && left.MorphTargetVertexCount == right.MorphTargetVertexCount && left.GpuSceneSlot == right.GpuSceneSlot;
 }

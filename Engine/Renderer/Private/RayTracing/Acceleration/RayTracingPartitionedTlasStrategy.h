@@ -16,17 +16,13 @@ struct RayTracingPtlasPartitionPlan;
 class RayTracingPartitionedTlasStrategy final : public RayTracingTopLevelAccelerationStructureStrategy
 {
 public:
-	RayTracingPartitionedTlasStrategy(
-	    RenderHardwareInterface& renderHardwareInterface,
-	    const RayTracingCapabilityReport& capabilityReport) noexcept;
+	RayTracingPartitionedTlasStrategy(RenderHardwareInterface& renderHardwareInterface, const RayTracingCapabilityReport& capabilityReport) noexcept;
 	~RayTracingPartitionedTlasStrategy() noexcept override;
 
 	const char* GetStrategyName() const noexcept override;
 	ERhiRayTracingTopLevelProvider GetActiveProvider() const noexcept override;
 	const char* GetActiveProviderReason() const noexcept override;
-	RenderRayTracingFrameBindings Prepare(
-	    const PreparedRenderScene& preparedScene,
-	    const RayTracingPtlasPartitionPlan& viewPlan) noexcept override;
+	RenderRayTracingFrameBindings Prepare(const PreparedRenderScene& preparedScene, const RayTracingPtlasPartitionPlan& viewPlan) noexcept override;
 	RayTracingTopLevelAccelerationStructureBuildResult Build(
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,
@@ -59,19 +55,13 @@ private:
 	static bool IsUsablePartitionPlan(const RayTracingPtlasPartitionPlan* partitionPlan) noexcept;
 	static std::uint32_t ResolveInstanceCapacity(const PreparedRenderScene& preparedScene) noexcept;
 	static std::uint32_t ResolvePartitionCount(const RayTracingPtlasPartitionPlan* partitionPlan) noexcept;
-	static std::uint32_t ResolveMaxInstancesPerPartition(
-	    std::uint32_t instanceCapacity,
-	    const RayTracingPtlasPartitionPlan* partitionPlan) noexcept;
+	static std::uint32_t ResolveMaxInstancesPerPartition(std::uint32_t instanceCapacity, const RayTracingPtlasPartitionPlan* partitionPlan) noexcept;
 	static bool CanUsePartitionedTlasProvider(const RayTracingCapabilityReport& capabilityReport) noexcept;
 	static const char* ResolveInactiveProviderReason(const RayTracingCapabilityReport& capabilityReport) noexcept;
 	static const char* ResolveActiveProviderReason() noexcept;
 	static RhiPartitionedTlasInstanceFlags ResolveInstanceFlags(const PreparedRenderScene& preparedScene, const MeshDraw& draw) noexcept;
-	void EnsurePartitionedTlasResources(
-	    const PreparedRenderScene& preparedScene,
-	    const RayTracingPtlasPartitionPlan* partitionPlan) noexcept;
-	RhiPartitionedTlasDesc BuildPartitionedTlasLayout(
-	    const PreparedRenderScene& preparedScene,
-	    const RayTracingPtlasPartitionPlan* partitionPlan) const noexcept;
+	void EnsurePartitionedTlasResources(const PreparedRenderScene& preparedScene, const RayTracingPtlasPartitionPlan* partitionPlan) noexcept;
+	RhiPartitionedTlasDesc BuildPartitionedTlasLayout(const PreparedRenderScene& preparedScene, const RayTracingPtlasPartitionPlan* partitionPlan) const noexcept;
 	RenderRayTracingFrameBindings BuildPartitionedTlasFrameData(const PreparedRenderScene& preparedScene) const noexcept;
 	RayTracingTopLevelAccelerationStructureBuildResult BuildPartitionedTlas(
 	    RenderCommandContext& commandContext,
@@ -89,10 +79,7 @@ private:
 	    RayTracingPerformanceDiagnostics* diagnostics,
 	    PartitionedBuildState& state) noexcept;
 	void PreparePartitionedOperationBuffer(PartitionedBuildState& state) noexcept;
-	void RecordPartitionedBuild(
-	    RenderCommandContext& commandContext,
-	    const PartitionedBuildState& state,
-	    RayTracingPerformanceDiagnostics* diagnostics) const noexcept;
+	void RecordPartitionedBuild(RenderCommandContext& commandContext, const PartitionedBuildState& state, RayTracingPerformanceDiagnostics* diagnostics) const noexcept;
 	void TrackBuildResources(RenderCommandContext& commandContext) const noexcept;
 	void ReleasePartitionedTlasResources() noexcept;
 

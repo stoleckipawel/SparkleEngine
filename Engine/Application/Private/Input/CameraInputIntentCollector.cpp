@@ -15,12 +15,10 @@ CameraInputIntentCollector::CameraInputIntentCollector(InputSystem& inputSystem,
     m_inputSystem(inputSystem),
     m_window(window)
 {
-	m_mouseButtonHandle =
-	    m_inputSystem.SubscribeMouseButton([this](const MouseButtonEvent& event) { OnMouseButton(event); }, InputLayer::Gameplay);
+	m_mouseButtonHandle = m_inputSystem.SubscribeMouseButton([this](const MouseButtonEvent& event) { OnMouseButton(event); }, InputLayer::Gameplay);
 	m_mouseMoveHandle = m_inputSystem.SubscribeMouseMove([this](const MouseMoveEvent& event) { OnMouseMove(event); }, InputLayer::Gameplay);
 	m_keyboardHandle = m_inputSystem.SubscribeKeyboard([this](const KeyboardEvent& event) { OnKeyboard(event); }, InputLayer::Gameplay);
-	m_mouseWheelHandle =
-	    m_inputSystem.SubscribeMouseWheel([this](const MouseWheelEvent& event) { OnMouseWheel(event); }, InputLayer::Gameplay);
+	m_mouseWheelHandle = m_inputSystem.SubscribeMouseWheel([this](const MouseWheelEvent& event) { OnMouseWheel(event); }, InputLayer::Gameplay);
 }
 
 CameraInputIntentCollector::~CameraInputIntentCollector() noexcept

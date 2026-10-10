@@ -21,12 +21,10 @@ public:
 		static const std::vector<ShaderBackendRegistration> registrations = []
 		{
 			std::vector<ShaderBackendRegistration> snapshot = MutableRegistrations();
-			std::ranges::sort(
-			    snapshot,
-			    [](const ShaderBackendRegistration& left, const ShaderBackendRegistration& right)
-			    { return left.Descriptor.Name < right.Descriptor.Name; });
+			std::ranges::sort(snapshot, [](const ShaderBackendRegistration& left, const ShaderBackendRegistration& right) { return left.Descriptor.Name < right.Descriptor.Name; });
 			return snapshot;
 		}();
+
 		return registrations;
 	}
 };

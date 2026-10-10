@@ -32,21 +32,12 @@ public:
 	    RenderCommandContext& commandContext,
 	    std::span<const FrameGraphTextureHandle> renderTargetHandles,
 	    FrameGraphTextureHandle depthStencilHandle = FrameGraphTextureHandle::Invalid()) const noexcept;
-	void CopyTexture(
-	    RenderCommandContext& commandContext,
-	    FrameGraphTextureHandle destinationHandle,
-	    FrameGraphTextureHandle sourceHandle) const noexcept;
-	void CopyBuffer(
-	    RenderCommandContext& commandContext,
-	    FrameGraphBufferHandle destinationHandle,
-	    FrameGraphBufferHandle sourceHandle) const noexcept;
+	void CopyTexture(RenderCommandContext& commandContext, FrameGraphTextureHandle destinationHandle, FrameGraphTextureHandle sourceHandle) const noexcept;
+	void CopyBuffer(RenderCommandContext& commandContext, FrameGraphBufferHandle destinationHandle, FrameGraphBufferHandle sourceHandle) const noexcept;
 	void ClearRenderTarget(RenderCommandContext& commandContext, FrameGraphTextureHandle handle) const noexcept;
 	void ClearDepthStencil(RenderCommandContext& commandContext, FrameGraphTextureHandle handle) const noexcept;
 	RhiResourceHandle ResolveResource(FrameGraphTextureHandle handle) const noexcept;
-	NativeTextureViewInfo ResolveNativeTextureView(
-	    FrameGraphTextureHandle handle,
-	    ResourceState state,
-	    const RhiNativeInteropRequest& request) const noexcept;
+	NativeTextureViewInfo ResolveNativeTextureView(FrameGraphTextureHandle handle, ResourceState state, const RhiNativeInteropRequest& request) const noexcept;
 	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphTextureHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphBufferHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphTextureHandle handle) const noexcept;
@@ -60,9 +51,6 @@ private:
 	RhiCpuDescriptorHandle ResolveRenderTargetView(FrameGraphResourceHandle handle) const noexcept;
 	RhiCpuDescriptorHandle ResolveDepthStencilView(FrameGraphResourceHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphResourceHandle handle) const noexcept;
-	void CopyResource(
-	    RenderCommandContext& commandContext,
-	    FrameGraphResourceHandle destinationHandle,
-	    FrameGraphResourceHandle sourceHandle) const noexcept;
+	void CopyResource(RenderCommandContext& commandContext, FrameGraphResourceHandle destinationHandle, FrameGraphResourceHandle sourceHandle) const noexcept;
 	const FrameGraph& m_frameGraph;
 };

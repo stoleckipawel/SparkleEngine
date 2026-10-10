@@ -16,11 +16,7 @@ public:
 	static DirectX::XMMATRIX ConvertAssimpMatrixToEngine(const aiMatrix4x4& matrix) noexcept;
 	static DirectX::XMFLOAT4X4 ConvertAssimpTransformToEngine(const aiMatrix4x4& matrix) noexcept;
 	static DirectX::XMFLOAT4X4 BuildNodeAttachedTranslation(const aiNode& node, const aiVector3D& position) noexcept;
-	static DirectX::XMFLOAT4X4 BuildNodeAttachedOrientation(
-	    const aiNode& node,
-	    const aiVector3D& position,
-	    const aiVector3D& direction,
-	    const aiVector3D& up);
+	static DirectX::XMFLOAT4X4 BuildNodeAttachedOrientation(const aiNode& node, const aiVector3D& position, const aiVector3D& direction, const aiVector3D& up);
 
 private:
 	static const aiNode* FindNode(const aiNode& node, const aiString& name) noexcept;

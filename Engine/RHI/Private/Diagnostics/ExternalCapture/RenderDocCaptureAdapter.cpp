@@ -12,8 +12,7 @@ static std::filesystem::path GetInstalledRenderDocLibraryPath()
 	std::array<wchar_t, 4096> programFiles{};
 	const DWORD length = GetEnvironmentVariableW(L"ProgramFiles", programFiles.data(), static_cast<DWORD>(programFiles.size()));
 
-	return length && length < programFiles.size() ? std::filesystem::path(programFiles.data()) / L"RenderDoc" / L"renderdoc.dll"
-	                                              : std::filesystem::path{};
+	return length && length < programFiles.size() ? std::filesystem::path(programFiles.data()) / L"RenderDoc" / L"renderdoc.dll" : std::filesystem::path{};
 }
 
 class RenderDocCaptureAdapter final : public ExternalCaptureAdapter
@@ -47,24 +46,17 @@ public:
 		return true;
 	}
 
-	void End(const ExternalCaptureNativeTarget& target) noexcept override
-	{
-		m_ended = m_api.EndFrameCapture(target.Root, target.Window) == 1;
-	}
+	void End(const ExternalCaptureNativeTarget& target) noexcept override { m_ended = m_api.EndFrameCapture(target.Root, target.Window) == 1; }
 
 	ExternalCaptureNativeResult Poll() override
 	{
 		if (!m_ended)
 		{
-			return {
-			    .State = m_api.IsFrameCapturing() ? ExternalCaptureState::Quarantined : ExternalCaptureState::Failed,
-			    .Message = "RenderDoc failed to end the requested native interval."};
+			return {.State = m_api.IsFrameCapturing() ? ExternalCaptureState::Quarantined : ExternalCaptureState::Failed, .Message = "RenderDoc failed to end the requested native interval."};
 		}
 		if (m_api.GetNumCaptures() != m_firstCapture + 1)
 		{
-			return {
-			    .State = ExternalCaptureState::Quarantined,
-			    .Message = "RenderDoc artifact count is ambiguous; restart before another request."};
+			return {.State = ExternalCaptureState::Quarantined, .Message = "RenderDoc artifact count is ambiguous; restart before another request."};
 		}
 		std::filesystem::path artifact;
 		if (!TryGetCaptureArtifact(artifact))
@@ -81,8 +73,7 @@ private:
 		std::array<char, 4096> path{};
 		std::uint32_t length = static_cast<std::uint32_t>(path.size());
 		std::uint64_t timestamp = 0;
-		if (!m_api.GetCapture(m_firstCapture, nullptr, &length, &timestamp) || length > path.size()
-		    || !m_api.GetCapture(m_firstCapture, path.data(), &length, &timestamp))
+		if (!m_api.GetCapture(m_firstCapture, nullptr, &length, &timestamp) || length > path.size() || !m_api.GetCapture(m_firstCapture, path.data(), &length, &timestamp))
 		{
 			return false;
 		}
@@ -100,8 +91,7 @@ private:
 		return {
 		    .State = ExternalCaptureState::Completed,
 		    .Artifact = artifact,
-		    .Message = opened ? "Capture finalized and handed to RenderDoc."
-		                      : "Capture finalized; RenderDoc replay UI launch failed. Open the artifact manually."};
+		    .Message = opened ? "Capture finalized and handed to RenderDoc." : "Capture finalized; RenderDoc replay UI launch failed. Open the artifact manually."};
 	}
 
 	RENDERDOC_API_1_6_0& m_api;

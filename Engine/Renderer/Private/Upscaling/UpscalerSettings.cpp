@@ -1,10 +1,7 @@
 #include "../PCH.h"
 #include "Upscaling/UpscalerSettings.h"
 
-ConsoleVariable<EUpscalerProviderKind> CVarUpscalerProvider(
-    "r.Upscaler.Provider",
-    EUpscalerProviderKind::Linear,
-    "Renderer upscaler provider: 0=Linear, 1=NVIDIA DLSS.");
+ConsoleVariable<EUpscalerProviderKind> CVarUpscalerProvider("r.Upscaler.Provider", EUpscalerProviderKind::Linear, "Renderer upscaler provider: 0=Linear, 1=NVIDIA DLSS.");
 ConsoleVariable<EUpscalerQualityMode> CVarUpscalerQualityMode(
     "r.Upscaler.QualityMode",
     EUpscalerQualityMode::NativeAA,

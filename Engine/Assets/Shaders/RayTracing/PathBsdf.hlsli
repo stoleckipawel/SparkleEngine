@@ -78,11 +78,7 @@ namespace PathBsdf
 		return denominator != 0.0f ? abs((wiNs * woNg) / denominator) : 0.0f;
 	}
 
-	Evaluation EvaluateContinuous(RayTracingPathSurface surface,
-	                              float3 directionWorld,
-	                              LobeMasses masses,
-	                              bool evaluateDiffuse,
-	                              bool evaluateSpecular)
+	Evaluation EvaluateContinuous(RayTracingPathSurface surface, float3 directionWorld, LobeMasses masses, bool evaluateDiffuse, bool evaluateSpecular)
 	{
 		Evaluation result = (Evaluation)0;
 		const float noL = dot(surface.NormalWorld, directionWorld);
@@ -150,9 +146,7 @@ namespace PathBsdf
 		float3 bitangentWorld;
 		CommonSampling::BuildOrthonormalBasis(surface.NormalWorld, tangentWorld, bitangentWorld);
 		const float alpha = surface.Roughness * surface.Roughness;
-		const float3 localView = float3(dot(surface.ViewDirWorld, tangentWorld),
-		                                dot(surface.ViewDirWorld, bitangentWorld),
-		                                dot(surface.ViewDirWorld, surface.NormalWorld));
+		const float3 localView = float3(dot(surface.ViewDirWorld, tangentWorld), dot(surface.ViewDirWorld, bitangentWorld), dot(surface.ViewDirWorld, surface.NormalWorld));
 		const float3 stretchedView = normalize(float3(alpha * localView.xy, localView.z));
 		const float length2 = dot(stretchedView.xy, stretchedView.xy);
 		const float3 orthogonalView = float3(-stretchedView.y, stretchedView.x, 0.0f);
@@ -168,18 +162,12 @@ namespace PathBsdf
 		const float projectedZ = sqrt(max(0.0f, 1.0f - diskX * diskX - diskY * diskY));
 		const float3 visibleNormal = diskX * basis1 + diskY * basis2 + projectedZ * stretchedView;
 		const float3 localHalfVector = normalize(float3(alpha * visibleNormal.xy, max(visibleNormal.z, 0.0f)));
-		const float3 halfVectorWorld =
-		    tangentWorld * localHalfVector.x + bitangentWorld * localHalfVector.y + surface.NormalWorld * localHalfVector.z;
+		const float3 halfVectorWorld = tangentWorld * localHalfVector.x + bitangentWorld * localHalfVector.y + surface.NormalWorld * localHalfVector.z;
 
 		return normalize(halfVectorWorld);
 	}
 
-	RayTracingPathSample::DirectionSample Sample(RayTracingPathSurface surface,
-	                                             LobeMasses masses,
-	                                             uint selectedLobe,
-	                                             float2 sample,
-	                                             bool evaluateDiffuse,
-	                                             bool evaluateSpecular)
+	RayTracingPathSample::DirectionSample Sample(RayTracingPathSurface surface, LobeMasses masses, uint selectedLobe, float2 sample, bool evaluateDiffuse, bool evaluateSpecular)
 	{
 		RayTracingPathSample::DirectionSample result = (RayTracingPathSample::DirectionSample)0;
 

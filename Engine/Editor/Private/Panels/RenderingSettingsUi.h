@@ -36,12 +36,8 @@ namespace RenderingSettingsUi
 		}
 	}
 
-	template <typename ValueType, std::size_t OptionCount, typename OnChanged> void DrawComboOptionRow(
-	    const char* id,
-	    const char* label,
-	    ValueType value,
-	    const ComboOption<ValueType> (&options)[OptionCount],
-	    OnChanged&& onChanged)
+	template <typename ValueType, std::size_t OptionCount, typename OnChanged>
+	void DrawComboOptionRow(const char* id, const char* label, ValueType value, const ComboOption<ValueType> (&options)[OptionCount], OnChanged&& onChanged)
 	{
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
@@ -78,8 +74,7 @@ namespace RenderingSettingsUi
 		}
 	}
 
-	template <typename OnChanged>
-	void DrawUnsignedIntInputRow(const char* id, const char* label, std::uint32_t value, OnChanged&& onChanged)
+	template <typename OnChanged> void DrawUnsignedIntInputRow(const char* id, const char* label, std::uint32_t value, OnChanged&& onChanged)
 	{
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
@@ -95,13 +90,7 @@ namespace RenderingSettingsUi
 		}
 	}
 
-	template <typename OnChanged> void DrawUnsignedIntSliderRow(
-	    const char* id,
-	    const char* label,
-	    std::uint32_t value,
-	    std::uint32_t minValue,
-	    std::uint32_t maxValue,
-	    OnChanged&& onChanged)
+	template <typename OnChanged> void DrawUnsignedIntSliderRow(const char* id, const char* label, std::uint32_t value, std::uint32_t minValue, std::uint32_t maxValue, OnChanged&& onChanged)
 	{
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
@@ -119,14 +108,7 @@ namespace RenderingSettingsUi
 		}
 	}
 
-	template <typename OnChanged> void DrawFloatInputRow(
-	    const char* id,
-	    const char* label,
-	    float value,
-	    OnChanged&& onChanged,
-	    float step = 1.0f,
-	    float stepFast = 10.0f,
-	    const char* format = "%.3f")
+	template <typename OnChanged> void DrawFloatInputRow(const char* id, const char* label, float value, OnChanged&& onChanged, float step = 1.0f, float stepFast = 10.0f, const char* format = "%.3f")
 	{
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);

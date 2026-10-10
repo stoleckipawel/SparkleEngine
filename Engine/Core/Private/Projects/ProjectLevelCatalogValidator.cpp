@@ -17,19 +17,12 @@ static bool IsSafeCatalogIdentifier(std::string_view value) noexcept
 	        value.begin(),
 	        value.end(),
 	        [](unsigned char character)
-	        {
-		        return (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z')
-		            || (character >= '0' && character <= '9') || character == '-' || character == '_';
-	        });
+	        { return (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') || (character >= '0' && character <= '9') || character == '-' || character == '_'; });
 }
 
 static bool IsSha256(std::string_view value) noexcept
 {
-	return value.size() == 64
-	    && std::all_of(
-	        value.begin(),
-	        value.end(),
-	        [](unsigned char character) { return (character >= '0' && character <= '9') || (character >= 'a' && character <= 'f'); });
+	return value.size() == 64 && std::all_of(value.begin(), value.end(), [](unsigned char character) { return (character >= '0' && character <= '9') || (character >= 'a' && character <= 'f'); });
 }
 
 static void ValidateLevel(const ProjectLevelCatalogEntry& level)
@@ -70,9 +63,8 @@ static void ValidateAssetPackMetadata(const ProjectLevelCatalog& catalog, std::s
 	{
 		throw Diagnostics::Error(std::format("Asset pack '{}' has no content root.", pack.id));
 	}
-	if (pack.requiredRelativePath.empty() || pack.requiredRelativePath == "." || pack.requiredRelativePath.has_root_name()
-	    || pack.requiredRelativePath.has_root_directory() || pack.requiredRelativePath.is_absolute()
-	    || pack.requiredRelativePath.generic_string().starts_with(".."))
+	if (pack.requiredRelativePath.empty() || pack.requiredRelativePath == "." || pack.requiredRelativePath.has_root_name() || pack.requiredRelativePath.has_root_directory()
+	    || pack.requiredRelativePath.is_absolute() || pack.requiredRelativePath.generic_string().starts_with(".."))
 	{
 		throw Diagnostics::Error(std::format("Asset pack '{}' has an unsafe required path.", pack.id));
 	}
@@ -81,9 +73,7 @@ static void ValidateAssetPackMetadata(const ProjectLevelCatalog& catalog, std::s
 		throw Diagnostics::Error(std::format("Downloadable asset pack '{}' must be declared external.", pack.id));
 	}
 	const bool filesPayload = !pack.sourceFilesManifestPath.empty();
-	if (pack.downloadSupported
-	    && (pack.sourceUrl.empty() || pack.extractionPath.empty()
-	        || (!filesPayload && (pack.archiveName.empty() || pack.archiveBytes == 0 || pack.archiveSha256.empty()))))
+	if (pack.downloadSupported && (pack.sourceUrl.empty() || pack.extractionPath.empty() || (!filesPayload && (pack.archiveName.empty() || pack.archiveBytes == 0 || pack.archiveSha256.empty()))))
 	{
 		throw Diagnostics::Error(std::format("Downloadable asset pack '{}' has incomplete acquisition metadata.", pack.id));
 	}
@@ -97,8 +87,7 @@ static void ValidateAssetPackMetadata(const ProjectLevelCatalog& catalog, std::s
 	}
 	if (filesPayload && (!pack.sourceUrl.ends_with('/') || pack.requiredRelativePath != ".sparkle-acquisition.txt"))
 	{
-		throw Diagnostics::Error(
-		    std::format("Loose-file asset pack '{}' needs a source directory URL and acquisition receipt.", pack.id));
+		throw Diagnostics::Error(std::format("Loose-file asset pack '{}' needs a source directory URL and acquisition receipt.", pack.id));
 	}
 	if (pack.downloadSupported && !pack.sourceUrl.starts_with("https://"))
 	{
@@ -138,8 +127,7 @@ static void ValidateAssetPackMetadata(const ProjectLevelCatalog& catalog, std::s
 	}
 	const std::filesystem::path archiveNamePath(pack.archiveName);
 	if (pack.downloadSupported && !filesPayload
-	    && (archiveNamePath == "." || archiveNamePath == ".." || archiveNamePath.has_root_name() || archiveNamePath.has_root_directory()
-	        || archiveNamePath.filename() != archiveNamePath))
+	    && (archiveNamePath == "." || archiveNamePath == ".." || archiveNamePath.has_root_name() || archiveNamePath.has_root_directory() || archiveNamePath.filename() != archiveNamePath))
 	{
 		throw Diagnostics::Error(std::format("Asset pack '{}' archive name must not contain a path.", pack.id));
 	}
@@ -158,8 +146,7 @@ static void ValidateParentChain(const ProjectLevelCatalog& catalog, const Projec
 		ancestor = &catalog.assetPacks.at(ancestor->parentPackId);
 		if (pack.runtimeSupported && !ancestor->runtimeSupported)
 		{
-			throw Diagnostics::Error(
-			    std::format("Runtime-supported asset pack '{}' depends on runtime-unsupported parent '{}'.", pack.id, ancestor->id));
+			throw Diagnostics::Error(std::format("Runtime-supported asset pack '{}' depends on runtime-unsupported parent '{}'.", pack.id, ancestor->id));
 		}
 	}
 }
@@ -172,11 +159,9 @@ static void ValidateExtractionRoots(const std::vector<const ProjectAssetPack*>& 
 		{
 			const ProjectAssetPack& left = *downloadablePacks[leftIndex];
 			const ProjectAssetPack& right = *downloadablePacks[rightIndex];
-			if (Paths::IsUnderRoot(left.extractionPath, right.extractionPath)
-			    || Paths::IsUnderRoot(right.extractionPath, left.extractionPath))
+			if (Paths::IsUnderRoot(left.extractionPath, right.extractionPath) || Paths::IsUnderRoot(right.extractionPath, left.extractionPath))
 			{
-				throw Diagnostics::Error(
-				    std::format("Downloadable asset packs '{}' and '{}' have overlapping extraction roots.", left.id, right.id));
+				throw Diagnostics::Error(std::format("Downloadable asset packs '{}' and '{}' have overlapping extraction roots.", left.id, right.id));
 			}
 		}
 	}

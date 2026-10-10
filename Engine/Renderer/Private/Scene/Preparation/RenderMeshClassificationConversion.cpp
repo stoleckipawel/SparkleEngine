@@ -7,6 +7,7 @@ namespace RenderMeshClassificationConversion
 	{
 		return kind == SceneMeshKind::Skeletal ? RenderMeshKind::Skeletal : RenderMeshKind::Static;
 	}
+
 	RenderMeshInstanceGroupKind ToRenderMeshInstanceGroupKind(SceneMeshInstanceGroupKind kind) noexcept
 	{
 		switch (kind)
@@ -20,6 +21,7 @@ namespace RenderMeshClassificationConversion
 				return RenderMeshInstanceGroupKind::None;
 		}
 	}
+
 	RenderMeshInstanceGroupIndex ToRenderMeshInstanceGroupIndex(SceneMeshInstanceGroupIndex index) noexcept
 	{
 		return index == kInvalidSceneMeshInstanceGroupIndex ? kInvalidRenderMeshInstanceGroupIndex : index;

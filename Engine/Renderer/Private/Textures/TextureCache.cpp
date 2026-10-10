@@ -52,8 +52,7 @@ TextureCache::~TextureCache() noexcept
 void TextureCache::UpdateSceneTextures(const RenderTextureTable& textures, RenderDeviceServices& deviceServices)
 {
 	RenderCommandList& graphicsCommandList = deviceServices.GetCurrentGraphicsCommandList();
-	const bool useCopyQueue = HasPendingSceneTextureUploads()
-	    && deviceServices.GetRenderHardwareInterface().GetCapabilities().Queues.SupportsIndependent(ERhiQueueType::Copy);
+	const bool useCopyQueue = HasPendingSceneTextureUploads() && deviceServices.GetRenderHardwareInterface().GetCapabilities().Queues.SupportsIndependent(ERhiQueueType::Copy);
 
 	RhiCommandRecordingLease uploadLease;
 	RenderCommandList* uploadCommandList = &graphicsCommandList;
@@ -95,11 +94,7 @@ bool TextureCache::HasPendingSceneTextureUploads() const noexcept
 	return std::any_of(
 	    m_requests.begin(),
 	    m_requests.end(),
-	    [this](const TextureRequest& request) noexcept
-	    {
-		    return request.Wanted && request.Decoded.has_value()
-		        && m_residency.GetState(request.Generation) == AssetResidencyState::ReadyForUpload;
-	    });
+	    [this](const TextureRequest& request) noexcept { return request.Wanted && request.Decoded.has_value() && m_residency.GetState(request.Generation) == AssetResidencyState::ReadyForUpload; });
 }
 
 void TextureCache::RecordUploadSubmission(RhiSubmissionToken token) noexcept
@@ -146,10 +141,7 @@ void TextureCache::CommitBindingRevision(std::uint64_t bindingRevision) noexcept
 	}
 
 	m_retiredTextures.erase(
-	    std::remove_if(
-	        m_retiredTextures.begin(),
-	        m_retiredTextures.end(),
-	        [bindingRevision](const RetiredTexture& texture) noexcept { return texture.BindingRevision <= bindingRevision; }),
+	    std::remove_if(m_retiredTextures.begin(), m_retiredTextures.end(), [bindingRevision](const RetiredTexture& texture) noexcept { return texture.BindingRevision <= bindingRevision; }),
 	    m_retiredTextures.end());
 }
 
@@ -246,9 +238,7 @@ const RendererTexture* TextureCache::GetSceneTexture(const std::filesystem::path
 	return FindPathTexture(texturePath);
 }
 
-const RendererTexture* TextureCache::ResolveTextureReferenceOrSemanticDefault(
-    const Assets::CookedTextureReference* textureReference,
-    DefaultTexture defaultType) const
+const RendererTexture* TextureCache::ResolveTextureReferenceOrSemanticDefault(const Assets::CookedTextureReference* textureReference, DefaultTexture defaultType) const
 {
 	if (textureReference != nullptr && textureReference->IsValid())
 	{

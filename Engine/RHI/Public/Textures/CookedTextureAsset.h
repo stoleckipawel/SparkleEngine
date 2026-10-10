@@ -10,8 +10,7 @@
 constexpr std::uint32_t MakeCookedTextureAssetMagic(char a, char b, char c, char d) noexcept
 {
 	return static_cast<std::uint32_t>(static_cast<std::uint8_t>(a)) | (static_cast<std::uint32_t>(static_cast<std::uint8_t>(b)) << 8u)
-	    | (static_cast<std::uint32_t>(static_cast<std::uint8_t>(c)) << 16u)
-	    | (static_cast<std::uint32_t>(static_cast<std::uint8_t>(d)) << 24u);
+	    | (static_cast<std::uint32_t>(static_cast<std::uint8_t>(c)) << 16u) | (static_cast<std::uint32_t>(static_cast<std::uint8_t>(d)) << 24u);
 }
 
 inline constexpr std::string_view kCookedTextureAssetExtension = ".stex";
@@ -47,6 +46,7 @@ struct SPARKLE_RHI_API CookedTextureAssetHeader
 	constexpr bool HasExpectedMagic() const noexcept { return magic == kCookedTextureAssetMagic; }
 
 	constexpr std::uint16_t GetArraySize() const noexcept { return UnpackCookedTextureArraySize(packedLayout); }
+
 	constexpr TextureResourceDimension GetDimension() const noexcept { return UnpackCookedTextureDimension(packedLayout); }
 };
 

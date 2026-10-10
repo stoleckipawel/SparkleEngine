@@ -16,11 +16,7 @@ namespace SparkleLauncher
 		return value ? "ON" : "OFF";
 	}
 
-	ProcessRequest MakeCMakeConfigureRequest(
-	    const std::filesystem::path& repositoryRoot,
-	    const BuildToolchainStatus& toolchain,
-	    std::string_view operationId,
-	    std::string_view logFileName)
+	ProcessRequest MakeCMakeConfigureRequest(const std::filesystem::path& repositoryRoot, const BuildToolchainStatus& toolchain, std::string_view operationId, std::string_view logFileName)
 	{
 		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
 		ProcessRequest process;
@@ -92,11 +88,7 @@ namespace SparkleLauncher
 		return process;
 	}
 
-	ProcessRequest MakeCMakeLauncherConfigureRequest(
-	    const std::filesystem::path& repositoryRoot,
-	    const BuildToolchainStatus& toolchain,
-	    std::string_view operationId,
-	    std::string_view logFileName)
+	ProcessRequest MakeCMakeLauncherConfigureRequest(const std::filesystem::path& repositoryRoot, const BuildToolchainStatus& toolchain, std::string_view operationId, std::string_view logFileName)
 	{
 		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
 		ProcessRequest process = MakeCMakeConfigureRequest(repositoryRoot, toolchain, operationId, logFileName);
@@ -124,13 +116,7 @@ namespace SparkleLauncher
 		process.ExecutablePath = toolchain.CMakePath;
 		process.WorkingDirectory = repositoryRoot;
 		process.LogPath = ResolveLauncherOperationLogPath(repositoryRoot, operationId, logFileName);
-		process.Arguments = {
-		    "--build",
-		    outputs.LauncherBuildDirectory().string(),
-		    "--config",
-		    std::string(profileName),
-		    "--target",
-		    "SparkleLauncher"};
+		process.Arguments = {"--build", outputs.LauncherBuildDirectory().string(), "--config", std::string(profileName), "--target", "SparkleLauncher"};
 		if (CMakeGeneratorUsesMsBuildArguments(toolchain.Generator))
 		{
 			process.Arguments.push_back("--");

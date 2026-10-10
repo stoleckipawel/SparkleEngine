@@ -87,6 +87,7 @@ void FrameGraphCompiler::BuildCompiledPlanResources() noexcept
 		assert(handle.index == resourceIndex && "FrameGraph resources must be registered in monotonically increasing handle order.");
 		const FrameGraphResourceMetadata& entry = m_resourceRegistry.GetMetadata(handle);
 		const ResourceState runtimeState = m_resourceStateTracker.GetRuntimeState(handle);
+
 		m_plan.resources.push_back(
 		    FrameGraphResourceNode{
 		        .index = static_cast<FrameGraphResourceIndex>(resourceIndex),
@@ -112,9 +113,7 @@ void FrameGraphCompiler::ResetCompiledResourceStatesForBarrierPlanning() noexcep
 	}
 }
 
-ResourceState FrameGraphCompiler::InferRequiredResourceState(
-    const PassResourceDeclaration& declaration,
-    const FrameGraphResourceNode& resource) const noexcept
+ResourceState FrameGraphCompiler::InferRequiredResourceState(const PassResourceDeclaration& declaration, const FrameGraphResourceNode& resource) const noexcept
 {
 	if (FrameGraphCompilerRayTracing::UsesRayTracingState(declaration))
 	{
@@ -174,8 +173,7 @@ ResourceState FrameGraphCompiler::InferRequiredResourceState(
 
 bool FrameGraphCompiler::ShouldRestoreFinalState(const FrameGraphResourceNode& resource) const noexcept
 {
-	return resource.finalState != ResourceState::Undefined
-	    && (resource.ownership != FrameGraphResourceOwnership::Transient || resource.kind == FrameGraphResourceKind::DepthStencil);
+	return resource.finalState != ResourceState::Undefined && (resource.ownership != FrameGraphResourceOwnership::Transient || resource.kind == FrameGraphResourceKind::DepthStencil);
 }
 
 FrameGraphResourceNode& FrameGraphCompiler::GetCompiledResourceEntry(FrameGraphResourceHandle handle) noexcept

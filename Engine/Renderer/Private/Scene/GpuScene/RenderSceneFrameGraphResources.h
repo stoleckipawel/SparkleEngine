@@ -42,7 +42,4 @@ struct RenderSceneGpuResources final
 };
 
 RenderSceneGpuResources DeclareRenderSceneGpuResources(FrameGraphBuilder& builder);
-void BindRenderSceneGpuResources(
-    FrameGraph& graph,
-    const RenderSceneGpuResources& resources,
-    const RenderSceneGpuBindings& sceneGpuBindings) noexcept;
+void BindRenderSceneGpuResources(FrameGraph& graph, const RenderSceneGpuResources& resources, const RenderSceneGpuBindings& sceneGpuBindings) noexcept;

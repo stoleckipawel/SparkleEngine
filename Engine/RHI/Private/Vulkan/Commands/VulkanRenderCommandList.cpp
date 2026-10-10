@@ -34,8 +34,7 @@ void VulkanRenderCommandList::CloseOpenRendering() noexcept
 
 RhiGpuVirtualAddress VulkanRenderCommandList::AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes) noexcept
 {
-	return m_isRecording && m_recordingUploadPage != nullptr ? m_recordingUploadPage->AllocateAndCopy(data, sizeInBytes)
-	                                                         : RhiGpuVirtualAddress{};
+	return m_isRecording && m_recordingUploadPage != nullptr ? m_recordingUploadPage->AllocateAndCopy(data, sizeInBytes) : RhiGpuVirtualAddress{};
 }
 
 void VulkanRenderCommandList::SetNativeCommandBuffer(
@@ -95,20 +94,12 @@ void VulkanRenderCommandList::OnResourceTrackingFinished(RhiResourceHandle resou
 
 	if (m_recordingResourceReleaseIndex >= m_recordingResourceUses.size())
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan command-list resource tracking finished without a matching retained resource.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan command-list resource tracking finished without a matching retained resource.");
 	}
 	const RecordingResourceUse& use = m_recordingResourceUses[m_recordingResourceReleaseIndex++];
 	if (use.Resource.Value != resource.Value)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan command-list resource tracking release order does not match its recording order.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan command-list resource tracking release order does not match its recording order.");
 	}
 	m_memoryAllocator->ReleaseRecordingResource(use.Token, submissionToken);
 

@@ -22,8 +22,7 @@ GltfTangentVertexRemapper::GltfTangentVertexRemapper(ImportedMeshGeometry& geome
     m_variantsBySourceVertex(geometry.vertices.size()),
     m_hasSkinInfluences(geometry.HasSkinInfluences())
 {
-	if (frames.baseCornerTangents.size() != geometry.indices.size()
-	    || frames.morphCornerTangentDeltas.size() != geometry.deformation.morphTargets.size())
+	if (frames.baseCornerTangents.size() != geometry.indices.size() || frames.morphCornerTangentDeltas.size() != geometry.deformation.morphTargets.size())
 	{
 		throw Diagnostics::Error("Generated glTF tangent frames do not match the geometry and deformation streams.");
 	}
@@ -60,14 +59,13 @@ GltfTangentVertexRemapper::GltfTangentVertexRemapper(ImportedMeshGeometry& geome
 
 bool GltfTangentVertexRemapper::TangentsMatch(const DirectX::XMFLOAT4& first, const DirectX::XMFLOAT4& second) noexcept
 {
-	return first.w == second.w && std::abs(first.x - second.x) <= kTangentEqualityTolerance
-	    && std::abs(first.y - second.y) <= kTangentEqualityTolerance && std::abs(first.z - second.z) <= kTangentEqualityTolerance;
+	return first.w == second.w && std::abs(first.x - second.x) <= kTangentEqualityTolerance && std::abs(first.y - second.y) <= kTangentEqualityTolerance
+	    && std::abs(first.z - second.z) <= kTangentEqualityTolerance;
 }
 
 bool GltfTangentVertexRemapper::TangentsMatch(const DirectX::XMFLOAT3& first, const DirectX::XMFLOAT3& second) noexcept
 {
-	return std::abs(first.x - second.x) <= kTangentEqualityTolerance && std::abs(first.y - second.y) <= kTangentEqualityTolerance
-	    && std::abs(first.z - second.z) <= kTangentEqualityTolerance;
+	return std::abs(first.x - second.x) <= kTangentEqualityTolerance && std::abs(first.y - second.y) <= kTangentEqualityTolerance && std::abs(first.z - second.z) <= kTangentEqualityTolerance;
 }
 
 bool GltfTangentVertexRemapper::FrameSetsMatch(std::uint32_t remappedVertexIndex, std::size_t cornerIndex) const noexcept
@@ -78,9 +76,7 @@ bool GltfTangentVertexRemapper::FrameSetsMatch(std::uint32_t remappedVertexIndex
 	}
 	for (std::size_t targetIndex = 0; targetIndex < m_morphTargets.size(); ++targetIndex)
 	{
-		if (!TangentsMatch(
-		        m_morphTargets[targetIndex].deltas[remappedVertexIndex].tangent,
-		        m_frames.morphCornerTangentDeltas[targetIndex][cornerIndex]))
+		if (!TangentsMatch(m_morphTargets[targetIndex].deltas[remappedVertexIndex].tangent, m_frames.morphCornerTangentDeltas[targetIndex][cornerIndex]))
 		{
 			return false;
 		}
@@ -100,10 +96,7 @@ std::uint32_t GltfTangentVertexRemapper::ResolveVertex(std::size_t cornerIndex)
 {
 	const std::uint32_t sourceVertexIndex = m_geometry.indices[cornerIndex];
 	std::vector<std::uint32_t>& variants = m_variantsBySourceVertex[sourceVertexIndex];
-	const auto matchingVariant = std::find_if(
-	    variants.begin(),
-	    variants.end(),
-	    [this, cornerIndex](std::uint32_t remappedVertexIndex) { return FrameSetsMatch(remappedVertexIndex, cornerIndex); });
+	const auto matchingVariant = std::find_if(variants.begin(), variants.end(), [this, cornerIndex](std::uint32_t remappedVertexIndex) { return FrameSetsMatch(remappedVertexIndex, cornerIndex); });
 	if (matchingVariant != variants.end())
 	{
 		return *matchingVariant;

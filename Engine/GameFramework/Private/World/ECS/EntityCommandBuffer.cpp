@@ -40,17 +40,12 @@ namespace ECS
 
 	EntityCommandKey EntityCommandBuffer::NextKey() noexcept
 	{
-		return EntityCommandKey{
-		    .System = m_desc.Id.System,
-		    .Phase = m_desc.Id.Phase,
-		    .Partition = m_desc.Id.Partition,
-		    .LocalSequence = m_nextSequence++};
+		return EntityCommandKey{.System = m_desc.Id.System, .Phase = m_desc.Id.Phase, .Partition = m_desc.Id.Partition, .LocalSequence = m_nextSequence++};
 	}
 
 	bool EntityCommandBuffer::CanRecord() noexcept
 	{
-		if (m_committed || m_overflowed || m_commands.size() >= m_desc.MaxCommands
-		    || m_nextSequence == (std::numeric_limits<std::uint32_t>::max)())
+		if (m_committed || m_overflowed || m_commands.size() >= m_desc.MaxCommands || m_nextSequence == (std::numeric_limits<std::uint32_t>::max)())
 		{
 			m_overflowed = true;
 			return false;
@@ -73,21 +68,13 @@ namespace ECS
 		return true;
 	}
 
-	bool EntityCommandBuffer::RecordComponent(
-	    EntityCommandKind kind,
-	    EntityCommandDetail::EntityCommandTarget target,
-	    std::unique_ptr<EntityCommandDetail::ComponentCommandOperation> operation)
+	bool EntityCommandBuffer::RecordComponent(EntityCommandKind kind, EntityCommandDetail::EntityCommandTarget target, std::unique_ptr<EntityCommandDetail::ComponentCommandOperation> operation)
 	{
 		if (!CanRecord())
 		{
 			return false;
 		}
-		m_commands.push_back(
-		    EntityCommandDetail::EntityCommandRecord{
-		        .Key = NextKey(),
-		        .Kind = kind,
-		        .Target = target,
-		        .ComponentOperation = std::move(operation)});
+		m_commands.push_back(EntityCommandDetail::EntityCommandRecord{.Key = NextKey(), .Kind = kind, .Target = target, .ComponentOperation = std::move(operation)});
 		return true;
 	}
 

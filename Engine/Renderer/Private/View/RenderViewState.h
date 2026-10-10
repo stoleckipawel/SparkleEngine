@@ -63,10 +63,9 @@ public:
 
 	void Invalidate(RenderViewInvalidationReason reason) noexcept;
 	ViewTemporalUniformData BuildTemporal(const RenderViewStateBuildInput& input) noexcept;
-	RayTracingPtlasPartitionPlan BuildRayTracingPlan(
-	    const PreparedRenderScene& preparedScene,
-	    const DirectX::XMFLOAT3& cameraPosition) noexcept;
+	RayTracingPtlasPartitionPlan BuildRayTracingPlan(const PreparedRenderScene& preparedScene, const DirectX::XMFLOAT3& cameraPosition) noexcept;
 	bool UpdateRestirLightingHistory(std::uint64_t invalidationHash) noexcept;
+
 	RenderViewInvalidationReason GetLastInvalidationReasons() const noexcept { return m_lastInvalidationReasons; }
 
 private:
@@ -85,9 +84,7 @@ private:
 	};
 
 	void ObserveIdentityAndGenerations(const RenderViewStateBuildInput& input) noexcept;
-	static RenderViewInvalidationReason CombineInvalidationReasons(
-	    RenderViewInvalidationReason left,
-	    RenderViewInvalidationReason right) noexcept;
+	static RenderViewInvalidationReason CombineInvalidationReasons(RenderViewInvalidationReason left, RenderViewInvalidationReason right) noexcept;
 	static CameraPose CapturePose(const RenderViewStateBuildInput& input) noexcept;
 	static bool HasProjectionChange(const CameraPose& previousPose, const CameraPose& currentPose) noexcept;
 	static bool IsLikelyCameraCut(const CameraPose& previousPose, const CameraPose& currentPose) noexcept;

@@ -20,7 +20,5 @@ struct ResolvedViewportDisplaySettings final
 
 private:
 	static EngineExposureMode ResolveMode(EngineExposureMode requested, EngineExposureMode fallback) noexcept;
-	static EngineExposureMeteringMethod ResolveMeteringMethod(
-	    EngineExposureMeteringMethod requested,
-	    EngineExposureMeteringMethod fallback) noexcept;
+	static EngineExposureMeteringMethod ResolveMeteringMethod(EngineExposureMeteringMethod requested, EngineExposureMeteringMethod fallback) noexcept;
 };

@@ -7,8 +7,7 @@
 
 constexpr RenderProductHandle ToRenderProductHandle(FrameGraphTextureHandle handle) noexcept
 {
-	return handle.IsValid() ? RenderProductHandle{static_cast<std::uint64_t>(handle.GetResourceHandle().index) + 1ull}
-	                        : RenderProductHandle{};
+	return handle.IsValid() ? RenderProductHandle{static_cast<std::uint64_t>(handle.GetResourceHandle().index) + 1ull} : RenderProductHandle{};
 }
 
 constexpr FrameGraphResourceHandle ToFrameGraphResourceHandle(RenderProductHandle handle) noexcept

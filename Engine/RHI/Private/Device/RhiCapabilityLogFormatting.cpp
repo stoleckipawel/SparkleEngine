@@ -11,13 +11,7 @@ std::string FormatBackendVersionInfo(const RhiBackendVersionInfo& version)
 		return "backendVersion(unknown)";
 	}
 
-	return std::format(
-	    "backendVersion(kind={} value={}.{}.{} packed={:#x})",
-	    RhiBackendVersionSemanticToString(version.Semantic),
-	    version.Major,
-	    version.Minor,
-	    version.Patch,
-	    version.PackedValue);
+	return std::format("backendVersion(kind={} value={}.{}.{} packed={:#x})", RhiBackendVersionSemanticToString(version.Semantic), version.Major, version.Minor, version.Patch, version.PackedValue);
 }
 
 std::string FormatBackendDiagnosticsSupport(const RhiBackendDiagnosticsSupport& diagnostics)
@@ -37,11 +31,7 @@ std::string FormatBackendDiagnosticsSupport(const RhiBackendDiagnosticsSupport& 
 
 std::string FormatBackendMemorySupport(const RhiBackendMemorySupport& memory)
 {
-	return std::format(
-	    "memorySupport(diagnostics={}, budgetQueries={}, residencyPressure={})",
-	    memory.SupportsMemoryDiagnostics,
-	    memory.SupportsBudgetQueries,
-	    memory.SupportsResidencyPressure);
+	return std::format("memorySupport(diagnostics={}, budgetQueries={}, residencyPressure={})", memory.SupportsMemoryDiagnostics, memory.SupportsBudgetQueries, memory.SupportsResidencyPressure);
 }
 
 std::string FormatExternalFeatureInteropCapabilities(const RhiExternalFeatureInteropCapabilities& capabilities)

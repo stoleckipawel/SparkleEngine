@@ -14,15 +14,19 @@ class SPARKLE_RHI_API CookedShaderLibrary final
 {
 public:
 	CookedShaderLibrary() = default;
+
 	static CookedShaderLibrary Open(const std::filesystem::path& path);
 
 	std::uint64_t GetPublicationHash() const noexcept { return m_header.PublicationHash; }
+
 	std::span<const CookedShaderCodeRecord> GetRecords() const noexcept { return m_records; }
+
 	const CookedShaderCodeRecord* Find(ShaderCodeHash codeHash) const noexcept;
 	ShaderBytecode GetBytecode(const CookedShaderCodeRecord& record) const noexcept;
 
 private:
 	CookedShaderLibraryHeader m_header = {};
+
 	std::vector<CookedShaderCodeRecord> m_records;
 	std::vector<std::uint8_t> m_codeBlob;
 };
@@ -31,26 +35,33 @@ class SPARKLE_RHI_API GlobalShaderMap final
 {
 public:
 	GlobalShaderMap() = default;
+
 	static GlobalShaderMap Open(const std::filesystem::path& path, const CookedShaderLibrary& library);
 
 	std::uint64_t GetPublicationHash() const noexcept { return m_header.PublicationHash; }
+
 	std::span<const GlobalShaderMapEntry> GetEntries() const noexcept { return m_entries; }
+
 	const GlobalShaderMapEntry* Find(ShaderTypeId shaderType, ShaderTarget target) const noexcept;
 	std::string_view ResolveString(ShaderMapStringRef ref) const noexcept;
 	std::span<const ShaderMapBindingRecord> GetBindings(const GlobalShaderMapEntry& entry) const noexcept;
 	const CookedShaderReflectionRecord& GetReflection(const GlobalShaderMapEntry& entry) const noexcept;
+
 	std::span<const CookedShaderResourceBindingRecord> GetResourceBindings() const noexcept { return m_resourceBindings; }
+
 	std::span<const CookedShaderConstantBufferRecord> GetConstantBuffers() const noexcept { return m_constantBuffers; }
+
 	std::span<const CookedShaderConstantBufferMemberRecord> GetConstantBufferMembers() const noexcept { return m_constantBufferMembers; }
+
 	std::span<const CookedShaderInputElementRecord> GetInputElements() const noexcept { return m_inputElements; }
+
 	std::span<const CookedShaderPushConstantRangeRecord> GetPushConstantRanges() const noexcept { return m_pushConstantRanges; }
-	std::span<const CookedShaderSpecializationConstantRecord> GetSpecializationConstants() const noexcept
-	{
-		return m_specializationConstants;
-	}
+
+	std::span<const CookedShaderSpecializationConstantRecord> GetSpecializationConstants() const noexcept { return m_specializationConstants; }
 
 private:
 	GlobalShaderMapHeader m_header = {};
+
 	std::vector<GlobalShaderMapEntry> m_entries;
 	std::vector<ShaderMapBindingRecord> m_bindingRecords;
 	std::vector<CookedShaderReflectionRecord> m_reflectionRecords;
@@ -71,6 +82,8 @@ struct ResolvedShader final
 	const CookedShaderCodeRecord* Code = nullptr;
 
 	bool IsValid() const noexcept { return Map != nullptr && Library != nullptr && Entry != nullptr && Code != nullptr; }
+
 	explicit operator bool() const noexcept { return IsValid(); }
+
 	ShaderBytecode GetBytecode() const noexcept { return IsValid() ? Library->GetBytecode(*Code) : ShaderBytecode{}; }
 };

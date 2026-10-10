@@ -35,11 +35,7 @@ int CookShaders(std::span<const std::string_view> args)
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		ToolConsole::Message(
-		    std::cerr,
-		    ToolConsoleSeverity::Error,
-		    "Invalid shader cook arguments",
-		    {ToolConsole::QuotedField("reason", error.what())});
+		ToolConsole::Message(std::cerr, ToolConsoleSeverity::Error, "Invalid shader cook arguments", {ToolConsole::QuotedField("reason", error.what())});
 		return kExitCodeUsage;
 	}
 
@@ -48,16 +44,11 @@ int CookShaders(std::span<const std::string_view> args)
 	ToolWorkProgressWriter progressOutput(std::cout);
 	try
 	{
-		cookResult =
-		    cooker.CookAll(settings, [&progressOutput](const ToolWorkProgressEvent& progress) { progressOutput.Report(progress); });
+		cookResult = cooker.CookAll(settings, [&progressOutput](const ToolWorkProgressEvent& progress) { progressOutput.Report(progress); });
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		ToolConsole::Message(
-		    std::cerr,
-		    ToolConsoleSeverity::Error,
-		    "Shader cook failed",
-		    {ToolConsole::QuotedField("reason", error.what())});
+		ToolConsole::Message(std::cerr, ToolConsoleSeverity::Error, "Shader cook failed", {ToolConsole::QuotedField("reason", error.what())});
 		return kExitCodeCookFailure;
 	}
 
@@ -98,16 +89,13 @@ static int RunAnalysisPasses(const ShaderCookResult& result, const ShaderCookSet
 				    ToolConsoleSeverity::Error,
 				    "Failed to run analysis pass",
 				    {ToolConsole::QuotedField("analysis", "cooked-shader-stats"), ToolConsole::QuotedField("reason", error.what())});
+
 				return kExitCodeCookFailure;
 			}
 			continue;
 		}
 
-		ToolConsole::Message(
-		    std::cerr,
-		    ToolConsoleSeverity::Error,
-		    "Unknown analysis pass",
-		    {ToolConsole::QuotedField("analysis", analysisPass)});
+		ToolConsole::Message(std::cerr, ToolConsoleSeverity::Error, "Unknown analysis pass", {ToolConsole::QuotedField("analysis", analysisPass)});
 		return kExitCodeUsage;
 	}
 
@@ -138,7 +126,5 @@ static void RunCookedShaderStats(const ShaderCookResult& result)
 	    std::cout,
 	    ToolConsoleSeverity::Info,
 	    "Analysis pass wrote output",
-	    {ToolConsole::QuotedField("analysis", "cooked-shader-stats"),
-	        ToolConsole::Field("rows", std::to_string(report.rowCount)),
-	        ToolConsole::PathField("output", report.outputPath)});
+	    {ToolConsole::QuotedField("analysis", "cooked-shader-stats"), ToolConsole::Field("rows", std::to_string(report.rowCount)), ToolConsole::PathField("output", report.outputPath)});
 }

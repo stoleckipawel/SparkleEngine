@@ -15,21 +15,21 @@ public:
 	using SubmitFunction = std::function<WorldEditResult(WorldEditCommand, std::uint64_t)>;
 
 	EditorTransactionHistory() = default;
+
 	explicit EditorTransactionHistory(SubmitFunction submit) :
 	    m_submit(std::move(submit))
 	{
 	}
 
-	WorldEditResult Execute(
-	    WorldEditCommand forward,
-	    WorldEditCommand inverse,
-	    std::uint64_t worldGeneration,
-	    std::string coalescingKey = {});
+	WorldEditResult Execute(WorldEditCommand forward, WorldEditCommand inverse, std::uint64_t worldGeneration, std::string coalescingKey = {});
 	WorldEditResult Undo(std::uint64_t worldGeneration);
 	WorldEditResult Redo(std::uint64_t worldGeneration);
 	void InvalidateForWorldGeneration(std::uint64_t worldGeneration) noexcept;
+
 	bool CanUndo() const noexcept { return !m_undo.empty(); }
+
 	bool CanRedo() const noexcept { return !m_redo.empty(); }
+
 	const std::optional<WorldEditResult>& GetLastResult() const noexcept { return m_lastResult; }
 
 private:
@@ -39,6 +39,7 @@ private:
 		WorldEditCommand Inverse;
 		std::string CoalescingKey;
 	};
+
 	WorldEditResult Submit(WorldEditCommand command, std::uint64_t worldGeneration);
 	SubmitFunction m_submit;
 	std::vector<Transaction> m_undo;

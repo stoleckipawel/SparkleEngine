@@ -19,10 +19,7 @@
 
 #include <imgui.h>
 
-SceneInspectorPanel::SceneInspectorPanel(
-    SceneObjectSelection& selection,
-    EditorTransactionHistory& transactionHistory,
-    float widthPixels) noexcept :
+SceneInspectorPanel::SceneInspectorPanel(SceneObjectSelection& selection, EditorTransactionHistory& transactionHistory, float widthPixels) noexcept :
     m_transactionHistory(&transactionHistory),
     m_selection(&selection),
     m_widthPixels(widthPixels)
@@ -99,8 +96,7 @@ void SceneInspectorPanel::BuildSelectionHeader() noexcept
 	const std::string title = BuildSelectionTitle();
 	const char* subtitle = BuildSelectionSubtitle();
 	const EditorSceneEntry* entry = m_model && m_selection ? m_model->FindEntry(*m_selection) : nullptr;
-	const UiUtil::EditorIcon icon =
-	    SceneObjectPresentation::BuildSelectionIcon(m_selection, entry ? entry->LightKind : SceneLightKind::Unknown);
+	const UiUtil::EditorIcon icon = SceneObjectPresentation::BuildSelectionIcon(m_selection, entry ? entry->LightKind : SceneLightKind::Unknown);
 
 	constexpr float kHeaderHeight = 30.0f;
 	constexpr float kHeaderPaddingX = 8.0f;
@@ -174,12 +170,7 @@ void SceneInspectorPanel::BuildSelectionInspector() noexcept
 			break;
 		case SceneObjectType::Light:
 			if (const WorldLightReadData* light = m_model->FindLight(m_selection->entity))
-				SceneLightInspector::Build(
-				    light->Description,
-				    light->Entity,
-				    *m_transactionHistory,
-				    m_model->GetWorldGeneration(),
-				    m_filterText);
+				SceneLightInspector::Build(light->Description, light->Entity, *m_transactionHistory, m_model->GetWorldGeneration(), m_filterText);
 			break;
 		case SceneObjectType::Sky:
 			SceneSkyInspector::Build(m_model->GetSkyEnvironment(), *m_transactionHistory, m_model->GetWorldGeneration(), m_filterText);
@@ -209,10 +200,7 @@ void SceneInspectorPanel::BuildUI(bool disableInteraction)
 	ImGui::SetNextWindowSizeConstraints(ImVec2(kMinWidth, panelHeight), ImVec2(kMaxWidth, panelHeight));
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	ImGui::Begin(
-	    "Inspector",
-	    nullptr,
-	    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings);
+	ImGui::Begin("Inspector", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings);
 	ImGui::PopStyleVar();
 
 	m_widthPixels = ImGui::GetWindowWidth();

@@ -24,14 +24,11 @@ public:
 	void Update(Renderer& renderer, const ViewportRenderProducts& products);
 
 	bool IsSettled() const noexcept;
+
 	const ReferencePathTracerArtifactWriteResult& GetLastResult() const noexcept { return m_lastResult; }
 
 private:
-	void Begin(
-	    ReferencePathTracerArtifactKind kind,
-	    Renderer& renderer,
-	    const ViewportRenderProducts& products,
-	    const std::filesystem::path& outputRoot);
+	void Begin(ReferencePathTracerArtifactKind kind, Renderer& renderer, const ViewportRenderProducts& products, const std::filesystem::path& outputRoot);
 	void CollectReadback(Renderer& renderer, ViewportCaptureSlot& capture, std::optional<ViewportCaptureReadback>& destination);
 	void PublishIfReady();
 	void Fail(std::string message);

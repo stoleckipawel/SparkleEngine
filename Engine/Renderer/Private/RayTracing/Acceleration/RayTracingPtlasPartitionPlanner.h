@@ -87,9 +87,7 @@ class RayTracingPtlasPartitionPlanner final
 public:
 	RayTracingPtlasPartitionPlanner() noexcept;
 
-	RayTracingPtlasPartitionPlan Build(
-	    const PreparedRenderScene& preparedScene,
-	    const RayTracingPtlasPartitionPlannerConfig& config) noexcept;
+	RayTracingPtlasPartitionPlan Build(const PreparedRenderScene& preparedScene, const RayTracingPtlasPartitionPlannerConfig& config) noexcept;
 	void Clear() noexcept;
 
 private:
@@ -116,28 +114,15 @@ private:
 	static void ExpandSceneBounds(SceneBounds& bounds, const DirectX::XMFLOAT3& point) noexcept;
 	static DirectX::XMFLOAT3 TransformPoint(const DirectX::XMFLOAT3& point, const DirectX::XMFLOAT4X4& worldMatrix) noexcept;
 	static InstanceBounds ComputeInstanceWorldBounds(const PreparedRenderScene& preparedScene, std::uint32_t primitiveIndex) noexcept;
-	static DirectX::XMFLOAT3 ComputeInstancePartitionPosition(
-	    const PreparedRenderScene& preparedScene,
-	    std::uint32_t primitiveIndex) noexcept;
+	static DirectX::XMFLOAT3 ComputeInstancePartitionPosition(const PreparedRenderScene& preparedScene, std::uint32_t primitiveIndex) noexcept;
 	static SceneBounds ComputeSceneBounds(const PreparedRenderScene& preparedScene) noexcept;
 	static std::uint32_t QuantizeAxis(float value, float minValue, float maxValue, std::uint32_t partitionsPerAxis) noexcept;
-	static std::uint32_t ComputeGridPartitionId(
-	    const DirectX::XMFLOAT3& position,
-	    const SceneBounds& bounds,
-	    std::uint32_t partitionsPerAxis) noexcept;
-	static DirectX::XMFLOAT3 ComputeGridPartitionCenter(
-	    std::uint32_t partitionId,
-	    const SceneBounds& bounds,
-	    std::uint32_t partitionsPerAxis) noexcept;
+	static std::uint32_t ComputeGridPartitionId(const DirectX::XMFLOAT3& position, const SceneBounds& bounds, std::uint32_t partitionsPerAxis) noexcept;
+	static DirectX::XMFLOAT3 ComputeGridPartitionCenter(std::uint32_t partitionId, const SceneBounds& bounds, std::uint32_t partitionsPerAxis) noexcept;
 	static std::uint64_t ComputeGridPartitionCount(std::uint32_t partitionsPerAxis) noexcept;
 	static bool RequiresGlobalPartition(RayTracingPtlasPartitionUpdateMode updateMode) noexcept;
-	static RayTracingPtlasPartitionPlan InitializePlan(
-	    const PreparedRenderScene& preparedScene,
-	    const RayTracingPtlasPartitionPlannerConfig& config) noexcept;
-	void PreparePartitionStates(
-	    const SceneBounds& bounds,
-	    const RayTracingPtlasPartitionPlannerConfig& config,
-	    const RayTracingPtlasPartitionPlan& plan);
+	static RayTracingPtlasPartitionPlan InitializePlan(const PreparedRenderScene& preparedScene, const RayTracingPtlasPartitionPlannerConfig& config) noexcept;
+	void PreparePartitionStates(const SceneBounds& bounds, const RayTracingPtlasPartitionPlannerConfig& config, const RayTracingPtlasPartitionPlan& plan);
 	void CollectObservedInstances(
 	    const PreparedRenderScene& preparedScene,
 	    const SceneBounds& bounds,

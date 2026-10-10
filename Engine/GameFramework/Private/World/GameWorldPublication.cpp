@@ -18,11 +18,7 @@ public:
 
 	template <typename T> static void UpsertEntity(std::vector<T>& values, T value)
 	{
-		auto position = std::lower_bound(
-		    values.begin(),
-		    values.end(),
-		    value.Entity,
-		    [](const T& existing, EntityId entity) { return existing.Entity < entity; });
+		auto position = std::lower_bound(values.begin(), values.end(), value.Entity, [](const T& existing, EntityId entity) { return existing.Entity < entity; });
 		if (position != values.end() && position->Entity == value.Entity)
 		{
 			*position = std::move(value);
@@ -98,8 +94,7 @@ namespace ECS
 	void GameWorldState::PublishReadView(std::span<const WorldChange> changes, WorldSequence sequence, bool fullBaseline)
 	{
 		const std::shared_ptr<const WorldReadView::Storage> previous = m_publishedReadView.load(std::memory_order_acquire);
-		auto next = previous != nullptr && !fullBaseline ? std::make_shared<WorldReadView::Storage>(*previous)
-		                                                 : std::make_shared<WorldReadView::Storage>();
+		auto next = previous != nullptr && !fullBaseline ? std::make_shared<WorldReadView::Storage>(*previous) : std::make_shared<WorldReadView::Storage>();
 		next->Generation = ++m_readGeneration;
 		next->Sequence = sequence;
 

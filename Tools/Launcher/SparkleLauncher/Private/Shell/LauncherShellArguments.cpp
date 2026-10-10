@@ -32,11 +32,7 @@ namespace SparkleLauncher
 		std::ostream* m_error = nullptr;
 	};
 
-	LauncherShellArgumentParser::LauncherShellArgumentParser(
-	    int argc,
-	    char** argv,
-	    LauncherShellArguments& outArguments,
-	    std::ostream& error) noexcept :
+	LauncherShellArgumentParser::LauncherShellArgumentParser(int argc, char** argv, LauncherShellArguments& outArguments, std::ostream& error) noexcept :
 	    m_argumentCount(argc),
 	    m_arguments(argv),
 	    m_outArguments(&outArguments),
@@ -165,8 +161,7 @@ namespace SparkleLauncher
 
 		if (!IsProfileTarget(*profile, target))
 		{
-			*m_error << "SparkleLauncher: unsupported " << (target == BuildProfileTarget::Editor ? "editor" : "runtime") << " profile '"
-			         << *profile << "'.\n";
+			*m_error << "SparkleLauncher: unsupported " << (target == BuildProfileTarget::Editor ? "editor" : "runtime") << " profile '" << *profile << "'.\n";
 			return false;
 		}
 

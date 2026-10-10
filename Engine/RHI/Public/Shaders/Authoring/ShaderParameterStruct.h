@@ -167,6 +167,7 @@ private:
 		static std::vector<ShaderParameterValueDescriptor> values;
 		return values;
 	}
+
 	static std::vector<ShaderParameterStructFieldDescriptor>& MutableFields()
 	{
 		static std::vector<ShaderParameterStructFieldDescriptor> fields;

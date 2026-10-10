@@ -11,6 +11,7 @@ namespace ECS
 		std::uint64_t Value = 0;
 
 		constexpr bool IsValid() const noexcept { return Value != 0; }
+
 		constexpr auto operator<=>(const ComponentSchemaId&) const noexcept = default;
 	};
 

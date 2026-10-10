@@ -36,6 +36,7 @@ namespace ECS
 	{
 	public:
 		virtual ~ComponentStorageBase() = default;
+
 		ComponentStorageBase(const ComponentStorageBase&) = delete;
 		ComponentStorageBase& operator=(const ComponentStorageBase&) = delete;
 		ComponentStorageBase(ComponentStorageBase&&) = delete;
@@ -47,8 +48,8 @@ namespace ECS
 		ComponentStorageBase() = default;
 	};
 
-	template <typename T> concept ComponentStorageCompatible = std::copy_constructible<T> && std::is_copy_assignable_v<T>
-	    && std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_assignable_v<T>;
+	template <typename T> concept ComponentStorageCompatible = std::copy_constructible<T> && std::is_copy_assignable_v<T> && std::is_nothrow_move_constructible_v<T>
+	    && std::is_nothrow_move_assignable_v<T>;
 
 	template <ComponentStorageCompatible T> class ComponentStorage final : public ComponentStorageBase
 	{
@@ -149,8 +150,11 @@ namespace ECS
 		}
 
 		std::span<const EntityId> GetEntities() const noexcept { return m_entities; }
+
 		std::span<const T> GetComponents() const noexcept { return m_components; }
+
 		ComponentStorageVersion GetVersion() const noexcept { return m_version; }
+
 		ComponentQueryVersion CaptureQueryVersion() const noexcept { return ComponentQueryVersion{m_version}; }
 
 	private:

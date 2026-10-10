@@ -19,11 +19,7 @@ static void RequireDirectLightingProduct(FrameGraphTextureHandle input, FrameGra
 	if (!input.IsValid() || !output.IsValid())
 	{
 		SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogDirectLighting, "Renderer.DirectLighting");
-		Diagnostics::Fatal(
-		    LogDirectLighting,
-		    __FILE__,
-		    __LINE__,
-		    std::format("Enabled direct {} requires its GBuffer input and lighting output.", lobe));
+		Diagnostics::Fatal(LogDirectLighting, __FILE__, __LINE__, std::format("Enabled direct {} requires its GBuffer input and lighting output.", lobe));
 	}
 }
 

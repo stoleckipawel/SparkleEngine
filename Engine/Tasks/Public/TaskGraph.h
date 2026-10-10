@@ -21,7 +21,9 @@ public:
 	TaskNodeHandle() noexcept;
 
 	bool IsValid() const noexcept { return m_indexPlusOne != 0; }
+
 	explicit operator bool() const noexcept { return IsValid(); }
+
 	bool operator==(const TaskNodeHandle&) const noexcept;
 
 private:
@@ -80,6 +82,7 @@ public:
 	CompiledTaskGraph() noexcept;
 
 	bool IsValid() const noexcept;
+
 	explicit operator bool() const noexcept { return IsValid(); }
 
 	const TaskGraphError& GetError() const noexcept;

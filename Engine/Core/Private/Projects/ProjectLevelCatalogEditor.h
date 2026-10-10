@@ -8,16 +8,8 @@
 class ProjectLevelCatalogEditor final
 {
 public:
-	static bool SetLevelSelected(
-	    const std::filesystem::path& projectRoot,
-	    std::string_view levelId,
-	    bool selected,
-	    std::string& outErrorMessage);
-	static bool SetLevelsSelected(
-	    const std::filesystem::path& projectRoot,
-	    const std::vector<std::string>& levelIds,
-	    bool selected,
-	    std::string& outErrorMessage);
+	static bool SetLevelSelected(const std::filesystem::path& projectRoot, std::string_view levelId, bool selected, std::string& outErrorMessage);
+	static bool SetLevelsSelected(const std::filesystem::path& projectRoot, const std::vector<std::string>& levelIds, bool selected, std::string& outErrorMessage);
 
 private:
 	ProjectLevelCatalogEditor(std::filesystem::path catalogPath, std::vector<std::string> levelIds, bool selected);

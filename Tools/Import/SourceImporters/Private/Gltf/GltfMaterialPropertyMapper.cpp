@@ -7,8 +7,7 @@
 
 void GltfMaterialPropertyMapper::Apply(const cgltf_material& material, ImportedMaterial& importedMaterial)
 {
-	importedMaterial.emissiveColor =
-	    DirectX::XMFLOAT3(material.emissive_factor[0], material.emissive_factor[1], material.emissive_factor[2]);
+	importedMaterial.emissiveColor = DirectX::XMFLOAT3(material.emissive_factor[0], material.emissive_factor[1], material.emissive_factor[2]);
 	if (material.has_emissive_strength)
 	{
 		importedMaterial.emissiveColor.x *= material.emissive_strength.emissive_strength;
@@ -23,21 +22,25 @@ void GltfMaterialPropertyMapper::Apply(const cgltf_material& material, ImportedM
 	{
 		case cgltf_alpha_mode_mask:
 			importedMaterial.alphaMode = ImportedAlphaMode::Mask;
+
 			break;
+
 		case cgltf_alpha_mode_blend:
 			importedMaterial.alphaMode = ImportedAlphaMode::Blend;
+
 			break;
+
 		case cgltf_alpha_mode_opaque:
 		default:
 			importedMaterial.alphaMode = ImportedAlphaMode::Opaque;
+
 			break;
 	}
 
 	if (material.has_pbr_metallic_roughness)
 	{
 		const cgltf_pbr_metallic_roughness& pbr = material.pbr_metallic_roughness;
-		importedMaterial.baseColor =
-		    DirectX::XMFLOAT4(pbr.base_color_factor[0], pbr.base_color_factor[1], pbr.base_color_factor[2], pbr.base_color_factor[3]);
+		importedMaterial.baseColor = DirectX::XMFLOAT4(pbr.base_color_factor[0], pbr.base_color_factor[1], pbr.base_color_factor[2], pbr.base_color_factor[3]);
 		importedMaterial.metallic = pbr.metallic_factor;
 		importedMaterial.roughness = pbr.roughness_factor;
 	}

@@ -32,9 +32,11 @@ public:
 	void SetRenderProducts(const ViewportRenderProducts& renderProducts) noexcept;
 	void SetFinalColorTexture(UiTextureHandle texture) noexcept;
 	const ViewportRenderRequest& GetRenderRequest() const noexcept;
+
 	void RequestOutputAction(ViewportOutputAction action) noexcept { m_outputAction = action; }
 
 	ViewportOutputAction ConsumeOutputAction() noexcept;
+
 	InputLayer GetTargetInputLayer() const noexcept { return InputLayer::Gameplay; }
 
 	bool GetInputBounds(float& left, float& top, float& right, float& bottom) const noexcept;

@@ -5,17 +5,10 @@
 
 namespace SparkleLauncher
 {
-	static constexpr LauncherCapabilityProvider kQuickStartCapabilityProviders[] = {
-	    RegisterHostToolCapabilities,
-	    RegisterSourceDependencyCapabilities,
-	    RegisterWorkspaceCapabilities,
-	    RegisterLevelCapabilities,
-	    RegisterCookCapabilities,
-	    RegisterLevelRunCapabilities};
+	static constexpr LauncherCapabilityProvider kQuickStartCapabilityProviders[] =
+	    {RegisterHostToolCapabilities, RegisterSourceDependencyCapabilities, RegisterWorkspaceCapabilities, RegisterLevelCapabilities, RegisterCookCapabilities, RegisterLevelRunCapabilities};
 
-	LauncherCapabilityResolution PlanLauncherQuickStartStep(
-	    const LauncherOperationRequest& launchRequest,
-	    const LauncherLevelUiModel& levelModel)
+	LauncherCapabilityResolution PlanLauncherQuickStartStep(const LauncherOperationRequest& launchRequest, const LauncherLevelUiModel& levelModel)
 	{
 		LauncherCapabilityRegistry registry;
 		const LauncherCapabilityContext context{BuildQuickStartOperationRequest(launchRequest, launchRequest.OperationId), levelModel};

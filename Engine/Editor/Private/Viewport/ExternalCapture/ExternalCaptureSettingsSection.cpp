@@ -31,8 +31,7 @@ void DrawExternalCaptureSettingsSection(EngineRenderingSettingsController& setti
 {
 	const auto& state = settings.GetState();
 	if ((!state.CaptureToolsInstalled && state.StartupCaptureProvider == ExternalCaptureProvider::None)
-	    || !RenderingSettingsUi::MatchesFilter(filterText, "GPU Capture", "pix nsight renderdoc capture attach startup")
-	    || !RenderingSettingsUi::BeginSettingsCategory("GPU Capture"))
+	    || !RenderingSettingsUi::MatchesFilter(filterText, "GPU Capture", "pix nsight renderdoc capture attach startup") || !RenderingSettingsUi::BeginSettingsCategory("GPU Capture"))
 	{
 		return;
 	}

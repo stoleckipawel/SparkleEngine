@@ -2,6 +2,7 @@
 #define SPARKLE_PUNCTUAL_LIGHTS_HLSLI
 
 #include "/Engine/Resources/LightGpuData.hlsli"
+
 namespace PunctualLights
 {
 	float3 GetDirectionalLightDirection(uint lightIndex)
@@ -37,8 +38,7 @@ namespace PunctualLights
 
 	float ComputeDistanceAttenuationDenominator(float distanceToLight, float3 distanceAttenuationCoefficients)
 	{
-		return distanceAttenuationCoefficients.x + distanceAttenuationCoefficients.y * distanceToLight
-		    + distanceAttenuationCoefficients.z * distanceToLight * distanceToLight;
+		return distanceAttenuationCoefficients.x + distanceAttenuationCoefficients.y * distanceToLight + distanceAttenuationCoefficients.z * distanceToLight * distanceToLight;
 	}
 
 	float ComputePunctualDistanceAttenuation(float distanceToLight, float range, float3 distanceAttenuationCoefficients)
@@ -54,10 +54,7 @@ namespace PunctualLights
 		return distanceSquared / max(denominator, 1.0e-4f);
 	}
 
-	float ComputeSpotAngularAttenuation(float3 lightToSurfaceDirection,
-	                                    float3 spotDirection,
-	                                    float innerAngleCosine,
-	                                    float outerAngleCosine)
+	float ComputeSpotAngularAttenuation(float3 lightToSurfaceDirection, float3 spotDirection, float innerAngleCosine, float outerAngleCosine)
 	{
 		const float coneCosine = dot(normalize(lightToSurfaceDirection), normalize(spotDirection));
 		const float angularTransition = max(innerAngleCosine - outerAngleCosine, 0.0001f);

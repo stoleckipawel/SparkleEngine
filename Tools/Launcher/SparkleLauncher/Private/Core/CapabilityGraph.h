@@ -120,10 +120,7 @@ namespace SparkleLauncher
 		{
 			if (!m_definitions.contains(goalCapabilityId))
 			{
-				return BlockedResolution(
-				    goalCapabilityId,
-				    "Required capability is not registered: " + goalCapabilityId + ".",
-				    {goalCapabilityId});
+				return BlockedResolution(goalCapabilityId, "Required capability is not registered: " + goalCapabilityId + ".", {goalCapabilityId});
 			}
 
 			const std::string validationError = Validate();
@@ -162,10 +159,7 @@ namespace SparkleLauncher
 			return resolution;
 		}
 
-		static CapabilityResolution<RequestT> BlockedResolution(
-		    const std::string& capabilityId,
-		    std::string message,
-		    std::vector<std::string> dependencyPath)
+		static CapabilityResolution<RequestT> BlockedResolution(const std::string& capabilityId, std::string message, std::vector<std::string> dependencyPath)
 		{
 			CapabilityResolution<RequestT> resolution;
 			resolution.CapabilityId = capabilityId;
@@ -174,10 +168,7 @@ namespace SparkleLauncher
 			return resolution;
 		}
 
-		std::string ValidateCapability(
-		    const std::string& capabilityId,
-		    std::set<std::string>& visiting,
-		    std::set<std::string>& validated) const
+		std::string ValidateCapability(const std::string& capabilityId, std::set<std::string>& visiting, std::set<std::string>& validated) const
 		{
 			if (validated.contains(capabilityId))
 			{
@@ -209,11 +200,8 @@ namespace SparkleLauncher
 			return {};
 		}
 
-		CapabilityResolution<RequestT> ResolveCapability(
-		    const std::string& capabilityId,
-		    const std::string& goalCapabilityId,
-		    std::set<std::string>& resolved,
-		    std::vector<std::string> dependencyPath) const
+		CapabilityResolution<RequestT> ResolveCapability(const std::string& capabilityId, const std::string& goalCapabilityId, std::set<std::string>& resolved, std::vector<std::string> dependencyPath)
+		    const
 		{
 			dependencyPath.push_back(capabilityId);
 			if (resolved.contains(capabilityId))
@@ -251,10 +239,7 @@ namespace SparkleLauncher
 			{
 				if (!evaluation.OperationRequest.has_value())
 				{
-					return BlockedResolution(
-					    capabilityId,
-					    "Capability " + capabilityId + " requested an operation without providing its request.",
-					    std::move(dependencyPath));
+					return BlockedResolution(capabilityId, "Capability " + capabilityId + " requested an operation without providing its request.", std::move(dependencyPath));
 				}
 
 				CapabilityResolution<RequestT> resolution;
@@ -271,9 +256,8 @@ namespace SparkleLauncher
 				return BlockedResolution(capabilityId, std::move(evaluation.StatusMessage), std::move(dependencyPath));
 			}
 
-			const std::string message = evaluation.StatusMessage.empty()
-			    ? "Capability " + capabilityId + " is still unavailable after its registered dependencies became ready."
-			    : std::move(evaluation.StatusMessage);
+			const std::string message = evaluation.StatusMessage.empty() ? "Capability " + capabilityId + " is still unavailable after its registered dependencies became ready."
+			                                                             : std::move(evaluation.StatusMessage);
 			return BlockedResolution(capabilityId, message, std::move(dependencyPath));
 		}
 

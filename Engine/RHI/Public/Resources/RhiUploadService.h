@@ -21,16 +21,9 @@ public:
 	RhiUploadService(RhiUploadService&&) = delete;
 	RhiUploadService& operator=(RhiUploadService&&) = delete;
 
-	virtual RhiGpuVirtualAddress AllocateUniformConstantBuffer(
-	    RenderCommandList& commandList,
-	    const void* data,
-	    std::uint32_t sizeInBytes) = 0;
-	virtual bool UploadBuffer(
-	    RenderCommandList& commandList,
-	    RhiOwnedResourceHandle destination,
-	    std::span<const std::byte> data,
-	    ResourceState finalState,
-	    std::wstring_view debugName) = 0;
+	virtual RhiGpuVirtualAddress AllocateUniformConstantBuffer(RenderCommandList& commandList, const void* data, std::uint32_t sizeInBytes) = 0;
+	virtual bool UploadBuffer(RenderCommandList& commandList, RhiOwnedResourceHandle destination, std::span<const std::byte> data, ResourceState finalState, std::wstring_view debugName) = 0;
+
 	virtual bool UploadTexture(
 	    RenderCommandList& commandList,
 	    RhiOwnedResourceHandle destination,

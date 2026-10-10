@@ -8,13 +8,15 @@
 
 ## Width And Call-Initializer Amendment — 2026-10-10
 
-The current profile uses **200 columns** for owned C++ and shaders, replacing the original 140-column selection below. Wider displays should retain complete declarations and expressions when they fit; wrapping still uses one argument per continuation line.
+The current profile uses **200 columns** for owned C++ and shaders, replacing the original 140-column selection below. Variable declarations, expressions, and function signatures stay on one line when they fit. `BinPackParameters: OnePerLine` and `BinPackArguments: false` use one item per continuation line when a parameter or argument list must wrap. The assignment rule below keeps the called function's name on the assignment line; it does not force function signatures or fitting argument lists to wrap.
 
 For a wrapped call initializer or assignment, keep `variable = Function(` on the opening line and break at the argument list. `PenaltyBreakAssignment: 1000000`, `PenaltyBreakBeforeFirstCallParameter: 0`, and `PenaltyBreakOpenParenthesis: 0` strongly prefer this layout alongside the existing bracket controls. These are formatter preferences, not an unconditional ban: a call head that itself exceeds the limit requires an authored readability decision. The option semantics are documented in the [LLVM 22 style reference](https://releases.llvm.org/22.1.0/tools/clang/docs/ClangFormatStyleOptions.html#penaltybreakassignment).
 
 The shader override inherits the root width instead of duplicating it. The tool remains pinned to 22.1.3; Allman braces, tabs, preserved include order, non-semantic formatting, and semantic paragraph rules remain in force. The [binding standard](../Foundations/CodeStyle.md#readability-rules) owns the current rule. The original ballot, comparisons, inventory, and migration evidence below remain dated evidence of the 140-column decision.
 
-This amendment changes configuration and guidance only. No source formatting was run for it. The existing [repository script](../../../CMake/CodeStyle.ps1) applies the owned tracked manifest when the user runs `-Mode Format`; it accepts `-SourceFamily Cpp` or `Shaders` for a narrower migration. Review shader changes through the shader acceptance gate below.
+The initial amendment changed configuration and guidance only; the user subsequently requested the whole owned-manifest format pass. The clarified rule permits fitting signatures on one line and protects the assignment/call head when arguments wrap. The existing [repository script](../../../CMake/CodeStyle.ps1) applies the owned tracked manifest with `-Mode Format`; it accepts `-SourceFamily Cpp` or `Shaders` for a narrower migration. Review shader changes through the shader acceptance gate below.
+
+Paragraph-spacing enforcement now complements line wrapping: `SeparateDefinitionBlocks: Always` separates function/type definitions, superseding the original `F7` selection below. The repository entry point also applies the [paragraph-spacing helper](../../../CMake/CodeStyleParagraphSpacing.cs) to wrapped statements in both source families; `Format` writes the spacing and `Check` rejects missing boundaries. This implements the existing [semantic paragraph rule](../Foundations/CodeStyle.md#readability-rules) without changing argument layout or source tokens.
 
 ## Executive Summary
 
@@ -236,7 +238,8 @@ This table summarizes the accepted executable profile. The complete option spell
 | Braces | Allman | inherit |
 | Namespace/case/preprocessor | indent all/indent labels/indent before hash | inherit |
 | Access modifiers | offset `-4` | not material |
-| Wrapped lists | one per line | inherit |
+| Function parameters | compact when fitting; one per line when wrapped | inherit |
+| Wrapped argument/initializer lists | one per line | inherit |
 | Short functions | in-class only | none expected |
 | Short lambdas | inline callback arguments | none expected |
 | Operators | leading non-assignment, fixed continuation | inherit |

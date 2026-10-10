@@ -7,11 +7,7 @@
 #include <iostream>
 #include <utility>
 
-int AssetCookerToolProcess::Run(
-    const std::filesystem::path& executablePath,
-    const std::vector<std::string>& arguments,
-    const std::filesystem::path& workingDirectory,
-    std::stop_token cancellation)
+int AssetCookerToolProcess::Run(const std::filesystem::path& executablePath, const std::vector<std::string>& arguments, const std::filesystem::path& workingDirectory, std::stop_token cancellation)
 {
 	SPARKLE_DEFINE_LOG_CATEGORY_STATIC(toolProcessLogger, "Tools.AssetCooker.Process");
 
@@ -27,15 +23,15 @@ int AssetCookerToolProcess::Run(
 		        std::cout.flush();
 	        },
 	        .Cancellation = std::move(cancellation)});
+
 	if (!result.Launched)
 	{
 		ToolConsole::Message(
 		    std::cerr,
 		    ToolConsoleSeverity::Error,
 		    "Failed to launch tool",
-		    {ToolConsole::QuotedField("tool", executablePath.filename().string()),
-		        ToolConsole::PathField("path", executablePath),
-		        ToolConsole::QuotedField("reason", result.FailureReason)});
+		    {ToolConsole::QuotedField("tool", executablePath.filename().string()), ToolConsole::PathField("path", executablePath), ToolConsole::QuotedField("reason", result.FailureReason)});
+
 		SPDLOG_LOGGER_ERROR(toolProcessLogger, "Failed to launch process '{}': {}", executablePath.string(), result.FailureReason);
 		return 1;
 	}

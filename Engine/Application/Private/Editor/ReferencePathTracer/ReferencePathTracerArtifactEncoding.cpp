@@ -13,12 +13,7 @@
 #include <cstring>
 #include <span>
 
-static bool EncodeCheckpoint(
-    const LinearRgbImage& mean,
-    const LinearRgbImage& moment2,
-    const ViewportCaptureResult& source,
-    std::vector<std::byte>& checkpoint,
-    std::string& errorMessage)
+static bool EncodeCheckpoint(const LinearRgbImage& mean, const LinearRgbImage& moment2, const ViewportCaptureResult& source, std::vector<std::byte>& checkpoint, std::string& errorMessage)
 {
 	static_assert(std::endian::native == std::endian::little);
 	if (mean.Width != moment2.Width || mean.Height != moment2.Height)
@@ -30,12 +25,8 @@ static bool EncodeCheckpoint(
 	std::array<std::vector<std::uint8_t>, 3> planes;
 	const auto meanBytes = std::as_bytes(std::span<const float>(mean.Pixels.data(), mean.Pixels.size()));
 	const auto moment2Bytes = std::as_bytes(std::span<const float>(moment2.Pixels.data(), moment2.Pixels.size()));
-	planes[0].assign(
-	    reinterpret_cast<const std::uint8_t*>(meanBytes.data()),
-	    reinterpret_cast<const std::uint8_t*>(meanBytes.data() + meanBytes.size()));
-	planes[1].assign(
-	    reinterpret_cast<const std::uint8_t*>(moment2Bytes.data()),
-	    reinterpret_cast<const std::uint8_t*>(moment2Bytes.data() + moment2Bytes.size()));
+	planes[0].assign(reinterpret_cast<const std::uint8_t*>(meanBytes.data()), reinterpret_cast<const std::uint8_t*>(meanBytes.data() + meanBytes.size()));
+	planes[1].assign(reinterpret_cast<const std::uint8_t*>(moment2Bytes.data()), reinterpret_cast<const std::uint8_t*>(moment2Bytes.data() + moment2Bytes.size()));
 	const std::size_t pixelCount = static_cast<std::size_t>(mean.Width) * mean.Height;
 	planes[2].resize(pixelCount * sizeof(std::uint32_t));
 	const std::uint32_t committed = static_cast<std::uint32_t>(source.SamplePrefix.SampleCount);
@@ -69,10 +60,12 @@ static bool EncodeCheckpoint(
 	const std::size_t headerHashOffset = bytes.size();
 	const Hash::Sha256Digest zeroHash{};
 	writer.WriteArray(std::span<const std::byte>(zeroHash));
+
 	const std::array<std::array<std::uint8_t, 8>, 3> names = {
 	    std::array<std::uint8_t, 8>{'M', 'e', 'a', 'n', 'R', 'G', 'B', 0},
 	    std::array<std::uint8_t, 8>{'M', '2', 'R', 'G', 'B', 0, 0, 0},
 	    std::array<std::uint8_t, 8>{'C', 'o', 'u', 'n', 't', 0, 0, 0}};
+
 	const std::uint32_t schemaBytes = static_cast<std::uint32_t>(bytes.size());
 	std::memcpy(bytes.data() + schemaBytesOffset, &schemaBytes, sizeof(schemaBytes));
 	Hash::Sha256Digest headerHash{};
@@ -97,18 +90,10 @@ static bool EncodeCheckpoint(
 	return true;
 }
 
-bool ReferencePathTracerArtifactEncoding::Encode(
-    const ReferencePathTracerArtifactWriteRequest& request,
-    ReferencePathTracerEncodedArtifact& artifact,
-    std::string& errorMessage)
+bool ReferencePathTracerArtifactEncoding::Encode(const ReferencePathTracerArtifactWriteRequest& request, ReferencePathTracerEncodedArtifact& artifact, std::string& errorMessage)
 {
 	artifact = {};
-	const ImageBufferView meanSource{
-	    .Pixels = request.Mean.Pixels,
-	    .Width = request.Mean.Width,
-	    .Height = request.Mean.Height,
-	    .RowPitch = request.Mean.RowPitch,
-	    .Format = request.Mean.Format};
+	const ImageBufferView meanSource{.Pixels = request.Mean.Pixels, .Width = request.Mean.Width, .Height = request.Mean.Height, .RowPitch = request.Mean.RowPitch, .Format = request.Mean.Format};
 	LinearRgbImage mean;
 	if (!ImageEncoding::DecodeLinearRgb(meanSource, mean, errorMessage))
 	{
@@ -135,10 +120,10 @@ bool ReferencePathTracerArtifactEncoding::Encode(
 	    .Height = request.Moment2->Height,
 	    .RowPitch = request.Moment2->RowPitch,
 	    .Format = request.Moment2->Format};
+
 	LinearRgbImage moment2;
 	artifact.Checkpoint.emplace();
-	if (!ImageEncoding::DecodeLinearRgb(moment2Source, moment2, errorMessage)
-	    || !EncodeCheckpoint(mean, moment2, request.Mean.Result, *artifact.Checkpoint, errorMessage))
+	if (!ImageEncoding::DecodeLinearRgb(moment2Source, moment2, errorMessage) || !EncodeCheckpoint(mean, moment2, request.Mean.Result, *artifact.Checkpoint, errorMessage))
 	{
 		artifact.Checkpoint.reset();
 		return false;
@@ -152,9 +137,8 @@ std::string ReferencePathTracerArtifactEncoding::BuildManifest(
     std::string_view beautyHash,
     std::string_view checkpointHash)
 {
-	const char* status = request.Kind == ReferencePathTracerArtifactKind::Complete
-	    ? "Complete"
-	    : (request.Kind == ReferencePathTracerArtifactKind::Checkpoint ? "Checkpoint" : "PartialPrefix");
+	const char* status = request.Kind == ReferencePathTracerArtifactKind::Complete ? "Complete" : (request.Kind == ReferencePathTracerArtifactKind::Checkpoint ? "Checkpoint" : "PartialPrefix");
+
 	std::vector<std::pair<std::string, std::string>> properties = {
 	    {"beauty", Json::QuoteString("beauty.exr")},
 	    {"beautyBytes", std::to_string(artifact.Beauty.size())},
@@ -172,6 +156,7 @@ std::string ReferencePathTracerArtifactEncoding::BuildManifest(
 	    {"status", Json::QuoteString(status)},
 	    {"targetSpp", std::to_string(request.Mean.Result.SamplePrefix.TargetSampleCount)},
 	    {"width", std::to_string(artifact.Width)}};
+
 	if (!checkpointHash.empty())
 	{
 		properties.emplace_back("checkpoint", Json::QuoteString("checkpoint.bin"));

@@ -33,15 +33,8 @@ namespace Strings
 	SPARKLE_CORE_API bool StartsWithIgnoreCase(std::string_view value, std::string_view prefix) noexcept;
 	SPARKLE_CORE_API bool ContainsIgnoreCase(std::string_view haystack, std::string_view needle) noexcept;
 	SPARKLE_CORE_API bool TryParseBool(std::string_view str, bool& outValue);
-	SPARKLE_CORE_API bool TrySplitKeyValue(
-	    std::string_view str,
-	    char separator,
-	    std::string_view& outKey,
-	    std::string_view& outValue) noexcept;
-	SPARKLE_CORE_API std::string Join(
-	    std::span<const std::string_view> values,
-	    std::string_view separator,
-	    std::size_t firstValueIndex = 0);
+	SPARKLE_CORE_API bool TrySplitKeyValue(std::string_view str, char separator, std::string_view& outKey, std::string_view& outValue) noexcept;
+	SPARKLE_CORE_API std::string Join(std::span<const std::string_view> values, std::string_view separator, std::size_t firstValueIndex = 0);
 
 	template <typename TNumber> bool TryParseNumber(std::string_view str, TNumber& outValue)
 	{

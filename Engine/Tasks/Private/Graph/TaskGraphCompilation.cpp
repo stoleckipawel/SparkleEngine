@@ -83,10 +83,7 @@ private:
 		graph.Nodes = m_builder.Nodes;
 	}
 
-	bool BuildDependencyRelations(
-	    TaskGraphStorage& graph,
-	    std::vector<std::vector<std::uint32_t>>& startAdjacency,
-	    std::vector<std::vector<std::uint32_t>>& completionAdjacency) const
+	bool BuildDependencyRelations(TaskGraphStorage& graph, std::vector<std::vector<std::uint32_t>>& startAdjacency, std::vector<std::vector<std::uint32_t>>& completionAdjacency) const
 	{
 		for (std::uint32_t taskIndex = 0; taskIndex < graph.Nodes.size(); ++taskIndex)
 		{
@@ -123,9 +120,7 @@ private:
 			return true;
 		}
 
-		graph.Error = State::CreateError(
-		    TaskGraphErrorCode::InvalidLaneDependency,
-		    "A FrameCritical task cannot depend on Background or BlockingIo work.");
+		graph.Error = State::CreateError(TaskGraphErrorCode::InvalidLaneDependency, "A FrameCritical task cannot depend on Background or BlockingIo work.");
 		return false;
 	}
 
@@ -138,22 +133,16 @@ private:
 		}
 
 		const TaskGraphNode& parent = graph.Nodes[*node.Parent];
-		if (node.Desc.Lane == parent.Desc.Lane
-		    || (node.Desc.Lane != TaskLane::FrameCritical && parent.Desc.Lane != TaskLane::FrameCritical))
+		if (node.Desc.Lane == parent.Desc.Lane || (node.Desc.Lane != TaskLane::FrameCritical && parent.Desc.Lane != TaskLane::FrameCritical))
 		{
 			return true;
 		}
 
-		graph.Error = State::CreateError(
-		    TaskGraphErrorCode::InvalidLaneDependency,
-		    "FrameCritical parent and nested task completion must remain in the FrameCritical lane.");
+		graph.Error = State::CreateError(TaskGraphErrorCode::InvalidLaneDependency, "FrameCritical parent and nested task completion must remain in the FrameCritical lane.");
 		return false;
 	}
 
-	void RejectCycles(
-	    TaskGraphStorage& graph,
-	    const std::vector<std::vector<std::uint32_t>>& startAdjacency,
-	    const std::vector<std::vector<std::uint32_t>>& completionAdjacency) const
+	void RejectCycles(TaskGraphStorage& graph, const std::vector<std::vector<std::uint32_t>>& startAdjacency, const std::vector<std::vector<std::uint32_t>>& completionAdjacency) const
 	{
 		if (!HasCycle(startAdjacency) && !HasCycle(completionAdjacency))
 		{

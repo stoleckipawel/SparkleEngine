@@ -113,8 +113,7 @@ namespace ECS
 		std::sort(
 		    m_morphBindings.begin(),
 		    m_morphBindings.end(),
-		    [](const MorphTargetBinding& lhs, const MorphTargetBinding& rhs)
-		    { return std::tie(lhs.SampleIndex, lhs.TargetEntity) < std::tie(rhs.SampleIndex, rhs.TargetEntity); });
+		    [](const MorphTargetBinding& lhs, const MorphTargetBinding& rhs) { return std::tie(lhs.SampleIndex, lhs.TargetEntity) < std::tie(rhs.SampleIndex, rhs.TargetEntity); });
 
 		const ComponentStorage<SkinningState>* skinnedMeshes = registry.FindStorage<SkinningState>();
 		if (skinnedMeshes != nullptr)
@@ -126,8 +125,7 @@ namespace ECS
 				const AuthoredIdentity* targetIdentity = registry.Get<AuthoredIdentity>(skinnedMeshes->GetEntities()[index]);
 				for (const PoseWorkSlot& work : m_poseWork)
 				{
-					if (targetIdentity != nullptr && work.SourceInstanceId == targetIdentity->SourceInstanceId
-					    && work.PoseOutputIndex < m_output.poses.size()
+					if (targetIdentity != nullptr && work.SourceInstanceId == targetIdentity->SourceInstanceId && work.PoseOutputIndex < m_output.poses.size()
 					    && m_output.poses[work.PoseOutputIndex].skeletonAssetId == updated.SkeletonAssetId)
 					{
 						updated.Pose = AnimationOutputSlotHandle{work.PoseOutputIndex, targetGeneration};

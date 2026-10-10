@@ -27,8 +27,7 @@ namespace ShaderParameterLayoutAssembly
 		    .Kind = field.SemanticKind,
 		    .ResourceDomain = field.ResourceDomain,
 		    .Access = field.Access,
-		    .Visibility = field.Visibility == ShaderStageVisibility::None ? ShaderParameterLayoutBuilder::GetDefaultVisibility(stage)
-		                                                                  : field.Visibility,
+		    .Visibility = field.Visibility == ShaderStageVisibility::None ? ShaderParameterLayoutBuilder::GetDefaultVisibility(stage) : field.Visibility,
 		    .ArrayCount = field.ArrayCount,
 		    .ValueSizeInBytes = field.ValueSizeInBytes,
 		    .ValueLayoutHash = field.ValueLayoutHash};
@@ -45,10 +44,8 @@ namespace ShaderParameterLayoutAssembly
 
 	bool Matches(const Entry& current, const PassParameterDesc& incoming, std::uint32_t alignment) noexcept
 	{
-		return current.Parameter.Kind == incoming.Kind && current.Parameter.ResourceDomain == incoming.ResourceDomain
-		    && current.Parameter.Access == incoming.Access && current.Parameter.ArrayCount == incoming.ArrayCount
-		    && current.Parameter.ValueSizeInBytes == incoming.ValueSizeInBytes
-		    && current.Parameter.ValueLayoutHash == incoming.ValueLayoutHash
+		return current.Parameter.Kind == incoming.Kind && current.Parameter.ResourceDomain == incoming.ResourceDomain && current.Parameter.Access == incoming.Access
+		    && current.Parameter.ArrayCount == incoming.ArrayCount && current.Parameter.ValueSizeInBytes == incoming.ValueSizeInBytes && current.Parameter.ValueLayoutHash == incoming.ValueLayoutHash
 		    && (current.Parameter.Kind != ShaderParameterSemanticKind::UniformData || current.ValueAlignmentInBytes == alignment);
 	}
 }
@@ -112,25 +109,15 @@ PassParameterLayout ShaderParameterLayoutBuilder::Build(std::span<const ShaderRe
 			{
 				throw Diagnostics::Error(std::format("Shader '{}' contains an invalid parameter declaration.", shader->ShaderName));
 			}
-			const auto existing = std::ranges::find_if(
-			    entries,
-			    [&parameter](const ShaderParameterLayoutAssembly::Entry& entry) { return entry.Parameter.Name == parameter.Name; });
+			const auto existing = std::ranges::find_if(entries, [&parameter](const ShaderParameterLayoutAssembly::Entry& entry) { return entry.Parameter.Name == parameter.Name; });
 			if (existing == entries.end())
 			{
 				entries.push_back(
-				    ShaderParameterLayoutAssembly::Entry{
-				        .Parameter = std::move(parameter),
-				        .ValueAlignmentInBytes = field.ValueAlignmentInBytes,
-				        .ShaderName = std::string(shader->ShaderName)});
+				    ShaderParameterLayoutAssembly::Entry{.Parameter = std::move(parameter), .ValueAlignmentInBytes = field.ValueAlignmentInBytes, .ShaderName = std::string(shader->ShaderName)});
 			}
 			else if (!ShaderParameterLayoutAssembly::Matches(*existing, parameter, field.ValueAlignmentInBytes))
 			{
-				throw Diagnostics::Error(
-				    std::format(
-				        "Shaders '{}' and '{}' declare incompatible parameter '{}'.",
-				        existing->ShaderName,
-				        shader->ShaderName,
-				        parameter.Name));
+				throw Diagnostics::Error(std::format("Shaders '{}' and '{}' declare incompatible parameter '{}'.", existing->ShaderName, shader->ShaderName, parameter.Name));
 			}
 			else
 			{

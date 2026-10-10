@@ -24,15 +24,7 @@ public:
 		return true;
 	}
 
-	static bool DrawFloat(
-	    const char* id,
-	    const char* label,
-	    float& value,
-	    float speed,
-	    float minimum,
-	    float maximum,
-	    const char* format,
-	    ImGuiSliderFlags flags = ImGuiSliderFlags_None) noexcept
+	static bool DrawFloat(const char* id, const char* label, float& value, float speed, float minimum, float maximum, const char* format, ImGuiSliderFlags flags = ImGuiSliderFlags_None) noexcept
 	{
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
@@ -49,10 +41,7 @@ void ViewportCameraProperties::OpenPopup() noexcept
 	ImGui::OpenPopup("##ViewportCameraProperties");
 }
 
-void ViewportCameraProperties::BuildPopup(
-    EditorViewportSession& viewportSession,
-    const EngineRenderingSettingsState& renderingDefaults,
-    bool disableInteraction) noexcept
+void ViewportCameraProperties::BuildPopup(EditorViewportSession& viewportSession, const EngineRenderingSettingsState& renderingDefaults, bool disableInteraction) noexcept
 {
 	ImGui::SetNextWindowSizeConstraints(ImVec2(430.0f, 0.0f), ImVec2(560.0f, 720.0f));
 	if (!ImGui::BeginPopup("##ViewportCameraProperties"))
@@ -106,15 +95,7 @@ void ViewportCameraProperties::BuildPopup(
 		}
 
 		float rotationSpeed = settings.Navigation.RotationSpeedDegreesPerPixel;
-		if (ViewportCameraPropertyTable::DrawFloat(
-		        "##ViewportRotationSpeed",
-		        "Rotation speed (deg/px)",
-		        rotationSpeed,
-		        0.005f,
-		        0.001f,
-		        10.0f,
-		        "%.4f",
-		        ImGuiSliderFlags_Logarithmic))
+		if (ViewportCameraPropertyTable::DrawFloat("##ViewportRotationSpeed", "Rotation speed (deg/px)", rotationSpeed, 0.005f, 0.001f, 10.0f, "%.4f", ImGuiSliderFlags_Logarithmic))
 		{
 			viewportSession.SetRotationSpeed(rotationSpeed);
 		}
@@ -133,15 +114,7 @@ void ViewportCameraProperties::BuildPopup(
 		if (settings.ProjectionKind == CameraProjectionKind::Orthographic)
 		{
 			float orthographicHeight = settings.OrthographicHeightMeters;
-			if (ViewportCameraPropertyTable::DrawFloat(
-			        "##ViewportOrthographicHeight",
-			        "Ortho height (m)",
-			        orthographicHeight,
-			        0.1f,
-			        0.001f,
-			        1000000.0f,
-			        "%.3f",
-			        ImGuiSliderFlags_Logarithmic))
+			if (ViewportCameraPropertyTable::DrawFloat("##ViewportOrthographicHeight", "Ortho height (m)", orthographicHeight, 0.1f, 0.001f, 1000000.0f, "%.3f", ImGuiSliderFlags_Logarithmic))
 			{
 				viewportSession.SetOrthographicHeight(orthographicHeight);
 			}

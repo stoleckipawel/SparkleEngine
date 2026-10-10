@@ -23,7 +23,9 @@ public:
 	UiFrameRenderer& operator=(const UiFrameRenderer&) = delete;
 
 	UiTextureHandle RegisterUiTexture(std::uint64_t nativeTextureId) noexcept;
+
 	UiTextureHandle GetViewportTexture() const noexcept { return m_viewportTexture; }
+
 	void BeginFrame() noexcept;
 	void Render(const UiRenderPacket& packet, FrameGraph* frameGraph, ViewportRenderProducts& viewportProducts) noexcept;
 
@@ -33,10 +35,7 @@ private:
 	void RenderViewport(const UiRenderPacket& packet, FrameGraph* frameGraph, ViewportRenderProducts& viewportProducts) noexcept;
 	void RenderHostOverlay(const UiRenderPacket& packet) noexcept;
 	void Play(const UiRenderPacket& packet) noexcept;
-	void TransitionViewportProduct(
-	    FrameGraph& frameGraph,
-	    const ViewportRenderProducts& viewportProducts,
-	    ResourceState resourceState) noexcept;
+	void TransitionViewportProduct(FrameGraph& frameGraph, const ViewportRenderProducts& viewportProducts, ResourceState resourceState) noexcept;
 
 	RenderDeviceServices& m_deviceServices;
 	std::unique_ptr<UiRenderPacketPlayer> m_packetPlayer;

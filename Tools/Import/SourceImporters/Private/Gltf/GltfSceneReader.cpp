@@ -45,8 +45,7 @@ void GltfSceneReader::ValidateGltf(cgltf_data* data, const std::string& path)
 	const cgltf_result validateResult = cgltf_validate(data);
 	if (validateResult != cgltf_result_success)
 	{
-		throw Diagnostics::Error(
-		    std::format("glTF source '{}' fails cgltf validation (error {}).", path, static_cast<int>(validateResult)));
+		throw Diagnostics::Error(std::format("glTF source '{}' fails cgltf validation (error {}).", path, static_cast<int>(validateResult)));
 	}
 }
 

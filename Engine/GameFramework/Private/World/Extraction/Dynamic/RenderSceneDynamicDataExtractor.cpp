@@ -39,10 +39,7 @@ namespace ECS
 		ExtractLights(readView, identities, dynamic);
 	}
 
-	void RenderSceneDynamicDataExtractor::ExtractObjects(
-	    std::span<const WorldExtractionStorage::MeshSlot> meshes,
-	    const RenderObjectDeltaExtractor& objects,
-	    RenderSceneDynamicData& dynamic)
+	void RenderSceneDynamicDataExtractor::ExtractObjects(std::span<const WorldExtractionStorage::MeshSlot> meshes, const RenderObjectDeltaExtractor& objects, RenderSceneDynamicData& dynamic)
 	{
 		m_currentObjects.clear();
 		m_currentObjects.reserve(meshes.size());
@@ -51,10 +48,7 @@ namespace ECS
 			m_currentObjects.push_back({objects.FindObject(mesh.Entity), mesh.WorldMatrix, mesh.WorldInverseTranspose, mesh.Visible});
 		}
 
-		std::sort(
-		    m_currentObjects.begin(),
-		    m_currentObjects.end(),
-		    [](const RenderObjectDynamicData& left, const RenderObjectDynamicData& right) { return left.Object < right.Object; });
+		std::sort(m_currentObjects.begin(), m_currentObjects.end(), [](const RenderObjectDynamicData& left, const RenderObjectDynamicData& right) { return left.Object < right.Object; });
 
 		dynamic.Objects.reserve(m_currentObjects.size());
 		std::size_t publishedIndex = 0u;
@@ -67,6 +61,7 @@ namespace ECS
 
 			const bool unchanged = publishedIndex < m_publishedObjects.size() && m_publishedObjects[publishedIndex].Object == object.Object
 			    && HasSameObjectData(m_publishedObjects[publishedIndex], object);
+
 			if (!unchanged)
 			{
 				dynamic.Objects.push_back(object);
@@ -76,9 +71,7 @@ namespace ECS
 		m_publishedObjects.swap(m_currentObjects);
 	}
 
-	bool RenderSceneDynamicDataExtractor::HasSameObjectData(
-	    const RenderObjectDynamicData& left,
-	    const RenderObjectDynamicData& right) noexcept
+	bool RenderSceneDynamicDataExtractor::HasSameObjectData(const RenderObjectDynamicData& left, const RenderObjectDynamicData& right) noexcept
 	{
 		return left.Visible == right.Visible && std::memcmp(&left.WorldMatrix, &right.WorldMatrix, sizeof(left.WorldMatrix)) == 0
 		    && std::memcmp(&left.WorldInverseTranspose, &right.WorldInverseTranspose, sizeof(left.WorldInverseTranspose)) == 0;
@@ -95,14 +88,14 @@ namespace ECS
 		for (const WorldExtractionStorage::MeshSlot& mesh : meshes)
 		{
 			const SkinningState* skinning = state.m_registry.Get<SkinningState>(mesh.Entity);
-			if (skinning == nullptr || !skinning->Pose.IsValid()
-			    || skinning->Pose.Generation != state.m_animationOutput.GetTargetGeneration() || skinning->Pose.Slot >= output.poses.size())
+			if (skinning == nullptr || !skinning->Pose.IsValid() || skinning->Pose.Generation != state.m_animationOutput.GetTargetGeneration() || skinning->Pose.Slot >= output.poses.size())
 				continue;
 			const AnimationPoseOutput& pose = output.poses[skinning->Pose.Slot];
 			const SkeletonResourceHandle skeleton = resources.Skeletons.Find(pose.skeletonAssetId);
 			const AnimationState* animation = state.m_registry.Get<AnimationState>(pose.animationEntity);
 			const std::uint32_t jointMatrixOffset = static_cast<std::uint32_t>(dynamic.JointMatrices.size());
 			dynamic.JointMatrices.insert(dynamic.JointMatrices.end(), pose.jointMatrices.begin(), pose.jointMatrices.end());
+
 			dynamic.JointMatrixRanges.push_back(
 			    RenderJointMatrixRange{
 			        .Object = objects.FindObject(mesh.Entity),
@@ -111,16 +104,10 @@ namespace ECS
 			        .JointMatrixOffset = jointMatrixOffset,
 			        .JointMatrixCount = static_cast<std::uint32_t>(pose.jointMatrices.size())});
 		}
-		std::sort(
-		    dynamic.JointMatrixRanges.begin(),
-		    dynamic.JointMatrixRanges.end(),
-		    [](const RenderJointMatrixRange& lhs, const RenderJointMatrixRange& rhs) { return lhs.Object < rhs.Object; });
+		std::sort(dynamic.JointMatrixRanges.begin(), dynamic.JointMatrixRanges.end(), [](const RenderJointMatrixRange& lhs, const RenderJointMatrixRange& rhs) { return lhs.Object < rhs.Object; });
 	}
 
-	void RenderSceneDynamicDataExtractor::ExtractMorphWeights(
-	    GameWorldState& state,
-	    const RenderObjectDeltaExtractor& objects,
-	    RenderSceneDynamicData& dynamic)
+	void RenderSceneDynamicDataExtractor::ExtractMorphWeights(GameWorldState& state, const RenderObjectDeltaExtractor& objects, RenderSceneDynamicData& dynamic)
 	{
 		const AnimationOutput& output = state.m_animationOutput.GetOutput();
 		const auto samples = state.m_animationOutput.GetMorphSamples();
@@ -136,17 +123,14 @@ namespace ECS
 				continue;
 			const MorphWeightOutput& morph = output.morphWeights[outputIndex];
 			const AnimationState* animation = state.m_registry.Get<AnimationState>(morph.animationEntity);
+
 			m_morphMetadata.push_back(
 			    MorphMetadata{
 			        .Entity = binding.TargetEntity,
-			        .Animation =
-			            animation != nullptr ? RenderAnimationAssetHandle(animation->AnimationAssetId) : RenderAnimationAssetHandle{},
+			        .Animation = animation != nullptr ? RenderAnimationAssetHandle(animation->AnimationAssetId) : RenderAnimationAssetHandle{},
 			        .TargetNodeIndex = morph.targetNodeIndex});
 		}
-		std::stable_sort(
-		    m_morphMetadata.begin(),
-		    m_morphMetadata.end(),
-		    [](const MorphMetadata& left, const MorphMetadata& right) { return left.Entity < right.Entity; });
+		std::stable_sort(m_morphMetadata.begin(), m_morphMetadata.end(), [](const MorphMetadata& left, const MorphMetadata& right) { return left.Entity < right.Entity; });
 
 		const ComponentStorage<MorphState>* morphStates = state.m_registry.FindStorage<MorphState>();
 		if (morphStates == nullptr)
@@ -171,10 +155,11 @@ namespace ECS
 			    m_morphMetadata.end(),
 			    entities[index],
 			    [](EntityId entity, const MorphMetadata& metadata) { return entity < metadata.Entity; });
-			const MorphMetadata* metadata =
-			    metadataEnd != m_morphMetadata.begin() && (metadataEnd - 1)->Entity == entities[index] ? &*(metadataEnd - 1) : nullptr;
+
+			const MorphMetadata* metadata = metadataEnd != m_morphMetadata.begin() && (metadataEnd - 1)->Entity == entities[index] ? &*(metadataEnd - 1) : nullptr;
 			const std::uint32_t weightOffset = static_cast<std::uint32_t>(dynamic.MorphWeights.size());
 			dynamic.MorphWeights.insert(dynamic.MorphWeights.end(), weights.begin(), weights.end());
+
 			dynamic.MorphWeightRanges.push_back(
 			    RenderMorphWeightRange{
 			        .Object = object,
@@ -189,19 +174,13 @@ namespace ECS
 		    [](const RenderMorphWeightRange& left, const RenderMorphWeightRange& right) { return left.Object < right.Object; });
 	}
 
-	void RenderSceneDynamicDataExtractor::ExtractLights(
-	    const WorldReadView& readView,
-	    RenderObjectIdentityMap& identities,
-	    RenderSceneDynamicData& dynamic)
+	void RenderSceneDynamicDataExtractor::ExtractLights(const WorldReadView& readView, RenderObjectIdentityMap& identities, RenderSceneDynamicData& dynamic)
 	{
 		dynamic.Lights.reserve(readView.GetLights().size());
 		for (const WorldLightReadData& light : readView.GetLights())
 		{
 			dynamic.Lights.push_back({identities.Resolve(light.Entity), light.Description});
 		}
-		std::sort(
-		    dynamic.Lights.begin(),
-		    dynamic.Lights.end(),
-		    [](const RenderLightData& left, const RenderLightData& right) { return left.Object < right.Object; });
+		std::sort(dynamic.Lights.begin(), dynamic.Lights.end(), [](const RenderLightData& left, const RenderLightData& right) { return left.Object < right.Object; });
 	}
 }

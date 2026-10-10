@@ -22,7 +22,9 @@ public:
 	}
 
 	std::size_t size() const noexcept { return m_lights.size(); }
+
 	const TLight& operator[](std::size_t index) const noexcept { return m_lights[index]; }
+
 	RenderObjectId GetObject(std::size_t index) const noexcept { return m_objects[index]; }
 
 private:

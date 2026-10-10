@@ -22,8 +22,7 @@ namespace Assets
 			sceneAssetPayload.materialVariants.push_back(std::move(variant));
 		}
 
-		sceneAssetPayload.materialVariantMappings.reserve(
-		    sceneAssetPayload.materialVariantMappings.size() + sceneManifest.materialVariantMappings.size());
+		sceneAssetPayload.materialVariantMappings.reserve(sceneAssetPayload.materialVariantMappings.size() + sceneManifest.materialVariantMappings.size());
 		for (const CookedSceneMaterialVariantMappingRecord& mappingRecord : sceneManifest.materialVariantMappings)
 		{
 			SceneAssetPayload::MaterialVariantMapping mapping;

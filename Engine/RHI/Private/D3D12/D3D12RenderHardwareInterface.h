@@ -41,6 +41,7 @@ public:
 	D3D12RenderHardwareInterface& operator=(D3D12RenderHardwareInterface&&) = delete;
 
 	const RhiCapabilities& GetCapabilities() const noexcept override { return m_capabilities; }
+
 	std::uint32_t GetCurrentFrameIndex() const noexcept override;
 	RhiResourceService& GetResourceService() noexcept override;
 	const RhiResourceService& GetResourceService() const noexcept override;
@@ -71,20 +72,13 @@ public:
 	RhiRect GetBackBufferScissorRect() const noexcept;
 	RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept;
 	RhiResourceHandle GetBackBufferResource() const noexcept;
-	RhiRayTracingAccelerationStructurePrebuildInfo GetBottomLevelAccelerationStructurePrebuildInfo(
-	    const RhiRayTracingGeometryDesc& geometry) const noexcept;
+	RhiRayTracingAccelerationStructurePrebuildInfo GetBottomLevelAccelerationStructurePrebuildInfo(const RhiRayTracingGeometryDesc& geometry) const noexcept;
 	RhiRayTracingAccelerationStructurePrebuildInfo GetTopLevelAccelerationStructurePrebuildInfo(
 	    std::uint32_t instanceCount,
 	    ERhiClassicTlasBuildFlags buildFlags = ERhiClassicTlasBuildFlags::None) const noexcept;
 	RhiOwnedResourceHandle CreateRayTracingScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName);
-	RhiOwnedResourceHandle CreateRayTracingAccelerationStructureBuffer(
-	    std::uint64_t sizeInBytes,
-	    ERhiRayTracingAccelerationStructureType type,
-	    std::wstring_view debugName);
-	RhiOwnedResourceHandle CreateRayTracingInstanceBuffer(
-	    const RhiRayTracingInstanceDesc* instances,
-	    std::uint32_t instanceCount,
-	    std::wstring_view debugName);
+	RhiOwnedResourceHandle CreateRayTracingAccelerationStructureBuffer(std::uint64_t sizeInBytes, ERhiRayTracingAccelerationStructureType type, std::wstring_view debugName);
+	RhiOwnedResourceHandle CreateRayTracingInstanceBuffer(const RhiRayTracingInstanceDesc* instances, std::uint32_t instanceCount, std::wstring_view debugName);
 	void BeginPresentRenderPass(RhiClearColorView clearColor) noexcept;
 	void BeginPresentOverlayPass() noexcept;
 	void EndPresentRenderPass() noexcept;
@@ -96,17 +90,11 @@ private:
 	friend class D3D12InteropService;
 	friend class D3D12RenderCommandList;
 
-	D3D12_CPU_DESCRIPTOR_HANDLE ResolveDescriptorTableCpuHandle(
-	    RhiDescriptorTableHandle tableHandle,
-	    std::uint32_t descriptorIndex = 0) const noexcept;
-	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(
-	    RhiDescriptorTableHandle tableHandle,
-	    std::uint32_t descriptorIndex = 0) const noexcept;
+	D3D12_CPU_DESCRIPTOR_HANDLE ResolveDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0) const noexcept;
+	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0) const noexcept;
 	D3D12RecordingResourceUseToken BeginResourceTracking(RhiResourceHandle resource, bool coordinatorRecording) noexcept;
 	void EndResourceTracking(D3D12RecordingResourceUseToken use, RhiSubmissionToken submissionToken) noexcept;
-	bool BuildPartitionedTopLevelAccelerationStructure(
-	    ID3D12GraphicsCommandList7* commandList,
-	    const RhiPartitionedTlasBuildCommandDesc& desc) const noexcept;
+	bool BuildPartitionedTopLevelAccelerationStructure(ID3D12GraphicsCommandList7* commandList, const RhiPartitionedTlasBuildCommandDesc& desc) const noexcept;
 	RhiCapabilities BuildCapabilities() const noexcept;
 	RhiBackendDiagnosticsSupport BuildBackendDiagnosticsSupport() const noexcept;
 	RhiBackendMemorySupport BuildBackendMemorySupport() const noexcept;

@@ -19,9 +19,7 @@ public:
 	static void CopyName(std::string_view sourceName, char (&destination)[64]) noexcept;
 };
 
-void CookedAnimationAssetWriter::StageAnimationAssets(
-    const std::vector<CookedAnimationAssetBuild>& animationAssets,
-    std::vector<Files::FilePublication>& outPublication)
+void CookedAnimationAssetWriter::StageAnimationAssets(const std::vector<CookedAnimationAssetBuild>& animationAssets, std::vector<Files::FilePublication>& outPublication)
 {
 	for (const CookedAnimationAssetBuild& animationAsset : animationAssets)
 	{
@@ -29,9 +27,7 @@ void CookedAnimationAssetWriter::StageAnimationAssets(
 	}
 }
 
-void CookedAnimationAssetStager::StageAnimationAsset(
-    const CookedAnimationAssetBuild& animationAsset,
-    std::vector<Files::FilePublication>& outPublication)
+void CookedAnimationAssetStager::StageAnimationAsset(const CookedAnimationAssetBuild& animationAsset, std::vector<Files::FilePublication>& outPublication)
 {
 	const std::filesystem::path outputPath = Paths::CookedAnimationAsset(animationAsset.assetId);
 	const std::filesystem::path stagedOutputPath = Files::BuildTemporaryPath(outputPath, ".cook-generation");
@@ -42,10 +38,8 @@ void CookedAnimationAssetStager::StageAnimationAsset(
 	const Assets::CookedAnimationAssetHeader header = BuildHeader(animationAsset);
 	std::string errorMessage;
 	std::ofstream output;
-	if (!Files::TryOpenBinaryOutput(stagedOutputPath, output, errorMessage)
-	    || !Files::BinaryStreamWriter::WriteValue(output, header, errorMessage)
-	    || !Files::BinaryStreamWriter::WriteArray(output, animationAsset.channels, errorMessage)
-	    || !Files::BinaryStreamWriter::WriteArray(output, animationAsset.keyframes, errorMessage))
+	if (!Files::TryOpenBinaryOutput(stagedOutputPath, output, errorMessage) || !Files::BinaryStreamWriter::WriteValue(output, header, errorMessage)
+	    || !Files::BinaryStreamWriter::WriteArray(output, animationAsset.channels, errorMessage) || !Files::BinaryStreamWriter::WriteArray(output, animationAsset.keyframes, errorMessage))
 	{
 		throw Diagnostics::Error(errorMessage);
 	}

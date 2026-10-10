@@ -12,11 +12,7 @@
 
 namespace Assets
 {
-	void SceneAssetFileReader::Read(
-	    const SceneAssetId& sceneAssetId,
-	    const std::filesystem::path& manifestRelativePath,
-	    LoadedSceneManifest& manifest,
-	    CookedAssetFileSet& files)
+	void SceneAssetFileReader::Read(const SceneAssetId& sceneAssetId, const std::filesystem::path& manifestRelativePath, LoadedSceneManifest& manifest, CookedAssetFileSet& files)
 	{
 		const std::filesystem::path manifestPath = Paths::CookedSceneManifestRelative(manifestRelativePath);
 		try
@@ -36,12 +32,7 @@ namespace Assets
 		}
 		catch (const Diagnostics::Error& error)
 		{
-			throw Diagnostics::Error(
-			    std::format(
-			        "Could not load scene asset '{}' from '{}': {}",
-			        sceneAssetId.value,
-			        manifestPath.generic_string(),
-			        error.what()));
+			throw Diagnostics::Error(std::format("Could not load scene asset '{}' from '{}': {}", sceneAssetId.value, manifestPath.generic_string(), error.what()));
 		}
 	}
 }

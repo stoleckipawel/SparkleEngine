@@ -39,13 +39,10 @@ namespace RayTracingPathLighting
 			outHitSurface = hitSurface;
 			result.Hit = hitSurface.Valid;
 			result.HitPositionWorld = hitSurface.Valid ? hitSurface.PositionWorld : 0.0f.xxx;
-			result.IncidentRadiance = hitSurface.Valid ? ShadeRayTracingHitIncidentRadiance(hitSurface,
-			                                                                                directionWorld,
-			                                                                                pathSampleIndex,
-			                                                                                bounceIndex,
-			                                                                                randomFrameIndex,
-			                                                                                traceSecondaryShadows)
+
+			result.IncidentRadiance = hitSurface.Valid ? ShadeRayTracingHitIncidentRadiance(hitSurface, directionWorld, pathSampleIndex, bounceIndex, randomFrameIndex, traceSecondaryShadows)
 			                                           : 0.0f.xxx;
+
 			return result;
 		}
 
@@ -77,14 +74,14 @@ namespace RayTracingPathLighting
 		[loop]
 		for (uint bounceIndex = 0u; bounceIndex < sanitizedBounceCount; ++bounceIndex)
 		{
-			const RayTracingPathSampling::RandomSamples randomSamples =
-			    RayTracingPathSampling::GenerateRandomSamples(pixelCoord, bounceIndex, sampleIndex, randomFrameIndex);
-			const RayTracingPathSample::DirectionSample sample =
-			    RayTracingPathSampling::SampleBSDF(surface,
-			                                       specularSampleMode,
-			                                       randomSamples,
-			                                       bounceIndex != 0u || evaluatePrimaryDiffuse,
-			                                       bounceIndex != 0u || evaluatePrimarySpecular);
+			const RayTracingPathSampling::RandomSamples randomSamples = RayTracingPathSampling::GenerateRandomSamples(pixelCoord, bounceIndex, sampleIndex, randomFrameIndex);
+
+			const RayTracingPathSample::DirectionSample sample = RayTracingPathSampling::SampleBSDF(surface,
+			                                                                                        specularSampleMode,
+			                                                                                        randomSamples,
+			                                                                                        bounceIndex != 0u || evaluatePrimaryDiffuse,
+			                                                                                        bounceIndex != 0u || evaluatePrimarySpecular);
+
 			if (!sample.HasSupport)
 			{
 				break;
@@ -131,15 +128,10 @@ namespace RayTracingPathLighting
 			const RayTracingTraceResult trace = RayTracingPathTrace::TraceSurfaceRay(surface, path.DirectionWorld, rayOriginWorld);
 			path.OriginWorld = rayOriginWorld;
 			RayTracingHitSurfaceData hitSurface;
-			RayTracingPathSample::LightingResult lighting = ResolveLighting(trace,
-			                                                                sample.DirectionWorld,
-			                                                                skyTexture,
-			                                                                skySampler,
-			                                                                sampleIndex,
-			                                                                bounceIndex,
-			                                                                randomFrameIndex,
-			                                                                traceSecondaryShadows,
-			                                                                hitSurface);
+
+			RayTracingPathSample::LightingResult
+			    lighting = ResolveLighting(trace, sample.DirectionWorld, skyTexture, skySampler, sampleIndex, bounceIndex, randomFrameIndex, traceSecondaryShadows, hitSurface);
+
 			if (evaluatePrimaryDiffuse)
 			{
 				PathTracer::AddRadiance(result.DiffuseContribution, diffuseThroughput, lighting.IncidentRadiance);

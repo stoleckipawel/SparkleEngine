@@ -15,34 +15,14 @@ public:
 
 	static const char* GetStepName(AssetCookerPlanStep step) noexcept;
 	static bool ValidateCapabilities(const AssetCookerProjectCookPlan& plan, AssetCookerDiagnostics& diagnostics);
-	static bool Execute(
-	    AssetCookerPlanStep step,
-	    const AssetCookerProjectCookPlan& plan,
-	    AssetCookerDiagnostics& diagnostics,
-	    std::vector<AssetCookerOutputRecord>& outOutputs);
+	static bool Execute(AssetCookerPlanStep step, const AssetCookerProjectCookPlan& plan, AssetCookerDiagnostics& diagnostics, std::vector<AssetCookerOutputRecord>& outOutputs);
 
 private:
 	static bool FileExists(const std::filesystem::path& path);
 	static bool PlanUsesStep(const AssetCookerProjectCookPlan& plan, AssetCookerPlanStep step) noexcept;
-	static std::filesystem::path MakeTemporaryPath(
-	    const AssetCookerProjectCookPlan& plan,
-	    std::string_view stem,
-	    std::string_view extension);
-	static void AppendOutput(
-	    std::vector<AssetCookerOutputRecord>& outputs,
-	    AssetCookerCategory category,
-	    std::string assetId,
-	    const std::filesystem::path& path);
-	static bool RunShaders(
-	    const AssetCookerProjectCookPlan& plan,
-	    AssetCookerDiagnostics& diagnostics,
-	    std::vector<AssetCookerOutputRecord>& outputs);
-	static bool RunTextures(
-	    const AssetCookerProjectCookPlan& plan,
-	    AssetCookerDiagnostics& diagnostics,
-	    std::vector<AssetCookerOutputRecord>& outputs);
-	static bool RunSceneAssets(
-	    const AssetCookerProjectCookPlan& plan,
-	    AssetCookerDiagnostics& diagnostics,
-	    std::vector<AssetCookerOutputRecord>& outputs);
+	static std::filesystem::path MakeTemporaryPath(const AssetCookerProjectCookPlan& plan, std::string_view stem, std::string_view extension);
+	static void AppendOutput(std::vector<AssetCookerOutputRecord>& outputs, AssetCookerCategory category, std::string assetId, const std::filesystem::path& path);
+	static bool RunShaders(const AssetCookerProjectCookPlan& plan, AssetCookerDiagnostics& diagnostics, std::vector<AssetCookerOutputRecord>& outputs);
+	static bool RunTextures(const AssetCookerProjectCookPlan& plan, AssetCookerDiagnostics& diagnostics, std::vector<AssetCookerOutputRecord>& outputs);
+	static bool RunSceneAssets(const AssetCookerProjectCookPlan& plan, AssetCookerDiagnostics& diagnostics, std::vector<AssetCookerOutputRecord>& outputs);
 };

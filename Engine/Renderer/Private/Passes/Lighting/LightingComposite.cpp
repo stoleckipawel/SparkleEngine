@@ -25,7 +25,5 @@ void AddLightingCompositePasses(FrameGraphBuilder& builder, RenderViewportExtent
 	parameters->IndirectDiffuse = builder.CreateSRV(lighting.IndirectDiffuse);
 	parameters->IndirectSpecular = builder.CreateSRV(lighting.IndirectSpecular);
 	parameters->GBufferEmissive = builder.CreateSRV(resources.Transient.GBuffer.Emissive);
-	builder.Dispatch<LightingCompositeCS>(
-	    parameters,
-	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
+	builder.Dispatch<LightingCompositeCS>(parameters, ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 }

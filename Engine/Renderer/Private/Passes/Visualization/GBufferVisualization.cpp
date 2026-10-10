@@ -8,11 +8,7 @@
 #include "Passes/Visualization/GBufferVisualizationShader.h"
 #include "View/RenderView.h"
 
-void AddGBufferVisualizationPass(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources)
+void AddGBufferVisualizationPass(FrameGraphBuilder& builder, const RenderFrame& frame, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
 	const GBufferRenderTargets& gbuffer = resources.Transient.GBuffer;
 
@@ -27,7 +23,5 @@ void AddGBufferVisualizationPass(
 
 	parameters->View = frame.View.uniform;
 
-	builder.Dispatch<GBufferVisualizationCS>(
-	    parameters,
-	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
+	builder.Dispatch<GBufferVisualizationCS>(parameters, ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 }

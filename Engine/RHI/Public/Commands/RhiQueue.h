@@ -72,8 +72,7 @@ struct RhiSubmissionState final
 
 	constexpr RhiSubmissionToken GetToken(ERhiQueueType queue) const noexcept
 	{
-		return IsRhiQueueTypeValid(queue) ? RhiSubmissionToken{.Queue = queue, .Value = Values[RhiQueueTypeToIndex(queue)]}
-		                                  : RhiSubmissionToken{};
+		return IsRhiQueueTypeValid(queue) ? RhiSubmissionToken{.Queue = queue, .Value = Values[RhiQueueTypeToIndex(queue)]} : RhiSubmissionToken{};
 	}
 
 	constexpr std::size_t CopyTokens(std::span<RhiSubmissionToken> destination) const noexcept

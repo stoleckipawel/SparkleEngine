@@ -82,8 +82,7 @@ struct FrameGraphPassNode
 };
 
 using FrameGraphSubmissionBatchIndex = std::uint32_t;
-static constexpr FrameGraphSubmissionBatchIndex INVALID_FRAME_GRAPH_SUBMISSION_BATCH_INDEX =
-    static_cast<FrameGraphSubmissionBatchIndex>(-1);
+static constexpr FrameGraphSubmissionBatchIndex INVALID_FRAME_GRAPH_SUBMISSION_BATCH_INDEX = static_cast<FrameGraphSubmissionBatchIndex>(-1);
 
 struct FrameGraphSubmissionBatch final
 {

@@ -13,6 +13,7 @@ class IShaderBackend
 {
 public:
 	virtual ~IShaderBackend() = default;
+
 	IShaderBackend(const IShaderBackend&) = delete;
 	IShaderBackend& operator=(const IShaderBackend&) = delete;
 	IShaderBackend(IShaderBackend&&) = delete;

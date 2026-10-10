@@ -44,14 +44,8 @@ class RenderDeformationPreparation final
 public:
 	void Prepare(const RenderScene& scene, std::span<ResolvedRenderPrimitive> primitives, RenderDeformationWork& work);
 
-	static void CopyJointMatrixRanges(
-	    std::span<const RenderJointMatrixCopyRange> ranges,
-	    std::span<DirectX::XMFLOAT4X4> current,
-	    std::span<DirectX::XMFLOAT4X4> previous) noexcept;
-	static void CopyMorphWeightRanges(
-	    std::span<const RenderMorphWeightCopyRange> ranges,
-	    std::span<float> current,
-	    std::span<float> previous) noexcept;
+	static void CopyJointMatrixRanges(std::span<const RenderJointMatrixCopyRange> ranges, std::span<DirectX::XMFLOAT4X4> current, std::span<DirectX::XMFLOAT4X4> previous) noexcept;
+	static void CopyMorphWeightRanges(std::span<const RenderMorphWeightCopyRange> ranges, std::span<float> current, std::span<float> previous) noexcept;
 
 private:
 	static void ResetWork(RenderDeformationWork& work) noexcept;

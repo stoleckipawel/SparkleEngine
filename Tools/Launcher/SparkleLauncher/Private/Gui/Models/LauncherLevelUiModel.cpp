@@ -58,18 +58,17 @@ namespace SparkleLauncher
 			const bool runtimeSupported = assetPack == nullptr || assetPack->runtimeSupported;
 			const bool acquisitionSupported = assetPack != nullptr && assetPack->downloadSupported;
 			const bool sourceReady = levelSourceReady && packSourceReady;
-			const bool canSelect =
-			    levelSourceReady && runtimeSupported && (assetPack == nullptr || packSourceReady || acquisitionSupported);
+			const bool canSelect = levelSourceReady && runtimeSupported && (assetPack == nullptr || packSourceReady || acquisitionSupported);
 			const bool canSync = levelSourceReady && assetPack != nullptr && acquisitionSupported && !packSourceReady;
 			const bool canClean = levelSourceReady && assetPack != nullptr && packSourceReady;
+
 			LauncherLevelUiEntry entry{
 			    .Id = QString::fromStdString(level.id),
 			    .DisplayName = DisplayNameOrId(level.displayName, level.id),
 			    .Description = QString::fromStdString(level.description),
 			    .ThumbnailPath = QString::fromStdString(level.thumbnailPath.string()),
 			    .Detail = BuildLevelDetail(level, assetPack),
-			    .SourcePageUrl = QString::fromStdString(
-			        level.sourcePageUrl.empty() && assetPack != nullptr ? assetPack->sourcePageUrl : level.sourcePageUrl),
+			    .SourcePageUrl = QString::fromStdString(level.sourcePageUrl.empty() && assetPack != nullptr ? assetPack->sourcePageUrl : level.sourcePageUrl),
 			    .UnsupportedReason = ResolveUnavailableReason(level, assetPack, levelSourceReady, packSourceReady, canSelect),
 			    .Selected = level.selected,
 			    .SourceReady = sourceReady,
@@ -84,12 +83,7 @@ namespace SparkleLauncher
 			return entry;
 		}
 
-		QString ResolveUnavailableReason(
-		    const ProjectLevelCatalogEntry& level,
-		    const ProjectAssetPack* pack,
-		    bool levelSourceReady,
-		    bool packSourceReady,
-		    bool canSelect) const
+		QString ResolveUnavailableReason(const ProjectLevelCatalogEntry& level, const ProjectAssetPack* pack, bool levelSourceReady, bool packSourceReady, bool canSelect) const
 		{
 			if (canSelect)
 			{
@@ -105,8 +99,7 @@ namespace SparkleLauncher
 			}
 			if (!packSourceReady && !pack->downloadSupported)
 			{
-				return QString::fromStdString(pack->downloadBlocker)
-				    + (pack->runtimeSupported ? QString() : QStringLiteral("\n\n") + QString::fromStdString(pack->runtimeBlocker));
+				return QString::fromStdString(pack->downloadBlocker) + (pack->runtimeSupported ? QString() : QStringLiteral("\n\n") + QString::fromStdString(pack->runtimeBlocker));
 			}
 			if (!pack->runtimeSupported)
 			{
@@ -205,10 +198,7 @@ namespace SparkleLauncher
 			return level.SourceReady ? QStringLiteral("ok") : QStringLiteral("neutral");
 		}
 
-		QString DisplayNameOrId(std::string_view displayName, std::string_view id) const
-		{
-			return QString::fromStdString(std::string(displayName.empty() ? id : displayName));
-		}
+		QString DisplayNameOrId(std::string_view displayName, std::string_view id) const { return QString::fromStdString(std::string(displayName.empty() ? id : displayName)); }
 
 		QString FormatArchiveSize(std::uintmax_t byteCount) const
 		{

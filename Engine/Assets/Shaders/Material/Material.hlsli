@@ -172,8 +172,7 @@ namespace Material
 		props.AlphaMode = AlphaMode;
 		ApplyAlphaMode(props.Alpha);
 		props.NormalTangent = SampleNormalTangent(Input.TexCoord);
-		props.NormalWorld =
-		    TransformTangentNormalToWorld(props.NormalTangent, Input.NormalWorld, Input.TangentWorld.xyz, Input.BitangentWorld);
+		props.NormalWorld = TransformTangentNormalToWorld(props.NormalTangent, Input.NormalWorld, Input.TangentWorld.xyz, Input.BitangentWorld);
 		if (!Input.IsFrontFace)
 		{
 			props.NormalWorld = -props.NormalWorld;

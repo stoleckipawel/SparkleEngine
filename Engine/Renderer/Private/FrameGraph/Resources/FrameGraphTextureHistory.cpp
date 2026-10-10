@@ -29,8 +29,9 @@ FrameGraphTextureHistory FrameGraph::CreateTextureHistory(const FrameGraphTextur
 		if (history.desc.name == desc.name)
 		{
 			assert(
-			    history.desc.width == desc.width && history.desc.height == desc.height && history.desc.format == desc.format
-			    && history.desc.kind == desc.kind && history.desc.sampleCount == desc.sampleCount);
+			    history.desc.width == desc.width && history.desc.height == desc.height && history.desc.format == desc.format && history.desc.kind == desc.kind
+			    && history.desc.sampleCount == desc.sampleCount);
+
 			return history.handles;
 		}
 	}
@@ -39,9 +40,7 @@ FrameGraphTextureHistory FrameGraph::CreateTextureHistory(const FrameGraphTextur
 	FrameGraphTextureDesc currentDesc = desc;
 	currentDesc.name = "Current" + desc.name + "History";
 
-	const FrameGraphTextureHistory handles{
-	    .Previous = ReservePersistentTexture(previousDesc, ResourceState::Undefined),
-	    .Current = ReservePersistentTexture(currentDesc, ResourceState::Undefined)};
+	const FrameGraphTextureHistory handles{.Previous = ReservePersistentTexture(previousDesc, ResourceState::Undefined), .Current = ReservePersistentTexture(currentDesc, ResourceState::Undefined)};
 	m_textureHistories.push_back(TextureHistoryRecord{.handles = handles, .desc = desc});
 	return handles;
 }
@@ -51,8 +50,8 @@ void FrameGraph::InvalidateTextureHistory(FrameGraphTextureHistory history) noex
 	const auto it = std::find_if(
 	    m_textureHistories.begin(),
 	    m_textureHistories.end(),
-	    [history](const TextureHistoryRecord& record)
-	    { return record.handles.Previous == history.Previous && record.handles.Current == history.Current; });
+	    [history](const TextureHistoryRecord& record) { return record.handles.Previous == history.Previous && record.handles.Current == history.Current; });
+
 	if (it == m_textureHistories.end())
 	{
 		return;
@@ -68,8 +67,7 @@ void FrameGraph::InvalidateTextureHistory(FrameGraphTextureHistory history) noex
 void FrameGraph::PrepareTextureHistories(const FrameGraphPlan& plan)
 {
 	RhiResourceService& resourceService = m_renderHardwareInterface->GetResourceService();
-	const std::uint32_t historyResourceCount =
-	    (std::max) (2u, m_renderHardwareInterface->GetCapabilities().Presentation.MaximumFramesInFlight);
+	const std::uint32_t historyResourceCount = (std::max) (2u, m_renderHardwareInterface->GetCapabilities().Presentation.MaximumFramesInFlight);
 	for (TextureHistoryRecord& history : m_textureHistories)
 	{
 		history.usedThisFrame = false;
@@ -101,8 +99,9 @@ void FrameGraph::PrepareTextureHistories(const FrameGraphPlan& plan)
 			continue;
 		}
 
-		const bool requiresRecreation = (requiresRenderTarget && !history.allowRenderTarget)
-		    || (requiresDepthStencil && !history.allowDepthStencil) || (requiresUnorderedAccess && !history.allowUnorderedAccess);
+		const bool requiresRecreation = (requiresRenderTarget && !history.allowRenderTarget) || (requiresDepthStencil && !history.allowDepthStencil)
+		    || (requiresUnorderedAccess && !history.allowUnorderedAccess);
+
 		if (requiresRecreation && history.resources.front())
 		{
 			ReleaseExternalResourceViews(history.handles.Previous.GetResourceHandle());
@@ -158,12 +157,8 @@ void FrameGraph::PrepareTextureHistories(const FrameGraphPlan& plan)
 		m_resourceRegistry.SetBoundaryStates(history.handles.Current.GetResourceHandle(), currentState, ResourceState::ShaderResource);
 		BindPersistentTexture(history.handles.Previous, history.resources[history.previousIndex], previousState);
 		BindPersistentTexture(history.handles.Current, history.resources[history.currentIndex], currentState);
-		m_resourceRegistry.SetExternalContentsProduced(
-		    history.handles.Previous.GetResourceHandle(),
-		    history.generations[history.previousIndex] == history.generation);
-		m_resourceRegistry.SetExternalContentsProduced(
-		    history.handles.Current.GetResourceHandle(),
-		    history.generations[history.currentIndex] == history.generation);
+		m_resourceRegistry.SetExternalContentsProduced(history.handles.Previous.GetResourceHandle(), history.generations[history.previousIndex] == history.generation);
+		m_resourceRegistry.SetExternalContentsProduced(history.handles.Current.GetResourceHandle(), history.generations[history.currentIndex] == history.generation);
 	}
 }
 

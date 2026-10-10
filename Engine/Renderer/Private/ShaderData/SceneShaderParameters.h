@@ -12,11 +12,7 @@
 #include "ShaderData/SkyUniformData.h"
 #include "View/RenderView.h"
 
-template <typename TParameterInstance> void BindSceneShaderParameters(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    TParameterInstance& parameters,
-    const RenderFrameGraphResources& resources)
+template <typename TParameterInstance> void BindSceneShaderParameters(FrameGraphBuilder& builder, const RenderFrame& frame, TParameterInstance& parameters, const RenderFrameGraphResources& resources)
 {
 	const RenderSceneGpuResources& scene = resources.ImportedScene.Scene;
 
@@ -120,9 +116,7 @@ template <typename TParameterInstance> void BindSceneShaderParameters(
 			parameters->ViewTemporal = frame.View.temporalUniform;
 		}
 	}
-	if constexpr (
-	    requires { parameters->Sky; } || requires { parameters->SceneLighting; } || requires { parameters->RayTracingHitConstants; }
-	    || requires { parameters->MaterialTextureTable; })
+	if constexpr (requires { parameters->Sky; } || requires { parameters->SceneLighting; } || requires { parameters->RayTracingHitConstants; } || requires { parameters->MaterialTextureTable; })
 	{
 		if constexpr (requires { parameters->Sky; })
 		{

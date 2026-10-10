@@ -62,6 +62,7 @@ public:
 	bool OnWindowMessage(uint32_t Msg, uintptr_t Param1, intptr_t Param2);
 
 	const InputState& GetState() const noexcept { return m_State; }
+
 	const InputState& GetState(InputLayer Layer) const noexcept;
 
 	void BeginInputRoutingFrame(bool interactionDisabled, bool textInputActive);
@@ -76,25 +77,13 @@ public:
 
 	InputLayer GetActiveLayer() const noexcept;
 
-	EventHandle SubscribeKeyboard(
-	    KeyboardCallback Callback,
-	    InputLayer Layer = InputLayer::Gameplay,
-	    DispatchMode Mode = DispatchMode::Immediate);
+	EventHandle SubscribeKeyboard(KeyboardCallback Callback, InputLayer Layer = InputLayer::Gameplay, DispatchMode Mode = DispatchMode::Immediate);
 
-	EventHandle SubscribeMouseButton(
-	    MouseButtonCallback Callback,
-	    InputLayer Layer = InputLayer::Gameplay,
-	    DispatchMode Mode = DispatchMode::Immediate);
+	EventHandle SubscribeMouseButton(MouseButtonCallback Callback, InputLayer Layer = InputLayer::Gameplay, DispatchMode Mode = DispatchMode::Immediate);
 
-	EventHandle SubscribeMouseMove(
-	    MouseMoveCallback Callback,
-	    InputLayer Layer = InputLayer::Gameplay,
-	    DispatchMode Mode = DispatchMode::Immediate);
+	EventHandle SubscribeMouseMove(MouseMoveCallback Callback, InputLayer Layer = InputLayer::Gameplay, DispatchMode Mode = DispatchMode::Immediate);
 
-	EventHandle SubscribeMouseWheel(
-	    MouseWheelCallback Callback,
-	    InputLayer Layer = InputLayer::Gameplay,
-	    DispatchMode Mode = DispatchMode::Immediate);
+	EventHandle SubscribeMouseWheel(MouseWheelCallback Callback, InputLayer Layer = InputLayer::Gameplay, DispatchMode Mode = DispatchMode::Immediate);
 
 	void Unsubscribe(EventHandle Handle);
 
@@ -116,6 +105,7 @@ public:
 
 private:
 	static constexpr std::size_t LayerCount = static_cast<std::size_t>(InputLayer::Count);
+
 	InputLayer ResolveTargetLayer(const InputBackendResult& Result);
 	void CancelLayer(InputLayer Layer);
 

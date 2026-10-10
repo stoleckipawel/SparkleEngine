@@ -55,6 +55,7 @@ public:
 
 private:
 	struct BuildScratch;
+
 	struct BatchKey final
 	{
 		GpuMeshHandle Mesh;
@@ -74,10 +75,7 @@ private:
 	    const MeshInstanceBatchBuildOptions& options,
 	    BuildScratch& scratch,
 	    MeshInstanceBatchBuildResult& result);
-	static void CollectPreservedGroupItems(
-	    std::span<const MeshRenderItem> renderItems,
-	    std::size_t instanceGroupCount,
-	    BuildScratch& scratch);
+	static void CollectPreservedGroupItems(std::span<const MeshRenderItem> renderItems, std::size_t instanceGroupCount, BuildScratch& scratch);
 	static void AppendPreservedGroups(
 	    std::span<const MeshRenderItem> renderItems,
 	    std::span<const PreparedRenderPrimitive> primitives,
@@ -98,10 +96,7 @@ private:
 	    const MeshInstanceBatchBuildOptions& options,
 	    BuildScratch& scratch,
 	    MeshInstanceBatchBuildResult& result);
-	static void FinalizeDiagnostics(
-	    const MeshInstanceBatchBuildOptions& options,
-	    const BuildScratch& scratch,
-	    MeshInstanceBatchBuildResult& result) noexcept;
+	static void FinalizeDiagnostics(const MeshInstanceBatchBuildOptions& options, const BuildScratch& scratch, MeshInstanceBatchBuildResult& result) noexcept;
 	static bool IsValidCandidate(
 	    const MeshRenderItem& item,
 	    std::span<const PreparedRenderPrimitive> primitives,
@@ -110,14 +105,8 @@ private:
 	    MeshGeometryInstancingDiagnostics& diagnostics) noexcept;
 	static BatchKey MakeBatchKey(const MeshRenderItem& item, std::span<const PreparedRenderPrimitive> primitives) noexcept;
 	static bool BatchKeyLess(const BatchKey& lhs, const BatchKey& rhs) noexcept;
-	static bool CanShareBatch(
-	    const MeshRenderItem& lhs,
-	    const MeshRenderItem& rhs,
-	    std::span<const PreparedRenderPrimitive> primitives) noexcept;
-	static bool OpaqueItemLess(
-	    const MeshRenderItem& lhs,
-	    const MeshRenderItem& rhs,
-	    std::span<const PreparedRenderPrimitive> primitives) noexcept;
+	static bool CanShareBatch(const MeshRenderItem& lhs, const MeshRenderItem& rhs, std::span<const PreparedRenderPrimitive> primitives) noexcept;
+	static bool OpaqueItemLess(const MeshRenderItem& lhs, const MeshRenderItem& rhs, std::span<const PreparedRenderPrimitive> primitives) noexcept;
 	static bool TransparentItemLess(const MeshRenderItem& lhs, const MeshRenderItem& rhs) noexcept;
 	static MeshInstanceBatchSource ResolvePreservedGroupSource(RenderMeshInstanceGroupKind groupKind) noexcept;
 	static void AppendBatch(

@@ -15,12 +15,7 @@ public:
 	static void ImportGeometry(const aiScene& scene, SourceImportOutput& output);
 
 private:
-	static void ExtractNodeMeshes(
-	    const aiScene& scene,
-	    const aiNode& node,
-	    const aiMatrix4x4& parentTransform,
-	    std::uint32_t& nextNodeIndex,
-	    SourceImportOutput& output);
+	static void ExtractNodeMeshes(const aiScene& scene, const aiNode& node, const aiMatrix4x4& parentTransform, std::uint32_t& nextNodeIndex, SourceImportOutput& output);
 	static void AppendMeshInstance(
 	    const aiScene& scene,
 	    const aiNode& node,
@@ -29,11 +24,7 @@ private:
 	    std::uint32_t sourceNodeIndex,
 	    const aiMatrix4x4& worldTransform,
 	    SourceImportOutput& output);
-	static ImportedMeshGeometry ExtractMeshGeometry(
-	    const aiMesh& mesh,
-	    const aiNode& node,
-	    const ImportedSkeleton* skeleton,
-	    SourceImportOutput& output);
+	static ImportedMeshGeometry ExtractMeshGeometry(const aiMesh& mesh, const aiNode& node, const ImportedSkeleton* skeleton, SourceImportOutput& output);
 	static void PopulateVertices(const aiMesh& mesh, ImportedMeshGeometry& meshGeometry);
 	static void AppendTriangleIndices(const aiMesh& mesh, ImportedMeshGeometry& meshGeometry);
 	static ImportedMaterialIndex ResolveMaterialIndex(const aiMesh& mesh, const SourceImportOutput& output);
@@ -42,4 +33,3 @@ private:
 	static std::string GetNodeName(const aiNode& node);
 	static std::string GetMeshName(const aiMesh& mesh);
 };
-

@@ -31,8 +31,7 @@ namespace RayTracedShadows
 			return false;
 		}
 
-		const bool supported =
-		    lightSample.IsDirectional ? RayTracedDirectionalShadowsEnabled != 0u : RayTracedLocalLightShadowsEnabled != 0u;
+		const bool supported = lightSample.IsDirectional ? RayTracedDirectionalShadowsEnabled != 0u : RayTracedLocalLightShadowsEnabled != 0u;
 		const float maxDistance = lightSample.IsDirectional ? RayTracedShadowMaxDistance : lightSample.VisibilityDistance;
 		immediateSignal = RayTracedShadowSignals::BuildUnshadowedSignal(maxDistance);
 		if (!castsShadow || !supported || (!lightSample.IsDirectional && lightSample.VisibilityDistance <= MinimumShadowTMin))
@@ -42,8 +41,7 @@ namespace RayTracedShadows
 
 		request.OriginWorld = positionWorld + normalize(normalWorld) * RayTracedShadowNormalBias;
 		request.DirectionWorld = lightSample.DirectionWorld;
-		request.MaxDistance = lightSample.IsDirectional ? RayTracedShadowMaxDistance
-		                                                : max(lightSample.VisibilityDistance - MinimumShadowTMin, MinimumShadowTMin);
+		request.MaxDistance = lightSample.IsDirectional ? RayTracedShadowMaxDistance : max(lightSample.VisibilityDistance - MinimumShadowTMin, MinimumShadowTMin);
 		return true;
 	}
 

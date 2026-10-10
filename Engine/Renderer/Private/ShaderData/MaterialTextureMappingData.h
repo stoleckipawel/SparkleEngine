@@ -12,6 +12,7 @@ struct MaterialTextureMappingData final
 	float Strength = 1.0f;
 	std::uint32_t AddressModes = 0u;
 };
+
 static_assert(std::is_standard_layout_v<MaterialTextureMappingData>);
 static_assert(std::is_trivially_copyable_v<MaterialTextureMappingData>);
 static_assert(sizeof(MaterialTextureMappingData) == 32);

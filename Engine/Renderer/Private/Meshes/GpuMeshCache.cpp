@@ -16,11 +16,7 @@
 
 SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_gpuMeshCacheLogger, "Renderer.GpuMeshCache");
 
-GpuMeshCache::GpuMeshCache(
-    RenderHardwareInterface& renderHardwareInterface,
-    RhiCommandSubmissionService& submissions,
-    TaskExecutor& taskExecutor,
-    TaskScope& parentScope) :
+GpuMeshCache::GpuMeshCache(RenderHardwareInterface& renderHardwareInterface, RhiCommandSubmissionService& submissions, TaskExecutor& taskExecutor, TaskScope& parentScope) :
     m_renderHardwareInterface(&renderHardwareInterface),
     m_submissions(&submissions),
     m_taskExecutor(&taskExecutor),
@@ -120,8 +116,7 @@ void GpuMeshCache::UploadReadyMeshes(RenderCommandList& commandList)
 	for (auto& entry : m_requests)
 	{
 		MeshRequest& request = entry.second;
-		if (!request.Wanted || request.Prepared == nullptr || request.Uploaded != nullptr
-		    || m_residency.GetState(request.Generation) != AssetResidencyState::ReadyForUpload
+		if (!request.Wanted || request.Prepared == nullptr || request.Uploaded != nullptr || m_residency.GetState(request.Generation) != AssetResidencyState::ReadyForUpload
 		    || !m_residency.BeginUpload(request.Generation))
 		{
 			continue;

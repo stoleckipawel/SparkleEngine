@@ -67,17 +67,15 @@ namespace SparkleLauncher
 		QApplication::setOrganizationName("Sparkle Engine");
 
 		std::string repositoryError;
-		const std::optional<RepositoryRoot> repository =
-		    TryResolveLauncherRepositoryContext(
-		        FindRequestedRepositoryRoot(argc, argv),
-		        std::filesystem::path(QCoreApplication::applicationDirPath().toStdString()),
-		        repositoryError);
+
+		const std::optional<RepositoryRoot> repository = TryResolveLauncherRepositoryContext(
+		    FindRequestedRepositoryRoot(argc, argv),
+		    std::filesystem::path(QCoreApplication::applicationDirPath().toStdString()),
+		    repositoryError);
+
 		if (!repository)
 		{
-			QMessageBox::critical(
-			    nullptr,
-			    QStringLiteral("Sparkle Launcher"),
-			    QString::fromStdString("Launcher startup failed. " + repositoryError));
+			QMessageBox::critical(nullptr, QStringLiteral("Sparkle Launcher"), QString::fromStdString("Launcher startup failed. " + repositoryError));
 			return 1;
 		}
 
@@ -89,16 +87,12 @@ namespace SparkleLauncher
 			QMessageBox::critical(
 			    nullptr,
 			    QStringLiteral("Sparkle Launcher"),
-			    QString::fromStdString(
-			        "Launcher startup failed. Repository working directory could not be selected: " + repositoryRoot.string()));
+			    QString::fromStdString("Launcher startup failed. Repository working directory could not be selected: " + repositoryRoot.string()));
+
 			return 1;
 		}
 
-		const LauncherShadowStartResult shadow =
-		    StartLauncherShadow(
-		        repositoryRoot,
-		        {"--root", repositoryRoot.string()},
-		        LauncherShadowCompletionPolicy::ReleaseCallingArtifact);
+		const LauncherShadowStartResult shadow = StartLauncherShadow(repositoryRoot, {"--root", repositoryRoot.string()}, LauncherShadowCompletionPolicy::ReleaseCallingArtifact);
 		if (shadow.State == LauncherShadowStartState::Started)
 		{
 			return shadow.ExitCode;

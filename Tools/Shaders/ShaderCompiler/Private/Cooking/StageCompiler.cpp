@@ -7,30 +7,20 @@
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
 
-CookedStageBuild StageCompiler::Compile(
-    IShaderBackend& backend,
-    const ShaderCompileRequest& request,
-    ShaderDebugArtifactSet* outDebugArtifacts)
+CookedStageBuild StageCompiler::Compile(IShaderBackend& backend, const ShaderCompileRequest& request, ShaderDebugArtifactSet* outDebugArtifacts)
 {
 	const ShaderBackendCapabilities capabilities = backend.GetCapabilities();
 	if (!capabilities.SupportsTarget(request.Target))
 	{
-		throw Diagnostics::Error(
-		    std::string{"Active shader backend does not support target '"} + GetShaderTargetName(request.Target) + "'.");
+		throw Diagnostics::Error(std::string{"Active shader backend does not support target '"} + GetShaderTargetName(request.Target) + "'.");
 	}
-	if (HasShaderCompileFeature(request.RequiredFeatures, ShaderCompileFeatureFlags::RayTracingPipeline)
-	    && !capabilities.SupportsRayTracingLibrary(request.Target))
+	if (HasShaderCompileFeature(request.RequiredFeatures, ShaderCompileFeatureFlags::RayTracingPipeline) && !capabilities.SupportsRayTracingLibrary(request.Target))
 	{
-		throw Diagnostics::Error(
-		    std::string{"Active shader backend does not support shader libraries for target '"} + GetShaderTargetName(request.Target)
-		    + "'.");
+		throw Diagnostics::Error(std::string{"Active shader backend does not support shader libraries for target '"} + GetShaderTargetName(request.Target) + "'.");
 	}
-	if (HasShaderCompileFeature(request.RequiredFeatures, ShaderCompileFeatureFlags::InlineRayQuery)
-	    && !capabilities.SupportsInlineRayQuery(request.Target))
+	if (HasShaderCompileFeature(request.RequiredFeatures, ShaderCompileFeatureFlags::InlineRayQuery) && !capabilities.SupportsInlineRayQuery(request.Target))
 	{
-		throw Diagnostics::Error(
-		    std::string{"Active shader backend does not support inline ray queries for target '"} + GetShaderTargetName(request.Target)
-		    + "'.");
+		throw Diagnostics::Error(std::string{"Active shader backend does not support inline ray queries for target '"} + GetShaderTargetName(request.Target) + "'.");
 	}
 
 	CompiledShader compiledShader = backend.Compile(request);

@@ -8,10 +8,7 @@
 #include <iostream>
 #include <string>
 
-bool AssetCookerDispatcher::DispatchPlan(
-    const AssetCookerProjectCookPlan& plan,
-    AssetCookerDiagnostics& diagnostics,
-    std::vector<AssetCookerOutputRecord>& outOutputs)
+bool AssetCookerDispatcher::DispatchPlan(const AssetCookerProjectCookPlan& plan, AssetCookerDiagnostics& diagnostics, std::vector<AssetCookerOutputRecord>& outOutputs)
 {
 	if (!AssetCookerStageExecutor::ValidateCapabilities(plan, diagnostics))
 	{

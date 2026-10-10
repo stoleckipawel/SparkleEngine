@@ -9,8 +9,5 @@ class IShaderBackend;
 class StageCompiler final
 {
 public:
-	static CookedStageBuild Compile(
-	    IShaderBackend& backend,
-	    const ShaderCompileRequest& request,
-	    ShaderDebugArtifactSet* outDebugArtifacts);
+	static CookedStageBuild Compile(IShaderBackend& backend, const ShaderCompileRequest& request, ShaderDebugArtifactSet* outDebugArtifacts);
 };

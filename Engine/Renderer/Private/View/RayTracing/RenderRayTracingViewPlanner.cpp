@@ -5,9 +5,7 @@
 #include "Debug/RendererCVars.h"
 #include "Scene/Preparation/PreparedRenderScene.h"
 
-RayTracingPtlasPartitionPlan RenderRayTracingViewPlanner::Build(
-    const PreparedRenderScene& preparedScene,
-    const DirectX::XMFLOAT3& cameraPosition) noexcept
+RayTracingPtlasPartitionPlan RenderRayTracingViewPlanner::Build(const PreparedRenderScene& preparedScene, const DirectX::XMFLOAT3& cameraPosition) noexcept
 {
 	return m_partitionPlanner.Build(
 	    preparedScene,

@@ -47,11 +47,7 @@ namespace SparkleLauncher
 		operation.Failure = OperationFailure{.Kind = kind, .Summary = std::move(summary), .ExpectedAction = std::move(expectedAction)};
 	}
 
-	void SetProcessOperationFailure(
-	    OperationRecord& operation,
-	    Process::ChildProcessStartFailure startFailure,
-	    std::string summary,
-	    std::string retryAction)
+	void SetProcessOperationFailure(OperationRecord& operation, Process::ChildProcessStartFailure startFailure, std::string summary, std::string retryAction)
 	{
 		switch (startFailure)
 		{
@@ -64,18 +60,10 @@ namespace SparkleLauncher
 				    "authorize that publisher. Rebuilding or retrying does not change the trust decision.");
 				return;
 			case Process::ChildProcessStartFailure::AccessDenied:
-				SetOperationFailure(
-				    operation,
-				    OperationProblemKind::ProcessStart,
-				    std::move(summary),
-				    "Check the executable's file permissions and security-product quarantine, then retry.");
+				SetOperationFailure(operation, OperationProblemKind::ProcessStart, std::move(summary), "Check the executable's file permissions and security-product quarantine, then retry.");
 				return;
 			case Process::ChildProcessStartFailure::ExecutableNotFound:
-				SetOperationFailure(
-				    operation,
-				    OperationProblemKind::ProcessStart,
-				    std::move(summary),
-				    "Rebuild the owning target, then retry.");
+				SetOperationFailure(operation, OperationProblemKind::ProcessStart, std::move(summary), "Rebuild the owning target, then retry.");
 				return;
 			case Process::ChildProcessStartFailure::OperatingSystemError:
 				SetOperationFailure(

@@ -5,10 +5,7 @@
 #include "Scene/Model/EditorSceneModel.h"
 #include "Scene/SceneObjectSelection.h"
 
-std::optional<EditorCommandPair> SceneObjectCommandFactory::SetVisibility(
-    const EditorSceneModel& model,
-    const SceneObjectSelection& selection,
-    bool visible)
+std::optional<EditorCommandPair> SceneObjectCommandFactory::SetVisibility(const EditorSceneModel& model, const SceneObjectSelection& selection, bool visible)
 {
 	EditorCommandPair commands;
 	commands.CoalescingKey = "visibility";

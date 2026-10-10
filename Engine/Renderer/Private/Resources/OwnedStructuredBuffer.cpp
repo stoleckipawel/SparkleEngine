@@ -34,12 +34,7 @@ OwnedStructuredBuffer& OwnedStructuredBuffer::operator=(OwnedStructuredBuffer&& 
 	return *this;
 }
 
-OwnedStructuredBuffer OwnedStructuredBuffer::Upload(
-    RhiResourceService& resourceService,
-    const void* data,
-    std::size_t sizeInBytes,
-    std::uint32_t strideInBytes,
-    std::wstring_view debugName)
+OwnedStructuredBuffer OwnedStructuredBuffer::Upload(RhiResourceService& resourceService, const void* data, std::size_t sizeInBytes, std::uint32_t strideInBytes, std::wstring_view debugName)
 {
 	OwnedStructuredBuffer buffer;
 	buffer.m_resourceService = &resourceService;
@@ -55,8 +50,7 @@ OwnedStructuredBuffer OwnedStructuredBuffer::Upload(
 
 bool OwnedStructuredBuffer::Write(std::size_t destinationOffsetInBytes, const void* data, std::size_t sizeInBytes) noexcept
 {
-	return m_resourceService != nullptr && m_resource && destinationOffsetInBytes <= m_sizeInBytes
-	    && sizeInBytes <= m_sizeInBytes - destinationOffsetInBytes
+	return m_resourceService != nullptr && m_resource && destinationOffsetInBytes <= m_sizeInBytes && sizeInBytes <= m_sizeInBytes - destinationOffsetInBytes
 	    && m_resourceService->WriteBufferResource(m_resource, destinationOffsetInBytes, data, sizeInBytes);
 }
 

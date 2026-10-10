@@ -21,7 +21,5 @@ namespace Filesystem
 	SPARKLE_CORE_API const ProductUserStatePaths& GetProductUserStatePaths();
 
 	// Resolves another development product's state for Launcher inspection/cleanup.
-	SPARKLE_CORE_API ProductUserStatePaths ResolveDevelopmentProductUserStatePaths(
-	    const std::filesystem::path& workspaceRoot,
-	    std::string_view productName);
+	SPARKLE_CORE_API ProductUserStatePaths ResolveDevelopmentProductUserStatePaths(const std::filesystem::path& workspaceRoot, std::string_view productName);
 }

@@ -12,11 +12,7 @@ enum class ExternalCaptureProvider : std::uint8_t
 	RenderDoc
 };
 
-inline constexpr std::array ExternalCaptureProviders{
-    ExternalCaptureProvider::None,
-    ExternalCaptureProvider::NsightGraphics,
-    ExternalCaptureProvider::Pix,
-    ExternalCaptureProvider::RenderDoc};
+inline constexpr std::array ExternalCaptureProviders{ExternalCaptureProvider::None, ExternalCaptureProvider::NsightGraphics, ExternalCaptureProvider::Pix, ExternalCaptureProvider::RenderDoc};
 
 constexpr std::string_view ExternalCaptureProviderToString(ExternalCaptureProvider provider) noexcept
 {

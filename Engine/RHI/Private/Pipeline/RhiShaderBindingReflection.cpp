@@ -22,15 +22,13 @@ public:
 			case ShaderParameterSemanticKind::ReadTexture:
 				return kind == CookedShaderResourceKind::Texture;
 			case ShaderParameterSemanticKind::ReadBuffer:
-				return kind == CookedShaderResourceKind::StructuredBuffer || kind == CookedShaderResourceKind::ByteAddressBuffer
-				    || kind == CookedShaderResourceKind::TypedBuffer;
+				return kind == CookedShaderResourceKind::StructuredBuffer || kind == CookedShaderResourceKind::ByteAddressBuffer || kind == CookedShaderResourceKind::TypedBuffer;
 			case ShaderParameterSemanticKind::AccelerationStructure:
 				return kind == CookedShaderResourceKind::AccelerationStructure;
 			case ShaderParameterSemanticKind::RWTexture:
 				return kind == CookedShaderResourceKind::RWTexture;
 			case ShaderParameterSemanticKind::RWBuffer:
-				return kind == CookedShaderResourceKind::RWStructuredBuffer || kind == CookedShaderResourceKind::RWByteAddressBuffer
-				    || kind == CookedShaderResourceKind::RWTypedBuffer;
+				return kind == CookedShaderResourceKind::RWStructuredBuffer || kind == CookedShaderResourceKind::RWByteAddressBuffer || kind == CookedShaderResourceKind::RWTypedBuffer;
 			case ShaderParameterSemanticKind::SamplerSet:
 				return kind == CookedShaderResourceKind::Sampler;
 			default:
@@ -38,10 +36,7 @@ public:
 		}
 	}
 
-	[[noreturn]] static void Fail(std::string_view message)
-	{
-		Diagnostics::Fatal(g_rhiShaderBindingReflectionLogger, __FILE__, __LINE__, message);
-	}
+	[[noreturn]] static void Fail(std::string_view message) { Diagnostics::Fatal(g_rhiShaderBindingReflectionLogger, __FILE__, __LINE__, message); }
 };
 
 std::vector<RhiReflectedBindingLocation> RhiShaderBindingReflection::ResolveLocations(
@@ -52,8 +47,7 @@ std::vector<RhiReflectedBindingLocation> RhiShaderBindingReflection::ResolveLoca
 {
 	if (!parameterLayout.HasParameter(bindingName))
 	{
-		RhiShaderBindingReflectionImplementation::Fail(
-		    std::format("Shader binding '{}' has no matching parameter in layout '{}'.", bindingName, parameterLayout.GetDebugName()));
+		RhiShaderBindingReflectionImplementation::Fail(std::format("Shader binding '{}' has no matching parameter in layout '{}'.", bindingName, parameterLayout.GetDebugName()));
 	}
 	std::vector<RhiReflectedBindingLocation> locations;
 	for (const ResolvedShader& shader : shaders)
@@ -73,14 +67,14 @@ std::vector<RhiReflectedBindingLocation> RhiShaderBindingReflection::ResolveLoca
 				continue;
 			}
 			const RhiBindingPoint point{.Set = resource.Set, .Binding = resource.Slot};
+
 			const auto existing = std::ranges::find_if(
 			    locations,
-			    [point](const RhiReflectedBindingLocation& value)
-			    { return value.BindingPoint.Set == point.Set && value.BindingPoint.Binding == point.Binding; });
+			    [point](const RhiReflectedBindingLocation& value) { return value.BindingPoint.Set == point.Set && value.BindingPoint.Binding == point.Binding; });
+
 			if (existing == locations.end())
 			{
-				locations.push_back(
-				    RhiReflectedBindingLocation{.BindingPoint = point, .VisibilityMask = ToShaderStageMask(shader.Entry->Stage)});
+				locations.push_back(RhiReflectedBindingLocation{.BindingPoint = point, .VisibilityMask = ToShaderStageMask(shader.Entry->Stage)});
 			}
 			else
 			{
@@ -90,8 +84,7 @@ std::vector<RhiReflectedBindingLocation> RhiShaderBindingReflection::ResolveLoca
 	}
 	if (locations.empty())
 	{
-		RhiShaderBindingReflectionImplementation::Fail(
-		    std::format("Shader parameter '{}' did not resolve to reflected code.", bindingName));
+		RhiShaderBindingReflectionImplementation::Fail(std::format("Shader parameter '{}' did not resolve to reflected code.", bindingName));
 	}
 	return locations;
 }

@@ -46,14 +46,7 @@ namespace SparkleLauncher
 		{
 			const WorkspaceFeatureSettings features = GetLauncherWorkspaceFeatureSettings();
 			return std::vector<SourceDependencyEntry>{
-			    {"imgui",
-			        "Dear ImGui",
-			        "v1.92.5",
-			        "Immediate-mode UI core and Win32 platform backend.",
-			        "imgui-src",
-			        {"imgui.h", "imgui.cpp", "backends/imgui_impl_win32.cpp"},
-			        true,
-			        true},
+			    {"imgui", "Dear ImGui", "v1.92.5", "Immediate-mode UI core and Win32 platform backend.", "imgui-src", {"imgui.h", "imgui.cpp", "backends/imgui_impl_win32.cpp"}, true, true},
 			    {"spdlog", "spdlog", "v1.14.1", "Repo-wide logging backend.", "spdlog-src", {"include/spdlog/spdlog.h"}, true, true},
 			    {"editor-icons",
 			        "Font Awesome Free Solid",
@@ -63,46 +56,11 @@ namespace SparkleLauncher
 			        {"fontawesome-6.7.1/fa-solid-900.ttf", "fontawesome-6.7.1/LICENSE.txt"},
 			        true,
 			        true},
-			    {"cgltf",
-			        "cgltf",
-			        "v1.15",
-			        "Single-header glTF 2.0 parser for source scene imports.",
-			        "cgltf-src",
-			        {"cgltf.h"},
-			        false,
-			        features.ContentPipelineEnabled},
-			    {"stb",
-			        "stb",
-			        "master",
-			        "Header-only image loading and mip resize helpers.",
-			        "stb-src",
-			        {"stb_image.h", "stb_image_resize2.h"},
-			        false,
-			        features.ContentPipelineEnabled},
-			    {"tinyexr",
-			        "tinyexr",
-			        "v1.0.7",
-			        "Header-only OpenEXR image loading support.",
-			        "tinyexr-src",
-			        {"tinyexr.h", "deps/miniz/miniz.h"},
-			        false,
-			        features.ContentPipelineEnabled},
-			    {"zlib",
-			        "zlib",
-			        "v1.3.1",
-			        "Compression backend used by Assimp.",
-			        "zlib-src",
-			        {"zlib.h", "CMakeLists.txt"},
-			        false,
-			        features.ContentPipelineEnabled},
-			    {"assimp",
-			        "Assimp",
-			        "v5.4.3",
-			        "FBX and DCC scene import support.",
-			        "assimp-src",
-			        {"include/assimp/Importer.hpp", "CMakeLists.txt"},
-			        false,
-			        features.ContentPipelineEnabled},
+			    {"cgltf", "cgltf", "v1.15", "Single-header glTF 2.0 parser for source scene imports.", "cgltf-src", {"cgltf.h"}, false, features.ContentPipelineEnabled},
+			    {"stb", "stb", "master", "Header-only image loading and mip resize helpers.", "stb-src", {"stb_image.h", "stb_image_resize2.h"}, false, features.ContentPipelineEnabled},
+			    {"tinyexr", "tinyexr", "v1.0.7", "Header-only OpenEXR image loading support.", "tinyexr-src", {"tinyexr.h", "deps/miniz/miniz.h"}, false, features.ContentPipelineEnabled},
+			    {"zlib", "zlib", "v1.3.1", "Compression backend used by Assimp.", "zlib-src", {"zlib.h", "CMakeLists.txt"}, false, features.ContentPipelineEnabled},
+			    {"assimp", "Assimp", "v5.4.3", "FBX and DCC scene import support.", "assimp-src", {"include/assimp/Importer.hpp", "CMakeLists.txt"}, false, features.ContentPipelineEnabled},
 			    {"compressonator",
 			        "Compressonator",
 			        "master (sparse)",
@@ -111,14 +69,7 @@ namespace SparkleLauncher
 			        {"cmp_core/source/cmp_core.cpp", "applications/_libs/cmp_math/cmp_math_common.cpp"},
 			        false,
 			        features.ContentPipelineEnabled},
-			    {"ktx",
-			        "KTX-Software",
-			        "v4.3.2",
-			        "KTX2 texture container read/write support.",
-			        "ktx-src",
-			        {"include/ktx.h", "CMakeLists.txt"},
-			        false,
-			        features.KtxSupportEnabled},
+			    {"ktx", "KTX-Software", "v4.3.2", "KTX2 texture container read/write support.", "ktx-src", {"include/ktx.h", "CMakeLists.txt"}, false, features.KtxSupportEnabled},
 			    {"spirv-reflect",
 			        "SPIRV-Reflect",
 			        "vulkan-sdk-1.3.290.0",
@@ -152,6 +103,7 @@ namespace SparkleLauncher
 			        features.NvidiaStreamlineEnabled},
 			};
 		}();
+
 		return dependencies;
 	}
 
@@ -167,9 +119,7 @@ namespace SparkleLauncher
 		return nullptr;
 	}
 
-	SourceDependencyValidation ValidateSourceDependency(
-	    const SourceDependencyEntry& dependency,
-	    const std::filesystem::path& dependencyCacheRoot)
+	SourceDependencyValidation ValidateSourceDependency(const SourceDependencyEntry& dependency, const std::filesystem::path& dependencyCacheRoot)
 	{
 		SourceDependencyValidation validation;
 		validation.CachePath = dependencyCacheRoot / dependency.CacheDirectoryName;
@@ -185,9 +135,7 @@ namespace SparkleLauncher
 		return validation;
 	}
 
-	std::vector<std::filesystem::path> GetSourceDependencyCachePaths(
-	    const SourceDependencyEntry& dependency,
-	    const std::filesystem::path& dependencyCacheRoot)
+	std::vector<std::filesystem::path> GetSourceDependencyCachePaths(const SourceDependencyEntry& dependency, const std::filesystem::path& dependencyCacheRoot)
 	{
 		std::vector<std::filesystem::path> paths{dependencyCacheRoot / dependency.CacheDirectoryName};
 		constexpr std::string_view sourceSuffix = "-src";
@@ -221,8 +169,7 @@ namespace SparkleLauncher
 			}
 
 			status.AllEnabledDependenciesReady = false;
-			status.ReadinessMessages.push_back(
-			    dependency.Label + " cache is incomplete. Missing: " + JoinPaths(validation.MissingRelativePaths) + ".");
+			status.ReadinessMessages.push_back(dependency.Label + " cache is incomplete. Missing: " + JoinPaths(validation.MissingRelativePaths) + ".");
 		}
 
 		if (status.EnabledDependencyCount == 0)

@@ -10,11 +10,7 @@ void RenderControlCompletion::Complete(RenderControlResult result)
 		std::lock_guard lock(m_mutex);
 		if (m_completed)
 		{
-			Diagnostics::Fatal(
-			    g_renderControlCompletionLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Render-control completion was published more than once.");
+			Diagnostics::Fatal(g_renderControlCompletionLogger, __FILE__, __LINE__, "Render-control completion was published more than once.");
 		}
 
 		m_result = std::move(result);

@@ -34,8 +34,7 @@ namespace RenderingSettingsUi
 
 	bool BeginSettingsTable(const char* id)
 	{
-		const ImGuiTableFlags tableFlags =
-		    ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersInnerH;
+		const ImGuiTableFlags tableFlags = ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersInnerH;
 		if (!ImGui::BeginTable(id, 2, tableFlags))
 		{
 			return false;

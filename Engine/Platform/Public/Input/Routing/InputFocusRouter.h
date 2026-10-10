@@ -12,6 +12,7 @@ class SPARKLE_PLATFORM_API InputFocusRouter final
 {
 public:
 	InputFocusRouter() noexcept = default;
+
 	~InputFocusRouter() = default;
 
 	InputFocusRouter(const InputFocusRouter&) = delete;

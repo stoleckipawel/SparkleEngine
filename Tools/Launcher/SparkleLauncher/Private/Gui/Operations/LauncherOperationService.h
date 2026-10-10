@@ -15,6 +15,7 @@ namespace SparkleLauncher
 	{
 	public:
 		using ProcessRunnerFactory = std::function<std::unique_ptr<IProcessRunner>()>;
+
 		using OutputCallback = std::function<void(std::string_view)>;
 		using CompletionCallback = std::function<void(OperationRecord)>;
 
@@ -24,12 +25,7 @@ namespace SparkleLauncher
 		LauncherOperationService(const LauncherOperationService&) = delete;
 		LauncherOperationService& operator=(const LauncherOperationService&) = delete;
 
-		void Launch(
-		    LauncherOperationCategory category,
-		    LauncherOperationRequest request,
-		    std::string title,
-		    OutputCallback outputCallback,
-		    CompletionCallback completionCallback);
+		void Launch(LauncherOperationCategory category, LauncherOperationRequest request, std::string title, OutputCallback outputCallback, CompletionCallback completionCallback);
 		bool Cancel(std::string_view runId) noexcept;
 
 	private:

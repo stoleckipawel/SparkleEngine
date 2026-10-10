@@ -16,33 +16,21 @@ void D3D12RenderCommandList::SetRayTracingPipeline(const RayTracingPipeline& pip
 	const auto* nativePipeline = dynamic_cast<const D3D12RayTracingPipeline*>(&pipeline);
 	if (m_commandList == nullptr || nativePipeline == nullptr)
 	{
-		Diagnostics::Fatal(
-		    g_d3d12RenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "D3D12 ray-tracing pipeline binding received no command list or a foreign pipeline.");
+		Diagnostics::Fatal(g_d3d12RenderCommandListLogger, __FILE__, __LINE__, "D3D12 ray-tracing pipeline binding received no command list or a foreign pipeline.");
 	}
 	m_commandList->SetPipelineState1(nativePipeline->GetStateObject());
 	m_boundRayTracingPipeline = &pipeline;
 }
 
-void D3D12RenderCommandList::BuildBottomLevelAccelerationStructure(
-    const RhiRayTracingGeometryDesc& geometry,
-    RhiGpuVirtualAddress scratchGpuAddress,
-    RhiGpuVirtualAddress resultGpuAddress) noexcept
+void D3D12RenderCommandList::BuildBottomLevelAccelerationStructure(const RhiRayTracingGeometryDesc& geometry, RhiGpuVirtualAddress scratchGpuAddress, RhiGpuVirtualAddress resultGpuAddress) noexcept
 {
 	const D3D12_GPU_VIRTUAL_ADDRESS vertexBufferAddress = ResolveRayTracingBufferAddress(geometry.VertexBuffer);
 
 	const D3D12_GPU_VIRTUAL_ADDRESS indexBufferAddress = ResolveRayTracingBufferAddress(geometry.IndexBuffer);
-	if (m_commandList == nullptr || !RhiContract::IsRayTracingGeometryDescUsable(geometry) || vertexBufferAddress == 0
-	    || indexBufferAddress == 0 || !RhiContract::IsRayTracingGpuAddressPresent(scratchGpuAddress)
-	    || !RhiContract::IsRayTracingGpuAddressPresent(resultGpuAddress))
+	if (m_commandList == nullptr || !RhiContract::IsRayTracingGeometryDescUsable(geometry) || vertexBufferAddress == 0 || indexBufferAddress == 0
+	    || !RhiContract::IsRayTracingGpuAddressPresent(scratchGpuAddress) || !RhiContract::IsRayTracingGpuAddressPresent(resultGpuAddress))
 	{
-		Diagnostics::Fatal(
-		    g_d3d12RenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "D3D12 BLAS build received incomplete geometry, command-list, or GPU-address inputs.");
+		Diagnostics::Fatal(g_d3d12RenderCommandListLogger, __FILE__, __LINE__, "D3D12 BLAS build received incomplete geometry, command-list, or GPU-address inputs.");
 	}
 
 	TrackResource(geometry.VertexBuffer.Resource);
@@ -87,14 +75,10 @@ void D3D12RenderCommandList::BuildTopLevelAccelerationStructure(
     RhiGpuVirtualAddress resultGpuAddress,
     ERhiClassicTlasBuildMode buildMode) noexcept
 {
-	if (m_commandList == nullptr || !RhiContract::IsRayTracingGpuAddressPresent(instanceDescsGpuAddress)
-	    || !RhiContract::IsRayTracingGpuAddressPresent(scratchGpuAddress) || !RhiContract::IsRayTracingGpuAddressPresent(resultGpuAddress))
+	if (m_commandList == nullptr || !RhiContract::IsRayTracingGpuAddressPresent(instanceDescsGpuAddress) || !RhiContract::IsRayTracingGpuAddressPresent(scratchGpuAddress)
+	    || !RhiContract::IsRayTracingGpuAddressPresent(resultGpuAddress))
 	{
-		Diagnostics::Fatal(
-		    g_d3d12RenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "D3D12 classic TLAS build received no command list or an empty GPU address.");
+		Diagnostics::Fatal(g_d3d12RenderCommandListLogger, __FILE__, __LINE__, "D3D12 classic TLAS build received no command list or an empty GPU address.");
 	}
 
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs{};
@@ -124,11 +108,7 @@ void D3D12RenderCommandList::BuildPartitionedTopLevelAccelerationStructure(const
 {
 	if (m_commandList == nullptr || m_owner == nullptr || !desc.DestinationResource)
 	{
-		Diagnostics::Fatal(
-		    g_d3d12RenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "D3D12 partitioned TLAS build has no command list, device owner, or destination resource.");
+		Diagnostics::Fatal(g_d3d12RenderCommandListLogger, __FILE__, __LINE__, "D3D12 partitioned TLAS build has no command list, device owner, or destination resource.");
 	}
 
 	BeginDiagnosticScope("RayTracing.PTLAS.Build", RhiDiagnosticLabelColor{92, 148, 255, 255});
@@ -136,11 +116,7 @@ void D3D12RenderCommandList::BuildPartitionedTopLevelAccelerationStructure(const
 	EndDiagnosticScope();
 	if (!submitted)
 	{
-		Diagnostics::Fatal(
-		    g_d3d12RenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "D3D12 partitioned TLAS provider rejected the build command.");
+		Diagnostics::Fatal(g_d3d12RenderCommandListLogger, __FILE__, __LINE__, "D3D12 partitioned TLAS provider rejected the build command.");
 	}
 	UnorderedAccessBarrier(desc.DestinationResource);
 }
@@ -157,11 +133,7 @@ void D3D12RenderCommandList::TraceRays(const TraceRaysDesc& desc) noexcept
 	}
 	if (m_commandList == nullptr || m_boundRayTracingPipeline != desc.Pipeline)
 	{
-		Diagnostics::Fatal(
-		    g_d3d12RenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "D3D12 TraceRays requires its exact pipeline to be bound first.");
+		Diagnostics::Fatal(g_d3d12RenderCommandListLogger, __FILE__, __LINE__, "D3D12 TraceRays requires its exact pipeline to be bound first.");
 	}
 	const auto* pipeline = dynamic_cast<const D3D12RayTracingPipeline*>(desc.Pipeline);
 	const auto* table = dynamic_cast<const D3D12RayTracingShaderTable*>(desc.ShaderTable);
@@ -171,25 +143,30 @@ void D3D12RenderCommandList::TraceRays(const TraceRaysDesc& desc) noexcept
 	}
 	TrackResource(table->GetResource());
 	const D3D12_GPU_VIRTUAL_ADDRESS baseAddress = table->GetGpuAddress();
+
 	const auto address = [baseAddress](const RhiRayTracingShaderTableRegion& region)
 	{
 		return baseAddress + region.OffsetInBytes;
 	};
+
 	D3D12_DISPATCH_RAYS_DESC nativeDesc{};
-	nativeDesc.RayGenerationShaderRecord =
-	    D3D12_GPU_VIRTUAL_ADDRESS_RANGE{.StartAddress = address(desc.RayGeneration), .SizeInBytes = desc.RayGeneration.SizeInBytes};
+	nativeDesc.RayGenerationShaderRecord = D3D12_GPU_VIRTUAL_ADDRESS_RANGE{.StartAddress = address(desc.RayGeneration), .SizeInBytes = desc.RayGeneration.SizeInBytes};
+
 	nativeDesc.MissShaderTable = D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE{
 	    .StartAddress = desc.Miss.SizeInBytes != 0 ? address(desc.Miss) : 0,
 	    .SizeInBytes = desc.Miss.SizeInBytes,
 	    .StrideInBytes = desc.Miss.StrideInBytes};
+
 	nativeDesc.HitGroupTable = D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE{
 	    .StartAddress = desc.HitGroup.SizeInBytes != 0 ? address(desc.HitGroup) : 0,
 	    .SizeInBytes = desc.HitGroup.SizeInBytes,
 	    .StrideInBytes = desc.HitGroup.StrideInBytes};
+
 	nativeDesc.CallableShaderTable = D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE{
 	    .StartAddress = desc.Callable.SizeInBytes != 0 ? address(desc.Callable) : 0,
 	    .SizeInBytes = desc.Callable.SizeInBytes,
 	    .StrideInBytes = desc.Callable.StrideInBytes};
+
 	nativeDesc.Width = desc.Width;
 	nativeDesc.Height = desc.Height;
 	nativeDesc.Depth = desc.Depth;

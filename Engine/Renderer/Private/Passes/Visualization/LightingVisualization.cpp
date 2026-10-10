@@ -8,11 +8,7 @@
 #include "ShaderData/SceneShaderParameters.h"
 #include "Passes/Visualization/LightingVisualizationShader.h"
 
-void AddLightingVisualizationPass(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources)
+void AddLightingVisualizationPass(FrameGraphBuilder& builder, const RenderFrame& frame, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
 	const auto& lighting = resources.Transient.Lighting;
 	auto& parameters = builder.AllocParameters<LightingVisualizationCS>();
@@ -24,7 +20,5 @@ void AddLightingVisualizationPass(
 	parameters->IndirectDiffuse = builder.CreateSRV(lighting.IndirectDiffuse);
 	parameters->IndirectSpecular = builder.CreateSRV(lighting.IndirectSpecular);
 	BindSceneShaderParameters(builder, frame, parameters, resources);
-	builder.Dispatch<LightingVisualizationCS>(
-	    parameters,
-	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
+	builder.Dispatch<LightingVisualizationCS>(parameters, ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 }

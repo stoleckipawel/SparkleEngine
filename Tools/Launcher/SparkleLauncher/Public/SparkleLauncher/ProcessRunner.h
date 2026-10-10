@@ -44,6 +44,7 @@ namespace SparkleLauncher
 	{
 	public:
 		virtual ~IProcessRunner() = default;
+
 		IProcessRunner(const IProcessRunner&) = delete;
 		IProcessRunner& operator=(const IProcessRunner&) = delete;
 		IProcessRunner(IProcessRunner&&) = delete;

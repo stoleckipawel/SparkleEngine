@@ -9,50 +9,29 @@
 
 #include <format>
 
-void PipelineRuntimeLibrary::ValidateShaderCapabilities(
-    RenderHardwareInterface& renderHardwareInterface,
-    std::string_view shaderName,
-    const ResolvedShader& shader)
+void PipelineRuntimeLibrary::ValidateShaderCapabilities(RenderHardwareInterface& renderHardwareInterface, std::string_view shaderName, const ResolvedShader& shader)
 {
 	if (!shader.IsValid())
 	{
 		throw Diagnostics::Error(std::format("Shader '{}' did not resolve through the active global shader map.", shaderName));
 	}
 	const RhiCapabilities& capabilities = renderHardwareInterface.GetCapabilities();
-	if (HasShaderFeature(shader.Entry->Features, ShaderFeatureFlags::UsesAccelerationStructure)
-	    && !capabilities.RayTracing.SupportsAccelerationStructure)
+	if (HasShaderFeature(shader.Entry->Features, ShaderFeatureFlags::UsesAccelerationStructure) && !capabilities.RayTracing.SupportsAccelerationStructure)
 	{
-		throw Diagnostics::Error(
-		    std::format(
-		        "Shader '{}' requires ray tracing, but backend '{}' does not support it.",
-		        shaderName,
-		        RhiBackendApiToString(capabilities.BackendApi)));
+		throw Diagnostics::Error(std::format("Shader '{}' requires ray tracing, but backend '{}' does not support it.", shaderName, RhiBackendApiToString(capabilities.BackendApi)));
 	}
 	if (HasShaderFeature(shader.Entry->Features, ShaderFeatureFlags::UsesInlineRayQuery) && !capabilities.RayTracing.SupportsInlineRayQuery)
 	{
-		throw Diagnostics::Error(
-		    std::format(
-		        "Shader '{}' requires inline ray query, but backend '{}' does not support it.",
-		        shaderName,
-		        RhiBackendApiToString(capabilities.BackendApi)));
+		throw Diagnostics::Error(std::format("Shader '{}' requires inline ray query, but backend '{}' does not support it.", shaderName, RhiBackendApiToString(capabilities.BackendApi)));
 	}
 	if (HasShaderFeature(shader.Entry->Features, ShaderFeatureFlags::UsesDescriptorIndexing)
-	    && (!capabilities.DescriptorIndexing.SupportsSampledImageArrayNonUniformIndexing
-	        || !capabilities.DescriptorIndexing.SupportsPartiallyBoundDescriptorArrays))
+	    && (!capabilities.DescriptorIndexing.SupportsSampledImageArrayNonUniformIndexing || !capabilities.DescriptorIndexing.SupportsPartiallyBoundDescriptorArrays))
 	{
-		throw Diagnostics::Error(
-		    std::format(
-		        "Shader '{}' requires descriptor indexing, but backend '{}' does not support it.",
-		        shaderName,
-		        RhiBackendApiToString(capabilities.BackendApi)));
+		throw Diagnostics::Error(std::format("Shader '{}' requires descriptor indexing, but backend '{}' does not support it.", shaderName, RhiBackendApiToString(capabilities.BackendApi)));
 	}
 	if (HasShaderFeature(shader.Entry->Features, ShaderFeatureFlags::UsesFloat64) && !capabilities.SupportsShaderFloat64)
 	{
-		throw Diagnostics::Error(
-		    std::format(
-		        "Shader '{}' requires float64 arithmetic, but backend '{}' does not support it.",
-		        shaderName,
-		        RhiBackendApiToString(capabilities.BackendApi)));
+		throw Diagnostics::Error(std::format("Shader '{}' requires float64 arithmetic, but backend '{}' does not support it.", shaderName, RhiBackendApiToString(capabilities.BackendApi)));
 	}
 }
 
@@ -76,9 +55,7 @@ std::unique_ptr<RenderBindingLayout> PipelineRuntimeLibrary::CreateBindingLayout
 	return layout;
 }
 
-std::unique_ptr<RenderPipeline> PipelineRuntimeLibrary::CreateGraphicsPipeline(
-    RenderHardwareInterface& renderHardwareInterface,
-    const GraphicsPipelineDesc& pipelineDesc)
+std::unique_ptr<RenderPipeline> PipelineRuntimeLibrary::CreateGraphicsPipeline(RenderHardwareInterface& renderHardwareInterface, const GraphicsPipelineDesc& pipelineDesc)
 {
 	std::unique_ptr<RenderPipeline> pipeline = renderHardwareInterface.GetPipelineService().CreateGraphicsPipeline(pipelineDesc);
 	if (!pipeline)
@@ -88,9 +65,7 @@ std::unique_ptr<RenderPipeline> PipelineRuntimeLibrary::CreateGraphicsPipeline(
 	return pipeline;
 }
 
-std::unique_ptr<RenderPipeline> PipelineRuntimeLibrary::CreateComputePipeline(
-    RenderHardwareInterface& renderHardwareInterface,
-    const ComputePipelineDesc& pipelineDesc)
+std::unique_ptr<RenderPipeline> PipelineRuntimeLibrary::CreateComputePipeline(RenderHardwareInterface& renderHardwareInterface, const ComputePipelineDesc& pipelineDesc)
 {
 	std::unique_ptr<RenderPipeline> pipeline = renderHardwareInterface.GetPipelineService().CreateComputePipeline(pipelineDesc);
 	if (!pipeline)

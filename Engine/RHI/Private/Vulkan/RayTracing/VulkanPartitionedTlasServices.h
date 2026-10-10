@@ -16,16 +16,10 @@ class VulkanPartitionedTlasServices final : public RhiPartitionedTlasService
 public:
 	VulkanPartitionedTlasServices(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator) noexcept;
 
-	RhiPartitionedTlasBuildSizes GetPartitionedTopLevelAccelerationStructureBuildSizes(
-	    const RhiPartitionedTlasDesc& desc) const noexcept override;
-	RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureBuffer(
-	    const RhiPartitionedTlasBuildSizes& sizes,
-	    std::wstring_view debugName) override;
-	RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureOperationBuffer(
-	    const RhiPartitionedTlasOperationPackDesc& operationPack,
-	    std::wstring_view debugName) override;
-	RhiPartitionedTlasOperationBufferLayout GetPartitionedTopLevelAccelerationStructureOperationBufferLayout(
-	    const RhiPartitionedTlasDesc& desc) const noexcept override;
+	RhiPartitionedTlasBuildSizes GetPartitionedTopLevelAccelerationStructureBuildSizes(const RhiPartitionedTlasDesc& desc) const noexcept override;
+	RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureBuffer(const RhiPartitionedTlasBuildSizes& sizes, std::wstring_view debugName) override;
+	RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureOperationBuffer(const RhiPartitionedTlasOperationPackDesc& operationPack, std::wstring_view debugName) override;
+	RhiPartitionedTlasOperationBufferLayout GetPartitionedTopLevelAccelerationStructureOperationBufferLayout(const RhiPartitionedTlasDesc& desc) const noexcept override;
 
 private:
 	static VkPartitionedAccelerationStructureInstanceFlagsNV ToVkPartitionedInstanceFlags(RhiPartitionedTlasInstanceFlags flags) noexcept;

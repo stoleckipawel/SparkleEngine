@@ -14,9 +14,7 @@
 #include <limits>
 #include <vector>
 
-std::vector<std::byte> D3D12RayTracingShaderTable::CollectShaderIdentifiers(
-    const D3D12RayTracingPipeline& pipeline,
-    std::span<const RhiRayTracingShaderRecord> records)
+std::vector<std::byte> D3D12RayTracingShaderTable::CollectShaderIdentifiers(const D3D12RayTracingPipeline& pipeline, std::span<const RhiRayTracingShaderRecord> records)
 {
 	if (records.size() > std::numeric_limits<std::size_t>::max() / D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES)
 	{
@@ -37,10 +35,7 @@ std::vector<std::byte> D3D12RayTracingShaderTable::CollectShaderIdentifiers(
 	return identifiers;
 }
 
-D3D12RayTracingShaderTable::D3D12RayTracingShaderTable(
-    D3D12Rhi& rhi,
-    D3D12ResourceService& resourceService,
-    const RayTracingShaderTableDesc& desc) :
+D3D12RayTracingShaderTable::D3D12RayTracingShaderTable(D3D12Rhi& rhi, D3D12ResourceService& resourceService, const RayTracingShaderTableDesc& desc) :
     RayTracingShaderTable(desc.Generation, desc.Pipeline != nullptr ? desc.Pipeline->GetGeneration() : 0),
     m_resourceService(&resourceService)
 {
@@ -55,27 +50,12 @@ D3D12RayTracingShaderTable::D3D12RayTracingShaderTable(
 	    .RecordAlignmentInBytes = D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT,
 	    .TableAlignmentInBytes = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT,
 	    .MaximumRecordStrideInBytes = D3D12_RAYTRACING_MAX_SHADER_RECORD_STRIDE};
+
 	std::vector<std::byte> bytes;
-	m_rayGeneration = RhiRayTracingShaderTablePacking::AppendRegion(
-	    desc.RayGenerationRecords,
-	    CollectShaderIdentifiers(*pipeline, desc.RayGenerationRecords),
-	    packingRules,
-	    bytes);
-	m_miss = RhiRayTracingShaderTablePacking::AppendRegion(
-	    desc.MissRecords,
-	    CollectShaderIdentifiers(*pipeline, desc.MissRecords),
-	    packingRules,
-	    bytes);
-	m_hitGroup = RhiRayTracingShaderTablePacking::AppendRegion(
-	    desc.HitGroupRecords,
-	    CollectShaderIdentifiers(*pipeline, desc.HitGroupRecords),
-	    packingRules,
-	    bytes);
-	m_callable = RhiRayTracingShaderTablePacking::AppendRegion(
-	    desc.CallableRecords,
-	    CollectShaderIdentifiers(*pipeline, desc.CallableRecords),
-	    packingRules,
-	    bytes);
+	m_rayGeneration = RhiRayTracingShaderTablePacking::AppendRegion(desc.RayGenerationRecords, CollectShaderIdentifiers(*pipeline, desc.RayGenerationRecords), packingRules, bytes);
+	m_miss = RhiRayTracingShaderTablePacking::AppendRegion(desc.MissRecords, CollectShaderIdentifiers(*pipeline, desc.MissRecords), packingRules, bytes);
+	m_hitGroup = RhiRayTracingShaderTablePacking::AppendRegion(desc.HitGroupRecords, CollectShaderIdentifiers(*pipeline, desc.HitGroupRecords), packingRules, bytes);
+	m_callable = RhiRayTracingShaderTablePacking::AppendRegion(desc.CallableRecords, CollectShaderIdentifiers(*pipeline, desc.CallableRecords), packingRules, bytes);
 	m_allocation = D3D12UploadBuffer::Upload(rhi, bytes.data(), bytes.size());
 	if (m_allocation == nullptr || m_allocation->Resource == nullptr)
 	{

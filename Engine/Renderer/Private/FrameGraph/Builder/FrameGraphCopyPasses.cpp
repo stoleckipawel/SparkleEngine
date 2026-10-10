@@ -7,11 +7,7 @@
 
 namespace FrameGraphCopyPasses
 {
-	void AddTextureCopy(
-	    FrameGraphBuilder& builder,
-	    std::string_view name,
-	    FrameGraphTextureHandle destination,
-	    FrameGraphTextureHandle source)
+	void AddTextureCopy(FrameGraphBuilder& builder, std::string_view name, FrameGraphTextureHandle destination, FrameGraphTextureHandle source)
 	{
 		builder.AddPass(
 		    name,

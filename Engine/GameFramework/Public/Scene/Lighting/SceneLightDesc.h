@@ -43,16 +43,26 @@ struct SPARKLE_ENGINE_API SceneLightDesc
 	}
 
 	const SceneDirectionalLightDesc* GetDirectional() const noexcept { return std::get_if<SceneDirectionalLightDesc>(&payload); }
+
 	SceneDirectionalLightDesc* GetDirectional() noexcept { return std::get_if<SceneDirectionalLightDesc>(&payload); }
+
 	const PointLightDesc* GetPoint() const noexcept { return std::get_if<PointLightDesc>(&payload); }
+
 	PointLightDesc* GetPoint() noexcept { return std::get_if<PointLightDesc>(&payload); }
+
 	const SpotLightDesc* GetSpot() const noexcept { return std::get_if<SpotLightDesc>(&payload); }
+
 	SpotLightDesc* GetSpot() noexcept { return std::get_if<SpotLightDesc>(&payload); }
+
 	const RectLightDesc* GetRect() const noexcept { return std::get_if<RectLightDesc>(&payload); }
+
 	RectLightDesc* GetRect() noexcept { return std::get_if<RectLightDesc>(&payload); }
 
 	bool IsDirectional() const noexcept { return GetDirectional() != nullptr; }
+
 	bool IsPoint() const noexcept { return GetPoint() != nullptr; }
+
 	bool IsSpot() const noexcept { return GetSpot() != nullptr; }
+
 	bool IsRect() const noexcept { return GetRect() != nullptr; }
 };

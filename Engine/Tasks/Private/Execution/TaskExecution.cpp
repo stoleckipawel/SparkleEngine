@@ -82,8 +82,7 @@ bool TaskExecution::IsSettled() const noexcept
 
 bool TaskExecution::WaitFor(std::chrono::milliseconds timeout) const
 {
-	if (m_state == nullptr || timeout < std::chrono::milliseconds::zero() || TaskWorkerContext::IsWorkerFor(m_state->ExecutorIdentity)
-	    || std::this_thread::get_id() != m_state->JoinThread)
+	if (m_state == nullptr || timeout < std::chrono::milliseconds::zero() || TaskWorkerContext::IsWorkerFor(m_state->ExecutorIdentity) || std::this_thread::get_id() != m_state->JoinThread)
 	{
 		return false;
 	}
@@ -142,13 +141,7 @@ std::optional<TaskResult> TaskExecution::GetTaskResult(TaskNodeHandle handle) co
 	std::scoped_lock lock(m_state->Mutex);
 	const auto& data = m_state->Data;
 	std::uint32_t index = 0;
-	if (!TaskGraphAccess::Decode(
-	        handle,
-	        data.BuilderIdentity,
-	        data.BuilderGeneration,
-	        static_cast<std::uint32_t>(data.TaskResults.size()),
-	        index)
-	    || !data.Settled[index])
+	if (!TaskGraphAccess::Decode(handle, data.BuilderIdentity, data.BuilderGeneration, static_cast<std::uint32_t>(data.TaskResults.size()), index) || !data.Settled[index])
 	{
 		return std::nullopt;
 	}

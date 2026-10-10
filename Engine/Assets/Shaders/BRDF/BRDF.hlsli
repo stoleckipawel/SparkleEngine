@@ -48,12 +48,12 @@ namespace BRDF
 
 			if (evaluateSubsurface && subsurfaceWeight > 0.0f)
 			{
-				response.Subsurface =
-				    Subsurface::EvaluateDirect(albedo, subsurfaceColor, roughness, subsurfaceWeight, sd) * kD * subsurfaceWeight;
+				response.Subsurface = Subsurface::EvaluateDirect(albedo, subsurfaceColor, roughness, subsurfaceWeight, sd) * kD * subsurfaceWeight;
 			}
 			return response;
 		}
 	}
+
 	namespace Indirect
 	{
 		void Evaluate(float NoV,

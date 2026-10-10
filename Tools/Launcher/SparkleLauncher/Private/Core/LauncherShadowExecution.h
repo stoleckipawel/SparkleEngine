@@ -26,8 +26,5 @@ namespace SparkleLauncher
 		std::string ErrorMessage;
 	};
 
-	LauncherShadowStartResult StartLauncherShadow(
-	    const std::filesystem::path& repositoryRoot,
-	    const std::vector<std::string>& arguments,
-	    LauncherShadowCompletionPolicy completionPolicy);
+	LauncherShadowStartResult StartLauncherShadow(const std::filesystem::path& repositoryRoot, const std::vector<std::string>& arguments, LauncherShadowCompletionPolicy completionPolicy);
 }

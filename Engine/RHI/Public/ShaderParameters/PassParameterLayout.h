@@ -67,6 +67,7 @@ public:
 	std::size_t GetParameterCount() const noexcept { return m_parameters.size(); }
 
 	const std::vector<PassParameterDesc>& GetParameters() const noexcept { return m_parameters; }
+
 	void SetAllVisibility(ShaderStageVisibility visibility) noexcept;
 
 	const PassParameterDesc* FindParameter(std::string_view name) const noexcept;
@@ -76,8 +77,7 @@ public:
 
 	std::uint32_t AddParameter(PassParameterDesc parameter);
 
-	template <typename T>
-	std::uint32_t Add(const char* name, ShaderStageVisibility visibility = ShaderStageVisibility::All, std::uint32_t arrayCount = 1)
+	template <typename T> std::uint32_t Add(const char* name, ShaderStageVisibility visibility = ShaderStageVisibility::All, std::uint32_t arrayCount = 1)
 	{
 		static_assert(IsShaderParameterSemanticV<T>, "Add<T> requires a shader-parameter semantic type.");
 

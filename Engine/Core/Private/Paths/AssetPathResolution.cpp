@@ -14,10 +14,7 @@ SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogCoreFileSystem, "Core.FileSystem");
 class AssetPathSearch final
 {
 public:
-	static std::optional<std::filesystem::path> TryResolveIn(
-	    const std::filesystem::path& searchDirectory,
-	    const std::filesystem::path& relativePath,
-	    AssetType type)
+	static std::optional<std::filesystem::path> TryResolveIn(const std::filesystem::path& searchDirectory, const std::filesystem::path& relativePath, AssetType type)
 	{
 		if (searchDirectory.empty())
 		{
@@ -81,10 +78,7 @@ namespace Filesystem
 		return std::nullopt;
 	}
 
-	void AppendNormalizedAssetPaths(
-	    std::span<const std::filesystem::path> inputPaths,
-	    AssetType type,
-	    std::vector<std::filesystem::path>& destination)
+	void AppendNormalizedAssetPaths(std::span<const std::filesystem::path> inputPaths, AssetType type, std::vector<std::filesystem::path>& destination)
 	{
 		for (const std::filesystem::path& inputPath : inputPaths)
 		{
@@ -131,11 +125,7 @@ namespace Filesystem
 			return *resolvedPath;
 		}
 
-		Diagnostics::Fatal(
-		    LogCoreFileSystem,
-		    __FILE__,
-		    __LINE__,
-		    std::string(GetAssetTypeName(type)) + " asset not found: " + inputPath.string());
+		Diagnostics::Fatal(LogCoreFileSystem, __FILE__, __LINE__, std::string(GetAssetTypeName(type)) + " asset not found: " + inputPath.string());
 		return {};
 	}
 }

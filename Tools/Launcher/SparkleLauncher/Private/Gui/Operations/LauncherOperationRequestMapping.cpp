@@ -106,8 +106,7 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 		mapped.RepositoryRoot = request.RepositoryRoot;
 		mapped.ContentId = request.ContentId.toStdString();
 		mapped.RunMode = request.RunMode == "game" ? LevelRunMode::Game : LevelRunMode::Editor;
-		mapped.ProductProfile =
-		    mapped.RunMode == LevelRunMode::Game ? request.RuntimeProfile.toStdString() : request.EditorProfile.toStdString();
+		mapped.ProductProfile = mapped.RunMode == LevelRunMode::Game ? request.RuntimeProfile.toStdString() : request.EditorProfile.toStdString();
 		const std::vector<std::string> requestedLevels = SplitList(request.RequestedLevelIds);
 		if (!requestedLevels.empty())
 		{
@@ -152,11 +151,7 @@ namespace SparkleLauncher::LauncherOperationRequestMapping
 		}
 		for (const LauncherCleanTarget& target : request.CleanTargets)
 		{
-			mapped.RequestedCleanTargets.push_back(
-			    MaintenanceCleanPathSpec{
-			        .DisplayName = target.DisplayName.toStdString(),
-			        .Path = target.Path.toStdString(),
-			        .Detail = target.Detail.toStdString()});
+			mapped.RequestedCleanTargets.push_back(MaintenanceCleanPathSpec{.DisplayName = target.DisplayName.toStdString(), .Path = target.Path.toStdString(), .Detail = target.Detail.toStdString()});
 		}
 		for (const QString& path : request.PreservedPaths)
 		{

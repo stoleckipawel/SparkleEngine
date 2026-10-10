@@ -24,8 +24,7 @@ WorldChangeBatch::WorldChangeBatch(
 
 std::span<const WorldChange> WorldChangeBatch::GetChanges() const noexcept
 {
-	return m_storage != nullptr ? std::span<const WorldChange>(m_storage->Changes).subspan(m_firstChangeIndex)
-	                            : std::span<const WorldChange>{};
+	return m_storage != nullptr ? std::span<const WorldChange>(m_storage->Changes).subspan(m_firstChangeIndex) : std::span<const WorldChange>{};
 }
 
 namespace ECS
@@ -79,12 +78,8 @@ namespace ECS
 				    batch->Changes.end(),
 				    acknowledgedSequence,
 				    [](WorldSequence sequence, const WorldChange& change) { return sequence < change.Sequence; });
-				return WorldChangeBatch(
-				    WorldChangeReadStatus::Available,
-				    oldest,
-				    m_latestSequence,
-				    batch,
-				    static_cast<std::size_t>(first - batch->Changes.begin()));
+
+				return WorldChangeBatch(WorldChangeReadStatus::Available, oldest, m_latestSequence, batch, static_cast<std::size_t>(first - batch->Changes.begin()));
 			}
 		}
 		return WorldChangeBatch(WorldChangeReadStatus::UpToDate, oldest, m_latestSequence, nullptr);

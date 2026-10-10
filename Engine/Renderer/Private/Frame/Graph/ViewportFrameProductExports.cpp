@@ -5,18 +5,14 @@
 #include "Frame/Graph/RenderFrameGraphSettings.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 
-void ExportViewportFrameProducts(
-    FrameGraphBuilder& builder,
-    const RenderFrameGraphSettings& settings,
-    const RenderFrameGraphResources& resources) noexcept
+void ExportViewportFrameProducts(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings, const RenderFrameGraphResources& resources) noexcept
 {
 	if (resources.ViewportProducts.FinalColorLdr.IsValid())
 	{
 		builder.ExportTexture(resources.ViewportProducts.FinalColorLdr, "Viewport.FinalColorLdr");
 	}
 
-	if (HasAnyRenderOutputFlags(settings.RequestedOutputs, RenderOutputFlags::SceneDepth)
-	    && resources.ViewportProducts.SceneDepth.IsValid())
+	if (HasAnyRenderOutputFlags(settings.RequestedOutputs, RenderOutputFlags::SceneDepth) && resources.ViewportProducts.SceneDepth.IsValid())
 	{
 		builder.ExportTexture(resources.ViewportProducts.SceneDepth, "Viewport.SceneDepth");
 	}

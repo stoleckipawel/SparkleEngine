@@ -66,12 +66,8 @@ namespace MaterialTextureTableSampling
 		const int2 p10 = int2(AddressTexel(first.x + 1, width, addressU), p00.y);
 		const int2 p01 = int2(p00.x, AddressTexel(first.y + 1, height, addressV));
 		const int2 p11 = int2(p10.x, p01.y);
-		const float4 row0 = lerp(table[NonUniformResourceIndex(textureIndex)].Load(int3(p00, 0)),
-		                         table[NonUniformResourceIndex(textureIndex)].Load(int3(p10, 0)),
-		                         weight.x);
-		const float4 row1 = lerp(table[NonUniformResourceIndex(textureIndex)].Load(int3(p01, 0)),
-		                         table[NonUniformResourceIndex(textureIndex)].Load(int3(p11, 0)),
-		                         weight.x);
+		const float4 row0 = lerp(table[NonUniformResourceIndex(textureIndex)].Load(int3(p00, 0)), table[NonUniformResourceIndex(textureIndex)].Load(int3(p10, 0)), weight.x);
+		const float4 row1 = lerp(table[NonUniformResourceIndex(textureIndex)].Load(int3(p01, 0)), table[NonUniformResourceIndex(textureIndex)].Load(int3(p11, 0)), weight.x);
 		return lerp(row0, row1, weight.y);
 	}
 }

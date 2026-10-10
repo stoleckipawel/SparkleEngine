@@ -31,8 +31,7 @@ void AddRestirIndirectTemporalPass(
 	BindSceneShaderParameters(builder, frame, parameters, resources);
 	BindRayTracedShadowParameters(frame.PreparedScene, parameters);
 
-	if (!builder.IsTextureHistoryValid(resources.History.RestirIndirectReservoir.Sample)
-	    || !builder.IsTextureHistoryValid(resources.History.RestirIndirectReservoir.Weight)
+	if (!builder.IsTextureHistoryValid(resources.History.RestirIndirectReservoir.Sample) || !builder.IsTextureHistoryValid(resources.History.RestirIndirectReservoir.Weight)
 	    || !builder.IsTextureHistoryValid(resources.History.RestirIndirectReservoir.Surface))
 	{
 		ViewTemporalUniformData temporal = frame.View.temporalUniform;
@@ -42,7 +41,5 @@ void AddRestirIndirectTemporalPass(
 
 	BindRestirIndirectParameters(parameters, resources);
 
-	builder.Dispatch<RestirIndirectTemporalCS>(
-	    parameters,
-	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
+	builder.Dispatch<RestirIndirectTemporalCS>(parameters, ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 }

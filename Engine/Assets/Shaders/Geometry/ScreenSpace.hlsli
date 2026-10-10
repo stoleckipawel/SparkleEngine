@@ -4,6 +4,7 @@
 #include "/Engine/Resources/ViewUniformData.hlsli"
 #include "/Engine/Resources/ViewCameraUniformData.hlsli"
 #include "/Engine/Resources/ViewTemporalUniformData.hlsli"
+
 float2 PixelCenterToNdc(uint2 pixelCoord)
 {
 	const float2 uv = (float2(pixelCoord) + 0.5f) * ViewportSizeInv;

@@ -22,13 +22,19 @@ public:
 	}
 
 	ShaderBytecode GetBytecode() const noexcept { return {m_bytecode.data(), m_bytecode.size()}; }
+
 	const std::filesystem::path& GetDebugArtifactPath() const noexcept { return m_debugArtifactPath; }
 
 	const ShaderReflection& GetReflection() const noexcept { return m_reflection; }
+
 	ShaderReflection&& TakeReflection() noexcept { return std::move(m_reflection); }
+
 	void SetReflection(ShaderReflection&& reflection) noexcept { m_reflection = std::move(reflection); }
+
 	const ShaderDebugArtifactSet& GetDebugArtifacts() const noexcept { return m_debugArtifacts; }
+
 	ShaderDebugArtifactSet&& TakeDebugArtifacts() noexcept { return std::move(m_debugArtifacts); }
+
 	void SetDebugArtifacts(ShaderDebugArtifactSet&& debugArtifacts) noexcept { m_debugArtifacts = std::move(debugArtifacts); }
 
 private:

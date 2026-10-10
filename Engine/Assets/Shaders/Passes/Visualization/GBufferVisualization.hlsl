@@ -41,9 +41,12 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 	{
 		case RenderViewMode::GBufferDiffuse:
 			outputColor = saturate(baseColor.rgb);
+
 			break;
+
 		case RenderViewMode::GBufferWorldNormal:
 			outputColor = VisualizeWorldDirection(GBufferWorldNormal.Load(pixel).xyz);
+
 			break;
 		case RenderViewMode::GBufferWorldTangent:
 		{
@@ -53,21 +56,32 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 		}
 		case RenderViewMode::GBufferRoughness:
 			outputColor = VisualizeScalar(GBufferMaterial.Load(pixel).g);
+
 			break;
+
 		case RenderViewMode::GBufferMetallic:
 			outputColor = VisualizeScalar(GBufferMaterial.Load(pixel).r);
+
 			break;
+
 		case RenderViewMode::GBufferEmissive:
 			outputColor = max(GBufferEmissive.Load(pixel).rgb, 0.0f);
+
 			break;
+
 		case RenderViewMode::GBufferAmbientOcclusion:
 			outputColor = VisualizeScalar(GBufferMaterial.Load(pixel).b);
+
 			break;
+
 		case RenderViewMode::GBufferSubsurfaceColor:
 			outputColor = saturate(GBufferSubsurface.Load(pixel).rgb);
+
 			break;
+
 		case RenderViewMode::GBufferSubsurfaceStrength:
 			outputColor = VisualizeScalar(GBufferSubsurface.Load(pixel).a);
+
 			break;
 		default:
 			return;

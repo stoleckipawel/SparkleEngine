@@ -49,10 +49,7 @@ namespace RayEndpoints
 		return transformedNormal * rsqrt(dot(transformedNormal, transformedNormal));
 	}
 
-	SurfaceEndpointError BuildSurfaceEndpointError(RayTracingEvaluatedTriangle evaluatedTriangle,
-	                                               MeshInstanceData mesh,
-	                                               float3 positionObject,
-	                                               float3 normalObject)
+	SurfaceEndpointError BuildSurfaceEndpointError(RayTracingEvaluatedTriangle evaluatedTriangle, MeshInstanceData mesh, float3 positionObject, float3 normalObject)
 	{
 		const float3 edge1 = evaluatedTriangle.V1.Position - evaluatedTriangle.V0.Position;
 		const float3 edge2 = evaluatedTriangle.V2.Position - evaluatedTriangle.V0.Position;
@@ -62,8 +59,7 @@ namespace RayEndpoints
 		const float3x3 worldLinear = (float3x3)mesh.WorldMatrix;
 		const float3 worldTranslation = float3(mesh.WorldMatrix._41, mesh.WorldMatrix._42, mesh.WorldMatrix._43);
 
-		const float3 worldError =
-		    TriangleIntersectionError * mul(abs(positionObject), abs(worldLinear)) + TransformError * abs(worldTranslation);
+		const float3 worldError = TriangleIntersectionError * mul(abs(positionObject), abs(worldLinear)) + TransformError * abs(worldTranslation);
 
 		const float3 transformedNormal = mul(normalObject, (float3x3)mesh.WorldInverseTranspose);
 		const float inverseNormalLength = rsqrt(dot(transformedNormal, transformedNormal));
@@ -71,16 +67,11 @@ namespace RayEndpoints
 
 		SurfaceEndpointError result;
 		result.BaseOffset = dot(abs(normalWorld), worldError) + inverseNormalLength * dot(abs(normalObject), objectError);
-		result.TraversalSensitivity =
-		    TransformError * inverseNormalLength * mul(abs(mesh.WorldInverseMatrix), float4(abs(normalObject), 0.0f));
+		result.TraversalSensitivity = TransformError * inverseNormalLength * mul(abs(mesh.WorldInverseMatrix), float4(abs(normalObject), 0.0f));
 		return result;
 	}
 
-	float SurfaceErrorBound(RayTracingEvaluatedTriangle evaluatedTriangle,
-	                        MeshInstanceData mesh,
-	                        float3 positionObject,
-	                        float3 positionWorld,
-	                        float3 normalObject)
+	float SurfaceErrorBound(RayTracingEvaluatedTriangle evaluatedTriangle, MeshInstanceData mesh, float3 positionObject, float3 positionWorld, float3 normalObject)
 	{
 		const SurfaceEndpointError error = BuildSurfaceEndpointError(evaluatedTriangle, mesh, positionObject, normalObject);
 		return error.BaseOffset + dot(float4(abs(positionWorld), 1.0f), error.TraversalSensitivity);
@@ -103,13 +94,7 @@ namespace RayEndpoints
 		return ray;
 	}
 
-	Ray Connection(float3 position,
-	               float3 geometricNormal,
-	               float errorBound,
-	               float3 targetPosition,
-	               float3 targetGeometricNormal,
-	               float targetBaseOffset,
-	               float4 targetTraversalSensitivity)
+	Ray Connection(float3 position, float3 geometricNormal, float errorBound, float3 targetPosition, float3 targetGeometricNormal, float targetBaseOffset, float4 targetTraversalSensitivity)
 	{
 		const float3 semanticDirection = normalize(targetPosition - position);
 		const float3 source = OffsetSurface(position, geometricNormal, errorBound, semanticDirection);

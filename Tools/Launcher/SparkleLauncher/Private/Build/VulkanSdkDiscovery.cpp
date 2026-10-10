@@ -63,6 +63,7 @@ namespace SparkleLauncher
 		    std::filesystem::path("C:\\Program Files\\VulkanSDK"),
 		    std::filesystem::path("C:\\Program Files (x86)\\VulkanSDK"),
 		};
+
 		for (const std::filesystem::path& candidateRoot : candidateRoots)
 		{
 			if (const std::optional<std::filesystem::path> versionRoot = FindLatestVersionedDirectory(candidateRoot))
@@ -81,14 +82,17 @@ namespace SparkleLauncher
 		{
 			status.Detail = "Vulkan SDK was not detected. Install it or define VULKAN_SDK so Vulkan and NVIDIA Streamline builds can "
 			                "resolve Vulkan headers and import libraries.";
+
 			return status;
 		}
 
 		status.Root = sdkRoot->lexically_normal();
+
 		const std::array<std::pair<std::filesystem::path, std::string_view>, 2> requiredFiles = {{
 		    {status.Root / "Include" / "vulkan" / "vulkan.h", "Include/vulkan/vulkan.h"},
 		    {status.Root / "Lib" / "vulkan-1.lib", "Lib/vulkan-1.lib"},
 		}};
+
 		std::vector<std::string> missingEntries;
 		for (const auto& [path, displayPath] : requiredFiles)
 		{
@@ -113,8 +117,7 @@ namespace SparkleLauncher
 			missingEntryViews.push_back(entry);
 		}
 		std::ostringstream detail;
-		detail << "Detected Vulkan SDK root " << status.Root.string()
-		       << ", but required Vulkan SDK files are missing: " << Strings::Join(missingEntryViews, ", ") << ".";
+		detail << "Detected Vulkan SDK root " << status.Root.string() << ", but required Vulkan SDK files are missing: " << Strings::Join(missingEntryViews, ", ") << ".";
 		status.Detail = detail.str();
 		return status;
 	}

@@ -64,10 +64,12 @@ public:
 	RayTracingPipeline& operator=(RayTracingPipeline&&) = delete;
 
 	std::uint64_t GetGeneration() const noexcept { return m_generation; }
+
 	const RecordContract* FindRecordContract(std::string_view exportName) const noexcept;
 
 private:
 	std::uint64_t m_generation = 0;
+
 	std::vector<RecordContract> m_recordContracts;
 };
 
@@ -102,7 +104,9 @@ public:
 	RayTracingShaderTable& operator=(RayTracingShaderTable&&) = delete;
 
 	std::uint64_t GetGeneration() const noexcept { return m_generation; }
+
 	std::uint64_t GetPipelineGeneration() const noexcept { return m_pipelineGeneration; }
+
 	virtual RhiResourceHandle GetResource() const noexcept = 0;
 	virtual RhiRayTracingShaderTableRegion GetRayGenerationRegion() const noexcept = 0;
 	virtual RhiRayTracingShaderTableRegion GetMissRegion() const noexcept = 0;
@@ -111,6 +115,7 @@ public:
 
 private:
 	std::uint64_t m_generation = 0;
+
 	std::uint64_t m_pipelineGeneration = 0;
 };
 

@@ -23,13 +23,7 @@ void AddRestirRayReconstructionPass(
 
 	const RayReconstructionPassResources providerInputs = CreateRestirRayReconstructionResources(builder, sceneExtent, resources);
 
-	AddRayReconstructionPass(
-	    builder,
-	    *imageProviders.GetRayReconstructionProvider(),
-	    "DlssRayReconstruction",
-	    sceneExtent,
-	    sceneExtent,
-	    providerInputs);
+	AddRayReconstructionPass(builder, *imageProviders.GetRayReconstructionProvider(), "DlssRayReconstruction", sceneExtent, sceneExtent, providerInputs);
 
 	resources.Presentation.SceneColorInput = providerInputs.OutputColor;
 }

@@ -33,15 +33,10 @@ MaterialData MaterialData::FromDesc(const MaterialDesc& desc)
 			const float cosine = std::cos(texture->mapping.Rotation);
 			const float sine = std::sin(texture->mapping.Rotation);
 			mat.materialTextureMappings[slot] = MaterialTextureMappingData{
-			    .UvLinear =
-			        {cosine * texture->mapping.Scale.x,
-			            -sine * texture->mapping.Scale.y,
-			            sine * texture->mapping.Scale.x,
-			            cosine * texture->mapping.Scale.y},
+			    .UvLinear = {cosine * texture->mapping.Scale.x, -sine * texture->mapping.Scale.y, sine * texture->mapping.Scale.x, cosine * texture->mapping.Scale.y},
 			    .UvOffset = texture->mapping.Offset,
 			    .Strength = texture->mapping.Strength,
-			    .AddressModes =
-			        static_cast<std::uint32_t>(texture->mapping.AddressU) | (static_cast<std::uint32_t>(texture->mapping.AddressV) << 2u)};
+			    .AddressModes = static_cast<std::uint32_t>(texture->mapping.AddressU) | (static_cast<std::uint32_t>(texture->mapping.AddressV) << 2u)};
 		}
 	};
 

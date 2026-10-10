@@ -40,9 +40,7 @@ void CookedSceneGenerationWriter::Publish(std::span<const CookedSceneBuild* cons
 	}
 }
 
-void CookedSceneGenerationStager::StageAssets(
-    std::span<const CookedSceneBuild* const> builds,
-    std::vector<Files::FilePublication>& outPublication)
+void CookedSceneGenerationStager::StageAssets(std::span<const CookedSceneBuild* const> builds, std::vector<Files::FilePublication>& outPublication)
 {
 	for (const CookedSceneBuild* build : builds)
 	{

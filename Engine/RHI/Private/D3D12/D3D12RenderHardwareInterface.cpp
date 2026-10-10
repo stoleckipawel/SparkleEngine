@@ -43,13 +43,11 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
 	m_interopService = std::make_unique<D3D12InteropService>(*this);
 	m_captureService = std::make_unique<D3D12CaptureService>(rhi);
 	m_presentationService = std::make_unique<RhiPresentationServiceAdapter<D3D12RenderHardwareInterface>>(*this);
-	m_pipelineService =
-	    std::make_unique<RhiPipelineServiceAdapter<D3D12Rhi, D3D12Pipeline, D3D12RayTracingPipeline, D3D12BindingLayoutCompiler>>(rhi);
+	m_pipelineService = std::make_unique<RhiPipelineServiceAdapter<D3D12Rhi, D3D12Pipeline, D3D12RayTracingPipeline, D3D12BindingLayoutCompiler>>(rhi);
 	m_descriptorService = std::make_unique<D3D12DescriptorService>(rhi, descriptorHeapManager, m_capabilities);
 	m_resourceService = std::make_unique<D3D12ResourceService>(rhi, memoryAllocator, m_capabilities);
 
-	m_rayTracingServices =
-	    std::make_unique<D3D12RayTracingServices>(rhi, memoryAllocator, *m_resourceService, rhi.GetNvapiRayTracingProvider());
+	m_rayTracingServices = std::make_unique<D3D12RayTracingServices>(rhi, memoryAllocator, *m_resourceService, rhi.GetNvapiRayTracingProvider());
 
 	m_diagnostics = CreateD3D12RenderDiagnostics(rhi, swapChain.GetMaximumFramesInFlight());
 	m_capabilities = BuildCapabilities();
@@ -58,9 +56,7 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
 
 D3D12RenderHardwareInterface::~D3D12RenderHardwareInterface() noexcept = default;
 
-D3D12RecordingResourceUseToken D3D12RenderHardwareInterface::BeginResourceTracking(
-    RhiResourceHandle resource,
-    bool coordinatorRecording) noexcept
+D3D12RecordingResourceUseToken D3D12RenderHardwareInterface::BeginResourceTracking(RhiResourceHandle resource, bool coordinatorRecording) noexcept
 {
 	return m_resourceService->BeginResourceTracking(resource, coordinatorRecording);
 }
@@ -74,39 +70,42 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 {
 	RhiCapabilities capabilities{};
 	const D3D_FEATURE_LEVEL featureLevel = m_rhi->GetDeviceFeatureLevel();
-	const std::uint32_t featureLevelMajor = featureLevel >= D3D_FEATURE_LEVEL_12_0 ? 12u
-	    : featureLevel >= D3D_FEATURE_LEVEL_11_0                                   ? 11u
-	                                                                               : 0u;
+	const std::uint32_t featureLevelMajor = featureLevel >= D3D_FEATURE_LEVEL_12_0 ? 12u : featureLevel >= D3D_FEATURE_LEVEL_11_0 ? 11u : 0u;
+
 	const std::uint32_t featureLevelMinor = featureLevel == D3D_FEATURE_LEVEL_12_2 ? 2u
 	    : featureLevel == D3D_FEATURE_LEVEL_12_1                                   ? 1u
 	    : featureLevel == D3D_FEATURE_LEVEL_12_0                                   ? 0u
 	    : featureLevel == D3D_FEATURE_LEVEL_11_1                                   ? 1u
 	    : featureLevel == D3D_FEATURE_LEVEL_11_0                                   ? 0u
 	                                                                               : 0u;
+
 	capabilities.BackendApi = ERhiBackendApi::D3D12;
 	capabilities.RuntimeShaderBinaryFormat = ShaderBinaryFormat::Dxil;
+
 	capabilities.BackendVersion = RhiBackendVersionInfo{
 	    .Semantic = ERhiBackendVersionSemantic::FeatureLevel,
 	    .Major = featureLevelMajor,
 	    .Minor = featureLevelMinor,
 	    .Patch = 0,
 	    .PackedValue = static_cast<std::uint32_t>(featureLevel)};
+
 	capabilities.DescriptorModel = ERhiDescriptorModel::DescriptorTables;
+
 	capabilities.BindingLimits = RhiBindingLimits{
 	    .MaxDescriptorSets = 1,
 	    .MaxShaderResourceDescriptors = D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_2,
 	    .MaxSamplerDescriptors = D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE,
 	    .MaxDescriptorTableEntries = D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_2,
 	    .MaxPushConstantBytes = 256};
-	capabilities.DescriptorIndexing = RhiDescriptorIndexingCapabilities{
-	    .SupportsSampledImageArrayNonUniformIndexing = true,
-	    .SupportsPartiallyBoundDescriptorArrays = true};
-	capabilities.UploadReadback =
-	    RhiUploadReadbackCapabilities{.SupportsBufferUpload = true, .SupportsTextureUpload = true, .SupportsReadback = true};
+
+	capabilities.DescriptorIndexing = RhiDescriptorIndexingCapabilities{.SupportsSampledImageArrayNonUniformIndexing = true, .SupportsPartiallyBoundDescriptorArrays = true};
+	capabilities.UploadReadback = RhiUploadReadbackCapabilities{.SupportsBufferUpload = true, .SupportsTextureUpload = true, .SupportsReadback = true};
+
 	capabilities.Presentation = RhiPresentationCapabilities{
 	    .BackBufferCount = m_swapChain->GetBackBufferCount(),
 	    .MaximumFramesInFlight = m_swapChain->GetMaximumFramesInFlight(),
 	    .Throttle = ERhiPresentationThrottle::FrameLatencyWaitableObject};
+
 	for (std::size_t index = 0; index < capabilities.FormatSupport.size(); ++index)
 	{
 		capabilities.FormatSupport[index] = QueryFormatSupport(kRhiCapabilityPixelFormats[index]);
@@ -114,9 +113,7 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 	capabilities.Diagnostics = BuildBackendDiagnosticsSupport();
 	capabilities.RayTracing = m_rhi->GetRayTracingCapabilities();
 	D3D12_FEATURE_DATA_D3D12_OPTIONS options{};
-	capabilities.SupportsShaderFloat64 =
-	    SUCCEEDED(m_rhi->GetDevice()->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options)))
-	    && options.DoublePrecisionFloatShaderOps != FALSE;
+	capabilities.SupportsShaderFloat64 = SUCCEEDED(m_rhi->GetDevice()->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options))) && options.DoublePrecisionFloatShaderOps != FALSE;
 	capabilities.SupportsMeshShaders = false;
 	capabilities.SupportsTaskShaders = false;
 	capabilities.Queues.Set(ERhiQueueType::Graphics, true, true);
@@ -133,6 +130,7 @@ RhiBackendDiagnosticsSupport D3D12RenderHardwareInterface::BuildBackendDiagnosti
 {
 	const bool validationEnabled = m_rhi->IsValidationEnabled();
 	const RhiDiagnosticsCapabilities diagnosticsCapabilities = m_diagnostics->GetCapabilities();
+
 	return RhiBackendDiagnosticsSupport{
 	    .ValidationEnabled = validationEnabled,
 	    .SupportsDebugLayer = validationEnabled,
@@ -147,6 +145,7 @@ RhiBackendDiagnosticsSupport D3D12RenderHardwareInterface::BuildBackendDiagnosti
 RhiBackendMemorySupport D3D12RenderHardwareInterface::BuildBackendMemorySupport() const noexcept
 {
 	const RenderMemoryDiagnostics* const memoryDiagnostics = m_diagnostics->GetMemoryDiagnostics();
+
 	return RhiBackendMemorySupport{
 	    .SupportsMemoryDiagnostics = memoryDiagnostics != nullptr,
 	    .SupportsBudgetQueries = memoryDiagnostics != nullptr && memoryDiagnostics->SupportsBudgetQueries(),
@@ -330,8 +329,7 @@ RhiResourceHandle D3D12RenderHardwareInterface::GetBackBufferResource() const no
 	return RhiResourceHandle{m_swapChain->GetCurrentResource()};
 }
 
-RhiRayTracingAccelerationStructurePrebuildInfo D3D12RenderHardwareInterface::GetBottomLevelAccelerationStructurePrebuildInfo(
-    const RhiRayTracingGeometryDesc& geometry) const noexcept
+RhiRayTracingAccelerationStructurePrebuildInfo D3D12RenderHardwareInterface::GetBottomLevelAccelerationStructurePrebuildInfo(const RhiRayTracingGeometryDesc& geometry) const noexcept
 {
 	return m_rayTracingServices->GetBottomLevelAccelerationStructurePrebuildInfo(geometry);
 }
@@ -348,18 +346,12 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingScratchBuff
 	return m_rayTracingServices->CreateScratchBuffer(sizeInBytes, debugName);
 }
 
-RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingAccelerationStructureBuffer(
-    std::uint64_t sizeInBytes,
-    ERhiRayTracingAccelerationStructureType type,
-    std::wstring_view debugName)
+RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingAccelerationStructureBuffer(std::uint64_t sizeInBytes, ERhiRayTracingAccelerationStructureType type, std::wstring_view debugName)
 {
 	return m_rayTracingServices->CreateAccelerationStructureBuffer(sizeInBytes, type, debugName);
 }
 
-RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingInstanceBuffer(
-    const RhiRayTracingInstanceDesc* instances,
-    std::uint32_t instanceCount,
-    std::wstring_view debugName)
+RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingInstanceBuffer(const RhiRayTracingInstanceDesc* instances, std::uint32_t instanceCount, std::wstring_view debugName)
 {
 	return m_rayTracingServices->CreateInstanceBuffer(instances, instanceCount, debugName);
 }
@@ -410,25 +402,19 @@ void D3D12RenderHardwareInterface::SetSamplerTableHandle(RhiDescriptorTableHandl
 	m_descriptorService->SetSamplerTableHandle(samplerTableHandle);
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE D3D12RenderHardwareInterface::ResolveDescriptorTableCpuHandle(
-    RhiDescriptorTableHandle tableHandle,
-    std::uint32_t descriptorIndex) const noexcept
+D3D12_CPU_DESCRIPTOR_HANDLE D3D12RenderHardwareInterface::ResolveDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex) const noexcept
 {
 	const RhiCpuDescriptorHandle handle = m_descriptorService->GetDescriptorTableCpuHandle(tableHandle, descriptorIndex);
 	return D3D12_CPU_DESCRIPTOR_HANDLE{handle.Value};
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE D3D12RenderHardwareInterface::ResolveDescriptorTableGpuHandle(
-    RhiDescriptorTableHandle tableHandle,
-    std::uint32_t descriptorIndex) const noexcept
+D3D12_GPU_DESCRIPTOR_HANDLE D3D12RenderHardwareInterface::ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex) const noexcept
 {
 	const RhiGpuDescriptorHandle handle = m_descriptorService->GetDescriptorTableGpuHandle(tableHandle, descriptorIndex);
 	return D3D12_GPU_DESCRIPTOR_HANDLE{handle.Value};
 }
 
-bool D3D12RenderHardwareInterface::BuildPartitionedTopLevelAccelerationStructure(
-    ID3D12GraphicsCommandList7* commandList,
-    const RhiPartitionedTlasBuildCommandDesc& desc) const noexcept
+bool D3D12RenderHardwareInterface::BuildPartitionedTopLevelAccelerationStructure(ID3D12GraphicsCommandList7* commandList, const RhiPartitionedTlasBuildCommandDesc& desc) const noexcept
 {
 	return m_rayTracingServices->BuildPartitionedTopLevelAccelerationStructure(commandList, desc);
 }

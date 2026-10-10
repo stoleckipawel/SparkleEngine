@@ -20,9 +20,7 @@ private:
 	static RendererMemoryPressureLevel ClassifyPressure(float usageRatio) noexcept;
 	static RendererMemoryPressureLevel MaxPressure(RendererMemoryPressureLevel lhs, RendererMemoryPressureLevel rhs) noexcept;
 	static bool IsAtLeast(RendererMemoryPressureLevel value, RendererMemoryPressureLevel threshold) noexcept;
-	static TextureStreamingMemoryPolicySnapshot BuildTextureStreamingPolicy(
-	    RendererMemoryPressureLevel overallPressure,
-	    const std::vector<RendererMemoryCategoryPressure>& categoryPressure);
+	static TextureStreamingMemoryPolicySnapshot BuildTextureStreamingPolicy(RendererMemoryPressureLevel overallPressure, const std::vector<RendererMemoryCategoryPressure>& categoryPressure);
 	static SceneMemoryReport BuildSceneMemoryReport(const RhiMemoryUsageSnapshot& memoryUsage);
 	static bool HasReachedPollInterval(std::uint64_t frameIndex, std::uint64_t lastPollFrame, std::uint32_t pollIntervalFrames) noexcept;
 

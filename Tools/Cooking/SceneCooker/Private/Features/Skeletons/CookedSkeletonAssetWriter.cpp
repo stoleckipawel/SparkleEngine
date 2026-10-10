@@ -16,9 +16,7 @@ public:
 	static void StageSkeletonAsset(const CookedSkeletonAssetBuild& skeletonAsset, std::vector<Files::FilePublication>& outPublication);
 };
 
-void CookedSkeletonAssetWriter::StageSkeletonAssets(
-    const std::vector<CookedSkeletonAssetBuild>& skeletonAssets,
-    std::vector<Files::FilePublication>& outPublication)
+void CookedSkeletonAssetWriter::StageSkeletonAssets(const std::vector<CookedSkeletonAssetBuild>& skeletonAssets, std::vector<Files::FilePublication>& outPublication)
 {
 	for (const CookedSkeletonAssetBuild& skeletonAsset : skeletonAssets)
 	{
@@ -26,9 +24,7 @@ void CookedSkeletonAssetWriter::StageSkeletonAssets(
 	}
 }
 
-void CookedSkeletonAssetStager::StageSkeletonAsset(
-    const CookedSkeletonAssetBuild& skeletonAsset,
-    std::vector<Files::FilePublication>& outPublication)
+void CookedSkeletonAssetStager::StageSkeletonAsset(const CookedSkeletonAssetBuild& skeletonAsset, std::vector<Files::FilePublication>& outPublication)
 {
 	const std::filesystem::path outputPath = Paths::CookedSkeletonAsset(skeletonAsset.assetId);
 	const std::filesystem::path stagedOutputPath = Files::BuildTemporaryPath(outputPath, ".cook-generation");
@@ -44,8 +40,7 @@ void CookedSkeletonAssetStager::StageSkeletonAsset(
 
 	std::string errorMessage;
 	std::ofstream output;
-	if (!Files::TryOpenBinaryOutput(stagedOutputPath, output, errorMessage)
-	    || !Files::BinaryStreamWriter::WriteValue(output, header, errorMessage)
+	if (!Files::TryOpenBinaryOutput(stagedOutputPath, output, errorMessage) || !Files::BinaryStreamWriter::WriteValue(output, header, errorMessage)
 	    || !Files::BinaryStreamWriter::WriteArray(output, skeletonAsset.joints, errorMessage))
 	{
 		throw Diagnostics::Error(errorMessage);

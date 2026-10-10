@@ -12,6 +12,7 @@ class VulkanShaderModule final
 {
 public:
 	VulkanShaderModule() = default;
+
 	VulkanShaderModule(VulkanRhi& rhi, const RhiShaderStageDesc& desc, std::string_view pipelineName);
 	~VulkanShaderModule() noexcept;
 
@@ -21,6 +22,7 @@ public:
 	VulkanShaderModule& operator=(VulkanShaderModule&& other) noexcept;
 
 	bool IsValid() const noexcept { return m_module != VK_NULL_HANDLE; }
+
 	explicit operator bool() const noexcept { return IsValid(); }
 
 	VkPipelineShaderStageCreateInfo BuildStageCreateInfo() const noexcept;

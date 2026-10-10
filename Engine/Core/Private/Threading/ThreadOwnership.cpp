@@ -57,6 +57,7 @@ namespace Threading
 		    location.file_name(),
 		    location.line(),
 		    location.function_name());
+
 		Diagnostics::Fatal(LogThreadOwnership, location.file_name(), location.line(), message);
 	}
 }

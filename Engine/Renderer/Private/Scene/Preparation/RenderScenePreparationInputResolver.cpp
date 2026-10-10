@@ -28,10 +28,7 @@ RenderScenePreparationInputResolver::RenderScenePreparationInputResolver(GpuMesh
 {
 }
 
-void RenderScenePreparationInputResolver::Resolve(
-    RenderScene& scene,
-    RenderDeformationPreparation& deformationPreparation,
-    RenderScenePreparationRun& run)
+void RenderScenePreparationInputResolver::Resolve(RenderScene& scene, RenderDeformationPreparation& deformationPreparation, RenderScenePreparationRun& run)
 {
 	run.Lights = scene.GetLights();
 	run.PreparedScene.structuralRevision = scene.GetStructuralRevision();
@@ -66,18 +63,13 @@ ResolvedRenderPrimitive RenderScenePreparationInputResolver::ResolvePrimitive(
     PreparedRenderScene& preparedScene)
 {
 	if (!primitive.Dynamic.Object.IsValid() || !primitive.Static.Mesh.IsValid())
-		Diagnostics::Fatal(
-		    g_renderPreparationInputResolverLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Render scene primitive contains an invalid primitive or mesh identity.");
+		Diagnostics::Fatal(g_renderPreparationInputResolverLogger, __FILE__, __LINE__, "Render scene primitive contains an invalid primitive or mesh identity.");
 
 	const GpuMesh* gpuMesh = m_gpuMeshCache->Resolve(primitive.GpuMesh);
 	if (gpuMesh == nullptr || !gpuMesh->IsValid())
 		Diagnostics::Fatal(g_renderPreparationInputResolverLogger, __FILE__, __LINE__, "Resident render scene primitive has no GPU mesh.");
 
-	const std::uint32_t materialSlot =
-	    MaterialHandleResolver::ResolveSlot(primitive.Static.Material, materialGeneration, preparedScene.materials.size());
+	const std::uint32_t materialSlot = MaterialHandleResolver::ResolveSlot(primitive.Static.Material, materialGeneration, preparedScene.materials.size());
 	const MaterialData& material = preparedScene.materials[materialSlot];
 
 	MeshDraw draw;
@@ -113,9 +105,7 @@ void RenderScenePreparationInputResolver::ResolveInstanceGroups(const RenderScen
 	for (const RenderMeshInstanceGroupData& group : scene.GetInstanceGroups())
 	{
 		run.PreparedScene.instanceGroups.push_back(
-		    RenderMeshInstanceGroup{
-		        .groupKind = RenderMeshClassificationConversion::ToRenderMeshInstanceGroupKind(group.Kind),
-		        .instanceCount = group.InstanceCount});
+		    RenderMeshInstanceGroup{.groupKind = RenderMeshClassificationConversion::ToRenderMeshInstanceGroupKind(group.Kind), .instanceCount = group.InstanceCount});
 	}
 }
 

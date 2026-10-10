@@ -15,15 +15,9 @@ struct RhiTextureUploadDesc;
 class RendererTextureFactory final
 {
 public:
-	RendererTextureFactory(
-	    RhiResourceService& resourceService,
-	    RhiDescriptorService& descriptorService,
-	    RhiUploadService& uploadService) noexcept;
+	RendererTextureFactory(RhiResourceService& resourceService, RhiDescriptorService& descriptorService, RhiUploadService& uploadService) noexcept;
 
-	RendererTexture Create(
-	    const std::filesystem::path& texturePath,
-	    LoadedTextureData& loadedTexture,
-	    RenderCommandList& commandList) const;
+	RendererTexture Create(const std::filesystem::path& texturePath, LoadedTextureData& loadedTexture, RenderCommandList& commandList) const;
 	void Release(RendererTexture& texture) const noexcept;
 
 	static std::uint64_t CalculatePayloadBytes(const RhiTextureUploadDesc& textureUpload) noexcept;

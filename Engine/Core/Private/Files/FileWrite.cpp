@@ -7,11 +7,7 @@
 
 namespace Files
 {
-	static bool TryOpenOutput(
-	    const std::filesystem::path& path,
-	    std::ios::openmode mode,
-	    std::ofstream& output,
-	    std::string& outErrorMessage)
+	static bool TryOpenOutput(const std::filesystem::path& path, std::ios::openmode mode, std::ofstream& output, std::string& outErrorMessage)
 	{
 		std::error_code errorCode;
 		if (path.has_parent_path())

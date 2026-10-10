@@ -22,17 +22,9 @@ SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanPipelineLogger, "RHI.Vulkan.Pipeline"
 class VulkanPipelineImplementation final
 {
 public:
-	static std::string ToDebugName(const wchar_t* debugName)
-	{
-		return debugName != nullptr ? Strings::ToNarrow(debugName) : std::string{"VulkanPipeline"};
-	}
+	static std::string ToDebugName(const wchar_t* debugName) { return debugName != nullptr ? Strings::ToNarrow(debugName) : std::string{"VulkanPipeline"}; }
 
-	static VkStencilOpState BuildStencilFaceState(
-	    CompareOp compareOp,
-	    RhiStencilOp failOp,
-	    RhiStencilOp depthFailOp,
-	    RhiStencilOp passOp,
-	    const RhiStencilState& desc) noexcept
+	static VkStencilOpState BuildStencilFaceState(CompareOp compareOp, RhiStencilOp failOp, RhiStencilOp depthFailOp, RhiStencilOp passOp, const RhiStencilState& desc) noexcept
 	{
 		return VkStencilOpState{
 		    .failOp = VulkanTypeConversions::ToVkStencilOp(failOp),
@@ -46,11 +38,7 @@ public:
 
 	static void HandlePipelineCreateFailure(std::string_view debugName, const char* functionName, VkResult result)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanPipelineLogger,
-		    __FILE__,
-		    __LINE__,
-		    std::format("Failed to create Vulkan pipeline '{}': {}", debugName, VulkanResult::FormatFailure(functionName, result)));
+		Diagnostics::Fatal(g_vulkanPipelineLogger, __FILE__, __LINE__, std::format("Failed to create Vulkan pipeline '{}': {}", debugName, VulkanResult::FormatFailure(functionName, result)));
 	}
 
 	static VkFrontFace ToVkFrontFace(ERhiFrontFaceWinding winding) noexcept
@@ -144,6 +132,7 @@ VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const GraphicsPipelineDesc& desc)
 	for (std::uint32_t index = 0; index < desc.VertexInput.BindingCount; ++index)
 	{
 		const RhiVertexInputBinding& binding = desc.VertexInput.Bindings[index];
+
 		vertexBindings[index] = VkVertexInputBindingDescription{
 		    .binding = binding.Binding,
 		    .stride = binding.StrideInBytes,
@@ -153,6 +142,7 @@ VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const GraphicsPipelineDesc& desc)
 	for (std::uint32_t index = 0; index < desc.VertexInput.ElementCount; ++index)
 	{
 		const RhiVertexInputElement& element = desc.VertexInput.Elements[index];
+
 		vertexAttributes[index] = VkVertexInputAttributeDescription{
 		    .location = element.Location,
 		    .binding = element.Binding,
@@ -175,14 +165,8 @@ VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const GraphicsPipelineDesc& desc)
 	    .topology = VulkanTypeConversions::ToVkPrimitiveTopology(desc.PrimitiveTopology),
 	    .primitiveRestartEnable = VK_FALSE};
 
-	const VkPipelineViewportStateCreateInfo viewportState{
-	    .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-	    .pNext = nullptr,
-	    .flags = 0,
-	    .viewportCount = 1,
-	    .pViewports = nullptr,
-	    .scissorCount = 1,
-	    .pScissors = nullptr};
+	const VkPipelineViewportStateCreateInfo
+	    viewportState{.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO, .pNext = nullptr, .flags = 0, .viewportCount = 1, .pViewports = nullptr, .scissorCount = 1, .pScissors = nullptr};
 
 	const VkPipelineRasterizationStateCreateInfo rasterizationState{
 	    .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
@@ -214,6 +198,7 @@ VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const GraphicsPipelineDesc& desc)
 	for (std::uint32_t renderTargetIndex = 0; renderTargetIndex < desc.ColorAttachmentCount; ++renderTargetIndex)
 	{
 		const RhiBlendTargetState& blend = desc.Blend.Targets[desc.Blend.IndependentBlendEnable ? renderTargetIndex : 0];
+
 		blendAttachments[renderTargetIndex] = VkPipelineColorBlendAttachmentState{
 		    .blendEnable = blend.BlendEnable ? VK_TRUE : VK_FALSE,
 		    .srcColorBlendFactor = VulkanPipelineImplementation::ToVkBlendFactor(blend.SourceColor),
@@ -259,6 +244,7 @@ VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const GraphicsPipelineDesc& desc)
 	    .maxDepthBounds = 1.0f};
 
 	const std::array<VkDynamicState, 2> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+
 	const VkPipelineDynamicStateCreateInfo dynamicState{
 	    .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
 	    .pNext = nullptr,
@@ -278,8 +264,7 @@ VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const GraphicsPipelineDesc& desc)
 	    .colorAttachmentCount = desc.ColorAttachmentCount,
 	    .pColorAttachmentFormats = renderTargetFormats.data(),
 	    .depthAttachmentFormat = VulkanTypeConversions::ToVkFormat(desc.DepthStencilAttachmentFormat),
-	    .stencilAttachmentFormat =
-	        hasStencilFormat ? VulkanTypeConversions::ToVkFormat(desc.DepthStencilAttachmentFormat) : VK_FORMAT_UNDEFINED};
+	    .stencilAttachmentFormat = hasStencilFormat ? VulkanTypeConversions::ToVkFormat(desc.DepthStencilAttachmentFormat) : VK_FORMAT_UNDEFINED};
 
 	const VkGraphicsPipelineCreateInfo createInfo{
 	    .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -301,18 +286,14 @@ VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const GraphicsPipelineDesc& desc)
 	    .subpass = 0,
 	    .basePipelineHandle = VK_NULL_HANDLE,
 	    .basePipelineIndex = -1};
+
 	const VkResult result = vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &createInfo, nullptr, &m_pipeline);
 	if (!VulkanResult::Succeeded(result))
 	{
 		VulkanPipelineImplementation::HandlePipelineCreateFailure(debugName, "vkCreateGraphicsPipelines", result);
 	}
 
-	VulkanDebugNames::SetObjectName(
-	    rhi.GetSetDebugUtilsObjectName(),
-	    m_device,
-	    VK_OBJECT_TYPE_PIPELINE,
-	    reinterpret_cast<std::uint64_t>(m_pipeline),
-	    debugName);
+	VulkanDebugNames::SetObjectName(rhi.GetSetDebugUtilsObjectName(), m_device, VK_OBJECT_TYPE_PIPELINE, reinterpret_cast<std::uint64_t>(m_pipeline), debugName);
 }
 
 VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const ComputePipelineDesc& desc) :
@@ -327,6 +308,7 @@ VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const ComputePipelineDesc& desc) 
 
 	VulkanShaderModule computeShader(rhi, desc.ComputeShader, debugName);
 	const VkPipelineShaderStageCreateInfo shaderStage = computeShader.BuildStageCreateInfo();
+
 	const VkComputePipelineCreateInfo createInfo{
 	    .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
 	    .pNext = nullptr,
@@ -335,18 +317,14 @@ VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const ComputePipelineDesc& desc) 
 	    .layout = GetPipelineLayout(),
 	    .basePipelineHandle = VK_NULL_HANDLE,
 	    .basePipelineIndex = -1};
+
 	const VkResult result = vkCreateComputePipelines(m_device, VK_NULL_HANDLE, 1, &createInfo, nullptr, &m_pipeline);
 	if (!VulkanResult::Succeeded(result))
 	{
 		VulkanPipelineImplementation::HandlePipelineCreateFailure(debugName, "vkCreateComputePipelines", result);
 	}
 
-	VulkanDebugNames::SetObjectName(
-	    rhi.GetSetDebugUtilsObjectName(),
-	    m_device,
-	    VK_OBJECT_TYPE_PIPELINE,
-	    reinterpret_cast<std::uint64_t>(m_pipeline),
-	    debugName);
+	VulkanDebugNames::SetObjectName(rhi.GetSetDebugUtilsObjectName(), m_device, VK_OBJECT_TYPE_PIPELINE, reinterpret_cast<std::uint64_t>(m_pipeline), debugName);
 }
 
 VulkanPipeline::~VulkanPipeline() noexcept

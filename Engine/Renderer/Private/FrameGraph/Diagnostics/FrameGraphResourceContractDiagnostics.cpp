@@ -20,10 +20,7 @@ static bool ReportValidationFailure(std::string_view passName, std::string_view 
 	Diagnostics::Fatal(g_frameGraphContractLogger, __FILE__, __LINE__, logMessage);
 }
 
-bool FrameGraphResourceContractDiagnostics::ValidatePassDeclarations(
-    std::string_view passName,
-    EFrameGraphPassKind passKind,
-    const std::vector<PassResourceDeclaration>& declarations) noexcept
+bool FrameGraphResourceContractDiagnostics::ValidatePassDeclarations(std::string_view passName, EFrameGraphPassKind passKind, const std::vector<PassResourceDeclaration>& declarations) noexcept
 {
 	assert(IsValidFrameGraphPassKind(passKind));
 
@@ -45,10 +42,7 @@ bool FrameGraphResourceContractDiagnostics::ValidatePassDeclarations(
 	return true;
 }
 
-bool FrameGraphResourceContractDiagnostics::ValidatePassParameterBinding(
-    std::string_view passName,
-    const PassParameterDesc& parameter,
-    const PassParameterBinding& binding) noexcept
+bool FrameGraphResourceContractDiagnostics::ValidatePassParameterBinding(std::string_view passName, const PassParameterDesc& parameter, const PassParameterBinding& binding) noexcept
 {
 	if (parameter.Kind != ShaderParameterSemanticKind::AccelerationStructure)
 	{

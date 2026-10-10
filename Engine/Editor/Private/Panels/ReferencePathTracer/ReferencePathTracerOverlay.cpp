@@ -12,6 +12,7 @@
 #include <imgui.h>
 
 static constexpr std::array ProgressStateLabels = {"Inactive", "Resetting", "Accumulating", "Paused", "Unavailable", "Complete"};
+
 static constexpr std::array ProgressReasonLabels = {
     "None",
     "View changed",
@@ -39,10 +40,7 @@ static void RequestAction(ViewportRenderRequest& request, ViewportRenderAction a
 	++request.Generation;
 }
 
-void DrawReferencePathTracerOverlay(
-    const ViewportRenderProgress& progress,
-    ViewportRenderRequest& request,
-    ViewportOutputAction& outputAction) noexcept
+void DrawReferencePathTracerOverlay(const ViewportRenderProgress& progress, ViewportRenderRequest& request, ViewportOutputAction& outputAction) noexcept
 {
 	const bool unavailable = progress.State == ViewportRenderProgressState::Unavailable;
 	const bool paused = progress.State == ViewportRenderProgressState::Paused;
@@ -52,11 +50,13 @@ void DrawReferencePathTracerOverlay(
 	const char* stateLabel = stateIndex < ProgressStateLabels.size() ? ProgressStateLabels[stateIndex] : "Unknown";
 	const char* reasonLabel = reasonIndex < ProgressReasonLabels.size() ? ProgressReasonLabels[reasonIndex] : "Unknown reason";
 	const float overlayHeight = unavailable ? 118.0f : (complete ? 92.0f : 142.0f);
+
 	ImGui::BeginChild(
 	    "##ViewportRenderProgress",
 	    ImVec2(330.0f, overlayHeight),
 	    ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY,
 	    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
 	ImGui::TextUnformatted("Reference Path Tracer");
 
 	if (unavailable)
@@ -79,16 +79,9 @@ void DrawReferencePathTracerOverlay(
 	}
 	else
 	{
-		const float fraction = progress.TargetSamples == 0
-		    ? 0.0f
-		    : (std::min) (1.0f, static_cast<float>(progress.CompletedSamples) / static_cast<float>(progress.TargetSamples));
+		const float fraction = progress.TargetSamples == 0 ? 0.0f : (std::min) (1.0f, static_cast<float>(progress.CompletedSamples) / static_cast<float>(progress.TargetSamples));
 		char sampleLabel[64] = {};
-		std::snprintf(
-		    sampleLabel,
-		    sizeof(sampleLabel),
-		    "%llu / %llu SPP",
-		    static_cast<unsigned long long>(progress.CompletedSamples),
-		    static_cast<unsigned long long>(progress.TargetSamples));
+		std::snprintf(sampleLabel, sizeof(sampleLabel), "%llu / %llu SPP", static_cast<unsigned long long>(progress.CompletedSamples), static_cast<unsigned long long>(progress.TargetSamples));
 		ImGui::Text("%s%s", stateLabel, complete ? " - target prefix reached" : "");
 		ImGui::ProgressBar(fraction, ImVec2(-1.0f, 0.0f), sampleLabel);
 
@@ -147,10 +140,7 @@ void DrawReferencePathTracerOverlay(
 	if (ImGui::BeginPopup("Reference Path Tracer Details"))
 	{
 		ImGui::Text("State: %s", stateLabel);
-		ImGui::Text(
-		    "Committed prefix: %llu / %llu SPP",
-		    static_cast<unsigned long long>(progress.CompletedSamples),
-		    static_cast<unsigned long long>(progress.TargetSamples));
+		ImGui::Text("Committed prefix: %llu / %llu SPP", static_cast<unsigned long long>(progress.CompletedSamples), static_cast<unsigned long long>(progress.TargetSamples));
 		ImGui::Text("Last event: %s", reasonLabel);
 		ImGui::Text("Discarded prefix: %llu SPP", static_cast<unsigned long long>(progress.DiscardedSamples));
 		ImGui::Separator();

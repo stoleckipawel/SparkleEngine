@@ -32,8 +32,5 @@ public:
 	static VkBufferCreateInfo BuildBufferCreateInfo(const RhiBufferResourceDesc& desc, VkBufferUsageFlags extraUsage = 0) noexcept;
 	static VkImageCreateInfo BuildTextureCreateInfo(const RhiTextureResourceDesc& desc, VkImageUsageFlags extraUsage = 0) noexcept;
 	static VkImageAspectFlags ResolveAspectMask(PixelFormat format) noexcept;
-	static void ConfigurePartitionedTlasInput(
-	    const RhiPartitionedTlasDesc& desc,
-	    VkPartitionedAccelerationStructureInstancesInputNV& input,
-	    VkPartitionedAccelerationStructureFlagsNV& flags) noexcept;
+	static void ConfigurePartitionedTlasInput(const RhiPartitionedTlasDesc& desc, VkPartitionedAccelerationStructureInstancesInputNV& input, VkPartitionedAccelerationStructureFlagsNV& flags) noexcept;
 };

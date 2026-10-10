@@ -19,11 +19,7 @@ public:
 	static bool GeometryEquals(const RhiRayTracingGeometryDesc& left, const RhiRayTracingGeometryDesc& right) noexcept;
 	static std::uint64_t AlignRayTracingBufferSize(std::uint64_t sizeInBytes, std::uint64_t alignment) noexcept;
 	static bool IsSkinnedDraw(const MeshDraw& draw) noexcept;
-	static void ComputeSkinnedPositions(
-	    const PreparedRenderScene& preparedScene,
-	    const MeshDraw& draw,
-	    const GpuMesh& mesh,
-	    std::vector<DirectX::XMFLOAT3>& outPositions) noexcept;
+	static void ComputeSkinnedPositions(const PreparedRenderScene& preparedScene, const MeshDraw& draw, const GpuMesh& mesh, std::vector<DirectX::XMFLOAT3>& outPositions) noexcept;
 
 private:
 	static DirectX::XMFLOAT3 TransformSkinnedPosition(

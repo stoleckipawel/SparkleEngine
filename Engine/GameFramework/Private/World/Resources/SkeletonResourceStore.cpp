@@ -57,7 +57,5 @@ ECS::SkeletonEvaluationData SkeletonResourceStore::Resolve(SkeletonResourceHandl
 	if (!handle.IsValid() || handle.Slot >= m_entries.size())
 		return {};
 	const Entry& entry = m_entries[handle.Slot];
-	return entry.Generation == handle.Generation
-	    ? ECS::SkeletonEvaluationData{&entry.Resource, entry.BindLocalTransforms, entry.EvaluationOrder}
-	    : ECS::SkeletonEvaluationData{};
+	return entry.Generation == handle.Generation ? ECS::SkeletonEvaluationData{&entry.Resource, entry.BindLocalTransforms, entry.EvaluationOrder} : ECS::SkeletonEvaluationData{};
 }

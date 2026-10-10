@@ -9,11 +9,7 @@ bool VulkanDebugEvents::SupportsScopes(VkCommandBuffer commandBuffer, const Vulk
 	return commandBuffer != VK_NULL_HANDLE && functions.BeginLabel != nullptr && functions.EndLabel != nullptr;
 }
 
-void VulkanDebugEvents::BeginScope(
-    VkCommandBuffer commandBuffer,
-    const VulkanDebugEventFunctions& functions,
-    std::string_view label,
-    RhiDiagnosticLabelColor color) noexcept
+void VulkanDebugEvents::BeginScope(VkCommandBuffer commandBuffer, const VulkanDebugEventFunctions& functions, std::string_view label, RhiDiagnosticLabelColor color) noexcept
 {
 	if (!SupportsScopes(commandBuffer, functions))
 	{
@@ -33,11 +29,7 @@ void VulkanDebugEvents::EndScope(VkCommandBuffer commandBuffer, const VulkanDebu
 	}
 }
 
-void VulkanDebugEvents::InsertMarker(
-    VkCommandBuffer commandBuffer,
-    const VulkanDebugEventFunctions& functions,
-    std::string_view label,
-    RhiDiagnosticLabelColor color) noexcept
+void VulkanDebugEvents::InsertMarker(VkCommandBuffer commandBuffer, const VulkanDebugEventFunctions& functions, std::string_view label, RhiDiagnosticLabelColor color) noexcept
 {
 	if (commandBuffer == VK_NULL_HANDLE || functions.InsertLabel == nullptr)
 	{
@@ -55,9 +47,5 @@ VkDebugUtilsLabelEXT VulkanDebugEvents::BuildLabel(const char* label, RhiDiagnos
 	    .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
 	    .pNext = nullptr,
 	    .pLabelName = label,
-	    .color = {
-	        static_cast<float>(color.Red) / 255.0f,
-	        static_cast<float>(color.Green) / 255.0f,
-	        static_cast<float>(color.Blue) / 255.0f,
-	        static_cast<float>(color.Alpha) / 255.0f}};
+	    .color = {static_cast<float>(color.Red) / 255.0f, static_cast<float>(color.Green) / 255.0f, static_cast<float>(color.Blue) / 255.0f, static_cast<float>(color.Alpha) / 255.0f}};
 }

@@ -53,18 +53,14 @@ void RenderPassRuntimeCache::ReloadShaders()
 				HandleRuntimeCreationFailure("Shader runtime cache contains an empty shader holder.");
 			}
 
-			replacement->RuntimeStorageByShaderType.emplace(
-			    shaderType,
-			    activeHolder->CreateReplacement(*m_renderHardwareInterface, *replacement));
+			replacement->RuntimeStorageByShaderType.emplace(shaderType, activeHolder->CreateReplacement(*m_renderHardwareInterface, *replacement));
 		}
-		m_retiredGenerations.push_back(
-		    RetiredShaderRuntimeGeneration{.LastUse = CaptureLastSubmittedState(), .Runtime = std::move(m_activeGeneration)});
+		m_retiredGenerations.push_back(RetiredShaderRuntimeGeneration{.LastUse = CaptureLastSubmittedState(), .Runtime = std::move(m_activeGeneration)});
 		m_activeGeneration = std::move(replacement);
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		throw Diagnostics::Error(
-		    std::string("Shader runtime replacement validation failed; active generation remains unchanged. ") + error.what());
+		throw Diagnostics::Error(std::string("Shader runtime replacement validation failed; active generation remains unchanged. ") + error.what());
 	}
 }
 
@@ -92,26 +88,23 @@ void RenderPassRuntimeCache::ValidateGenerationContracts(const ShaderRuntimeGene
 		const GlobalShaderMapEntry* const entry = generation.Map.Find(registration.TypeId, generation.Target);
 		if (entry == nullptr)
 		{
-			throw Diagnostics::Error(
-			    std::format("Shader '{}' is missing from the active-target global shader map.", registration.ShaderName));
+			throw Diagnostics::Error(std::format("Shader '{}' is missing from the active-target global shader map.", registration.ShaderName));
 		}
 
 		const PassParameterLayout parameterLayout = BuildShaderParameterLayout(registration);
 		const std::uint64_t expectedParameterSignature = BuildShaderParameterSignature(parameterLayout);
-		if (generation.Map.ResolveString(entry->ShaderName) != registration.ShaderName
-		    || generation.Map.ResolveString(entry->EntryPoint) != registration.EntryPoint || entry->Stage != registration.Stage
-		    || entry->Features != registration.Features || entry->RayPayloadSizeInBytes != registration.RayTracing.PayloadSizeInBytes
-		    || entry->RayAttributeSizeInBytes != registration.RayTracing.AttributeSizeInBytes
-		    || entry->MinimumRayRecursionDepth != registration.RayTracing.MinimumRecursionDepth
-		    || entry->LocalRecordSizeInBytes != registration.RayTracing.LocalRecordSizeInBytes
-		    || entry->LocalRecordSignature != registration.RayTracing.LocalRecordSignature
+		if (generation.Map.ResolveString(entry->ShaderName) != registration.ShaderName || generation.Map.ResolveString(entry->EntryPoint) != registration.EntryPoint
+		    || entry->Stage != registration.Stage || entry->Features != registration.Features || entry->RayPayloadSizeInBytes != registration.RayTracing.PayloadSizeInBytes
+		    || entry->RayAttributeSizeInBytes != registration.RayTracing.AttributeSizeInBytes || entry->MinimumRayRecursionDepth != registration.RayTracing.MinimumRecursionDepth
+		    || entry->LocalRecordSizeInBytes != registration.RayTracing.LocalRecordSizeInBytes || entry->LocalRecordSignature != registration.RayTracing.LocalRecordSignature
 		    || entry->ParameterSignature != expectedParameterSignature)
 		{
-			throw Diagnostics::Error(std::format(
-			    "Shader '{}' map entry does not match its registered contract (parameter signature map={:016X}, runtime={:016X}).",
-			    registration.ShaderName,
-			    entry->ParameterSignature,
-			    expectedParameterSignature));
+			throw Diagnostics::Error(
+			    std::format(
+			        "Shader '{}' map entry does not match its registered contract (parameter signature map={:016X}, runtime={:016X}).",
+			        registration.ShaderName,
+			        entry->ParameterSignature,
+			        expectedParameterSignature));
 		}
 	}
 }
@@ -119,10 +112,7 @@ void RenderPassRuntimeCache::ValidateGenerationContracts(const ShaderRuntimeGene
 void RenderPassRuntimeCache::PollRetiredGenerations() noexcept
 {
 	m_retiredGenerations.erase(
-	    std::remove_if(
-	        m_retiredGenerations.begin(),
-	        m_retiredGenerations.end(),
-	        [this](const RetiredShaderRuntimeGeneration& generation) noexcept { return IsComplete(generation.LastUse); }),
+	    std::remove_if(m_retiredGenerations.begin(), m_retiredGenerations.end(), [this](const RetiredShaderRuntimeGeneration& generation) noexcept { return IsComplete(generation.LastUse); }),
 	    m_retiredGenerations.end());
 }
 

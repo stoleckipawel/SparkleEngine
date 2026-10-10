@@ -19,7 +19,4 @@ enum class SceneUpscalingMethod : std::uint8_t
 
 RenderViewPresentationDomain ResolveRenderViewPresentationDomain(RenderViewMode viewMode);
 SceneUpscalingMethod ResolveSceneUpscalingMethod(RenderViewMode viewMode);
-RenderViewportExtent ResolveSceneRenderExtent(
-    RenderViewMode viewMode,
-    RenderViewportExtent outputExtent,
-    RenderViewportExtent configuredRenderExtent);
+RenderViewportExtent ResolveSceneRenderExtent(RenderViewMode viewMode, RenderViewportExtent outputExtent, RenderViewportExtent configuredRenderExtent);

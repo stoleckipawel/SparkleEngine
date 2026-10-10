@@ -88,11 +88,7 @@ namespace SparkleLauncher
 	void MarkOperationStarted(OperationRecord& operation, std::filesystem::path logPath = {});
 	void MarkOperationFinished(OperationRecord& operation, OperationStatus status, std::optional<int> exitCode = std::nullopt);
 	void SetOperationFailure(OperationRecord& operation, OperationProblemKind kind, std::string summary, std::string expectedAction);
-	void SetProcessOperationFailure(
-	    OperationRecord& operation,
-	    Process::ChildProcessStartFailure startFailure,
-	    std::string summary,
-	    std::string retryAction);
+	void SetProcessOperationFailure(OperationRecord& operation, Process::ChildProcessStartFailure startFailure, std::string summary, std::string retryAction);
 	std::string ToString(OperationStatus status);
 	std::string ToString(OperationDestructiveScope scope);
 	std::string ToString(OperationProblemKind kind);

@@ -25,6 +25,7 @@ public:
 	VkDescriptorSet AllocateSet(VkDescriptorSetLayout layout, std::span<const VkDescriptorPoolSize> requirements) noexcept;
 
 	std::uint32_t GetCapacity() const noexcept { return DescriptorSetCapacity; }
+
 	VkDescriptorPool GetNativePool() const noexcept { return m_pages.front().Pool; }
 
 private:

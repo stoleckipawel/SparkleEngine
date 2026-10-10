@@ -89,8 +89,7 @@ static constexpr std::array DefaultTextures = {
 
 static void AppendRequest(const DefaultTextureCookDesc& description, TextureCookRequestSet& requestSet)
 {
-	const std::filesystem::path sourcePath =
-	    (Filesystem::GetEnginePath() / std::filesystem::path(description.SourceRelativePath)).lexically_normal();
+	const std::filesystem::path sourcePath = (Filesystem::GetEnginePath() / std::filesystem::path(description.SourceRelativePath)).lexically_normal();
 	std::error_code errorCode;
 	if (!std::filesystem::exists(sourcePath, errorCode))
 	{

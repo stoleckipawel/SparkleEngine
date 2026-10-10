@@ -12,10 +12,7 @@
 
 #include <format>
 
-FrameGraphRecordingChunkRecorder::FrameGraphRecordingChunkRecorder(
-    const FrameGraph& frameGraph,
-    const FrameGraphPlan& plan,
-    FrameExecutionDiagnostics& frameDiagnostics) noexcept :
+FrameGraphRecordingChunkRecorder::FrameGraphRecordingChunkRecorder(const FrameGraph& frameGraph, const FrameGraphPlan& plan, FrameExecutionDiagnostics& frameDiagnostics) noexcept :
     m_frameGraph(frameGraph),
     m_plan(plan),
     m_frameDiagnostics(frameDiagnostics)
@@ -46,17 +43,12 @@ ScopedGpuScope FrameGraphRecordingChunkRecorder::BeginChunkScope(const Recording
 		return {};
 	}
 
-	const std::string chunkLabel =
-	    std::format("GPU Frame/{}/Batch {}/RecordingChunk {}", RhiQueueTypeToString(chunk.Queue), chunk.SubmissionOrder.Batch, chunk.Index);
+	const std::string chunkLabel = std::format("GPU Frame/{}/Batch {}/RecordingChunk {}", RhiQueueTypeToString(chunk.Queue), chunk.SubmissionOrder.Batch, chunk.Index);
 	const RhiDiagnosticLabelColor color{.Red = 180, .Green = 200, .Blue = 220, .Alpha = 255};
 	return m_frameDiagnostics.BeginGpuScope(commands, chunkLabel, color);
 }
 
-void FrameGraphRecordingChunkRecorder::RecordGroup(
-    const RecordingGroup& group,
-    RenderCommandList& commandList,
-    RenderCommandContext& commands,
-    FrameGraphExecutionDiagnostics& graphDiagnostics) const
+void FrameGraphRecordingChunkRecorder::RecordGroup(const RecordingGroup& group, RenderCommandList& commandList, RenderCommandContext& commands, FrameGraphExecutionDiagnostics& graphDiagnostics) const
 {
 	for (std::uint32_t passOffset = 0; passOffset < group.PassCount; ++passOffset)
 	{
@@ -64,11 +56,7 @@ void FrameGraphRecordingChunkRecorder::RecordGroup(
 	}
 }
 
-void FrameGraphRecordingChunkRecorder::RecordPass(
-    FrameGraphPassIndex passIndex,
-    RenderCommandList& commandList,
-    RenderCommandContext& commands,
-    FrameGraphExecutionDiagnostics& graphDiagnostics) const
+void FrameGraphRecordingChunkRecorder::RecordPass(FrameGraphPassIndex passIndex, RenderCommandList& commandList, RenderCommandContext& commands, FrameGraphExecutionDiagnostics& graphDiagnostics) const
 {
 	const FrameGraphPassNode& passRecord = m_plan.passes[passIndex];
 	TrackPassResources(passRecord, commandList);

@@ -39,8 +39,7 @@ public:
 			throw Diagnostics::Error("Scene asset reference contains multiple catalog separators.");
 
 		SceneAssetId assetId;
-		assetId.value =
-		    Strings::TrimCopy(separator == std::string::npos ? std::string_view(value) : std::string_view(value).substr(0, separator));
+		assetId.value = Strings::TrimCopy(separator == std::string::npos ? std::string_view(value) : std::string_view(value).substr(0, separator));
 		if (separator != std::string::npos)
 		{
 			assetId.catalogValue = Strings::TrimCopy(std::string_view(value).substr(separator + 1u));
@@ -50,10 +49,7 @@ public:
 		levelDesc.sceneAssetIds.push_back(std::move(assetId));
 	}
 
-	static void ParseField(
-	    LevelParsing::LevelFileSection currentSection,
-	    const LevelParsing::ParsedLevelLine& parsedLine,
-	    LevelDesc& levelDesc)
+	static void ParseField(LevelParsing::LevelFileSection currentSection, const LevelParsing::ParsedLevelLine& parsedLine, LevelDesc& levelDesc)
 	{
 		switch (currentSection)
 		{

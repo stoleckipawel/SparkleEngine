@@ -89,8 +89,7 @@ namespace SparkleLauncher
 	std::filesystem::path GetBuildSolutionPath(const std::filesystem::path& repositoryRoot)
 	{
 		const Filesystem::WorkspaceOutputPaths workspaceOutputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
-		const std::filesystem::path solutionBasePath =
-		    workspaceOutputs.BuildRoot / ReadRootCMakeProjectName(repositoryRoot).value_or("Sparkle");
+		const std::filesystem::path solutionBasePath = workspaceOutputs.BuildRoot / ReadRootCMakeProjectName(repositoryRoot).value_or("Sparkle");
 		std::filesystem::path candidate = solutionBasePath;
 		candidate += ".sln";
 		if (std::filesystem::exists(candidate))

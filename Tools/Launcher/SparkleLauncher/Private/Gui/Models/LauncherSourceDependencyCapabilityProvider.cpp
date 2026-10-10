@@ -36,6 +36,7 @@ namespace SparkleLauncher
 
 			const std::string capabilityId = SourceDependencyCapabilityId(dependency.Id);
 			dependencyCapabilityIds.push_back(capabilityId);
+
 			error = registry.Register(
 			    {capabilityId,
 			        {std::string(LauncherCapabilityId::HostTools)},
@@ -48,13 +49,11 @@ namespace SparkleLauncher
 
 				        LauncherOperationRequest syncRequest = BuildQuickStartOperationRequest(request, "workspace.sync-code");
 				        syncRequest.SourceDependencyId = QString::fromStdString(dependency.Id);
-				        const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation(
-				            "workspace.sync-code",
-				            LauncherOperationRequestMapping::BuildWorkspace(syncRequest));
-				        return plan.CanRun
-				            ? LauncherCapabilityEvaluation::RunOperation(std::move(syncRequest))
-				            : LauncherCapabilityEvaluation::DependenciesRequired(BuildCapabilityReadinessSummary(plan.ReadinessMessages));
+				        const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation("workspace.sync-code", LauncherOperationRequestMapping::BuildWorkspace(syncRequest));
+				        return plan.CanRun ? LauncherCapabilityEvaluation::RunOperation(std::move(syncRequest))
+				                           : LauncherCapabilityEvaluation::DependenciesRequired(BuildCapabilityReadinessSummary(plan.ReadinessMessages));
 			        }});
+
 			if (!error.empty())
 			{
 				return error;
@@ -67,9 +66,8 @@ namespace SparkleLauncher
 		        [dependencyCacheRoot]()
 		        {
 			        const SourceDependencyInventoryStatus status = InspectSourceDependencyCache(dependencyCacheRoot);
-			        return status.AllEnabledDependenciesReady
-			            ? LauncherCapabilityEvaluation::Ready()
-			            : LauncherCapabilityEvaluation::DependenciesRequired(BuildCapabilityReadinessSummary(status.ReadinessMessages));
+			        return status.AllEnabledDependenciesReady ? LauncherCapabilityEvaluation::Ready()
+			                                                  : LauncherCapabilityEvaluation::DependenciesRequired(BuildCapabilityReadinessSummary(status.ReadinessMessages));
 		        }});
 	}
 }

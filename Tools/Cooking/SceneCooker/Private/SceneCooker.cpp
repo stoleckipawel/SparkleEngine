@@ -85,9 +85,7 @@ void SceneCooker::BuildManifest(const SourceImportOutput& importOutput, CookedSc
 	SceneCookPipeline::FinalizeManifestHeader(outBuild);
 }
 
-void SceneCooker::StageManifestsAndRegistry(
-    std::span<const CookedSceneBuild* const> builds,
-    std::vector<Files::FilePublication>& outPublication)
+void SceneCooker::StageManifestsAndRegistry(std::span<const CookedSceneBuild* const> builds, std::vector<Files::FilePublication>& outPublication)
 {
 	for (const CookedSceneBuild* build : builds)
 	{
@@ -116,8 +114,7 @@ void SceneCookPipeline::StageManifest(const CookedSceneBuild& build, std::vector
 	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialAssetReferences, errorMessage)
 	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.instances, errorMessage)
 	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.instanceGroups, errorMessage)
-	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.cameras, errorMessage)
-	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.lights, errorMessage)
+	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.cameras, errorMessage) || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.lights, errorMessage)
 	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.skeletonRefs, errorMessage)
 	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.animationReferences, errorMessage)
 	    || !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.morphWeights, errorMessage)
@@ -156,9 +153,7 @@ std::string SceneCookPipeline::BuildSceneAssetId(const std::filesystem::path& re
 
 	if (!relativePath)
 	{
-		throw Diagnostics::Error(
-		    "Source scene path must be under a Sparkle mesh asset root to derive a stable scene asset id: '"
-		    + resolvedSourceScenePath.string() + "'.");
+		throw Diagnostics::Error("Source scene path must be under a Sparkle mesh asset root to derive a stable scene asset id: '" + resolvedSourceScenePath.string() + "'.");
 	}
 
 	std::filesystem::path sceneAssetPath(relativePath->generic_string());
@@ -187,12 +182,10 @@ void SceneCookPipeline::StageRegistry(std::span<const CookedSceneBuild* const> b
 
 std::filesystem::path SceneCookPipeline::ResolveManifestRelativePath(const CookedSceneBuild& build)
 {
-	const std::optional<std::filesystem::path> relativePath =
-	    Paths::TryMakeRelativeUnderRoot(build.identity.manifestPath, Filesystem::GetCookedSceneManifestRootPath());
+	const std::optional<std::filesystem::path> relativePath = Paths::TryMakeRelativeUnderRoot(build.identity.manifestPath, Filesystem::GetCookedSceneManifestRootPath());
 	if (!relativePath)
 	{
-		throw Diagnostics::Error(
-		    "Failed to derive a relative cooked scene manifest path for scene asset id '" + build.identity.assetId + "'.");
+		throw Diagnostics::Error("Failed to derive a relative cooked scene manifest path for scene asset id '" + build.identity.assetId + "'.");
 	}
 
 	return *relativePath;

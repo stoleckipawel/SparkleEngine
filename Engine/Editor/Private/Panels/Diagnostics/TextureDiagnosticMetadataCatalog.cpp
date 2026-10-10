@@ -35,8 +35,7 @@ public:
 
 	static std::optional<std::filesystem::path> FindLatestTextureCookSummary()
 	{
-		const Filesystem::WorkspaceOutputPaths workspaceOutputs =
-		    Filesystem::ResolveWorkspaceOutputPaths(Filesystem::GetWorkspaceRootPath());
+		const Filesystem::WorkspaceOutputPaths workspaceOutputs = Filesystem::ResolveWorkspaceOutputPaths(Filesystem::GetWorkspaceRootPath());
 		const std::filesystem::path summaryRoot = workspaceOutputs.DiagnosticsRoot / "cook" / "Summaries";
 		std::error_code errorCode;
 		if (!std::filesystem::exists(summaryRoot, errorCode) || errorCode)
@@ -240,8 +239,7 @@ public:
 
 std::optional<TextureDiagnosticMetadata> FindTextureDiagnosticMetadata(const TextureDiagnosticsRow& row)
 {
-	static const TextureDiagnosticMetadataCatalogImplementation::TextureDiagnosticMetadataCache metadata =
-	    TextureDiagnosticMetadataCatalogImplementation::LoadTextureDiagnosticMetadata();
+	static const TextureDiagnosticMetadataCatalogImplementation::TextureDiagnosticMetadataCache metadata = TextureDiagnosticMetadataCatalogImplementation::LoadTextureDiagnosticMetadata();
 	const std::filesystem::path rowPath{row.Key};
 	if (const auto metadataIt = metadata.ByCookedPath.find(rowPath.generic_string()); metadataIt != metadata.ByCookedPath.end())
 	{

@@ -18,17 +18,10 @@ public:
 private:
 	static bool HasText(const char* text) noexcept;
 	static bool IsAllProjects(std::string_view projectName) noexcept;
-	static AssetCookerServiceResult Finish(
-	    bool succeeded,
-	    AssetCookerDiagnostics& diagnostics,
-	    std::vector<AssetCookerOutputRecord> outputs = {});
+	static AssetCookerServiceResult Finish(bool succeeded, AssetCookerDiagnostics& diagnostics, std::vector<AssetCookerOutputRecord> outputs = {});
 
 	bool ResolveRepositoryRoot(AssetCookerDiagnostics& diagnostics, std::filesystem::path& outRepositoryRoot) const;
-	bool ResolveProjects(
-	    const std::filesystem::path& repositoryRoot,
-	    std::string_view projectName,
-	    AssetCookerDiagnostics& diagnostics,
-	    std::vector<std::string>& outProjects) const;
+	bool ResolveProjects(const std::filesystem::path& repositoryRoot, std::string_view projectName, AssetCookerDiagnostics& diagnostics, std::vector<std::string>& outProjects) const;
 	bool CookProjects(
 	    const std::filesystem::path& repositoryRoot,
 	    std::string_view toolProfile,

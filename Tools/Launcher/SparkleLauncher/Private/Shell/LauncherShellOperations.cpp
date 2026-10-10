@@ -207,11 +207,7 @@ namespace SparkleLauncher
 		return operation.Status == OperationStatus::Succeeded ? 0 : 1;
 	}
 
-	int RunLauncherShellOperation(
-	    LauncherShellModel& model,
-	    const LauncherShellArguments& arguments,
-	    std::ostream& output,
-	    std::ostream& error)
+	int RunLauncherShellOperation(LauncherShellModel& model, const LauncherShellArguments& arguments, std::ostream& output, std::ostream& error)
 	{
 		NativeProcessRunner processRunner;
 		if (FindBuildWorkspaceOperationDefinition(arguments.RunOperationId).has_value())
@@ -220,6 +216,7 @@ namespace SparkleLauncher
 			    PlanBuildWorkspaceOperation(arguments.RunOperationId, BuildWorkspaceShellRequest(model)),
 			    processRunner,
 			    [&output](std::string_view text) { output << text; });
+
 			return ReportLauncherShellOperationResult(operation, output, error);
 		}
 
@@ -229,6 +226,7 @@ namespace SparkleLauncher
 			    PlanCookOperation(arguments.RunOperationId, BuildCookShellRequest(model, arguments)),
 			    processRunner,
 			    [&output](std::string_view text) { output << text; });
+
 			return ReportLauncherShellOperationResult(operation, output, error);
 		}
 
@@ -238,14 +236,13 @@ namespace SparkleLauncher
 			    PlanLevelOperation(arguments.RunOperationId, BuildLevelShellRequest(model)),
 			    processRunner,
 			    [&output](std::string_view text) { output << text; });
+
 			return ReportLauncherShellOperationResult(operation, output, error);
 		}
 
 		if (FindMaintenanceOperationDefinition(arguments.RunOperationId).has_value())
 		{
-			const OperationRecord operation = RunMaintenanceOperationPlan(
-			    PlanMaintenanceOperation(arguments.RunOperationId, BuildMaintenanceShellRequest(model, arguments)),
-			    processRunner);
+			const OperationRecord operation = RunMaintenanceOperationPlan(PlanMaintenanceOperation(arguments.RunOperationId, BuildMaintenanceShellRequest(model, arguments)), processRunner);
 			return ReportLauncherShellOperationResult(operation, output, error);
 		}
 

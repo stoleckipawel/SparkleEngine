@@ -79,11 +79,7 @@ void TextureAssetCooker::Cook(const TextureCookRequest& request, TextureCookMemo
 		}
 
 		if (!Files::BinaryStreamWriter::WriteValue(output, header, fileError)
-		    || !Files::BinaryStreamWriter::WriteBytes(
-		        output,
-		        mipHeaders.data(),
-		        sizeof(CookedTextureMipHeader) * mipHeaders.size(),
-		        fileError))
+		    || !Files::BinaryStreamWriter::WriteBytes(output, mipHeaders.data(), sizeof(CookedTextureMipHeader) * mipHeaders.size(), fileError))
 		{
 			throw Diagnostics::Error(fileError);
 		}

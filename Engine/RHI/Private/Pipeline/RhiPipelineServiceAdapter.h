@@ -7,8 +7,7 @@
 
 #include <memory>
 
-template <typename BackendRhi, typename BackendPipeline, typename BackendRayTracingPipeline, typename BindingLayoutCompiler>
-class RhiPipelineServiceAdapter final : public RhiPipelineService
+template <typename BackendRhi, typename BackendPipeline, typename BackendRayTracingPipeline, typename BindingLayoutCompiler> class RhiPipelineServiceAdapter final : public RhiPipelineService
 {
 public:
 	explicit RhiPipelineServiceAdapter(BackendRhi& rhi) noexcept :

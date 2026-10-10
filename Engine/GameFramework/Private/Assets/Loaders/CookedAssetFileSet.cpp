@@ -22,6 +22,7 @@ namespace Assets
 	struct CookedAssetFileSet::File final
 	{
 		File() = default;
+
 		~File() noexcept
 		{
 #if defined(_WIN32)
@@ -53,21 +54,10 @@ namespace Assets
 	{
 		auto mappedFile = std::make_unique<File>();
 #if defined(_WIN32)
-		const HANDLE fileHandle = CreateFileW(
-		    path.c_str(),
-		    GENERIC_READ,
-		    FILE_SHARE_READ,
-		    nullptr,
-		    OPEN_EXISTING,
-		    FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,
-		    nullptr);
+		const HANDLE fileHandle = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
 		if (fileHandle == INVALID_HANDLE_VALUE)
 		{
-			throw Diagnostics::Error(
-			    std::format(
-			        "Could not open cooked asset '{}': {}",
-			        path.generic_string(),
-			        CookedAssetFileSetDetail::FormatSystemError(GetLastError())));
+			throw Diagnostics::Error(std::format("Could not open cooked asset '{}': {}", path.generic_string(), CookedAssetFileSetDetail::FormatSystemError(GetLastError())));
 		}
 
 		LARGE_INTEGER fileSize{};
@@ -75,17 +65,12 @@ namespace Assets
 		{
 			const unsigned long error = GetLastError();
 			CloseHandle(fileHandle);
-			throw Diagnostics::Error(
-			    std::format(
-			        "Could not determine the size of cooked asset '{}': {}",
-			        path.generic_string(),
-			        CookedAssetFileSetDetail::FormatSystemError(error)));
+			throw Diagnostics::Error(std::format("Could not determine the size of cooked asset '{}': {}", path.generic_string(), CookedAssetFileSetDetail::FormatSystemError(error)));
 		}
 		if (fileSize.QuadPart <= 0 || static_cast<unsigned long long>(fileSize.QuadPart) > (std::numeric_limits<std::size_t>::max)())
 		{
 			CloseHandle(fileHandle);
-			throw Diagnostics::Error(
-			    std::format("Cooked asset '{}' has an unsupported empty or oversized payload.", path.generic_string()));
+			throw Diagnostics::Error(std::format("Cooked asset '{}' has an unsupported empty or oversized payload.", path.generic_string()));
 		}
 
 		const HANDLE mappingHandle = CreateFileMappingW(fileHandle, nullptr, PAGE_READONLY, 0, 0, nullptr);
@@ -93,11 +78,7 @@ namespace Assets
 		{
 			const unsigned long error = GetLastError();
 			CloseHandle(fileHandle);
-			throw Diagnostics::Error(
-			    std::format(
-			        "Could not map cooked asset '{}': {}",
-			        path.generic_string(),
-			        CookedAssetFileSetDetail::FormatSystemError(error)));
+			throw Diagnostics::Error(std::format("Could not map cooked asset '{}': {}", path.generic_string(), CookedAssetFileSetDetail::FormatSystemError(error)));
 		}
 
 		void* const data = MapViewOfFile(mappingHandle, FILE_MAP_READ, 0, 0, 0);
@@ -106,11 +87,7 @@ namespace Assets
 		CloseHandle(fileHandle);
 		if (data == nullptr)
 		{
-			throw Diagnostics::Error(
-			    std::format(
-			        "Could not map cooked asset '{}': {}",
-			        path.generic_string(),
-			        CookedAssetFileSetDetail::FormatSystemError(mapError)));
+			throw Diagnostics::Error(std::format("Could not map cooked asset '{}': {}", path.generic_string(), CookedAssetFileSetDetail::FormatSystemError(mapError)));
 		}
 
 		mappedFile->Data = data;
@@ -120,8 +97,7 @@ namespace Assets
 		const int descriptor = open(path.c_str(), O_RDONLY);
 		if (descriptor < 0)
 		{
-			throw Diagnostics::Error(
-			    std::format("Could not open cooked asset '{}': {}", path.generic_string(), std::generic_category().message(errno)));
+			throw Diagnostics::Error(std::format("Could not open cooked asset '{}': {}", path.generic_string(), std::generic_category().message(errno)));
 		}
 
 		struct stat status{};
@@ -129,17 +105,12 @@ namespace Assets
 		{
 			const int error = errno;
 			close(descriptor);
-			throw Diagnostics::Error(
-			    std::format(
-			        "Could not determine the size of cooked asset '{}': {}",
-			        path.generic_string(),
-			        std::generic_category().message(error)));
+			throw Diagnostics::Error(std::format("Could not determine the size of cooked asset '{}': {}", path.generic_string(), std::generic_category().message(error)));
 		}
 		if (status.st_size <= 0 || static_cast<unsigned long long>(status.st_size) > (std::numeric_limits<std::size_t>::max)())
 		{
 			close(descriptor);
-			throw Diagnostics::Error(
-			    std::format("Cooked asset '{}' has an unsupported empty or oversized payload.", path.generic_string()));
+			throw Diagnostics::Error(std::format("Cooked asset '{}' has an unsupported empty or oversized payload.", path.generic_string()));
 		}
 
 		const std::size_t fileSize = static_cast<std::size_t>(status.st_size);
@@ -148,8 +119,7 @@ namespace Assets
 		close(descriptor);
 		if (data == MAP_FAILED)
 		{
-			throw Diagnostics::Error(
-			    std::format("Could not map cooked asset '{}': {}", path.generic_string(), std::generic_category().message(mapError)));
+			throw Diagnostics::Error(std::format("Could not map cooked asset '{}': {}", path.generic_string(), std::generic_category().message(mapError)));
 		}
 
 		mappedFile->Data = data;
@@ -181,8 +151,7 @@ namespace Assets
 		const auto file = m_files.find(path);
 		if (file == m_files.end())
 		{
-			throw Diagnostics::Error(
-			    std::format("Cooked asset '{}' was not retained by the scene-load transaction.", path.generic_string()));
+			throw Diagnostics::Error(std::format("Cooked asset '{}' was not retained by the scene-load transaction.", path.generic_string()));
 		}
 		return {static_cast<const std::uint8_t*>(file->second->Data), file->second->Size};
 	}

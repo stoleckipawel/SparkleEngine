@@ -21,7 +21,9 @@ public:
 	RenderViewCameraData UpdateCamera(const CameraInputIntent& intent, float deltaSeconds, RenderViewportExtent extent) noexcept;
 
 	const EditorViewportSettingsState& GetSettings() const noexcept { return m_settings.GetState(); }
+
 	RenderViewMode GetViewMode() const noexcept { return m_viewMode; }
+
 	void SetMoveSpeed(float speedMetersPerSecond) noexcept;
 	void SetRotationSpeed(float degreesPerPixel) noexcept;
 	void SetInvertY(bool invertY) noexcept;

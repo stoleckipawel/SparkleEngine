@@ -55,12 +55,10 @@ struct TaskExecutor::Implementation::Runtime final
 	Runtime(const Runtime&) = delete;
 	Runtime& operator=(const Runtime&) = delete;
 
-	std::shared_ptr<TaskExecution::State> Launch(
-	    const CompiledTaskGraph& graph,
-	    TaskExecutionContext context,
-	    const std::shared_ptr<TaskScope::State>& scope);
+	std::shared_ptr<TaskExecution::State> Launch(const CompiledTaskGraph& graph, TaskExecutionContext context, const std::shared_ptr<TaskScope::State>& scope);
 	bool Shutdown(TaskExecutorShutdownMode mode) noexcept;
 	std::uint32_t GetWorkerCount(TaskLane lane) const noexcept;
+
 	const TaskExecutorConfig& GetConfig() const noexcept { return m_config; }
 
 	void Enqueue(ReadyTask task, TaskWorker* preferredWorker, TaskLane lane);
@@ -87,23 +85,11 @@ private:
 	    const std::shared_ptr<TaskScope::State>& scope,
 	    const std::shared_ptr<TaskExecution::State>& execution,
 	    std::uint64_t generation) const;
-	bool ValidateWorkerLanes(
-	    const CompiledTaskGraph& graph,
-	    const std::shared_ptr<TaskExecution::State>& execution,
-	    std::uint64_t generation) const;
-	bool RegisterScopedExecution(
-	    const std::shared_ptr<TaskScope::State>& scope,
-	    const std::shared_ptr<TaskExecution::State>& execution,
-	    std::uint64_t generation) const;
+	bool ValidateWorkerLanes(const CompiledTaskGraph& graph, const std::shared_ptr<TaskExecution::State>& execution, std::uint64_t generation) const;
+	bool RegisterScopedExecution(const std::shared_ptr<TaskScope::State>& scope, const std::shared_ptr<TaskExecution::State>& execution, std::uint64_t generation) const;
 	bool AdmitExecution(const std::shared_ptr<TaskExecution::State>& execution, std::uint64_t generation);
-	void StartExecution(
-	    const CompiledTaskGraph& graph,
-	    TaskExecutionContext context,
-	    const std::shared_ptr<TaskExecution::State>& execution);
-	void ExecuteSerial(
-	    const CompiledTaskGraph& graph,
-	    TaskExecutionContext& context,
-	    const std::shared_ptr<TaskExecution::State>& execution);
+	void StartExecution(const CompiledTaskGraph& graph, TaskExecutionContext context, const std::shared_ptr<TaskExecution::State>& execution);
+	void ExecuteSerial(const CompiledTaskGraph& graph, TaskExecutionContext& context, const std::shared_ptr<TaskExecution::State>& execution);
 	void AddWorkers(TaskLane lane, std::uint32_t count);
 	void StartWorkers();
 	bool TryPopLocal(TaskWorker& worker, ReadyTask& task);

@@ -40,6 +40,7 @@ class SPARKLE_RHI_API RenderMemoryDiagnostics
 {
 public:
 	virtual ~RenderMemoryDiagnostics() noexcept = default;
+
 	RenderMemoryDiagnostics(const RenderMemoryDiagnostics&) = delete;
 	RenderMemoryDiagnostics& operator=(const RenderMemoryDiagnostics&) = delete;
 	RenderMemoryDiagnostics(RenderMemoryDiagnostics&&) = delete;

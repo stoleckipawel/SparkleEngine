@@ -21,25 +21,13 @@ namespace UiUtil
 	{
 		ImFont* headingFont = SparkleUiTheme::GetHeadingFont();
 		ImFont* monoFont = SparkleUiTheme::GetMonoFont();
-		DrawHeaderBar(
-		    title,
-		    subtitle,
-		    24.0f,
-		    SparkleUiPalette::PanelHeaderBackground(),
-		    SparkleUiPalette::PanelHeaderBorder(),
-		    headingFont,
-		    monoFont,
-		    ImVec2(8.0f, 3.0f));
+		DrawHeaderBar(title, subtitle, 24.0f, SparkleUiPalette::PanelHeaderBackground(), SparkleUiPalette::PanelHeaderBorder(), headingFont, monoFont, ImVec2(8.0f, 3.0f));
 	}
 
 	void BeginSectionCard(const char* title)
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-		ImGui::BeginChild(
-		    title,
-		    ImVec2(0.0f, 0.0f),
-		    ImGuiChildFlags_AutoResizeY,
-		    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+		ImGui::BeginChild(title, ImVec2(0.0f, 0.0f), ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 		DrawSectionHeader(title);
 	}
 
@@ -80,15 +68,7 @@ namespace UiUtil
 	{
 		ImFont* headingFont = SparkleUiTheme::GetHeadingFont();
 		ImGui::PushID(title);
-		DrawHeaderBar(
-		    title,
-		    nullptr,
-		    22.0f,
-		    SparkleUiPalette::SectionHeaderBackground(),
-		    SparkleUiPalette::SectionHeaderBorder(),
-		    headingFont,
-		    nullptr,
-		    ImVec2(6.0f, 3.0f));
+		DrawHeaderBar(title, nullptr, 22.0f, SparkleUiPalette::SectionHeaderBackground(), SparkleUiPalette::SectionHeaderBorder(), headingFont, nullptr, ImVec2(6.0f, 3.0f));
 		ImGui::PopID();
 	}
 }

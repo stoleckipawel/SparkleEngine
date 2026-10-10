@@ -97,6 +97,7 @@ VkSampler VulkanSamplerLibrary::CreateSampler(const RhiSamplerDesc& desc) const
 {
 	const std::uint32_t maxAnisotropy = static_cast<std::uint32_t>(desc.MaxAnisotropy);
 	const bool anisotropyEnabled = maxAnisotropy > 1 && m_rhi.GetFeatureStatus().EnabledSamplerAnisotropy;
+
 	const VkSamplerCreateInfo createInfo{
 	    .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
 	    .pNext = nullptr,

@@ -39,9 +39,9 @@ bool RhiContract::IsTextureResourceDescUsable(const RhiCapabilities& capabilitie
 	}
 
 	const RhiFormatSupport* const formatSupport = capabilities.FindFormatSupport(desc.Format);
+
 	return formatSupport != nullptr && formatSupport->SupportsTexture && (!desc.AllowRenderTarget || formatSupport->SupportsRenderTarget)
-	    && (!desc.AllowDepthStencil || formatSupport->SupportsDepthStencil)
-	    && (!desc.AllowUnorderedAccess || formatSupport->SupportsUnorderedAccess);
+	    && (!desc.AllowDepthStencil || formatSupport->SupportsDepthStencil) && (!desc.AllowUnorderedAccess || formatSupport->SupportsUnorderedAccess);
 }
 
 bool RhiContract::IsResourceViewDescUsable(const RhiResourceViewDesc& desc) noexcept
@@ -71,8 +71,8 @@ bool RhiContract::IsResourceViewDescUsable(const RhiResourceViewDesc& desc) noex
 
 bool RhiContract::IsRayTracingGeometryDescUsable(const RhiRayTracingGeometryDesc& geometry) noexcept
 {
-	return geometry.VertexBuffer.Resource && geometry.IndexBuffer.Resource && geometry.VertexStrideInBytes >= sizeof(float) * 3u
-	    && geometry.VertexCount != 0 && geometry.IndexCount != 0 && geometry.IndexCount % 3u == 0;
+	return geometry.VertexBuffer.Resource && geometry.IndexBuffer.Resource && geometry.VertexStrideInBytes >= sizeof(float) * 3u && geometry.VertexCount != 0 && geometry.IndexCount != 0
+	    && geometry.IndexCount % 3u == 0;
 }
 
 bool RhiContract::IsRayTracingInstanceListUsable(const RhiRayTracingInstanceDesc* instances, std::uint32_t instanceCount) noexcept
@@ -89,8 +89,7 @@ bool RhiContract::IsRayTracingInstanceListUsable(const RhiRayTracingInstanceDesc
 	for (std::uint32_t index = 0; index < instanceCount; ++index)
 	{
 		const RhiRayTracingInstanceDesc& instance = instances[index];
-		if (instance.AccelerationStructure == 0 || instance.InstanceID > kRhiRayTracingMaxInstanceId || instance.InstanceMask == 0
-		    || instance.InstanceMask > kRhiRayTracingMaxInstanceMask
+		if (instance.AccelerationStructure == 0 || instance.InstanceID > kRhiRayTracingMaxInstanceId || instance.InstanceMask == 0 || instance.InstanceMask > kRhiRayTracingMaxInstanceMask
 		    || instance.InstanceContributionToHitGroupIndex > kRhiRayTracingMaxInstanceContributionToHitGroupIndex)
 		{
 			return false;
@@ -102,10 +101,8 @@ bool RhiContract::IsRayTracingInstanceListUsable(const RhiRayTracingInstanceDesc
 
 bool RhiContract::IsPartitionedTlasOperationPackUsable(const RhiPartitionedTlasOperationPackDesc& operationPack) noexcept
 {
-	if (operationPack.OperationCount == 0 || operationPack.Operations == nullptr
-	    || (operationPack.InstanceWriteCount != 0 && operationPack.InstanceWrites == nullptr)
-	    || (operationPack.InstanceUpdateCount != 0 && operationPack.InstanceUpdates == nullptr)
-	    || (operationPack.PartitionTranslationCount != 0 && operationPack.PartitionTranslations == nullptr))
+	if (operationPack.OperationCount == 0 || operationPack.Operations == nullptr || (operationPack.InstanceWriteCount != 0 && operationPack.InstanceWrites == nullptr)
+	    || (operationPack.InstanceUpdateCount != 0 && operationPack.InstanceUpdates == nullptr) || (operationPack.PartitionTranslationCount != 0 && operationPack.PartitionTranslations == nullptr))
 	{
 		return false;
 	}
@@ -113,8 +110,7 @@ bool RhiContract::IsPartitionedTlasOperationPackUsable(const RhiPartitionedTlasO
 	for (std::uint32_t index = 0; index < operationPack.InstanceWriteCount; ++index)
 	{
 		const RhiPartitionedTlasInstanceWriteDesc& instance = operationPack.InstanceWrites[index];
-		if (instance.AccelerationStructure == 0 || instance.InstanceID > kRhiRayTracingMaxInstanceId || instance.InstanceMask == 0
-		    || instance.InstanceMask > kRhiRayTracingMaxInstanceMask
+		if (instance.AccelerationStructure == 0 || instance.InstanceID > kRhiRayTracingMaxInstanceId || instance.InstanceMask == 0 || instance.InstanceMask > kRhiRayTracingMaxInstanceMask
 		    || instance.InstanceContributionToHitGroupIndex > kRhiRayTracingMaxInstanceContributionToHitGroupIndex)
 		{
 			return false;
@@ -124,8 +120,7 @@ bool RhiContract::IsPartitionedTlasOperationPackUsable(const RhiPartitionedTlasO
 	for (std::uint32_t index = 0; index < operationPack.InstanceUpdateCount; ++index)
 	{
 		const RhiPartitionedTlasInstanceUpdateDesc& instance = operationPack.InstanceUpdates[index];
-		if (instance.AccelerationStructure == 0
-		    || instance.InstanceContributionToHitGroupIndex > kRhiRayTracingMaxInstanceContributionToHitGroupIndex)
+		if (instance.AccelerationStructure == 0 || instance.InstanceContributionToHitGroupIndex > kRhiRayTracingMaxInstanceContributionToHitGroupIndex)
 		{
 			return false;
 		}

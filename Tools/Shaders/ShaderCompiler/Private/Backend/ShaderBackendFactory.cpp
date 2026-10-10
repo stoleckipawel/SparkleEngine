@@ -11,6 +11,7 @@
 #include <cctype>
 
 static constexpr std::string_view kAutoShaderBackendName = "auto";
+
 static constexpr std::array<ShaderBinaryFormatDescriptor, 2> kShaderBinaryFormats = {{
     {.Name = "Dxil", .IsAvailable = true},
     {.Name = "SpirV", .IsAvailable = true},
@@ -32,18 +33,13 @@ static constexpr std::array<ShaderCodegenTargetDescriptor, 11> kShaderCodegenTar
 static std::string NormalizeShaderBackendName(std::string_view name)
 {
 	std::string normalized(name);
-	std::transform(
-	    normalized.begin(),
-	    normalized.end(),
-	    normalized.begin(),
-	    [](unsigned char value) { return static_cast<char>(std::tolower(value)); });
+	std::transform(normalized.begin(), normalized.end(), normalized.begin(), [](unsigned char value) { return static_cast<char>(std::tolower(value)); });
 	return normalized;
 }
 
 static bool HasSourceExtension(const ShaderBackendStaticDescriptor& descriptor, std::string_view extension) noexcept
 {
-	return std::find(descriptor.SourceExtensions.begin(), descriptor.SourceExtensions.end(), extension)
-	    != descriptor.SourceExtensions.end();
+	return std::find(descriptor.SourceExtensions.begin(), descriptor.SourceExtensions.end(), extension) != descriptor.SourceExtensions.end();
 }
 
 static std::string GetVirtualSourceExtension(std::string_view sourcePath)
@@ -74,10 +70,7 @@ static std::string SelectAutomaticShaderBackendName(std::string_view sourcePath,
 static const ShaderBackendRegistration* FindShaderBackendRegistration(std::string_view name)
 {
 	const std::span<const ShaderBackendRegistration> registrations = GetBuiltinShaderBackendRegistrations();
-	const auto it = std::find_if(
-	    registrations.begin(),
-	    registrations.end(),
-	    [name](const ShaderBackendRegistration& registration) { return registration.Descriptor.Name == name; });
+	const auto it = std::find_if(registrations.begin(), registrations.end(), [name](const ShaderBackendRegistration& registration) { return registration.Descriptor.Name == name; });
 	return it != registrations.end() ? &(*it) : nullptr;
 }
 
@@ -155,9 +148,7 @@ std::string ResolveShaderBackendName(std::string_view sourcePath, ShaderTarget t
 		selectedName = SelectAutomaticShaderBackendName(sourcePath, target);
 		if (selectedName.empty())
 		{
-			throw Diagnostics::Error(
-			    "Unable to auto-select a shader backend for source '" + std::string(sourcePath) + "' and target '"
-			    + GetShaderTargetName(target) + "'.");
+			throw Diagnostics::Error("Unable to auto-select a shader backend for source '" + std::string(sourcePath) + "' and target '" + GetShaderTargetName(target) + "'.");
 		}
 	}
 

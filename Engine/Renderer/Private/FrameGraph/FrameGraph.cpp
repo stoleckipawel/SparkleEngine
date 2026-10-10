@@ -14,8 +14,7 @@ FrameGraph::AllocatedParameterInstanceBase::~AllocatedParameterInstanceBase() no
 FrameGraph::FrameGraph(RenderHardwareInterface* renderHardwareInterface, Window* window) :
     m_renderHardwareInterface(renderHardwareInterface),
     m_window(window),
-    m_transientAllocator(
-        renderHardwareInterface != nullptr ? std::make_unique<FrameGraphTransientAllocator>(*renderHardwareInterface) : nullptr)
+    m_transientAllocator(renderHardwareInterface != nullptr ? std::make_unique<FrameGraphTransientAllocator>(*renderHardwareInterface) : nullptr)
 {
 }
 
@@ -42,8 +41,7 @@ const FrameGraphPlan& FrameGraph::Compile()
 	PrepareTextureHistories(m_compiledPlan);
 	SyncImportedResourceAccesses();
 	BuildTransientMaterializationPlan(m_compiledPlan);
-	const RhiQueueCapabilities queueCapabilities =
-	    m_renderHardwareInterface != nullptr ? m_renderHardwareInterface->GetCapabilities().Queues : RhiQueueCapabilities{};
+	const RhiQueueCapabilities queueCapabilities = m_renderHardwareInterface != nullptr ? m_renderHardwareInterface->GetCapabilities().Queues : RhiQueueCapabilities{};
 	FrameGraphCompiler compiler(m_compiledPlan, m_resourceRegistry, m_resourceStateTracker, queueCapabilities);
 	compiler.Compile();
 	m_submissionBatchTokens.resize(m_compiledPlan.submissionBatches.size());
@@ -91,10 +89,7 @@ void FrameGraph::UpdateTrackedResourceState(FrameGraphResourceHandle handle, Res
 	m_resourceStateTracker.UpdateCurrentState(handle, currentState);
 }
 
-FrameGraphResourceHandle FrameGraph::FindResource(
-    std::string_view name,
-    FrameGraphResourceKind kind,
-    FrameGraphResourceOwnership ownership) const noexcept
+FrameGraphResourceHandle FrameGraph::FindResource(std::string_view name, FrameGraphResourceKind kind, FrameGraphResourceOwnership ownership) const noexcept
 {
 	for (FrameGraphResourceHandle handle : m_resourceRegistry.GetRegisteredHandles())
 	{

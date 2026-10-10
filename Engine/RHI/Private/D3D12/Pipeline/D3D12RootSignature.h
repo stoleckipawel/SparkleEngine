@@ -27,6 +27,7 @@ public:
 	D3D12RootSignature& operator=(const D3D12RootSignature&) = delete;
 
 	ComPtr<ID3D12RootSignature> Get() noexcept { return m_rootSignature; }
+
 	ID3D12RootSignature* GetRaw() const noexcept { return m_rootSignature.Get(); }
 
 private:

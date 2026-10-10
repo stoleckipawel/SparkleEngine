@@ -27,11 +27,7 @@ void EditorTransactionHistory::InvalidateForWorldGeneration(std::uint64_t worldG
 	m_lastResult.reset();
 }
 
-WorldEditResult EditorTransactionHistory::Execute(
-    WorldEditCommand forward,
-    WorldEditCommand inverse,
-    std::uint64_t worldGeneration,
-    std::string coalescingKey)
+WorldEditResult EditorTransactionHistory::Execute(WorldEditCommand forward, WorldEditCommand inverse, std::uint64_t worldGeneration, std::string coalescingKey)
 {
 	InvalidateForWorldGeneration(worldGeneration);
 	WorldEditResult result = Submit(forward, worldGeneration);

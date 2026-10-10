@@ -24,6 +24,7 @@ std::string SpirVDisassembler::Disassemble(std::span<const std::uint8_t> bytecod
 	std::memcpy(words.data(), bytecode.data(), bytecode.size());
 	spvtools::SpirvTools tools(SPV_ENV_UNIVERSAL_1_6);
 	std::string diagnostic;
+
 	tools.SetMessageConsumer(
 	    [&diagnostic](spv_message_level_t, const char*, const spv_position_t&, const char* message)
 	    {
@@ -34,8 +35,7 @@ std::string SpirVDisassembler::Disassemble(std::span<const std::uint8_t> bytecod
 	    });
 
 	std::string disassembly;
-	const auto options =
-	    static_cast<std::uint32_t>(SPV_BINARY_TO_TEXT_OPTION_INDENT) | static_cast<std::uint32_t>(SPV_BINARY_TO_TEXT_OPTION_FRIENDLY_NAMES);
+	const auto options = static_cast<std::uint32_t>(SPV_BINARY_TO_TEXT_OPTION_INDENT) | static_cast<std::uint32_t>(SPV_BINARY_TO_TEXT_OPTION_FRIENDLY_NAMES);
 	if (!tools.Disassemble(words, &disassembly, options) || disassembly.empty())
 	{
 		throw Diagnostics::Error("SPIR-V disassembly failed: " + diagnostic);

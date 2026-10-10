@@ -8,9 +8,5 @@
   #include <sl.h>
 
 RenderViewportExtent QueryStreamlineDlssOptimalRenderExtent(RenderViewportExtent outputExtent, EUpscalerQualityMode qualityMode) noexcept;
-bool EvaluateStreamlineDlssFrame(
-    const ImageProviderFrameInput& frameInput,
-    EUpscalerQualityMode qualityMode,
-    sl::ViewportHandle viewport,
-    const UpscalerEvaluationDesc& evaluation);
+bool EvaluateStreamlineDlssFrame(const ImageProviderFrameInput& frameInput, EUpscalerQualityMode qualityMode, sl::ViewportHandle viewport, const UpscalerEvaluationDesc& evaluation);
 #endif

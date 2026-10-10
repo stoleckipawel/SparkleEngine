@@ -110,10 +110,7 @@ void CookedSceneInstanceBuilder::BuildInstances(const SourceImportOutput& import
 		{
 			firstMorphWeight = static_cast<std::uint32_t>(build.manifest.morphWeights.size());
 			morphWeightCount = static_cast<std::uint32_t>(importedInstance.morphWeights.size());
-			build.manifest.morphWeights.insert(
-			    build.manifest.morphWeights.end(),
-			    importedInstance.morphWeights.begin(),
-			    importedInstance.morphWeights.end());
+			build.manifest.morphWeights.insert(build.manifest.morphWeights.end(), importedInstance.morphWeights.begin(), importedInstance.morphWeights.end());
 		}
 
 		build.manifest.instances.push_back(

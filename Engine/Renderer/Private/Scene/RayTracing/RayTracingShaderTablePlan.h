@@ -70,11 +70,7 @@ public:
 	void Clear() noexcept;
 
 	bool ResolveInstanceContribution(std::uint32_t gpuSceneSlot, std::uint32_t& contribution) const noexcept;
-	bool ComputeRecordIndex(
-	    std::uint32_t gpuSceneSlot,
-	    std::uint32_t geometryIndex,
-	    RayTracingSceneRayType rayType,
-	    std::uint32_t& recordIndex) const noexcept;
+	bool ComputeRecordIndex(std::uint32_t gpuSceneSlot, std::uint32_t geometryIndex, RayTracingSceneRayType rayType, std::uint32_t& recordIndex) const noexcept;
 	bool Validate() const noexcept;
 	void BeginMaterializationSet() noexcept;
 	void RecordMaterialization(std::uint64_t tableBytes, std::uint64_t elapsedMicroseconds) noexcept;
@@ -87,9 +83,13 @@ public:
 	    std::uint32_t& recordIndex) noexcept;
 
 	std::span<const RayTracingShaderTableInstancePlan> GetInstances() const noexcept { return m_instances; }
+
 	std::span<const RayTracingShaderTableRecordPlan> GetRecords() const noexcept { return m_records; }
+
 	std::uint32_t GetGeometryMultiplier() const noexcept { return static_cast<std::uint32_t>(RayTracingSceneRayType::Count); }
+
 	std::uint64_t GetGeneration() const noexcept { return m_generation; }
+
 	const RayTracingShaderTableMetrics& GetMetrics() const noexcept { return m_metrics; }
 
 private:

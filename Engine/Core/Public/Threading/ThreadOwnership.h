@@ -26,6 +26,7 @@ namespace Threading
 
 	private:
 		std::thread::id m_thread = std::this_thread::get_id();
+
 		std::string m_ownerDescription;
 	};
 }

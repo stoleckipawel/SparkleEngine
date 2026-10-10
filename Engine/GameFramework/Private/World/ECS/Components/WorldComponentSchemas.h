@@ -12,52 +12,62 @@ namespace ECS
 	{
 		static constexpr ComponentSchema Schema{MakeComponentSchemaId("sparkle.world.LocalTransform"), "sparkle.world.LocalTransform"};
 	};
+
 	template <> struct ComponentSchemaTraits<WorldTransform> final
 	{
 		static constexpr ComponentSchema Schema{MakeComponentSchemaId("sparkle.world.WorldTransform"), "sparkle.world.WorldTransform"};
 	};
+
 	template <> struct ComponentSchemaTraits<CameraDerivedState> final
 	{
-		static constexpr ComponentSchema Schema{
-		    MakeComponentSchemaId("sparkle.world.CameraDerivedState"),
-		    "sparkle.world.CameraDerivedState"};
+		static constexpr ComponentSchema Schema{MakeComponentSchemaId("sparkle.world.CameraDerivedState"), "sparkle.world.CameraDerivedState"};
 	};
+
 	template <> struct ComponentSchemaTraits<MeshInstance> final
 	{
 		static constexpr ComponentSchema Schema{MakeComponentSchemaId("sparkle.world.MeshInstance"), "sparkle.world.MeshInstance"};
 	};
+
 	template <> struct ComponentSchemaTraits<Visibility> final
 	{
 		static constexpr ComponentSchema Schema{MakeComponentSchemaId("sparkle.world.Visibility"), "sparkle.world.Visibility"};
 	};
+
 	template <> struct ComponentSchemaTraits<Camera> final
 	{
 		static constexpr ComponentSchema Schema{MakeComponentSchemaId("sparkle.world.Camera"), "sparkle.world.Camera"};
 	};
+
 	template <> struct ComponentSchemaTraits<Light> final
 	{
 		static constexpr ComponentSchema Schema{MakeComponentSchemaId("sparkle.world.Light"), "sparkle.world.Light"};
 	};
+
 	template <> struct ComponentSchemaTraits<AnimationState> final
 	{
 		static constexpr ComponentSchema Schema{MakeComponentSchemaId("sparkle.world.AnimationState"), "sparkle.world.AnimationState"};
 	};
+
 	template <> struct ComponentSchemaTraits<MorphState> final
 	{
 		static constexpr ComponentSchema Schema{MakeComponentSchemaId("sparkle.world.MorphState"), "sparkle.world.MorphState"};
 	};
+
 	template <> struct ComponentSchemaTraits<SkinningState> final
 	{
 		static constexpr ComponentSchema Schema{MakeComponentSchemaId("sparkle.world.SkinningState"), "sparkle.world.SkinningState"};
 	};
+
 	template <> struct ComponentSchemaTraits<Name> final
 	{
 		static constexpr ComponentSchema Schema{MakeComponentSchemaId("sparkle.world.Name"), "sparkle.world.Name"};
 	};
+
 	template <> struct ComponentSchemaTraits<AuthoredIdentity> final
 	{
 		static constexpr ComponentSchema Schema{MakeComponentSchemaId("sparkle.world.AuthoredIdentity"), "sparkle.world.AuthoredIdentity"};
 	};
+
 	template <> struct ComponentSchemaTraits<EditorMetadata> final
 	{
 		static constexpr ComponentSchema Schema{MakeComponentSchemaId("sparkle.world.EditorMetadata"), "sparkle.world.EditorMetadata"};

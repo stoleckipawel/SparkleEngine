@@ -13,10 +13,7 @@ namespace Assets
 	{
 	}
 
-	Diagnostics::Error CookedAssetLoaderDiagnostics::MakeError(
-	    std::string_view recordKind,
-	    std::string_view expectedFeature,
-	    std::string_view reason) const
+	Diagnostics::Error CookedAssetLoaderDiagnostics::MakeError(std::string_view recordKind, std::string_view expectedFeature, std::string_view reason) const
 	{
 		return Diagnostics::Error(
 		    std::format(

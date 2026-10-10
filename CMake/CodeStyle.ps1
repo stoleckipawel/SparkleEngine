@@ -4,6 +4,8 @@ param(
     [string] $Mode = "Check",
     [ValidateSet("All", "Cpp", "Shaders")]
     [string] $SourceFamily = "All",
+    [switch] $Staged,
+    [string] $Path = "",
     [string] $ClangFormatPath = "",
     [string] $ClangTidyPath = ""
 )
@@ -191,6 +193,122 @@ function ConvertTo-CanonicalShaderText
     return $canonicalText
 }
 
+function Get-SelectedSourcePaths
+{
+    if ($Staged -and -not [string]::IsNullOrWhiteSpace($Path))
+    {
+        throw "Use either -Staged or -Path, not both."
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($Path))
+    {
+        $absolutePath = [IO.Path]::GetFullPath((Join-Path $repositoryRoot $Path))
+        $rootPrefix = $repositoryRoot + [IO.Path]::DirectorySeparatorChar
+        if (-not $absolutePath.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase))
+        {
+            throw "-Path must identify a tracked owned source file inside the repository."
+        }
+
+        return $absolutePath.Substring($rootPrefix.Length).Replace('\', '/')
+    }
+
+    if ($Staged)
+    {
+        $selectedPaths = @(& git -C $repositoryRoot -c core.quotepath=false diff --cached --name-only --diff-filter=ACMR -- Engine Tools Projects)
+        if ($LASTEXITCODE -ne 0)
+        {
+            throw "Failed to enumerate staged source files."
+        }
+
+        return $selectedPaths
+    }
+
+    $selectedPaths = @(& git -C $repositoryRoot -c core.quotepath=false ls-files -- Engine Tools Projects)
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw "Failed to enumerate tracked source files."
+    }
+
+    return $selectedPaths
+}
+
+function Test-ClangFormatChanges
+{
+    param([string[]] $Paths, [string] $ReplacementXml)
+
+    $documents = @([regex]::Split($ReplacementXml, '(?=<\?xml)') | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($documents.Count -ne $Paths.Count)
+    {
+        throw "clang-format returned an unexpected replacement-document count."
+    }
+
+    $changed = $false
+    for ($fileIndex = 0; $fileIndex -lt $Paths.Count; ++$fileIndex)
+    {
+        $relativePath = $Paths[$fileIndex]
+        $absolutePath = Join-Path $repositoryRoot $relativePath
+        $bytes = [IO.File]::ReadAllBytes($absolutePath)
+        $document = [xml] $documents[$fileIndex]
+        if ($document.replacements.incomplete_format -eq "true")
+        {
+            throw "${relativePath}: clang-format could not complete formatting."
+        }
+
+        foreach ($replacement in $document.SelectNodes('/replacements/replacement'))
+        {
+            $offset = [int] $replacement.offset
+            $length = [int] $replacement.length
+            $existing = [Text.Encoding]::UTF8.GetString($bytes, $offset, $length)
+            if ($existing -ceq $replacement.InnerText)
+            {
+                continue
+            }
+
+            [Console]::Error.WriteLine("${relativePath}: code should be clang-formatted")
+            $changed = $true
+            break
+        }
+    }
+
+    return $changed
+}
+
+$selectedSourcePaths = @(Get-SelectedSourcePaths)
+$ownedSourcePaths = @(
+    $selectedSourcePaths | Where-Object {
+        $absolutePath = Join-Path $repositoryRoot ($_ -replace "/", [IO.Path]::DirectorySeparatorChar)
+        $extension = [IO.Path]::GetExtension($_)
+        $isShader = $extension -in @(".hlsl", ".hlsli")
+        $matchesSourceFamily = $SourceFamily -eq "All" -or ($SourceFamily -eq "Shaders" -and $isShader) -or
+            ($SourceFamily -eq "Cpp" -and -not $isShader)
+        $ownedExtensions.Contains($extension) -and
+        $matchesSourceFamily -and
+        $_ -match '^(Engine|Tools|Projects)/' -and
+        -not $_.StartsWith("Engine/RHI/Private/D3D12/ThirdParty/", [StringComparison]::OrdinalIgnoreCase) -and
+        (Test-Path -LiteralPath $absolutePath -PathType Leaf)
+    } | Sort-Object -Unique
+)
+
+if (-not [string]::IsNullOrWhiteSpace($Path))
+{
+    & git -C $repositoryRoot ls-files --error-unmatch -- $selectedSourcePaths[0] 1>$null 2>$null
+    if ($LASTEXITCODE -ne 0 -or $ownedSourcePaths.Count -ne 1)
+    {
+        throw "-Path must identify an existing tracked owned source file matching -SourceFamily."
+    }
+}
+
+if ($ownedSourcePaths.Count -eq 0)
+{
+    if ($Staged)
+    {
+        Write-Host "No staged owned source files match the selected source family."
+        exit 0
+    }
+
+    throw "The tracked owned-source manifest is empty."
+}
+
 $clangFormat = Resolve-ClangFormatExecutable -ConfiguredPath $ClangFormatPath
 $clangFormatVersion = (& $clangFormat --version 2>&1 | Out-String).Trim()
 if ($LASTEXITCODE -ne 0 -or $clangFormatVersion -notmatch "version $([regex]::Escape($requiredClangFormatVersion))(?:\s|$)")
@@ -223,32 +341,10 @@ if ($Mode -eq "Check" -and $SourceFamily -ne "Shaders")
     }
 }
 
-$trackedPaths = @(& git -C $repositoryRoot ls-files -- Engine Tools Projects)
-if ($LASTEXITCODE -ne 0)
-{
-    throw "Failed to enumerate tracked source files."
-}
-
-$ownedSourcePaths = @(
-    $trackedPaths | Where-Object {
-        $absolutePath = Join-Path $repositoryRoot ($_ -replace "/", [IO.Path]::DirectorySeparatorChar)
-        $extension = [IO.Path]::GetExtension($_)
-        $isShader = $extension -in @(".hlsl", ".hlsli")
-        $matchesSourceFamily = $SourceFamily -eq "All" -or ($SourceFamily -eq "Shaders" -and $isShader) -or
-            ($SourceFamily -eq "Cpp" -and -not $isShader)
-        $ownedExtensions.Contains($extension) -and
-        $matchesSourceFamily -and
-        -not $_.StartsWith("Engine/RHI/Private/D3D12/ThirdParty/", [StringComparison]::OrdinalIgnoreCase) -and
-        (Test-Path -LiteralPath $absolutePath -PathType Leaf)
-    } | Sort-Object
-)
-if ($ownedSourcePaths.Count -eq 0)
-{
-    throw "The tracked owned-source manifest is empty."
-}
-
 $ownedCppPaths = @($ownedSourcePaths | Where-Object { [IO.Path]::GetExtension($_) -notin @(".hlsl", ".hlsli") })
 $ownedShaderPaths = @($ownedSourcePaths | Where-Object { [IO.Path]::GetExtension($_) -in @(".hlsl", ".hlsli") })
+
+Add-Type -Path (Join-Path $PSScriptRoot "CodeStyleParagraphSpacing.cs")
 
 $formatFailed = $false
 Push-Location $repositoryRoot
@@ -260,21 +356,57 @@ try
         $batch = $ownedCppPaths[$offset..$lastIndex]
         $arguments = if ($Mode -eq "Check")
         {
-            @("--dry-run", "--Werror", "--style=file") + $batch
+            @("--output-replacements-xml", "--Werror", "--style=file") + $batch
         }
         else
         {
             @("-i", "--Werror", "--style=file") + $batch
         }
 
-        & $clangFormat $arguments
-        if ($LASTEXITCODE -ne 0)
+        if ($Mode -eq "Check")
         {
-            $formatFailed = $true
+            $replacementLines = @(& $clangFormat $arguments)
+            if ($LASTEXITCODE -ne 0)
+            {
+                $formatFailed = $true
+            }
+            elseif (Test-ClangFormatChanges -Paths $batch -ReplacementXml ($replacementLines -join "`n"))
+            {
+                $formatFailed = $true
+            }
+        }
+        else
+        {
+            & $clangFormat $arguments
+            if ($LASTEXITCODE -ne 0)
+            {
+                $formatFailed = $true
+            }
         }
     }
 
     $utf8WithoutBom = [Text.UTF8Encoding]::new($false)
+    foreach ($relativePath in $ownedCppPaths)
+    {
+        $absolutePath = Join-Path $repositoryRoot ($relativePath -replace "/", [IO.Path]::DirectorySeparatorChar)
+        $currentText = [IO.File]::ReadAllText($absolutePath)
+        $canonicalText = [CodeStyleParagraphSpacing]::Format($currentText)
+        if ($currentText.Replace("`r`n", "`n").Replace("`r", "`n") -ceq $canonicalText)
+        {
+            continue
+        }
+
+        if ($Mode -eq "Format")
+        {
+            [IO.File]::WriteAllText($absolutePath, $canonicalText, $utf8WithoutBom)
+        }
+        else
+        {
+            [Console]::Error.WriteLine("${relativePath}: multiline statements require blank paragraph boundaries")
+            $formatFailed = $true
+        }
+    }
+
     foreach ($relativePath in $ownedShaderPaths)
     {
         $absolutePath = Join-Path $repositoryRoot ($relativePath -replace "/", [IO.Path]::DirectorySeparatorChar)
@@ -287,6 +419,7 @@ try
 
         $formattedText = ($formattedLines -join "`n") + "`n"
         $canonicalText = ConvertTo-CanonicalShaderText -Text $formattedText
+        $canonicalText = [CodeStyleParagraphSpacing]::Format($canonicalText)
         $currentText = ([IO.File]::ReadAllText($absolutePath)).Replace("`r`n", "`n").Replace("`r", "`n")
         if ($currentText -ceq $canonicalText)
         {

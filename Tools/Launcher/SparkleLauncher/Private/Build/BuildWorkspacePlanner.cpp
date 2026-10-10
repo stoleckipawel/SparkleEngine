@@ -48,8 +48,7 @@ namespace SparkleLauncher
 		AddReadiness(plan, "Enabled workspace configure prerequisites are incomplete.");
 		for (const ToolchainItemStatus& item : plan.Toolchain.Items)
 		{
-			if ((item.Id == "shader-compiler-sdk" || item.Id == "vulkan-sdk") && item.State != ToolchainItemState::Found
-			    && !item.Detail.empty())
+			if ((item.Id == "shader-compiler-sdk" || item.Id == "vulkan-sdk") && item.State != ToolchainItemState::Found && !item.Detail.empty())
 			{
 				AddReadiness(plan, item.Detail);
 			}
@@ -103,9 +102,7 @@ namespace SparkleLauncher
 
 	static void AddConfigureStep(BuildWorkspaceOperationPlan& plan)
 	{
-		AddPlannedEffect(
-		    plan,
-		    "Run CMake configure with generator '" + plan.Toolchain.Generator + "' for " + DisplayName(plan.Request.PreferredIde) + ".");
+		AddPlannedEffect(plan, "Run CMake configure with generator '" + plan.Toolchain.Generator + "' for " + DisplayName(plan.Request.PreferredIde) + ".");
 	}
 
 	static void AddBuildStep(BuildWorkspaceOperationPlan& plan, std::string_view profileName, const std::vector<std::string>& targets)
@@ -129,10 +126,7 @@ namespace SparkleLauncher
 				return;
 			}
 
-			const auto status = std::find_if(
-			    plan.Toolchain.Items.begin(),
-			    plan.Toolchain.Items.end(),
-			    [&request](const ToolchainItemStatus& item) { return item.Id == request.HostToolId; });
+			const auto status = std::find_if(plan.Toolchain.Items.begin(), plan.Toolchain.Items.end(), [&request](const ToolchainItemStatus& item) { return item.Id == request.HostToolId; });
 			if (status != plan.Toolchain.Items.end() && status->State == ToolchainItemState::Found)
 			{
 				AddReadiness(plan, installer->DisplayName + " is already installed.");
@@ -166,9 +160,7 @@ namespace SparkleLauncher
 				}
 				if (sourceDependenciesMissing)
 				{
-					AddPlannedEffect(
-					    plan,
-					    "Repair incomplete enabled source dependency caches before the next local rebuild or cook workflow.");
+					AddPlannedEffect(plan, "Repair incomplete enabled source dependency caches before the next local rebuild or cook workflow.");
 				}
 				if (needsConfigure)
 				{
@@ -187,9 +179,7 @@ namespace SparkleLauncher
 				}
 				if (sourceDependenciesMissing)
 				{
-					AddPlannedEffect(
-					    plan,
-					    "Repair incomplete enabled source dependency caches while refreshing generated workspace files.");
+					AddPlannedEffect(plan, "Repair incomplete enabled source dependency caches while refreshing generated workspace files.");
 				}
 				if (RequiresNativeBuildOutputReset(plan.Freshness.State))
 				{
@@ -276,9 +266,7 @@ namespace SparkleLauncher
 			case BuildWorkspaceOperationKind::CompileLauncher:
 				AddConfigureStep(plan);
 				AddBuildStep(plan, request.EditorProfile, {"SparkleLauncher"});
-				AddPlannedEffect(
-				    plan,
-				    "Configure the Launcher-owned product graph, then rebuild its executable and deployed runtime files.");
+				AddPlannedEffect(plan, "Configure the Launcher-owned product graph, then rebuild its executable and deployed runtime files.");
 				plan.CanRun = true;
 				return;
 			case BuildWorkspaceOperationKind::CompileEditor:
@@ -295,9 +283,7 @@ namespace SparkleLauncher
 				{
 					return;
 				}
-				std::vector<std::string> targets = request.SelectedTargets.empty()
-				    ? ResolveProjectTargets(request.ContentId, request.EditorProfile)
-				    : request.SelectedTargets;
+				std::vector<std::string> targets = request.SelectedTargets.empty() ? ResolveProjectTargets(request.ContentId, request.EditorProfile) : request.SelectedTargets;
 				if (targets.empty())
 				{
 					AddReadiness(plan, "No editor build target could be resolved.");
@@ -321,9 +307,7 @@ namespace SparkleLauncher
 				{
 					return;
 				}
-				std::vector<std::string> targets = request.SelectedTargets.empty()
-				    ? ResolveProjectTargets(request.ContentId, request.RuntimeProfile)
-				    : request.SelectedTargets;
+				std::vector<std::string> targets = request.SelectedTargets.empty() ? ResolveProjectTargets(request.ContentId, request.RuntimeProfile) : request.SelectedTargets;
 				if (targets.empty())
 				{
 					AddReadiness(plan, "No runtime build target could be resolved.");
@@ -382,43 +366,24 @@ namespace SparkleLauncher
 		        "Build",
 		        "Build Workspace",
 		        "Build the selected editor, game, cooking-tool, and launcher scopes; refresh generated workspace files when needed."},
-		    {BuildWorkspaceOperationKind::CompileLauncher,
-		        "launcher.build.self",
-		        "Build",
-		        "Build Launcher",
-		        "Optional local rebuild of Sparkle Launcher for development or customization.",
-		        true},
-		    {BuildWorkspaceOperationKind::CompileEditor,
-		        "workspace.build.editor",
-		        "Build",
-		        "Build Editor",
-		        "Optional local rebuild of the editor target."},
-		    {BuildWorkspaceOperationKind::CompileRuntime,
-		        "workspace.build.runtime",
-		        "Build",
-		        "Build Runtime",
-		        "Optional local rebuild of the runtime target."},
-		    {BuildWorkspaceOperationKind::BuildCookTools,
-		        "cook.tools.prepare",
-		        "Build",
-		        "Build Cooking Tools",
-		        "Optional local build of tools required by recook workflows."},
+		    {BuildWorkspaceOperationKind::CompileLauncher, "launcher.build.self", "Build", "Build Launcher", "Optional local rebuild of Sparkle Launcher for development or customization.", true},
+		    {BuildWorkspaceOperationKind::CompileEditor, "workspace.build.editor", "Build", "Build Editor", "Optional local rebuild of the editor target."},
+		    {BuildWorkspaceOperationKind::CompileRuntime, "workspace.build.runtime", "Build", "Build Runtime", "Optional local rebuild of the runtime target."},
+		    {BuildWorkspaceOperationKind::BuildCookTools, "cook.tools.prepare", "Build", "Build Cooking Tools", "Optional local build of tools required by recook workflows."},
 		    {BuildWorkspaceOperationKind::InstallHostTool,
 		        "workspace.install-host-tool",
 		        "Setup",
 		        "Install Host Tool",
 		        "Install a registered host tool through its launcher-owned installation provider."},
 		};
+
 		return definitions;
 	}
 
 	std::optional<BuildWorkspaceOperationDefinition> FindBuildWorkspaceOperationDefinition(std::string_view operationId)
 	{
 		const std::vector<BuildWorkspaceOperationDefinition>& definitions = GetBuildWorkspaceOperationDefinitions();
-		const auto found = std::find_if(
-		    definitions.begin(),
-		    definitions.end(),
-		    [operationId](const BuildWorkspaceOperationDefinition& definition) { return definition.Id == operationId; });
+		const auto found = std::find_if(definitions.begin(), definitions.end(), [operationId](const BuildWorkspaceOperationDefinition& definition) { return definition.Id == operationId; });
 		return found == definitions.end() ? std::nullopt : std::optional<BuildWorkspaceOperationDefinition>(*found);
 	}
 
@@ -429,11 +394,7 @@ namespace SparkleLauncher
 		if (!definition.has_value())
 		{
 			plan.Operation = MakeOperationRecord(std::string(operationId), "Unknown build operation");
-			SetOperationFailure(
-			    plan.Operation,
-			    OperationProblemKind::Planning,
-			    "Unknown build/workspace operation id.",
-			    "Choose a registered Build or Sync operation, then retry.");
+			SetOperationFailure(plan.Operation, OperationProblemKind::Planning, "Unknown build/workspace operation id.", "Choose a registered Build or Sync operation, then retry.");
 			AddReadiness(plan, plan.Operation.Failure->Summary);
 			return plan;
 		}
@@ -477,9 +438,7 @@ namespace SparkleLauncher
 		const Filesystem::WorkspaceOutputPaths workspaceOutputs = Filesystem::ResolveWorkspaceOutputPaths(request.RepositoryRoot);
 		plan.SourceDependencies = InspectSourceDependencyCache(workspaceOutputs.DependencyCacheRoot);
 
-		AddReadiness(
-		    plan,
-		    plan.Toolchain.RequiredToolsAvailable ? "Required toolchain is available." : "Required toolchain is incomplete.");
+		AddReadiness(plan, plan.Toolchain.RequiredToolsAvailable ? "Required toolchain is available." : "Required toolchain is incomplete.");
 		AddReadiness(plan, plan.Freshness.Summary);
 		if (!plan.SourceDependencies.AllEnabledDependenciesReady)
 		{

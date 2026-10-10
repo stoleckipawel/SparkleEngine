@@ -25,6 +25,7 @@ bool TaskScope::State::RegisterExecution(const std::shared_ptr<TaskExecution::St
 	++ActiveExecutions;
 	Executions.emplace_back(execution);
 	execution->JoinThread = OwnerThread;
+
 	execution->OnSettled = [scope = weak_from_this()]
 	{
 		if (auto state = scope.lock())
@@ -32,6 +33,7 @@ bool TaskScope::State::RegisterExecution(const std::shared_ptr<TaskExecution::St
 			state->ExecutionSettled();
 		}
 	};
+
 	return true;
 }
 

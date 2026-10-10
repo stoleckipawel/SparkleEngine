@@ -25,14 +25,11 @@ class D3D12CommandRecordingContext final
 {
 public:
 	static constexpr std::uint32_t MaximumContextsPerFrameQueue = 8;
+
 	static constexpr std::uint64_t UploadPageCapacityInBytes = 256 * 1024;
 	static constexpr std::uint32_t DescriptorPageCapacity = 256;
 
-	D3D12CommandRecordingContext(
-	    D3D12Rhi& rhi,
-	    D3D12RenderHardwareInterface& hardwareInterface,
-	    D3D12DescriptorHeapManager& descriptorHeapManager,
-	    std::uint32_t maximumFramesInFlight) noexcept;
+	D3D12CommandRecordingContext(D3D12Rhi& rhi, D3D12RenderHardwareInterface& hardwareInterface, D3D12DescriptorHeapManager& descriptorHeapManager, std::uint32_t maximumFramesInFlight) noexcept;
 	~D3D12CommandRecordingContext() noexcept;
 
 	D3D12CommandRecordingContext(const D3D12CommandRecordingContext&) = delete;
@@ -43,14 +40,10 @@ public:
 	void BeginFrame(std::uint32_t frameIndex) noexcept;
 	RhiCommandRecordingLease Acquire(ERhiQueueType queueType, std::uint32_t frameIndex, RhiCommandRecordingOwner owner) noexcept;
 	RhiSubmissionToken Submit(RhiCommandRecordingLease&& lease, std::span<const RhiSubmissionToken> waitTokens = {}) noexcept;
-	RhiSubmissionToken SubmitBatch(
-	    std::span<RhiCommandRecordingLease> leases,
-	    std::span<const RhiSubmissionToken> waitTokens = {}) noexcept;
+	RhiSubmissionToken SubmitBatch(std::span<RhiCommandRecordingLease> leases, std::span<const RhiSubmissionToken> waitTokens = {}) noexcept;
 	RenderCommandList& BeginCurrentGraphicsCommandList(std::uint32_t frameIndex) noexcept;
 	RhiCommandRecordingLease TakeCurrentGraphicsCommandRecordingLease(std::uint32_t frameIndex) noexcept;
-	RhiSubmissionToken SubmitCurrentGraphicsCommandList(
-	    std::uint32_t frameIndex,
-	    std::span<const RhiSubmissionToken> waitTokens = {}) noexcept;
+	RhiSubmissionToken SubmitCurrentGraphicsCommandList(std::uint32_t frameIndex, std::span<const RhiSubmissionToken> waitTokens = {}) noexcept;
 
 	RenderCommandList& GetCurrentCommandList(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept;
 	RenderCommandList* TryGetCurrentCommandList(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept;

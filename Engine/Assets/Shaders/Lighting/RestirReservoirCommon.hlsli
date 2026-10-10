@@ -4,6 +4,7 @@
 #include "/Engine/Resources/FrameUniformData.hlsli"
 
 #include "/Engine/Common/Random.hlsli"
+
 namespace RestirReservoirCommon
 {
 	static const uint InitialCandidateCount = 4u;

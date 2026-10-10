@@ -8,6 +8,7 @@
 #include <cstdint>
 struct ImageProviderFrameInput;
 struct RhiCapabilities;
+
 struct RayReconstructionEvaluationDesc final
 {
 	ERhiBackendApi BackendApi = ERhiBackendApi::Unknown;
@@ -30,6 +31,7 @@ class IRayReconstructionProvider
 {
 public:
 	virtual ~IRayReconstructionProvider() = default;
+
 	IRayReconstructionProvider(const IRayReconstructionProvider&) = delete;
 	IRayReconstructionProvider& operator=(const IRayReconstructionProvider&) = delete;
 	IRayReconstructionProvider(IRayReconstructionProvider&&) = delete;

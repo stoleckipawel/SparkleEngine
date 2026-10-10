@@ -75,8 +75,7 @@ namespace SparkleLauncher
 
 	static bool IncludesScope(const CookOperationPlan& plan, CookWorkspaceScope scope)
 	{
-		return std::find(plan.Request.SelectedScopes.begin(), plan.Request.SelectedScopes.end(), scope)
-		    != plan.Request.SelectedScopes.end();
+		return std::find(plan.Request.SelectedScopes.begin(), plan.Request.SelectedScopes.end(), scope) != plan.Request.SelectedScopes.end();
 	}
 
 	static void AddUniqueTool(std::vector<std::string>& tools, std::string tool)
@@ -203,15 +202,9 @@ namespace SparkleLauncher
 			}
 			case CookOperationKind::CookShaders:
 				AddPlannedEffect(plan, "Shader backend: " + plan.Request.ShaderBackend + ".");
-				AddPlannedEffect(
-				    plan,
-				    std::string("Shader debug info: ") + (plan.Request.ShaderEnableDebugInfo ? "enabled." : "disabled."));
-				AddPlannedEffect(
-				    plan,
-				    std::string("Shader optimizations: ") + (plan.Request.ShaderEnableOptimizations ? "enabled." : "disabled."));
-				AddPlannedEffect(
-				    plan,
-				    std::string("Warnings as errors: ") + (plan.Request.ShaderWarningsAsErrors ? "enabled." : "disabled."));
+				AddPlannedEffect(plan, std::string("Shader debug info: ") + (plan.Request.ShaderEnableDebugInfo ? "enabled." : "disabled."));
+				AddPlannedEffect(plan, std::string("Shader optimizations: ") + (plan.Request.ShaderEnableOptimizations ? "enabled." : "disabled."));
+				AddPlannedEffect(plan, std::string("Warnings as errors: ") + (plan.Request.ShaderWarningsAsErrors ? "enabled." : "disabled."));
 				AddPlannedEffect(plan, std::string("Strip debug info: ") + (plan.Request.ShaderStripDebugInfo ? "enabled." : "disabled."));
 				AddPlannedEffect(plan, "Cook the global shader map and code library for the canonical runtime targets.");
 				return;
@@ -223,12 +216,8 @@ namespace SparkleLauncher
 				return;
 			case CookOperationKind::CookAllAssets:
 				AddPlannedEffect(plan, "Shader phase backend: " + plan.Request.ShaderBackend + ".");
-				AddPlannedEffect(
-				    plan,
-				    std::string("Shader phase debug info: ") + (plan.Request.ShaderEnableDebugInfo ? "enabled." : "disabled."));
-				AddPlannedEffect(
-				    plan,
-				    std::string("Shader phase optimizations: ") + (plan.Request.ShaderEnableOptimizations ? "enabled." : "disabled."));
+				AddPlannedEffect(plan, std::string("Shader phase debug info: ") + (plan.Request.ShaderEnableDebugInfo ? "enabled." : "disabled."));
+				AddPlannedEffect(plan, std::string("Shader phase optimizations: ") + (plan.Request.ShaderEnableOptimizations ? "enabled." : "disabled."));
 				AddPlannedEffect(plan, "Cook all selected level assets.");
 				return;
 		}
@@ -342,34 +331,20 @@ namespace SparkleLauncher
 	const std::vector<CookOperationDefinition>& GetCookOperationDefinitions()
 	{
 		static const std::vector<CookOperationDefinition> definitions = {
-		    {CookOperationKind::CookWorkspace,
-		        "cook.workspace",
-		        "Cook",
-		        "Cook Workspace",
-		        "Cook the selected shader, texture, and scene outputs as one request."},
+		    {CookOperationKind::CookWorkspace, "cook.workspace", "Cook", "Cook Workspace", "Cook the selected shader, texture, and scene outputs as one request."},
 		    {CookOperationKind::CookAllAssets, "cook.all", "Cook", "Cook All", "Prepare all selected level assets."},
-		    {CookOperationKind::CookShaders,
-		        "cook.shaders",
-		        "Cook",
-		        "Cook Shaders",
-		        "Validate and prepare the shader map and code library."},
+		    {CookOperationKind::CookShaders, "cook.shaders", "Cook", "Cook Shaders", "Validate and prepare the shader map and code library."},
 		    {CookOperationKind::BuildTextures, "cook.textures", "Cook", "Cook Textures", "Prepare texture assets for runtime use."},
-		    {CookOperationKind::BuildSceneAssets,
-		        "cook.assets",
-		        "Cook",
-		        "Cook Scenes And Meshes",
-		        "Prepare scene, mesh, and material assets for runtime use."},
+		    {CookOperationKind::BuildSceneAssets, "cook.assets", "Cook", "Cook Scenes And Meshes", "Prepare scene, mesh, and material assets for runtime use."},
 		};
+
 		return definitions;
 	}
 
 	std::optional<CookOperationDefinition> FindCookOperationDefinition(std::string_view operationId)
 	{
 		const std::vector<CookOperationDefinition>& definitions = GetCookOperationDefinitions();
-		const auto found = std::find_if(
-		    definitions.begin(),
-		    definitions.end(),
-		    [operationId](const CookOperationDefinition& definition) { return definition.Id == operationId; });
+		const auto found = std::find_if(definitions.begin(), definitions.end(), [operationId](const CookOperationDefinition& definition) { return definition.Id == operationId; });
 		return found == definitions.end() ? std::nullopt : std::optional<CookOperationDefinition>(*found);
 	}
 
@@ -380,11 +355,7 @@ namespace SparkleLauncher
 		if (!definition.has_value())
 		{
 			plan.Operation = MakeOperationRecord(std::string(operationId), "Unknown cook operation");
-			SetOperationFailure(
-			    plan.Operation,
-			    OperationProblemKind::Planning,
-			    "Unknown cook operation id.",
-			    "Choose a registered Cook operation, then retry.");
+			SetOperationFailure(plan.Operation, OperationProblemKind::Planning, "Unknown cook operation id.", "Choose a registered Cook operation, then retry.");
 			AddReadiness(plan, plan.Operation.Failure->Summary);
 			return plan;
 		}
@@ -469,22 +440,28 @@ namespace SparkleLauncher
 				}
 #endif
 				break;
+
 			case CookOperationKind::CookShaders:
 #if !SPARKLE_ENABLE_SHADER_COMPILER
 				selectedScopesSupported = false;
+
 				AddReadiness(plan, "ShaderCompiler is disabled in this workspace configuration.");
 #endif
 				break;
+
 			case CookOperationKind::BuildTextures:
 			case CookOperationKind::BuildSceneAssets:
 #if !SPARKLE_ENABLE_CONTENT_PIPELINE
 				selectedScopesSupported = false;
+
 				AddReadiness(plan, "Content pipeline tools are disabled in this workspace configuration.");
 #endif
 				break;
+
 			case CookOperationKind::CookAllAssets:
 #if !SPARKLE_ENABLE_CONTENT_PIPELINE && !SPARKLE_ENABLE_SHADER_COMPILER
 				selectedScopesSupported = false;
+
 				AddReadiness(plan, "No cook features are enabled in this workspace configuration.");
 #endif
 				break;
@@ -518,8 +495,7 @@ namespace SparkleLauncher
 			AddReadiness(
 			    plan,
 			    "Cook tool runtime support bundle is incomplete beside " + toolPath.filename().string()
-			        + "; run Build Cooking Tools first after Sync shows the Vulkan SDK as ready: "
-			        + Strings::Join(missingSupportEntryViews, ", "));
+			        + "; run Build Cooking Tools first after Sync shows the Vulkan SDK as ready: " + Strings::Join(missingSupportEntryViews, ", "));
 		}
 		if (request.Mode == CookMode::Force && !request.ForceRecookConfirmed)
 		{
@@ -532,8 +508,7 @@ namespace SparkleLauncher
 			PopulateCookSteps(plan);
 		}
 
-		plan.CanRun = requiredCookToolsAvailable && !request.ContentId.empty() && hasSelectedScopes && selectedScopesSupported
-		    && (request.Mode != CookMode::Force || request.ForceRecookConfirmed);
+		plan.CanRun = requiredCookToolsAvailable && !request.ContentId.empty() && hasSelectedScopes && selectedScopesSupported && (request.Mode != CookMode::Force || request.ForceRecookConfirmed);
 
 		std::ostringstream dryRun;
 		dryRun << "Dry-run plan for " << definition->DisplayName << ":";

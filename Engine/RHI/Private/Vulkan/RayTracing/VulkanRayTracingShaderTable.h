@@ -19,14 +19,16 @@ public:
 	VulkanRayTracingShaderTable(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator, const RayTracingShaderTableDesc& desc);
 	~VulkanRayTracingShaderTable() noexcept override;
 
-	RhiResourceHandle GetResource() const noexcept override
-	{
-		return m_allocation != nullptr ? GetVulkanResourceHandle(*m_allocation) : RhiResourceHandle{};
-	}
+	RhiResourceHandle GetResource() const noexcept override { return m_allocation != nullptr ? GetVulkanResourceHandle(*m_allocation) : RhiResourceHandle{}; }
+
 	RhiRayTracingShaderTableRegion GetRayGenerationRegion() const noexcept override { return m_rayGeneration; }
+
 	RhiRayTracingShaderTableRegion GetMissRegion() const noexcept override { return m_miss; }
+
 	RhiRayTracingShaderTableRegion GetHitGroupRegion() const noexcept override { return m_hitGroup; }
+
 	RhiRayTracingShaderTableRegion GetCallableRegion() const noexcept override { return m_callable; }
+
 	VkDeviceAddress GetDeviceAddress() const noexcept { return m_allocation != nullptr ? m_allocation->BufferDeviceAddress : 0; }
 
 private:

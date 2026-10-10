@@ -4,6 +4,7 @@
 #include "Level/Parsing/LevelParserCommon.h"
 
 #include <fstream>
+
 namespace LevelParsing
 {
 	void ParseLightingSectionField(const ParsedLevelLine& parsedLine, LevelDesc& levelDesc);

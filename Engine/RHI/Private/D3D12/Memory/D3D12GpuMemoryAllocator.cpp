@@ -38,10 +38,7 @@ class D3D12GpuMemoryAllocatorImplementation final
 public:
 	using CategoryAggregation = RhiMemoryCategoryAggregation<ID3D12Heap*>;
 
-	static std::uint64_t GetBudgetBytesForResidency(
-	    RhiMemoryResidencyClass residencyClass,
-	    const D3D12MA::Budget& localBudget,
-	    const D3D12MA::Budget& nonLocalBudget) noexcept
+	static std::uint64_t GetBudgetBytesForResidency(RhiMemoryResidencyClass residencyClass, const D3D12MA::Budget& localBudget, const D3D12MA::Budget& nonLocalBudget) noexcept
 	{
 		switch (residencyClass)
 		{
@@ -62,11 +59,7 @@ public:
 	    const D3D12MA::Budget& localBudget,
 	    const D3D12MA::Budget& nonLocalBudget)
 	{
-		return RhiMemoryCategoryAggregationPolicy::FindOrCreate(
-		    aggregations,
-		    category,
-		    residencyClass,
-		    GetBudgetBytesForResidency(residencyClass, localBudget, nonLocalBudget));
+		return RhiMemoryCategoryAggregationPolicy::FindOrCreate(aggregations, category, residencyClass, GetBudgetBytesForResidency(residencyClass, localBudget, nonLocalBudget));
 	}
 
 	static void AddBlockReference(CategoryAggregation& aggregation, D3D12MA::Allocation* allocation) noexcept
@@ -181,13 +174,13 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 			{
 				snapshot.TransientUsageBytes += allocationBytes;
 			}
-			D3D12GpuMemoryAllocatorImplementation::CategoryAggregation& aggregation =
-			    D3D12GpuMemoryAllocatorImplementation::FindOrCreateAggregation(
-			        aggregations,
-			        record->Category,
-			        record->ResidencyClass,
-			        localBudget,
-			        nonLocalBudget);
+			D3D12GpuMemoryAllocatorImplementation::CategoryAggregation& aggregation = D3D12GpuMemoryAllocatorImplementation::FindOrCreateAggregation(
+			    aggregations,
+			    record->Category,
+			    record->ResidencyClass,
+			    localBudget,
+			    nonLocalBudget);
+
 			++aggregation.Stats.AllocationCount;
 			if (record->Resource != nullptr)
 			{
@@ -211,13 +204,13 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 			{
 				snapshot.TransientUsageBytes += allocationBytes;
 			}
-			D3D12GpuMemoryAllocatorImplementation::CategoryAggregation& aggregation =
-			    D3D12GpuMemoryAllocatorImplementation::FindOrCreateAggregation(
-			        aggregations,
-			        record->Category,
-			        record->ResidencyClass,
-			        localBudget,
-			        nonLocalBudget);
+			D3D12GpuMemoryAllocatorImplementation::CategoryAggregation& aggregation = D3D12GpuMemoryAllocatorImplementation::FindOrCreateAggregation(
+			    aggregations,
+			    record->Category,
+			    record->ResidencyClass,
+			    localBudget,
+			    nonLocalBudget);
+
 			++aggregation.Stats.AllocationCount;
 			aggregation.Stats.ResourceCount += record->AliasingResourceCount;
 			aggregation.Stats.UsedBytes += allocationBytes;
@@ -342,13 +335,7 @@ std::unique_ptr<D3D12GpuAllocationRecord> D3D12GpuMemoryAllocator::CreateResourc
 
 	D3D12MA::Allocation* allocation = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource;
-	const HRESULT hr = m_impl->allocator->CreateResource(
-	    &allocationDesc,
-	    &resourceDesc,
-	    initialState,
-	    optimizedClearValue,
-	    &allocation,
-	    IID_PPV_ARGS(resource.ReleaseAndGetAddressOf()));
+	const HRESULT hr = m_impl->allocator->CreateResource(&allocationDesc, &resourceDesc, initialState, optimizedClearValue, &allocation, IID_PPV_ARGS(resource.ReleaseAndGetAddressOf()));
 	if (FAILED(hr) || allocation == nullptr || resource == nullptr)
 	{
 		std::size_t liveAllocationCount = 0;
@@ -368,6 +355,7 @@ std::unique_ptr<D3D12GpuAllocationRecord> D3D12GpuMemoryAllocator::CreateResourc
 		    liveAllocationCount,
 		    liveHeapCount,
 		    D3D12GpuMemoryAllocatorImplementation::WideStringToUtf8(std::wstring(debugName).c_str()));
+
 		if (allocation != nullptr)
 		{
 			allocation->Release();
@@ -406,13 +394,7 @@ std::unique_ptr<D3D12GpuAllocationRecord> D3D12GpuMemoryAllocator::CreateAliasin
 	}
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource;
-	const HRESULT hr = m_impl->allocator->CreateAliasingResource(
-	    heap.Allocation,
-	    heapOffset,
-	    &resourceDesc,
-	    initialState,
-	    optimizedClearValue,
-	    IID_PPV_ARGS(resource.ReleaseAndGetAddressOf()));
+	const HRESULT hr = m_impl->allocator->CreateAliasingResource(heap.Allocation, heapOffset, &resourceDesc, initialState, optimizedClearValue, IID_PPV_ARGS(resource.ReleaseAndGetAddressOf()));
 	if (FAILED(hr) || resource == nullptr)
 	{
 		return {};
@@ -476,11 +458,12 @@ D3D12GpuAllocationRecord* D3D12GpuMemoryAllocator::FindAllocationRecord(ID3D12Re
 	}
 
 	std::scoped_lock lock(m_impl->recordsMutex);
+
 	const auto record = std::find_if(
 	    m_impl->liveRecords.begin(),
 	    m_impl->liveRecords.end(),
-	    [resource](const D3D12GpuAllocationRecord* candidate) noexcept
-	    { return candidate != nullptr && !candidate->PendingRelease && candidate->Resource.Get() == resource; });
+	    [resource](const D3D12GpuAllocationRecord* candidate) noexcept { return candidate != nullptr && !candidate->PendingRelease && candidate->Resource.Get() == resource; });
+
 	return record != m_impl->liveRecords.end() ? *record : nullptr;
 }
 
@@ -510,9 +493,7 @@ D3D12RecordingResourceUseToken D3D12GpuMemoryAllocator::RetainCoordinatorRecordi
 	return record != nullptr ? m_recordingResources->Retain(*record) : D3D12RecordingResourceUseToken{};
 }
 
-void D3D12GpuMemoryAllocator::ReleaseRecordingResource(
-    D3D12RecordingResourceUseToken use,
-    RhiSubmissionToken submissionToken) const noexcept
+void D3D12GpuMemoryAllocator::ReleaseRecordingResource(D3D12RecordingResourceUseToken use, RhiSubmissionToken submissionToken) const noexcept
 {
 	m_recordingResources->Release(use, submissionToken);
 }

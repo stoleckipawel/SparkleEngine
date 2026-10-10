@@ -11,18 +11,14 @@ RayTracingPipeline::RayTracingPipeline(const RayTracingPipelineDesc& desc) :
 		m_recordContracts.push_back(
 		    RecordContract{
 		        .ExportName = std::string(shaderExport.ExportName),
-		        .Stage = shaderExport.Shader != nullptr && shaderExport.Shader->Entry != nullptr ? shaderExport.Shader->Entry->Stage
-		                                                                                         : ShaderStage::Count,
-		        .LocalRecordSizeInBytes = shaderExport.Shader != nullptr && shaderExport.Shader->Entry != nullptr
-		            ? shaderExport.Shader->Entry->LocalRecordSizeInBytes
-		            : 0,
-		        .LocalRecordSignature = shaderExport.Shader != nullptr && shaderExport.Shader->Entry != nullptr
-		            ? shaderExport.Shader->Entry->LocalRecordSignature
-		            : 0});
+		        .Stage = shaderExport.Shader != nullptr && shaderExport.Shader->Entry != nullptr ? shaderExport.Shader->Entry->Stage : ShaderStage::Count,
+		        .LocalRecordSizeInBytes = shaderExport.Shader != nullptr && shaderExport.Shader->Entry != nullptr ? shaderExport.Shader->Entry->LocalRecordSizeInBytes : 0,
+		        .LocalRecordSignature = shaderExport.Shader != nullptr && shaderExport.Shader->Entry != nullptr ? shaderExport.Shader->Entry->LocalRecordSignature : 0});
 	}
 	for (const RhiRayTracingHitGroupDesc& hitGroup : desc.HitGroups)
 	{
 		const RecordContract* closestHit = FindRecordContract(hitGroup.ClosestHitExport);
+
 		m_recordContracts.push_back(
 		    RecordContract{
 		        .ExportName = std::string(hitGroup.ExportName),

@@ -18,10 +18,13 @@ static CaptureButtonPresentation GetCaptureButtonPresentation(ExternalCapturePro
 	{
 		case ExternalCaptureProvider::Pix:
 			return {&EditorIconAssets::ExternalTools::Pix, "PIX"};
+
 		case ExternalCaptureProvider::NsightGraphics:
 			return {&EditorIconAssets::ExternalTools::NsightGraphics, "Nsight Graphics (Experimental SDK)"};
+
 		case ExternalCaptureProvider::RenderDoc:
 			return {&EditorIconAssets::ExternalTools::RenderDoc, "RenderDoc"};
+
 		default:
 			return {};
 	}
@@ -40,8 +43,7 @@ static void DrawCaptureTooltip(const ExternalCaptureSnapshot& snapshot, const ch
 	{
 		ImGui::TextUnformatted("Capturing...");
 	}
-	else if (snapshot.State == ExternalCaptureState::Unavailable || snapshot.State == ExternalCaptureState::Failed
-	    || snapshot.State == ExternalCaptureState::Quarantined)
+	else if (snapshot.State == ExternalCaptureState::Unavailable || snapshot.State == ExternalCaptureState::Failed || snapshot.State == ExternalCaptureState::Quarantined)
 	{
 		ImGui::TextUnformatted(snapshot.Message.c_str());
 	}

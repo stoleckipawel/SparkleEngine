@@ -6,12 +6,7 @@ SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_descriptorHeapLogger, "RHI.D3D12.Descriptor
 static constexpr UINT kRenderTargetDescriptorHeapSize = 4096;
 static constexpr UINT kDepthStencilDescriptorHeapSize = 4096;
 
-D3D12DescriptorHeap::D3D12DescriptorHeap(
-    D3D12Rhi& rhi,
-    D3D12_DESCRIPTOR_HEAP_TYPE type,
-    D3D12_DESCRIPTOR_HEAP_FLAGS flags,
-    LPCWSTR name,
-    UINT descriptorCount) :
+D3D12DescriptorHeap::D3D12DescriptorHeap(D3D12Rhi& rhi, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags, LPCWSTR name, UINT descriptorCount) :
     m_rhi(&rhi)
 {
 	m_desc.Type = type;

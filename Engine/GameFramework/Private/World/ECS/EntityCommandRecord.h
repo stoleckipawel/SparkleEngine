@@ -20,6 +20,7 @@ namespace ECS::EntityCommandDetail
 	{
 	public:
 		virtual ~ComponentCommandOperation() = default;
+
 		ComponentCommandOperation(const ComponentCommandOperation&) = delete;
 		ComponentCommandOperation& operator=(const ComponentCommandOperation&) = delete;
 		ComponentCommandOperation(ComponentCommandOperation&&) = delete;
@@ -36,6 +37,7 @@ namespace ECS::EntityCommandDetail
 	{
 	public:
 		TypedComponentCommandOperation() = default;
+
 		explicit TypedComponentCommandOperation(T value) :
 		    m_value(std::move(value))
 		{
@@ -65,13 +67,11 @@ namespace ECS::EntityCommandDetail
 					{
 						return EntityCommandStatus::ComponentMissing;
 					}
-					return registry.Replace(entity, std::move(*m_value)) ? EntityCommandStatus::Applied
-					                                                     : EntityCommandStatus::ComponentMissing;
+					return registry.Replace(entity, std::move(*m_value)) ? EntityCommandStatus::Applied : EntityCommandStatus::ComponentMissing;
 				case EntityCommandKind::Set:
 					if (present)
 					{
-						return registry.Replace(entity, std::move(*m_value)) ? EntityCommandStatus::Applied
-						                                                     : EntityCommandStatus::StaleTarget;
+						return registry.Replace(entity, std::move(*m_value)) ? EntityCommandStatus::Applied : EntityCommandStatus::StaleTarget;
 					}
 					return registry.Add(entity, std::move(*m_value)) ? EntityCommandStatus::Applied : EntityCommandStatus::CapacityExceeded;
 				case EntityCommandKind::Create:

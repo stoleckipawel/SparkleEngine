@@ -24,12 +24,7 @@ void AssimpGeometryImporter::ImportGeometry(const aiScene& scene, SourceImportOu
 	ExtractNodeMeshes(scene, *scene.mRootNode, aiMatrix4x4(), nextNodeIndex, output);
 }
 
-void AssimpGeometryImporter::ExtractNodeMeshes(
-    const aiScene& scene,
-    const aiNode& node,
-    const aiMatrix4x4& parentTransform,
-    std::uint32_t& nextNodeIndex,
-    SourceImportOutput& output)
+void AssimpGeometryImporter::ExtractNodeMeshes(const aiScene& scene, const aiNode& node, const aiMatrix4x4& parentTransform, std::uint32_t& nextNodeIndex, SourceImportOutput& output)
 {
 	const std::uint32_t sourceNodeIndex = nextNodeIndex++;
 	const aiMatrix4x4 worldTransform = parentTransform * node.mTransformation;
@@ -99,9 +94,7 @@ void AssimpGeometryImporter::AppendMeshInstance(
 	output.scene.meshInstances.push_back(std::move(instanceEntry));
 }
 
-ImportedMeshPrimitiveIndex AssimpGeometryImporter::FindImportedPrimitiveIndex(
-    const ImportedScene& scene,
-    std::uint32_t sourceMeshIndex) noexcept
+ImportedMeshPrimitiveIndex AssimpGeometryImporter::FindImportedPrimitiveIndex(const ImportedScene& scene, std::uint32_t sourceMeshIndex) noexcept
 {
 	for (std::size_t primitiveIndex = 0; primitiveIndex < scene.meshPrimitives.size(); ++primitiveIndex)
 	{
@@ -115,11 +108,7 @@ ImportedMeshPrimitiveIndex AssimpGeometryImporter::FindImportedPrimitiveIndex(
 	return kInvalidImportedMeshPrimitiveIndex;
 }
 
-ImportedMeshGeometry AssimpGeometryImporter::ExtractMeshGeometry(
-    const aiMesh& mesh,
-    const aiNode& node,
-    const ImportedSkeleton* skeleton,
-    SourceImportOutput& output)
+ImportedMeshGeometry AssimpGeometryImporter::ExtractMeshGeometry(const aiMesh& mesh, const aiNode& node, const ImportedSkeleton* skeleton, SourceImportOutput& output)
 {
 	if (!mesh.HasPositions())
 	{
@@ -181,11 +170,7 @@ void AssimpGeometryImporter::PopulateVertices(const aiMesh& mesh, ImportedMeshGe
 
 		if (mesh.HasVertexColors(0))
 		{
-			vertex.color = DirectX::XMFLOAT4(
-			    mesh.mColors[0][vertexIndex].r,
-			    mesh.mColors[0][vertexIndex].g,
-			    mesh.mColors[0][vertexIndex].b,
-			    mesh.mColors[0][vertexIndex].a);
+			vertex.color = DirectX::XMFLOAT4(mesh.mColors[0][vertexIndex].r, mesh.mColors[0][vertexIndex].g, mesh.mColors[0][vertexIndex].b, mesh.mColors[0][vertexIndex].a);
 		}
 	}
 }
@@ -203,12 +188,7 @@ void AssimpGeometryImporter::AppendTriangleIndices(const aiMesh& mesh, ImportedM
 		{
 			if (face.mIndices[faceIndexOffset] >= mesh.mNumVertices)
 			{
-				throw Diagnostics::Error(
-				    std::format(
-				        "Assimp face {} in mesh '{}' references unknown vertex {}.",
-				        faceIndex,
-				        GetMeshName(mesh),
-				        face.mIndices[faceIndexOffset]));
+				throw Diagnostics::Error(std::format("Assimp face {} in mesh '{}' references unknown vertex {}.", faceIndex, GetMeshName(mesh), face.mIndices[faceIndexOffset]));
 			}
 		}
 

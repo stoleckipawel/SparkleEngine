@@ -15,6 +15,7 @@ namespace ECS
 	{
 	public:
 		static constexpr std::size_t MaxRetainedBatches = 64;
+
 		static constexpr std::size_t MaxChangesPerBatch = 4096;
 
 		WorldSequence Publish(std::span<const WorldChange> changes);

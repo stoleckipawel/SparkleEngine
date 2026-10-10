@@ -24,11 +24,7 @@
 class CookedMeshAssetTranslation final
 {
 public:
-	static CookedMeshAssetBuild BuildAsset(
-	    const ImportedMeshPrimitive& importedPrimitive,
-	    std::size_t primitiveIndex,
-	    std::string_view sceneAssetId,
-	    const std::filesystem::path& sourcePath)
+	static CookedMeshAssetBuild BuildAsset(const ImportedMeshPrimitive& importedPrimitive, std::size_t primitiveIndex, std::string_view sceneAssetId, const std::filesystem::path& sourcePath)
 	{
 		const ImportedMeshGeometry& geometry = importedPrimitive.geometry;
 		ValidateGeometry(geometry, primitiveIndex);
@@ -43,13 +39,7 @@ public:
 
 		for (const ImportedVertex& vertex : geometry.vertices)
 		{
-			asset.vertices.push_back(
-			    Assets::CookedMeshVertex{
-			        .position = vertex.position,
-			        .uv = vertex.uv,
-			        .color = vertex.color,
-			        .normal = vertex.normal,
-			        .tangent = vertex.tangent});
+			asset.vertices.push_back(Assets::CookedMeshVertex{.position = vertex.position, .uv = vertex.uv, .color = vertex.color, .normal = vertex.normal, .tangent = vertex.tangent});
 		}
 		for (const ImportedSkinInfluence& skinInfluence : geometry.deformation.skinInfluences)
 		{
@@ -69,8 +59,7 @@ private:
 
 	static void ValidateGeometry(const ImportedMeshGeometry& geometry, std::size_t primitiveIndex)
 	{
-		if (!geometry.IsValid() || geometry.vertices.size() > (std::numeric_limits<std::uint32_t>::max)()
-		    || geometry.indices.size() % 3u != 0u)
+		if (!geometry.IsValid() || geometry.vertices.size() > (std::numeric_limits<std::uint32_t>::max)() || geometry.indices.size() % 3u != 0u)
 		{
 			throw Diagnostics::Error(std::format("Imported mesh primitive {} has invalid triangle geometry.", primitiveIndex));
 		}
@@ -78,22 +67,13 @@ private:
 		{
 			if (index >= geometry.vertices.size())
 			{
-				throw Diagnostics::Error(
-				    std::format(
-				        "Imported mesh primitive {} references vertex {} but only {} vertices exist.",
-				        primitiveIndex,
-				        index,
-				        geometry.vertices.size()));
+				throw Diagnostics::Error(std::format("Imported mesh primitive {} references vertex {} but only {} vertices exist.", primitiveIndex, index, geometry.vertices.size()));
 			}
 		}
 		if (geometry.HasSkinInfluences() && geometry.deformation.skinInfluences.size() != geometry.vertices.size())
 		{
 			throw Diagnostics::Error(
-			    std::format(
-			        "Imported mesh primitive {} has {} skin influences for {} vertices.",
-			        primitiveIndex,
-			        geometry.deformation.skinInfluences.size(),
-			        geometry.vertices.size()));
+			    std::format("Imported mesh primitive {} has {} skin influences for {} vertices.", primitiveIndex, geometry.deformation.skinInfluences.size(), geometry.vertices.size()));
 		}
 		if (geometry.HasMorphTargets() && !geometry.HasSkinInfluences())
 		{
@@ -143,16 +123,11 @@ private:
 			if (!morphTarget.IsValidForVertexCount(static_cast<std::uint32_t>(geometry.vertices.size())))
 			{
 				throw Diagnostics::Error(
-				    std::format(
-				        "Imported mesh primitive {} has a morph target with {} deltas for {} vertices.",
-				        primitiveIndex,
-				        morphTarget.deltas.size(),
-				        geometry.vertices.size()));
+				    std::format("Imported mesh primitive {} has a morph target with {} deltas for {} vertices.", primitiveIndex, morphTarget.deltas.size(), geometry.vertices.size()));
 			}
 			if (morphTarget.name.size() >= Assets::kCookedMeshMorphTargetNameCapacity)
 			{
-				throw Diagnostics::Error(
-				    std::format("Imported mesh primitive {} has a morph-target name that exceeds the cooked format.", primitiveIndex));
+				throw Diagnostics::Error(std::format("Imported mesh primitive {} has a morph-target name that exceeds the cooked format.", primitiveIndex));
 			}
 
 			Assets::CookedMeshMorphTargetRecord record;
@@ -179,8 +154,7 @@ MeshCookOutput CookedMeshAssetBuilder::BuildMeshAssets(const SourceImportOutput&
 	for (std::size_t primitiveIndex = 0; primitiveIndex < importOutput.scene.meshPrimitives.size(); ++primitiveIndex)
 	{
 		const ImportedMeshPrimitive& importedPrimitive = importOutput.scene.meshPrimitives[primitiveIndex];
-		CookedMeshAssetBuild meshAsset =
-		    CookedMeshAssetTranslation::BuildAsset(importedPrimitive, primitiveIndex, sceneAssetId, importOutput.GetSourcePath());
+		CookedMeshAssetBuild meshAsset = CookedMeshAssetTranslation::BuildAsset(importedPrimitive, primitiveIndex, sceneAssetId, importOutput.GetSourcePath());
 		output.assetReferences.push_back({meshAsset.assetId, meshAsset.assetKind});
 		output.assets.push_back(std::move(meshAsset));
 	}

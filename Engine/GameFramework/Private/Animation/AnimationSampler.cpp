@@ -5,10 +5,7 @@
 #include <algorithm>
 #include <limits>
 
-static inline std::uint32_t FindKeyframeSegment(
-    const AnimationClipResource& clip,
-    const AnimationChannel& channel,
-    float timeSeconds) noexcept
+static inline std::uint32_t FindKeyframeSegment(const AnimationClipResource& clip, const AnimationChannel& channel, float timeSeconds) noexcept
 {
 	if (channel.keyframeCount <= 1u)
 	{
@@ -58,12 +55,12 @@ static inline DirectX::XMVECTOR CubicSpline(const AnimationKeyframe& lhs, const 
 	const float h10 = alphaCubed - 2.0f * alphaSquared + alpha;
 	const float h01 = -2.0f * alphaCubed + 3.0f * alphaSquared;
 	const float h11 = alphaCubed - alphaSquared;
-	const DirectX::XMVECTOR valueTerms = DirectX::XMVectorAdd(
-	    DirectX::XMVectorScale(DirectX::XMLoadFloat4(&lhs.value), h00),
-	    DirectX::XMVectorScale(DirectX::XMLoadFloat4(&rhs.value), h01));
+	const DirectX::XMVECTOR valueTerms = DirectX::XMVectorAdd(DirectX::XMVectorScale(DirectX::XMLoadFloat4(&lhs.value), h00), DirectX::XMVectorScale(DirectX::XMLoadFloat4(&rhs.value), h01));
+
 	const DirectX::XMVECTOR tangentTerms = DirectX::XMVectorAdd(
 	    DirectX::XMVectorScale(DirectX::XMLoadFloat4(&lhs.outTangent), h10 * duration),
 	    DirectX::XMVectorScale(DirectX::XMLoadFloat4(&rhs.inTangent), h11 * duration));
+
 	return DirectX::XMVectorAdd(valueTerms, tangentTerms);
 }
 
@@ -90,9 +87,9 @@ namespace AnimationSampler
 		const AnimationKeyframe& lhs = clip.keyframes[first + segment];
 		const AnimationKeyframe& rhs = clip.keyframes[first + segment + 1u];
 		const float alpha = ComputeSegmentAlpha(lhs, rhs, timeSeconds);
-		return channel.interpolation == Assets::CookedAnimationInterpolation::CubicSpline
-		    ? CubicSpline(lhs, rhs, alpha)
-		    : DirectX::XMVectorLerp(DirectX::XMLoadFloat4(&lhs.value), DirectX::XMLoadFloat4(&rhs.value), alpha);
+
+		return channel.interpolation == Assets::CookedAnimationInterpolation::CubicSpline ? CubicSpline(lhs, rhs, alpha)
+		                                                                                  : DirectX::XMVectorLerp(DirectX::XMLoadFloat4(&lhs.value), DirectX::XMLoadFloat4(&rhs.value), alpha);
 	}
 
 	DirectX::XMVECTOR SampleRotationChannel(const AnimationClipResource& clip, const AnimationChannel& channel, float timeSeconds) noexcept
@@ -109,17 +106,18 @@ namespace AnimationSampler
 		}
 		if (channel.interpolation == Assets::CookedAnimationInterpolation::Step)
 		{
-			return DirectX::XMQuaternionNormalize(
-			    DirectX::XMLoadFloat4(&clip.keyframes[first + FindStepKeyframe(clip, channel, timeSeconds)].value));
+			return DirectX::XMQuaternionNormalize(DirectX::XMLoadFloat4(&clip.keyframes[first + FindStepKeyframe(clip, channel, timeSeconds)].value));
 		}
 
 		const std::uint32_t segment = FindKeyframeSegment(clip, channel, timeSeconds);
 		const AnimationKeyframe& lhs = clip.keyframes[first + segment];
 		const AnimationKeyframe& rhs = clip.keyframes[first + segment + 1u];
 		const float alpha = ComputeSegmentAlpha(lhs, rhs, timeSeconds);
+
 		const DirectX::XMVECTOR sampled = channel.interpolation == Assets::CookedAnimationInterpolation::CubicSpline
 		    ? CubicSpline(lhs, rhs, alpha)
 		    : DirectX::XMQuaternionSlerp(DirectX::XMLoadFloat4(&lhs.value), DirectX::XMLoadFloat4(&rhs.value), alpha);
+
 		return DirectX::XMQuaternionNormalize(sampled);
 	}
 }

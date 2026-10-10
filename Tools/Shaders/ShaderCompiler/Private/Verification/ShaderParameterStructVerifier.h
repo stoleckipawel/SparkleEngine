@@ -19,8 +19,5 @@ class ShaderParameterStructVerifier final
 public:
 	ShaderParameterStructVerifier() = delete;
 
-	static ShaderParameterStructVerificationResult Verify(
-	    const ShaderParameterStructDescriptor& descriptor,
-	    const ShaderReflection& reflection,
-	    bool allowUnreflectedDeclarations = false);
+	static ShaderParameterStructVerificationResult Verify(const ShaderParameterStructDescriptor& descriptor, const ShaderReflection& reflection, bool allowUnreflectedDeclarations = false);
 };

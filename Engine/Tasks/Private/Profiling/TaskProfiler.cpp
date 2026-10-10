@@ -7,10 +7,7 @@
   #include <Windows.h>
   #include <TraceLoggingProvider.h>
 
-TRACELOGGING_DEFINE_PROVIDER(
-    g_sparkleTasksProvider,
-    "SparkleTasks",
-    (0x109d07d6, 0xb67d, 0x4e26, 0x9f, 0xa2, 0x47, 0x96, 0xea, 0xe8, 0x14, 0x83));
+TRACELOGGING_DEFINE_PROVIDER(g_sparkleTasksProvider, "SparkleTasks", (0x109d07d6, 0xb67d, 0x4e26, 0x9f, 0xa2, 0x47, 0x96, 0xea, 0xe8, 0x14, 0x83));
 #endif
 
 class TaskTraceProvider final
@@ -48,6 +45,7 @@ public:
 	struct TaskProviderRegistration final
 	{
 		TaskProviderRegistration() noexcept { TraceLoggingRegister(g_sparkleTasksProvider); }
+
 		~TaskProviderRegistration() { TraceLoggingUnregister(g_sparkleTasksProvider); }
 	};
 
@@ -62,12 +60,7 @@ void TaskProfiler::RecordDependency(std::uint64_t generation, std::uint32_t prer
 	{
 		return;
 	}
-	TraceLoggingWrite(
-	    g_sparkleTasksProvider,
-	    "TaskDependency",
-	    TraceLoggingUInt64(generation, "Run"),
-	    TraceLoggingUInt32(prerequisite, "Prerequisite"),
-	    TraceLoggingUInt32(dependent, "Dependent"));
+	TraceLoggingWrite(g_sparkleTasksProvider, "TaskDependency", TraceLoggingUInt64(generation, "Run"), TraceLoggingUInt32(prerequisite, "Prerequisite"), TraceLoggingUInt32(dependent, "Dependent"));
 #else
 	(void) generation;
 	(void) prerequisite;
@@ -75,11 +68,7 @@ void TaskProfiler::RecordDependency(std::uint64_t generation, std::uint32_t prer
 #endif
 }
 
-TaskProfiler::TimePoint TaskProfiler::Begin(
-    const TaskDesc& desc,
-    std::uint64_t generation,
-    std::uint32_t taskIndex,
-    std::uint32_t laneWorkerIndex) noexcept
+TaskProfiler::TimePoint TaskProfiler::Begin(const TaskDesc& desc, std::uint64_t generation, std::uint32_t taskIndex, std::uint32_t laneWorkerIndex) noexcept
 {
 #if defined(_WIN32)
 	if (!TraceLoggingProviderEnabled(g_sparkleTasksProvider, 0, 0))
@@ -87,6 +76,7 @@ TaskProfiler::TimePoint TaskProfiler::Begin(
 		return {};
 	}
 	const TimePoint start = std::chrono::steady_clock::now();
+
 	TraceLoggingWrite(
 	    g_sparkleTasksProvider,
 	    "TaskBegin",
@@ -105,13 +95,7 @@ TaskProfiler::TimePoint TaskProfiler::Begin(
 	return start;
 }
 
-void TaskProfiler::End(
-    const TaskDesc& desc,
-    std::uint64_t generation,
-    std::uint32_t taskIndex,
-    std::uint32_t laneWorkerIndex,
-    const TaskResult& result,
-    TimePoint start) noexcept
+void TaskProfiler::End(const TaskDesc& desc, std::uint64_t generation, std::uint32_t taskIndex, std::uint32_t laneWorkerIndex, const TaskResult& result, TimePoint start) noexcept
 {
 	if (start == TimePoint{})
 	{

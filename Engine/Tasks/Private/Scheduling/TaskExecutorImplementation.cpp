@@ -17,20 +17,18 @@ SPARKLE_DEFINE_LOG_CATEGORY_STATIC(LogTaskExecutor, "Tasks.Executor");
 void TaskExecutor::Implementation::Runtime::ValidateConfiguration(const TaskExecutorConfig& config)
 {
 	const std::uint32_t totalWorkers = config.FrameCriticalWorkerCount + config.BackgroundWorkerCount + config.BlockingIoWorkerCount;
-	const bool invalidSerialMix =
-	    config.FrameCriticalWorkerCount == 0 && (config.BackgroundWorkerCount != 0 || config.BlockingIoWorkerCount != 0);
+	const bool invalidSerialMix = config.FrameCriticalWorkerCount == 0 && (config.BackgroundWorkerCount != 0 || config.BlockingIoWorkerCount != 0);
+
 	const bool invalidCapacity = config.MaximumTasksPerExecution == 0 || config.MaximumTasksPerExecution > TaskGraphLimits::HardMaximumTasks
 	    || config.MaximumEdgesPerExecution > TaskGraphLimits::HardMaximumEdges || config.MaximumActiveExecutions == 0;
+
 	if (totalWorkers > MaximumWorkerCount || invalidSerialMix || invalidCapacity)
 	{
 		throw std::invalid_argument("TaskExecutorConfig contains an unsupported lane worker count or capacity.");
 	}
 }
 
-bool TaskExecutor::Implementation::Runtime::RejectExecution(
-    const std::shared_ptr<TaskExecution::State>& execution,
-    std::uint64_t generation,
-    std::string_view reason)
+bool TaskExecutor::Implementation::Runtime::RejectExecution(const std::shared_ptr<TaskExecution::State>& execution, std::uint64_t generation, std::string_view reason)
 {
 	TaskExecutionCompletion completion;
 	completion.Generation = generation;
@@ -77,9 +75,7 @@ TaskExecutor::Implementation::Runtime::~Runtime()
 	Shutdown(TaskExecutorShutdownMode::Drain);
 }
 
-std::shared_ptr<TaskExecution::State> TaskExecutor::Implementation::Runtime::CreateExecution(
-    std::uint64_t generation,
-    const std::shared_ptr<TaskScope::State>& scope) const
+std::shared_ptr<TaskExecution::State> TaskExecutor::Implementation::Runtime::CreateExecution(std::uint64_t generation, const std::shared_ptr<TaskScope::State>& scope) const
 {
 	auto execution = std::make_shared<TaskExecution::State>(generation);
 	execution->JoinThread = scope ? scope->OwnerThread : std::this_thread::get_id();
@@ -87,10 +83,7 @@ std::shared_ptr<TaskExecution::State> TaskExecutor::Implementation::Runtime::Cre
 	return execution;
 }
 
-bool TaskExecutor::Implementation::Runtime::ValidateWorkerLanes(
-    const CompiledTaskGraph& graph,
-    const std::shared_ptr<TaskExecution::State>& execution,
-    std::uint64_t generation) const
+bool TaskExecutor::Implementation::Runtime::ValidateWorkerLanes(const CompiledTaskGraph& graph, const std::shared_ptr<TaskExecution::State>& execution, std::uint64_t generation) const
 {
 	if (m_workers.empty())
 	{
@@ -117,10 +110,7 @@ bool TaskExecutor::Implementation::Runtime::ValidateLaunchRequest(
 {
 	if (TaskWorkerContext::IsWorkerFor(this))
 	{
-		return RejectExecution(
-		    execution,
-		    generation,
-		    "A task worker cannot submit work to its own executor; use graph dependencies or nested tasks.");
+		return RejectExecution(execution, generation, "A task worker cannot submit work to its own executor; use graph dependencies or nested tasks.");
 	}
 	if (scope && context.HasUserData() && !context.HasOwnedUserData())
 	{
@@ -170,32 +160,21 @@ bool TaskExecutor::Implementation::Runtime::AdmitExecution(const std::shared_ptr
 	return true;
 }
 
-void TaskExecutor::Implementation::Runtime::ExecuteSerial(
-    const CompiledTaskGraph& graph,
-    TaskExecutionContext& context,
-    const std::shared_ptr<TaskExecution::State>& execution)
+void TaskExecutor::Implementation::Runtime::ExecuteSerial(const CompiledTaskGraph& graph, TaskExecutionContext& context, const std::shared_ptr<TaskExecution::State>& execution)
 {
 	try
 	{
-		TaskExecutionCompletion completion =
-		    SerialTaskExecution::Execute(*graph.m_data, context, execution->Data.Generation, execution->Cancellation.get_token());
+		TaskExecutionCompletion completion = SerialTaskExecution::Execute(*graph.m_data, context, execution->Data.Generation, execution->Cancellation.get_token());
 		execution->Publish(std::move(completion));
 		OnExecutionSettled();
 	}
 	catch (...)
 	{
-		Diagnostics::Fatal(
-		    LogTaskExecutor,
-		    __FILE__,
-		    __LINE__,
-		    "Serial task execution failed after admission and could not publish completion.");
+		Diagnostics::Fatal(LogTaskExecutor, __FILE__, __LINE__, "Serial task execution failed after admission and could not publish completion.");
 	}
 }
 
-void TaskExecutor::Implementation::Runtime::StartExecution(
-    const CompiledTaskGraph& graph,
-    TaskExecutionContext context,
-    const std::shared_ptr<TaskExecution::State>& execution)
+void TaskExecutor::Implementation::Runtime::StartExecution(const CompiledTaskGraph& graph, TaskExecutionContext context, const std::shared_ptr<TaskExecution::State>& execution)
 {
 	if (m_workers.empty())
 	{
@@ -210,18 +189,11 @@ void TaskExecutor::Implementation::Runtime::StartExecution(
 	}
 	catch (...)
 	{
-		Diagnostics::Fatal(
-		    LogTaskExecutor,
-		    __FILE__,
-		    __LINE__,
-		    "Threaded task execution failed after admission and could not safely roll back publication.");
+		Diagnostics::Fatal(LogTaskExecutor, __FILE__, __LINE__, "Threaded task execution failed after admission and could not safely roll back publication.");
 	}
 }
 
-std::shared_ptr<TaskExecution::State> TaskExecutor::Implementation::Runtime::Launch(
-    const CompiledTaskGraph& graph,
-    TaskExecutionContext context,
-    const std::shared_ptr<TaskScope::State>& scope)
+std::shared_ptr<TaskExecution::State> TaskExecutor::Implementation::Runtime::Launch(const CompiledTaskGraph& graph, TaskExecutionContext context, const std::shared_ptr<TaskScope::State>& scope)
 {
 	const std::uint64_t generation = m_nextExecutionGeneration.fetch_add(1, std::memory_order_relaxed);
 	auto execution = CreateExecution(generation, scope);
@@ -332,10 +304,7 @@ TaskExecutor::Implementation::Implementation(TaskExecutorConfig config) :
 
 TaskExecutor::Implementation::~Implementation() = default;
 
-std::shared_ptr<TaskExecution::State> TaskExecutor::Implementation::Launch(
-    const CompiledTaskGraph& graph,
-    TaskExecutionContext context,
-    TaskScope* scope)
+std::shared_ptr<TaskExecution::State> TaskExecutor::Implementation::Launch(const CompiledTaskGraph& graph, TaskExecutionContext context, TaskScope* scope)
 {
 	return m_runtime->Launch(graph, std::move(context), scope != nullptr ? scope->m_state : nullptr);
 }

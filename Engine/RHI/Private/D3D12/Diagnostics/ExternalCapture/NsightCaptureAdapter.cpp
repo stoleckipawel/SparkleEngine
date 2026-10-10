@@ -23,10 +23,7 @@ static void* LoadNsightLibrary(const NGFX_PathChar* path)
 class NsightInstallations final
 {
 public:
-	NsightInstallations()
-	{
-		m_result = NGFX_EnumerateInstallations(m_installations.data(), static_cast<std::uint32_t>(m_installations.size()), &m_count);
-	}
+	NsightInstallations() { m_result = NGFX_EnumerateInstallations(m_installations.data(), static_cast<std::uint32_t>(m_installations.size()), &m_count); }
 
 	~NsightInstallations() noexcept { NGFX_FreeInstallations(m_installations.data(), m_count); }
 
@@ -39,6 +36,7 @@ public:
 
 private:
 	std::array<NGFX_InstallationInfo, 8> m_installations{};
+
 	std::uint32_t m_count = 0;
 	NGFX_Result m_result = NGFX_Result_Success;
 };
@@ -80,9 +78,7 @@ public:
 		}
 		if (count.count != m_captureIndex + 1)
 		{
-			return {
-			    .State = ExternalCaptureState::Quarantined,
-			    .Message = "Nsight completed multiple captures; request attribution is ambiguous."};
+			return {.State = ExternalCaptureState::Quarantined, .Message = "Nsight completed multiple captures; request attribution is ambiguous."};
 		}
 		std::array<NGFX_PathChar, 4096> path{};
 		NGFX_ArtifactFilePath_Params artifact{};
@@ -92,17 +88,14 @@ public:
 		artifact.filePathCapacity = static_cast<std::uint32_t>(path.size());
 		if (NGFX_GraphicsCapture_GetCaptureFilePath(&artifact) != NGFX_Result_Success)
 		{
-			return {
-			    .State = ExternalCaptureState::Failed,
-			    .Message = "Nsight completed capture but did not provide a finalized artifact path."};
+			return {.State = ExternalCaptureState::Failed, .Message = "Nsight completed capture but did not provide a finalized artifact path."};
 		}
 		const bool opened = OpenNsightCaptureInDesktopShell(path.data());
 
 		return {
 		    .State = ExternalCaptureState::Completed,
 		    .Artifact = std::filesystem::path(path.data()),
-		    .Message = opened ? "Experimental SDK: capture finalized and handed to Nsight."
-		                      : "Experimental SDK: capture finalized; open the artifact in Nsight Graphics."};
+		    .Message = opened ? "Experimental SDK: capture finalized and handed to Nsight." : "Experimental SDK: capture finalized; open the artifact in Nsight Graphics."};
 	}
 
 private:
@@ -128,8 +121,7 @@ static bool InjectNsightGraphicsCapture(std::string& error)
 		return false;
 	}
 
-	const auto root =
-	    Filesystem::GetProductUserStatePaths().CapturesRoot / "ExternalCapture" / ("Nsight-" + std::to_string(GetCurrentProcessId()));
+	const auto root = Filesystem::GetProductUserStatePaths().CapturesRoot / "ExternalCapture" / ("Nsight-" + std::to_string(GetCurrentProcessId()));
 
 	std::error_code ioError;
 	std::filesystem::create_directories(root, ioError);

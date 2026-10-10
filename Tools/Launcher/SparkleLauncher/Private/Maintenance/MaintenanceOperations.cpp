@@ -59,8 +59,7 @@ namespace SparkleLauncher
 			}
 
 			const ProjectAssetPack& pack = packIt->second;
-			const auto appendExistingTarget =
-			    [&targets](const std::string& displayName, const std::filesystem::path& path, std::string detail)
+			const auto appendExistingTarget = [&targets](const std::string& displayName, const std::filesystem::path& path, std::string detail)
 			{
 				std::error_code existsError;
 				if (path.empty() || !std::filesystem::exists(path, existsError) || existsError)
@@ -77,10 +76,7 @@ namespace SparkleLauncher
 
 			if (pack.external && !pack.extractionPath.empty())
 			{
-				appendExistingTarget(
-				    pack.displayName + " level content",
-				    pack.extractionPath,
-				    "Extracted level content. The cached source archive is preserved for fast re-sync.");
+				appendExistingTarget(pack.displayName + " level content", pack.extractionPath, "Extracted level content. The cached source archive is preserved for fast re-sync.");
 			}
 
 			self(self, pack.parentPackId);
@@ -144,10 +140,7 @@ namespace SparkleLauncher
 			return;
 		}
 
-		std::filesystem::recursive_directory_iterator iterator(
-		    target.Path,
-		    std::filesystem::directory_options::skip_permission_denied,
-		    errorCode);
+		std::filesystem::recursive_directory_iterator iterator(target.Path, std::filesystem::directory_options::skip_permission_denied, errorCode);
 		const std::filesystem::recursive_directory_iterator end;
 		while (iterator != end)
 		{
@@ -180,8 +173,7 @@ namespace SparkleLauncher
 	static std::string CleanTargetDisplayName(std::string_view processDisplayName)
 	{
 		static constexpr std::string_view cleanPrefix = "Clean ";
-		return std::string(
-		    processDisplayName.starts_with(cleanPrefix) ? processDisplayName.substr(cleanPrefix.size()) : processDisplayName);
+		return std::string(processDisplayName.starts_with(cleanPrefix) ? processDisplayName.substr(cleanPrefix.size()) : processDisplayName);
 	}
 
 	static std::string CleanTargetDetail(const MaintenanceOperationProcessStep& step)
@@ -218,8 +210,7 @@ namespace SparkleLauncher
 			return "not present";
 		}
 
-		return std::to_string(target.FileCount) + " files, " + std::to_string(target.DirectoryCount) + " directories, "
-		    + std::to_string(target.ByteCount) + " bytes";
+		return std::to_string(target.FileCount) + " files, " + std::to_string(target.DirectoryCount) + " directories, " + std::to_string(target.ByteCount) + " bytes";
 	}
 
 	static OperationDestructiveScope ToOperationDestructiveScope(CleanScope scope)
@@ -331,6 +322,7 @@ namespace SparkleLauncher
 		    CleanScope::ThirdPartyDependencyCache,
 		    CleanScope::Logs,
 		    CleanScope::PristineGeneratedWorkspace};
+
 		for (const CleanScope scope : scopes)
 		{
 			if (CleanScopeId(scope) == text)
@@ -345,22 +337,16 @@ namespace SparkleLauncher
 	const std::vector<MaintenanceOperationDefinition>& GetMaintenanceOperationDefinitions()
 	{
 		static const std::vector<MaintenanceOperationDefinition> definitions = {
-		    {MaintenanceOperationKind::CleanWorkspace,
-		        "workspace.clean",
-		        "Clean",
-		        "Clean Workspace",
-		        "Remove generated files for the selected confirmed scope."},
+		    {MaintenanceOperationKind::CleanWorkspace, "workspace.clean", "Clean", "Clean Workspace", "Remove generated files for the selected confirmed scope."},
 		};
+
 		return definitions;
 	}
 
 	std::optional<MaintenanceOperationDefinition> FindMaintenanceOperationDefinition(std::string_view operationId)
 	{
 		const std::vector<MaintenanceOperationDefinition>& definitions = GetMaintenanceOperationDefinitions();
-		const auto found = std::find_if(
-		    definitions.begin(),
-		    definitions.end(),
-		    [operationId](const MaintenanceOperationDefinition& definition) { return definition.Id == operationId; });
+		const auto found = std::find_if(definitions.begin(), definitions.end(), [operationId](const MaintenanceOperationDefinition& definition) { return definition.Id == operationId; });
 		return found == definitions.end() ? std::nullopt : std::optional<MaintenanceOperationDefinition>(*found);
 	}
 
@@ -371,11 +357,7 @@ namespace SparkleLauncher
 		if (!definition.has_value())
 		{
 			plan.Operation = MakeOperationRecord(std::string(operationId), "Unknown maintenance operation");
-			SetOperationFailure(
-			    plan.Operation,
-			    OperationProblemKind::Planning,
-			    "Unknown maintenance operation id.",
-			    "Choose a registered Clean operation, then retry.");
+			SetOperationFailure(plan.Operation, OperationProblemKind::Planning, "Unknown maintenance operation id.", "Choose a registered Clean operation, then retry.");
 			AddReadiness(plan, plan.Operation.Failure->Summary);
 			return plan;
 		}
@@ -402,8 +384,10 @@ namespace SparkleLauncher
 			case MaintenanceOperationKind::CleanWorkspace:
 			{
 				const std::vector<CleanScope> requestedCleanScopes = ResolveRequestedCleanScopes(request);
+
 				const bool missingContent = request.ContentId.empty() && request.RequestedCleanTargets.empty()
 				    && std::any_of(requestedCleanScopes.begin(), requestedCleanScopes.end(), CleanScopeRequiresContent);
+
 				if (missingContent)
 				{
 					SetOperationFailure(
@@ -411,24 +395,21 @@ namespace SparkleLauncher
 					    OperationProblemKind::Prerequisite,
 					    "The selected clean scope requires a content project.",
 					    "Select a content project or remove project-owned outputs from the clean request, then retry.");
+
 					AddReadiness(plan, plan.Operation.Failure->Summary);
 					break;
 				}
 
 				PopulateCleanTargets(plan);
-				plan.Operation.DestructiveScope = request.RequestedCleanTargets.empty() && requestedCleanScopes.size() == 1
-				    ? ToOperationDestructiveScope(requestedCleanScopes.front())
-				    : OperationDestructiveScope::None;
+
+				plan.Operation.DestructiveScope = request.RequestedCleanTargets.empty() && requestedCleanScopes.size() == 1 ? ToOperationDestructiveScope(requestedCleanScopes.front())
+				                                                                                                            : OperationDestructiveScope::None;
+
 				plan.Operation.RequiresConfirmation = true;
-				AddReadiness(
-				    plan,
-				    request.DestructiveActionConfirmed ? "Clean scope was confirmed." : "Clean scope requires explicit confirmation.");
+				AddReadiness(plan, request.DestructiveActionConfirmed ? "Clean scope was confirmed." : "Clean scope requires explicit confirmation.");
 				for (const MaintenanceCleanTarget& target : plan.CleanTargets)
 				{
-					AddPlannedEffect(
-					    plan,
-					    target.DisplayName + ": " + target.Path.string() + " (" + target.Detail + "; " + FormatCleanTargetStats(target)
-					        + ")");
+					AddPlannedEffect(plan, target.DisplayName + ": " + target.Path.string() + " (" + target.Detail + "; " + FormatCleanTargetStats(target) + ")");
 				}
 				plan.CanRun = request.DestructiveActionConfirmed;
 				break;

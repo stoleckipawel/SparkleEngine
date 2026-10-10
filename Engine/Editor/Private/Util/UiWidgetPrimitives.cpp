@@ -56,15 +56,7 @@ namespace UiUtil
 		}
 	}
 
-	void DrawHeaderBar(
-	    const char* title,
-	    const char* trailingText,
-	    float height,
-	    ImU32 backgroundColor,
-	    ImU32 borderColor,
-	    ImFont* titleFont,
-	    ImFont* trailingFont,
-	    const ImVec2& padding)
+	void DrawHeaderBar(const char* title, const char* trailingText, float height, ImU32 backgroundColor, ImU32 borderColor, ImFont* titleFont, ImFont* trailingFont, const ImVec2& padding)
 	{
 		ImDrawList* drawList = ImGui::GetWindowDrawList();
 		const ImVec2 start = ImGui::GetCursorScreenPos();
@@ -124,8 +116,7 @@ namespace UiUtil
 
 	bool IsDifferentFromDefault(const float values[3], const float defaultValues[3]) noexcept
 	{
-		return IsDifferentFromDefault(values[0], defaultValues[0]) || IsDifferentFromDefault(values[1], defaultValues[1])
-		    || IsDifferentFromDefault(values[2], defaultValues[2]);
+		return IsDifferentFromDefault(values[0], defaultValues[0]) || IsDifferentFromDefault(values[1], defaultValues[1]) || IsDifferentFromDefault(values[2], defaultValues[2]);
 	}
 
 	ImVec4 WithAlpha(ImVec4 color, float alpha) noexcept

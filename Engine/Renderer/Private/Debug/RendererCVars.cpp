@@ -2,14 +2,8 @@
 
 #include "Debug/RendererCVars.h"
 
-ConsoleVariable<GBufferAlgorithm> CVarGBufferAlgorithm(
-    "r.GBuffer.Algorithm",
-    GBufferAlgorithm::Rasterized,
-    "GBuffer algorithm: 0=rasterized, 1=ray tracing.");
-ConsoleVariable<bool> CVarRendererMeshAutoBatching(
-    "r.MeshAutoBatching",
-    true,
-    "Build renderer-side auto batches for compatible flat mesh instances.");
+ConsoleVariable<GBufferAlgorithm> CVarGBufferAlgorithm("r.GBuffer.Algorithm", GBufferAlgorithm::Rasterized, "GBuffer algorithm: 0=rasterized, 1=ray tracing.");
+ConsoleVariable<bool> CVarRendererMeshAutoBatching("r.MeshAutoBatching", true, "Build renderer-side auto batches for compatible flat mesh instances.");
 ConsoleVariable<RendererDiagnosticMarkerVerbosity> CVarRendererDiagnosticMarkerVerbosity(
     "r.Diagnostics.MarkerVerbosity",
     RendererDiagnosticMarkerVerbosity::FramePass,
@@ -19,18 +13,9 @@ ConsoleVariable<bool> CVarRendererDiagnosticGpuTiming(
     false,
     "Collect internal GPU timestamp timings from renderer diagnostic scopes. Profiler markers remain controlled by "
     "r.Diagnostics.MarkerVerbosity.");
-ConsoleVariable<bool> CVarRendererParallelFrameGraphRecording(
-    "r.FrameGraph.ParallelRecording",
-    true,
-    "Record compiled typed-shader frame-graph chunks through SparkleTasks.");
-ConsoleVariable<bool> CVarRayTracingClassicTlasRefit(
-    "r.RayTracing.Tlas.Refit",
-    true,
-    "Use classic TLAS refit/update after the initial full build when PTLAS is disabled.");
-ConsoleVariable<std::uint32_t> CVarRayTracingPartitionsPerAxis(
-    "r.RayTracing.Ptlas.PartitionsPerAxis",
-    8u,
-    "Logical ray tracing partition grid resolution per axis.");
+ConsoleVariable<bool> CVarRendererParallelFrameGraphRecording("r.FrameGraph.ParallelRecording", true, "Record compiled typed-shader frame-graph chunks through SparkleTasks.");
+ConsoleVariable<bool> CVarRayTracingClassicTlasRefit("r.RayTracing.Tlas.Refit", true, "Use classic TLAS refit/update after the initial full build when PTLAS is disabled.");
+ConsoleVariable<std::uint32_t> CVarRayTracingPartitionsPerAxis("r.RayTracing.Ptlas.PartitionsPerAxis", 8u, "Logical ray tracing partition grid resolution per axis.");
 ConsoleVariable<RayTracingPtlasPartitionUpdateMode> CVarRayTracingPtlasPartitionUpdateMode(
     "r.RayTracing.Ptlas.PartitionUpdateMode",
     RayTracingPtlasPartitionUpdateMode::AlwaysUpdatePartition,

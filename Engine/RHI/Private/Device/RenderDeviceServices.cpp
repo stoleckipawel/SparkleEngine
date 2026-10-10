@@ -37,11 +37,8 @@ void RenderDeviceServices::ValidateBackBufferFormat(PixelFormat backBufferFormat
 
 RhiPresentationConfiguration RenderDeviceServices::ResolvePresentationConfiguration() noexcept
 {
-	const RhiPresentationConfiguration configuration{
-	    .BackBufferCount = CVarBackBufferCount.Get(),
-	    .MaximumFramesInFlight = CVarMaximumFramesInFlight.Get()};
-	if (configuration.BackBufferCount < RhiPresentationDefaults::MinBackBufferCount
-	    || configuration.BackBufferCount > RhiPresentationDefaults::MaxBackBufferCount)
+	const RhiPresentationConfiguration configuration{.BackBufferCount = CVarBackBufferCount.Get(), .MaximumFramesInFlight = CVarMaximumFramesInFlight.Get()};
+	if (configuration.BackBufferCount < RhiPresentationDefaults::MinBackBufferCount || configuration.BackBufferCount > RhiPresentationDefaults::MaxBackBufferCount)
 	{
 		FailCreation(
 		    std::format(
@@ -49,18 +46,13 @@ RhiPresentationConfiguration RenderDeviceServices::ResolvePresentationConfigurat
 		        "for single-frame pacing.",
 		        configuration.BackBufferCount));
 	}
-	if (configuration.MaximumFramesInFlight < RhiPresentationDefaults::MinFramesInFlight
-	    || configuration.MaximumFramesInFlight > RhiPresentationDefaults::MaxFramesInFlight)
+	if (configuration.MaximumFramesInFlight < RhiPresentationDefaults::MinFramesInFlight || configuration.MaximumFramesInFlight > RhiPresentationDefaults::MaxFramesInFlight)
 	{
 		FailCreation(std::format("r.MaximumFramesInFlight={} is outside the supported range [1, 3].", configuration.MaximumFramesInFlight));
 	}
 	if (configuration.MaximumFramesInFlight > configuration.BackBufferCount)
 	{
-		FailCreation(
-		    std::format(
-		        "r.MaximumFramesInFlight={} exceeds r.BackBufferCount={}.",
-		        configuration.MaximumFramesInFlight,
-		        configuration.BackBufferCount));
+		FailCreation(std::format("r.MaximumFramesInFlight={} exceeds r.BackBufferCount={}.", configuration.MaximumFramesInFlight, configuration.BackBufferCount));
 	}
 	return configuration;
 }
@@ -86,8 +78,7 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Window& windo
 	{
 		case ERhiBackendApi::D3D12:
 #if SPARKLE_RHI_WITH_D3D12
-			services->m_state->SetBackendServices(
-			    CreateD3D12RenderDeviceServices(window, backBufferFormat, presentationConfiguration, interposerHooks));
+			services->m_state->SetBackendServices(CreateD3D12RenderDeviceServices(window, backBufferFormat, presentationConfiguration, interposerHooks));
 			break;
 #else
 			FailUnsupportedBackend(backendApi);
@@ -198,9 +189,7 @@ RenderCommandList& RenderDeviceServices::BeginCurrentGraphicsCommandList() noexc
 	return m_state->GetBackendServices().BeginCurrentGraphicsCommandList();
 }
 
-RhiCommandRecordingLease RenderDeviceServices::AcquireCommandRecordingLease(
-    ERhiQueueType queueType,
-    RhiCommandRecordingOwner owner) noexcept
+RhiCommandRecordingLease RenderDeviceServices::AcquireCommandRecordingLease(ERhiQueueType queueType, RhiCommandRecordingOwner owner) noexcept
 {
 	return m_state->GetBackendServices().AcquireCommandRecordingLease(queueType, owner);
 }
@@ -210,16 +199,12 @@ RhiCommandRecordingLease RenderDeviceServices::TakeCurrentGraphicsCommandRecordi
 	return m_state->GetBackendServices().TakeCurrentGraphicsCommandRecordingLease();
 }
 
-RhiSubmissionToken RenderDeviceServices::SubmitCommandRecordingLease(
-    RhiCommandRecordingLease&& lease,
-    std::span<const RhiSubmissionToken> waitTokens) noexcept
+RhiSubmissionToken RenderDeviceServices::SubmitCommandRecordingLease(RhiCommandRecordingLease&& lease, std::span<const RhiSubmissionToken> waitTokens) noexcept
 {
 	return m_state->GetBackendServices().SubmitCommandRecordingLease(std::move(lease), waitTokens);
 }
 
-RhiSubmissionToken RenderDeviceServices::SubmitCommandRecordingBatch(
-    std::span<RhiCommandRecordingLease> leases,
-    std::span<const RhiSubmissionToken> waitTokens) noexcept
+RhiSubmissionToken RenderDeviceServices::SubmitCommandRecordingBatch(std::span<RhiCommandRecordingLease> leases, std::span<const RhiSubmissionToken> waitTokens) noexcept
 {
 	return m_state->GetBackendServices().SubmitCommandRecordingBatch(leases, waitTokens);
 }

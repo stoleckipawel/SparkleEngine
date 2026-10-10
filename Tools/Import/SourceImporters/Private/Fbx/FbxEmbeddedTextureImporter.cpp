@@ -35,9 +35,7 @@ public:
 		Payload payload;
 		if (texture.mHeight == 0)
 		{
-			payload.Bytes.assign(
-			    reinterpret_cast<const std::uint8_t*>(texture.pcData),
-			    reinterpret_cast<const std::uint8_t*>(texture.pcData) + texture.mWidth);
+			payload.Bytes.assign(reinterpret_cast<const std::uint8_t*>(texture.pcData), reinterpret_cast<const std::uint8_t*>(texture.pcData) + texture.mWidth);
 			payload.Extension = ResolveCompressedExtension(texture, payload.Bytes);
 			if (payload.Extension.empty())
 			{
@@ -105,8 +103,7 @@ private:
 		{
 			return hint;
 		}
-		if (const std::string fileExtension = NormalizeExtension(
-		        texture.mFilename.length > 0 ? std::filesystem::path(texture.mFilename.C_Str()).extension().string() : std::string{});
+		if (const std::string fileExtension = NormalizeExtension(texture.mFilename.length > 0 ? std::filesystem::path(texture.mFilename.C_Str()).extension().string() : std::string{});
 		    !fileExtension.empty())
 		{
 			return fileExtension;
@@ -136,18 +133,14 @@ private:
 		{
 			return ".exr";
 		}
-		if (StartsWith(bytes, {0x23u, 0x3Fu, 0x52u, 0x41u, 0x44u, 0x49u, 0x41u, 0x4Eu, 0x43u, 0x45u})
-		    || StartsWith(bytes, {0x23u, 0x3Fu, 0x52u, 0x47u, 0x42u, 0x45u}))
+		if (StartsWith(bytes, {0x23u, 0x3Fu, 0x52u, 0x41u, 0x44u, 0x49u, 0x41u, 0x4Eu, 0x43u, 0x45u}) || StartsWith(bytes, {0x23u, 0x3Fu, 0x52u, 0x47u, 0x42u, 0x45u}))
 		{
 			return ".hdr";
 		}
 		return {};
 	}
 
-	static bool IsExtensionCharacter(char character) noexcept
-	{
-		return (character >= 'a' && character <= 'z') || (character >= '0' && character <= '9');
-	}
+	static bool IsExtensionCharacter(char character) noexcept { return (character >= 'a' && character <= 'z') || (character >= '0' && character <= '9'); }
 
 	static bool StartsWith(const std::vector<std::uint8_t>& bytes, std::initializer_list<std::uint8_t> signature) noexcept
 	{
@@ -169,8 +162,7 @@ std::vector<std::filesystem::path> FbxEmbeddedTextureImporter::ExtractTextures(c
 		const FbxEmbeddedTextureEncoding::Payload payload = FbxEmbeddedTextureEncoding::BuildFilePayload(*texture);
 
 		const std::uint64_t contentHash = Hash::Fnv1a64(payload.Bytes.data(), payload.Bytes.size());
-		const std::filesystem::path cachePath =
-		    Paths::ImportedTextureCacheRoot() / (Formatting::FormatHexUInt64(contentHash) + payload.Extension);
+		const std::filesystem::path cachePath = Paths::ImportedTextureCacheRoot() / (Formatting::FormatHexUInt64(contentHash) + payload.Extension);
 		std::error_code errorCode;
 		const bool cacheEntryExists = std::filesystem::exists(cachePath, errorCode);
 		if (errorCode)
@@ -213,8 +205,7 @@ std::vector<std::filesystem::path> FbxEmbeddedTextureImporter::ExtractTextures(c
 			}
 			if (finalizedHash != contentHash)
 			{
-				throw Diagnostics::Error(
-				    "Embedded texture cache entry does not match its content-addressed name: '" + cachePath.string() + "'.");
+				throw Diagnostics::Error("Embedded texture cache entry does not match its content-addressed name: '" + cachePath.string() + "'.");
 			}
 		}
 

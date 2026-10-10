@@ -61,22 +61,19 @@ void GpuMesh::CreateGeometryBuffers(RenderCommandList& commandList, const MeshDa
 void GpuMesh::CreateVertexBuffer(RenderCommandList& commandList, const MeshData& meshData)
 {
 	RhiResourceService& resources = m_renderHardwareInterface->GetResourceService();
+
 	m_vertexBuffer = resources.CreateBufferResource(
-	    RhiBufferResourceDesc{
-	        .SizeInBytes = meshData.GetVertexBufferSize(),
-	        .StrideInBytes = sizeof(VertexData),
-	        .Kind = RhiBufferKind::Vertex,
-	        .AllowRayTracingBuildInput = true},
+	    RhiBufferResourceDesc{.SizeInBytes = meshData.GetVertexBufferSize(), .StrideInBytes = sizeof(VertexData), .Kind = RhiBufferKind::Vertex, .AllowRayTracingBuildInput = true},
 	    ResourceState::CopyDest,
 	    RhiMemoryCategory::Mesh,
 	    RhiMemoryResidencyClass::DeviceLocal,
 	    L"GpuMesh_VertexBuffer");
+
 	if (!m_vertexBuffer)
 		Diagnostics::Fatal(g_gpuMeshLogger, __FILE__, __LINE__, "GPU mesh vertex buffer creation failed.");
 
 	const std::span<const VertexData> vertices{meshData.vertices};
-	if (!m_renderHardwareInterface->GetUploadService()
-	        .UploadBuffer(commandList, m_vertexBuffer, std::as_bytes(vertices), ResourceState::Common, L"GpuMesh_VertexUpload"))
+	if (!m_renderHardwareInterface->GetUploadService().UploadBuffer(commandList, m_vertexBuffer, std::as_bytes(vertices), ResourceState::Common, L"GpuMesh_VertexUpload"))
 	{
 		resources.ReleaseOwnedResource(m_vertexBuffer);
 		m_vertexBuffer = {};
@@ -87,6 +84,7 @@ void GpuMesh::CreateVertexBuffer(RenderCommandList& commandList, const MeshData&
 	    .BufferLocation = resources.GetResourceGpuVirtualAddress(m_vertexBuffer),
 	    .SizeInBytes = static_cast<std::uint32_t>(meshData.GetVertexBufferSize()),
 	    .StrideInBytes = sizeof(VertexData)};
+
 	if (m_vertexBufferView.BufferLocation == 0)
 		Diagnostics::Fatal(g_gpuMeshLogger, __FILE__, __LINE__, "GPU mesh vertex buffer has no device address.");
 }
@@ -94,21 +92,19 @@ void GpuMesh::CreateVertexBuffer(RenderCommandList& commandList, const MeshData&
 void GpuMesh::CreateIndexBuffer(RenderCommandList& commandList, const MeshData& meshData)
 {
 	RhiResourceService& resources = m_renderHardwareInterface->GetResourceService();
+
 	m_indexBuffer = resources.CreateBufferResource(
-	    RhiBufferResourceDesc{
-	        .SizeInBytes = meshData.GetIndexBufferSize(),
-	        .Kind = RhiBufferKind::Index,
-	        .AllowRayTracingBuildInput = true},
+	    RhiBufferResourceDesc{.SizeInBytes = meshData.GetIndexBufferSize(), .Kind = RhiBufferKind::Index, .AllowRayTracingBuildInput = true},
 	    ResourceState::CopyDest,
 	    RhiMemoryCategory::Mesh,
 	    RhiMemoryResidencyClass::DeviceLocal,
 	    L"GpuMesh_IndexBuffer");
+
 	if (!m_indexBuffer)
 		Diagnostics::Fatal(g_gpuMeshLogger, __FILE__, __LINE__, "GPU mesh index buffer creation failed.");
 
 	const std::span<const std::uint32_t> indices{meshData.indices};
-	if (!m_renderHardwareInterface->GetUploadService()
-	        .UploadBuffer(commandList, m_indexBuffer, std::as_bytes(indices), ResourceState::Common, L"GpuMesh_IndexUpload"))
+	if (!m_renderHardwareInterface->GetUploadService().UploadBuffer(commandList, m_indexBuffer, std::as_bytes(indices), ResourceState::Common, L"GpuMesh_IndexUpload"))
 	{
 		resources.ReleaseOwnedResource(m_indexBuffer);
 		m_indexBuffer = {};
@@ -119,6 +115,7 @@ void GpuMesh::CreateIndexBuffer(RenderCommandList& commandList, const MeshData& 
 	    .BufferLocation = resources.GetResourceGpuVirtualAddress(m_indexBuffer),
 	    .SizeInBytes = static_cast<std::uint32_t>(meshData.GetIndexBufferSize()),
 	    .Format = RhiIndexFormat::UInt32};
+
 	if (m_indexBufferView.BufferLocation == 0)
 		Diagnostics::Fatal(g_gpuMeshLogger, __FILE__, __LINE__, "GPU mesh index buffer has no device address.");
 }
@@ -126,14 +123,12 @@ void GpuMesh::CreateIndexBuffer(RenderCommandList& commandList, const MeshData& 
 void GpuMesh::CreateDeformationBuffers(RenderCommandList& commandList, GpuMeshPreparedData& preparedData)
 {
 	m_skinInfluences.Upload(*m_renderHardwareInterface, commandList, preparedData.GpuSkinInfluences);
-	m_morphTargets
-	    .Upload(*m_renderHardwareInterface, commandList, std::move(preparedData.MorphTargetDeltas), preparedData.MorphTargetCount);
+	m_morphTargets.Upload(*m_renderHardwareInterface, commandList, std::move(preparedData.MorphTargetDeltas), preparedData.MorphTargetCount);
 }
 
 void GpuMesh::CommitPreparedData(GpuMeshPreparedData&& preparedData)
 {
-	m_localBounds =
-	    GpuMeshBounds{.Min = preparedData.LocalBoundsMin, .Max = preparedData.LocalBoundsMax, .Valid = preparedData.HasLocalBounds};
+	m_localBounds = GpuMeshBounds{.Min = preparedData.LocalBoundsMin, .Max = preparedData.LocalBoundsMax, .Valid = preparedData.HasLocalBounds};
 	m_rayTracingHitVertices = std::move(preparedData.RayTracingVertices);
 	m_rayTracingHitIndices = std::move(preparedData.RayTracingIndices);
 	m_cpuSkinInfluences = std::move(preparedData.SkinInfluences);
@@ -159,32 +154,13 @@ const RhiVertexInputDeclaration& GpuMesh::GetVertexInputDeclaration() const noex
 	static const RhiVertexInputDeclaration declaration{
 	    .Bindings = {RhiVertexInputBinding{.Binding = 0, .StrideInBytes = sizeof(VertexData)}},
 	    .Elements =
-	        {RhiVertexInputElement{
-	             .Semantic = RhiVertexSemantic::Position,
-	             .Location = 0,
-	             .Binding = 0,
-	             .Format = RhiVertexElementFormat::Float3,
-	             .OffsetInBytes = offsetof(VertexData, position)},
-	            RhiVertexInputElement{
-	                .Semantic = RhiVertexSemantic::TexCoord,
-	                .Location = 1,
-	                .Binding = 0,
-	                .Format = RhiVertexElementFormat::Float2,
-	                .OffsetInBytes = offsetof(VertexData, uv)},
-	            RhiVertexInputElement{
-	                .Semantic = RhiVertexSemantic::Normal,
-	                .Location = 2,
-	                .Binding = 0,
-	                .Format = RhiVertexElementFormat::Float3,
-	                .OffsetInBytes = offsetof(VertexData, normal)},
-	            RhiVertexInputElement{
-	                .Semantic = RhiVertexSemantic::Tangent,
-	                .Location = 3,
-	                .Binding = 0,
-	                .Format = RhiVertexElementFormat::Float4,
-	                .OffsetInBytes = offsetof(VertexData, tangent)}},
+	        {RhiVertexInputElement{.Semantic = RhiVertexSemantic::Position, .Location = 0, .Binding = 0, .Format = RhiVertexElementFormat::Float3, .OffsetInBytes = offsetof(VertexData, position)},
+	            RhiVertexInputElement{.Semantic = RhiVertexSemantic::TexCoord, .Location = 1, .Binding = 0, .Format = RhiVertexElementFormat::Float2, .OffsetInBytes = offsetof(VertexData, uv)},
+	            RhiVertexInputElement{.Semantic = RhiVertexSemantic::Normal, .Location = 2, .Binding = 0, .Format = RhiVertexElementFormat::Float3, .OffsetInBytes = offsetof(VertexData, normal)},
+	            RhiVertexInputElement{.Semantic = RhiVertexSemantic::Tangent, .Location = 3, .Binding = 0, .Format = RhiVertexElementFormat::Float4, .OffsetInBytes = offsetof(VertexData, tangent)}},
 	    .BindingCount = 1,
 	    .ElementCount = 4};
+
 	return declaration;
 }
 

@@ -17,10 +17,7 @@
 
 SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_d3d12RenderCommandListLogger, "RHI.D3D12.CommandList");
 
-D3D12RenderCommandList::D3D12RenderCommandList(
-    D3D12RenderHardwareInterface& owner,
-    ID3D12GraphicsCommandList7* commandList,
-    ERhiQueueType queueType) noexcept :
+D3D12RenderCommandList::D3D12RenderCommandList(D3D12RenderHardwareInterface& owner, ID3D12GraphicsCommandList7* commandList, ERhiQueueType queueType) noexcept :
     m_owner(&owner),
     m_commandList(commandList),
     m_queueType(queueType)
@@ -48,20 +45,12 @@ void D3D12RenderCommandList::OnResourceTrackingFinished(RhiResourceHandle resour
 	{
 		if (m_recordingResourceReleaseIndex >= m_recordingResourceUses.size())
 		{
-			Diagnostics::Fatal(
-			    g_d3d12RenderCommandListLogger,
-			    __FILE__,
-			    __LINE__,
-			    "D3D12 command-list resource tracking finished without a matching retained resource.");
+			Diagnostics::Fatal(g_d3d12RenderCommandListLogger, __FILE__, __LINE__, "D3D12 command-list resource tracking finished without a matching retained resource.");
 		}
 		const RecordingResourceUse& use = m_recordingResourceUses[m_recordingResourceReleaseIndex++];
 		if (use.Resource.Value != resource.Value)
 		{
-			Diagnostics::Fatal(
-			    g_d3d12RenderCommandListLogger,
-			    __FILE__,
-			    __LINE__,
-			    "D3D12 command-list resource tracking release order does not match its recording order.");
+			Diagnostics::Fatal(g_d3d12RenderCommandListLogger, __FILE__, __LINE__, "D3D12 command-list resource tracking release order does not match its recording order.");
 		}
 		m_owner->EndResourceTracking(use.Token, submissionToken);
 

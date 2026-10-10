@@ -43,6 +43,7 @@ std::unique_ptr<RayTracingPipelineRuntime> RayTracingPipelineRuntime::Create(
 
 	std::vector<ShaderTypeId> selections;
 	std::unordered_set<ShaderTypeId> selectedTypes;
+
 	auto select = [&selections, &selectedTypes](ShaderTypeId shaderType)
 	{
 		if (selectedTypes.insert(shaderType).second)
@@ -50,6 +51,7 @@ std::unique_ptr<RayTracingPipelineRuntime> RayTracingPipelineRuntime::Create(
 			selections.push_back(shaderType);
 		}
 	};
+
 	select(composition.GetRayGeneration());
 	for (ShaderTypeId miss : composition.GetMissShaders())
 	{
@@ -84,30 +86,23 @@ std::unique_ptr<RayTracingPipelineRuntime> RayTracingPipelineRuntime::Create(
 		PipelineRuntimeLibrary::ValidateShaderCapabilities(renderHardwareInterface, registration.ShaderName, runtime->m_shaders.back());
 	}
 
-	const ShaderRegistrationDesc& rayGenerationRegistration =
-	    RayTracingRuntimeMaterialization::GetRegistration(composition.GetRayGeneration());
+	const ShaderRegistrationDesc& rayGenerationRegistration = RayTracingRuntimeMaterialization::GetRegistration(composition.GetRayGeneration());
 	if (rayGenerationRegistration.BuildParameterStructDescriptor == nullptr)
 	{
 		throw Diagnostics::Error("Ray-generation shader has no registered global parameter contract.");
 	}
 	runtime->m_parameterLayout = BuildShaderParameterLayout(rayGenerationRegistration);
 	std::wstring debugName = Strings::ToWide(rayGenerationRegistration.ShaderName);
-	runtime->m_bindingLayout = PipelineRuntimeLibrary::CreateBindingLayout(
-	    renderHardwareInterface,
-	    runtime->m_parameterLayout,
-	    runtime->m_shaders,
-	    false,
-	    debugName.c_str());
+	runtime->m_bindingLayout = PipelineRuntimeLibrary::CreateBindingLayout(renderHardwareInterface, runtime->m_parameterLayout, runtime->m_shaders, false, debugName.c_str());
 
 	std::vector<RhiRayTracingHitGroupDesc> hitGroups;
 	hitGroups.reserve(composition.GetHitGroups().size());
 	for (const RayTracingHitGroupComposition& group : composition.GetHitGroups())
 	{
 		const ShaderRegistrationDesc& closestHit = RayTracingRuntimeMaterialization::GetRegistration(group.ClosestHit);
-		const ShaderRegistrationDesc* anyHit =
-		    group.AnyHit != 0 ? &RayTracingRuntimeMaterialization::GetRegistration(group.AnyHit) : nullptr;
-		const ShaderRegistrationDesc* intersection =
-		    group.Intersection != 0 ? &RayTracingRuntimeMaterialization::GetRegistration(group.Intersection) : nullptr;
+		const ShaderRegistrationDesc* anyHit = group.AnyHit != 0 ? &RayTracingRuntimeMaterialization::GetRegistration(group.AnyHit) : nullptr;
+		const ShaderRegistrationDesc* intersection = group.Intersection != 0 ? &RayTracingRuntimeMaterialization::GetRegistration(group.Intersection) : nullptr;
+
 		hitGroups.push_back(
 		    RhiRayTracingHitGroupDesc{
 		        .ExportName = group.ExportName,
@@ -117,6 +112,7 @@ std::unique_ptr<RayTracingPipelineRuntime> RayTracingPipelineRuntime::Create(
 		        .IntersectionExport = intersection != nullptr ? intersection->EntryPoint : std::string_view{}});
 	}
 	const RayTracingShaderMetadata& rayGenerationMetadata = rayGenerationRegistration.RayTracing;
+
 	RayTracingPipelineDesc pipelineDesc{
 	    .GlobalBindingLayout = runtime->m_bindingLayout.get(),
 	    .ShaderExports = exports,
@@ -126,6 +122,7 @@ std::unique_ptr<RayTracingPipelineRuntime> RayTracingPipelineRuntime::Create(
 	    .MaxRecursionDepth = rayGenerationMetadata.MinimumRecursionDepth,
 	    .Generation = generation,
 	    .DebugName = debugName.c_str()};
+
 	runtime->m_pipeline = renderHardwareInterface.GetPipelineService().CreateRayTracingPipeline(pipelineDesc);
 	if (runtime->m_pipeline == nullptr)
 	{
@@ -135,9 +132,7 @@ std::unique_ptr<RayTracingPipelineRuntime> RayTracingPipelineRuntime::Create(
 	return runtime;
 }
 
-std::unique_ptr<RayTracingShaderTable> RayTracingPipelineRuntime::CreateShaderTable(
-    RenderHardwareInterface& renderHardwareInterface,
-    const RayTracingPipelineComposition& composition) const
+std::unique_ptr<RayTracingShaderTable> RayTracingPipelineRuntime::CreateShaderTable(RenderHardwareInterface& renderHardwareInterface, const RayTracingPipelineComposition& composition) const
 {
 	std::vector<const RayTracingHitGroupComposition*> recordGroups;
 	recordGroups.reserve(composition.GetHitGroups().size());
@@ -202,10 +197,8 @@ std::unique_ptr<RayTracingShaderTable> RayTracingPipelineRuntime::CreateShaderTa
 	{
 		throw Diagnostics::Error("Ray-tracing shader-table materialization received an invalid pipeline composition.");
 	}
-	const ShaderRegistrationDesc& rayGenerationRegistration =
-	    RayTracingRuntimeMaterialization::GetRegistration(composition.GetRayGeneration());
-	std::vector<RhiRayTracingShaderRecord> rayGenerationRecords{
-	    RhiRayTracingShaderRecord{.ExportName = rayGenerationRegistration.EntryPoint}};
+	const ShaderRegistrationDesc& rayGenerationRegistration = RayTracingRuntimeMaterialization::GetRegistration(composition.GetRayGeneration());
+	std::vector<RhiRayTracingShaderRecord> rayGenerationRecords{RhiRayTracingShaderRecord{.ExportName = rayGenerationRegistration.EntryPoint}};
 	std::vector<RhiRayTracingShaderRecord> missRecords;
 	std::vector<RhiRayTracingShaderRecord> hitGroupRecords;
 	std::vector<RhiRayTracingShaderRecord> callableRecords;
@@ -226,15 +219,14 @@ std::unique_ptr<RayTracingShaderTable> RayTracingPipelineRuntime::CreateShaderTa
 		    RhiRayTracingShaderRecord{
 		        .ExportName = group->ExportName,
 		        .LocalData = group->LocalData,
-		        .LocalRecordSignature =
-		            RayTracingRuntimeMaterialization::GetRegistration(group->ClosestHit).RayTracing.LocalRecordSignature});
+		        .LocalRecordSignature = RayTracingRuntimeMaterialization::GetRegistration(group->ClosestHit).RayTracing.LocalRecordSignature});
 	}
 	for (ShaderTypeId callable : composition.GetCallableShaders())
 	{
-		callableRecords.push_back(
-		    RhiRayTracingShaderRecord{.ExportName = RayTracingRuntimeMaterialization::GetRegistration(callable).EntryPoint});
+		callableRecords.push_back(RhiRayTracingShaderRecord{.ExportName = RayTracingRuntimeMaterialization::GetRegistration(callable).EntryPoint});
 	}
 	std::wstring debugName = Strings::ToWide(rayGenerationRegistration.ShaderName);
+
 	RayTracingShaderTableDesc tableDesc{
 	    .Pipeline = m_pipeline.get(),
 	    .RayGenerationRecords = rayGenerationRecords,
@@ -243,8 +235,8 @@ std::unique_ptr<RayTracingShaderTable> RayTracingPipelineRuntime::CreateShaderTa
 	    .CallableRecords = callableRecords,
 	    .Generation = m_generation,
 	    .DebugName = debugName.c_str()};
-	std::unique_ptr<RayTracingShaderTable> shaderTable =
-	    renderHardwareInterface.GetRayTracingService().CreateRayTracingShaderTable(tableDesc);
+
+	std::unique_ptr<RayTracingShaderTable> shaderTable = renderHardwareInterface.GetRayTracingService().CreateRayTracingShaderTable(tableDesc);
 	if (shaderTable == nullptr)
 	{
 		throw Diagnostics::Error("Ray-tracing shader-table materialization failed.");

@@ -16,8 +16,5 @@ namespace SparkleLauncher
 	};
 
 	LauncherStatePaths ResolveLauncherStatePaths(const std::filesystem::path& repositoryRoot);
-	std::filesystem::path ResolveLauncherOperationLogPath(
-	    const std::filesystem::path& repositoryRoot,
-	    std::string_view operationId,
-	    std::string_view logFileName);
+	std::filesystem::path ResolveLauncherOperationLogPath(const std::filesystem::path& repositoryRoot, std::string_view operationId, std::string_view logFileName);
 }

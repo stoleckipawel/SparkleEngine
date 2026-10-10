@@ -20,10 +20,8 @@ VulkanRayTracingPipeline::VulkanRayTracingPipeline(VulkanRhi& rhi, const RayTrac
 {
 	RhiContract::ValidateRayTracingPipelineDesc(desc);
 	const RhiRayTracingCapabilities capabilities = rhi.GetRayTracingCapabilities();
-	if (!capabilities.SupportsRayTracingPipeline || rhi.GetCreateRayTracingPipelines() == nullptr
-	    || desc.MaxPayloadSizeInBytes > capabilities.MaxRayPayloadSizeInBytes
-	    || desc.MaxAttributeSizeInBytes > capabilities.MaxRayAttributeSizeInBytes
-	    || desc.MaxRecursionDepth > capabilities.MaxTraceRecursionDepth)
+	if (!capabilities.SupportsRayTracingPipeline || rhi.GetCreateRayTracingPipelines() == nullptr || desc.MaxPayloadSizeInBytes > capabilities.MaxRayPayloadSizeInBytes
+	    || desc.MaxAttributeSizeInBytes > capabilities.MaxRayAttributeSizeInBytes || desc.MaxRecursionDepth > capabilities.MaxTraceRecursionDepth)
 	{
 		throw Diagnostics::Error("Vulkan ray-tracing pipeline is not fully ready.");
 	}
@@ -64,6 +62,7 @@ VulkanRayTracingPipeline::VulkanRayTracingPipeline(VulkanRhi& rhi, const RayTrac
 		        .anyHitShader = VK_SHADER_UNUSED_KHR,
 		        .intersectionShader = VK_SHADER_UNUSED_KHR,
 		        .pShaderGroupCaptureReplayHandle = nullptr});
+
 		m_groupNames.emplace_back(shaderExport.ExportName);
 	}
 	const auto stageIndex = [&stageIndices](std::string_view name)
@@ -71,19 +70,20 @@ VulkanRayTracingPipeline::VulkanRayTracingPipeline(VulkanRhi& rhi, const RayTrac
 		const auto found = stageIndices.find(name);
 		return found != stageIndices.end() ? found->second : VK_SHADER_UNUSED_KHR;
 	};
+
 	for (const RhiRayTracingHitGroupDesc& hitGroup : desc.HitGroups)
 	{
 		groups.push_back(
 		    VkRayTracingShaderGroupCreateInfoKHR{
 		        .sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR,
 		        .pNext = nullptr,
-		        .type = hitGroup.Kind == ERhiRayTracingHitGroupKind::Triangles ? VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR
-		                                                                       : VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR,
+		        .type = hitGroup.Kind == ERhiRayTracingHitGroupKind::Triangles ? VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR : VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR,
 		        .generalShader = VK_SHADER_UNUSED_KHR,
 		        .closestHitShader = stageIndex(hitGroup.ClosestHitExport),
 		        .anyHitShader = stageIndex(hitGroup.AnyHitExport),
 		        .intersectionShader = stageIndex(hitGroup.IntersectionExport),
 		        .pShaderGroupCaptureReplayHandle = nullptr});
+
 		m_groupNames.emplace_back(hitGroup.ExportName);
 	}
 
@@ -102,18 +102,13 @@ VulkanRayTracingPipeline::VulkanRayTracingPipeline(VulkanRhi& rhi, const RayTrac
 	    .layout = GetPipelineLayout(),
 	    .basePipelineHandle = VK_NULL_HANDLE,
 	    .basePipelineIndex = -1};
-	const VkResult result =
-	    rhi.GetCreateRayTracingPipelines()(m_device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &createInfo, nullptr, &m_pipeline);
+
+	const VkResult result = rhi.GetCreateRayTracingPipelines()(m_device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &createInfo, nullptr, &m_pipeline);
 	if (!VulkanResult::Succeeded(result))
 	{
 		throw Diagnostics::Error(VulkanResult::FormatFailure("vkCreateRayTracingPipelinesKHR", result));
 	}
-	VulkanDebugNames::SetObjectName(
-	    rhi.GetSetDebugUtilsObjectName(),
-	    m_device,
-	    VK_OBJECT_TYPE_PIPELINE,
-	    reinterpret_cast<std::uint64_t>(m_pipeline),
-	    debugName);
+	VulkanDebugNames::SetObjectName(rhi.GetSetDebugUtilsObjectName(), m_device, VK_OBJECT_TYPE_PIPELINE, reinterpret_cast<std::uint64_t>(m_pipeline), debugName);
 }
 
 VulkanRayTracingPipeline::~VulkanRayTracingPipeline() noexcept

@@ -24,6 +24,7 @@ public:
 
 private:
 	sl::FrameToken* m_frameToken = nullptr;
+
 	sl::ViewportHandle m_viewport = {};
 	sl::CommandBuffer* m_commandBuffer = nullptr;
 };

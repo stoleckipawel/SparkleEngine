@@ -29,6 +29,7 @@ struct AssetGenerationHandle final
 	std::uint32_t Generation = 0;
 
 	constexpr bool IsValid() const noexcept { return AssetKey != 0 && Generation != 0; }
+
 	constexpr auto operator<=>(const AssetGenerationHandle&) const noexcept = default;
 };
 
@@ -76,9 +77,12 @@ public:
 	void Poll(RhiCommandSubmissionService& submissions) noexcept;
 
 	bool HasRequestCapacity() const noexcept { return m_counters.RequestBacklog < m_budget.MaximumRequestBacklog; }
+
 	const AssetGenerationStatus* Find(AssetGenerationHandle handle) const noexcept;
 	AssetResidencyState GetState(AssetGenerationHandle handle) const noexcept;
+
 	const AssetResidencyBudget& GetBudget() const noexcept { return m_budget; }
+
 	const AssetResidencyCounters& GetCounters() const noexcept { return m_counters; }
 
 private:

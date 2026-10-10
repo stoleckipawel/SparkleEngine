@@ -15,11 +15,7 @@ RenderCoordinator::RenderCoordinator(Timer& timer, Window& window, RendererExecu
 {
 	if (!m_config.HasAssetTaskRuntime())
 	{
-		Diagnostics::Fatal(
-		    g_renderCoordinatorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "RendererExecutionConfig has no asset-task executor or parent scope.");
+		Diagnostics::Fatal(g_renderCoordinatorLogger, __FILE__, __LINE__, "RendererExecutionConfig has no asset-task executor or parent scope.");
 	}
 	Initialize();
 	m_resizeHandle = ScopedEventHandle(window.OnResized, window.OnResized.Add([this] { SubmitResize(); }));
@@ -96,11 +92,7 @@ RenderExecutionRequest RenderCoordinator::TakePendingExecutionRequest()
 	const TimeInfo timing = m_timer->GetTimeInfo();
 	if (timing.frameIndex != m_pendingSubmission->FrameId)
 	{
-		Diagnostics::Fatal(
-		    g_renderCoordinatorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Render frame submission identity does not match the application timer frame.");
+		Diagnostics::Fatal(g_renderCoordinatorLogger, __FILE__, __LINE__, "Render frame submission identity does not match the application timer frame.");
 	}
 
 	RenderExecutionRequest request{
@@ -130,11 +122,7 @@ void RenderCoordinator::SubmitThreadedFrame()
 	const std::optional<RenderFrameQueueTicket> ticket = m_frameQueue->Acquire();
 	if (!ticket)
 	{
-		Diagnostics::Fatal(
-		    g_renderCoordinatorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Render frame queue closed while the producer was acquiring a slot.");
+		Diagnostics::Fatal(g_renderCoordinatorLogger, __FILE__, __LINE__, "Render frame queue closed while the producer was acquiring a slot.");
 	}
 
 	if (!m_frameQueue->Publish(*ticket, TakePendingExecutionRequest()))
@@ -148,11 +136,7 @@ void RenderCoordinator::SubmitThreadedFrame()
 	{
 		if (!m_frameQueue->WaitUntilReusable(*ticket))
 		{
-			Diagnostics::Fatal(
-			    g_renderCoordinatorLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Render frame queue closed before synchronous frame reuse completed.");
+			Diagnostics::Fatal(g_renderCoordinatorLogger, __FILE__, __LINE__, "Render frame queue closed before synchronous frame reuse completed.");
 		}
 	}
 }
@@ -178,11 +162,7 @@ RendererExecutionContext& RenderCoordinator::GetSerialContext()
 	m_producerOwner.AssertAccess();
 	if (m_config.IsThreaded())
 	{
-		Diagnostics::Fatal(
-		    g_renderCoordinatorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Serial renderer capability requested while RenderCoordinator owns a RenderThread.");
+		Diagnostics::Fatal(g_renderCoordinatorLogger, __FILE__, __LINE__, "Serial renderer capability requested while RenderCoordinator owns a RenderThread.");
 	}
 	return *m_context;
 }

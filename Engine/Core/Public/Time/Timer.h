@@ -55,10 +55,13 @@ public:
 	double GetTotalTime(TimeDomain domain, TimeUnit unit = TimeUnit::Milliseconds) const noexcept;
 
 	void SetTimeScale(double scale) noexcept { m_timeScale = scale; }
+
 	double GetTimeScale() const noexcept { return m_timeScale; }
 
 	void Pause() noexcept { m_bPaused = true; }
+
 	void Resume() noexcept { m_bPaused = false; }
+
 	bool IsPaused() const noexcept { return m_bPaused; }
 
 private:

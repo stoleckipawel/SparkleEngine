@@ -7,8 +7,4 @@ class Renderer;
 struct ViewportRenderProducts;
 enum class ViewportOutputAction : std::uint8_t;
 
-void ApplyReferencePathTracerArtifactAction(
-    ViewportOutputAction action,
-    ReferencePathTracerArtifactCoordinator& artifacts,
-    Renderer& renderer,
-    const ViewportRenderProducts& products);
+void ApplyReferencePathTracerArtifactAction(ViewportOutputAction action, ReferencePathTracerArtifactCoordinator& artifacts, Renderer& renderer, const ViewportRenderProducts& products);

@@ -79,13 +79,7 @@ namespace SparkleLauncher
 	class ResponsiveCardGridWidget final : public QWidget
 	{
 	public:
-		ResponsiveCardGridWidget(
-		    int minimumCardWidth,
-		    int maximumCardWidth,
-		    int maximumColumns,
-		    int horizontalSpacing,
-		    int verticalSpacing,
-		    QWidget* parent = nullptr);
+		ResponsiveCardGridWidget(int minimumCardWidth, int maximumCardWidth, int maximumColumns, int horizontalSpacing, int verticalSpacing, QWidget* parent = nullptr);
 
 		void AddCard(QWidget* card);
 		int CardCount() const;

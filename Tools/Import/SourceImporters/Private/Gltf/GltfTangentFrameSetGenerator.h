@@ -20,8 +20,5 @@ public:
 
 private:
 	static std::vector<ImportedVertex> BuildMorphVertices(const ImportedMeshGeometry& geometry, const ImportedMorphTarget& morphTarget);
-	static std::vector<DirectX::XMFLOAT3> BuildMorphTangentDeltas(
-	    const std::vector<DirectX::XMFLOAT4>& baseTangents,
-	    const std::vector<DirectX::XMFLOAT4>& targetTangents,
-	    std::size_t targetIndex);
+	static std::vector<DirectX::XMFLOAT3> BuildMorphTangentDeltas(const std::vector<DirectX::XMFLOAT4>& baseTangents, const std::vector<DirectX::XMFLOAT4>& targetTangents, std::size_t targetIndex);
 };

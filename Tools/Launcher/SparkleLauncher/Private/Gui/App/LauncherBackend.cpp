@@ -133,6 +133,7 @@ namespace SparkleLauncher
 		std::ostringstream output;
 		const std::string operationId = request.OperationId.toStdString();
 		const LauncherOperationPlan plan = PlanLauncherOperation(operation->Category, operationId, request);
+
 		const bool canRun = std::visit(
 		    [&output](const auto& typedPlan)
 		    {
@@ -158,13 +159,13 @@ namespace SparkleLauncher
 		const LauncherOperationCategory category = operation->Category;
 		const QString title = operation->DisplayName;
 		const QString operationIdText = operation->Id;
+
 		m_operationService->Launch(
 		    category,
 		    std::move(request),
 		    title.toStdString(),
 		    [this, runId, operationIdText](std::string_view output) { QueueOperationOutput(runId, operationIdText, std::string(output)); },
-		    [this, runId, operationIdText, title](const OperationRecord& record)
-		    { QueueOperationFinished(runId, operationIdText, title, record); });
+		    [this, runId, operationIdText, title](const OperationRecord& record) { QueueOperationFinished(runId, operationIdText, title, record); });
 	}
 
 	bool LauncherBackend::CancelOperation(const QString& runId)
@@ -181,12 +182,7 @@ namespace SparkleLauncher
 			    m_progressDecoders[runId].Consume(
 			        outputText,
 			        [this, &runId, &operationId](std::string_view output)
-			        {
-				        emit OperationOutputReceived(
-				            runId,
-				            operationId,
-				            QString::fromUtf8(output.data(), static_cast<qsizetype>(output.size())));
-			        },
+			        { emit OperationOutputReceived(runId, operationId, QString::fromUtf8(output.data(), static_cast<qsizetype>(output.size()))); },
 			        [this, &runId, &operationId](const ToolWorkProgress& progress)
 			        {
 				        emit OperationProgressReceived(
@@ -203,6 +199,7 @@ namespace SparkleLauncher
 	void LauncherBackend::QueueOperationFinished(QString runId, QString operationId, QString title, const OperationRecord& record)
 	{
 		const LauncherOperationResult result = BuildOperationResult(record);
+
 		QMetaObject::invokeMethod(
 		    this,
 		    [this, runId = std::move(runId), operationId = std::move(operationId), title = std::move(title), result]
@@ -210,14 +207,8 @@ namespace SparkleLauncher
 			    auto progressDecoder = m_progressDecoders.find(runId);
 			    if (progressDecoder != m_progressDecoders.end())
 			    {
-				    progressDecoder->Flush(
-				        [this, &runId, &operationId](std::string_view output)
-				        {
-					        emit OperationOutputReceived(
-					            runId,
-					            operationId,
-					            QString::fromUtf8(output.data(), static_cast<qsizetype>(output.size())));
-				        });
+				    progressDecoder->Flush([this, &runId, &operationId](std::string_view output)
+				        { emit OperationOutputReceived(runId, operationId, QString::fromUtf8(output.data(), static_cast<qsizetype>(output.size()))); });
 				    m_progressDecoders.erase(progressDecoder);
 			    }
 			    emit OperationFinished(runId, operationId, title, result);

@@ -33,20 +33,13 @@ public:
 	}
 };
 
-D3D12CommandQueue::D3D12CommandQueue(
-    ID3D12Device& device,
-    ERhiQueueType queueType,
-    Microsoft::WRL::ComPtr<ID3D12CommandQueue> nativeQueue) noexcept :
+D3D12CommandQueue::D3D12CommandQueue(ID3D12Device& device, ERhiQueueType queueType, Microsoft::WRL::ComPtr<ID3D12CommandQueue> nativeQueue) noexcept :
     m_queueType(queueType),
     m_queue(std::move(nativeQueue))
 {
 	if (m_queue == nullptr)
 	{
-		const D3D12_COMMAND_QUEUE_DESC queueDesc{
-		    .Type = GetNativeCommandListType(queueType),
-		    .Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL,
-		    .Flags = D3D12_COMMAND_QUEUE_FLAG_NONE,
-		    .NodeMask = 0};
+		const D3D12_COMMAND_QUEUE_DESC queueDesc{.Type = GetNativeCommandListType(queueType), .Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL, .Flags = D3D12_COMMAND_QUEUE_FLAG_NONE, .NodeMask = 0};
 		CHECK(device.CreateCommandQueue(&queueDesc, IID_PPV_ARGS(m_queue.ReleaseAndGetAddressOf())));
 	}
 
@@ -90,9 +83,7 @@ D3D12_COMMAND_LIST_TYPE D3D12CommandQueue::GetNativeCommandListType(ERhiQueueTyp
 	}
 }
 
-RhiSubmissionToken D3D12CommandQueue::Submit(
-    std::span<ID3D12CommandList* const> commandLists,
-    std::span<const D3D12QueueWait> waits) noexcept
+RhiSubmissionToken D3D12CommandQueue::Submit(std::span<ID3D12CommandList* const> commandLists, std::span<const D3D12QueueWait> waits) noexcept
 {
 	m_owner.AssertAccess();
 	if (m_queue == nullptr || m_fence == nullptr || commandLists.empty())
@@ -109,11 +100,7 @@ RhiSubmissionToken D3D12CommandQueue::Submit(
 		}
 		if (wait.ProducerQueue == nullptr || !wait.ProducerQueue->HasSubmitted(wait.SubmissionValue))
 		{
-			Diagnostics::Fatal(
-			    D3D12CommandQueuePolicy::Logger,
-			    __FILE__,
-			    __LINE__,
-			    "Submit rejected a wait for an unknown or unsubmitted queue value");
+			Diagnostics::Fatal(D3D12CommandQueuePolicy::Logger, __FILE__, __LINE__, "Submit rejected a wait for an unknown or unsubmitted queue value");
 			return {};
 		}
 	}
@@ -193,16 +180,12 @@ void D3D12CommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexcep
 	if (waitResult != WAIT_OBJECT_0)
 	{
 		const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - waitStart);
+
 		Diagnostics::Fatal(
 		    D3D12CommandQueuePolicy::Logger,
 		    __FILE__,
 		    __LINE__,
-		    std::format(
-		        "D3D12 {} queue CPU wait failed for submission {} after {} ms (wait result 0x{:08X}).",
-		        RhiQueueTypeToString(m_queueType),
-		        submissionValue,
-		        elapsed.count(),
-		        waitResult));
+		    std::format("D3D12 {} queue CPU wait failed for submission {} after {} ms (wait result 0x{:08X}).", RhiQueueTypeToString(m_queueType), submissionValue, elapsed.count(), waitResult));
 	}
 }
 

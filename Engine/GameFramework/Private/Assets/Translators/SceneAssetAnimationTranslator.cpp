@@ -33,12 +33,7 @@ namespace Assets
 
 		for (const CookedAnimationKeyframeRecord& keyframe : animationAsset.keyframes)
 		{
-			clip.keyframes.push_back(
-			    AnimationKeyframe{
-			        .timeSeconds = keyframe.timeSeconds,
-			        .value = keyframe.value,
-			        .inTangent = keyframe.inTangent,
-			        .outTangent = keyframe.outTangent});
+			clip.keyframes.push_back(AnimationKeyframe{.timeSeconds = keyframe.timeSeconds, .value = keyframe.value, .inTangent = keyframe.inTangent, .outTangent = keyframe.outTangent});
 		}
 
 		return clip;

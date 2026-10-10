@@ -33,16 +33,17 @@ public:
 	RenderViewportExtent ResolveRenderExtent(RenderViewportExtent outputExtent) noexcept;
 
 	ImageProviderGraphKey GetFrameGraphKey() const noexcept;
+
 	std::uint64_t GetGeneration() const noexcept { return m_generation; }
+
 	IUpscalerProvider* GetUpscalerProvider() noexcept { return m_upscaler.get(); }
+
 	IRayReconstructionProvider* GetRayReconstructionProvider() noexcept { return m_rayReconstruction.get(); }
 
 private:
 	void Initialize();
 	void Shutdown() noexcept;
-	static void ShutdownProviders(
-	    std::unique_ptr<IUpscalerProvider>& upscaler,
-	    std::unique_ptr<IRayReconstructionProvider>& rayReconstruction) noexcept;
+	static void ShutdownProviders(std::unique_ptr<IUpscalerProvider>& upscaler, std::unique_ptr<IRayReconstructionProvider>& rayReconstruction) noexcept;
 
 	struct RetiredGeneration final
 	{

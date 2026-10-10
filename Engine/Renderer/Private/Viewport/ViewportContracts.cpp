@@ -139,6 +139,5 @@ const RenderProduct* ViewportRenderProducts::SelectProduct(RenderOutputFlags out
 
 void ViewportRenderProducts::RemoveAvailableOutput(RenderOutputFlags output) noexcept
 {
-	m_availableOutputs =
-	    static_cast<RenderOutputFlags>(static_cast<std::uint16_t>(m_availableOutputs) & ~static_cast<std::uint16_t>(output));
+	m_availableOutputs = static_cast<RenderOutputFlags>(static_cast<std::uint16_t>(m_availableOutputs) & ~static_cast<std::uint16_t>(output));
 }

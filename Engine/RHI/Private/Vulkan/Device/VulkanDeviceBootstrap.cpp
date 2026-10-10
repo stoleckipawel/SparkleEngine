@@ -16,17 +16,10 @@
 
 SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanRhiLogger, "RHI.Vulkan");
 
-bool VulkanRhi::AppendAvailableDeviceExtension(
-    VkPhysicalDevice physicalDevice,
-    std::vector<const char*>& extensions,
-    const char* extensionName) noexcept
+bool VulkanRhi::AppendAvailableDeviceExtension(VkPhysicalDevice physicalDevice, std::vector<const char*>& extensions, const char* extensionName) noexcept
 {
 	if (extensionName == nullptr
-	    || std::find_if(
-	           extensions.begin(),
-	           extensions.end(),
-	           [extensionName](const char* enabled) noexcept { return std::strcmp(enabled, extensionName) == 0; })
-	        != extensions.end())
+	    || std::find_if(extensions.begin(), extensions.end(), [extensionName](const char* enabled) noexcept { return std::strcmp(enabled, extensionName) == 0; }) != extensions.end())
 	{
 		return false;
 	}
@@ -48,8 +41,8 @@ bool VulkanRhi::AppendAvailableDeviceExtension(
 	const bool availableOnDevice = std::any_of(
 	    available.begin(),
 	    available.end(),
-	    [extensionName](const VkExtensionProperties& properties) noexcept
-	    { return std::strcmp(properties.extensionName, extensionName) == 0; });
+	    [extensionName](const VkExtensionProperties& properties) noexcept { return std::strcmp(properties.extensionName, extensionName) == 0; });
+
 	if (!availableOnDevice)
 	{
 		return false;
@@ -68,11 +61,7 @@ void VulkanRhi::CreateInstance() noexcept
 	}
 	if (loaderApiVersion < VK_API_VERSION_1_3)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRhiLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan 1.3 is required by the engine's SPIR-V 1.6 runtime shader contract.");
+		Diagnostics::Fatal(g_vulkanRhiLogger, __FILE__, __LINE__, "Vulkan 1.3 is required by the engine's SPIR-V 1.6 runtime shader contract.");
 	}
 
 	std::vector<const char*> instanceExtensions;
@@ -181,8 +170,7 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 		candidate.Features.pNext = &candidate.Features12;
 		candidate.Features12.pNext = &candidate.Features13;
 		vkGetPhysicalDeviceFeatures2(device, &candidate.Features);
-		if (candidate.Features.features.shaderStorageImageReadWithoutFormat != VK_TRUE
-		    || candidate.Features.features.shaderStorageImageWriteWithoutFormat != VK_TRUE
+		if (candidate.Features.features.shaderStorageImageReadWithoutFormat != VK_TRUE || candidate.Features.features.shaderStorageImageWriteWithoutFormat != VK_TRUE
 		    || candidate.Features12.scalarBlockLayout != VK_TRUE)
 		{
 			continue;
@@ -192,8 +180,7 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 			continue;
 		}
 		candidate.QueueTopology = VulkanQueueTopology::Select(device);
-		if (!candidate.QueueTopology.Supports(ERhiQueueType::Graphics) || !candidate.QueueTopology.Supports(ERhiQueueType::Compute)
-		    || !candidate.QueueTopology.Supports(ERhiQueueType::Copy))
+		if (!candidate.QueueTopology.Supports(ERhiQueueType::Graphics) || !candidate.QueueTopology.Supports(ERhiQueueType::Compute) || !candidate.QueueTopology.Supports(ERhiQueueType::Copy))
 		{
 			continue;
 		}
@@ -203,17 +190,10 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 
 	if (candidates.empty())
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRhiLogger,
-		    __FILE__,
-		    __LINE__,
-		    "No Vulkan 1.3 physical device exposes a graphics queue, scalar block layout and formatless storage-image reads and writes.");
+		Diagnostics::Fatal(g_vulkanRhiLogger, __FILE__, __LINE__, "No Vulkan 1.3 physical device exposes a graphics queue, scalar block layout and formatless storage-image reads and writes.");
 	}
 
-	std::sort(
-	    candidates.begin(),
-	    candidates.end(),
-	    [](const PhysicalDeviceCandidate& lhs, const PhysicalDeviceCandidate& rhs) noexcept { return lhs.Score > rhs.Score; });
+	std::sort(candidates.begin(), candidates.end(), [](const PhysicalDeviceCandidate& lhs, const PhysicalDeviceCandidate& rhs) noexcept { return lhs.Score > rhs.Score; });
 
 	const PhysicalDeviceCandidate& selected = candidates.front();
 	m_physicalDevice = selected.Device;
@@ -246,6 +226,7 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	for (const VulkanQueueFamilyRequest& familyRequest : familyRequests)
 	{
 		queuePriorities.emplace_back(familyRequest.QueueCount, 1.0f);
+
 		queueCreateInfos.push_back(
 		    VkDeviceQueueCreateInfo{
 		        .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
@@ -300,10 +281,8 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	enabledFeatures.features.fillModeNonSolid = m_featureStatus.SupportsFillModeNonSolid ? VK_TRUE : VK_FALSE;
 	enabledFeatures.features.shaderInt64 = m_featureStatus.SupportsShaderInt64 ? VK_TRUE : VK_FALSE;
 	enabledFeatures.features.shaderFloat64 = m_featureStatus.SupportsShaderFloat64 ? VK_TRUE : VK_FALSE;
-	enabledFeatures.features.shaderStorageImageReadWithoutFormat =
-	    m_featureStatus.SupportsStorageImageReadWithoutFormat ? VK_TRUE : VK_FALSE;
-	enabledFeatures.features.shaderStorageImageWriteWithoutFormat =
-	    m_featureStatus.SupportsStorageImageWriteWithoutFormat ? VK_TRUE : VK_FALSE;
+	enabledFeatures.features.shaderStorageImageReadWithoutFormat = m_featureStatus.SupportsStorageImageReadWithoutFormat ? VK_TRUE : VK_FALSE;
+	enabledFeatures.features.shaderStorageImageWriteWithoutFormat = m_featureStatus.SupportsStorageImageWriteWithoutFormat ? VK_TRUE : VK_FALSE;
 	m_featureStatus.EnabledSamplerAnisotropy = enabledFeatures.features.samplerAnisotropy == VK_TRUE;
 	m_featureStatus.EnabledFillModeNonSolid = enabledFeatures.features.fillModeNonSolid == VK_TRUE;
 	m_featureStatus.EnabledShaderInt64 = enabledFeatures.features.shaderInt64 == VK_TRUE;
@@ -320,8 +299,7 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 		enabledFeatures12.hostQueryReset = m_featureStatus.SupportsHostQueryReset ? VK_TRUE : VK_FALSE;
 		m_featureStatus.EnabledHostQueryReset = enabledFeatures12.hostQueryReset == VK_TRUE;
 		enabledFeatures12.timelineSemaphore = m_featureStatus.SupportsTimelineSemaphore ? VK_TRUE : VK_FALSE;
-		enabledFeatures12.shaderSampledImageArrayNonUniformIndexing =
-		    m_featureStatus.SupportsSampledImageArrayNonUniformIndexing ? VK_TRUE : VK_FALSE;
+		enabledFeatures12.shaderSampledImageArrayNonUniformIndexing = m_featureStatus.SupportsSampledImageArrayNonUniformIndexing ? VK_TRUE : VK_FALSE;
 		enabledFeatures12.descriptorBindingPartiallyBound = m_featureStatus.SupportsPartiallyBoundDescriptorArrays ? VK_TRUE : VK_FALSE;
 		*enabledNext = &enabledFeatures12;
 		enabledNext = &enabledFeatures12.pNext;
@@ -341,15 +319,14 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 
 		m_featureStatus.EnabledShaderDemoteToHelperInvocation = enabledFeatures13.shaderDemoteToHelperInvocation == VK_TRUE;
 	}
-	VkPhysicalDeviceAccelerationStructureFeaturesKHR enabledAccelerationStructureFeatures{
-	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR};
-	VkPhysicalDeviceBufferDeviceAddressFeatures enabledBufferDeviceAddressFeatures{
-	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES};
-	VkPhysicalDeviceRayTracingPipelineFeaturesKHR enabledRayTracingPipelineFeatures{
-	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR};
+	VkPhysicalDeviceAccelerationStructureFeaturesKHR enabledAccelerationStructureFeatures{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR};
+	VkPhysicalDeviceBufferDeviceAddressFeatures enabledBufferDeviceAddressFeatures{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES};
+	VkPhysicalDeviceRayTracingPipelineFeaturesKHR enabledRayTracingPipelineFeatures{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR};
 	VkPhysicalDeviceRayQueryFeaturesKHR enabledRayQueryFeatures{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR};
+
 	VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV enabledPartitionedAccelerationStructureFeatures{
 	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PARTITIONED_ACCELERATION_STRUCTURE_FEATURES_NV};
+
 	if (m_featureStatus.RayTracing.EnabledAccelerationStructure)
 	{
 		if (m_adapterInfo.ApiVersion >= VK_API_VERSION_1_2)
@@ -437,12 +414,7 @@ void VulkanRhi::NameBootstrapObjects() noexcept
 		return;
 	}
 
-	(void) VulkanDebugNames::SetObjectName(
-	    m_setDebugUtilsObjectName,
-	    m_device,
-	    VK_OBJECT_TYPE_DEVICE,
-	    reinterpret_cast<std::uint64_t>(m_device),
-	    "Sparkle Vulkan Device");
+	(void) VulkanDebugNames::SetObjectName(m_setDebugUtilsObjectName, m_device, VK_OBJECT_TYPE_DEVICE, reinterpret_cast<std::uint64_t>(m_device), "Sparkle Vulkan Device");
 	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 	{
 		const ERhiQueueType queueType = static_cast<ERhiQueueType>(queueIndex);
@@ -452,19 +424,9 @@ void VulkanRhi::NameBootstrapObjects() noexcept
 			continue;
 		}
 		const std::string queueName = std::format("Sparkle Vulkan {} Queue", RhiQueueTypeToString(queueType));
-		(void) VulkanDebugNames::SetObjectName(
-		    m_setDebugUtilsObjectName,
-		    m_device,
-		    VK_OBJECT_TYPE_QUEUE,
-		    reinterpret_cast<std::uint64_t>(queue.GetNativeQueue()),
-		    queueName);
+		(void) VulkanDebugNames::SetObjectName(m_setDebugUtilsObjectName, m_device, VK_OBJECT_TYPE_QUEUE, reinterpret_cast<std::uint64_t>(queue.GetNativeQueue()), queueName);
 		const std::string timelineName = std::format("Sparkle Vulkan {} Queue Timeline", RhiQueueTypeToString(queueType));
-		(void) VulkanDebugNames::SetObjectName(
-		    m_setDebugUtilsObjectName,
-		    m_device,
-		    VK_OBJECT_TYPE_SEMAPHORE,
-		    reinterpret_cast<std::uint64_t>(queue.GetTimelineSemaphore()),
-		    timelineName);
+		(void) VulkanDebugNames::SetObjectName(m_setDebugUtilsObjectName, m_device, VK_OBJECT_TYPE_SEMAPHORE, reinterpret_cast<std::uint64_t>(queue.GetTimelineSemaphore()), timelineName);
 	}
 }
 
@@ -472,6 +434,7 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 {
 	const std::string instanceExtensions = std::format("Enabled Vulkan instance extensions: {}", m_enabledInstanceExtensions.size());
 	const std::string deviceExtensions = std::format("Enabled Vulkan device extensions: {}", m_enabledDeviceExtensions.size());
+
 	const std::string featureSummary = std::format(
 	    "Vulkan features: validation={}, synchronization2 supported/enabled={}/{}, timelineSemaphore supported/enabled={}/{}, "
 	    "dynamicRendering supported/enabled={}/{}, scalarBlockLayout supported/enabled={}/{}, "
@@ -507,6 +470,7 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	    m_featureStatus.RayTracing.EnabledRayTracingPipeline,
 	    m_featureStatus.RayTracing.EnabledInlineRayQuery,
 	    m_featureStatus.RayTracing.EnabledPartitionedAccelerationStructure);
+
 	const std::string adapterSummary = std::format(
 	    "Vulkan adapter: name='{}', api={}, driver={}, queues(graphics={}:{}, compute={}:{}, copy={}:{}), independent(compute={}, copy={})",
 	    m_adapterInfo.Name,
@@ -520,6 +484,7 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	    GetQueueIndex(ERhiQueueType::Copy),
 	    HasIndependentQueue(ERhiQueueType::Compute),
 	    HasIndependentQueue(ERhiQueueType::Copy));
+
 	const std::string providerSummary = std::format(
 	    "Vulkan ray tracing provider: topLevel={}({}), partitionedTlasProvider={} supported={} reason={}",
 	    RhiRayTracingTopLevelProviderToString(m_rayTracingCapabilities.Groups.Provider.SelectedTopLevelProvider),
@@ -548,9 +513,9 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 		    m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature,
 		    m_featureStatus.RayTracing.SupportsRayQueryFeature,
 		    m_featureStatus.RayTracing.SupportsBufferDeviceAddressFeature,
-		    m_getBufferDeviceAddress != nullptr && m_createAccelerationStructure != nullptr && m_destroyAccelerationStructure != nullptr
-		        && m_getAccelerationStructureBuildSizes != nullptr && m_cmdBuildAccelerationStructures != nullptr
-		        && m_getAccelerationStructureDeviceAddress != nullptr);
+		    m_getBufferDeviceAddress != nullptr && m_createAccelerationStructure != nullptr && m_destroyAccelerationStructure != nullptr && m_getAccelerationStructureBuildSizes != nullptr
+		        && m_cmdBuildAccelerationStructures != nullptr && m_getAccelerationStructureDeviceAddress != nullptr);
+
 		SPDLOG_LOGGER_WARN(g_vulkanRhiLogger, "{}", rayTracingSummary);
 		PushDiagnosticMessage(ERhiDiagnosticMessageSeverity::Warning, ERhiDiagnosticMessageCategory::Validation, rayTracingSummary);
 	}
@@ -570,10 +535,7 @@ bool VulkanRhi::IsLayerAvailable(const char* layerName) noexcept
 		return false;
 	}
 
-	return std::any_of(
-	    layers.begin(),
-	    layers.end(),
-	    [layerName](const VkLayerProperties& layer) noexcept { return std::string_view(layer.layerName) == layerName; });
+	return std::any_of(layers.begin(), layers.end(), [layerName](const VkLayerProperties& layer) noexcept { return std::string_view(layer.layerName) == layerName; });
 }
 
 bool VulkanRhi::IsInstanceExtensionAvailable(const char* extensionName) noexcept
@@ -590,11 +552,7 @@ bool VulkanRhi::IsInstanceExtensionAvailable(const char* extensionName) noexcept
 		return false;
 	}
 
-	return std::any_of(
-	    extensions.begin(),
-	    extensions.end(),
-	    [extensionName](const VkExtensionProperties& extension) noexcept
-	    { return std::string_view(extension.extensionName) == extensionName; });
+	return std::any_of(extensions.begin(), extensions.end(), [extensionName](const VkExtensionProperties& extension) noexcept { return std::string_view(extension.extensionName) == extensionName; });
 }
 
 bool VulkanRhi::IsDeviceExtensionAvailable(VkPhysicalDevice device, const char* extensionName) noexcept
@@ -611,11 +569,7 @@ bool VulkanRhi::IsDeviceExtensionAvailable(VkPhysicalDevice device, const char* 
 		return false;
 	}
 
-	return std::any_of(
-	    extensions.begin(),
-	    extensions.end(),
-	    [extensionName](const VkExtensionProperties& extension) noexcept
-	    { return std::string_view(extension.extensionName) == extensionName; });
+	return std::any_of(extensions.begin(), extensions.end(), [extensionName](const VkExtensionProperties& extension) noexcept { return std::string_view(extension.extensionName) == extensionName; });
 }
 
 std::uint32_t VulkanRhi::ScorePhysicalDevice(const VkPhysicalDeviceProperties& properties) noexcept

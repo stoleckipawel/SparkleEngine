@@ -29,6 +29,7 @@ public:
 	RhiGpuVirtualAddress AllocateAndCopy(const void* data, std::uint32_t sizeInBytes);
 
 	std::uint64_t GetCapacityInBytes() const noexcept { return m_capacityInBytes; }
+
 	std::uint64_t GetUsedBytes() const noexcept { return m_offset; }
 
 private:

@@ -40,7 +40,10 @@ struct ImportedLight
 	std::uint32_t sourceNodeIndex = (std::numeric_limits<std::uint32_t>::max)();
 
 	bool IsDirectional() const noexcept { return kind == ImportedLightKind::Directional; }
+
 	bool IsPoint() const noexcept { return kind == ImportedLightKind::Point; }
+
 	bool IsSpot() const noexcept { return kind == ImportedLightKind::Spot; }
+
 	bool IsRect() const noexcept { return kind == ImportedLightKind::Rect; }
 };

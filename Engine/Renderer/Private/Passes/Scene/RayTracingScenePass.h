@@ -6,8 +6,4 @@ class FrameGraphBuilder;
 class RenderRayTracingScene;
 struct RenderFrameGraphResources;
 
-void AddRayTracingScenePass(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderRayTracingScene& rayTracingScene,
-    RenderFrameGraphResources& resources);
+void AddRayTracingScenePass(FrameGraphBuilder& builder, const RenderFrame& frame, RenderRayTracingScene& rayTracingScene, RenderFrameGraphResources& resources);

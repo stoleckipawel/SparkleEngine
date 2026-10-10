@@ -44,9 +44,7 @@ void EditorConsolePanel::BuildUI(bool disableInteraction)
 	const ImGuiViewport* viewport = ImGui::GetMainViewport();
 	if (viewport != nullptr)
 	{
-		ImGui::SetNextWindowPos(
-		    ImVec2(viewport->WorkPos.x + 12.0f, viewport->WorkPos.y + viewport->WorkSize.y - 320.0f),
-		    ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ImVec2(viewport->WorkPos.x + 12.0f, viewport->WorkPos.y + viewport->WorkSize.y - 320.0f), ImGuiCond_FirstUseEver);
 	}
 	ImGui::SetNextWindowSize(ImVec2(600.0f, 300.0f), ImGuiCond_FirstUseEver);
 	const std::string windowTitle = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Console, "Console") + "##Editor Console";
@@ -251,12 +249,7 @@ void EditorConsolePanel::DrawScrollback()
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 6.0f));
 	const ImGuiInputTextFlags flags = ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_NoUndoRedo;
 	const ImVec2 available = ImGui::GetContentRegionAvail();
-	ImGui::InputTextMultiline(
-	    "##EditorConsoleScrollback",
-	    m_outputTextBuffer.data(),
-	    m_outputTextBuffer.size(),
-	    ImVec2(available.x, (std::max) (32.0f, available.y - 34.0f)),
-	    flags);
+	ImGui::InputTextMultiline("##EditorConsoleScrollback", m_outputTextBuffer.data(), m_outputTextBuffer.size(), ImVec2(available.x, (std::max) (32.0f, available.y - 34.0f)), flags);
 	ImGui::PopStyleVar();
 	ImGui::PopStyleColor(3);
 	if (monoFont != nullptr)
@@ -280,16 +273,8 @@ void EditorConsolePanel::DrawInputLine(bool disableInteraction)
 
 	ImGui::SetNextItemWidth(-1.0f);
 	ImGui::PushStyleColor(ImGuiCol_FrameBg, SparkleUiPalette::ConsoleInputBackground());
-	const ImGuiInputTextFlags flags =
-	    ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackCompletion;
-	if (ImGui::InputTextWithHint(
-	        "##EditorConsoleCommandInput",
-	        "Enter command",
-	        m_inputBuffer.data(),
-	        m_inputBuffer.size(),
-	        flags,
-	        &HandleInputTextCallback,
-	        this))
+	const ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackCompletion;
+	if (ImGui::InputTextWithHint("##EditorConsoleCommandInput", "Enter command", m_inputBuffer.data(), m_inputBuffer.size(), flags, &HandleInputTextCallback, this))
 	{
 		SubmitInput();
 	}

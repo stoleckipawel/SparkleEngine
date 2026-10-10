@@ -22,13 +22,12 @@ struct RhiQueueCapabilities final
 		Entries[RhiQueueTypeToIndex(queue)] = RhiQueueCapability{.Supported = supported, .Independent = supported && independent};
 	}
 
-	constexpr RhiQueueCapability Get(ERhiQueueType queue) const noexcept
-	{
-		return IsRhiQueueTypeValid(queue) ? Entries[RhiQueueTypeToIndex(queue)] : RhiQueueCapability{};
-	}
+	constexpr RhiQueueCapability Get(ERhiQueueType queue) const noexcept { return IsRhiQueueTypeValid(queue) ? Entries[RhiQueueTypeToIndex(queue)] : RhiQueueCapability{}; }
 
 	constexpr bool Supports(ERhiQueueType queue) const noexcept { return Get(queue).Supported; }
+
 	constexpr bool IsIndependent(ERhiQueueType queue) const noexcept { return Get(queue).Independent; }
+
 	constexpr bool SupportsIndependent(ERhiQueueType queue) const noexcept
 	{
 		const RhiQueueCapability capability = Get(queue);

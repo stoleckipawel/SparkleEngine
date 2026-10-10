@@ -72,20 +72,14 @@ public:
 
 	static sl::float2 ConvertNdcJitterToPixelJitter(const DirectX::XMFLOAT2& jitterNdc, const RenderViewportExtent& renderExtent)
 	{
-		return sl::float2{
-		    jitterNdc.x * static_cast<float>(renderExtent.Width) * 0.5f,
-		    -jitterNdc.y * static_cast<float>(renderExtent.Height) * 0.5f};
+		return sl::float2{jitterNdc.x * static_cast<float>(renderExtent.Width) * 0.5f, -jitterNdc.y * static_cast<float>(renderExtent.Height) * 0.5f};
 	}
 
 	static sl::float2 BuildMotionVectorScale(const StreamlineViewConstantsInput& input)
 	{
-		Require(
-		    input.RenderExtent.Width > 0 && input.RenderExtent.Height > 0,
-		    "Streamline motion-vector scale requires a non-empty render extent.");
+		Require(input.RenderExtent.Width > 0 && input.RenderExtent.Height > 0, "Streamline motion-vector scale requires a non-empty render extent.");
 		const float directionScale = input.MotionVectorsCurrentMinusPrevious ? 1.0f : -1.0f;
-		return sl::float2{
-		    directionScale / static_cast<float>(input.RenderExtent.Width),
-		    directionScale / static_cast<float>(input.RenderExtent.Height)};
+		return sl::float2{directionScale / static_cast<float>(input.RenderExtent.Width), directionScale / static_cast<float>(input.RenderExtent.Height)};
 	}
 };
 
@@ -101,12 +95,8 @@ sl::float4x4 ToStreamlineMatrix(const DirectX::XMFLOAT4X4& source)
 
 void FillStreamlineViewConstants(sl::Constants& constants, const StreamlineViewConstantsInput& input)
 {
-	StreamlineViewConstantTranslation::Require(
-	    input.RenderExtent.Width > 0 && input.RenderExtent.Height > 0,
-	    "Streamline view constants require a non-empty render extent.");
-	StreamlineViewConstantTranslation::Require(
-	    input.Camera.NearZ > 0.0f && input.Camera.FarZ > input.Camera.NearZ,
-	    "Streamline view constants contain an invalid camera clip range.");
+	StreamlineViewConstantTranslation::Require(input.RenderExtent.Width > 0 && input.RenderExtent.Height > 0, "Streamline view constants require a non-empty render extent.");
+	StreamlineViewConstantTranslation::Require(input.Camera.NearZ > 0.0f && input.Camera.FarZ > input.Camera.NearZ, "Streamline view constants contain an invalid camera clip range.");
 
 	DirectX::XMMATRIX clipToPrevClip = DirectX::XMMatrixIdentity();
 	DirectX::XMMATRIX prevClipToClip = DirectX::XMMatrixIdentity();
@@ -124,8 +114,7 @@ void FillStreamlineViewConstants(sl::Constants& constants, const StreamlineViewC
 	StreamlineViewConstantTranslation::FillIdentity(constants.clipToLensClip);
 	constants.clipToPrevClip = StreamlineViewConstantTranslation::ToStreamlineMatrixFromMatrix(clipToPrevClip);
 	constants.prevClipToClip = StreamlineViewConstantTranslation::ToStreamlineMatrixFromMatrix(prevClipToClip);
-	constants.jitterOffset =
-	    StreamlineViewConstantTranslation::ConvertNdcJitterToPixelJitter(input.Temporal.CurrentJitterNdc, input.RenderExtent);
+	constants.jitterOffset = StreamlineViewConstantTranslation::ConvertNdcJitterToPixelJitter(input.Temporal.CurrentJitterNdc, input.RenderExtent);
 	constants.mvecScale = StreamlineViewConstantTranslation::BuildMotionVectorScale(input);
 	constants.cameraPinholeOffset = sl::float2{0.0f, 0.0f};
 	constants.cameraPos = StreamlineViewConstantTranslation::ToStreamlineFloat3(input.Camera.Position);

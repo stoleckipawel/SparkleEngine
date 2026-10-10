@@ -53,21 +53,20 @@ class GBufferMeshPass final
 {
 public:
 	using Parameters = GBufferGraphParameters;
+
 	using ParameterInstance = TypedPassParameterInstance<Parameters>;
 
 	GBufferMeshPass(GpuMeshCache& gpuMeshCache, const PreparedRenderScene& scene, const RenderView& view) noexcept;
 	GBufferMeshPass(const GBufferMeshPass&) = delete;
 	GBufferMeshPass(GBufferMeshPass&&) noexcept = default;
 
-	void MaterializePipelines(
-	    const RenderPassRuntimeCache& runtimeCache,
-	    const RasterPassRenderState& renderState,
-	    const GraphicsAttachmentSignature& attachments);
+	void MaterializePipelines(const RenderPassRuntimeCache& runtimeCache, const RasterPassRenderState& renderState, const GraphicsAttachmentSignature& attachments);
 	void PrepareRasterPass(RenderCommandContext& commandContext) const;
 	void Draw(PassCommandContext& context, ParameterInstance& parameters);
 
 private:
 	using DrawParameters = GBufferShaderParameters;
+
 	using DrawParameterMetadata = ShaderParameterStructMetadata<DrawParameters>;
 	using DrawParameterInstance = TypedPassParameterInstance<DrawParameters>;
 
@@ -87,16 +86,9 @@ private:
 	static void BindMaterial(DrawParameterInstance& drawParameters, const PreparedDraw& draw);
 	static const GpuMesh* ResolveBatch(const RenderView& view, const MeshInstanceBatch& batch, const GpuMeshCache& meshes) noexcept;
 	static bool HasValidSkinning(const PreparedRenderScene& preparedScene, const RenderView& view, const MeshInstanceBatch& batch) noexcept;
-	static void ConfigureDrawParameters(
-	    const Parameters& passParameters,
-	    std::uint32_t firstInstance,
-	    DrawParameterInstance& drawParameters);
+	static void ConfigureDrawParameters(const Parameters& passParameters, std::uint32_t firstInstance, DrawParameterInstance& drawParameters);
 	static RhiRasterizerState ResolveRasterizerState(const MaterialData& material, const GpuMesh& gpuMesh, bool wireframe) noexcept;
-	static bool BindBatchPipeline(
-	    const FrameGraphResourceCommands& resources,
-	    RenderCommandContext& commandContext,
-	    DrawParameterInstance& drawParameters,
-	    const PreparedDraw& draw);
+	static bool BindBatchPipeline(const FrameGraphResourceCommands& resources, RenderCommandContext& commandContext, DrawParameterInstance& drawParameters, const PreparedDraw& draw);
 	static void DrawBatch(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& commandContext,

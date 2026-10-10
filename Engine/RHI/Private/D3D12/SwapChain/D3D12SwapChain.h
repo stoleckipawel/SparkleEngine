@@ -27,12 +27,7 @@ class D3D12Rhi;
 class D3D12SwapChain final
 {
 public:
-	D3D12SwapChain(
-	    D3D12Rhi& rhi,
-	    Window& window,
-	    D3D12DescriptorHeapManager& descriptorHeapManager,
-	    PixelFormat backBufferFormat,
-	    const RhiPresentationConfiguration& presentationConfiguration);
+	D3D12SwapChain(D3D12Rhi& rhi, Window& window, D3D12DescriptorHeapManager& descriptorHeapManager, PixelFormat backBufferFormat, const RhiPresentationConfiguration& presentationConfiguration);
 
 	~D3D12SwapChain() noexcept;
 

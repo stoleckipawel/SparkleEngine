@@ -24,9 +24,7 @@ namespace SparkleLauncher
 		};
 	}
 
-	static SourceDependencyValidation ValidateDependency(
-	    const ThirdPartyDependencyUiEntry& dependency,
-	    const std::filesystem::path& dependencyCachePath)
+	static SourceDependencyValidation ValidateDependency(const ThirdPartyDependencyUiEntry& dependency, const std::filesystem::path& dependencyCachePath)
 	{
 		if (const SourceDependencyEntry* sourceDependency = FindSourceDependency(dependency.Id.toStdString()))
 		{
@@ -50,17 +48,14 @@ namespace SparkleLauncher
 			}
 			return entries;
 		}();
+
 		return dependencies;
 	}
 
-	ThirdPartyDependencyUiStatus BuildThirdPartyDependencyStatus(
-	    const ThirdPartyDependencyUiEntry& dependency,
-	    const std::filesystem::path& dependencyCachePath)
+	ThirdPartyDependencyUiStatus BuildThirdPartyDependencyStatus(const ThirdPartyDependencyUiEntry& dependency, const std::filesystem::path& dependencyCachePath)
 	{
 		const SourceDependencyValidation validation = ValidateDependency(dependency, dependencyCachePath);
-		const QString detail =
-		    dependency.Purpose.isEmpty() ? dependency.Version : QStringLiteral("%1 · %2").arg(dependency.Version, dependency.Purpose);
-		return validation.Ready ? ThirdPartyDependencyUiStatus{"Synced", detail, "ok", true}
-		                        : ThirdPartyDependencyUiStatus{"Missing", detail, "warning", false};
+		const QString detail = dependency.Purpose.isEmpty() ? dependency.Version : QStringLiteral("%1 · %2").arg(dependency.Version, dependency.Purpose);
+		return validation.Ready ? ThirdPartyDependencyUiStatus{"Synced", detail, "ok", true} : ThirdPartyDependencyUiStatus{"Missing", detail, "warning", false};
 	}
 }

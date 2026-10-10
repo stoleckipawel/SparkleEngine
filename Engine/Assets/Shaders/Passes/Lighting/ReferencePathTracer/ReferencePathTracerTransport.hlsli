@@ -12,13 +12,9 @@
 
 namespace ReferencePathTracer
 {
-	RayTracingPathSample::DirectionSample SamplePathDirection(RayTracingPathSurface surface,
-	                                                          PathBsdf::LobeMasses lobeMasses,
-	                                                          SampleIdentity sampleIdentity,
-	                                                          uint surfaceDepth)
+	RayTracingPathSample::DirectionSample SamplePathDirection(RayTracingPathSurface surface, PathBsdf::LobeMasses lobeMasses, SampleIdentity sampleIdentity, uint surfaceDepth)
 	{
-		const CommonRandom::CategoricalSample lobeChoice =
-		    CommonRandom::SampleCategorical(RandomWord(sampleIdentity, SurfaceDimension(surfaceDepth, LobeChoiceOffset)), lobeMasses.Count);
+		const CommonRandom::CategoricalSample lobeChoice = CommonRandom::SampleCategorical(RandomWord(sampleIdentity, SurfaceDimension(surfaceDepth, LobeChoiceOffset)), lobeMasses.Count);
 
 		uint selectedLobe = RayTracingPathSample::LobeSpecular;
 		if (lobeMasses.Diffuse > 0.0f && lobeChoice.Index == 0u)
@@ -26,9 +22,9 @@ namespace ReferencePathTracer
 			selectedLobe = RayTracingPathSample::LobeDiffuse;
 		}
 
-		const float2 bsdfSample =
-		    float2(CommonRandom::OpenUnitInterval(RandomWord(sampleIdentity, SurfaceDimension(surfaceDepth, BsdfDirectionXOffset))),
-		           CommonRandom::OpenUnitInterval(RandomWord(sampleIdentity, SurfaceDimension(surfaceDepth, BsdfDirectionYOffset))));
+		const float2 bsdfSample = float2(CommonRandom::OpenUnitInterval(RandomWord(sampleIdentity, SurfaceDimension(surfaceDepth, BsdfDirectionXOffset))),
+		                                 CommonRandom::OpenUnitInterval(RandomWord(sampleIdentity, SurfaceDimension(surfaceDepth, BsdfDirectionYOffset))));
+
 		return PathBsdf::Sample(surface, lobeMasses, selectedLobe, bsdfSample, true, true);
 	}
 
@@ -38,8 +34,7 @@ namespace ReferencePathTracer
 		const float scaledSurvival = targetSurvival * 16777216.0f;
 		const uint lowerThreshold = (uint)floor(scaledSurvival);
 		const float thresholdFraction = scaledSurvival - (float)lowerThreshold;
-		const uint roundedThreshold =
-		    lowerThreshold + (thresholdFraction > 0.5f || (thresholdFraction == 0.5f && (lowerThreshold & 1u) != 0u) ? 1u : 0u);
+		const uint roundedThreshold = lowerThreshold + (thresholdFraction > 0.5f || (thresholdFraction == 0.5f && (lowerThreshold & 1u) != 0u) ? 1u : 0u);
 		const uint threshold = min(max(roundedThreshold, 1u), 16777215u);
 		const uint rouletteValue = RandomWord(sampleIdentity, SurfaceDimension(surfaceVertexCount - 1u, RouletteOffset)) >> 8u;
 
@@ -52,11 +47,7 @@ namespace ReferencePathTracer
 		return true;
 	}
 
-	float3 TraceSurfaceTransport(RaytracingAccelerationStructure sceneTlas,
-	                             Texture2D skyTexture,
-	                             SamplerState skySampler,
-	                             RayEndpoints::Ray traversal,
-	                             SampleIdentity sampleIdentity)
+	float3 TraceSurfaceTransport(RaytracingAccelerationStructure sceneTlas, Texture2D skyTexture, SamplerState skySampler, RayEndpoints::Ray traversal, SampleIdentity sampleIdentity)
 	{
 		const LightCounts lightCounts = GetLightCounts();
 		PathTracer::PathState path;
@@ -75,20 +66,11 @@ namespace ReferencePathTracer
 		[loop]
 		for (;;)
 		{
-			const RayTracingTraceResult trace = TraceSceneRay(sceneTlas,
-			                                                  path.OriginWorld,
-			                                                  path.DirectionWorld,
-			                                                  traversal.TMin,
-			                                                  traversal.TMax,
-			                                                  RAY_FLAG_CULL_BACK_FACING_TRIANGLES,
-			                                                  0xFFu);
+			const RayTracingTraceResult trace = TraceSceneRay(sceneTlas, path.OriginWorld, path.DirectionWorld, traversal.TMin, traversal.TMax, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, 0xFFu);
 
 			if (!trace.Hit)
 			{
-				PathTracer::AddRadiance(
-				    contribution,
-				    path.Throughput,
-				    EvaluateEnvironmentRadiance(lightCounts, previousEvent, path.DirectionWorld, skyTexture, skySampler));
+				PathTracer::AddRadiance(contribution, path.Throughput, EvaluateEnvironmentRadiance(lightCounts, previousEvent, path.DirectionWorld, skyTexture, skySampler));
 				break;
 			}
 
@@ -109,19 +91,9 @@ namespace ReferencePathTracer
 
 			const PathBsdf::LobeMasses lobeMasses = PathBsdf::BuildEqualLobeMasses(surface);
 
-			PathTracer::AddRadiance(contribution,
-			                        path.Throughput,
-			                        SampleDirectLighting(sceneTlas,
-			                                             skyTexture,
-			                                             skySampler,
-			                                             surface,
-			                                             lobeMasses,
-			                                             lightCounts,
-			                                             sampleIdentity,
-			                                             path.SurfaceDepth));
+			PathTracer::AddRadiance(contribution, path.Throughput, SampleDirectLighting(sceneTlas, skyTexture, skySampler, surface, lobeMasses, lightCounts, sampleIdentity, path.SurfaceDepth));
 
-			if ((FinitePathDiagnosticSurfaceVertices != 0u && surfaceVertexCount == FinitePathDiagnosticSurfaceVertices)
-			    || lobeMasses.Count == 0u)
+			if ((FinitePathDiagnosticSurfaceVertices != 0u && surfaceVertexCount == FinitePathDiagnosticSurfaceVertices) || lobeMasses.Count == 0u)
 			{
 				break;
 			}
@@ -143,8 +115,7 @@ namespace ReferencePathTracer
 				break;
 			}
 
-			traversal =
-			    RayEndpoints::Continuation(surface.PositionWorld, surface.GeometricNormalWorld, surface.PositionError, path.DirectionWorld);
+			traversal = RayEndpoints::Continuation(surface.PositionWorld, surface.GeometricNormalWorld, surface.PositionError, path.DirectionWorld);
 
 			path.OriginWorld = traversal.Origin;
 			path.DirectionWorld = traversal.Direction;

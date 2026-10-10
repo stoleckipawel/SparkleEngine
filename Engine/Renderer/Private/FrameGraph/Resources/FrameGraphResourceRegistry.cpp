@@ -9,97 +9,48 @@ void FrameGraphResourceRegistry::Clear() noexcept
 	m_registeredHandles.clear();
 }
 
-void FrameGraphResourceRegistry::RegisterBackBuffer(
-    FrameGraphResourceHandle handle,
-    const FrameGraphTextureDesc& desc,
-    ResourceState initialState) noexcept
+void FrameGraphResourceRegistry::RegisterBackBuffer(FrameGraphResourceHandle handle, const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept
 {
-	FrameGraphResourceMetadata& metadata = RegisterMetadata(
-	    handle,
-	    FrameGraphResourceClass::Texture,
-	    FrameGraphResourceKind::BackBuffer,
-	    FrameGraphResourceOwnership::Imported,
-	    desc.name,
-	    initialState,
-	    initialState);
+	FrameGraphResourceMetadata&
+	    metadata = RegisterMetadata(handle, FrameGraphResourceClass::Texture, FrameGraphResourceKind::BackBuffer, FrameGraphResourceOwnership::Imported, desc.name, initialState, initialState);
+
 	metadata.textureDesc = desc;
 	metadata.bufferDesc = {};
 }
 
-void FrameGraphResourceRegistry::RegisterTransientTexture(
-    FrameGraphResourceHandle handle,
-    const FrameGraphTextureDesc& desc,
-    FrameGraphResourceKind kind,
-    ResourceState initialState) noexcept
+void FrameGraphResourceRegistry::RegisterTransientTexture(FrameGraphResourceHandle handle, const FrameGraphTextureDesc& desc, FrameGraphResourceKind kind, ResourceState initialState) noexcept
 {
-	FrameGraphResourceMetadata& metadata = RegisterMetadata(
-	    handle,
-	    FrameGraphResourceClass::Texture,
-	    kind,
-	    FrameGraphResourceOwnership::Transient,
-	    desc.name,
-	    initialState,
-	    initialState);
+	FrameGraphResourceMetadata& metadata = RegisterMetadata(handle, FrameGraphResourceClass::Texture, kind, FrameGraphResourceOwnership::Transient, desc.name, initialState, initialState);
 	metadata.textureDesc = desc;
 	metadata.bufferDesc = {};
 }
 
-void FrameGraphResourceRegistry::RegisterTransientBuffer(
-    FrameGraphResourceHandle handle,
-    const FrameGraphBufferDesc& desc,
-    ResourceState initialState) noexcept
+void FrameGraphResourceRegistry::RegisterTransientBuffer(FrameGraphResourceHandle handle, const FrameGraphBufferDesc& desc, ResourceState initialState) noexcept
 {
-	FrameGraphResourceMetadata& metadata = RegisterMetadata(
-	    handle,
-	    FrameGraphResourceClass::Buffer,
-	    FrameGraphResourceKind::Buffer,
-	    FrameGraphResourceOwnership::Transient,
-	    desc.name,
-	    initialState,
-	    initialState);
+	FrameGraphResourceMetadata&
+	    metadata = RegisterMetadata(handle, FrameGraphResourceClass::Buffer, FrameGraphResourceKind::Buffer, FrameGraphResourceOwnership::Transient, desc.name, initialState, initialState);
+
 	metadata.textureDesc = {};
 	metadata.bufferDesc = desc;
 }
 
-void FrameGraphResourceRegistry::RegisterPersistentTexture(
-    FrameGraphResourceHandle handle,
-    const FrameGraphTextureDesc& desc,
-    FrameGraphResourceKind kind,
-    ResourceState initialState) noexcept
+void FrameGraphResourceRegistry::RegisterPersistentTexture(FrameGraphResourceHandle handle, const FrameGraphTextureDesc& desc, FrameGraphResourceKind kind, ResourceState initialState) noexcept
 {
-	FrameGraphResourceMetadata& metadata = RegisterMetadata(
-	    handle,
-	    FrameGraphResourceClass::Texture,
-	    kind,
-	    FrameGraphResourceOwnership::ExternalPersistent,
-	    desc.name,
-	    initialState,
-	    initialState);
+	FrameGraphResourceMetadata& metadata = RegisterMetadata(handle, FrameGraphResourceClass::Texture, kind, FrameGraphResourceOwnership::ExternalPersistent, desc.name, initialState, initialState);
 	metadata.textureDesc = desc;
 	metadata.bufferDesc = {};
 }
 
-void FrameGraphResourceRegistry::RegisterPersistentBuffer(
-    FrameGraphResourceHandle handle,
-    const FrameGraphBufferDesc& desc,
-    ResourceState initialState) noexcept
+void FrameGraphResourceRegistry::RegisterPersistentBuffer(FrameGraphResourceHandle handle, const FrameGraphBufferDesc& desc, ResourceState initialState) noexcept
 {
-	FrameGraphResourceMetadata& metadata = RegisterMetadata(
-	    handle,
-	    FrameGraphResourceClass::Buffer,
-	    FrameGraphResourceKind::Buffer,
-	    FrameGraphResourceOwnership::ExternalPersistent,
-	    desc.name,
-	    initialState,
-	    initialState);
+	FrameGraphResourceMetadata&
+	    metadata = RegisterMetadata(handle, FrameGraphResourceClass::Buffer, FrameGraphResourceKind::Buffer, FrameGraphResourceOwnership::ExternalPersistent, desc.name, initialState, initialState);
+
 	metadata.textureDesc = {};
 	metadata.bufferDesc = desc;
 }
 
-void FrameGraphResourceRegistry::RegisterPersistentAccelerationStructure(
-    FrameGraphResourceHandle handle,
-    std::string_view name,
-    ResourceState initialState) noexcept
+void FrameGraphResourceRegistry::RegisterPersistentAccelerationStructure(FrameGraphResourceHandle handle, std::string_view name, ResourceState initialState) noexcept
 {
 	FrameGraphResourceMetadata& metadata = RegisterMetadata(
 	    handle,
@@ -109,14 +60,12 @@ void FrameGraphResourceRegistry::RegisterPersistentAccelerationStructure(
 	    name,
 	    initialState,
 	    initialState);
+
 	metadata.textureDesc = {};
 	metadata.bufferDesc = {};
 }
 
-void FrameGraphResourceRegistry::SetBoundaryStates(
-    FrameGraphResourceHandle handle,
-    ResourceState initialState,
-    ResourceState finalState) noexcept
+void FrameGraphResourceRegistry::SetBoundaryStates(FrameGraphResourceHandle handle, ResourceState initialState, ResourceState finalState) noexcept
 {
 	FrameGraphResourceMetadata& metadata = GetMetadata(handle);
 	metadata.initialState = initialState;

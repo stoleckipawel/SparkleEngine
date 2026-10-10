@@ -8,11 +8,7 @@
 #include "ShaderData/FrameUniformData.h"
 #include "View/RenderView.h"
 
-void AddExposureAdaptationPass(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    const ExposureMomentTexture& luminanceMoments,
-    const RenderFrameGraphResources& resources)
+void AddExposureAdaptationPass(FrameGraphBuilder& builder, const RenderFrame& frame, const ExposureMomentTexture& luminanceMoments, const RenderFrameGraphResources& resources)
 {
 	auto& parameters = builder.AllocParameters<ExposureCS>();
 	parameters->LuminanceMoments = builder.CreateSRV(luminanceMoments.Handle);

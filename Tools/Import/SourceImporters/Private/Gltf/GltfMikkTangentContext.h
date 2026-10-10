@@ -18,6 +18,7 @@ public:
 
 private:
 	static constexpr std::size_t kVerticesPerTriangle = 3u;
+
 	static constexpr float kMinimumVectorLengthSquared = 1.0e-12f;
 	static constexpr float kFrameTolerance = 1.0e-3f;
 

@@ -24,5 +24,6 @@ public:
 
 private:
 	Threading::OwnerThread m_owner{"RenderDeviceServices"};
+
 	std::unique_ptr<RenderDeviceBackendServices> m_backendServices;
 };

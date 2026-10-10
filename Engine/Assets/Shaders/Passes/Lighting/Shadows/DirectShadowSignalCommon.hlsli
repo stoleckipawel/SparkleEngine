@@ -16,10 +16,7 @@ RWTexture2D<float4> ShadowVisibilitySignal;
 Texture2D<float4> CurrentReservoirSample;
 Texture2D<float4> CurrentReservoirWeight;
 
-bool PrepareDirectShadowSignal(uint2 pixelCoord,
-                               out bool validPixel,
-                               out RayTracedShadowRequest request,
-                               out ShadowVisibilitySample immediateSignal)
+bool PrepareDirectShadowSignal(uint2 pixelCoord, out bool validPixel, out RayTracedShadowRequest request, out ShadowVisibilitySample immediateSignal)
 {
 	validPixel = false;
 	request = (RayTracedShadowRequest)0;
@@ -42,21 +39,14 @@ bool PrepareDirectShadowSignal(uint2 pixelCoord,
 
 	const float3 positionWorld = ReconstructGBufferWorldPosition(pixelCoord, sceneDepth, InvViewMTX, InvProjectionMTX);
 	const float3 normalWorld = GBufferPacking::DecodeWorldNormal(GBufferWorldNormal.Load(int3(pixelCoord, 0)).xyz);
-	const DirectLightReservoir::Reservoir reservoir =
-	    DirectLightReservoir::UnpackReservoir(CurrentReservoirSample.Load(int3(pixelCoord, 0)),
-	                                          CurrentReservoirWeight.Load(int3(pixelCoord, 0)));
+	const DirectLightReservoir::Reservoir reservoir = DirectLightReservoir::UnpackReservoir(CurrentReservoirSample.Load(int3(pixelCoord, 0)), CurrentReservoirWeight.Load(int3(pixelCoord, 0)));
 	if (!DirectLightReservoir::IsValid(reservoir))
 	{
 		return false;
 	}
 
 	const LightSampling::DirectLightSample lightSample = DirectLightReservoir::ReplayLightSample(reservoir, positionWorld);
-	return RayTracedShadows::BuildDirectLightRequest(positionWorld,
-	                                                 normalWorld,
-	                                                 lightSample,
-	                                                 DirectLightSampling::CastsShadow(reservoir.Candidate.Light),
-	                                                 request,
-	                                                 immediateSignal);
+	return RayTracedShadows::BuildDirectLightRequest(positionWorld, normalWorld, lightSample, DirectLightSampling::CastsShadow(reservoir.Candidate.Light), request, immediateSignal);
 }
 
 void StoreDirectShadowSignal(uint2 pixelCoord, ShadowVisibilitySample signal)

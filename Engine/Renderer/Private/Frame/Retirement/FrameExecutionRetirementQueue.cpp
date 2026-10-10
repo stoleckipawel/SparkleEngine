@@ -13,21 +13,14 @@ FrameExecutionRetirementQueue::FrameExecutionRetirementQueue() noexcept = defaul
 
 FrameExecutionRetirementQueue::~FrameExecutionRetirementQueue() noexcept = default;
 
-void FrameExecutionRetirementQueue::Retire(
-    const RenderDeviceServices& deviceServices,
-    std::unique_ptr<FrameGraph> graph,
-    std::vector<std::unique_ptr<RenderFrame>> renderFrames) noexcept
+void FrameExecutionRetirementQueue::Retire(const RenderDeviceServices& deviceServices, std::unique_ptr<FrameGraph> graph, std::vector<std::unique_ptr<RenderFrame>> renderFrames) noexcept
 {
 	if (graph == nullptr)
 	{
 		return;
 	}
 
-	m_retiredExecutions.push_back(
-	    RetiredFrameExecution{
-	        .LastUse = CaptureLastSubmittedState(deviceServices),
-	        .Graph = std::move(graph),
-	        .RenderFrames = std::move(renderFrames)});
+	m_retiredExecutions.push_back(RetiredFrameExecution{.LastUse = CaptureLastSubmittedState(deviceServices), .Graph = std::move(graph), .RenderFrames = std::move(renderFrames)});
 }
 
 void FrameExecutionRetirementQueue::Poll(const RenderDeviceServices& deviceServices) noexcept
@@ -36,8 +29,7 @@ void FrameExecutionRetirementQueue::Poll(const RenderDeviceServices& deviceServi
 	    std::remove_if(
 	        m_retiredExecutions.begin(),
 	        m_retiredExecutions.end(),
-	        [&deviceServices](const RetiredFrameExecution& execution) noexcept
-	        { return IsSubmissionStateComplete(deviceServices, execution.LastUse); }),
+	        [&deviceServices](const RetiredFrameExecution& execution) noexcept { return IsSubmissionStateComplete(deviceServices, execution.LastUse); }),
 	    m_retiredExecutions.end());
 }
 
@@ -51,9 +43,7 @@ RhiSubmissionState FrameExecutionRetirementQueue::CaptureLastSubmittedState(cons
 	return state;
 }
 
-bool FrameExecutionRetirementQueue::IsSubmissionStateComplete(
-    const RenderDeviceServices& deviceServices,
-    const RhiSubmissionState& state) noexcept
+bool FrameExecutionRetirementQueue::IsSubmissionStateComplete(const RenderDeviceServices& deviceServices, const RhiSubmissionState& state) noexcept
 {
 	std::array<RhiSubmissionToken, RhiQueueTypeCount> tokens{};
 	const std::size_t tokenCount = state.CopyTokens(tokens);

@@ -30,10 +30,7 @@ public:
 	}
 };
 
-void CookedSceneSkeletonBuilder::BuildSkeletons(
-    const SourceImportOutput& importOutput,
-    std::string_view sceneAssetId,
-    CookedSceneBuild& outBuild)
+void CookedSceneSkeletonBuilder::BuildSkeletons(const SourceImportOutput& importOutput, std::string_view sceneAssetId, CookedSceneBuild& outBuild)
 {
 	outBuild.outputs.skeletonAssets.clear();
 	outBuild.manifest.skeletonRefs.clear();
@@ -50,8 +47,7 @@ void CookedSceneSkeletonBuilder::BuildSkeletons(
 		}
 		if (!sourceSkinIndices.insert(importedSkeleton.sourceSkinIndex).second)
 		{
-			throw Diagnostics::Error(
-			    std::format("Imported skeleton {} duplicates source skin index {}.", skeletonIndex, importedSkeleton.sourceSkinIndex));
+			throw Diagnostics::Error(std::format("Imported skeleton {} duplicates source skin index {}.", skeletonIndex, importedSkeleton.sourceSkinIndex));
 		}
 		std::vector<std::uint32_t> evaluationOrder;
 		if (!SkeletonTransformContract::BuildEvaluationOrder(importedSkeleton.joints, evaluationOrder))
@@ -69,32 +65,23 @@ void CookedSceneSkeletonBuilder::BuildSkeletons(
 		for (std::size_t jointIndex = 0; jointIndex < importedSkeleton.joints.size(); ++jointIndex)
 		{
 			const ImportedJoint& importedJoint = importedSkeleton.joints[jointIndex];
-			if (importedJoint.name.size() >= sizeof(Assets::CookedSkeletonJointRecord::name)
-			    || importedJoint.sourceNodeIndex == (std::numeric_limits<std::uint32_t>::max)()
+			if (importedJoint.name.size() >= sizeof(Assets::CookedSkeletonJointRecord::name) || importedJoint.sourceNodeIndex == (std::numeric_limits<std::uint32_t>::max)()
 			    || !sourceNodeIndices.insert(importedJoint.sourceNodeIndex).second
 			    || (importedJoint.parentJointIndex != (std::numeric_limits<std::uint32_t>::max)()
 			        && (importedJoint.parentJointIndex >= importedSkeleton.joints.size() || importedJoint.parentJointIndex == jointIndex)))
 			{
 				throw Diagnostics::Error(std::format("Imported skeleton {} has invalid joint {}.", skeletonIndex, jointIndex));
 			}
-			const DirectX::XMFLOAT4X4* parentBindModel = importedJoint.parentJointIndex < importedSkeleton.joints.size()
-			    ? &importedSkeleton.joints[importedJoint.parentJointIndex].bindModelTransform
-			    : nullptr;
-			if (!SkeletonTransformContract::IsFinite(importedJoint.inverseBindMatrix)
-			    || !SkeletonTransformContract::IsFinite(importedJoint.bindLocalTransform)
-			    || !SkeletonTransformContract::IsFinite(importedJoint.parentSpaceTransform)
-			    || !SkeletonTransformContract::IsFinite(importedJoint.bindModelTransform)
-			    || !SkeletonTransformContract::IsInvertible(importedJoint.inverseBindMatrix)
-			    || !SkeletonTransformContract::IsInvertible(importedJoint.bindLocalTransform)
+			const DirectX::XMFLOAT4X4* parentBindModel = importedJoint.parentJointIndex < importedSkeleton.joints.size() ? &importedSkeleton.joints[importedJoint.parentJointIndex].bindModelTransform
+			                                                                                                             : nullptr;
+
+			if (!SkeletonTransformContract::IsFinite(importedJoint.inverseBindMatrix) || !SkeletonTransformContract::IsFinite(importedJoint.bindLocalTransform)
+			    || !SkeletonTransformContract::IsFinite(importedJoint.parentSpaceTransform) || !SkeletonTransformContract::IsFinite(importedJoint.bindModelTransform)
+			    || !SkeletonTransformContract::IsInvertible(importedJoint.inverseBindMatrix) || !SkeletonTransformContract::IsInvertible(importedJoint.bindLocalTransform)
 			    || !SkeletonTransformContract::IsTrsDecomposable(importedJoint.bindLocalTransform)
-			    || !SkeletonTransformContract::SatisfiesBindInvariant(
-			        importedJoint.bindLocalTransform,
-			        importedJoint.parentSpaceTransform,
-			        parentBindModel,
-			        importedJoint.bindModelTransform))
+			    || !SkeletonTransformContract::SatisfiesBindInvariant(importedJoint.bindLocalTransform, importedJoint.parentSpaceTransform, parentBindModel, importedJoint.bindModelTransform))
 			{
-				throw Diagnostics::Error(
-				    std::format("Imported skeleton {} joint {} violates the canonical transform contract.", skeletonIndex, jointIndex));
+				throw Diagnostics::Error(std::format("Imported skeleton {} joint {} violates the canonical transform contract.", skeletonIndex, jointIndex));
 			}
 
 			Assets::CookedSkeletonJointRecord jointRecord;
@@ -108,11 +95,7 @@ void CookedSceneSkeletonBuilder::BuildSkeletons(
 			skeletonAsset.joints.push_back(jointRecord);
 		}
 
-		outBuild.manifest.skeletonRefs.push_back(
-		    Assets::CookedSceneSkeletonRef{
-		        .skeletonAssetId = skeletonAsset.assetId,
-		        .sourceSkinIndex = importedSkeleton.sourceSkinIndex,
-		        .flags = 0});
+		outBuild.manifest.skeletonRefs.push_back(Assets::CookedSceneSkeletonRef{.skeletonAssetId = skeletonAsset.assetId, .sourceSkinIndex = importedSkeleton.sourceSkinIndex, .flags = 0});
 		outBuild.outputs.skeletonAssets.push_back(std::move(skeletonAsset));
 	}
 }

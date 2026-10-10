@@ -9,9 +9,7 @@ bool FrameGraphCompilerRayTracing::UsesRayTracingState(const PassResourceDeclara
 	return UsesAccelerationStructure(declaration.usage) || UsesRayTracingShaderTable(declaration.usage);
 }
 
-ResourceState FrameGraphCompilerRayTracing::InferRequiredResourceState(
-    const PassResourceDeclaration& declaration,
-    const FrameGraphResourceNode& resource) noexcept
+ResourceState FrameGraphCompilerRayTracing::InferRequiredResourceState(const PassResourceDeclaration& declaration, const FrameGraphResourceNode& resource) noexcept
 {
 	assert(UsesRayTracingState(declaration));
 	if (UsesAccelerationStructure(declaration.usage))

@@ -3,11 +3,7 @@
 
 #include "Commands/RenderCommandContext.h"
 
-void PassBinder::BindDescriptorTableOverride(
-    RenderCommandContext& commandContext,
-    const CompiledBinding& compiledBinding,
-    const PassBindingOverride& bindingOverride,
-    BindingDomain domain)
+void PassBinder::BindDescriptorTableOverride(RenderCommandContext& commandContext, const CompiledBinding& compiledBinding, const PassBindingOverride& bindingOverride, BindingDomain domain)
 {
 	if (bindingOverride.DescriptorTableKind == DescriptorTableOverrideKind::LogicalTable)
 	{
@@ -19,11 +15,7 @@ void PassBinder::BindDescriptorTableOverride(
 	}
 }
 
-void PassBinder::BindGpuAddress(
-    RenderCommandContext& commandContext,
-    const CompiledBinding& compiledBinding,
-    RhiGpuVirtualAddress gpuAddress,
-    BindingDomain domain)
+void PassBinder::BindGpuAddress(RenderCommandContext& commandContext, const CompiledBinding& compiledBinding, RhiGpuVirtualAddress gpuAddress, BindingDomain domain)
 {
 	Require(gpuAddress != 0, "Pass address binding resolved to a null GPU address.");
 	switch (compiledBinding.Type)
@@ -76,11 +68,7 @@ void PassBinder::BindGpuAddress(
 	}
 }
 
-void PassBinder::BindDescriptorTable(
-    RenderCommandContext& commandContext,
-    const CompiledBinding& compiledBinding,
-    RhiGpuDescriptorHandle descriptorTable,
-    BindingDomain domain)
+void PassBinder::BindDescriptorTable(RenderCommandContext& commandContext, const CompiledBinding& compiledBinding, RhiGpuDescriptorHandle descriptorTable, BindingDomain domain)
 {
 	Require(static_cast<bool>(descriptorTable), "Pass resource binding resolved to a null GPU descriptor handle.");
 	if (domain == BindingDomain::Compute)
@@ -97,11 +85,7 @@ void PassBinder::BindDescriptorTable(
 	commandContext.BindDescriptorTable(compiledBinding.BindingIndex, descriptorTable);
 }
 
-void PassBinder::BindDescriptorTable(
-    RenderCommandContext& commandContext,
-    const CompiledBinding& compiledBinding,
-    RhiDescriptorTableBinding descriptorTable,
-    BindingDomain domain)
+void PassBinder::BindDescriptorTable(RenderCommandContext& commandContext, const CompiledBinding& compiledBinding, RhiDescriptorTableBinding descriptorTable, BindingDomain domain)
 {
 	Require(static_cast<bool>(descriptorTable), "Pass resource binding resolved to an invalid logical descriptor table.");
 	if (domain == BindingDomain::Compute)
@@ -118,12 +102,7 @@ void PassBinder::BindDescriptorTable(
 	commandContext.BindDescriptorTable(compiledBinding.BindingIndex, descriptorTable);
 }
 
-void PassBinder::BindPushConstants(
-    RenderCommandContext& commandContext,
-    const CompiledBinding& compiledBinding,
-    const void* data,
-    std::uint32_t constantCount,
-    BindingDomain domain)
+void PassBinder::BindPushConstants(RenderCommandContext& commandContext, const CompiledBinding& compiledBinding, const void* data, std::uint32_t constantCount, BindingDomain domain)
 {
 	Require(data != nullptr, "Push-constant binding has no data.");
 	Require(constantCount > 0, "Push-constant binding has no values.");

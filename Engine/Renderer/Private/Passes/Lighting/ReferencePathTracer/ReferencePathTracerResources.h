@@ -40,6 +40,7 @@ private:
 	bool IsAllocated() const noexcept;
 
 	const ReferencePathTracerGraphResources& GetGraphResources() const noexcept { return m_graphResources; }
+
 	struct Allocation final
 	{
 		RhiOwnedResourceHandle WorkingMean = {};

@@ -109,11 +109,7 @@ void SettingsPanel::DrawToolbar()
 
 	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 12.0f);
 	ImGui::SetNextItemWidth(-FLT_MIN);
-	if (ImGui::InputTextWithHint(
-	        "##SettingsSearch",
-	        UiUtil::MakeIconLabel(UiUtil::EditorIcon::Search, "Search").c_str(),
-	        filterBuffer.data(),
-	        filterBuffer.size()))
+	if (ImGui::InputTextWithHint("##SettingsSearch", UiUtil::MakeIconLabel(UiUtil::EditorIcon::Search, "Search").c_str(), filterBuffer.data(), filterBuffer.size()))
 	{
 		m_filterText = filterBuffer.data();
 	}

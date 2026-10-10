@@ -134,6 +134,7 @@ void BindComputeShaderPass(
 	}
 
 	commandContext.SetPipeline(pipeline);
+
 	PassBinder::BindCompute(
 	    commandContext,
 	    resources,
@@ -161,6 +162,7 @@ void BindRasterShaderPass(
 	}
 
 	commandContext.SetPipeline(pipeline);
+
 	PassBinder::BindGraphics(
 	    commandContext,
 	    resources,

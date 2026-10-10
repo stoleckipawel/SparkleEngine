@@ -8,6 +8,7 @@ class TemporalJitterGeneration final
 {
 public:
 	static constexpr float kNormalizedOffsetRange = 0.5f;
+
 	static constexpr uint32_t kHaltonBaseX = 2u;
 	static constexpr uint32_t kHaltonBaseY = 3u;
 	static constexpr float kR2G = 1.32471795724474602596f;
@@ -32,15 +33,9 @@ public:
 
 	static DirectX::XMFLOAT2 CalculateMSAAJitter(uint32_t index) noexcept
 	{
-		const DirectX::XMFLOAT2 offsets[] = {
-		    {0.0625f, -0.1875f},
-		    {-0.0625f, 0.1875f},
-		    {0.3125f, 0.0625f},
-		    {-0.1875f, -0.3125f},
-		    {-0.3125f, 0.3125f},
-		    {-0.4375f, -0.0625f},
-		    {0.1875f, 0.4375f},
-		    {0.4375f, -0.4375f}};
+		const DirectX::XMFLOAT2 offsets[] =
+		    {{0.0625f, -0.1875f}, {-0.0625f, 0.1875f}, {0.3125f, 0.0625f}, {-0.1875f, -0.3125f}, {-0.3125f, 0.3125f}, {-0.4375f, -0.0625f}, {0.1875f, 0.4375f}, {0.4375f, -0.4375f}};
+
 		return offsets[index % 8u];
 	}
 
@@ -81,8 +76,10 @@ DirectX::XMFLOAT2 TemporalJitterPatterns::GeneratePatternSample(Pattern pattern,
 			return TemporalJitterGeneration::CalculateR2Jitter(frameIndex);
 		case Pattern::WhiteNoise:
 			return TemporalJitterGeneration::CalculateWhiteNoiseJitter(frameIndex);
+
 		case Pattern::None:
 			return {};
+
 		default:
 			return {};
 	}

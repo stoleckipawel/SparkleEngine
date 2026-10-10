@@ -31,10 +31,7 @@ namespace SparkleLauncher
 			{
 				for (const std::string& levelId : m_requestedLevelIds)
 				{
-					const auto level = std::find_if(
-					    m_catalog.levels.begin(),
-					    m_catalog.levels.end(),
-					    [&levelId](const ProjectLevelCatalogEntry& candidate) { return candidate.id == levelId; });
+					const auto level = std::find_if(m_catalog.levels.begin(), m_catalog.levels.end(), [&levelId](const ProjectLevelCatalogEntry& candidate) { return candidate.id == levelId; });
 					if (level == m_catalog.levels.end())
 					{
 						throw Diagnostics::Error("Requested level '" + levelId + "' is not present in the level catalog.");
@@ -64,8 +61,7 @@ namespace SparkleLauncher
 			const ProjectAssetPack& pack = m_catalog.assetPacks.at(level.assetPackId);
 			if (!pack.runtimeSupported)
 			{
-				throw Diagnostics::Error(
-				    "Selected level '" + level.id + "' requires runtime-unsupported asset pack '" + pack.id + "': " + pack.runtimeBlocker);
+				throw Diagnostics::Error("Selected level '" + level.id + "' requires runtime-unsupported asset pack '" + pack.id + "': " + pack.runtimeBlocker);
 			}
 			AppendPackAndParents(pack);
 		}

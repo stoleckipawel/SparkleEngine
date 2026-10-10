@@ -14,7 +14,9 @@ public:
 	~SettingsPanel();
 
 	void SetOpen(bool open) noexcept;
+
 	bool IsOpen() const noexcept { return m_isOpen; }
+
 	void SetRenderingSettings(EngineRenderingSettingsController* renderingSettings) noexcept;
 	void SetRestartHandler(std::function<void()> restartHandler);
 	void BuildUI(bool disableInteraction);

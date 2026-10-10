@@ -6,8 +6,4 @@
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
 
-void CreateGBufferRenderTargets(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    GBufferAlgorithm algorithm,
-    RenderFrameGraphResources& resources);
+void CreateGBufferRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, GBufferAlgorithm algorithm, RenderFrameGraphResources& resources);

@@ -6,8 +6,7 @@
 #include <cassert>
 #include <utility>
 
-template <typename THandle>
-static bool ValidateResourceBinding(const std::vector<THandle>& handles, const PassParameterDesc& parameter) noexcept
+template <typename THandle> static bool ValidateResourceBinding(const std::vector<THandle>& handles, const PassParameterDesc& parameter) noexcept
 {
 	if (parameter.ArrayCount != static_cast<std::uint32_t>(handles.size()))
 	{
@@ -148,8 +147,7 @@ bool PassParameterSet::SetAttachment(const char* name, FrameGraphAttachmentBindi
 	std::uint32_t index = 0;
 	const PassParameterDesc* parameter = FindParameter(name, index);
 	if (parameter == nullptr || parameter->ResourceDomain != ShaderParameterResourceDomain::Texture
-	    || (parameter->Kind != ShaderParameterSemanticKind::RenderTarget && parameter->Kind != ShaderParameterSemanticKind::DepthTarget)
-	    || !binding.Handle.IsValid())
+	    || (parameter->Kind != ShaderParameterSemanticKind::RenderTarget && parameter->Kind != ShaderParameterSemanticKind::DepthTarget) || !binding.Handle.IsValid())
 	{
 		return false;
 	}
@@ -183,20 +181,12 @@ bool PassParameterSet::SetBufferArray(const char* name, const std::vector<FrameG
 
 bool PassParameterSet::SetShaderResourceView(const char* name, RhiDescriptorTableBinding descriptorTable)
 {
-	return SetDescriptorTable(
-	    name,
-	    PassParameterDescriptorTableBindingData{.Table = descriptorTable},
-	    ShaderParameterSemanticKind::ReadTexture,
-	    ShaderParameterSemanticKind::ReadBuffer);
+	return SetDescriptorTable(name, PassParameterDescriptorTableBindingData{.Table = descriptorTable}, ShaderParameterSemanticKind::ReadTexture, ShaderParameterSemanticKind::ReadBuffer);
 }
 
 bool PassParameterSet::SetShaderResourceView(const char* name, RhiGpuDescriptorHandle descriptorTable)
 {
-	return SetDescriptorTable(
-	    name,
-	    PassParameterDescriptorTableBindingData{.GpuHandle = descriptorTable},
-	    ShaderParameterSemanticKind::ReadTexture,
-	    ShaderParameterSemanticKind::ReadBuffer);
+	return SetDescriptorTable(name, PassParameterDescriptorTableBindingData{.GpuHandle = descriptorTable}, ShaderParameterSemanticKind::ReadTexture, ShaderParameterSemanticKind::ReadBuffer);
 }
 
 bool PassParameterSet::UsesGraphResource(std::uint32_t index) const noexcept
@@ -206,20 +196,12 @@ bool PassParameterSet::UsesGraphResource(std::uint32_t index) const noexcept
 
 bool PassParameterSet::SetUnorderedAccessView(const char* name, RhiDescriptorTableBinding descriptorTable)
 {
-	return SetDescriptorTable(
-	    name,
-	    PassParameterDescriptorTableBindingData{.Table = descriptorTable},
-	    ShaderParameterSemanticKind::RWTexture,
-	    ShaderParameterSemanticKind::RWBuffer);
+	return SetDescriptorTable(name, PassParameterDescriptorTableBindingData{.Table = descriptorTable}, ShaderParameterSemanticKind::RWTexture, ShaderParameterSemanticKind::RWBuffer);
 }
 
 bool PassParameterSet::SetUnorderedAccessView(const char* name, RhiGpuDescriptorHandle descriptorTable)
 {
-	return SetDescriptorTable(
-	    name,
-	    PassParameterDescriptorTableBindingData{.GpuHandle = descriptorTable},
-	    ShaderParameterSemanticKind::RWTexture,
-	    ShaderParameterSemanticKind::RWBuffer);
+	return SetDescriptorTable(name, PassParameterDescriptorTableBindingData{.GpuHandle = descriptorTable}, ShaderParameterSemanticKind::RWTexture, ShaderParameterSemanticKind::RWBuffer);
 }
 
 bool PassParameterSet::SetAccelerationStructure(const char* name, FrameGraphAccelerationStructureHandle handle)
@@ -341,11 +323,7 @@ const PassParameterBinding* PassParameterSet::FindBinding(const char* name, std:
 	return &m_bindings[outIndex];
 }
 
-bool PassParameterSet::SetDescriptorTable(
-    const char* name,
-    PassParameterDescriptorTableBindingData binding,
-    ShaderParameterSemanticKind textureKind,
-    ShaderParameterSemanticKind bufferKind)
+bool PassParameterSet::SetDescriptorTable(const char* name, PassParameterDescriptorTableBindingData binding, ShaderParameterSemanticKind textureKind, ShaderParameterSemanticKind bufferKind)
 {
 	std::uint32_t index = 0;
 	const PassParameterDesc* parameter = FindParameter(name, index);

@@ -11,6 +11,7 @@ std::unique_ptr<IRayReconstructionProvider> CreateConfiguredRayReconstructionPro
 	{
 		case EngineRayReconstructionMode::NvidiaDlssRayReconstruction:
 			return std::make_unique<NvidiaDlssRayReconstructionProvider>();
+
 		case EngineRayReconstructionMode::Off:
 		default:
 			return {};

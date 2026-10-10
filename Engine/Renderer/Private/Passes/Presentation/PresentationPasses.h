@@ -7,8 +7,4 @@ struct RenderFrame;
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
 
-void AddPresentationPasses(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    const RenderFrameGraphSettings& settings,
-    RenderFrameGraphResources& resources);
+void AddPresentationPasses(FrameGraphBuilder& builder, const RenderFrame& frame, const RenderFrameGraphSettings& settings, RenderFrameGraphResources& resources);

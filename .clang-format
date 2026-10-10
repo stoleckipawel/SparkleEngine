@@ -102,7 +102,7 @@ ReflowComments: IndentOnly
 FixNamespaceComments: false
 MaxEmptyLinesToKeep: 1
 KeepEmptyLinesAtTheStartOfBlocks: false
-SeparateDefinitionBlocks: Leave
+SeparateDefinitionBlocks: Always
 
 # Keep the formatter non-semantic and deterministic.
 SkipMacroDefinitionBody: false

@@ -30,36 +30,25 @@ class FrameGraphBuilder final
 public:
 	FrameGraphBuilder(FrameGraph& frameGraph, const RenderPassRuntimeCache& renderPassRuntimeCache) noexcept;
 
-	template <typename TVertexShader, typename TPixelShader, typename TParameters, typename TDrawCollaborator> void Draw(
-	    TypedPassParameterInstance<TParameters>& parameters,
-	    const RasterPassRenderState& renderState,
-	    TDrawCollaborator drawCollaborator)
+	template <typename TVertexShader, typename TPixelShader, typename TParameters, typename TDrawCollaborator>
+	void Draw(TypedPassParameterInstance<TParameters>& parameters, const RasterPassRenderState& renderState, TDrawCollaborator drawCollaborator)
 	{
 		const ShaderRegistrationDesc& shader = GlobalShader<TPixelShader>::GetRegistration();
 		Draw<TVertexShader, TPixelShader>(shader.ShaderName, parameters, renderState, std::move(drawCollaborator));
 	}
 
-	template <typename SetupFn, typename ExecuteFn>
-	void AddPass(std::string_view name, EFrameGraphPassKind kind, SetupFn&& setupFn, ExecuteFn&& executeFn)
+	template <typename SetupFn, typename ExecuteFn> void AddPass(std::string_view name, EFrameGraphPassKind kind, SetupFn&& setupFn, ExecuteFn&& executeFn)
 	{
 		AddPass(name, kind, EFrameGraphQueuePreference::Graphics, std::forward<SetupFn>(setupFn), std::forward<ExecuteFn>(executeFn));
 	}
 
-	template <typename SetupFn, typename ExecuteFn> void AddPass(
-	    std::string_view name,
-	    EFrameGraphPassKind kind,
-	    EFrameGraphQueuePreference queuePreference,
-	    SetupFn&& setupFn,
-	    ExecuteFn&& executeFn)
+	template <typename SetupFn, typename ExecuteFn> void AddPass(std::string_view name, EFrameGraphPassKind kind, EFrameGraphQueuePreference queuePreference, SetupFn&& setupFn, ExecuteFn&& executeFn)
 	{
 		m_frameGraph.AddPass(name, kind, queuePreference, std::forward<SetupFn>(setupFn), std::forward<ExecuteFn>(executeFn));
 	}
 
-	template <typename TVertexShader, typename TPixelShader, typename TParameters, typename TDrawCollaborator> void Draw(
-	    std::string_view label,
-	    TypedPassParameterInstance<TParameters>& parameters,
-	    const RasterPassRenderState& renderState,
-	    TDrawCollaborator drawCollaborator)
+	template <typename TVertexShader, typename TPixelShader, typename TParameters, typename TDrawCollaborator>
+	void Draw(std::string_view label, TypedPassParameterInstance<TParameters>& parameters, const RasterPassRenderState& renderState, TDrawCollaborator drawCollaborator)
 	{
 		// Preparation and recording share one collaborator and its compiled attachments.
 		struct RasterPassState final
@@ -67,11 +56,13 @@ public:
 			FrameGraphRasterPass Pass;
 			TDrawCollaborator Draw;
 		};
+
 		auto passState = std::make_shared<RasterPassState>(RasterPassState{.Draw = std::move(drawCollaborator)});
 		auto* parameterInstance = &parameters;
 		auto* frameGraph = &m_frameGraph;
 		auto* runtimeCache = &m_renderPassRuntimeCache;
 		const FrameGraphPassIndex passIndex = static_cast<FrameGraphPassIndex>(m_frameGraph.m_passes.size());
+
 		m_frameGraph.m_passPreparations.emplace_back(
 		    passIndex,
 		    [parameterInstance, frameGraph, runtimeCache, renderState, passState]()
@@ -79,7 +70,9 @@ public:
 			    passState->Pass = frameGraph->BuildRasterPass(parameterInstance->GetPassParameterSet(), renderState);
 			    passState->Draw.MaterializePipelines(*runtimeCache, renderState, passState->Pass.Compatibility);
 		    });
+
 		const std::string diagnosticLabel(label);
+
 		m_frameGraph.AddRasterPass(
 		    diagnosticLabel,
 		    parameters,
@@ -110,13 +103,12 @@ public:
 		m_renderPassRuntimeCache.MaterializeComputeShaderRuntime<TShader>();
 		const ComputePassPipelineRuntime* const runtime = &m_renderPassRuntimeCache.GetComputeShaderRuntime<TShader>();
 		const std::string diagnosticLabel(label);
+
 		m_frameGraph.AddComputePass(
 		    diagnosticLabel,
 		    queuePreference,
 		    parameters,
-		    [runtime,
-		        groupCount,
-		        diagnosticLabel](PassCommandContext& context, TypedPassParameterInstance<typename TShader::Parameters>& passParameters)
+		    [runtime, groupCount, diagnosticLabel](PassCommandContext& context, TypedPassParameterInstance<typename TShader::Parameters>& passParameters)
 		    {
 			    const bool valid = passParameters.Sync();
 			    assert(valid);
@@ -143,8 +135,7 @@ public:
 	{
 		m_renderPassRuntimeCache.MaterializeRayTracingRuntime<TRayGenerationShader>(composition);
 		const RayTracingPassPipelineRuntime runtime = m_renderPassRuntimeCache.GetRayTracingRuntime<TRayGenerationShader>(composition);
-		const std::string tableKey = std::string(label) + "." + std::to_string(reinterpret_cast<std::uintptr_t>(&runtime.Pipeline)) + "."
-		    + std::to_string(runtime.Generation);
+		const std::string tableKey = std::string(label) + "." + std::to_string(reinterpret_cast<std::uintptr_t>(&runtime.Pipeline)) + "." + std::to_string(runtime.Generation);
 		auto& shaderTable = m_frameGraph.m_rayTracingShaderTables[tableKey];
 		if (shaderTable == nullptr)
 		{
@@ -162,15 +153,16 @@ public:
 	{
 		m_renderPassRuntimeCache.MaterializeRayTracingRuntime<TRayGenerationShader>(composition);
 		const RayTracingPassPipelineRuntime runtime = m_renderPassRuntimeCache.GetRayTracingRuntime<TRayGenerationShader>(composition);
-		const std::string tableKey = std::string(label) + "." + std::to_string(reinterpret_cast<std::uintptr_t>(&runtime.Pipeline)) + "."
-		    + std::to_string(runtime.Generation) + "." + std::to_string(shaderTablePlan.GetGeneration());
+
+		const std::string tableKey = std::string(label) + "." + std::to_string(reinterpret_cast<std::uintptr_t>(&runtime.Pipeline)) + "." + std::to_string(runtime.Generation) + "."
+		    + std::to_string(shaderTablePlan.GetGeneration());
+
 		auto& shaderTable = m_frameGraph.m_rayTracingShaderTables[tableKey];
 		if (shaderTable == nullptr)
 		{
 			const auto materializationStart = std::chrono::steady_clock::now();
 			shaderTable = m_renderPassRuntimeCache.CreateRayTracingShaderTable<TRayGenerationShader>(composition, shaderTablePlan);
-			const auto elapsed = static_cast<std::uint64_t>(
-			    std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - materializationStart).count());
+			const auto elapsed = static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - materializationStart).count());
 			shaderTablePlan.RecordMaterialization(GetRayTracingShaderTableSize(*shaderTable), elapsed);
 		}
 		AddRayTracingPass<TRayGenerationShader>(label, tableKey, runtime, shaderTable, parameters, dimensions);
@@ -184,63 +176,33 @@ public:
 		return m_frameGraph.AllocParameters<typename TShader::Parameters>(shader.ShaderName.data(), visibility);
 	}
 
-	template <typename TParameters> TypedPassParameterInstance<TParameters>& AllocGraphParameters(const char* label)
-	{
-		return m_frameGraph.AllocParameters<TParameters>(label);
-	}
+	template <typename TParameters> TypedPassParameterInstance<TParameters>& AllocGraphParameters(const char* label) { return m_frameGraph.AllocParameters<TParameters>(label); }
 
 	bool IsTextureHistoryValid(FrameGraphTextureHistory history) const noexcept { return m_frameGraph.IsTextureHistoryValid(history); }
 
-	void BindPersistentTexture(FrameGraphTextureHandle handle, RhiOwnedResourceHandle resource, ResourceState state) noexcept
-	{
-		m_frameGraph.BindPersistentTexture(handle, resource, state);
-	}
+	void BindPersistentTexture(FrameGraphTextureHandle handle, RhiOwnedResourceHandle resource, ResourceState state) noexcept { m_frameGraph.BindPersistentTexture(handle, resource, state); }
 
 	FrameGraphTextureHandle ImportBackBuffer(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
-	FrameGraphTextureHandle ReservePersistentTexture(
-	    const FrameGraphTextureDesc& desc,
-	    ResourceState initialState = ResourceState::Common) noexcept;
+	FrameGraphTextureHandle ReservePersistentTexture(const FrameGraphTextureDesc& desc, ResourceState initialState = ResourceState::Common) noexcept;
 	FrameGraphTextureHandle CreateTexture(const FrameGraphTextureDesc& desc) noexcept;
 	FrameGraphTextureHistory CreateTextureHistory(const FrameGraphTextureDesc& desc) noexcept;
-	FrameGraphBufferHandle ReservePersistentBuffer(
-	    const FrameGraphBufferDesc& desc,
-	    ResourceState initialState = ResourceState::Common) noexcept;
+	FrameGraphBufferHandle ReservePersistentBuffer(const FrameGraphBufferDesc& desc, ResourceState initialState = ResourceState::Common) noexcept;
 	FrameGraphBufferHandle CreateBuffer(const FrameGraphBufferDesc& desc) noexcept;
-	FrameGraphAccelerationStructureHandle ReservePersistentAccelerationStructure(
-	    std::string_view name,
-	    ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;
+	FrameGraphAccelerationStructureHandle ReservePersistentAccelerationStructure(std::string_view name, ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;
 	void ExportTexture(FrameGraphTextureHandle handle, std::string_view name) noexcept;
 
-	template <typename TValue = void> ShaderTexture2D<TValue> CreateSRV(FrameGraphTextureHandle handle) const noexcept
-	{
-		return m_frameGraph.CreateSRV<TValue>(handle);
-	}
+	template <typename TValue = void> ShaderTexture2D<TValue> CreateSRV(FrameGraphTextureHandle handle) const noexcept { return m_frameGraph.CreateSRV<TValue>(handle); }
 
-	template <typename TValue = void> ShaderBuffer<TValue> CreateSRV(FrameGraphBufferHandle handle) const noexcept
-	{
-		return m_frameGraph.CreateSRV<TValue>(handle);
-	}
+	template <typename TValue = void> ShaderBuffer<TValue> CreateSRV(FrameGraphBufferHandle handle) const noexcept { return m_frameGraph.CreateSRV<TValue>(handle); }
 
-	template <typename TValue = void> ShaderRWTexture2D<TValue> CreateUAV(FrameGraphTextureHandle handle) const noexcept
-	{
-		return m_frameGraph.CreateUAV<TValue>(handle);
-	}
+	template <typename TValue = void> ShaderRWTexture2D<TValue> CreateUAV(FrameGraphTextureHandle handle) const noexcept { return m_frameGraph.CreateUAV<TValue>(handle); }
 
-	template <typename TValue = void> ShaderRWBuffer<TValue> CreateUAV(FrameGraphBufferHandle handle) const noexcept
-	{
-		return m_frameGraph.CreateUAV<TValue>(handle);
-	}
+	template <typename TValue = void> ShaderRWBuffer<TValue> CreateUAV(FrameGraphBufferHandle handle) const noexcept { return m_frameGraph.CreateUAV<TValue>(handle); }
 
 	ShaderAccelerationStructure CreateAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) const noexcept;
-	ShaderRenderTarget CreateRenderTarget(
-	    FrameGraphTextureHandle handle,
-	    FrameGraphAttachmentLoadAction load,
-	    FrameGraphAttachmentStoreAction store) const noexcept;
-	ShaderDepthTarget CreateDepthTarget(
-	    FrameGraphTextureHandle handle,
-	    FrameGraphAttachmentLoadAction load,
-	    FrameGraphAttachmentStoreAction store,
-	    FrameGraphDepthStencilAccess access) const noexcept;
+
+	ShaderRenderTarget CreateRenderTarget(FrameGraphTextureHandle handle, FrameGraphAttachmentLoadAction load, FrameGraphAttachmentStoreAction store) const noexcept;
+	ShaderDepthTarget CreateDepthTarget(FrameGraphTextureHandle handle, FrameGraphAttachmentLoadAction load, FrameGraphAttachmentStoreAction store, FrameGraphDepthStencilAccess access) const noexcept;
 
 private:
 	static std::uint64_t GetRayTracingShaderTableSize(const RayTracingShaderTable& shaderTable)
@@ -253,11 +215,9 @@ private:
 			}
 			return region.OffsetInBytes + region.SizeInBytes;
 		};
+
 		return std::max(
-		    {regionEnd(shaderTable.GetRayGenerationRegion()),
-		        regionEnd(shaderTable.GetMissRegion()),
-		        regionEnd(shaderTable.GetHitGroupRegion()),
-		        regionEnd(shaderTable.GetCallableRegion())});
+		    {regionEnd(shaderTable.GetRayGenerationRegion()), regionEnd(shaderTable.GetMissRegion()), regionEnd(shaderTable.GetHitGroupRegion()), regionEnd(shaderTable.GetCallableRegion())});
 	}
 
 	template <typename TRayGenerationShader> void AddRayTracingPass(
@@ -269,28 +229,23 @@ private:
 	    const RayTracingDispatchDimensions& dimensions)
 	{
 		const std::uint64_t tableSize = GetRayTracingShaderTableSize(*shaderTable);
+
 		FrameGraphBufferHandle shaderTableBuffer = m_frameGraph.ReservePersistentBuffer(
 		    FrameGraphBufferDesc::Create(std::string(tableKey) + ".ShaderTable", tableSize),
 		    ResourceState::RayTracingShaderTable);
+
 		m_frameGraph.BindPersistentBuffer(shaderTableBuffer, shaderTable->GetResource(), ResourceState::RayTracingShaderTable);
 		const std::string diagnosticLabel(label);
+
 		m_frameGraph.AddRayTracingPass(
 		    diagnosticLabel,
 		    parameters,
 		    shaderTableBuffer,
-		    [runtime, shaderTable, dimensions, diagnosticLabel](
-		        PassCommandContext& context,
-		        TypedPassParameterInstance<typename TRayGenerationShader::Parameters>& passParameters)
+		    [runtime, shaderTable, dimensions, diagnosticLabel](PassCommandContext& context, TypedPassParameterInstance<typename TRayGenerationShader::Parameters>& passParameters)
 		    {
-			    const bool valid =
-			        passParameters.Sync() && ValidateShaderParameters(passParameters.GetPassParameterSet(), diagnosticLabel.c_str());
+			    const bool valid = passParameters.Sync() && ValidateShaderParameters(passParameters.GetPassParameterSet(), diagnosticLabel.c_str());
 			    assert(valid);
-			    BindRayTracingShaderPass(
-			        context.Commands,
-			        context.Resources,
-			        runtime.BindingLayout,
-			        runtime.Pipeline,
-			        passParameters.GetPassParameterSet());
+			    BindRayTracingShaderPass(context.Commands, context.Resources, runtime.BindingLayout, runtime.Pipeline, passParameters.GetPassParameterSet());
 			    context.Commands.TraceRays(
 			        TraceRaysDesc{
 			            .Pipeline = &runtime.Pipeline,

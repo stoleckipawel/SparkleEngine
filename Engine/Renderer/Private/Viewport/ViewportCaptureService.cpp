@@ -15,12 +15,7 @@ struct ViewportCaptureService::CaptureSource final
 	ResourceState State = ResourceState::Common;
 };
 
-bool ViewportCaptureService::ResolveSource(
-    const ViewportRenderProducts& products,
-    FrameGraph& frameGraph,
-    RenderOutputFlags output,
-    CaptureSource& source,
-    std::string& failureReason)
+bool ViewportCaptureService::ResolveSource(const ViewportRenderProducts& products, FrameGraph& frameGraph, RenderOutputFlags output, CaptureSource& source, std::string& failureReason)
 {
 	source.Product = products.FindProduct(output);
 	if (source.Product == nullptr || !source.Product->Handle)
@@ -28,8 +23,7 @@ bool ViewportCaptureService::ResolveSource(
 		failureReason = "Viewport output is not available";
 		return false;
 	}
-	if (source.Product->Format != RenderProductFormat::ColorLdr && source.Product->Format != RenderProductFormat::ColorHdr
-	    && source.Product->Format != RenderProductFormat::Float)
+	if (source.Product->Format != RenderProductFormat::ColorLdr && source.Product->Format != RenderProductFormat::ColorHdr && source.Product->Format != RenderProductFormat::Float)
 	{
 		failureReason = "Viewport output format is not supported for readback";
 		return false;
@@ -85,6 +79,7 @@ bool ViewportCaptureService::BeginCapture(
 	result.SamplePrefix = source.Product->SamplePrefix;
 
 	RhiCaptureService& captureService = m_deviceServices.GetRenderHardwareInterface().GetCaptureService();
+
 	const RhiCaptureTicket ticket = captureService.BeginTextureReadback(
 	    RhiTextureCaptureRequest{
 	        .Resource = source.Resource,
@@ -93,6 +88,7 @@ bool ViewportCaptureService::BeginCapture(
 	        .SourceFormat = frameGraph.GetTextureFormat(FrameGraphTextureHandle{source.FrameGraphResource}),
 	        .SourceState = source.State,
 	        .FrameId = frameId});
+
 	if (!ticket)
 	{
 		result.Status = ViewportCaptureStatus::Failed;
@@ -124,8 +120,7 @@ void ViewportCaptureService::Poll() noexcept
 		        .Readback = {
 		            .Result =
 		                ViewportCaptureResult{
-		                    .Status = rhiReadback.Result.Status == ERhiCaptureStatus::Succeeded ? ViewportCaptureStatus::Succeeded
-		                                                                                        : ViewportCaptureStatus::Failed,
+		                    .Status = rhiReadback.Result.Status == ERhiCaptureStatus::Succeeded ? ViewportCaptureStatus::Succeeded : ViewportCaptureStatus::Failed,
 		                    .FrameId = rhiReadback.Result.FrameId,
 		                    .SceneGeneration = pending.Result.SceneGeneration,
 		                    .ProviderGeneration = pending.Result.ProviderGeneration,
@@ -136,6 +131,7 @@ void ViewportCaptureService::Poll() noexcept
 		            .Height = rhiReadback.Height,
 		            .RowPitch = rhiReadback.RowPitch,
 		            .Format = rhiReadback.Format}});
+
 		m_pendingCaptures.erase(m_pendingCaptures.begin() + index);
 	}
 }

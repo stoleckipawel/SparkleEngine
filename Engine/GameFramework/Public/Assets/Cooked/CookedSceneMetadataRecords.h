@@ -59,9 +59,5 @@ namespace Assets
 
 static_assert(std::is_trivially_copyable_v<Assets::CookedSceneSkeletonRef>, "CookedSceneSkeletonRef must stay trivially copyable.");
 static_assert(std::is_trivially_copyable_v<Assets::CookedAnimationReference>, "CookedAnimationReference must stay trivially copyable.");
-static_assert(
-    std::is_trivially_copyable_v<Assets::CookedSceneMaterialVariantRecord>,
-    "CookedSceneMaterialVariantRecord must stay trivially copyable.");
-static_assert(
-    std::is_trivially_copyable_v<Assets::CookedSceneMaterialVariantMappingRecord>,
-    "CookedSceneMaterialVariantMappingRecord must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Assets::CookedSceneMaterialVariantRecord>, "CookedSceneMaterialVariantRecord must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Assets::CookedSceneMaterialVariantMappingRecord>, "CookedSceneMaterialVariantMappingRecord must stay trivially copyable.");

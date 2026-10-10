@@ -32,10 +32,7 @@ struct ShaderDescriptorBindingIdentity final
 
 	auto operator<=>(const ShaderDescriptorBindingIdentity&) const = default;
 
-	bool Matches(const PassParameterDesc& parameter) const noexcept
-	{
-		return Name == parameter.Name && Kind == parameter.Kind && Domain == parameter.ResourceDomain && Access == parameter.Access;
-	}
+	bool Matches(const PassParameterDesc& parameter) const noexcept { return Name == parameter.Name && Kind == parameter.Kind && Domain == parameter.ResourceDomain && Access == parameter.Access; }
 };
 
 ShaderCompileInputHash ShaderCompileJobBuilder::BuildInputHash(
@@ -54,12 +51,7 @@ ShaderCompileInputHash ShaderCompileJobBuilder::BuildInputHash(
 	return Hash::FinalizeFnv1a64(hash);
 }
 
-void ShaderCompileJobBuilder::BuildAndAdd(
-    const ShaderCookSettings& settings,
-    std::size_t shaderIndex,
-    ShaderTarget target,
-    ShaderBackendPool& backendPool,
-    ShaderCookPipelinePlan& plan)
+void ShaderCompileJobBuilder::BuildAndAdd(const ShaderCookSettings& settings, std::size_t shaderIndex, ShaderTarget target, ShaderBackendPool& backendPool, ShaderCookPipelinePlan& plan)
 {
 	const ShaderCookDesc& shader = plan.shaders[shaderIndex];
 	ShaderCompileRequest request = BuildRequest(settings, shader, target);
@@ -67,11 +59,9 @@ void ShaderCompileJobBuilder::BuildAndAdd(
 	const IncludeClosureHash before = IncludeClosureHasher::Compute(request);
 	request.SourceCode = ShaderSourcePreprocessor::Load(request.VirtualSourcePath, request);
 	const IncludeClosureHash closure = IncludeClosureHasher::Compute(request);
-	if (before.sourceHash != closure.sourceHash || before.includeClosureHash != closure.includeClosureHash
-	    || before.virtualDependencies != closure.virtualDependencies)
+	if (before.sourceHash != closure.sourceHash || before.includeClosureHash != closure.includeClosureHash || before.virtualDependencies != closure.virtualDependencies)
 	{
-		throw Diagnostics::Error(
-		    std::format("Shader source closure changed while constructing compile job for '{}'.", shader.shaderTypeName));
+		throw Diagnostics::Error(std::format("Shader source closure changed while constructing compile job for '{}'.", shader.shaderTypeName));
 	}
 	const std::uint64_t sourceHash = Hash::Fnv1a64(request.SourceCode);
 	const std::uint64_t requestHash = ShaderCompileRequestHasher::Compute(request);
@@ -79,6 +69,7 @@ void ShaderCompileJobBuilder::BuildAndAdd(
 	const std::uint64_t backendVersion = backend.GetBackendVersion();
 	const std::string targetProfile = ShaderCompileProfile::BuildTargetProfile(request);
 	const std::size_t jobIndex = plan.jobs.size();
+
 	plan.jobs.push_back(
 	    ShaderCompileJob{
 	        .Request = std::move(request),
@@ -90,13 +81,11 @@ void ShaderCompileJobBuilder::BuildAndAdd(
 	        .RequestHash = requestHash,
 	        .InputHash = BuildInputHash(sourceHash, closure.includeClosureHash, requestHash, backendName, backendVersion),
 	        .VirtualDependencies = closure.virtualDependencies});
+
 	plan.consumers.push_back(ShaderCompileConsumer{.JobIndex = jobIndex, .ShaderIndex = shaderIndex});
 }
 
-ShaderCompileRequest ShaderCompileJobBuilder::BuildRequest(
-    const ShaderCookSettings& settings,
-    const ShaderCookDesc& shader,
-    ShaderTarget target)
+ShaderCompileRequest ShaderCompileJobBuilder::BuildRequest(const ShaderCookSettings& settings, const ShaderCookDesc& shader, ShaderTarget target)
 {
 	ShaderCompileRequest request(GetSourceMounts());
 	request.ShaderType = shader.shaderTypeId;
@@ -133,13 +122,10 @@ void ShaderCompileJobBuilder::AppendDescriptorBindingRemaps(const ShaderCookDesc
 			{
 				continue;
 			}
-			const auto existing = std::ranges::find_if(
-			    bindings,
-			    [&parameter](const ShaderDescriptorBindingIdentity& value) { return value.Matches(parameter); });
+			const auto existing = std::ranges::find_if(bindings, [&parameter](const ShaderDescriptorBindingIdentity& value) { return value.Matches(parameter); });
 			if (existing == bindings.end())
 			{
-				bindings.push_back(
-				    ShaderDescriptorBindingIdentity{parameter.Name, parameter.Kind, parameter.ResourceDomain, parameter.Access});
+				bindings.push_back(ShaderDescriptorBindingIdentity{parameter.Name, parameter.Kind, parameter.ResourceDomain, parameter.Access});
 			}
 		}
 	}
@@ -153,8 +139,7 @@ void ShaderCompileJobBuilder::AppendDescriptorBindingRemaps(const ShaderCookDesc
 			const bool duplicateAfter = index + 1 < bindings.size() && bindings[index + 1].Name == binding.Name;
 			if (!duplicateBefore && !duplicateAfter)
 			{
-				request.DescriptorBindingRemaps.push_back(
-				    ShaderDescriptorBindingRemap{.Name = binding.Name, .Set = 0, .Binding = static_cast<std::uint32_t>(index)});
+				request.DescriptorBindingRemaps.push_back(ShaderDescriptorBindingRemap{.Name = binding.Name, .Set = 0, .Binding = static_cast<std::uint32_t>(index)});
 			}
 		}
 		return;
@@ -165,17 +150,12 @@ void ShaderCompileJobBuilder::AppendDescriptorBindingRemaps(const ShaderCookDesc
 		{
 			continue;
 		}
-		const auto found =
-		    std::ranges::find_if(bindings, [&parameter](const ShaderDescriptorBindingIdentity& value) { return value.Matches(parameter); });
+		const auto found = std::ranges::find_if(bindings, [&parameter](const ShaderDescriptorBindingIdentity& value) { return value.Matches(parameter); });
 		if (found == bindings.end())
 		{
 			throw Diagnostics::Error(std::format("Shader parameter '{}' is missing from the global binding assignment.", parameter.Name));
 		}
-		request.DescriptorBindingRemaps.push_back(
-		    ShaderDescriptorBindingRemap{
-		        .Name = parameter.Name,
-		        .Set = 0,
-		        .Binding = static_cast<std::uint32_t>(std::distance(bindings.begin(), found))});
+		request.DescriptorBindingRemaps.push_back(ShaderDescriptorBindingRemap{.Name = parameter.Name, .Set = 0, .Binding = static_cast<std::uint32_t>(std::distance(bindings.begin(), found))});
 	}
 }
 

@@ -18,11 +18,7 @@ GpuMorphTargetBuffer::~GpuMorphTargetBuffer() noexcept
 	Release();
 }
 
-void GpuMorphTargetBuffer::Upload(
-    RenderHardwareInterface& renderHardwareInterface,
-    RenderCommandList& commandList,
-    std::vector<MorphTargetDeltaData> deltas,
-    std::uint32_t targetCount)
+void GpuMorphTargetBuffer::Upload(RenderHardwareInterface& renderHardwareInterface, RenderCommandList& commandList, std::vector<MorphTargetDeltaData> deltas, std::uint32_t targetCount)
 {
 	Release();
 	m_renderHardwareInterface = &renderHardwareInterface;
@@ -34,28 +30,23 @@ void GpuMorphTargetBuffer::Upload(
 	const std::size_t gpuPayloadCount = std::max<std::size_t>(m_deltas.size(), 1u);
 	const std::span<const MorphTargetDeltaData> payload{gpuPayload, gpuPayloadCount};
 	RhiResourceService& resources = m_renderHardwareInterface->GetResourceService();
+
 	m_buffer = resources.CreateBufferResource(
-	    RhiBufferResourceDesc{
-	        .SizeInBytes = payload.size_bytes(),
-	        .StrideInBytes = sizeof(MorphTargetDeltaData),
-	        .Kind = RhiBufferKind::Structured},
+	    RhiBufferResourceDesc{.SizeInBytes = payload.size_bytes(), .StrideInBytes = sizeof(MorphTargetDeltaData), .Kind = RhiBufferKind::Structured},
 	    ResourceState::CopyDest,
 	    RhiMemoryCategory::Mesh,
 	    RhiMemoryResidencyClass::DeviceLocal,
 	    L"GpuMesh_MorphTargetDeltas");
-	if (!m_buffer
-	    || !m_renderHardwareInterface->GetUploadService()
-	        .UploadBuffer(commandList, m_buffer, std::as_bytes(payload), ResourceState::ShaderResource, L"GpuMesh_MorphTargetUpload"))
+
+	if (!m_buffer || !m_renderHardwareInterface->GetUploadService().UploadBuffer(commandList, m_buffer, std::as_bytes(payload), ResourceState::ShaderResource, L"GpuMesh_MorphTargetUpload"))
 	{
 		Release();
 		Diagnostics::Fatal(g_gpuMorphTargetBufferLogger, __FILE__, __LINE__, "GPU morph target upload failed.");
 	}
 
 	m_view = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
-	    RhiResourceViewDesc::BufferShaderResource(
-	        resources.GetResourceHandle(m_buffer),
-	        payload.size_bytes(),
-	        sizeof(MorphTargetDeltaData)));
+	    RhiResourceViewDesc::BufferShaderResource(resources.GetResourceHandle(m_buffer), payload.size_bytes(), sizeof(MorphTargetDeltaData)));
+
 	m_shaderResourceView = m_renderHardwareInterface->GetDescriptorService().GetResourceViewGpuHandle(m_view);
 	if (!m_shaderResourceView)
 	{

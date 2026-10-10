@@ -60,6 +60,7 @@ public:
 
 private:
 	static constexpr std::size_t RenderThreadCommandCapacity = 64;
+
 	static constexpr std::size_t MaximumOutstandingViewportCaptures = 3;
 
 	template <typename TResult> static TResult ExtractControlResult(RenderControlResult result);

@@ -54,12 +54,7 @@ namespace SparkleLauncher
 		Q_OBJECT
 
 	public:
-		LauncherMainWindow(
-		    std::filesystem::path repositoryRoot,
-		    LauncherContentModel& contentModel,
-		    LauncherSettings& settings,
-		    LauncherBackend& backend,
-		    QWidget* parent = nullptr);
+		LauncherMainWindow(std::filesystem::path repositoryRoot, LauncherContentModel& contentModel, LauncherSettings& settings, LauncherBackend& backend, QWidget* parent = nullptr);
 
 		void SetStartupNotice(const QString& message);
 
@@ -70,17 +65,8 @@ namespace SparkleLauncher
 		void CleanSelectedOperation();
 		void DisplayOperationStarted(const QString& runId, const QString& operationId, const QString& title);
 		void AppendOperationOutput(const QString& runId, const QString& operationId, const QString& outputText);
-		void UpdateOperationProgress(
-		    const QString& runId,
-		    const QString& operationId,
-		    const QString& phase,
-		    quint64 completed,
-		    quint64 total);
-		void DisplayOperationFinished(
-		    const QString& runId,
-		    const QString& operationId,
-		    const QString& title,
-		    const LauncherOperationResult& result);
+		void UpdateOperationProgress(const QString& runId, const QString& operationId, const QString& phase, quint64 completed, quint64 total);
+		void DisplayOperationFinished(const QString& runId, const QString& operationId, const QString& title, const LauncherOperationResult& result);
 
 	private:
 		struct PendingLevelSelectionUpdate
@@ -96,24 +82,10 @@ namespace SparkleLauncher
 		QLabel* CreateSectionLabel(const QString& title) const;
 		QLabel* CreateFieldLabel(const QString& title) const;
 		QCheckBox* CreateBoundCheckBox(const QString& label, const QString& tooltip, bool checked, void (LauncherSettings::*setter)(bool));
-		QLineEdit* CreateBoundLineEdit(
-		    const QString& text,
-		    const QString& placeholder,
-		    const QString& tooltip,
-		    void (LauncherSettings::*setter)(const QString&));
-		QTextEdit* CreateBoundTextEdit(
-		    const QString& text,
-		    const QString& placeholder,
-		    const QString& tooltip,
-		    void (LauncherSettings::*setter)(const QString&));
-		QComboBox* CreateProfileCombo(
-		    const QStringList& profiles,
-		    const QString& currentProfile,
-		    void (LauncherSettings::*setter)(const QString&));
-		QComboBox* CreateValueCombo(
-		    const QVector<QPair<QString, QString>>& options,
-		    const QString& currentValue,
-		    void (LauncherSettings::*setter)(const QString&));
+		QLineEdit* CreateBoundLineEdit(const QString& text, const QString& placeholder, const QString& tooltip, void (LauncherSettings::*setter)(const QString&));
+		QTextEdit* CreateBoundTextEdit(const QString& text, const QString& placeholder, const QString& tooltip, void (LauncherSettings::*setter)(const QString&));
+		QComboBox* CreateProfileCombo(const QStringList& profiles, const QString& currentProfile, void (LauncherSettings::*setter)(const QString&));
+		QComboBox* CreateValueCombo(const QVector<QPair<QString, QString>>& options, const QString& currentValue, void (LauncherSettings::*setter)(const QString&));
 		QComboBox* CreateContextCombo(void (LauncherSettings::*setter)(const QString&));
 		void RefreshContextSelectors();
 		static bool UsesBuildEnvironmentStatus(const QString& operationId);
@@ -133,22 +105,11 @@ namespace SparkleLauncher
 		void UpdateBuildScopeSetting(const QVector<QCheckBox*>& scopeBoxes);
 		void UpdateCookScopeSetting(const QVector<QCheckBox*>& scopeBoxes);
 		void AddCleanOptions(QVBoxLayout& layout, const QString& operationId);
-		void AddCleanScopeRow(
-		    QVBoxLayout& layout,
-		    const CleanScopeUiOption& scope,
-		    const QString& activeContentId,
-		    const QStringList& selectedScopes,
-		    QVector<QCheckBox*>& scopeBoxes);
+		void AddCleanScopeRow(QVBoxLayout& layout, const CleanScopeUiOption& scope, const QString& activeContentId, const QStringList& selectedScopes, QVector<QCheckBox*>& scopeBoxes);
 		void UpdateCleanScopeSetting(const QVector<QCheckBox*>& scopeBoxes, bool cleanAllRequested);
 		QWidget* AddOptionField(QVBoxLayout& layout, const QString& label, QWidget* control);
 		QVBoxLayout* AddOptionGroup(QVBoxLayout& layout, const QString& title, const QString& detail);
-		QLabel* AddStatusRow(
-		    QVBoxLayout& layout,
-		    const QString& label,
-		    const QString& status,
-		    const QString& detail,
-		    const QString& state,
-		    QWidget* accessory = nullptr);
+		QLabel* AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state, QWidget* accessory = nullptr);
 		void AddSyncDependencies(QVBoxLayout& layout, bool optional);
 		QPushButton* CreateSourceDependencyActionButton(const ThirdPartyDependencyUiEntry& dependency);
 		void ApplySourceDependencyRowState(const ThirdPartyDependencyUiEntry& dependency, QLabel& statusLabel, QPushButton& button);
@@ -163,14 +124,8 @@ namespace SparkleLauncher
 		void RefreshLevelActionButtons();
 		void SyncAllLevels();
 		void CleanAllLevels();
-		QVector<LauncherCleanTarget> BuildLevelCleanTargets(
-		    const LauncherContentSummary& content,
-		    const QString& levelId = QString()) const;
-		bool SetLevelsSelected(
-		    const std::filesystem::path& contentRoot,
-		    const std::vector<std::string>& levelIds,
-		    bool selected,
-		    const QString& actionName);
+		QVector<LauncherCleanTarget> BuildLevelCleanTargets(const LauncherContentSummary& content, const QString& levelId = QString()) const;
+		bool SetLevelsSelected(const std::filesystem::path& contentRoot, const std::vector<std::string>& levelIds, bool selected, const QString& actionName);
 		LauncherLevelUiModel BuildLevelUiModel() const;
 		QPushButton* CreateCommandActionButton(const QString& operationId, const QString& label, bool primary, bool runImmediately = false);
 		void AddHomeQuickStart(QVBoxLayout& layout);
@@ -195,11 +150,7 @@ namespace SparkleLauncher
 		void RegisterFocusable(QWidget* widget);
 		void ConfigureTabOrder();
 		void UpdateRunAvailability();
-		QPushButton* CreateStatusActionButton(
-		    const QString& actionId,
-		    const QString& actionLabel,
-		    const QString& actionTitle,
-		    bool navigateInsteadOfRun = false);
+		QPushButton* CreateStatusActionButton(const QString& actionId, const QString& actionLabel, const QString& actionTitle, bool navigateInsteadOfRun = false);
 		void TriggerActionDependencyRegenerate(const QString& actionId, const QString& actionTitle, bool navigateInsteadOfRun);
 		const LauncherOperationDescriptor* FindOperationDescriptor(const QString& operationId) const;
 		QString DisplayNameForOperation(const QString& operationId) const;

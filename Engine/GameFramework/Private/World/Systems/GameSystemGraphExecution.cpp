@@ -35,6 +35,7 @@ namespace ECS
 					const auto count = wave.ItemCounts[offset];
 					if (count == 0)
 						continue;
+
 					ParallelFor(
 					    tasks,
 					    TaskDesc{TaskName(system.Name), TaskLane::FrameCritical},
@@ -45,9 +46,8 @@ namespace ECS
 						    if (context.IsCancellationRequested())
 							    return TaskResult::Cancelled("Game-system execution cancelled at the owner boundary.");
 						    auto* execution = context.TryGet<GameWorldSystemExecution>();
-						    return execution != nullptr && system.ExecuteRange(*execution, begin, end)
-						        ? TaskResult::Success()
-						        : TaskResult::Failure("Game-system range rejected its declared access or target range.");
+						    return execution != nullptr && system.ExecuteRange(*execution, begin, end) ? TaskResult::Success()
+						                                                                               : TaskResult::Failure("Game-system range rejected its declared access or target range.");
 					    });
 				}
 				wave.Tasks = tasks.Compile();
@@ -63,9 +63,7 @@ namespace ECS
 			TaskExecution result = executor.Submit(wave.Tasks, context);
 			if (!result.IsValid() || result.GetStatus() != TaskExecutionStatus::Succeeded)
 			{
-				error = {
-				    GameSystemGraphErrorCode::ExecutionFailed,
-				    result.IsValid() ? std::string(result.GetResult().GetMessage()) : "SparkleTasks rejected the game-system execution."};
+				error = {GameSystemGraphErrorCode::ExecutionFailed, result.IsValid() ? std::string(result.GetResult().GetMessage()) : "SparkleTasks rejected the game-system execution."};
 				return false;
 			}
 		}

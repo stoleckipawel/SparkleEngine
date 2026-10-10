@@ -242,16 +242,23 @@ struct SPARKLE_RENDERER_API ViewportRenderProgress final
 struct SPARKLE_RENDERER_API ViewportRenderProducts
 {
 	std::uint64_t GetGeneration() const noexcept { return m_generation; }
+
 	RenderOutputFlags GetAvailableOutputs() const noexcept { return m_availableOutputs; }
+
 	bool HasOutput(RenderOutputFlags output) const noexcept;
 
 	const RenderProduct* FindProduct(RenderOutputFlags output) const noexcept;
 
 	const RenderProduct& GetFinalColorLdr() const noexcept { return m_finalColorLdr; }
+
 	const RenderProduct& GetSceneDepth() const noexcept { return m_sceneDepth; }
+
 	const RenderProduct& GetObjectId() const noexcept { return m_objectId; }
+
 	const RenderProduct& GetNormals() const noexcept { return m_normals; }
+
 	const RenderProduct& GetOverlayMask() const noexcept { return m_overlayMask; }
+
 	const ViewportRenderProgress& GetProgress() const noexcept { return m_progress; }
 
 private:
@@ -269,6 +276,7 @@ private:
 
 	void ClearProduct(RenderOutputFlags output) noexcept;
 	void SetProduct(RenderOutputFlags output, RenderProduct product) noexcept;
+
 	void SetProgress(ViewportRenderProgress progress) noexcept { m_progress = progress; }
 
 	RenderProduct* SelectProduct(RenderOutputFlags output) noexcept;

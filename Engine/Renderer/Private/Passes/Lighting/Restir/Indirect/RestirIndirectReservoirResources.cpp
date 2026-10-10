@@ -16,8 +16,7 @@ RestirIndirectWorkingReservoirs CreateRestirIndirectWorkingReservoirs(FrameGraph
 {
 	const auto createReservoirTexture = [&](const char* name)
 	{
-		return builder.CreateTexture(
-		    FrameGraphTextureDesc::CreateColor(name, sceneExtent.Width, sceneExtent.Height, PixelFormat::R32G32B32A32_Float));
+		return builder.CreateTexture(FrameGraphTextureDesc::CreateColor(name, sceneExtent.Width, sceneExtent.Height, PixelFormat::R32G32B32A32_Float));
 	};
 	return RestirIndirectWorkingReservoirs{
 	    .TemporalSample = createReservoirTexture("RestirIndirectTemporalReservoirSample"),

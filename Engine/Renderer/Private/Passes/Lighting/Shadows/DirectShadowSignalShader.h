@@ -50,6 +50,7 @@ class DirectShadowSignalRGS final : public GlobalShader<DirectShadowSignalRGS>
 {
 public:
 	using Parameters = DirectShadowSignalCS::Parameters;
+
 	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
 	static constexpr RayTracingShaderMetadata kRayTracingMetadata = kRayTracingMaterialShaderMetadata;
 };

@@ -55,6 +55,7 @@ void InputSystem::BeginFrame()
 void InputSystem::ProcessDeferredEvents()
 {
 	m_OwnerThread.AssertAccess();
+
 	m_eventDispatcher->ProcessDeferredEvents(
 	    m_LayerEnabled,
 	    [this]

@@ -76,8 +76,7 @@ TextureGroup TextureCookPolicyCodec::ParseTextureGroup(std::string_view value)
 	{
 		return TextureGroup::Default;
 	}
-	if (Strings::EqualsIgnoreCase(value, "diffuse") || Strings::EqualsIgnoreCase(value, "albedo")
-	    || Strings::EqualsIgnoreCase(value, "base-color") || Strings::EqualsIgnoreCase(value, "basecolor")
+	if (Strings::EqualsIgnoreCase(value, "diffuse") || Strings::EqualsIgnoreCase(value, "albedo") || Strings::EqualsIgnoreCase(value, "base-color") || Strings::EqualsIgnoreCase(value, "basecolor")
 	    || Strings::EqualsIgnoreCase(value, "color"))
 	{
 		return TextureGroup::Diffuse;
@@ -90,9 +89,8 @@ TextureGroup TextureCookPolicyCodec::ParseTextureGroup(std::string_view value)
 	{
 		return TextureGroup::Metallic;
 	}
-	if (Strings::EqualsIgnoreCase(value, "ambient-occlusion") || Strings::EqualsIgnoreCase(value, "ambientocclusion")
-	    || Strings::EqualsIgnoreCase(value, "occlusion") || Strings::EqualsIgnoreCase(value, "ao")
-	    || Strings::EqualsIgnoreCase(value, "masks"))
+	if (Strings::EqualsIgnoreCase(value, "ambient-occlusion") || Strings::EqualsIgnoreCase(value, "ambientocclusion") || Strings::EqualsIgnoreCase(value, "occlusion")
+	    || Strings::EqualsIgnoreCase(value, "ao") || Strings::EqualsIgnoreCase(value, "masks"))
 	{
 		return TextureGroup::AmbientOcclusion;
 	}

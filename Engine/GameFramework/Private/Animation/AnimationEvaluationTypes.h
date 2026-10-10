@@ -22,10 +22,6 @@ namespace ECS
 		std::span<const AnimationJointTransform> BindLocalTransforms;
 		std::span<const std::uint32_t> EvaluationOrder;
 
-		bool IsValid() const noexcept
-		{
-			return Resource != nullptr && BindLocalTransforms.size() == Resource->joints.size()
-			    && EvaluationOrder.size() == Resource->joints.size();
-		}
+		bool IsValid() const noexcept { return Resource != nullptr && BindLocalTransforms.size() == Resource->joints.size() && EvaluationOrder.size() == Resource->joints.size(); }
 	};
 }

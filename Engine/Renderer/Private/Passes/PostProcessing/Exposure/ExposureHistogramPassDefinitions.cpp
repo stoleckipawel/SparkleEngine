@@ -13,15 +13,12 @@ void AddExposureHistogramClearPass(FrameGraphBuilder& builder, FrameGraphBufferH
 	builder.Dispatch<ExposureHistogramClearCS>(parameters, ComputeDispatchDesc{1u, 1u, 1u}, EFrameGraphQueuePreference::AsyncCompute);
 }
 
-void AddExposureHistogramBuildPass(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle sceneColor,
-    RenderViewportExtent extent,
-    FrameGraphBufferHandle histogram)
+void AddExposureHistogramBuildPass(FrameGraphBuilder& builder, FrameGraphTextureHandle sceneColor, RenderViewportExtent extent, FrameGraphBufferHandle histogram)
 {
 	auto& parameters = builder.AllocParameters<ExposureHistogramBuildCS>();
 	parameters->SceneColor = builder.CreateSRV(sceneColor);
 	parameters->HistogramCounts = builder.CreateUAV(histogram);
+
 	builder.Dispatch<ExposureHistogramBuildCS>(
 	    parameters,
 	    ComputeDispatchDesc{MathUtils::DivideRoundUp(extent.Width, 16u), MathUtils::DivideRoundUp(extent.Height, 16u), 1u},

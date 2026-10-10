@@ -32,8 +32,7 @@ MaterialTextureTableCapabilityReport BuildMaterialTextureTableCapabilityReport(c
 		return MaterialTextureTableCapabilityReport{.StatusReason = "partially-bound-descriptor-arrays-unavailable"};
 	}
 
-	const std::uint32_t shaderResourceCapacity =
-	    MaterialTextureTableCapacity::ResolveShaderResourceDescriptorCapacity(capabilities.BindingLimits);
+	const std::uint32_t shaderResourceCapacity = MaterialTextureTableCapacity::ResolveShaderResourceDescriptorCapacity(capabilities.BindingLimits);
 	if (shaderResourceCapacity == 0)
 	{
 		return MaterialTextureTableCapabilityReport{.StatusReason = "shader-resource-descriptor-limit-unavailable"};
@@ -41,9 +40,7 @@ MaterialTextureTableCapabilityReport BuildMaterialTextureTableCapabilityReport(c
 
 	if (shaderResourceCapacity < MaterialTextureTableFixedCapacity)
 	{
-		return MaterialTextureTableCapabilityReport{
-		    .MaxTextureDescriptors = shaderResourceCapacity,
-		    .StatusReason = "shader-resource-descriptor-limit-below-material-texture-table-capacity"};
+		return MaterialTextureTableCapabilityReport{.MaxTextureDescriptors = shaderResourceCapacity, .StatusReason = "shader-resource-descriptor-limit-below-material-texture-table-capacity"};
 	}
 
 	return MaterialTextureTableCapabilityReport{

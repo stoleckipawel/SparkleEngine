@@ -15,7 +15,9 @@ public:
 	explicit EditorConsolePanel(ConsoleSession& session) noexcept;
 
 	void SetOpen(bool open) noexcept { m_isOpen = open; }
+
 	bool IsOpen() const noexcept { return m_isOpen; }
+
 	void RequestFocus() noexcept;
 	void Clear() noexcept;
 	void BuildUI(bool disableInteraction);

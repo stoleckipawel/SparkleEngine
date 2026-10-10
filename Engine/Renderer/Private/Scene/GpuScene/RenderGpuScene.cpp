@@ -115,12 +115,14 @@ struct RenderGpuScene::Impl final
 	{
 		const RenderGpuGeometryPayloads& payloads = Geometry.GetPayloads();
 		Geometry.CollectMeshInstanceWriteRanges(storage.MeshInstanceRevision, MeshInstanceWriteRanges);
+
 		storage.MeshInstances.UpdateRanges(
 		    *ResourceService,
 		    std::as_bytes(std::span<const MeshInstanceData>{payloads.MeshInstances}),
 		    static_cast<std::uint32_t>(sizeof(MeshInstanceData)),
 		    MeshInstanceWriteRanges,
 		    L"MeshInstances");
+
 		storage.MeshInstanceRevision = Geometry.GetMeshInstanceRevision();
 
 		if (storage.MeshInstanceSlotRevision != Geometry.GetMeshInstanceSlotRevision())
@@ -152,15 +154,12 @@ struct RenderGpuScene::Impl final
 			topologyHash = Hash::ContinueFnv1a64Value(topologyHash, input.GpuSceneSlot);
 		}
 		topologyHash = Hash::FinalizeFnv1a64(topologyHash);
-		const bool topologyChanged =
-		    preparedScene.structuralRevision != RayTracingStructuralRevision || topologyHash != RayTracingWorkTopologyHash;
-		const bool payloadChanged = topologyChanged || preparedScene.materialRevision != RayTracingMaterialRevision
-		    || textureGeneration != RayTracingTextureGeneration;
+		const bool topologyChanged = preparedScene.structuralRevision != RayTracingStructuralRevision || topologyHash != RayTracingWorkTopologyHash;
+		const bool payloadChanged = topologyChanged || preparedScene.materialRevision != RayTracingMaterialRevision || textureGeneration != RayTracingTextureGeneration;
 		if (payloadChanged)
 		{
 			RenderGpuRayTracingPayloadBuilder::Build(preparedScene, *Meshes, RayTracingPayloads);
-			if (topologyChanged || RayTracingPayloads.InstanceCount == 0u || !RayTracing.Vertices.GetBinding()
-			    || !RayTracing.MorphTargetDeltas.GetBinding())
+			if (topologyChanged || RayTracingPayloads.InstanceCount == 0u || !RayTracing.Vertices.GetBinding() || !RayTracing.MorphTargetDeltas.GetBinding())
 			{
 				UpdateRayTracingTopology();
 			}
@@ -194,10 +193,7 @@ struct RenderGpuScene::Impl final
 	{
 		RayTracing.Vertices.Replace(*ResourceService, std::span{RayTracingPayloads.Vertices}, L"RayTracingHitVertices");
 		RayTracing.SkinInfluences.Replace(*ResourceService, std::span{RayTracingPayloads.SkinInfluences}, L"RayTracingHitSkinInfluences");
-		RayTracing.MorphTargetDeltas.Replace(
-		    *ResourceService,
-		    std::span{RayTracingPayloads.MorphTargetDeltas},
-		    L"RayTracingHitMorphTargetDeltas");
+		RayTracing.MorphTargetDeltas.Replace(*ResourceService, std::span{RayTracingPayloads.MorphTargetDeltas}, L"RayTracingHitMorphTargetDeltas");
 		RayTracing.Indices.Replace(*ResourceService, std::span{RayTracingPayloads.Indices}, L"RayTracingHitIndices");
 	}
 
@@ -241,10 +237,7 @@ RenderGpuScene::RenderGpuScene(RhiResourceService& resourceService, const GpuMes
 
 RenderGpuScene::~RenderGpuScene() noexcept = default;
 
-const RenderSceneGpuBindings& RenderGpuScene::Update(
-    const PreparedRenderScene& preparedScene,
-    const RenderView& view,
-    std::uint32_t frameIndex)
+const RenderSceneGpuBindings& RenderGpuScene::Update(const PreparedRenderScene& preparedScene, const RenderView& view, std::uint32_t frameIndex)
 {
 	return m_impl->Update(preparedScene, view, frameIndex);
 }

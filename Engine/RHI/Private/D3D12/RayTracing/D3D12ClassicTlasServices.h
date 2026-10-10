@@ -16,12 +16,10 @@ public:
 	RhiRayTracingAccelerationStructurePrebuildInfo GetClassicTopLevelAccelerationStructurePrebuildInfo(
 	    std::uint32_t instanceCount,
 	    ERhiClassicTlasBuildFlags buildFlags = ERhiClassicTlasBuildFlags::None) const noexcept override;
-	RhiOwnedResourceHandle CreateClassicTopLevelAccelerationStructureInstanceBuffer(
-	    const RhiRayTracingInstanceDesc* instances,
-	    std::uint32_t instanceCount,
-	    std::wstring_view debugName) override;
+	RhiOwnedResourceHandle CreateClassicTopLevelAccelerationStructureInstanceBuffer(const RhiRayTracingInstanceDesc* instances, std::uint32_t instanceCount, std::wstring_view debugName) override;
 
 private:
 	D3D12Rhi* m_rhi = nullptr;
+
 	D3D12GpuMemoryAllocator* m_memoryAllocator = nullptr;
 };

@@ -62,20 +62,25 @@ namespace SparkleLauncher
 		{
 			case HostGraphicsVendor::Nvidia:
 				capabilities.HasNvidiaAdapter = true;
+
 				if (primaryAdapter)
 				{
 					capabilities.PrimaryVendor = HostGraphicsVendor::Nvidia;
 				}
 				return;
+
 			case HostGraphicsVendor::Amd:
 				capabilities.HasAmdAdapter = true;
+
 				if (primaryAdapter)
 				{
 					capabilities.PrimaryVendor = HostGraphicsVendor::Amd;
 				}
 				return;
+
 			case HostGraphicsVendor::Intel:
 				capabilities.HasIntelAdapter = true;
+
 				if (primaryAdapter)
 				{
 					capabilities.PrimaryVendor = HostGraphicsVendor::Intel;
@@ -141,9 +146,8 @@ namespace SparkleLauncher
 
 		if (capabilities.HasNvidiaAdapter)
 		{
-			capabilities.Summary = capabilities.HasAmdAdapter
-			    ? "Detected NVIDIA and AMD graphics adapters; NVIDIA SDK dependencies stay enabled."
-			    : "Detected NVIDIA graphics adapter; NVIDIA SDK dependencies stay enabled.";
+			capabilities.Summary = capabilities.HasAmdAdapter ? "Detected NVIDIA and AMD graphics adapters; NVIDIA SDK dependencies stay enabled."
+			                                                  : "Detected NVIDIA graphics adapter; NVIDIA SDK dependencies stay enabled.";
 		}
 		else if (capabilities.HasAmdAdapter)
 		{
@@ -155,8 +159,7 @@ namespace SparkleLauncher
 		}
 		else if (capabilities.AdapterDetected)
 		{
-			capabilities.Summary =
-			    "Detected graphics adapter, but it does not identify as NVIDIA or AMD; NVIDIA SDK dependencies stay disabled.";
+			capabilities.Summary = "Detected graphics adapter, but it does not identify as NVIDIA or AMD; NVIDIA SDK dependencies stay disabled.";
 		}
 		else
 		{

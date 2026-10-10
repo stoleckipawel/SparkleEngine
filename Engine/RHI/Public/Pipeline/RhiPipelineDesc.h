@@ -140,13 +140,11 @@ public:
 	const CompiledBinding* FindBinding(const char* name) const noexcept;
 
 protected:
-	RenderBindingLayout(
-	    const PassParameterLayout& parameterLayout,
-	    std::vector<CompiledBinding> bindings,
-	    std::vector<std::string> bindingNames) noexcept;
+	RenderBindingLayout(const PassParameterLayout& parameterLayout, std::vector<CompiledBinding> bindings, std::vector<std::string> bindingNames) noexcept;
 
 private:
 	const PassParameterLayout* m_parameterLayout = nullptr;
+
 	std::vector<CompiledBinding> m_bindings;
 	std::vector<std::string> m_bindingNames;
 };
@@ -286,6 +284,7 @@ struct RhiShaderStageDesc
 	const ResolvedShader* Shader = nullptr;
 
 	bool IsValid() const noexcept { return Shader != nullptr && Shader->IsValid(); }
+
 	explicit operator bool() const noexcept { return IsValid(); }
 };
 
@@ -318,6 +317,7 @@ class SPARKLE_RHI_API RenderPipeline
 {
 public:
 	virtual ~RenderPipeline() noexcept = default;
+
 	RenderPipeline(const RenderPipeline&) = delete;
 	RenderPipeline& operator=(const RenderPipeline&) = delete;
 	RenderPipeline(RenderPipeline&&) = delete;

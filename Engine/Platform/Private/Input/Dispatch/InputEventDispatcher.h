@@ -15,6 +15,7 @@ class InputEventDispatcher final
 {
 public:
 	static constexpr std::size_t LayerCount = static_cast<std::size_t>(InputLayer::Count);
+
 	using LayerAvailability = std::array<bool, LayerCount>;
 
 	template <typename TEvent> EventHandle Subscribe(InputCallback<TEvent> callback, InputLayer layer, DispatchMode mode)
@@ -33,16 +34,13 @@ public:
 
 		auto removeByHandle = [&handle](auto& callbacks)
 		{
-			callbacks.erase(
-			    std::remove_if(callbacks.begin(), callbacks.end(), [&handle](const auto& entry) { return entry.Handle == handle; }),
-			    callbacks.end());
+			callbacks.erase(std::remove_if(callbacks.begin(), callbacks.end(), [&handle](const auto& entry) { return entry.Handle == handle; }), callbacks.end());
 		};
 
 		std::apply([&removeByHandle](auto&... callbacks) { (removeByHandle(callbacks), ...); }, m_callbacks);
 	}
 
-	template <typename TEvent>
-	void DispatchImmediate(const TEvent& event, InputLayer targetLayer, const LayerAvailability& layerAvailability)
+	template <typename TEvent> void DispatchImmediate(const TEvent& event, InputLayer targetLayer, const LayerAvailability& layerAvailability)
 	{
 		DispatchToCallbacks(event, DispatchMode::Immediate, targetLayer, layerAvailability);
 	}
@@ -59,8 +57,7 @@ public:
 		}
 	}
 
-	template <typename PrepareDispatch>
-	void ProcessDeferredEvents(const LayerAvailability& layerAvailability, PrepareDispatch&& prepareDispatch)
+	template <typename PrepareDispatch> void ProcessDeferredEvents(const LayerAvailability& layerAvailability, PrepareDispatch&& prepareDispatch)
 	{
 		if (m_isProcessingDeferredEvents)
 		{
@@ -107,11 +104,8 @@ private:
 		InputLayer TargetLayer = InputLayer::System;
 	};
 
-	using CallbackTuple = std::tuple<
-	    std::vector<CallbackEntry<KeyboardEvent>>,
-	    std::vector<CallbackEntry<MouseButtonEvent>>,
-	    std::vector<CallbackEntry<MouseMoveEvent>>,
-	    std::vector<CallbackEntry<MouseWheelEvent>>>;
+	using CallbackTuple = std::
+	    tuple<std::vector<CallbackEntry<KeyboardEvent>>, std::vector<CallbackEntry<MouseButtonEvent>>, std::vector<CallbackEntry<MouseMoveEvent>>, std::vector<CallbackEntry<MouseWheelEvent>>>;
 
 	using DeferredQueueTuple = std::tuple<
 	    std::vector<RoutedInputEvent<KeyboardEvent>>,
@@ -119,10 +113,7 @@ private:
 	    std::vector<RoutedInputEvent<MouseMoveEvent>>,
 	    std::vector<RoutedInputEvent<MouseWheelEvent>>>;
 
-	static bool ShouldDispatchToLayer(
-	    InputLayer registeredLayer,
-	    InputLayer targetLayer,
-	    const LayerAvailability& layerAvailability) noexcept
+	static bool ShouldDispatchToLayer(InputLayer registeredLayer, InputLayer targetLayer, const LayerAvailability& layerAvailability) noexcept
 	{
 		if (registeredLayer == InputLayer::System)
 		{
@@ -137,21 +128,11 @@ private:
 		return index < layerAvailability.size() && layerAvailability[index];
 	}
 
-	template <typename TEvent> std::vector<CallbackEntry<TEvent>>& GetCallbacks()
-	{
-		return std::get<std::vector<CallbackEntry<TEvent>>>(m_callbacks);
-	}
+	template <typename TEvent> std::vector<CallbackEntry<TEvent>>& GetCallbacks() { return std::get<std::vector<CallbackEntry<TEvent>>>(m_callbacks); }
 
-	template <typename TEvent> std::vector<RoutedInputEvent<TEvent>>& GetDeferredQueue()
-	{
-		return std::get<std::vector<RoutedInputEvent<TEvent>>>(m_deferredQueues);
-	}
+	template <typename TEvent> std::vector<RoutedInputEvent<TEvent>>& GetDeferredQueue() { return std::get<std::vector<RoutedInputEvent<TEvent>>>(m_deferredQueues); }
 
-	template <typename TEvent> void DispatchToCallbacks(
-	    const TEvent& event,
-	    DispatchMode targetMode,
-	    InputLayer targetLayer,
-	    const LayerAvailability& layerAvailability)
+	template <typename TEvent> void DispatchToCallbacks(const TEvent& event, DispatchMode targetMode, InputLayer targetLayer, const LayerAvailability& layerAvailability)
 	{
 		// Registry changes affect the next dispatch; nested dispatches take a fresh snapshot.
 		std::vector<InputCallback<TEvent>> callbacks;

@@ -11,6 +11,7 @@ std::unique_ptr<IUpscalerProvider> CreateConfiguredUpscalerProvider()
 	{
 		case EUpscalerProviderKind::NvidiaDlss:
 			return std::make_unique<NvidiaDlssUpscalerProvider>();
+
 		case EUpscalerProviderKind::Linear:
 		default:
 			return {};

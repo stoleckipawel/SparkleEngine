@@ -34,11 +34,7 @@ void LevelRegistry::DiscoverLevels()
 
 			if (!catalog.IsLevelReady(entry))
 			{
-				SPDLOG_LOGGER_WARN(
-				    g_levelRegistryLogger,
-				    "LevelRegistry: selected level '{}' is not ready: '{}'.",
-				    entry.id,
-				    entry.sourcePath.string());
+				SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "LevelRegistry: selected level '{}' is not ready: '{}'.", entry.id, entry.sourcePath.string());
 				continue;
 			}
 
@@ -61,15 +57,13 @@ void LevelRegistry::LoadCatalogLevel(const ProjectLevelCatalogEntry& entry)
 		const std::string loadedLevelName(loadedLevel->GetName());
 		if (loadedLevelName != entry.id)
 		{
-			throw Diagnostics::Error(
-			    std::format("Catalog identity '{}' does not match authored level name '{}'.", entry.id, loadedLevelName));
+			throw Diagnostics::Error(std::format("Catalog identity '{}' does not match authored level name '{}'.", entry.id, loadedLevelName));
 		}
 		Register(std::move(loadedLevel));
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		const std::string failure =
-		    std::format("LevelRegistry: Failed to load catalog level '{}': {}", entry.sourcePath.string(), error.what());
+		const std::string failure = std::format("LevelRegistry: Failed to load catalog level '{}': {}", entry.sourcePath.string(), error.what());
 		SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "{}", failure);
 	}
 }

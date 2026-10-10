@@ -48,11 +48,7 @@ private:
 	{
 		if (std::this_thread::get_id() != m_thread || ImGui::GetCurrentContext() != m_context || ImGui::GetIO().Fonts != m_atlas)
 		{
-			Diagnostics::Fatal(
-			    g_editorIconLogger,
-			    __FILE__,
-			    __LINE__,
-			    "EditorIconService used outside its owning thread/context/atlas lifetime");
+			Diagnostics::Fatal(g_editorIconLogger, __FILE__, __LINE__, "EditorIconService used outside its owning thread/context/atlas lifetime");
 		}
 	}
 
@@ -86,10 +82,7 @@ ImFontAtlasRect EditorIconService::Implementation::Resolve(const EditorIconAsset
 	m_atlas->TexPixelsUseColors = true;
 	for (int row = 0; row < asset.Extent; ++row)
 	{
-		std::memcpy(
-		    m_atlas->TexData->GetPixelsAt(rectangle.x, rectangle.y + row),
-		    asset.Pixels.data() + static_cast<std::size_t>(row) * asset.Extent * 4,
-		    static_cast<std::size_t>(asset.Extent) * 4);
+		std::memcpy(m_atlas->TexData->GetPixelsAt(rectangle.x, rectangle.y + row), asset.Pixels.data() + static_cast<std::size_t>(row) * asset.Extent * 4, static_cast<std::size_t>(asset.Extent) * 4);
 	}
 	if (found != m_icons.end())
 	{

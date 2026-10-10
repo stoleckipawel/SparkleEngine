@@ -61,15 +61,10 @@ namespace Assets
 		LoadedAnimationAsset animationAsset;
 		animationAsset.header = reader.Read<CookedAnimationAssetHeader>();
 
-		if (!animationAsset.header.fileHeader.HasMagic(kCookedAnimationAssetMagic)
-		    || animationAsset.header.channelStride != sizeof(CookedAnimationChannelRecord)
-		    || animationAsset.header.keyframeStride != sizeof(CookedAnimationKeyframeRecord)
-		    || !Strings::IsNullTerminated(std::span(animationAsset.header.name)))
+		if (!animationAsset.header.fileHeader.HasMagic(kCookedAnimationAssetMagic) || animationAsset.header.channelStride != sizeof(CookedAnimationChannelRecord)
+		    || animationAsset.header.keyframeStride != sizeof(CookedAnimationKeyframeRecord) || !Strings::IsNullTerminated(std::span(animationAsset.header.name)))
 		{
-			throw diagnostics.MakeError(
-			    "header",
-			    "animation magic and current channel/keyframe strides",
-			    "Invalid cooked animation asset header; recook the asset");
+			throw diagnostics.MakeError("header", "animation magic and current channel/keyframe strides", "Invalid cooked animation asset header; recook the asset");
 		}
 
 		animationAsset.channels = reader.ReadArray<CookedAnimationChannelRecord>(animationAsset.header.channelCount);
@@ -82,16 +77,11 @@ namespace Assets
 		for (std::size_t channelIndex = 0; channelIndex < animationAsset.channels.size(); ++channelIndex)
 		{
 			const CookedAnimationChannelRecord& channel = animationAsset.channels[channelIndex];
-			if (!AnimationAssetLoaderValidation::IsKnownTargetPath(channel.targetPath)
-			    || !AnimationAssetLoaderValidation::IsKnownInterpolation(channel.interpolation)
-			    || channel.targetNodeIndex == (std::numeric_limits<std::uint32_t>::max)() || channel.keyframeCount == 0u
-			    || channel.firstKeyframe > animationAsset.keyframes.size()
+			if (!AnimationAssetLoaderValidation::IsKnownTargetPath(channel.targetPath) || !AnimationAssetLoaderValidation::IsKnownInterpolation(channel.interpolation)
+			    || channel.targetNodeIndex == (std::numeric_limits<std::uint32_t>::max)() || channel.keyframeCount == 0u || channel.firstKeyframe > animationAsset.keyframes.size()
 			    || channel.keyframeCount > animationAsset.keyframes.size() - channel.firstKeyframe)
 			{
-				throw diagnostics.MakeError(
-				    "payload",
-				    "known channel semantics and an in-range non-empty keyframe span",
-				    std::format("Cooked animation channel {} is invalid", channelIndex));
+				throw diagnostics.MakeError("payload", "known channel semantics and an in-range non-empty keyframe span", std::format("Cooked animation channel {} is invalid", channelIndex));
 			}
 
 			float previousTime = -1.0f;
@@ -101,12 +91,9 @@ namespace Assets
 			{
 				const CookedAnimationKeyframeRecord& keyframe = animationAsset.keyframes[channel.firstKeyframe + keyframeOffset];
 				const bool cubicSpline = channel.interpolation == CookedAnimationInterpolation::CubicSpline;
-				if (!std::isfinite(keyframe.timeSeconds) || keyframe.timeSeconds < 0.0f || keyframe.timeSeconds <= previousTime
-				    || keyframe.timeSeconds > animationAsset.header.durationSeconds
+				if (!std::isfinite(keyframe.timeSeconds) || keyframe.timeSeconds < 0.0f || keyframe.timeSeconds <= previousTime || keyframe.timeSeconds > animationAsset.header.durationSeconds
 				    || !AnimationAssetLoaderValidation::IsFinite(keyframe.value)
-				    || (cubicSpline
-				        && (!AnimationAssetLoaderValidation::IsFinite(keyframe.inTangent)
-				            || !AnimationAssetLoaderValidation::IsFinite(keyframe.outTangent))))
+				    || (cubicSpline && (!AnimationAssetLoaderValidation::IsFinite(keyframe.inTangent) || !AnimationAssetLoaderValidation::IsFinite(keyframe.outTangent))))
 				{
 					throw diagnostics.MakeError(
 					    "payload",
@@ -119,8 +106,7 @@ namespace Assets
 					const DirectX::XMVECTOR rotation = DirectX::XMLoadFloat4(&keyframe.value);
 					const float lengthSquared = DirectX::XMVectorGetX(DirectX::XMVector4LengthSq(rotation));
 					if (!std::isfinite(lengthSquared) || std::abs(lengthSquared - 1.0f) > 1.0e-3f
-					    || (hasPreviousRotation
-					        && DirectX::XMVectorGetX(DirectX::XMVector4Dot(DirectX::XMLoadFloat4(&previousRotation), rotation)) < -1.0e-5f))
+					    || (hasPreviousRotation && DirectX::XMVectorGetX(DirectX::XMVector4Dot(DirectX::XMLoadFloat4(&previousRotation), rotation)) < -1.0e-5f))
 					{
 						throw diagnostics.MakeError(
 						    "payload",
@@ -136,10 +122,7 @@ namespace Assets
 
 		if (reader.GetRemainingByteCount() != 0)
 		{
-			throw diagnostics.MakeError(
-			    "payload",
-			    "no trailing bytes after declared animation records",
-			    "Cooked animation asset contains unexpected trailing bytes");
+			throw diagnostics.MakeError("payload", "no trailing bytes after declared animation records", "Cooked animation asset contains unexpected trailing bytes");
 		}
 
 		return animationAsset;

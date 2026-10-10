@@ -24,16 +24,11 @@ public:
 	{
 		return material != nullptr
 		    && ((material->has_pbr_metallic_roughness
-		            && (material->pbr_metallic_roughness.base_color_texture.texture != nullptr
-		                || material->pbr_metallic_roughness.metallic_roughness_texture.texture != nullptr))
-		        || material->normal_texture.texture != nullptr || material->occlusion_texture.texture != nullptr
-		        || material->emissive_texture.texture != nullptr);
+		            && (material->pbr_metallic_roughness.base_color_texture.texture != nullptr || material->pbr_metallic_roughness.metallic_roughness_texture.texture != nullptr))
+		        || material->normal_texture.texture != nullptr || material->occlusion_texture.texture != nullptr || material->emissive_texture.texture != nullptr);
 	}
 
-	static bool RequiresTangents(const cgltf_material* material) noexcept
-	{
-		return material != nullptr && material->normal_texture.texture != nullptr;
-	}
+	static bool RequiresTangents(const cgltf_material* material) noexcept { return material != nullptr && material->normal_texture.texture != nullptr; }
 };
 
 struct GltfMeshGeometryExtractor::Attributes
@@ -80,8 +75,7 @@ bool GltfMeshGeometryExtractor::HasValidTangentFrame(const ImportedMeshGeometry&
 
 void GltfMeshGeometryExtractor::ValidateAttributes(const cgltf_primitive& primitive, const Attributes& attributes)
 {
-	if (attributes.Positions == nullptr || attributes.Normals == nullptr
-	    || (GltfGeometryRequirements::RequiresTextureCoordinates(primitive.material) && attributes.TextureCoordinates == nullptr)
+	if (attributes.Positions == nullptr || attributes.Normals == nullptr || (GltfGeometryRequirements::RequiresTextureCoordinates(primitive.material) && attributes.TextureCoordinates == nullptr)
 	    || attributes.Positions->count == 0 || attributes.Positions->count > (std::numeric_limits<std::uint32_t>::max)())
 	{
 		throw Diagnostics::Error("glTF primitive contains unsupported or malformed vertex attributes.");
@@ -90,12 +84,12 @@ void GltfMeshGeometryExtractor::ValidateAttributes(const cgltf_primitive& primit
 	for (cgltf_size attributeIndex = 0; attributeIndex < primitive.attributes_count; ++attributeIndex)
 	{
 		const cgltf_attribute& attribute = primitive.attributes[attributeIndex];
-		const bool supported = ((attribute.type == cgltf_attribute_type_position || attribute.type == cgltf_attribute_type_normal
-		                            || attribute.type == cgltf_attribute_type_tangent)
+
+		const bool supported = ((attribute.type == cgltf_attribute_type_position || attribute.type == cgltf_attribute_type_normal || attribute.type == cgltf_attribute_type_tangent)
 		                           && attribute.index == 0)
 		    || attribute.type == cgltf_attribute_type_texcoord || attribute.type == cgltf_attribute_type_color
-		    || ((attribute.type == cgltf_attribute_type_joints || attribute.type == cgltf_attribute_type_weights)
-		        && (attribute.index == 0 || attribute.index == 1));
+		    || ((attribute.type == cgltf_attribute_type_joints || attribute.type == cgltf_attribute_type_weights) && (attribute.index == 0 || attribute.index == 1));
+
 		if (!supported || attribute.data == nullptr || attribute.data->count != attributes.Positions->count)
 		{
 			throw Diagnostics::Error("glTF primitive contains unsupported or malformed vertex attributes.");
@@ -103,13 +97,10 @@ void GltfMeshGeometryExtractor::ValidateAttributes(const cgltf_primitive& primit
 	}
 
 	if (attributes.Positions->type != cgltf_type_vec3 || attributes.Normals->type != cgltf_type_vec3
-	    || (attributes.TextureCoordinates != nullptr && attributes.TextureCoordinates->type != cgltf_type_vec2)
-	    || (attributes.Tangents != nullptr && attributes.Tangents->type != cgltf_type_vec4)
+	    || (attributes.TextureCoordinates != nullptr && attributes.TextureCoordinates->type != cgltf_type_vec2) || (attributes.Tangents != nullptr && attributes.Tangents->type != cgltf_type_vec4)
 	    || (attributes.Colors != nullptr && attributes.Colors->type != cgltf_type_vec3 && attributes.Colors->type != cgltf_type_vec4)
-	    || (attributes.Joints0 == nullptr) != (attributes.Weights0 == nullptr)
-	    || (attributes.Joints1 == nullptr) != (attributes.Weights1 == nullptr)
-	    || GltfAccessorReader::FindAttribute(primitive, cgltf_attribute_type_joints, 2) != nullptr
-	    || GltfAccessorReader::FindAttribute(primitive, cgltf_attribute_type_weights, 2) != nullptr)
+	    || (attributes.Joints0 == nullptr) != (attributes.Weights0 == nullptr) || (attributes.Joints1 == nullptr) != (attributes.Weights1 == nullptr)
+	    || GltfAccessorReader::FindAttribute(primitive, cgltf_attribute_type_joints, 2) != nullptr || GltfAccessorReader::FindAttribute(primitive, cgltf_attribute_type_weights, 2) != nullptr)
 	{
 		throw Diagnostics::Error("glTF primitive contains unsupported or malformed vertex attributes.");
 	}
@@ -143,9 +134,7 @@ void GltfMeshGeometryExtractor::PopulateVertices(const Attributes& attributes, s
 			if (attributes.Tangents != nullptr)
 			{
 				const DirectX::XMFLOAT4 sourceTangent = GltfAccessorReader::ReadFloat4(attributes.Tangents, vertexIndex);
-				vertex.tangent = GltfVertexFrameBuilder::BuildAuthoredTangent(
-				    GltfCoordinateConverter::ConvertTangentFrame(sourceTangent),
-				    vertex.normal);
+				vertex.tangent = GltfVertexFrameBuilder::BuildAuthoredTangent(GltfCoordinateConverter::ConvertTangentFrame(sourceTangent), vertex.normal);
 			}
 		}
 		catch (const Diagnostics::Error& error)
@@ -173,12 +162,7 @@ void GltfMeshGeometryExtractor::PopulateVertices(const Attributes& attributes, s
 
 		if (attributes.HasSkinInfluences())
 		{
-			geometry.deformation.skinInfluences[vertexIndex] = GltfSkinImporter::ReadSkinInfluence(
-			    attributes.Joints0,
-			    attributes.Weights0,
-			    attributes.Joints1,
-			    attributes.Weights1,
-			    vertexIndex);
+			geometry.deformation.skinInfluences[vertexIndex] = GltfSkinImporter::ReadSkinInfluence(attributes.Joints0, attributes.Weights0, attributes.Joints1, attributes.Weights1, vertexIndex);
 		}
 	}
 }

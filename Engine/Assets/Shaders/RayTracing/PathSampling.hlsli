@@ -51,11 +51,7 @@ namespace RayTracingPathSampling
 		return result;
 	}
 
-	RayTracingPathSample::DirectionSample SampleBSDF(RayTracingPathSurface surface,
-	                                                 uint specularSampleMode,
-	                                                 RandomSamples randomSamples,
-	                                                 bool evaluateDiffuse,
-	                                                 bool evaluateSpecular)
+	RayTracingPathSample::DirectionSample SampleBSDF(RayTracingPathSurface surface, uint specularSampleMode, RandomSamples randomSamples, bool evaluateDiffuse, bool evaluateSpecular)
 	{
 		if (!surface.Valid)
 		{

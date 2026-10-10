@@ -25,9 +25,13 @@ class SceneOutlinerPanel final
 public:
 	SceneOutlinerPanel(SceneObjectSelection& selection, EditorTransactionHistory& transactionHistory, float widthPixels = 320.0f) noexcept;
 	void SetWidth(float widthPixels) noexcept;
+
 	float GetWidth() const noexcept { return m_widthPixels; }
+
 	void SetTopInset(float topInsetPixels) noexcept;
+
 	void SetModel(std::shared_ptr<const EditorSceneModel> model) noexcept { m_model = std::move(model); }
+
 	void BuildUI(bool disableInteraction = false);
 
 private:

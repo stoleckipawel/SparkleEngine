@@ -19,6 +19,7 @@ private:
 	template <typename TResult> friend class EditorOperationSlot;
 
 	TaskExecutor& GetExecutor() const noexcept { return m_executor; }
+
 	TaskScope& GetScope() noexcept { return m_scope; }
 
 	TaskExecutor& m_executor;

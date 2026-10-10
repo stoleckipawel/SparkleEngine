@@ -45,8 +45,7 @@ namespace Files
 			for (const FilePublication& file : files)
 			{
 				std::error_code errorCode;
-				if (file.StagedPath.empty() || file.PublishedPath.empty() || !std::filesystem::is_regular_file(file.StagedPath, errorCode)
-				    || errorCode)
+				if (file.StagedPath.empty() || file.PublishedPath.empty() || !std::filesystem::is_regular_file(file.StagedPath, errorCode) || errorCode)
 				{
 					outErrorMessage = std::format("Publication input '{}' is missing or is not a file", file.StagedPath.string());
 					return false;
@@ -79,8 +78,7 @@ namespace Files
 					std::filesystem::rename(state.File.PublishedPath, state.BackupPath, errorCode);
 					if (errorCode)
 					{
-						outErrorMessage =
-						    std::format("Failed to preserve active output '{}' before publication", state.File.PublishedPath.string());
+						outErrorMessage = std::format("Failed to preserve active output '{}' before publication", state.File.PublishedPath.string());
 						return false;
 					}
 				}
@@ -89,10 +87,7 @@ namespace Files
 				std::filesystem::rename(state.File.StagedPath, state.File.PublishedPath, errorCode);
 				if (errorCode)
 				{
-					outErrorMessage = std::format(
-					    "Failed to publish staged output '{}' as '{}'",
-					    state.File.StagedPath.string(),
-					    state.File.PublishedPath.string());
+					outErrorMessage = std::format("Failed to publish staged output '{}' as '{}'", state.File.StagedPath.string(), state.File.PublishedPath.string());
 					return false;
 				}
 				state.Published = true;
@@ -136,10 +131,7 @@ namespace Files
 		return temporaryPath;
 	}
 
-	bool TryFinalizeTemporaryFile(
-	    const std::filesystem::path& temporaryPath,
-	    const std::filesystem::path& finalPath,
-	    std::string& outErrorMessage)
+	bool TryFinalizeTemporaryFile(const std::filesystem::path& temporaryPath, const std::filesystem::path& finalPath, std::string& outErrorMessage)
 	{
 		std::error_code errorCode;
 		std::filesystem::rename(temporaryPath, finalPath, errorCode);
@@ -155,8 +147,7 @@ namespace Files
 			std::filesystem::remove(finalPath, errorCode);
 			if (errorCode)
 			{
-				outErrorMessage =
-				    std::format("Failed to replace existing output '{}'. The destination file may still be in use.", finalPath.string());
+				outErrorMessage = std::format("Failed to replace existing output '{}'. The destination file may still be in use.", finalPath.string());
 				return false;
 			}
 
@@ -173,10 +164,7 @@ namespace Files
 		return false;
 	}
 
-	bool TryFinalizeTemporaryFileIfMissing(
-	    const std::filesystem::path& temporaryPath,
-	    const std::filesystem::path& finalPath,
-	    std::string& outErrorMessage)
+	bool TryFinalizeTemporaryFileIfMissing(const std::filesystem::path& temporaryPath, const std::filesystem::path& finalPath, std::string& outErrorMessage)
 	{
 		std::error_code errorCode;
 		if (std::filesystem::exists(finalPath, errorCode) && !errorCode)

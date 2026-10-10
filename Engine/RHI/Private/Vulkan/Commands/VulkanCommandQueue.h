@@ -49,7 +49,9 @@ public:
 
 	RhiSubmissionToken GetLastSubmittedToken() const noexcept;
 	std::uint64_t GetCompletedSubmissionValue() const noexcept;
+
 	ERhiQueueType GetQueueType() const noexcept { return m_queueType; }
+
 	VkQueue GetNativeQueue() const noexcept;
 	VkSemaphore GetTimelineSemaphore() const noexcept;
 
@@ -58,11 +60,7 @@ private:
 
 	static std::uint64_t GetWaitTimeoutNanoseconds() noexcept;
 	bool ResolveWaitState(std::span<const RhiSubmissionToken> waitTokens, RhiSubmissionState& waitState) const noexcept;
-	void BuildNativeSubmission(
-	    const VulkanQueueSubmission& submission,
-	    const RhiSubmissionState& waitState,
-	    std::uint64_t submissionValue,
-	    NativeSubmission& nativeSubmission) const noexcept;
+	void BuildNativeSubmission(const VulkanQueueSubmission& submission, const RhiSubmissionState& waitState, std::uint64_t submissionValue, NativeSubmission& nativeSubmission) const noexcept;
 	VkResult SubmitNative(const VkSubmitInfo& submission) noexcept;
 
 	Threading::OwnerThread m_owner{"Vulkan command queue"};

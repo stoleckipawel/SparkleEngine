@@ -5,7 +5,4 @@
 
 class FrameGraphBuilder;
 
-FrameGraphTextureHandle AddOutputEncodingPass(
-    FrameGraphBuilder& builder,
-    const RenderFrameGraphSettings& settings,
-    FrameGraphTextureHandle displayLinearColor);
+FrameGraphTextureHandle AddOutputEncodingPass(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings, FrameGraphTextureHandle displayLinearColor);

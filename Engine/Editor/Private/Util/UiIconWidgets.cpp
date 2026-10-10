@@ -247,12 +247,7 @@ namespace UiUtil
 
 		const ImVec4 iconColor = visible ? WithAlpha(SparkleUiPalette::TextMuted(), 0.58f) : SparkleUiPalette::AccentStrong();
 		const ImU32 iconColorU32 = ImGui::ColorConvertFloat4ToU32(iconColor);
-		DrawCenteredGlyph(
-		    drawList,
-		    start,
-		    size,
-		    GetEditorIconGlyph(visible ? EditorIcon::EyeVisible : EditorIcon::EyeHidden),
-		    iconColorU32);
+		DrawCenteredGlyph(drawList, start, size, GetEditorIconGlyph(visible ? EditorIcon::EyeVisible : EditorIcon::EyeHidden), iconColorU32);
 
 		if (hovered)
 		{

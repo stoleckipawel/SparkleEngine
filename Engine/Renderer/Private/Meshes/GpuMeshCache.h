@@ -25,11 +25,7 @@ struct GpuMeshPreparedData;
 class GpuMeshCache final
 {
 public:
-	GpuMeshCache(
-	    RenderHardwareInterface& renderHardwareInterface,
-	    RhiCommandSubmissionService& submissions,
-	    TaskExecutor& taskExecutor,
-	    TaskScope& parentScope);
+	GpuMeshCache(RenderHardwareInterface& renderHardwareInterface, RhiCommandSubmissionService& submissions, TaskExecutor& taskExecutor, TaskScope& parentScope);
 	~GpuMeshCache() noexcept;
 
 	GpuMeshCache(const GpuMeshCache&) = delete;

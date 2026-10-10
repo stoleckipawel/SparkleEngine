@@ -137,11 +137,7 @@ std::uint8_t DxilReflectionExtractor::PopMaskBits(std::uint8_t mask)
 	return count;
 }
 
-ShaderReflection DxilReflectionExtractor::Extract(
-    IDxcUtils& utils,
-    IDxcResult* result,
-    std::span<const std::uint8_t> bytecode,
-    ShaderStage stage)
+ShaderReflection DxilReflectionExtractor::Extract(IDxcUtils& utils, IDxcResult* result, std::span<const std::uint8_t> bytecode, ShaderStage stage)
 {
 	ShaderReflection reflection;
 	ShaderReflection& outReflection = reflection;

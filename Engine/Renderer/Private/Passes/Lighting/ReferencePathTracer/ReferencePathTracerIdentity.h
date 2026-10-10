@@ -34,7 +34,4 @@ struct ReferencePathTracerIdentity final
 	ReferencePathTracerIdentityComponent FindFirstDifference(const ReferencePathTracerIdentity& other) const noexcept;
 };
 
-ReferencePathTracerIdentity BuildReferencePathTracerIdentity(
-    const RenderFrame& frame,
-    RayTracingExecutionFrontend executionFrontend,
-    ERhiBackendApi backendApi) noexcept;
+ReferencePathTracerIdentity BuildReferencePathTracerIdentity(const RenderFrame& frame, RayTracingExecutionFrontend executionFrontend, ERhiBackendApi backendApi) noexcept;

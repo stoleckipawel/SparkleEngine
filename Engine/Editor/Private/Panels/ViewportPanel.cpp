@@ -190,10 +190,7 @@ void ViewportPanel::BeginViewportWindow() const
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	ImGui::Begin(
-	    "Viewport",
-	    nullptr,
-	    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
+	ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
 	ImGui::PopStyleVar(); // WindowPadding
 }
 
@@ -201,11 +198,7 @@ void ViewportPanel::BeginViewportSurface()
 {
 	m_hasInputBounds = false;
 	const float surfaceRegionHeight = (std::max) (MinimumViewportExtent, ImGui::GetContentRegionAvail().y);
-	ImGui::BeginChild(
-	    "##ViewportSurface",
-	    ImVec2(0.0f, surfaceRegionHeight),
-	    ImGuiChildFlags_None,
-	    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+	ImGui::BeginChild("##ViewportSurface", ImVec2(0.0f, surfaceRegionHeight), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 	const ImVec2 viewportMin = ImGui::GetWindowPos();
 	m_inputLeft = viewportMin.x;
 	m_inputTop = viewportMin.y;

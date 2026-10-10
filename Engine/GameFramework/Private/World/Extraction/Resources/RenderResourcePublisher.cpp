@@ -32,23 +32,14 @@ namespace ECS
 		PublishChangedTables(resources, skyTexturePath, delta);
 	}
 
-	void RenderResourcePublisher::PublishInstanceGroups(
-	    std::span<const SceneMeshInstanceGroupData> instanceGroups,
-	    RenderSceneDelta& delta) const
+	void RenderResourcePublisher::PublishInstanceGroups(std::span<const SceneMeshInstanceGroupData> instanceGroups, RenderSceneDelta& delta) const
 	{
 		if (!delta.ResetScene)
 			return;
 		delta.InstanceGroups.Published = true;
 		delta.InstanceGroups.Values.reserve(instanceGroups.size());
 		for (const SceneMeshInstanceGroupData& group : instanceGroups)
-			delta.InstanceGroups.Values.push_back(
-			    {group.meshAssetId,
-			        group.meshAssetIndex,
-			        group.materialHandle,
-			        group.firstInstance,
-			        group.instanceCount,
-			        group.groupKind,
-			        group.flags});
+			delta.InstanceGroups.Values.push_back({group.meshAssetId, group.meshAssetIndex, group.materialHandle, group.firstInstance, group.instanceCount, group.groupKind, group.flags});
 	}
 
 	void RenderResourcePublisher::PublishSky(const std::optional<SceneSkyDesc>& sky, RenderSceneDelta& delta)
@@ -61,10 +52,7 @@ namespace ECS
 		m_skyPublished = true;
 	}
 
-	void RenderResourcePublisher::PublishChangedTables(
-	    GameWorldResourceStores& resources,
-	    const std::optional<std::filesystem::path>& skyTexturePath,
-	    RenderSceneDelta& delta)
+	void RenderResourcePublisher::PublishChangedTables(GameWorldResourceStores& resources, const std::optional<std::filesystem::path>& skyTexturePath, RenderSceneDelta& delta)
 	{
 		const std::uint64_t materialRevision = resources.Materials.GetContentRevision();
 		if (delta.ResetScene || materialRevision != m_materialRevision)
@@ -91,9 +79,8 @@ namespace ECS
 			return false;
 		if (!left)
 			return true;
-		return left->enabled == right->enabled && left->color.x == right->color.x && left->color.y == right->color.y
-		    && left->color.z == right->color.z && left->brightness == right->brightness
-		    && left->skyTexture.texturePath == right->skyTexture.texturePath
-		    && left->skyTexture.textureGroup == right->skyTexture.textureGroup;
+
+		return left->enabled == right->enabled && left->color.x == right->color.x && left->color.y == right->color.y && left->color.z == right->color.z && left->brightness == right->brightness
+		    && left->skyTexture.texturePath == right->skyTexture.texturePath && left->skyTexture.textureGroup == right->skyTexture.textureGroup;
 	}
 }

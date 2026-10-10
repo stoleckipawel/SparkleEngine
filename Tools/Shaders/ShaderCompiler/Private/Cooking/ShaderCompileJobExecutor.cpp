@@ -23,11 +23,7 @@ ShaderCompileResult ShaderCompileJobExecutor::Execute(const ShaderCompileJob& jo
 	}
 	catch (const Diagnostics::Error& error)
 	{
-		throw Diagnostics::Error(
-		    std::format(
-		        "Failed to compile {} - {}",
-		        ShaderCookDiagnostics::FormatJobContext(job, backend->GetBackendName(), job.Request.Target),
-		        error.what()));
+		throw Diagnostics::Error(std::format("Failed to compile {} - {}", ShaderCookDiagnostics::FormatJobContext(job, backend->GetBackendName(), job.Request.Target), error.what()));
 	}
 
 	output.sourceHash = job.SourceContentHash;

@@ -32,19 +32,12 @@ public:
 	void SetDebugName(const RenderCommandList& commandList, std::wstring_view debugName) noexcept override
 	{
 		SetD3D12ObjectDebugName(
-		    static_cast<ID3D12Object*>(commandList
-		            .GetNativeHandle(
-		                RhiNativeInteropRequest{
-		                    .Consumer = ERhiNativeInteropConsumer::Diagnostics,
-		                    .Reason = "Assign D3D12 command list debug name"})
-		            .Value),
+		    static_cast<ID3D12Object*>(
+		        commandList.GetNativeHandle(RhiNativeInteropRequest{.Consumer = ERhiNativeInteropConsumer::Diagnostics, .Reason = "Assign D3D12 command list debug name"}).Value),
 		    debugName);
 	}
 
-	void SetDebugName(RhiResourceHandle resource, std::wstring_view debugName) noexcept override
-	{
-		SetD3D12ObjectDebugName(static_cast<ID3D12Object*>(resource.Value), debugName);
-	}
+	void SetDebugName(RhiResourceHandle resource, std::wstring_view debugName) noexcept override { SetD3D12ObjectDebugName(static_cast<ID3D12Object*>(resource.Value), debugName); }
 
 	void SetDebugName(RhiOwnedMemoryBlockHandle memoryBlock, std::wstring_view debugName) noexcept override
 	{
@@ -90,10 +83,7 @@ public:
 		Initialize();
 	}
 
-	bool SupportsTimestampQueries() const noexcept override
-	{
-		return !m_poolStates.empty() && m_poolStates.front().TimestampFrequencyHz != 0;
-	}
+	bool SupportsTimestampQueries() const noexcept override { return !m_poolStates.empty() && m_poolStates.front().TimestampFrequencyHz != 0; }
 
 	RhiTimestampQueryHandle AllocateTimestampQuery(ERhiQueueType queueType) override
 	{
@@ -105,11 +95,7 @@ public:
 		const std::uint32_t frameIndex = m_rhi.GetCurrentFrameIndex();
 		if (frameIndex >= m_maximumFramesInFlight)
 		{
-			Diagnostics::Fatal(
-			    g_d3d12RenderDiagnosticsLogger,
-			    __FILE__,
-			    __LINE__,
-			    "D3D12 timestamp query addressed an invalid frame slot.");
+			Diagnostics::Fatal(g_d3d12RenderDiagnosticsLogger, __FILE__, __LINE__, "D3D12 timestamp query addressed an invalid frame slot.");
 		}
 
 		const std::uint32_t poolIndex = GetPoolIndex(frameIndex, queueType);
@@ -132,21 +118,19 @@ public:
 		PoolTimingState& poolState = m_poolStates[location.PoolIndex];
 		if (commandList.GetQueueType() != poolState.QueueType)
 		{
-			Diagnostics::Fatal(
-			    g_d3d12RenderDiagnosticsLogger,
-			    __FILE__,
-			    __LINE__,
-			    "D3D12 timestamp query was written on a different queue than it was allocated for.");
+			Diagnostics::Fatal(g_d3d12RenderDiagnosticsLogger, __FILE__, __LINE__, "D3D12 timestamp query was written on a different queue than it was allocated for.");
 		}
 
-		ID3D12GraphicsCommandList* const nativeCommandList = D3D12TypeConversions::ToGraphicsCommandList(commandList.GetNativeHandle(
-		    RhiNativeInteropRequest{.Consumer = ERhiNativeInteropConsumer::Diagnostics, .Reason = "Write D3D12 timestamp query"}));
+		ID3D12GraphicsCommandList* const nativeCommandList = D3D12TypeConversions::ToGraphicsCommandList(
+		    commandList.GetNativeHandle(RhiNativeInteropRequest{.Consumer = ERhiNativeInteropConsumer::Diagnostics, .Reason = "Write D3D12 timestamp query"}));
+
 		if (nativeCommandList == nullptr)
 		{
 			Diagnostics::Fatal(g_d3d12RenderDiagnosticsLogger, __FILE__, __LINE__, "D3D12 timestamp query has no native command list.");
 		}
 
 		nativeCommandList->EndQuery(poolState.QueryHeap.Get(), D3D12_QUERY_TYPE_TIMESTAMP, location.QueryIndex);
+
 		nativeCommandList->ResolveQueryData(
 		    poolState.QueryHeap.Get(),
 		    D3D12_QUERY_TYPE_TIMESTAMP,
@@ -154,6 +138,7 @@ public:
 		    1,
 		    poolState.ReadbackAllocation->Resource.Get(),
 		    static_cast<UINT64>(location.QueryIndex) * sizeof(std::uint64_t));
+
 		return true;
 	}
 
@@ -169,6 +154,7 @@ public:
 		const RhiTimestampQueryLocation location = m_queryAllocator.Resolve(query);
 		return 1'000'000'000.0 / static_cast<double>(m_poolStates[location.PoolIndex].TimestampFrequencyHz);
 	}
+
 	std::uint32_t GetTimestampValidBits(RhiTimestampQueryHandle) const noexcept override { return 64; }
 
 private:
@@ -208,35 +194,30 @@ private:
 	{
 		PoolTimingState& poolState = m_poolStates[GetPoolIndex(frameIndex, queueType)];
 		poolState.QueueType = queueType;
-		if (FAILED(m_rhi.GetCommandQueue(queueType)->GetTimestampFrequency(&poolState.TimestampFrequencyHz))
-		    || poolState.TimestampFrequencyHz == 0)
+		if (FAILED(m_rhi.GetCommandQueue(queueType)->GetTimestampFrequency(&poolState.TimestampFrequencyHz)) || poolState.TimestampFrequencyHz == 0)
 		{
-			Diagnostics::Fatal(
-			    g_d3d12RenderDiagnosticsLogger,
-			    __FILE__,
-			    __LINE__,
-			    "D3D12 command queue does not expose a timestamp frequency.");
+			Diagnostics::Fatal(g_d3d12RenderDiagnosticsLogger, __FILE__, __LINE__, "D3D12 command queue does not expose a timestamp frequency.");
 		}
 
 		const D3D12_QUERY_HEAP_DESC queryHeapDesc{
 		    .Type = queueType == ERhiQueueType::Copy ? D3D12_QUERY_HEAP_TYPE_COPY_QUEUE_TIMESTAMP : D3D12_QUERY_HEAP_TYPE_TIMESTAMP,
 		    .Count = kQueriesPerQueuePerFrame,
 		    .NodeMask = 0};
+
 		CHECK(m_rhi.GetDevice()->CreateQueryHeap(&queryHeapDesc, IID_PPV_ARGS(poolState.QueryHeap.ReleaseAndGetAddressOf())));
 
 		const RhiBufferResourceDesc readbackBufferDesc{
 		    .SizeInBytes = static_cast<std::uint64_t>(kQueriesPerQueuePerFrame) * sizeof(std::uint64_t),
 		    .StrideInBytes = sizeof(std::uint64_t),
 		    .AllowUnorderedAccess = false};
+
 		const D3D12_RESOURCE_DESC nativeReadbackDesc = D3D12TypeConversions::BuildBufferResourceDesc(readbackBufferDesc);
 		const std::wstring queueName = Strings::ToWide(std::string_view(RhiQueueTypeToString(queueType)));
 		const std::wstring readbackName = std::wstring(L"D3D12TimestampReadback_") + queueName + L"_Frame" + std::to_wstring(frameIndex);
-		auto readbackAllocation = m_rhi.GetMemoryAllocator().CreateBuffer(
-		    nativeReadbackDesc,
-		    D3D12_RESOURCE_STATE_COPY_DEST,
-		    RhiMemoryCategory::Readback,
-		    RhiMemoryResidencyClass::HostReadback,
-		    readbackName);
+
+		auto readbackAllocation = m_rhi.GetMemoryAllocator()
+		                              .CreateBuffer(nativeReadbackDesc, D3D12_RESOURCE_STATE_COPY_DEST, RhiMemoryCategory::Readback, RhiMemoryResidencyClass::HostReadback, readbackName);
+
 		if (readbackAllocation == nullptr || readbackAllocation->Resource == nullptr)
 		{
 			Diagnostics::Fatal(g_d3d12RenderDiagnosticsLogger, __FILE__, __LINE__, "Failed to allocate a D3D12 timestamp readback buffer.");

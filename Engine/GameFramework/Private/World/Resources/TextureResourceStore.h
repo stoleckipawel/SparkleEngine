@@ -15,9 +15,12 @@ public:
 	    m_generation(generation)
 	{
 	}
+
 	void AppendMaterialReferences(const std::vector<MaterialDesc>& materials);
 	void AppendPaths(std::span<const std::filesystem::path> paths);
+
 	std::uint64_t GetContentRevision() const noexcept { return m_contentRevision; }
+
 	RenderTextureTable CaptureRenderTable() const;
 	RenderTextureTable CaptureRenderTable(std::span<const std::filesystem::path> additionalPaths) const;
 

@@ -155,12 +155,15 @@ UI::Implementation::Implementation(EditorHostServices hostServices) :
 	    .AcknowledgeChanges = std::move(hostServices.AcknowledgeWorldChanges),
 	    .WorldGeneration = std::move(hostServices.WorldGeneration),
 	    .MaterialVariants = std::move(hostServices.MaterialVariants)});
+
 	m_transactionHistory = std::make_unique<EditorTransactionHistory>(std::move(hostServices.SubmitWorldEdit));
 	m_renderPacketBuilder = std::make_unique<ImGuiRenderPacketBuilder>();
+
 	m_renderingSettings = std::make_unique<EngineRenderingSettingsController>(
 	    std::move(hostServices.RenderingSettings),
 	    std::move(hostServices.SubmitRenderingSettings),
 	    std::move(hostServices.CaptureRenderingSettings));
+
 	m_consoleVariables = std::move(hostServices.ConsoleVariables);
 	m_editorConsoleSystem = std::make_unique<EditorConsoleSystem>(m_consoleVariables);
 

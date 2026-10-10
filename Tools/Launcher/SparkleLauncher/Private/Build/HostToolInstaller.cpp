@@ -51,14 +51,13 @@ namespace SparkleLauncher
 			return std::nullopt;
 		}
 
-		const std::string installerArguments = "modify --installPath \"" + toolchain.VisualStudioPath.string() + "\" --add "
-		    + std::string(kClangClVisualStudioCompilerComponent) + " --add " + std::string(kClangClVisualStudioToolsetComponent)
-		    + " --passive --norestart";
+		const std::string installerArguments = "modify --installPath \"" + toolchain.VisualStudioPath.string() + "\" --add " + std::string(kClangClVisualStudioCompilerComponent) + " --add "
+		    + std::string(kClangClVisualStudioToolsetComponent) + " --passive --norestart";
+
 		const std::string script = "$ErrorActionPreference='Stop'; "
 		                           "Write-Output 'Requesting administrator approval for the Visual Studio clang-cl component...'; "
 		                           "$process = Start-Process -FilePath "
-		    + QuotePowerShellLiteral(toolchain.VisualStudioInstallerPath.string()) + " -ArgumentList "
-		    + QuotePowerShellLiteral(installerArguments)
+		    + QuotePowerShellLiteral(toolchain.VisualStudioInstallerPath.string()) + " -ArgumentList " + QuotePowerShellLiteral(installerArguments)
 		    + " -Verb RunAs -Wait -PassThru; "
 		      "if ($process.ExitCode -eq 8006) { throw 'Visual Studio Installer could not continue because Visual Studio or an MSBuild "
 		      "process is running. Close active IDEs and builds, then retry.' }; "
@@ -84,6 +83,7 @@ namespace SparkleLauncher
 		        CanInstallClangCl,
 		        BuildClangClInstallRequest},
 		};
+
 		return definitions;
 	}
 

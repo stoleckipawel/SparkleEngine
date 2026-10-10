@@ -15,13 +15,7 @@ public:
 	static CompareOp GetDepthComparisonFuncEqual() noexcept;
 
 	static DirectX::XMMATRIX CreatePerspectiveFovLH(float fovY, float aspect, float nearZ, float farZ) noexcept;
-	static DirectX::XMMATRIX CreateOrthographicOffCenterLH(
-	    float left,
-	    float right,
-	    float bottom,
-	    float top,
-	    float nearZ,
-	    float farZ) noexcept;
+	static DirectX::XMMATRIX CreateOrthographicOffCenterLH(float left, float right, float bottom, float top, float nearZ, float farZ) noexcept;
 
 	static float LinearizeDepth(float ndcDepth, float nearZ, float farZ) noexcept;
 

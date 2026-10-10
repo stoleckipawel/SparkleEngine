@@ -10,18 +10,10 @@
 #include "Passes/Presentation/Display/ToneMappingShader.h"
 #include "View/RenderView.h"
 
-FrameGraphTextureHandle AddToneMappingPass(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderViewportExtent outputExtent,
-    const RenderFrameGraphResources& resources)
+FrameGraphTextureHandle AddToneMappingPass(FrameGraphBuilder& builder, const RenderFrame& frame, RenderViewportExtent outputExtent, const RenderFrameGraphResources& resources)
 {
 	const FrameGraphTextureHandle toneMappedColor = builder.CreateTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "ToneMappedSceneColor",
-	        outputExtent.Width,
-	        outputExtent.Height,
-	        RenderFrameGraphFormats::SceneColor));
+	    FrameGraphTextureDesc::CreateColor("ToneMappedSceneColor", outputExtent.Width, outputExtent.Height, RenderFrameGraphFormats::SceneColor));
 
 	auto& parameters = builder.AllocParameters<ToneMappingCS>();
 	parameters->SceneColor = builder.CreateSRV(resources.Presentation.ResolvedSceneColor);
@@ -30,9 +22,7 @@ FrameGraphTextureHandle AddToneMappingPass(
 
 	parameters->ToneMapper = static_cast<std::uint32_t>(frame.View.displaySettings.ToneMapper);
 
-	builder.Dispatch<ToneMappingCS>(
-	    parameters,
-	    ComputeDispatchDesc{MathUtils::DivideRoundUp(outputExtent.Width, 8u), MathUtils::DivideRoundUp(outputExtent.Height, 8u), 1u});
+	builder.Dispatch<ToneMappingCS>(parameters, ComputeDispatchDesc{MathUtils::DivideRoundUp(outputExtent.Width, 8u), MathUtils::DivideRoundUp(outputExtent.Height, 8u), 1u});
 
 	return toneMappedColor;
 }

@@ -26,10 +26,7 @@ struct FrameHistoryResourceLayout final
 };
 
 FrameHistoryResourceLayout DeclareFrameHistoryResources(FrameGraphBuilder& builder);
-FrameGraphReservoirHistoryHandles DeclareLightingReservoirHistory(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent renderExtent,
-    std::string_view name);
+FrameGraphReservoirHistoryHandles DeclareLightingReservoirHistory(FrameGraphBuilder& builder, RenderViewportExtent renderExtent, std::string_view name);
 
 void InvalidateFrameHistory(FrameGraph& frameGraph, const FrameHistoryResourceLayout& history) noexcept;
 void InvalidateRestirLightingHistory(FrameGraph& frameGraph, const FrameHistoryResourceLayout& history) noexcept;

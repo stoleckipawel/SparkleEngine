@@ -20,9 +20,6 @@ struct EditorCommandPair final
 class SceneObjectCommandFactory final
 {
 public:
-	static std::optional<EditorCommandPair> SetVisibility(
-	    const EditorSceneModel& model,
-	    const SceneObjectSelection& selection,
-	    bool visible);
+	static std::optional<EditorCommandPair> SetVisibility(const EditorSceneModel& model, const SceneObjectSelection& selection, bool visible);
 	static std::optional<EditorCommandPair> SetActiveCamera(const EditorSceneModel& model, EntityId camera);
 };

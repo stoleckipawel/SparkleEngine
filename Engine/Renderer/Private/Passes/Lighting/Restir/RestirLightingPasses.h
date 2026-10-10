@@ -8,9 +8,4 @@ struct RenderFrame;
 class FrameGraphBuilder;
 class RenderRayTracingScene;
 
-void AddRestirLightingPasses(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderViewportExtent sceneExtent,
-    RenderRayTracingScene& rayTracingScene,
-    RenderFrameGraphResources& resources);
+void AddRestirLightingPasses(FrameGraphBuilder& builder, const RenderFrame& frame, RenderViewportExtent sceneExtent, RenderRayTracingScene& rayTracingScene, RenderFrameGraphResources& resources);

@@ -4,11 +4,7 @@
 
 TaskExecutionContext::TaskExecutionContext() noexcept = default;
 
-void TaskExecutionContextBinding::Bind(
-    TaskExecutionContext& context,
-    std::uint64_t generation,
-    TaskLane lane,
-    std::stop_token cancellation) noexcept
+void TaskExecutionContextBinding::Bind(TaskExecutionContext& context, std::uint64_t generation, TaskLane lane, std::stop_token cancellation) noexcept
 {
 	context.m_executionGeneration = generation;
 	context.m_lane = lane;

@@ -59,10 +59,7 @@ void FrameGraphRecordingPlanCompiler::BuildGroups()
 	}
 }
 
-void FrameGraphRecordingPlanCompiler::BuildGroup(
-    FrameGraphSubmissionBatch& batch,
-    FrameGraphPassIndex passIndex,
-    std::uint32_t submissionPosition)
+void FrameGraphRecordingPlanCompiler::BuildGroup(FrameGraphSubmissionBatch& batch, FrameGraphPassIndex passIndex, std::uint32_t submissionPosition)
 {
 	assert(passIndex < m_plan.passes.size());
 	const FrameGraphPassNode& pass = m_plan.passes[passIndex];
@@ -73,8 +70,7 @@ void FrameGraphRecordingPlanCompiler::BuildGroup(
 	    .PassOffset = static_cast<std::uint32_t>(m_plan.recording.Passes.size()),
 	    .PassCount = 1,
 	    .Queue = batch.queue,
-	    .ContextRequirement = serialReason == RecordingSerialIslandReason::None ? RecordingContextRequirement::ExclusiveLease
-	                                                                            : RecordingContextRequirement::Coordinator,
+	    .ContextRequirement = serialReason == RecordingSerialIslandReason::None ? RecordingContextRequirement::ExclusiveLease : RecordingContextRequirement::Coordinator,
 	    .EstimatedRecordingCost = EstimateRecordingCost(pass),
 	    .SubmissionOrder = SubmissionOrderKey{.Batch = batch.index, .Position = submissionPosition},
 	    .SerialIslandReason = serialReason};
@@ -96,8 +92,7 @@ void FrameGraphRecordingPlanCompiler::BuildGroupStateContract(RecordingGroup& gr
 		}
 
 		assert(declaration.handle.index < m_resourceStates.size());
-		group.InitialResourceStates.push_back(
-		    RecordingResourceState{.Resource = declaration.handle, .State = m_resourceStates[declaration.handle.index]});
+		group.InitialResourceStates.push_back(RecordingResourceState{.Resource = declaration.handle, .State = m_resourceStates[declaration.handle.index]});
 	}
 
 	ApplyBarriers(pass.compiledBarriers);
@@ -105,8 +100,7 @@ void FrameGraphRecordingPlanCompiler::BuildGroupStateContract(RecordingGroup& gr
 
 	for (const RecordingResourceState& initialState : group.InitialResourceStates)
 	{
-		group.FinalResourceStates.push_back(
-		    RecordingResourceState{.Resource = initialState.Resource, .State = m_resourceStates[initialState.Resource.index]});
+		group.FinalResourceStates.push_back(RecordingResourceState{.Resource = initialState.Resource, .State = m_resourceStates[initialState.Resource.index]});
 	}
 }
 
@@ -122,8 +116,7 @@ void FrameGraphRecordingPlanCompiler::BuildGroupPrerequisites()
 		{
 			assert(dependency < m_passToGroup.size());
 			const RecordingGroupIndex prerequisite = m_passToGroup[dependency];
-			if (prerequisite != InvalidRecordingGroupIndex && prerequisite != group.Index
-			    && !ContainsGroup(group.Prerequisites, prerequisite))
+			if (prerequisite != InvalidRecordingGroupIndex && prerequisite != group.Index && !ContainsGroup(group.Prerequisites, prerequisite))
 			{
 				group.Prerequisites.push_back(prerequisite);
 			}
@@ -188,6 +181,7 @@ void FrameGraphRecordingPlanCompiler::CollapseBatchChunks(FrameGraphSubmissionBa
 	}
 
 	m_plan.recording.Chunks.resize(firstChunk);
+
 	m_plan.recording.Chunks.push_back(
 	    RecordingChunk{
 	        .Index = firstChunk,
@@ -235,8 +229,7 @@ bool FrameGraphRecordingPlanCompiler::CanAppendToChunk(const RecordingChunk& chu
 		return false;
 	}
 
-	return chunk.ContextRequirement == RecordingContextRequirement::Coordinator
-	    || chunk.EstimatedRecordingCost < RecordingPlan::TargetParallelChunkCost;
+	return chunk.ContextRequirement == RecordingContextRequirement::Coordinator || chunk.EstimatedRecordingCost < RecordingPlan::TargetParallelChunkCost;
 }
 
 RecordingSerialIslandReason FrameGraphRecordingPlanCompiler::ResolveSerialIslandReason(const FrameGraphPassNode& pass) const noexcept
@@ -256,8 +249,8 @@ RecordingSerialIslandReason FrameGraphRecordingPlanCompiler::ResolveSerialIsland
 
 std::uint32_t FrameGraphRecordingPlanCompiler::EstimateRecordingCost(const FrameGraphPassNode& pass) const noexcept
 {
-	return 1u + static_cast<std::uint32_t>(pass.declarations.size()) + static_cast<std::uint32_t>(pass.transientAliasingBarriers.size())
-	    + static_cast<std::uint32_t>(pass.compiledBarriers.size()) + static_cast<std::uint32_t>(pass.compiledReleaseBarriers.size());
+	return 1u + static_cast<std::uint32_t>(pass.declarations.size()) + static_cast<std::uint32_t>(pass.transientAliasingBarriers.size()) + static_cast<std::uint32_t>(pass.compiledBarriers.size())
+	    + static_cast<std::uint32_t>(pass.compiledReleaseBarriers.size());
 }
 
 bool FrameGraphRecordingPlanCompiler::WritesPresentationResource(const FrameGraphPassNode& pass) const noexcept
@@ -289,13 +282,7 @@ bool FrameGraphRecordingPlanCompiler::ContainsGroup(const std::vector<RecordingG
 	return std::find(groups.begin(), groups.end(), group) != groups.end();
 }
 
-bool FrameGraphRecordingPlanCompiler::ContainsResource(
-    const std::vector<RecordingResourceState>& states,
-    FrameGraphResourceHandle resource) noexcept
+bool FrameGraphRecordingPlanCompiler::ContainsResource(const std::vector<RecordingResourceState>& states, FrameGraphResourceHandle resource) noexcept
 {
-	return std::find_if(
-	           states.begin(),
-	           states.end(),
-	           [resource](const RecordingResourceState& state) { return state.Resource == resource; })
-	    != states.end();
+	return std::find_if(states.begin(), states.end(), [resource](const RecordingResourceState& state) { return state.Resource == resource; }) != states.end();
 }

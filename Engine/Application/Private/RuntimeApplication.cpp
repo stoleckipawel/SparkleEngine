@@ -120,8 +120,7 @@ void RuntimeApplication::InitializeGameRuntime()
 	m_cameraInputIntentCollector = std::make_unique<CameraInputIntentCollector>(*m_inputSystem, *m_window);
 
 	m_levelSession = std::make_unique<LevelSession>(*m_gameWorld, m_taskRuntime->GetExecutor(), m_taskRuntime->GetApplicationScope());
-	m_levelSession->GetLevelChangeEvents().OnLevelChanged.Add(
-	    [](const LevelChangedEventArgs& event) noexcept { Process::SignalParentReadiness(event.activeLevelName); });
+	m_levelSession->GetLevelChangeEvents().OnLevelChanged.Add([](const LevelChangedEventArgs& event) noexcept { Process::SignalParentReadiness(event.activeLevelName); });
 }
 
 void RuntimeApplication::InitializeRenderer()
@@ -153,10 +152,7 @@ void RuntimeApplication::InitializeRuntimeConsole()
 {
 	if (m_options.EnableRuntimeConsole)
 	{
-		m_runtimeConsoleHost = std::make_unique<RuntimeConsoleHost>(
-		    *m_timer,
-		    *m_window,
-		    [this](CVarControlRequest request) { return m_renderer->ExecuteConsoleVariables(std::move(request)); });
+		m_runtimeConsoleHost = std::make_unique<RuntimeConsoleHost>(*m_timer, *m_window, [this](CVarControlRequest request) { return m_renderer->ExecuteConsoleVariables(std::move(request)); });
 	}
 }
 
@@ -209,9 +205,7 @@ void RuntimeApplication::UpdateEditorRuntime(const RenderViewCameraData& renderC
 	UpdateRuntimeFrame(nullptr, &renderCamera);
 }
 
-void RuntimeApplication::UpdateRuntimeFrame(
-    const CameraInputIntent* worldCameraIntent,
-    const RenderViewCameraData* renderCameraOverride) noexcept
+void RuntimeApplication::UpdateRuntimeFrame(const CameraInputIntent* worldCameraIntent, const RenderViewCameraData* renderCameraOverride) noexcept
 {
 	if (m_gameWorld && m_timer)
 	{

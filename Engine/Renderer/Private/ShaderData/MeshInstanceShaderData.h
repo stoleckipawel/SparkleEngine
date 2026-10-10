@@ -21,6 +21,7 @@ struct MeshInstanceData
 	uint32_t GpuSceneSlot = 0;
 	uint32_t Reserved = 0;
 };
+
 static_assert(std::is_standard_layout_v<MeshInstanceData>, "MeshInstanceData must be standard-layout");
 static_assert(std::is_trivially_copyable_v<MeshInstanceData>, "MeshInstanceData must be trivially-copyable");
 static_assert(sizeof(MeshInstanceData) == 272, "MeshInstanceData must match the HLSL structured-buffer stride");
@@ -37,6 +38,7 @@ struct VertexSkinInfluenceData
 	DirectX::XMFLOAT4 JointWeights0 = {0.0f, 0.0f, 0.0f, 0.0f};
 	DirectX::XMFLOAT4 JointWeights1 = {0.0f, 0.0f, 0.0f, 0.0f};
 };
+
 static_assert(std::is_standard_layout_v<VertexSkinInfluenceData>, "VertexSkinInfluenceData must be standard-layout");
 static_assert(std::is_trivially_copyable_v<VertexSkinInfluenceData>, "VertexSkinInfluenceData must be trivially-copyable");
 static_assert(sizeof(VertexSkinInfluenceData) == 64, "VertexSkinInfluenceData must match the HLSL structured-buffer stride");
@@ -45,6 +47,7 @@ struct JointMatrixData
 {
 	DirectX::XMFLOAT4X4 Matrix;
 };
+
 static_assert(std::is_standard_layout_v<JointMatrixData>, "JointMatrixData must be standard-layout");
 static_assert(std::is_trivially_copyable_v<JointMatrixData>, "JointMatrixData must be trivially-copyable");
 static_assert(sizeof(JointMatrixData) == 64, "JointMatrixData must match the HLSL structured-buffer stride");

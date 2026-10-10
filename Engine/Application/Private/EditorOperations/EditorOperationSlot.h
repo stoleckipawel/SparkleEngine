@@ -19,8 +19,7 @@ public:
 	{
 	}
 
-	template <typename TOperation>
-	bool Start(TaskName taskName, std::string_view activeMessage, TOperation operation, std::string& errorMessage) noexcept
+	template <typename TOperation> bool Start(TaskName taskName, std::string_view activeMessage, TOperation operation, std::string& errorMessage) noexcept
 	{
 		if (m_execution.IsValid())
 		{
@@ -32,9 +31,7 @@ public:
 			m_result = std::make_shared<TResult>();
 			const auto result = m_result;
 			TaskGraphBuilder graph;
-			graph.Add(
-			    TaskDesc{std::move(taskName), TaskLane::BlockingIo},
-			    [operation = std::move(operation), result](TaskExecutionContext& context) mutable { return operation(*result, context); });
+			graph.Add(TaskDesc{std::move(taskName), TaskLane::BlockingIo}, [operation = std::move(operation), result](TaskExecutionContext& context) mutable { return operation(*result, context); });
 			m_execution = m_runtime.GetExecutor().Launch(m_runtime.GetScope(), graph.Compile());
 			errorMessage.clear();
 			return true;

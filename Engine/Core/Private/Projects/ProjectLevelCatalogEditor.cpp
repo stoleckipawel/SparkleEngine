@@ -12,20 +12,12 @@
 #include <unordered_set>
 #include <utility>
 
-bool ProjectLevelCatalogEditor::SetLevelSelected(
-    const std::filesystem::path& projectRoot,
-    std::string_view levelId,
-    bool selected,
-    std::string& outErrorMessage)
+bool ProjectLevelCatalogEditor::SetLevelSelected(const std::filesystem::path& projectRoot, std::string_view levelId, bool selected, std::string& outErrorMessage)
 {
 	return SetLevelsSelected(projectRoot, {std::string(levelId)}, selected, outErrorMessage);
 }
 
-bool ProjectLevelCatalogEditor::SetLevelsSelected(
-    const std::filesystem::path& projectRoot,
-    const std::vector<std::string>& levelIds,
-    bool selected,
-    std::string& outErrorMessage)
+bool ProjectLevelCatalogEditor::SetLevelsSelected(const std::filesystem::path& projectRoot, const std::vector<std::string>& levelIds, bool selected, std::string& outErrorMessage)
 {
 	ProjectLevelCatalogEditor editor(projectRoot / "Levels.catalog", levelIds, selected);
 	return editor.Apply(outErrorMessage);

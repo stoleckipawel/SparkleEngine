@@ -78,10 +78,7 @@ namespace TextureCookPipeline
 		return processedTexture;
 	}
 
-	static TextureLoadResult BuildCompressedTexture(
-	    const TextureCookRequest& request,
-	    const WorkingTexture& workingTexture,
-	    CompressionTarget target)
+	static TextureLoadResult BuildCompressedTexture(const TextureCookRequest& request, const WorkingTexture& workingTexture, CompressionTarget target)
 	{
 		const DXGI_FORMAT outputFormat = ResolveCompressedOutputFormat(request, workingTexture, target);
 		const bool srgbOutput = ResolveFormatIntent(outputFormat) == TextureFormatIntent::ColorSrgb;

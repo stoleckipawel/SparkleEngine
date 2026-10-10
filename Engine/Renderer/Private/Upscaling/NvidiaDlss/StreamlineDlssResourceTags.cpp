@@ -6,10 +6,7 @@
 
   #include <array>
 
-sl::Result TagDlssResourcesForFrame(
-    const sl::FrameToken& frameToken,
-    sl::ViewportHandle viewport,
-    const UpscalerEvaluationDesc& evaluation) noexcept
+sl::Result TagDlssResourcesForFrame(const sl::FrameToken& frameToken, sl::ViewportHandle viewport, const UpscalerEvaluationDesc& evaluation) noexcept
 {
 	sl::Extent renderExtent = BuildStreamlineExtent(evaluation.RenderExtent);
 	sl::Extent outputExtent = BuildStreamlineExtent(evaluation.OutputExtent);

@@ -49,10 +49,7 @@ public:
 	RayTracingBlasCache& operator=(RayTracingBlasCache&&) = delete;
 
 	void BeginFrame() noexcept;
-	BlasHandle EnsureBlas(
-	    RenderCommandContext& commandContext,
-	    const GpuMesh& gpuMesh,
-	    RayTracingPerformanceDiagnostics* diagnostics = nullptr) noexcept;
+	BlasHandle EnsureBlas(RenderCommandContext& commandContext, const GpuMesh& gpuMesh, RayTracingPerformanceDiagnostics* diagnostics = nullptr) noexcept;
 	BlasHandle EnsureBlas(
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,
@@ -89,11 +86,7 @@ private:
 	};
 
 	void ReleaseEntryResources(Entry& entry) noexcept;
-	BlasHandle BuildBlas(
-	    RenderCommandContext& commandContext,
-	    const RhiRayTracingGeometryDesc& geometry,
-	    Entry& entry,
-	    RayTracingPerformanceDiagnostics* diagnostics) noexcept;
+	BlasHandle BuildBlas(RenderCommandContext& commandContext, const RhiRayTracingGeometryDesc& geometry, Entry& entry, RayTracingPerformanceDiagnostics* diagnostics) noexcept;
 	BlasHandle EnsureSkinnedBlas(
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,
@@ -102,10 +95,7 @@ private:
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept;
 	RhiRayTracingGeometryDesc BuildSkinnedGeometry(const PreparedRenderScene& preparedScene, const MeshDraw& draw, Entry& entry) noexcept;
 	void ReplaceDynamicVertexBuffer(std::span<const DirectX::XMFLOAT3> positions, Entry& entry) noexcept;
-	RhiRayTracingGeometryDesc BuildSkinnedGeometryDesc(
-	    const GpuMesh& gpuMesh,
-	    const Entry& entry,
-	    std::uint32_t vertexCount) const noexcept;
+	RhiRayTracingGeometryDesc BuildSkinnedGeometryDesc(const GpuMesh& gpuMesh, const Entry& entry, std::uint32_t vertexCount) const noexcept;
 	void EnsureEntryResources(const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo, Entry& entry) noexcept;
 	void TrackBuildResources(RenderCommandContext& commandContext, const Entry& entry) const noexcept;
 	bool GeometryMatches(const Entry& entry, const RhiRayTracingGeometryDesc& geometry) const noexcept;

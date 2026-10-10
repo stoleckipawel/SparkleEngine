@@ -15,8 +15,7 @@ namespace Assets
 		{
 			SceneAssetPayloadMeshBinding& binding = bindings.emplace_back();
 			binding.kind = meshReference.meshAssetKind;
-			binding.payloadMeshAssetIndex =
-			    meshReference.meshAssetKind == CookedMeshAssetKind::Skeletal ? skeletalMeshIndex++ : staticMeshIndex++;
+			binding.payloadMeshAssetIndex = meshReference.meshAssetKind == CookedMeshAssetKind::Skeletal ? skeletalMeshIndex++ : staticMeshIndex++;
 		}
 
 		return bindings;

@@ -7,11 +7,7 @@
 
 #include <format>
 
-ImportedMaterialIndex GltfPrimitiveMaterialResolver::Resolve(
-    const cgltf_primitive& primitive,
-    const cgltf_data* data,
-    std::string_view primitiveLabel,
-    SourceImportOutput& output)
+ImportedMaterialIndex GltfPrimitiveMaterialResolver::Resolve(const cgltf_primitive& primitive, const cgltf_data* data, std::string_view primitiveLabel, SourceImportOutput& output)
 {
 	if (!primitive.material || output.scene.materials.empty())
 	{

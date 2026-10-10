@@ -10,6 +10,7 @@
 #include <cstdint>
 
 struct MaterialDesc;
+
 namespace MaterialTextureSlots
 {
 	constexpr std::uint32_t BaseColor = 0;
@@ -48,6 +49,7 @@ struct MaterialData
 	float alphaCutoff = 0.5f;
 	std::uint32_t textureFlags = 0;
 	bool doubleSided = false;
+
 	std::array<std::uint32_t, MaterialTextureSlots::Count> materialTextureIndices = {
 	    InvalidMaterialTextureIndex,
 	    InvalidMaterialTextureIndex,
@@ -57,6 +59,7 @@ struct MaterialData
 	    InvalidMaterialTextureIndex,
 	    InvalidMaterialTextureIndex,
 	    InvalidMaterialTextureIndex};
+
 	std::array<MaterialTextureMappingData, MaterialTextureSlots::Count> materialTextureMappings = {};
 
 	RhiDescriptorTableBinding rasterTextureTable = {};

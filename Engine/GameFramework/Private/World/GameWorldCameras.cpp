@@ -35,12 +35,12 @@ namespace ECS
 
 		Transform transform(entry.desc.position, {entry.desc.pitchRadians, entry.desc.yawRadians, 0.0f});
 		const LocalTransform local = WorldTransformConversion::ToLocal(transform);
+
 		const bool added = m_registry.Add(entity, local) && m_registry.Add(entity, WorldTransform{})
-		    && m_registry.Add(entity, CameraComponentTranslation::ToCameraData(entry.desc, 16.0f / 9.0f, active))
-		    && m_registry.Add(entity, CameraDerivedState{}) && m_registry.Add(entity, Visibility{})
-		    && m_registry.Add(entity, Name{std::move(entry.name)})
-		    && m_registry.Add(entity, AuthoredIdentity{.SourceObjectId = ++m_nextCameraIdentity, .Kind = AuthoredObjectKind::Camera})
-		    && m_registry.Add(entity, EditorMetadata{});
+		    && m_registry.Add(entity, CameraComponentTranslation::ToCameraData(entry.desc, 16.0f / 9.0f, active)) && m_registry.Add(entity, CameraDerivedState{})
+		    && m_registry.Add(entity, Visibility{}) && m_registry.Add(entity, Name{std::move(entry.name)})
+		    && m_registry.Add(entity, AuthoredIdentity{.SourceObjectId = ++m_nextCameraIdentity, .Kind = AuthoredObjectKind::Camera}) && m_registry.Add(entity, EditorMetadata{});
+
 		if (!added)
 		{
 			m_registry.Destroy(entity);
@@ -61,10 +61,12 @@ namespace ECS
 	{
 		return Count<Camera>();
 	}
+
 	EntityId GameWorldState::GetCameraEntity(std::size_t index) const noexcept
 	{
 		return EntityAt<Camera>(index);
 	}
+
 	bool GameWorldState::IsCamera(EntityId entity) const noexcept
 	{
 		return m_registry.Get<Camera>(entity) != nullptr;
@@ -131,8 +133,7 @@ namespace ECS
 			return false;
 		}
 		Transform transform(desc.position, {desc.pitchRadians, desc.yawRadians, 0.0f});
-		const bool written = WriteTransform(entity, transform)
-		    && m_registry.Replace(entity, CameraComponentTranslation::ToCameraData(desc, existing->AspectRatio, existing->Active));
+		const bool written = WriteTransform(entity, transform) && m_registry.Replace(entity, CameraComponentTranslation::ToCameraData(desc, existing->AspectRatio, existing->Active));
 		if (written)
 		{
 			RecordChange(entity, WorldChangeKind::ValueChanged, WorldDataKind::Camera);

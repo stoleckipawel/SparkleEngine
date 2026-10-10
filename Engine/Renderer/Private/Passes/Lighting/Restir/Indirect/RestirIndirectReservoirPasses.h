@@ -6,7 +6,4 @@
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
 
-RestirIndirectWorkingReservoirs AddRestirIndirectReservoirPasses(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources);
+RestirIndirectWorkingReservoirs AddRestirIndirectReservoirPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources);

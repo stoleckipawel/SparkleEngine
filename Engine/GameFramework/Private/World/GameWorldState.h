@@ -45,8 +45,11 @@ namespace ECS
 	{
 	public:
 		GameWorldState();
+
 		bool IsAlive(EntityId entity) const noexcept { return m_registry.IsAlive(entity); }
+
 		std::size_t GetEntityCount() const noexcept { return m_registry.GetLiveCount(); }
+
 		bool Destroy(EntityId entity) noexcept;
 
 		EntityId AddCamera(SceneCameraEntry&& entry, bool active = false);
@@ -55,7 +58,9 @@ namespace ECS
 		bool IsCamera(EntityId entity) const noexcept;
 		std::optional<SceneCameraEntry> ReadCamera(EntityId entity) const;
 		bool SetActiveCamera(EntityId entity) noexcept;
+
 		EntityId GetActiveCamera() const noexcept { return m_activeCamera; }
+
 		bool WriteCameraDesc(EntityId entity, const CameraDesc& desc) noexcept;
 		float ReadCameraAspectRatio(EntityId entity) const noexcept;
 		bool WriteCameraAspectRatio(EntityId entity, float aspectRatio) noexcept;
@@ -75,8 +80,11 @@ namespace ECS
 		Assets::CookedAssetId ReadSkeletonAssetId(EntityId entity) const noexcept;
 		std::uint32_t ReadMeshSourceNodeIndex(EntityId entity) const noexcept;
 		void AppendMeshInstanceGroups(std::vector<SceneMeshInstanceGroupData> groups);
+
 		std::size_t GetMeshInstanceGroupCount() const noexcept { return m_meshInstanceGroups.size(); }
+
 		std::span<const WorldExtractionStorage::MeshSlot> GetExtractedMeshes() const noexcept { return m_extraction.GetExtractedMeshes(); }
+
 		std::span<const SceneMeshInstanceGroupData> GetExtractedMeshGroups() const noexcept { return m_extraction.GetMeshGroups(); }
 
 		EntityId AddLight(SceneLightDesc&& desc);
@@ -86,16 +94,16 @@ namespace ECS
 		bool WriteLight(EntityId entity, SceneLightDesc&& desc);
 		std::vector<SceneLightDesc> CaptureLightsToDesc() const;
 
-		void AppendAnimationClips(
-		    std::vector<AnimationClipResource> clips,
-		    AnimationClipResourceStore& resources,
-		    std::uint64_t sourceInstanceId);
+		void AppendAnimationClips(std::vector<AnimationClipResource> clips, AnimationClipResourceStore& resources, std::uint64_t sourceInstanceId);
 		bool PrepareSystemResources(GameWorldResourceStores& resources);
 		bool ExecuteSystems(const GameWorldSystemExecutionContext& context);
+
 		const AnimationOutput& GetAnimationOutput() const noexcept { return m_animationOutput.GetOutput(); }
 
 		std::optional<SkyEnvironment> ReadSkyEnvironment() const { return m_skyEnvironment; }
+
 		bool HasSkyEnvironment() const noexcept { return m_skyEnvironment.has_value(); }
+
 		void WriteSkyEnvironment(SkyEnvironment environment) noexcept;
 		void RemoveSkyEnvironment() noexcept;
 		void NotifyResourceChanged(WorldDataKind data) noexcept;
@@ -131,6 +139,7 @@ namespace ECS
 		WorldCameraReadData BuildCameraReadData(EntityId entity) const;
 		WorldLightReadData BuildLightReadData(EntityId entity) const;
 		WorldMeshReadData BuildMeshReadData(EntityId entity) const;
+
 		template <typename T> std::size_t Count() const noexcept
 		{
 			const ComponentStorage<T>* storage = m_registry.FindStorage<T>();

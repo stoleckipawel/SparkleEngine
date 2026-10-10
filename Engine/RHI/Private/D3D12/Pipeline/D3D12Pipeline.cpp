@@ -166,6 +166,7 @@ public:
 				}
 			}
 			assert(binding != nullptr && "Neutral graphics pipeline validation must reject missing vertex bindings.");
+
 			result.push_back(
 			    D3D12_INPUT_ELEMENT_DESC{
 			        ToD3D12Semantic(element.Semantic),
@@ -198,10 +199,7 @@ public:
 			    g_pipelineLogger,
 			    __FILE__,
 			    __LINE__,
-			    std::format(
-			        "Pipeline '{}' received non-DXIL code for shader stage '{}'",
-			        pipelineName,
-			        GetShaderStagePrefix(shader.Entry->Stage)));
+			    std::format("Pipeline '{}' received non-DXIL code for shader stage '{}'", pipelineName, GetShaderStagePrefix(shader.Entry->Stage)));
 		}
 
 		const ShaderBytecode bytecode = shader.GetBytecode();
@@ -211,10 +209,7 @@ public:
 			    g_pipelineLogger,
 			    __FILE__,
 			    __LINE__,
-			    std::format(
-			        "Pipeline '{}' has invalid cooked shader bytecode for stage '{}'",
-			        pipelineName,
-			        GetShaderStagePrefix(shader.Entry->Stage)));
+			    std::format("Pipeline '{}' has invalid cooked shader bytecode for stage '{}'", pipelineName, GetShaderStagePrefix(shader.Entry->Stage)));
 		}
 
 		ResolvedD3D12ShaderStage resolved{};
@@ -241,10 +236,7 @@ void D3D12Pipeline::SetRasterizerState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDe
 	rs.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 }
 
-void D3D12Pipeline::SetRenderTargetBlendState(
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc,
-    const RhiBlendState& blend,
-    std::uint32_t colorAttachmentCount) noexcept
+void D3D12Pipeline::SetRenderTargetBlendState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, const RhiBlendState& blend, std::uint32_t colorAttachmentCount) noexcept
 {
 	psoDesc.BlendState = {};
 	psoDesc.BlendState.AlphaToCoverageEnable = blend.AlphaToCoverageEnable ? TRUE : FALSE;
@@ -308,10 +300,8 @@ void D3D12Pipeline::Create(const GraphicsPipelineDesc& desc)
 	RhiContract::ValidateGraphicsPipelineDesc(desc);
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 	const std::string pipelineName = desc.DebugName != nullptr ? Strings::ToNarrow(desc.DebugName) : "RHI_GraphicsPipeline";
-	const D3D12PipelineImplementation::ResolvedD3D12ShaderStage vertexShader =
-	    D3D12PipelineImplementation::ResolveD3D12ShaderStage(desc.VertexShader, pipelineName);
-	const D3D12PipelineImplementation::ResolvedD3D12ShaderStage pixelShader =
-	    D3D12PipelineImplementation::ResolveD3D12ShaderStage(desc.PixelShader, pipelineName);
+	const D3D12PipelineImplementation::ResolvedD3D12ShaderStage vertexShader = D3D12PipelineImplementation::ResolveD3D12ShaderStage(desc.VertexShader, pipelineName);
+	const D3D12PipelineImplementation::ResolvedD3D12ShaderStage pixelShader = D3D12PipelineImplementation::ResolveD3D12ShaderStage(desc.PixelShader, pipelineName);
 
 	const std::vector<D3D12_INPUT_ELEMENT_DESC> vertexLayout = D3D12PipelineImplementation::BuildVertexInput(desc.VertexInput);
 	psoDesc.InputLayout.NumElements = static_cast<UINT>(vertexLayout.size());
@@ -362,8 +352,7 @@ void D3D12Pipeline::Create(const ComputePipelineDesc& desc)
 	RhiContract::ValidateComputePipelineDesc(desc);
 	D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
 	const std::string pipelineName = desc.DebugName != nullptr ? Strings::ToNarrow(desc.DebugName) : "RHI_ComputePipeline";
-	const D3D12PipelineImplementation::ResolvedD3D12ShaderStage computeShader =
-	    D3D12PipelineImplementation::ResolveD3D12ShaderStage(desc.ComputeShader, pipelineName);
+	const D3D12PipelineImplementation::ResolvedD3D12ShaderStage computeShader = D3D12PipelineImplementation::ResolveD3D12ShaderStage(desc.ComputeShader, pipelineName);
 	const auto* bindingLayout = static_cast<const D3D12BindingLayout*>(desc.BindingLayout);
 	psoDesc.pRootSignature = bindingLayout != nullptr ? bindingLayout->GetRootSignature().GetRaw() : nullptr;
 	psoDesc.CS = computeShader.Bytecode;

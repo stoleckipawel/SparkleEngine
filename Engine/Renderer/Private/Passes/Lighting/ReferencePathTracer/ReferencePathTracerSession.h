@@ -24,10 +24,7 @@ struct ViewportFrameProducts;
 class ReferencePathTracerSession final
 {
 public:
-	ReferencePathTracerSession(
-	    RenderDeviceServices& deviceServices,
-	    RendererMemoryMonitor& memoryMonitor,
-	    RenderRayTracingScene& rayTracingScene) noexcept;
+	ReferencePathTracerSession(RenderDeviceServices& deviceServices, RendererMemoryMonitor& memoryMonitor, RenderRayTracingScene& rayTracingScene) noexcept;
 
 	bool PrepareFrame(const RenderFrame& frame, ViewportRenderAction action, std::uint64_t actionSequence) noexcept;
 	void PublishFrameProducts(ViewportFrameProducts& products) const noexcept;
@@ -51,13 +48,11 @@ private:
 
 	static constexpr std::uint32_t WorkRowsPerDispatch = 32u;
 
-	void Update(
-	    const RenderFrame& frame,
-	    ViewportRenderAction action,
-	    std::uint64_t actionSequence,
-	    RayTracingExecutionFrontend executionFrontend) noexcept;
+	void Update(const RenderFrame& frame, ViewportRenderAction action, std::uint64_t actionSequence, RayTracingExecutionFrontend executionFrontend) noexcept;
 	void ReserveGraphResources(FrameGraphBuilder& builder, RenderViewportExtent extent);
+
 	const ReferencePathTracerGraphResources& GetGraphResources() const noexcept { return m_resources.GetGraphResources(); }
+
 	bool BindResources(FrameGraphBuilder& builder) const noexcept;
 
 	const ReferencePathTracerWork& GetWork() const noexcept { return m_work; }
@@ -73,15 +68,8 @@ private:
 		explicit operator bool() const noexcept { return Submission.IsValid(); }
 	};
 
-	ViewportRenderProgressReason ResolveAvailability(
-	    const RenderView& view,
-	    const PreparedRenderScene& scene,
-	    RayTracingExecutionFrontend executionFrontend) const noexcept;
-	void BeginIdentity(
-	    const ReferencePathTracerIdentity& identity,
-	    RenderViewportExtent extent,
-	    ViewportRenderProgressReason reason,
-	    std::uint32_t discardedSamples) noexcept;
+	ViewportRenderProgressReason ResolveAvailability(const RenderView& view, const PreparedRenderScene& scene, RayTracingExecutionFrontend executionFrontend) const noexcept;
+	void BeginIdentity(const ReferencePathTracerIdentity& identity, RenderViewportExtent extent, ViewportRenderProgressReason reason, std::uint32_t discardedSamples) noexcept;
 	void UpdateIdentity(const RenderFrame& frame, RayTracingExecutionFrontend executionFrontend) noexcept;
 	void CompletePendingCommit() noexcept;
 	void PrepareWork(RenderViewportExtent extent) noexcept;

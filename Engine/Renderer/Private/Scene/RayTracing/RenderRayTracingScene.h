@@ -24,10 +24,7 @@ struct RayTracingPtlasPartitionPlan;
 class RenderRayTracingScene final
 {
 public:
-	RenderRayTracingScene(
-	    RenderHardwareInterface& renderHardwareInterface,
-	    const GpuMeshCache& meshes,
-	    const RayTracingCapabilityReport& capabilityReport) noexcept;
+	RenderRayTracingScene(RenderHardwareInterface& renderHardwareInterface, const GpuMeshCache& meshes, const RayTracingCapabilityReport& capabilityReport) noexcept;
 	~RenderRayTracingScene() noexcept;
 
 	RenderRayTracingScene(const RenderRayTracingScene&) = delete;
@@ -36,17 +33,16 @@ public:
 	RenderRayTracingScene& operator=(RenderRayTracingScene&&) = delete;
 
 	RenderRayTracingFrameBindings Prepare(const PreparedRenderScene& preparedScene, const RayTracingPtlasPartitionPlan& viewPlan) noexcept;
-	void Build(
-	    RenderCommandContext& commandContext,
-	    const PreparedRenderScene& preparedScene,
-	    const RayTracingPtlasPartitionPlan& viewPlan,
-	    PassExecutionDiagnostics* diagnostics = nullptr) noexcept;
+	void Build(RenderCommandContext& commandContext, const PreparedRenderScene& preparedScene, const RayTracingPtlasPartitionPlan& viewPlan, PassExecutionDiagnostics* diagnostics = nullptr) noexcept;
 	void Clear() noexcept;
 	void SynchronizeShaderTablePlan(std::span<const RenderPrimitive> primitives, const RenderMaterialTable& materials) noexcept;
 
 	bool IsAvailable() const noexcept { return m_capabilityReport.SupportsAccelerationStructure; }
+
 	bool HasValidTlas() const noexcept;
+
 	RayTracingExecutionFrontend GetExecutionFrontend() const noexcept { return m_executionFrontend; }
+
 	void BeginGraphBuild() noexcept
 	{
 		if (m_executionFrontend == RayTracingExecutionFrontend::Pipeline)
@@ -54,16 +50,18 @@ public:
 			m_shaderTablePlan.BeginMaterializationSet();
 		}
 	}
-	std::uint64_t GetGraphGeneration() const noexcept
-	{
-		return m_executionFrontend == RayTracingExecutionFrontend::Pipeline ? m_shaderTablePlan.GetGeneration() : 0u;
-	}
+
+	std::uint64_t GetGraphGeneration() const noexcept { return m_executionFrontend == RayTracingExecutionFrontend::Pipeline ? m_shaderTablePlan.GetGeneration() : 0u; }
+
 	const RayTracingPerformanceMetrics& GetPerformanceMetrics() const noexcept { return m_performanceMetrics; }
+
 	const RayTracingShaderTableMetrics& GetShaderTableMetrics() const noexcept { return m_shaderTablePlan.GetMetrics(); }
+
 	RayTracingShaderTablePlan& GetShaderTablePlan() noexcept { return m_shaderTablePlan; }
 
 private:
 	RayTracingCapabilityReport m_capabilityReport = {};
+
 	RayTracingExecutionFrontend m_executionFrontend = RayTracingExecutionFrontend::None;
 	RayTracingPerformanceMetrics m_performanceMetrics = {};
 	RayTracingShaderTablePlan m_shaderTablePlan;

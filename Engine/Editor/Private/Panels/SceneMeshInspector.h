@@ -16,11 +16,7 @@ public:
 private:
 	static void BuildTransformCategory(const std::string&, const WorldMeshReadData&, EditorTransactionHistory&, std::uint64_t) noexcept;
 	static void BuildStaticMeshCategory(const std::string&, const WorldMeshReadData&) noexcept;
-	static void BuildAdvancedParametersCategory(
-	    const std::string&,
-	    const WorldMeshReadData&,
-	    EditorTransactionHistory&,
-	    std::uint64_t) noexcept;
+	static void BuildAdvancedParametersCategory(const std::string&, const WorldMeshReadData&, EditorTransactionHistory&, std::uint64_t) noexcept;
 	static void BuildMaterialsCategory(const std::string&, const WorldMeshReadData&) noexcept;
 
 	static constexpr float kPositionSliderMin = -500.0f;

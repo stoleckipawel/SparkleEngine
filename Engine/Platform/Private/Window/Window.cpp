@@ -69,19 +69,7 @@ void Window::CreateWindowHandle(std::string_view title)
 {
 	const std::wstring wideTitle(title.begin(), title.end());
 
-	m_hWnd = CreateWindowExW(
-	    kWindowedExStyle,
-	    kWindowClassName,
-	    wideTitle.c_str(),
-	    kWindowedStyle,
-	    CW_USEDEFAULT,
-	    CW_USEDEFAULT,
-	    CW_USEDEFAULT,
-	    CW_USEDEFAULT,
-	    nullptr,
-	    nullptr,
-	    m_hInstance,
-	    this);
+	m_hWnd = CreateWindowExW(kWindowedExStyle, kWindowClassName, wideTitle.c_str(), kWindowedStyle, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, m_hInstance, this);
 
 	if (!m_hWnd)
 	{
@@ -380,10 +368,12 @@ LRESULT Window::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 
 		case WM_CLOSE:
 			m_bShouldClose = true;
+
 			return 0;
 
 		case WM_DESTROY:
 			m_hWnd = nullptr;
+
 			return 0;
 
 		case WM_KEYDOWN:
@@ -439,14 +429,7 @@ void Window::HandleDpiChanged(UINT dpi, const RECT& suggestedWindowRect)
 		targetRect = GetCurrentMonitorInfo().rcMonitor;
 	}
 
-	SetWindowPos(
-	    m_hWnd,
-	    nullptr,
-	    targetRect.left,
-	    targetRect.top,
-	    targetRect.right - targetRect.left,
-	    targetRect.bottom - targetRect.top,
-	    SWP_NOACTIVATE | SWP_NOZORDER);
+	SetWindowPos(m_hWnd, nullptr, targetRect.left, targetRect.top, targetRect.right - targetRect.left, targetRect.bottom - targetRect.top, SWP_NOACTIVATE | SWP_NOZORDER);
 
 	const float dpiScale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
 	OnDpiScaleChanged.Broadcast(dpiScale);
@@ -463,14 +446,17 @@ void Window::OnSizeChanged(WPARAM sizeType, uint32_t width, uint32_t height)
 		{
 			case SIZE_MINIMIZED:
 				m_state = State::Minimized;
+
 				break;
 
 			case SIZE_RESTORED:
 				m_state = State::Normal;
+
 				break;
 
 			case SIZE_MAXIMIZED:
 				m_state = State::Maximized;
+
 				break;
 		}
 	}

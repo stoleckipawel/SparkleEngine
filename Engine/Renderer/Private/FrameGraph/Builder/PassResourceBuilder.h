@@ -32,18 +32,9 @@ public:
 	FrameGraphBufferHandle Read(FrameGraphBufferHandle handle, ResourceUsage usage, std::string_view label) noexcept;
 	FrameGraphBufferHandle Write(FrameGraphBufferHandle handle, ResourceUsage usage, std::string_view label) noexcept;
 	FrameGraphBufferHandle Use(FrameGraphBufferHandle handle, ResourceUsage usage, std::string_view label) noexcept;
-	FrameGraphAccelerationStructureHandle Read(
-	    FrameGraphAccelerationStructureHandle handle,
-	    ResourceUsage usage,
-	    std::string_view label) noexcept;
-	FrameGraphAccelerationStructureHandle Write(
-	    FrameGraphAccelerationStructureHandle handle,
-	    ResourceUsage usage,
-	    std::string_view label) noexcept;
-	FrameGraphAccelerationStructureHandle Use(
-	    FrameGraphAccelerationStructureHandle handle,
-	    ResourceUsage usage,
-	    std::string_view label) noexcept;
+	FrameGraphAccelerationStructureHandle Read(FrameGraphAccelerationStructureHandle handle, ResourceUsage usage, std::string_view label) noexcept;
+	FrameGraphAccelerationStructureHandle Write(FrameGraphAccelerationStructureHandle handle, ResourceUsage usage, std::string_view label) noexcept;
+	FrameGraphAccelerationStructureHandle Use(FrameGraphAccelerationStructureHandle handle, ResourceUsage usage, std::string_view label) noexcept;
 	bool DeclareParameterUsages(const PassParameterSet& parameterSet, std::string_view passName = {}) noexcept;
 
 private:
@@ -52,11 +43,7 @@ private:
 	void DeclareTextureBinding(const PassParameterDesc& parameter, const PassParameterBinding& binding) noexcept;
 	void DeclareBufferBinding(const PassParameterDesc& parameter, const PassParameterBinding& binding) noexcept;
 	void DeclareAccelerationStructureBinding(const PassParameterDesc& parameter, const PassParameterBinding& binding) noexcept;
-	void DeclareResourceHandle(
-	    FrameGraphResourceHandle handle,
-	    ResourceUsage usage,
-	    const PassParameterDesc& parameter,
-	    std::uint32_t arrayIndex) noexcept;
+	void DeclareResourceHandle(FrameGraphResourceHandle handle, ResourceUsage usage, const PassParameterDesc& parameter, std::uint32_t arrayIndex) noexcept;
 
 	std::vector<PassResourceDeclaration>* m_declarations = nullptr;
 };

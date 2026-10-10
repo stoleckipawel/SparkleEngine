@@ -45,9 +45,6 @@ struct SceneAssetPayload final
 	std::vector<MaterialDesc> materials;
 	std::vector<MaterialVariant> materialVariants;
 	std::vector<MaterialVariantMapping> materialVariantMappings;
-	bool HasMeshes() const noexcept
-	{
-		return (!staticMeshAssets.empty() && !staticMeshInstances.empty())
-		    || (!skeletalMeshAssets.empty() && !skeletalMeshInstances.empty());
-	}
+
+	bool HasMeshes() const noexcept { return (!staticMeshAssets.empty() && !staticMeshInstances.empty()) || (!skeletalMeshAssets.empty() && !skeletalMeshInstances.empty()); }
 };

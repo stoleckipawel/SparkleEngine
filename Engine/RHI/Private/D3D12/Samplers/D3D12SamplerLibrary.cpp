@@ -11,6 +11,7 @@ bool D3D12SamplerLibrary::TryGetSlot(const RhiSamplerDesc& samplerDesc, Slot& ou
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::None,
 	    .Address = {.U = RhiSamplerAddressMode::Wrap, .V = RhiSamplerAddressMode::Clamp, .W = RhiSamplerAddressMode::Clamp}};
+
 	if (samplerDesc == linearNoMipWrapClampClamp)
 	{
 		outSlot = Slot::LinearNoMipWrapClampClamp;
@@ -25,8 +26,7 @@ bool D3D12SamplerLibrary::TryGetSlot(const RhiSamplerDesc& samplerDesc, Slot& ou
 
 	if (samplerDesc.MaxAnisotropy != RhiSamplerAnisotropy::X1)
 	{
-		const bool anisotropyApplies =
-		    samplerDesc.MinMagFilter == RhiSamplerMinMagFilter::Linear && samplerDesc.MipFilter == RhiSamplerMipFilter::Linear;
+		const bool anisotropyApplies = samplerDesc.MinMagFilter == RhiSamplerMinMagFilter::Linear && samplerDesc.MipFilter == RhiSamplerMipFilter::Linear;
 		if (anisotropyApplies)
 		{
 			return TryGetAnisotropicSlot(samplerDesc.MaxAnisotropy, addressMode, outSlot);
@@ -59,225 +59,53 @@ D3D12SamplerLibrary::D3D12SamplerLibrary(D3D12Rhi& rhi, RhiDescriptorService& de
 
 	m_descriptorSize = m_rhi->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
-	const auto createSampler = [this](
-	                               Slot slot,
-	                               RhiSamplerMinMagFilter minMagFilter,
-	                               RhiSamplerMipFilter mipFilter,
-	                               RhiSamplerAddressMode addressMode,
-	                               RhiSamplerAnisotropy maxAnisotropy)
+	const auto createSampler = [this](Slot slot, RhiSamplerMinMagFilter minMagFilter, RhiSamplerMipFilter mipFilter, RhiSamplerAddressMode addressMode, RhiSamplerAnisotropy maxAnisotropy)
 	{
 		CreateSampler(slot, MakeSamplerDesc(minMagFilter, mipFilter, addressMode, maxAnisotropy));
 	};
 
-	createSampler(
-	    Slot::PointMipPointWrap,
-	    RhiSamplerMinMagFilter::Point,
-	    RhiSamplerMipFilter::Point,
-	    RhiSamplerAddressMode::Wrap,
-	    RhiSamplerAnisotropy::X1);
-	createSampler(
-	    Slot::PointMipPointClamp,
-	    RhiSamplerMinMagFilter::Point,
-	    RhiSamplerMipFilter::Point,
-	    RhiSamplerAddressMode::Clamp,
-	    RhiSamplerAnisotropy::X1);
-	createSampler(
-	    Slot::PointMipPointMirror,
-	    RhiSamplerMinMagFilter::Point,
-	    RhiSamplerMipFilter::Point,
-	    RhiSamplerAddressMode::Mirror,
-	    RhiSamplerAnisotropy::X1);
-	createSampler(
-	    Slot::PointMipLinearWrap,
-	    RhiSamplerMinMagFilter::Point,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Wrap,
-	    RhiSamplerAnisotropy::X1);
-	createSampler(
-	    Slot::PointMipLinearClamp,
-	    RhiSamplerMinMagFilter::Point,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Clamp,
-	    RhiSamplerAnisotropy::X1);
-	createSampler(
-	    Slot::PointMipLinearMirror,
-	    RhiSamplerMinMagFilter::Point,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Mirror,
-	    RhiSamplerAnisotropy::X1);
-	createSampler(
-	    Slot::PointNoMipWrap,
-	    RhiSamplerMinMagFilter::Point,
-	    RhiSamplerMipFilter::None,
-	    RhiSamplerAddressMode::Wrap,
-	    RhiSamplerAnisotropy::X1);
-	createSampler(
-	    Slot::PointNoMipClamp,
-	    RhiSamplerMinMagFilter::Point,
-	    RhiSamplerMipFilter::None,
-	    RhiSamplerAddressMode::Clamp,
-	    RhiSamplerAnisotropy::X1);
-	createSampler(
-	    Slot::PointNoMipMirror,
-	    RhiSamplerMinMagFilter::Point,
-	    RhiSamplerMipFilter::None,
-	    RhiSamplerAddressMode::Mirror,
-	    RhiSamplerAnisotropy::X1);
+	createSampler(Slot::PointMipPointWrap, RhiSamplerMinMagFilter::Point, RhiSamplerMipFilter::Point, RhiSamplerAddressMode::Wrap, RhiSamplerAnisotropy::X1);
+	createSampler(Slot::PointMipPointClamp, RhiSamplerMinMagFilter::Point, RhiSamplerMipFilter::Point, RhiSamplerAddressMode::Clamp, RhiSamplerAnisotropy::X1);
+	createSampler(Slot::PointMipPointMirror, RhiSamplerMinMagFilter::Point, RhiSamplerMipFilter::Point, RhiSamplerAddressMode::Mirror, RhiSamplerAnisotropy::X1);
+	createSampler(Slot::PointMipLinearWrap, RhiSamplerMinMagFilter::Point, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Wrap, RhiSamplerAnisotropy::X1);
+	createSampler(Slot::PointMipLinearClamp, RhiSamplerMinMagFilter::Point, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Clamp, RhiSamplerAnisotropy::X1);
+	createSampler(Slot::PointMipLinearMirror, RhiSamplerMinMagFilter::Point, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Mirror, RhiSamplerAnisotropy::X1);
+	createSampler(Slot::PointNoMipWrap, RhiSamplerMinMagFilter::Point, RhiSamplerMipFilter::None, RhiSamplerAddressMode::Wrap, RhiSamplerAnisotropy::X1);
+	createSampler(Slot::PointNoMipClamp, RhiSamplerMinMagFilter::Point, RhiSamplerMipFilter::None, RhiSamplerAddressMode::Clamp, RhiSamplerAnisotropy::X1);
+	createSampler(Slot::PointNoMipMirror, RhiSamplerMinMagFilter::Point, RhiSamplerMipFilter::None, RhiSamplerAddressMode::Mirror, RhiSamplerAnisotropy::X1);
 
-	createSampler(
-	    Slot::LinearMipPointWrap,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Point,
-	    RhiSamplerAddressMode::Wrap,
-	    RhiSamplerAnisotropy::X1);
-	createSampler(
-	    Slot::LinearMipPointClamp,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Point,
-	    RhiSamplerAddressMode::Clamp,
-	    RhiSamplerAnisotropy::X1);
-	createSampler(
-	    Slot::LinearMipPointMirror,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Point,
-	    RhiSamplerAddressMode::Mirror,
-	    RhiSamplerAnisotropy::X1);
-	createSampler(
-	    Slot::LinearMipLinearWrap,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Wrap,
-	    RhiSamplerAnisotropy::X1);
-	createSampler(
-	    Slot::LinearMipLinearClamp,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Clamp,
-	    RhiSamplerAnisotropy::X1);
-	createSampler(
-	    Slot::LinearMipLinearMirror,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Mirror,
-	    RhiSamplerAnisotropy::X1);
-	createSampler(
-	    Slot::LinearNoMipWrap,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::None,
-	    RhiSamplerAddressMode::Wrap,
-	    RhiSamplerAnisotropy::X1);
-	createSampler(
-	    Slot::LinearNoMipClamp,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::None,
-	    RhiSamplerAddressMode::Clamp,
-	    RhiSamplerAnisotropy::X1);
-	createSampler(
-	    Slot::LinearNoMipMirror,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::None,
-	    RhiSamplerAddressMode::Mirror,
-	    RhiSamplerAnisotropy::X1);
+	createSampler(Slot::LinearMipPointWrap, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Point, RhiSamplerAddressMode::Wrap, RhiSamplerAnisotropy::X1);
+	createSampler(Slot::LinearMipPointClamp, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Point, RhiSamplerAddressMode::Clamp, RhiSamplerAnisotropy::X1);
+	createSampler(Slot::LinearMipPointMirror, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Point, RhiSamplerAddressMode::Mirror, RhiSamplerAnisotropy::X1);
+	createSampler(Slot::LinearMipLinearWrap, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Wrap, RhiSamplerAnisotropy::X1);
+	createSampler(Slot::LinearMipLinearClamp, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Clamp, RhiSamplerAnisotropy::X1);
+	createSampler(Slot::LinearMipLinearMirror, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Mirror, RhiSamplerAnisotropy::X1);
+	createSampler(Slot::LinearNoMipWrap, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::None, RhiSamplerAddressMode::Wrap, RhiSamplerAnisotropy::X1);
+	createSampler(Slot::LinearNoMipClamp, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::None, RhiSamplerAddressMode::Clamp, RhiSamplerAnisotropy::X1);
+	createSampler(Slot::LinearNoMipMirror, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::None, RhiSamplerAddressMode::Mirror, RhiSamplerAnisotropy::X1);
+
 	CreateSampler(
 	    Slot::LinearNoMipWrapClampClamp,
 	    RhiSamplerDesc{
 	        .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	        .MipFilter = RhiSamplerMipFilter::None,
-	        .Address = {
-	            .U = RhiSamplerAddressMode::Wrap,
-	            .V = RhiSamplerAddressMode::Clamp,
-	            .W = RhiSamplerAddressMode::Clamp}});
+	        .Address = {.U = RhiSamplerAddressMode::Wrap, .V = RhiSamplerAddressMode::Clamp, .W = RhiSamplerAddressMode::Clamp}});
 
-	createSampler(
-	    Slot::Aniso1xWrap,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Wrap,
-	    RhiSamplerAnisotropy::X1);
-	createSampler(
-	    Slot::Aniso1xClamp,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Clamp,
-	    RhiSamplerAnisotropy::X1);
-	createSampler(
-	    Slot::Aniso1xMirror,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Mirror,
-	    RhiSamplerAnisotropy::X1);
-	createSampler(
-	    Slot::Aniso2xWrap,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Wrap,
-	    RhiSamplerAnisotropy::X2);
-	createSampler(
-	    Slot::Aniso2xClamp,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Clamp,
-	    RhiSamplerAnisotropy::X2);
-	createSampler(
-	    Slot::Aniso2xMirror,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Mirror,
-	    RhiSamplerAnisotropy::X2);
-	createSampler(
-	    Slot::Aniso4xWrap,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Wrap,
-	    RhiSamplerAnisotropy::X4);
-	createSampler(
-	    Slot::Aniso4xClamp,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Clamp,
-	    RhiSamplerAnisotropy::X4);
-	createSampler(
-	    Slot::Aniso4xMirror,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Mirror,
-	    RhiSamplerAnisotropy::X4);
-	createSampler(
-	    Slot::Aniso8xWrap,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Wrap,
-	    RhiSamplerAnisotropy::X8);
-	createSampler(
-	    Slot::Aniso8xClamp,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Clamp,
-	    RhiSamplerAnisotropy::X8);
-	createSampler(
-	    Slot::Aniso8xMirror,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Mirror,
-	    RhiSamplerAnisotropy::X8);
-	createSampler(
-	    Slot::Aniso16xWrap,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Wrap,
-	    RhiSamplerAnisotropy::X16);
-	createSampler(
-	    Slot::Aniso16xClamp,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Clamp,
-	    RhiSamplerAnisotropy::X16);
-	createSampler(
-	    Slot::Aniso16xMirror,
-	    RhiSamplerMinMagFilter::Linear,
-	    RhiSamplerMipFilter::Linear,
-	    RhiSamplerAddressMode::Mirror,
-	    RhiSamplerAnisotropy::X16);
+	createSampler(Slot::Aniso1xWrap, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Wrap, RhiSamplerAnisotropy::X1);
+	createSampler(Slot::Aniso1xClamp, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Clamp, RhiSamplerAnisotropy::X1);
+	createSampler(Slot::Aniso1xMirror, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Mirror, RhiSamplerAnisotropy::X1);
+	createSampler(Slot::Aniso2xWrap, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Wrap, RhiSamplerAnisotropy::X2);
+	createSampler(Slot::Aniso2xClamp, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Clamp, RhiSamplerAnisotropy::X2);
+	createSampler(Slot::Aniso2xMirror, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Mirror, RhiSamplerAnisotropy::X2);
+	createSampler(Slot::Aniso4xWrap, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Wrap, RhiSamplerAnisotropy::X4);
+	createSampler(Slot::Aniso4xClamp, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Clamp, RhiSamplerAnisotropy::X4);
+	createSampler(Slot::Aniso4xMirror, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Mirror, RhiSamplerAnisotropy::X4);
+	createSampler(Slot::Aniso8xWrap, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Wrap, RhiSamplerAnisotropy::X8);
+	createSampler(Slot::Aniso8xClamp, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Clamp, RhiSamplerAnisotropy::X8);
+	createSampler(Slot::Aniso8xMirror, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Mirror, RhiSamplerAnisotropy::X8);
+	createSampler(Slot::Aniso16xWrap, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Wrap, RhiSamplerAnisotropy::X16);
+	createSampler(Slot::Aniso16xClamp, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Clamp, RhiSamplerAnisotropy::X16);
+	createSampler(Slot::Aniso16xMirror, RhiSamplerMinMagFilter::Linear, RhiSamplerMipFilter::Linear, RhiSamplerAddressMode::Mirror, RhiSamplerAnisotropy::X16);
 
 	m_bInitialized = true;
 }
@@ -308,23 +136,14 @@ void D3D12SamplerLibrary::CreateSampler(Slot slot, const RhiSamplerDesc& sampler
 	desc.MinLOD = 0.0f;
 	desc.MaxLOD = samplerDesc.MipFilter == RhiSamplerMipFilter::None ? 0.0f : D3D12_FLOAT32_MAX;
 
-	const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle =
-	    D3D12TypeConversions::ToCpuDescriptor(m_descriptorService->GetDescriptorTableCpuHandle(m_tableHandle, static_cast<uint32_t>(slot)));
+	const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = D3D12TypeConversions::ToCpuDescriptor(m_descriptorService->GetDescriptorTableCpuHandle(m_tableHandle, static_cast<uint32_t>(slot)));
 
 	m_rhi->GetDevice()->CreateSampler(&desc, cpuHandle);
 }
 
-RhiSamplerDesc D3D12SamplerLibrary::MakeSamplerDesc(
-    RhiSamplerMinMagFilter minMagFilter,
-    RhiSamplerMipFilter mipFilter,
-    RhiSamplerAddressMode addressMode,
-    RhiSamplerAnisotropy maxAnisotropy) noexcept
+RhiSamplerDesc D3D12SamplerLibrary::MakeSamplerDesc(RhiSamplerMinMagFilter minMagFilter, RhiSamplerMipFilter mipFilter, RhiSamplerAddressMode addressMode, RhiSamplerAnisotropy maxAnisotropy) noexcept
 {
-	return RhiSamplerDesc{
-	    .MinMagFilter = minMagFilter,
-	    .MipFilter = mipFilter,
-	    .Address = MakeRhiSamplerAddressModes(addressMode),
-	    .MaxAnisotropy = maxAnisotropy};
+	return RhiSamplerDesc{.MinMagFilter = minMagFilter, .MipFilter = mipFilter, .Address = MakeRhiSamplerAddressModes(addressMode), .MaxAnisotropy = maxAnisotropy};
 }
 
 bool D3D12SamplerLibrary::TryGetAddressOffset(RhiSamplerAddressMode addressMode, std::uint32_t& outOffset) noexcept
@@ -333,12 +152,17 @@ bool D3D12SamplerLibrary::TryGetAddressOffset(RhiSamplerAddressMode addressMode,
 	{
 		case RhiSamplerAddressMode::Wrap:
 			outOffset = 0;
+
 			return true;
+
 		case RhiSamplerAddressMode::Clamp:
 			outOffset = 1;
+
 			return true;
+
 		case RhiSamplerAddressMode::Mirror:
 			outOffset = 2;
+
 			return true;
 		default:
 			return false;
@@ -369,12 +193,17 @@ bool D3D12SamplerLibrary::TryGetPointSlot(RhiSamplerMipFilter mipFilter, RhiSamp
 	{
 		case RhiSamplerMipFilter::None:
 			baseSlot = Slot::PointNoMipWrap;
+
 			break;
+
 		case RhiSamplerMipFilter::Point:
 			baseSlot = Slot::PointMipPointWrap;
+
 			break;
+
 		case RhiSamplerMipFilter::Linear:
 			baseSlot = Slot::PointMipLinearWrap;
+
 			break;
 		default:
 			return false;
@@ -397,12 +226,17 @@ bool D3D12SamplerLibrary::TryGetLinearSlot(RhiSamplerMipFilter mipFilter, RhiSam
 	{
 		case RhiSamplerMipFilter::None:
 			baseSlot = Slot::LinearNoMipWrap;
+
 			break;
+
 		case RhiSamplerMipFilter::Point:
 			baseSlot = Slot::LinearMipPointWrap;
+
 			break;
+
 		case RhiSamplerMipFilter::Linear:
 			baseSlot = Slot::LinearMipLinearWrap;
+
 			break;
 		default:
 			return false;
@@ -412,10 +246,7 @@ bool D3D12SamplerLibrary::TryGetLinearSlot(RhiSamplerMipFilter mipFilter, RhiSam
 	return true;
 }
 
-bool D3D12SamplerLibrary::TryGetAnisotropicSlot(
-    RhiSamplerAnisotropy maxAnisotropy,
-    RhiSamplerAddressMode addressMode,
-    Slot& outSlot) noexcept
+bool D3D12SamplerLibrary::TryGetAnisotropicSlot(RhiSamplerAnisotropy maxAnisotropy, RhiSamplerAddressMode addressMode, Slot& outSlot) noexcept
 {
 	std::uint32_t addressOffset = 0;
 	if (!TryGetAddressOffset(addressMode, addressOffset))
@@ -428,18 +259,27 @@ bool D3D12SamplerLibrary::TryGetAnisotropicSlot(
 	{
 		case RhiSamplerAnisotropy::X1:
 			baseSlot = Slot::Aniso1xWrap;
+
 			break;
+
 		case RhiSamplerAnisotropy::X2:
 			baseSlot = Slot::Aniso2xWrap;
+
 			break;
+
 		case RhiSamplerAnisotropy::X4:
 			baseSlot = Slot::Aniso4xWrap;
+
 			break;
+
 		case RhiSamplerAnisotropy::X8:
 			baseSlot = Slot::Aniso8xWrap;
+
 			break;
+
 		case RhiSamplerAnisotropy::X16:
 			baseSlot = Slot::Aniso16xWrap;
+
 			break;
 		default:
 			return false;

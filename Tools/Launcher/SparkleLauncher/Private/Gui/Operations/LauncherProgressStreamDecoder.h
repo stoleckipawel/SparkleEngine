@@ -12,6 +12,7 @@ namespace SparkleLauncher
 	{
 	public:
 		using OutputCallback = std::function<void(std::string_view)>;
+
 		using ProgressCallback = std::function<void(const ToolWorkProgress&)>;
 
 		void Consume(std::string_view output, const OutputCallback& outputCallback, const ProgressCallback& progressCallback);

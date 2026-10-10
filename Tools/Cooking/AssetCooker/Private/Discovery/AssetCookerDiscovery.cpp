@@ -28,10 +28,8 @@ bool AssetCookerDiscovery::TryFindRepositoryRoot(const std::filesystem::path& st
 		currentPath = currentPath.parent_path();
 	}
 
-	const std::optional<std::filesystem::path> workspaceRoot =
-	    Filesystem::FindAncestorWithMarker(currentPath, Filesystem::kWorkspaceMarker);
-	if (!workspaceRoot || !PathExists(*workspaceRoot / "Engine" / std::string(Filesystem::kEngineMarker))
-	    || !PathExists(*workspaceRoot / "Projects") || !PathExists(*workspaceRoot / "Tools"))
+	const std::optional<std::filesystem::path> workspaceRoot = Filesystem::FindAncestorWithMarker(currentPath, Filesystem::kWorkspaceMarker);
+	if (!workspaceRoot || !PathExists(*workspaceRoot / "Engine" / std::string(Filesystem::kEngineMarker)) || !PathExists(*workspaceRoot / "Projects") || !PathExists(*workspaceRoot / "Tools"))
 	{
 		return false;
 	}
@@ -57,9 +55,7 @@ std::optional<std::string_view> AssetCookerDiscovery::ResolveToolProfile(std::st
 	return std::nullopt;
 }
 
-std::vector<std::string> AssetCookerDiscovery::DiscoverProjects(
-    const std::filesystem::path& repositoryRoot,
-    AssetCookerDiagnostics& diagnostics)
+std::vector<std::string> AssetCookerDiscovery::DiscoverProjects(const std::filesystem::path& repositoryRoot, AssetCookerDiagnostics& diagnostics)
 {
 	std::vector<std::string> projects;
 	const std::filesystem::path projectsRoot = repositoryRoot / "Projects";
@@ -74,8 +70,7 @@ std::vector<std::string> AssetCookerDiscovery::DiscoverProjects(
 	{
 		std::error_code statusError;
 		const std::string projectName = entry.path().filename().string();
-		if (entry.is_directory(statusError) && projectName != "TemplateProject"
-		    && PathExists(entry.path() / std::string(Filesystem::kProjectMarker)))
+		if (entry.is_directory(statusError) && projectName != "TemplateProject" && PathExists(entry.path() / std::string(Filesystem::kProjectMarker)))
 		{
 			projects.push_back(projectName);
 		}
@@ -101,10 +96,7 @@ bool AssetCookerDiscovery::BuildProjectCookPlan(
 
 	if (!PathExists(outPlan.projectRoot / std::string(Filesystem::kProjectMarker)))
 	{
-		diagnostics.AddError(
-		    AssetCookerCategory::All,
-		    "Project marker was not found.",
-		    outPlan.projectRoot / std::string(Filesystem::kProjectMarker));
+		diagnostics.AddError(AssetCookerCategory::All, "Project marker was not found.", outPlan.projectRoot / std::string(Filesystem::kProjectMarker));
 		return false;
 	}
 
@@ -124,8 +116,7 @@ bool AssetCookerDiscovery::PathExists(const std::filesystem::path& path)
 
 bool AssetCookerDiscovery::CategoryNeedsScenes(AssetCookerCategory category) noexcept
 {
-	return category == AssetCookerCategory::All || category == AssetCookerCategory::Textures
-	    || category == AssetCookerCategory::SceneAssets;
+	return category == AssetCookerCategory::All || category == AssetCookerCategory::Textures || category == AssetCookerCategory::SceneAssets;
 }
 
 void AssetCookerDiscovery::InitializePlan(
@@ -146,10 +137,7 @@ void AssetCookerDiscovery::InitializePlan(
 	AddPlanSteps(category, outPlan.steps);
 }
 
-bool AssetCookerDiscovery::CollectSceneEntries(
-    const std::filesystem::path& projectRoot,
-    std::vector<AssetCookerSceneEntry>& outEntries,
-    AssetCookerDiagnostics& diagnostics)
+bool AssetCookerDiscovery::CollectSceneEntries(const std::filesystem::path& projectRoot, std::vector<AssetCookerSceneEntry>& outEntries, AssetCookerDiagnostics& diagnostics)
 {
 	std::vector<std::string> sceneIds;
 	if (!CollectSceneIds(projectRoot, sceneIds, diagnostics))
@@ -194,10 +182,7 @@ void AssetCookerDiscovery::AddPlanSteps(AssetCookerCategory category, std::vecto
 	}
 }
 
-bool AssetCookerDiscovery::CollectSceneIds(
-    const std::filesystem::path& projectRoot,
-    std::vector<std::string>& outSceneIds,
-    AssetCookerDiagnostics& diagnostics)
+bool AssetCookerDiscovery::CollectSceneIds(const std::filesystem::path& projectRoot, std::vector<std::string>& outSceneIds, AssetCookerDiagnostics& diagnostics)
 {
 	ProjectLevelCatalog catalog;
 	try
@@ -224,11 +209,7 @@ bool AssetCookerDiscovery::CollectSceneIds(
 	return true;
 }
 
-bool AssetCookerDiscovery::AppendLevelSceneIds(
-    const ProjectLevelCatalog& catalog,
-    const ProjectLevelCatalogEntry& level,
-    std::vector<std::string>& outSceneIds,
-    AssetCookerDiagnostics& diagnostics)
+bool AssetCookerDiscovery::AppendLevelSceneIds(const ProjectLevelCatalog& catalog, const ProjectLevelCatalogEntry& level, std::vector<std::string>& outSceneIds, AssetCookerDiagnostics& diagnostics)
 {
 	if (!level.selected)
 	{
@@ -251,20 +232,14 @@ bool AssetCookerDiscovery::AppendLevelSceneIds(
 	return false;
 }
 
-bool AssetCookerDiscovery::ResolveSceneEntry(
-    const std::filesystem::path& projectRoot,
-    std::string_view sceneId,
-    AssetCookerSceneEntry& outEntry,
-    AssetCookerDiagnostics& diagnostics)
+bool AssetCookerDiscovery::ResolveSceneEntry(const std::filesystem::path& projectRoot, std::string_view sceneId, AssetCookerSceneEntry& outEntry, AssetCookerDiagnostics& diagnostics)
 {
 	const std::filesystem::path meshRoot = Paths::Normalize(projectRoot / "Assets" / "Meshes");
 	const std::filesystem::path relativeBase = std::filesystem::path(sceneId).lexically_normal();
 
 	if (!IsSceneIdSafe(relativeBase))
 	{
-		diagnostics.AddError(
-		    AssetCookerCategory::SceneAssets,
-		    "Catalog scene id must remain under the project mesh root: " + std::string(sceneId));
+		diagnostics.AddError(AssetCookerCategory::SceneAssets, "Catalog scene id must remain under the project mesh root: " + std::string(sceneId));
 		return false;
 	}
 
@@ -276,10 +251,7 @@ bool AssetCookerDiscovery::ResolveSceneEntry(
 
 	if (sourcePath.empty())
 	{
-		diagnostics.AddError(
-		    AssetCookerCategory::SceneAssets,
-		    "Catalog scene source was not found: " + std::string(sceneId),
-		    meshRoot / relativeBase);
+		diagnostics.AddError(AssetCookerCategory::SceneAssets, "Catalog scene source was not found: " + std::string(sceneId), meshRoot / relativeBase);
 		return false;
 	}
 
@@ -327,9 +299,7 @@ bool AssetCookerDiscovery::ResolveSceneSource(
 		}
 		if (!outSourcePath.empty())
 		{
-			diagnostics.AddError(
-			    AssetCookerCategory::SceneAssets,
-			    "Catalog scene id resolves to more than one source file: " + std::string(sceneId));
+			diagnostics.AddError(AssetCookerCategory::SceneAssets, "Catalog scene id resolves to more than one source file: " + std::string(sceneId));
 			return false;
 		}
 		outSourcePath = std::move(candidate);

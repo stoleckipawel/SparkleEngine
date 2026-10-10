@@ -7,10 +7,7 @@
 
 namespace SparkleLauncher
 {
-	static bool ValidateBuildDirectoryResetScope(
-	    const std::filesystem::path& repositoryRoot,
-	    const std::filesystem::path& buildDirectory,
-	    std::string& errorMessage)
+	static bool ValidateBuildDirectoryResetScope(const std::filesystem::path& repositoryRoot, const std::filesystem::path& buildDirectory, std::string& errorMessage)
 	{
 		if (repositoryRoot.empty() || buildDirectory.empty())
 		{
@@ -35,15 +32,11 @@ namespace SparkleLauncher
 		}
 
 		errorCode.clear();
-		const std::filesystem::path repositoryRelativeToBuildDirectory =
-		    std::filesystem::relative(normalizedRepositoryRoot, normalizedBuildDirectory, errorCode);
-		const bool buildDirectoryContainsRepository =
-		    !errorCode && !repositoryRelativeToBuildDirectory.empty() && *repositoryRelativeToBuildDirectory.begin() != "..";
-		if (normalizedBuildDirectory.empty() || normalizedBuildDirectory == normalizedBuildDirectory.root_path()
-		    || buildDirectoryContainsRepository)
+		const std::filesystem::path repositoryRelativeToBuildDirectory = std::filesystem::relative(normalizedRepositoryRoot, normalizedBuildDirectory, errorCode);
+		const bool buildDirectoryContainsRepository = !errorCode && !repositoryRelativeToBuildDirectory.empty() && *repositoryRelativeToBuildDirectory.begin() != "..";
+		if (normalizedBuildDirectory.empty() || normalizedBuildDirectory == normalizedBuildDirectory.root_path() || buildDirectoryContainsRepository)
 		{
-			errorMessage = "Refusing to reset native build outputs because the configured build directory contains the repository: "
-			    + normalizedBuildDirectory.string();
+			errorMessage = "Refusing to reset native build outputs because the configured build directory contains the repository: " + normalizedBuildDirectory.string();
 			return false;
 		}
 		return true;
@@ -111,10 +104,7 @@ namespace SparkleLauncher
 		return true;
 	}
 
-	static bool RemoveGeneratedBuildTree(
-	    const std::filesystem::path& buildDirectory,
-	    const std::filesystem::path& dependencyCacheRoot,
-	    std::string& errorMessage)
+	static bool RemoveGeneratedBuildTree(const std::filesystem::path& buildDirectory, const std::filesystem::path& dependencyCacheRoot, std::string& errorMessage)
 	{
 		std::error_code errorCode;
 		if (!std::filesystem::is_directory(buildDirectory, errorCode))
@@ -157,9 +147,7 @@ namespace SparkleLauncher
 		return true;
 	}
 
-	static bool RemoveProjectBuildOutputs(
-	    const Filesystem::WorkspaceOutputPaths& outputs,
-	    std::string& errorMessage)
+	static bool RemoveProjectBuildOutputs(const Filesystem::WorkspaceOutputPaths& outputs, std::string& errorMessage)
 	{
 		const std::filesystem::path& projectsDirectory = outputs.ProjectArtifactRoot;
 		std::error_code errorCode;
@@ -194,8 +182,7 @@ namespace SparkleLauncher
 				continue;
 			}
 
-			const std::filesystem::path cookedDirectory =
-			    outputs.CookedProjectDirectory(projectDirectory.filename().string()).lexically_normal();
+			const std::filesystem::path cookedDirectory = outputs.CookedProjectDirectory(projectDirectory.filename().string()).lexically_normal();
 			std::filesystem::directory_iterator projectIterator(projectDirectory, errorCode);
 			while (!errorCode && projectIterator != end)
 			{
@@ -220,9 +207,7 @@ namespace SparkleLauncher
 		return true;
 	}
 
-	static bool RemoveCompiledDevelopmentArtifacts(
-	    const Filesystem::WorkspaceOutputPaths& outputs,
-	    std::string& errorMessage)
+	static bool RemoveCompiledDevelopmentArtifacts(const Filesystem::WorkspaceOutputPaths& outputs, std::string& errorMessage)
 	{
 		std::error_code errorCode;
 		if (!std::filesystem::is_directory(outputs.DevelopmentArtifactRoot, errorCode))
@@ -232,8 +217,7 @@ namespace SparkleLauncher
 				return true;
 			}
 
-			errorMessage = "Failed to inspect development artifacts: " + outputs.DevelopmentArtifactRoot.string() + ": "
-			    + errorCode.message();
+			errorMessage = "Failed to inspect development artifacts: " + outputs.DevelopmentArtifactRoot.string() + ": " + errorCode.message();
 			return false;
 		}
 
@@ -254,8 +238,7 @@ namespace SparkleLauncher
 		}
 		if (errorCode)
 		{
-			errorMessage = "Failed to enumerate development artifacts: " + outputs.DevelopmentArtifactRoot.string() + ": "
-			    + errorCode.message();
+			errorMessage = "Failed to enumerate development artifacts: " + outputs.DevelopmentArtifactRoot.string() + ": " + errorCode.message();
 			return false;
 		}
 
@@ -267,10 +250,7 @@ namespace SparkleLauncher
 		return state == BuildFilesFreshnessState::GeneratorMismatch || state == BuildFilesFreshnessState::FreshnessStampMismatch;
 	}
 
-	bool ResetNativeBuildOutputs(
-	    const std::filesystem::path& repositoryRoot,
-	    const std::filesystem::path& buildDirectory,
-	    std::string& errorMessage)
+	bool ResetNativeBuildOutputs(const std::filesystem::path& repositoryRoot, const std::filesystem::path& buildDirectory, std::string& errorMessage)
 	{
 		errorMessage.clear();
 		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);

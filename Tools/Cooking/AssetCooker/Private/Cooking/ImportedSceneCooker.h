@@ -13,8 +13,5 @@ public:
 	static CookedSceneBuild Build(const AssetCookerSceneEntry& sceneEntry, AssetCookerDiagnostics& diagnostics);
 
 private:
-	static CookedSceneBuild BuildCookedScene(
-	    const AssetCookerSceneEntry& sceneEntry,
-	    const SourceImportOutput& importOutput,
-	    AssetCookerDiagnostics& diagnostics);
+	static CookedSceneBuild BuildCookedScene(const AssetCookerSceneEntry& sceneEntry, const SourceImportOutput& importOutput, AssetCookerDiagnostics& diagnostics);
 };

@@ -40,11 +40,7 @@ public:
 	static void Warning(std::string_view message);
 	static void Error(std::string_view message);
 	static void Message(std::ostream& output, ToolConsoleSeverity severity, std::string_view message);
-	static void Message(
-	    std::ostream& output,
-	    ToolConsoleSeverity severity,
-	    std::string_view message,
-	    std::initializer_list<ToolConsoleField> fields);
+	static void Message(std::ostream& output, ToolConsoleSeverity severity, std::string_view message, std::initializer_list<ToolConsoleField> fields);
 
 	static void Progress(
 	    std::ostream& output,

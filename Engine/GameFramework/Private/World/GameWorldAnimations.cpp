@@ -11,10 +11,7 @@
 
 namespace ECS
 {
-	void GameWorldState::AppendAnimationClips(
-	    std::vector<AnimationClipResource> clips,
-	    AnimationClipResourceStore& resources,
-	    std::uint64_t sourceInstanceId)
+	void GameWorldState::AppendAnimationClips(std::vector<AnimationClipResource> clips, AnimationClipResourceStore& resources, std::uint64_t sourceInstanceId)
 	{
 		for (AnimationClipResource& clip : clips)
 		{
@@ -35,16 +32,12 @@ namespace ECS
 			{
 				continue;
 			}
-			const bool added = m_registry.Add(entity, AnimationState{.Resource = resource, .AnimationAssetId = animationAssetId})
-			    && m_registry.Add(entity, Name{name})
+			const bool added = m_registry.Add(entity, AnimationState{.Resource = resource, .AnimationAssetId = animationAssetId}) && m_registry.Add(entity, Name{name})
 			    && m_registry.Add(
 			        entity,
-			        AuthoredIdentity{
-			            .SourceAssetId = animationAssetId,
-			            .SourceInstanceId = sourceInstanceId,
-			            .SourceObjectId = sourceAnimationIndex,
-			            .Kind = AuthoredObjectKind::Animation})
+			        AuthoredIdentity{.SourceAssetId = animationAssetId, .SourceInstanceId = sourceInstanceId, .SourceObjectId = sourceAnimationIndex, .Kind = AuthoredObjectKind::Animation})
 			    && m_registry.Add(entity, EditorMetadata{});
+
 			if (!added)
 			{
 				m_registry.Destroy(entity);
@@ -58,8 +51,7 @@ namespace ECS
 	bool GameWorldState::PrepareSystemResources(GameWorldResourceStores& resources)
 	{
 		return resources.AnimationClips.ResolveTargets(resources.Skeletons, resources.Generation)
-		    && m_animationOutput.Prepare(m_registry, resources.AnimationClips, resources.Skeletons, m_morphWeights, resources.Generation)
-		    && m_extraction.Prepare(m_registry);
+		    && m_animationOutput.Prepare(m_registry, resources.AnimationClips, resources.Skeletons, m_morphWeights, resources.Generation) && m_extraction.Prepare(m_registry);
 	}
 
 	bool GameWorldState::ExecuteSystems(const GameWorldSystemExecutionContext& context)

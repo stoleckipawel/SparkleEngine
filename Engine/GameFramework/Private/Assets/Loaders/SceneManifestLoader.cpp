@@ -29,16 +29,12 @@ namespace Assets
 		manifest.animationReferences = reader.ReadArray<CookedAnimationReference>(manifest.header.animationRefCount);
 		manifest.morphWeights = reader.ReadArray<float>(manifest.header.morphWeightCount);
 		manifest.materialVariants = reader.ReadArray<CookedSceneMaterialVariantRecord>(manifest.header.materialVariantCount);
-		manifest.materialVariantMappings =
-		    reader.ReadArray<CookedSceneMaterialVariantMappingRecord>(manifest.header.materialVariantMappingCount);
+		manifest.materialVariantMappings = reader.ReadArray<CookedSceneMaterialVariantMappingRecord>(manifest.header.materialVariantMappingCount);
 		SceneManifestValidator::ValidateRecords(manifest);
 
 		if (reader.GetRemainingByteCount() != 0)
 		{
-			throw diagnostics.MakeError(
-			    "payload",
-			    "no trailing bytes after declared scene manifest records",
-			    "Cooked scene manifest contains unexpected trailing bytes");
+			throw diagnostics.MakeError("payload", "no trailing bytes after declared scene manifest records", "Cooked scene manifest contains unexpected trailing bytes");
 		}
 
 		return manifest;

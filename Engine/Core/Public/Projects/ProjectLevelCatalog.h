@@ -62,14 +62,6 @@ class SPARKLE_CORE_API ProjectLevelCatalogFile final
 {
 public:
 	static ProjectLevelCatalog Load(const std::filesystem::path& projectRoot);
-	static bool SetLevelSelected(
-	    const std::filesystem::path& projectRoot,
-	    std::string_view levelId,
-	    bool selected,
-	    std::string& outErrorMessage);
-	static bool SetLevelsSelected(
-	    const std::filesystem::path& projectRoot,
-	    const std::vector<std::string>& levelIds,
-	    bool selected,
-	    std::string& outErrorMessage);
+	static bool SetLevelSelected(const std::filesystem::path& projectRoot, std::string_view levelId, bool selected, std::string& outErrorMessage);
+	static bool SetLevelsSelected(const std::filesystem::path& projectRoot, const std::vector<std::string>& levelIds, bool selected, std::string& outErrorMessage);
 };

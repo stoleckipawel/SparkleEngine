@@ -18,17 +18,17 @@ namespace SparkleLauncher
 		}
 
 		const LauncherOperationRequest request = context.Request;
+
 		std::string error = registry.Register(
 		    {context.ProjectCapabilityId(),
 		        {},
 		        [request]()
 		        {
-			        const LevelRunOperationPlan plan =
-			            PlanLevelRunOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::LevelRun(request));
-			        return plan.Readiness.ContentDirectoryReady
-			            ? LauncherCapabilityEvaluation::Ready()
-			            : LauncherCapabilityEvaluation::Blocked(BuildCapabilityReadinessSummary(plan.ReadinessMessages));
+			        const LevelRunOperationPlan plan = PlanLevelRunOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::LevelRun(request));
+			        return plan.Readiness.ContentDirectoryReady ? LauncherCapabilityEvaluation::Ready()
+			                                                    : LauncherCapabilityEvaluation::Blocked(BuildCapabilityReadinessSummary(plan.ReadinessMessages));
 		        }});
+
 		if (!error.empty())
 		{
 			return error;
@@ -39,20 +39,17 @@ namespace SparkleLauncher
 		        {std::string(LauncherCapabilityId::BuildFiles)},
 		        [request, buildOperationId = context.ProductBuildOperationId()]()
 		        {
-			        const LevelRunOperationPlan runPlan =
-			            PlanLevelRunOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::LevelRun(request));
+			        const LevelRunOperationPlan runPlan = PlanLevelRunOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::LevelRun(request));
 			        if (runPlan.Readiness.ExecutableReady)
 			        {
 				        return LauncherCapabilityEvaluation::Ready();
 			        }
 
-			        const BuildWorkspaceOperationPlan buildPlan = PlanBuildWorkspaceOperation(
-			            buildOperationId.toStdString(),
-			            LauncherOperationRequestMapping::BuildWorkspace(request));
-			        return buildPlan.CanRun
-			            ? LauncherCapabilityEvaluation::RunOperation(BuildQuickStartOperationRequest(request, buildOperationId))
-			            : LauncherCapabilityEvaluation::DependenciesRequired(BuildCapabilityReadinessSummary(buildPlan.ReadinessMessages));
+			        const BuildWorkspaceOperationPlan buildPlan = PlanBuildWorkspaceOperation(buildOperationId.toStdString(), LauncherOperationRequestMapping::BuildWorkspace(request));
+			        return buildPlan.CanRun ? LauncherCapabilityEvaluation::RunOperation(BuildQuickStartOperationRequest(request, buildOperationId))
+			                                : LauncherCapabilityEvaluation::DependenciesRequired(BuildCapabilityReadinessSummary(buildPlan.ReadinessMessages));
 		        }});
+
 		if (!error.empty())
 		{
 			return error;
@@ -60,17 +57,12 @@ namespace SparkleLauncher
 
 		return registry.Register(
 		    {request.OperationId.toStdString(),
-		        {context.ProjectCapabilityId(),
-		            std::string(LauncherCapabilityId::SelectedLevels),
-		            context.ProductCapabilityId(),
-		            std::string(LauncherCapabilityId::CookedContent)},
+		        {context.ProjectCapabilityId(), std::string(LauncherCapabilityId::SelectedLevels), context.ProductCapabilityId(), std::string(LauncherCapabilityId::CookedContent)},
 		        [request]()
 		        {
-			        const LevelRunOperationPlan plan =
-			            PlanLevelRunOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::LevelRun(request));
-			        return plan.CanRun
-			            ? LauncherCapabilityEvaluation::RunOperation(BuildQuickStartOperationRequest(request, request.OperationId))
-			            : LauncherCapabilityEvaluation::DependenciesRequired(BuildCapabilityReadinessSummary(plan.ReadinessMessages));
+			        const LevelRunOperationPlan plan = PlanLevelRunOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::LevelRun(request));
+			        return plan.CanRun ? LauncherCapabilityEvaluation::RunOperation(BuildQuickStartOperationRequest(request, request.OperationId))
+			                           : LauncherCapabilityEvaluation::DependenciesRequired(BuildCapabilityReadinessSummary(plan.ReadinessMessages));
 		        }});
 	}
 }

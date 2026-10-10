@@ -236,16 +236,8 @@ void RuntimeConsoleOverlay::DrawInputLine()
 	}
 
 	ImGui::SetNextItemWidth(-1.0f);
-	const ImGuiInputTextFlags flags =
-	    ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackCompletion;
-	if (ImGui::InputTextWithHint(
-	        "##RuntimeConsoleInput",
-	        "Type command, press Enter. Use Tab for completion.",
-	        m_inputBuffer.data(),
-	        m_inputBuffer.size(),
-	        flags,
-	        &HandleInputTextCallback,
-	        this))
+	const ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackCompletion;
+	if (ImGui::InputTextWithHint("##RuntimeConsoleInput", "Type command, press Enter. Use Tab for completion.", m_inputBuffer.data(), m_inputBuffer.size(), flags, &HandleInputTextCallback, this))
 	{
 		SubmitInput();
 	}

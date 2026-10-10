@@ -49,12 +49,8 @@ public:
 	RenderCommandList& BeginCurrentGraphicsCommandList() noexcept override;
 	RhiCommandRecordingLease AcquireCommandRecordingLease(ERhiQueueType queueType, RhiCommandRecordingOwner owner) noexcept override;
 	RhiCommandRecordingLease TakeCurrentGraphicsCommandRecordingLease() noexcept override;
-	RhiSubmissionToken SubmitCommandRecordingLease(
-	    RhiCommandRecordingLease&& lease,
-	    std::span<const RhiSubmissionToken> waitTokens) noexcept override;
-	RhiSubmissionToken SubmitCommandRecordingBatch(
-	    std::span<RhiCommandRecordingLease> leases,
-	    std::span<const RhiSubmissionToken> waitTokens) noexcept override;
+	RhiSubmissionToken SubmitCommandRecordingLease(RhiCommandRecordingLease&& lease, std::span<const RhiSubmissionToken> waitTokens) noexcept override;
+	RhiSubmissionToken SubmitCommandRecordingBatch(std::span<RhiCommandRecordingLease> leases, std::span<const RhiSubmissionToken> waitTokens) noexcept override;
 	RhiSubmissionToken SubmitCurrentGraphicsCommandList(std::span<const RhiSubmissionToken> waitTokens) noexcept override;
 	void QueueWait(ERhiQueueType waitQueue, RhiSubmissionToken executionToken) noexcept override;
 	void WaitForSubmission(RhiSubmissionToken token) noexcept override;
@@ -66,16 +62,9 @@ public:
 private:
 	D3D12RenderDeviceServices() noexcept = default;
 
-	void Initialize(
-	    Window& window,
-	    PixelFormat backBufferFormat,
-	    const RhiPresentationConfiguration& presentationConfiguration,
-	    RhiInterposerHooks interposerHooks);
+	void Initialize(Window& window, PixelFormat backBufferFormat, const RhiPresentationConfiguration& presentationConfiguration, RhiInterposerHooks interposerHooks);
 	void InitializeDevice(RhiInterposerHooks interposerHooks);
-	void InitializePresentation(
-	    Window& window,
-	    PixelFormat backBufferFormat,
-	    const RhiPresentationConfiguration& presentationConfiguration);
+	void InitializePresentation(Window& window, PixelFormat backBufferFormat, const RhiPresentationConfiguration& presentationConfiguration);
 	void InitializeHardwareInterface();
 	void InitializeCommandRecording();
 	void InitializeSamplers();
@@ -111,11 +100,7 @@ std::unique_ptr<D3D12RenderDeviceServices> D3D12RenderDeviceServices::Create(
 	return services;
 }
 
-void D3D12RenderDeviceServices::Initialize(
-    Window& window,
-    PixelFormat backBufferFormat,
-    const RhiPresentationConfiguration& presentationConfiguration,
-    RhiInterposerHooks interposerHooks)
+void D3D12RenderDeviceServices::Initialize(Window& window, PixelFormat backBufferFormat, const RhiPresentationConfiguration& presentationConfiguration, RhiInterposerHooks interposerHooks)
 {
 	InitializeDevice(interposerHooks);
 	InitializePresentation(window, backBufferFormat, presentationConfiguration);
@@ -130,10 +115,7 @@ void D3D12RenderDeviceServices::InitializeDevice(RhiInterposerHooks interposerHo
 	m_descriptorHeapManager = std::make_unique<D3D12DescriptorHeapManager>(*m_rhi);
 }
 
-void D3D12RenderDeviceServices::InitializePresentation(
-    Window& window,
-    PixelFormat backBufferFormat,
-    const RhiPresentationConfiguration& presentationConfiguration)
+void D3D12RenderDeviceServices::InitializePresentation(Window& window, PixelFormat backBufferFormat, const RhiPresentationConfiguration& presentationConfiguration)
 {
 	m_swapChain = std::make_unique<D3D12SwapChain>(*m_rhi, window, *m_descriptorHeapManager, backBufferFormat, presentationConfiguration);
 }
@@ -141,21 +123,12 @@ void D3D12RenderDeviceServices::InitializePresentation(
 void D3D12RenderDeviceServices::InitializeHardwareInterface()
 {
 	m_uploadService = std::make_unique<D3D12UploadService>(*m_rhi, m_rhi->GetMemoryAllocator());
-	m_renderHardwareInterface = std::make_unique<D3D12RenderHardwareInterface>(
-	    *m_rhi,
-	    m_rhi->GetMemoryAllocator(),
-	    *m_descriptorHeapManager,
-	    *m_swapChain,
-	    *m_uploadService);
+	m_renderHardwareInterface = std::make_unique<D3D12RenderHardwareInterface>(*m_rhi, m_rhi->GetMemoryAllocator(), *m_descriptorHeapManager, *m_swapChain, *m_uploadService);
 }
 
 void D3D12RenderDeviceServices::InitializeCommandRecording()
 {
-	m_commandRecordingContext = std::make_unique<D3D12CommandRecordingContext>(
-	    *m_rhi,
-	    *m_renderHardwareInterface,
-	    *m_descriptorHeapManager,
-	    m_swapChain->GetMaximumFramesInFlight());
+	m_commandRecordingContext = std::make_unique<D3D12CommandRecordingContext>(*m_rhi, *m_renderHardwareInterface, *m_descriptorHeapManager, m_swapChain->GetMaximumFramesInFlight());
 	m_renderHardwareInterface->SetCommandRecordingContext(*m_commandRecordingContext);
 }
 
@@ -242,9 +215,7 @@ RenderCommandList& D3D12RenderDeviceServices::BeginCurrentGraphicsCommandList() 
 	return m_commandRecordingContext->BeginCurrentGraphicsCommandList(m_rhi->GetCurrentFrameIndex());
 }
 
-RhiCommandRecordingLease D3D12RenderDeviceServices::AcquireCommandRecordingLease(
-    ERhiQueueType queueType,
-    RhiCommandRecordingOwner owner) noexcept
+RhiCommandRecordingLease D3D12RenderDeviceServices::AcquireCommandRecordingLease(ERhiQueueType queueType, RhiCommandRecordingOwner owner) noexcept
 {
 	return m_commandRecordingContext->Acquire(queueType, m_rhi->GetCurrentFrameIndex(), owner);
 }
@@ -254,16 +225,12 @@ RhiCommandRecordingLease D3D12RenderDeviceServices::TakeCurrentGraphicsCommandRe
 	return m_commandRecordingContext->TakeCurrentGraphicsCommandRecordingLease(m_rhi->GetCurrentFrameIndex());
 }
 
-RhiSubmissionToken D3D12RenderDeviceServices::SubmitCommandRecordingLease(
-    RhiCommandRecordingLease&& lease,
-    std::span<const RhiSubmissionToken> waitTokens) noexcept
+RhiSubmissionToken D3D12RenderDeviceServices::SubmitCommandRecordingLease(RhiCommandRecordingLease&& lease, std::span<const RhiSubmissionToken> waitTokens) noexcept
 {
 	return m_commandRecordingContext->Submit(std::move(lease), waitTokens);
 }
 
-RhiSubmissionToken D3D12RenderDeviceServices::SubmitCommandRecordingBatch(
-    std::span<RhiCommandRecordingLease> leases,
-    std::span<const RhiSubmissionToken> waitTokens) noexcept
+RhiSubmissionToken D3D12RenderDeviceServices::SubmitCommandRecordingBatch(std::span<RhiCommandRecordingLease> leases, std::span<const RhiSubmissionToken> waitTokens) noexcept
 {
 	return m_commandRecordingContext->SubmitBatch(leases, waitTokens);
 }

@@ -13,9 +13,7 @@
 
 #include <algorithm>
 
-ReferencePathTracerResources::ReferencePathTracerResources(
-    RenderDeviceServices& deviceServices,
-    RendererMemoryMonitor& memoryMonitor) noexcept :
+ReferencePathTracerResources::ReferencePathTracerResources(RenderDeviceServices& deviceServices, RendererMemoryMonitor& memoryMonitor) noexcept :
     m_deviceServices(deviceServices),
     m_memoryMonitor(memoryMonitor)
 {
@@ -29,25 +27,15 @@ ReferencePathTracerResources::~ReferencePathTracerResources() noexcept
 void ReferencePathTracerResources::ReserveGraphResources(FrameGraphBuilder& builder, RenderViewportExtent extent)
 {
 	m_graphResources.WorkingMean = builder.ReservePersistentTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "ReferencePathTracer.WorkingMean",
-	        extent.Width,
-	        extent.Height,
-	        PixelFormat::R32G32B32A32_Float));
-	m_graphResources.WorkingM2 = builder.ReservePersistentTexture(
-	    FrameGraphTextureDesc::CreateColor("ReferencePathTracer.WorkingM2", extent.Width, extent.Height, PixelFormat::R32G32B32A32_Float));
+	    FrameGraphTextureDesc::CreateColor("ReferencePathTracer.WorkingMean", extent.Width, extent.Height, PixelFormat::R32G32B32A32_Float));
+
+	m_graphResources.WorkingM2 = builder.ReservePersistentTexture(FrameGraphTextureDesc::CreateColor("ReferencePathTracer.WorkingM2", extent.Width, extent.Height, PixelFormat::R32G32B32A32_Float));
+
 	m_graphResources.CommittedMean = builder.ReservePersistentTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "ReferencePathTracer.CommittedMean",
-	        extent.Width,
-	        extent.Height,
-	        PixelFormat::R32G32B32A32_Float));
+	    FrameGraphTextureDesc::CreateColor("ReferencePathTracer.CommittedMean", extent.Width, extent.Height, PixelFormat::R32G32B32A32_Float));
+
 	m_graphResources.CommittedM2 = builder.ReservePersistentTexture(
-	    FrameGraphTextureDesc::CreateColor(
-	        "ReferencePathTracer.CommittedM2",
-	        extent.Width,
-	        extent.Height,
-	        PixelFormat::R32G32B32A32_Float));
+	    FrameGraphTextureDesc::CreateColor("ReferencePathTracer.CommittedM2", extent.Width, extent.Height, PixelFormat::R32G32B32A32_Float));
 }
 
 void ReferencePathTracerResources::Allocate(RenderViewportExtent extent)
@@ -60,36 +48,15 @@ void ReferencePathTracerResources::Allocate(RenderViewportExtent extent)
 	Release();
 
 	RhiResourceService& resources = m_deviceServices.GetRenderHardwareInterface().GetResourceService();
-	const RhiTextureResourceDesc desc{
-	    .Width = extent.Width,
-	    .Height = extent.Height,
-	    .Format = PixelFormat::R32G32B32A32_Float,
-	    .AllowUnorderedAccess = true};
+	const RhiTextureResourceDesc desc{.Width = extent.Width, .Height = extent.Height, .Format = PixelFormat::R32G32B32A32_Float, .AllowUnorderedAccess = true};
 
-	m_allocation.WorkingMean = resources.CreateTextureResource(
-	    desc,
-	    ResourceState::Undefined,
-	    RhiMemoryCategory::Texture,
-	    RhiMemoryResidencyClass::DeviceLocal,
-	    L"ReferencePathTracer.WorkingMean");
-	m_allocation.WorkingM2 = resources.CreateTextureResource(
-	    desc,
-	    ResourceState::Undefined,
-	    RhiMemoryCategory::Texture,
-	    RhiMemoryResidencyClass::DeviceLocal,
-	    L"ReferencePathTracer.WorkingM2");
-	m_allocation.CommittedMean = resources.CreateTextureResource(
-	    desc,
-	    ResourceState::Undefined,
-	    RhiMemoryCategory::Texture,
-	    RhiMemoryResidencyClass::DeviceLocal,
-	    L"ReferencePathTracer.CommittedMean");
-	m_allocation.CommittedM2 = resources.CreateTextureResource(
-	    desc,
-	    ResourceState::Undefined,
-	    RhiMemoryCategory::Texture,
-	    RhiMemoryResidencyClass::DeviceLocal,
-	    L"ReferencePathTracer.CommittedM2");
+	m_allocation.WorkingMean = resources.CreateTextureResource(desc, ResourceState::Undefined, RhiMemoryCategory::Texture, RhiMemoryResidencyClass::DeviceLocal, L"ReferencePathTracer.WorkingMean");
+	m_allocation.WorkingM2 = resources.CreateTextureResource(desc, ResourceState::Undefined, RhiMemoryCategory::Texture, RhiMemoryResidencyClass::DeviceLocal, L"ReferencePathTracer.WorkingM2");
+
+	m_allocation.CommittedMean = resources
+	                                 .CreateTextureResource(desc, ResourceState::Undefined, RhiMemoryCategory::Texture, RhiMemoryResidencyClass::DeviceLocal, L"ReferencePathTracer.CommittedMean");
+
+	m_allocation.CommittedM2 = resources.CreateTextureResource(desc, ResourceState::Undefined, RhiMemoryCategory::Texture, RhiMemoryResidencyClass::DeviceLocal, L"ReferencePathTracer.CommittedM2");
 
 	m_allocation.Extent = extent;
 	m_allocation.Bytes = resources.GetTextureAllocationInfo(desc).SizeInBytes * 4u;

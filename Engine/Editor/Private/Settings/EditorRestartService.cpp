@@ -68,6 +68,7 @@ bool EditorRestartService::Restart(Window& hostWindow) const
 	STARTUPINFOW startupInfo{};
 	startupInfo.cb = sizeof(startupInfo);
 	PROCESS_INFORMATION processInfo{};
+
 	const BOOL launched = CreateProcessW(
 	    executablePath.c_str(),
 	    mutableCommandLine.data(),
@@ -79,6 +80,7 @@ bool EditorRestartService::Restart(Window& hostWindow) const
 	    workingDirectory.empty() ? nullptr : workingDirectory.c_str(),
 	    &startupInfo,
 	    &processInfo);
+
 	if (launched == FALSE)
 	{
 		return false;

@@ -17,12 +17,10 @@ public:
 	RhiRayTracingAccelerationStructurePrebuildInfo GetClassicTopLevelAccelerationStructurePrebuildInfo(
 	    std::uint32_t instanceCount,
 	    ERhiClassicTlasBuildFlags buildFlags = ERhiClassicTlasBuildFlags::None) const noexcept override;
-	RhiOwnedResourceHandle CreateClassicTopLevelAccelerationStructureInstanceBuffer(
-	    const RhiRayTracingInstanceDesc* instances,
-	    std::uint32_t instanceCount,
-	    std::wstring_view debugName) override;
+	RhiOwnedResourceHandle CreateClassicTopLevelAccelerationStructureInstanceBuffer(const RhiRayTracingInstanceDesc* instances, std::uint32_t instanceCount, std::wstring_view debugName) override;
 
 private:
 	VulkanRhi* m_rhi = nullptr;
+
 	VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
 };

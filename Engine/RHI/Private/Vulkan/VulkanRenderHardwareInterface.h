@@ -35,6 +35,7 @@ public:
 	VulkanRenderHardwareInterface& operator=(VulkanRenderHardwareInterface&&) = delete;
 
 	const RhiCapabilities& GetCapabilities() const noexcept override { return m_capabilities; }
+
 	std::uint32_t GetCurrentFrameIndex() const noexcept override;
 	RhiResourceService& GetResourceService() noexcept override;
 	const RhiResourceService& GetResourceService() const noexcept override;
@@ -63,20 +64,13 @@ public:
 	RhiRect GetBackBufferScissorRect() const noexcept;
 	RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept;
 	RhiResourceHandle GetBackBufferResource() const noexcept;
-	RhiRayTracingAccelerationStructurePrebuildInfo GetBottomLevelAccelerationStructurePrebuildInfo(
-	    const RhiRayTracingGeometryDesc& geometry) const noexcept;
+	RhiRayTracingAccelerationStructurePrebuildInfo GetBottomLevelAccelerationStructurePrebuildInfo(const RhiRayTracingGeometryDesc& geometry) const noexcept;
 	RhiRayTracingAccelerationStructurePrebuildInfo GetTopLevelAccelerationStructurePrebuildInfo(
 	    std::uint32_t instanceCount,
 	    ERhiClassicTlasBuildFlags buildFlags = ERhiClassicTlasBuildFlags::None) const noexcept;
 	RhiOwnedResourceHandle CreateRayTracingScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName);
-	RhiOwnedResourceHandle CreateRayTracingAccelerationStructureBuffer(
-	    std::uint64_t sizeInBytes,
-	    ERhiRayTracingAccelerationStructureType type,
-	    std::wstring_view debugName);
-	RhiOwnedResourceHandle CreateRayTracingInstanceBuffer(
-	    const RhiRayTracingInstanceDesc* instances,
-	    std::uint32_t instanceCount,
-	    std::wstring_view debugName);
+	RhiOwnedResourceHandle CreateRayTracingAccelerationStructureBuffer(std::uint64_t sizeInBytes, ERhiRayTracingAccelerationStructureType type, std::wstring_view debugName);
+	RhiOwnedResourceHandle CreateRayTracingInstanceBuffer(const RhiRayTracingInstanceDesc* instances, std::uint32_t instanceCount, std::wstring_view debugName);
 	void BeginPresentRenderPass(RhiClearColorView clearColor) noexcept;
 	void BeginPresentOverlayPass() noexcept;
 	void EndPresentRenderPass() noexcept;

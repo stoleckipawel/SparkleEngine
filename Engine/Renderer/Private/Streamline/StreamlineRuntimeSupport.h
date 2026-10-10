@@ -12,8 +12,5 @@ void SetSharedStreamlineFrameMarker(ERhiFrameLatencyMarker marker, std::uint64_t
   #include <cstdint>
   #include <sl.h>
 
-bool IsStreamlineFeatureSupported(
-    sl::Feature feature,
-    const RhiCapabilities& capabilities,
-    RhiNativeDeviceQueueInterop nativeInterop) noexcept;
+bool IsStreamlineFeatureSupported(sl::Feature feature, const RhiCapabilities& capabilities, RhiNativeDeviceQueueInterop nativeInterop) noexcept;
 #endif

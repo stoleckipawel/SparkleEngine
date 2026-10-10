@@ -8,13 +8,13 @@
 #include <utility>
 
 template <typename Signature, std::size_t Capacity> class Event;
+
 class SPARKLE_CORE_API ScopedEventHandle
 {
 public:
 	ScopedEventHandle() noexcept = default;
 
-	template <typename Signature, std::size_t Capacity>
-	ScopedEventHandle(Event<Signature, Capacity>& InEvent, EventHandle InHandle) noexcept :
+	template <typename Signature, std::size_t Capacity> ScopedEventHandle(Event<Signature, Capacity>& InEvent, EventHandle InHandle) noexcept :
 	    m_Handle(InHandle),
 	    m_RemoveFn([&InEvent, InHandle]() { InEvent.Remove(InHandle); })
 	{
@@ -44,6 +44,7 @@ public:
 	}
 
 	ScopedEventHandle(const ScopedEventHandle&) = delete;
+
 	ScopedEventHandle& operator=(const ScopedEventHandle&) = delete;
 
 	void Reset() noexcept

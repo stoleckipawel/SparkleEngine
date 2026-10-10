@@ -11,10 +11,7 @@ namespace SparkleLauncher
 {
 	static constexpr std::size_t kMaximumProgressLineBytes = 4096;
 
-	void LauncherProgressStreamDecoder::Consume(
-	    std::string_view output,
-	    const OutputCallback& outputCallback,
-	    const ProgressCallback& progressCallback)
+	void LauncherProgressStreamDecoder::Consume(std::string_view output, const OutputCallback& outputCallback, const ProgressCallback& progressCallback)
 	{
 		m_pendingLine.append(output);
 		for (std::size_t newline = m_pendingLine.find('\n'); newline != std::string::npos; newline = m_pendingLine.find('\n'))

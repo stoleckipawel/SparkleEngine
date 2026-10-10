@@ -52,10 +52,7 @@ namespace Filesystem
 	std::filesystem::path BuildShaderRecookSignalPath(const std::filesystem::path& cookedShaderRootPath);
 
 	// Marker-based repository discovery
-	std::optional<std::filesystem::path> FindAncestorWithMarker(
-	    const std::filesystem::path& startDir,
-	    std::string_view markerFileName,
-	    uint32_t maxDepth = 32);
+	std::optional<std::filesystem::path> FindAncestorWithMarker(const std::filesystem::path& startDir, std::string_view markerFileName, uint32_t maxDepth = 32);
 
 	std::optional<std::filesystem::path> DiscoverWorkspaceRoot();
 
@@ -69,10 +66,7 @@ namespace Filesystem
 
 	// Source asset resolution
 	std::optional<std::filesystem::path> ResolveAssetPathNormalized(const std::filesystem::path& inputPath, AssetType type);
-	void AppendNormalizedAssetPaths(
-	    std::span<const std::filesystem::path> inputPaths,
-	    AssetType type,
-	    std::vector<std::filesystem::path>& destination);
+	void AppendNormalizedAssetPaths(std::span<const std::filesystem::path> inputPaths, AssetType type, std::vector<std::filesystem::path>& destination);
 	std::optional<std::filesystem::path> ResolveAssetPath(const std::filesystem::path& inputPath, AssetType type);
 	std::filesystem::path ResolveAssetPathValidated(const std::filesystem::path& inputPath, AssetType type);
 	const std::filesystem::path& GetShaderSymbolsOutputPath();

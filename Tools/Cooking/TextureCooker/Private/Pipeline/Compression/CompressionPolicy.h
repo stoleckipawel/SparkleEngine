@@ -18,10 +18,7 @@ namespace TextureCookPipeline
 	};
 
 	CompressionTarget ResolveCompressionTarget(const TextureCookRequest& request, const WorkingTexture& workingTexture) noexcept;
-	DXGI_FORMAT ResolveCompressedOutputFormat(
-	    const TextureCookRequest& request,
-	    const WorkingTexture& workingTexture,
-	    CompressionTarget target) noexcept;
+	DXGI_FORMAT ResolveCompressedOutputFormat(const TextureCookRequest& request, const WorkingTexture& workingTexture, CompressionTarget target) noexcept;
 
 	std::uint32_t ComputeBlockCompressedRowPitch(CompressionTarget target, std::uint32_t width) noexcept;
 	std::uint32_t ComputeBlockCompressedSlicePitch(CompressionTarget target, std::uint32_t width, std::uint32_t height) noexcept;

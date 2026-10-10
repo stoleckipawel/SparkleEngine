@@ -15,10 +15,7 @@ struct AssetCookerSceneBatch::Item final
 	AssetCookerDiagnostics Diagnostics;
 };
 
-bool AssetCookerSceneBatch::Execute(
-    const std::vector<AssetCookerSceneEntry>& sceneEntries,
-    AssetCookerDiagnostics& diagnostics,
-    const ToolWorkProgressCallback& progress)
+bool AssetCookerSceneBatch::Execute(const std::vector<AssetCookerSceneEntry>& sceneEntries, AssetCookerDiagnostics& diagnostics, const ToolWorkProgressCallback& progress)
 {
 	const std::size_t totalWork = sceneEntries.size() + 1;
 	if (progress)
@@ -89,11 +86,7 @@ CompiledTaskGraph AssetCookerSceneBatch::BuildTaskGraph(
 	return builder.Compile();
 }
 
-TaskResult AssetCookerSceneBatch::BuildProduct(
-    const std::vector<AssetCookerSceneEntry>& sceneEntries,
-    std::vector<Item>& items,
-    std::uint32_t index,
-    TaskExecutionContext& context)
+TaskResult AssetCookerSceneBatch::BuildProduct(const std::vector<AssetCookerSceneEntry>& sceneEntries, std::vector<Item>& items, std::uint32_t index, TaskExecutionContext& context)
 {
 	if (context.IsCancellationRequested())
 	{
@@ -112,15 +105,12 @@ TaskResult AssetCookerSceneBatch::BuildProduct(
 	}
 }
 
-bool AssetCookerSceneBatch::BuildProducts(
-    const std::vector<AssetCookerSceneEntry>& sceneEntries,
-    std::vector<Item>& items,
-    const ToolWorkProgressCallback& progress,
-    std::size_t totalWork)
+bool AssetCookerSceneBatch::BuildProducts(const std::vector<AssetCookerSceneEntry>& sceneEntries, std::vector<Item>& items, const ToolWorkProgressCallback& progress, std::size_t totalWork)
 {
 	const std::uint32_t taskCapacity = static_cast<std::uint32_t>(std::max<std::size_t>(sceneEntries.size(), 1u));
 	std::mutex progressMutex;
 	std::size_t completed = 0;
+
 	const auto itemCompleted = [&sceneEntries, &progress, &progressMutex, &completed, totalWork](std::uint32_t index)
 	{
 		if (progress)

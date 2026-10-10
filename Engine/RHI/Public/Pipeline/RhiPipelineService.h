@@ -13,6 +13,7 @@ class SPARKLE_RHI_API RhiPipelineService
 {
 public:
 	virtual ~RhiPipelineService() noexcept = default;
+
 	RhiPipelineService(const RhiPipelineService&) = delete;
 	RhiPipelineService& operator=(const RhiPipelineService&) = delete;
 	RhiPipelineService(RhiPipelineService&&) = delete;

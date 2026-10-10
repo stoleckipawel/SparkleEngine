@@ -39,12 +39,12 @@ namespace Filesystem::Private
 
 	void RebuildCookedPaths(AssetPathState& state)
 	{
-		const std::filesystem::path projectName =
-		    state.projectPath.empty() ? std::filesystem::path("Shared") : state.projectPath.filename();
+		const std::filesystem::path projectName = state.projectPath.empty() ? std::filesystem::path("Shared") : state.projectPath.filename();
 		const WorkspaceOutputPaths workspaceOutputs = ResolveWorkspaceOutputPaths(state.workspacePath);
-		state.cookedAssetRootPath = state.packageRuntimeRoot
-		    ? Paths::Normalize(state.workspacePath / "Projects" / projectName / "Cooked")
-		    : Paths::Normalize(workspaceOutputs.CookedProjectDirectory(projectName.string()));
+
+		state.cookedAssetRootPath = state.packageRuntimeRoot ? Paths::Normalize(state.workspacePath / "Projects" / projectName / "Cooked")
+		                                                     : Paths::Normalize(workspaceOutputs.CookedProjectDirectory(projectName.string()));
+
 		state.cookedShaderRootPath = Paths::Normalize(state.cookedAssetRootPath / "Shaders");
 		state.globalShaderMapPath = Filesystem::BuildGlobalShaderMapPath(state.cookedShaderRootPath);
 		state.cookedShaderLibraryPath = Filesystem::BuildCookedShaderLibraryPath(state.cookedShaderRootPath);
@@ -56,9 +56,9 @@ namespace Filesystem::Private
 		state.cookedSkeletonRootPath = Paths::Normalize(state.cookedAssetRootPath / "Skeletons");
 		state.cookedAnimationRootPath = Paths::Normalize(state.cookedAssetRootPath / "Animations");
 		state.sceneAssetRegistryPath = Paths::Normalize(state.cookedAssetRootPath / "SceneAssetRegistry.sreg");
-		state.shaderSymbolsOutputPath = state.packageRuntimeRoot
-		    ? Paths::Normalize(state.productUserStatePaths.CacheRoot / "ShaderSymbols" / projectName)
-		    : Paths::Normalize(workspaceOutputs.SymbolsRoot / "shaders" / projectName);
+
+		state.shaderSymbolsOutputPath = state.packageRuntimeRoot ? Paths::Normalize(state.productUserStatePaths.CacheRoot / "ShaderSymbols" / projectName)
+		                                                         : Paths::Normalize(workspaceOutputs.SymbolsRoot / "shaders" / projectName);
 	}
 
 	void MaterializeOutputDirectories(const AssetPathState& state)

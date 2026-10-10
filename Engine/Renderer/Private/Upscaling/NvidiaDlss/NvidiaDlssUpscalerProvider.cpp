@@ -55,11 +55,7 @@ bool NvidiaDlssUpscalerProvider::Evaluate(const UpscalerEvaluationDesc& evaluati
 	}
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-	return EvaluateStreamlineDlssFrame(
-	    m_frameState.GetFrameInput(),
-	    m_frameState.GetQualityMode(),
-	    sl::ViewportHandle{NvidiaDlssUpscalerProviderConstants::kDlssViewportId},
-	    evaluation);
+	return EvaluateStreamlineDlssFrame(m_frameState.GetFrameInput(), m_frameState.GetQualityMode(), sl::ViewportHandle{NvidiaDlssUpscalerProviderConstants::kDlssViewportId}, evaluation);
 #else
 	(void) evaluation;
 	return false;

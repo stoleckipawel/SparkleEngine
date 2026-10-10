@@ -43,7 +43,9 @@ public:
 	    RayTracingBlasCache& blasCache,
 	    const RayTracingShaderTablePlan& shaderTablePlan,
 	    RayTracingPerformanceDiagnostics* diagnostics = nullptr) noexcept;
+
 	const TlasHandle& GetTlas() const noexcept { return m_tlas; }
+
 	void Clear() noexcept;
 
 private:
@@ -52,9 +54,7 @@ private:
 	static std::uint64_t AlignRayTracingBufferSize(std::uint64_t sizeInBytes, std::uint64_t alignment) noexcept;
 	static bool SupportsClassicTlasRefit(RenderHardwareInterface& renderHardwareInterface) noexcept;
 	static ERhiClassicTlasBuildFlags ResolveClassicTlasBuildFlags(RenderHardwareInterface& renderHardwareInterface) noexcept;
-	static std::uint64_t ResolveScratchSize(
-	    const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo,
-	    ERhiClassicTlasBuildFlags buildFlags) noexcept;
+	static std::uint64_t ResolveScratchSize(const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo, ERhiClassicTlasBuildFlags buildFlags) noexcept;
 	static RhiRayTracingInstanceFlags ResolveInstanceFlags(const PreparedRenderScene& preparedScene, const MeshDraw& draw) noexcept;
 	static void CollectInstances(
 	    RenderCommandContext& commandContext,
@@ -64,10 +64,7 @@ private:
 	    RayTracingPerformanceDiagnostics* diagnostics,
 	    BuildState& state) noexcept;
 	void PrepareBuild(BuildState& state) noexcept;
-	void RecordBuild(
-	    RenderCommandContext& commandContext,
-	    const BuildState& state,
-	    RayTracingPerformanceDiagnostics* diagnostics) const noexcept;
+	void RecordBuild(RenderCommandContext& commandContext, const BuildState& state, RayTracingPerformanceDiagnostics* diagnostics) const noexcept;
 	void TrackBuildResources(RenderCommandContext& commandContext) const noexcept;
 	void ReleaseResources() noexcept;
 	void EnsureResources(const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo) noexcept;

@@ -61,10 +61,7 @@ CookedSceneBuild ImportedSceneCooker::Build(const AssetCookerSceneEntry& sceneEn
 	return BuildCookedScene(sceneEntry, importOutput, diagnostics);
 }
 
-CookedSceneBuild ImportedSceneCooker::BuildCookedScene(
-    const AssetCookerSceneEntry& sceneEntry,
-    const SourceImportOutput& importOutput,
-    AssetCookerDiagnostics& diagnostics)
+CookedSceneBuild ImportedSceneCooker::BuildCookedScene(const AssetCookerSceneEntry& sceneEntry, const SourceImportOutput& importOutput, AssetCookerDiagnostics& diagnostics)
 {
 	CookedSceneBuild build;
 	try

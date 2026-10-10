@@ -23,5 +23,6 @@ public:
 
 protected:
 	Application() = default;
+
 	static void SaveRenderingSettings(const EngineRenderingSettingsState& settings);
 };

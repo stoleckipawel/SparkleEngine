@@ -24,10 +24,6 @@ namespace AnimationDiagnostics
 
 	void LogUnsupportedRuntimeChannels(const AnimationClipResource& clip, std::uint32_t unsupportedRuntimeChannelCount)
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_animationEvaluationLogger,
-		    "Animation evaluation: clip '{}' has {} unsupported runtime animation channel(s).",
-		    clip.name,
-		    unsupportedRuntimeChannelCount);
+		SPDLOG_LOGGER_WARN(g_animationEvaluationLogger, "Animation evaluation: clip '{}' has {} unsupported runtime animation channel(s).", clip.name, unsupportedRuntimeChannelCount);
 	}
 }

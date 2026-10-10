@@ -29,8 +29,6 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 		cumulativeCount = nextCount;
 	}
 
-	const float averageLuminance = retainedCount > 0.0f
-	    ? max(weightedLuminance / retainedCount, Exposure::MinimumMeteredLuminance)
-	    : Exposure::MinimumMeteredLuminance;
+	const float averageLuminance = retainedCount > 0.0f ? max(weightedLuminance / retainedCount, Exposure::MinimumMeteredLuminance) : Exposure::MinimumMeteredLuminance;
 	LuminanceMomentsOutput[uint2(0u, 0u)] = float4(log(averageLuminance), sampleCount != 0u ? 1.0f : 0.0f, 0.0f, 0.0f);
 }

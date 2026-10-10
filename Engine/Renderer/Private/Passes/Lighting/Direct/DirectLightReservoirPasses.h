@@ -7,8 +7,4 @@ struct RenderFrame;
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
 
-void AddDirectLightReservoirPasses(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources);
+void AddDirectLightReservoirPasses(FrameGraphBuilder& builder, const RenderFrame& frame, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources);

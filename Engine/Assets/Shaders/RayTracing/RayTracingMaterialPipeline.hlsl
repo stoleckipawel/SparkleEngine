@@ -8,8 +8,7 @@ void RayTracingMaterialMiss(inout RayTracingMaterialPayload payload)
 }
 
 [shader("closesthit")]
-void RayTracingMaterialClosestHit(inout RayTracingMaterialPayload payload,
-	BuiltInTriangleIntersectionAttributes attributes)
+void RayTracingMaterialClosestHit(inout RayTracingMaterialPayload payload, BuiltInTriangleIntersectionAttributes attributes)
 {
 	payload.RayT = RayTCurrent();
 	payload.InstanceId = InstanceID();
@@ -23,10 +22,7 @@ void RayTracingMaterialClosestHit(inout RayTracingMaterialPayload payload,
 void RayTracingMaterialAnyHit(inout RayTracingMaterialPayload payload, BuiltInTriangleIntersectionAttributes attributes)
 {
 	(void)payload;
-	if (!ResolveRayTracingCandidateAlpha(InstanceID(),
-	                                     PrimitiveIndex(),
-	                                     attributes.barycentrics,
-	                                     HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE))
+	if (!ResolveRayTracingCandidateAlpha(InstanceID(), PrimitiveIndex(), attributes.barycentrics, HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE))
 	{
 		IgnoreHit();
 	}

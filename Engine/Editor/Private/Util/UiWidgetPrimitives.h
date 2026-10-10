@@ -22,15 +22,7 @@ namespace UiUtil
 	ImU32 DetailsRowBackgroundColor() noexcept;
 	void PushFontIfAvailable(ImFont* font);
 	void PopFontIfAvailable(ImFont* font);
-	void DrawHeaderBar(
-	    const char* title,
-	    const char* trailingText,
-	    float height,
-	    ImU32 backgroundColor,
-	    ImU32 borderColor,
-	    ImFont* titleFont,
-	    ImFont* trailingFont,
-	    const ImVec2& padding);
+	void DrawHeaderBar(const char* title, const char* trailingText, float height, ImU32 backgroundColor, ImU32 borderColor, ImFont* titleFont, ImFont* trailingFont, const ImVec2& padding);
 	void DrawRightAlignedText(const char* value);
 	ImU32 AxisColor(int axisIndex) noexcept;
 	bool IsDifferentFromDefault(float value, float defaultValue) noexcept;

@@ -14,8 +14,7 @@ StreamlineFrameEvaluation::StreamlineFrameEvaluation(sl::ViewportHandle viewport
 bool StreamlineFrameEvaluation::AcquireFrameToken(std::uint64_t frameId) noexcept
 {
 	const std::uint32_t streamlineFrameIndex = static_cast<std::uint32_t>(frameId);
-	return m_commandBuffer != nullptr && slGetNewFrameToken(m_frameToken, &streamlineFrameIndex) == sl::Result::eOk
-	    && m_frameToken != nullptr;
+	return m_commandBuffer != nullptr && slGetNewFrameToken(m_frameToken, &streamlineFrameIndex) == sl::Result::eOk && m_frameToken != nullptr;
 }
 
 bool StreamlineFrameEvaluation::SetViewConstants(const ImageProviderFrameInput& frameInput) noexcept
@@ -26,6 +25,7 @@ bool StreamlineFrameEvaluation::SetViewConstants(const ImageProviderFrameInput& 
 	}
 
 	sl::Constants constants{};
+
 	FillStreamlineViewConstants(
 	    constants,
 	    StreamlineViewConstantsInput{
@@ -35,6 +35,7 @@ bool StreamlineFrameEvaluation::SetViewConstants(const ImageProviderFrameInput& 
 	        .MotionVectorsCurrentMinusPrevious = true,
 	        .ReversedDeviceDepth = true,
 	        .ResetRequested = frameInput.ResetHistory});
+
 	return slSetConstants(constants, *m_frameToken, m_viewport) == sl::Result::eOk;
 }
 
@@ -46,7 +47,6 @@ bool StreamlineFrameEvaluation::Evaluate(sl::Feature feature) noexcept
 	}
 
 	const sl::BaseStructure* inputs[] = {&m_viewport};
-	return slEvaluateFeature(feature, *m_frameToken, inputs, static_cast<std::uint32_t>(std::size(inputs)), m_commandBuffer)
-	    == sl::Result::eOk;
+	return slEvaluateFeature(feature, *m_frameToken, inputs, static_cast<std::uint32_t>(std::size(inputs)), m_commandBuffer) == sl::Result::eOk;
 }
 #endif

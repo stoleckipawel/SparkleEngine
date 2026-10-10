@@ -12,9 +12,7 @@
   #include <sl_dlss.h>
   #include <sl_dlss_d.h>
 
-static sl::DLSSDOptions BuildStreamlineRayReconstructionOptions(
-    EUpscalerQualityMode qualityMode,
-    RenderViewportExtent outputExtent) noexcept
+static sl::DLSSDOptions BuildStreamlineRayReconstructionOptions(EUpscalerQualityMode qualityMode, RenderViewportExtent outputExtent) noexcept
 {
 	sl::DLSSDOptions options{};
 	options.mode = ToStreamlineDlssMode(qualityMode);

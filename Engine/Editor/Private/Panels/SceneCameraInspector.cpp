@@ -11,36 +11,22 @@
 class SceneCameraEditSubmission final
 {
 public:
-	static void Submit(
-	    EditorTransactionHistory& transactionHistory,
-	    std::uint64_t generation,
-	    WorldEditPayload after,
-	    WorldEditPayload before,
-	    const char* key)
+	static void Submit(EditorTransactionHistory& transactionHistory, std::uint64_t generation, WorldEditPayload after, WorldEditPayload before, const char* key)
 	{
 		(void) transactionHistory.Execute({0, std::move(after)}, {0, std::move(before)}, generation, key);
 	}
 };
 
-void SceneCameraInspector::Build(
-    const WorldCameraReadData& camera,
-    EditorTransactionHistory& transactionHistory,
-    std::uint64_t generation,
-    const std::string& filter) noexcept
+void SceneCameraInspector::Build(const WorldCameraReadData& camera, EditorTransactionHistory& transactionHistory, std::uint64_t generation, const std::string& filter) noexcept
 {
 	BuildTransformCategory(filter, camera, transactionHistory, generation);
 	BuildCameraCategory(filter, camera, transactionHistory, generation);
 	BuildAdvancedParametersCategory(filter, camera, transactionHistory, generation);
 }
 
-void SceneCameraInspector::BuildTransformCategory(
-    const std::string& filter,
-    const WorldCameraReadData& camera,
-    EditorTransactionHistory& transactionHistory,
-    std::uint64_t generation) noexcept
+void SceneCameraInspector::BuildTransformCategory(const std::string& filter, const WorldCameraReadData& camera, EditorTransactionHistory& transactionHistory, std::uint64_t generation) noexcept
 {
-	if (!UiUtil::MatchesDetailsFilter(filter, "Transform", "location rotation scale position")
-	    || !UiUtil::BeginDetailsCategory("Transform"))
+	if (!UiUtil::MatchesDetailsFilter(filter, "Transform", "location rotation scale position") || !UiUtil::BeginDetailsCategory("Transform"))
 	{
 		return;
 	}
@@ -88,14 +74,9 @@ void SceneCameraInspector::BuildTransformCategory(
 	UiUtil::EndDetailsCategory();
 }
 
-void SceneCameraInspector::BuildCameraCategory(
-    const std::string& filter,
-    const WorldCameraReadData& camera,
-    EditorTransactionHistory& transactionHistory,
-    std::uint64_t generation) noexcept
+void SceneCameraInspector::BuildCameraCategory(const std::string& filter, const WorldCameraReadData& camera, EditorTransactionHistory& transactionHistory, std::uint64_t generation) noexcept
 {
-	if (!UiUtil::MatchesDetailsFilter(filter, "Camera", "field of view near clip far clip aspect ratio")
-	    || !UiUtil::BeginDetailsCategory("Camera"))
+	if (!UiUtil::MatchesDetailsFilter(filter, "Camera", "field of view near clip far clip aspect ratio") || !UiUtil::BeginDetailsCategory("Camera"))
 	{
 		return;
 	}

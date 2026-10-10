@@ -40,15 +40,10 @@ SceneUpscalingMethod ResolveSceneUpscalingMethod(RenderViewMode viewMode)
 		return SceneUpscalingMethod::Linear;
 	}
 
-	return ResolveRenderViewPresentationDomain(viewMode) == RenderViewPresentationDomain::DisplayLinearExact
-	    ? SceneUpscalingMethod::Point
-	    : SceneUpscalingMethod::ConfiguredProvider;
+	return ResolveRenderViewPresentationDomain(viewMode) == RenderViewPresentationDomain::DisplayLinearExact ? SceneUpscalingMethod::Point : SceneUpscalingMethod::ConfiguredProvider;
 }
 
-RenderViewportExtent ResolveSceneRenderExtent(
-    RenderViewMode viewMode,
-    RenderViewportExtent outputExtent,
-    RenderViewportExtent configuredRenderExtent)
+RenderViewportExtent ResolveSceneRenderExtent(RenderViewMode viewMode, RenderViewportExtent outputExtent, RenderViewportExtent configuredRenderExtent)
 {
 	return ResolveSceneUpscalingMethod(viewMode) == SceneUpscalingMethod::ConfiguredProvider ? configuredRenderExtent : outputExtent;
 }

@@ -9,8 +9,5 @@
 class AssetCookerDispatcher final
 {
 public:
-	static bool DispatchPlan(
-	    const AssetCookerProjectCookPlan& plan,
-	    AssetCookerDiagnostics& diagnostics,
-	    std::vector<AssetCookerOutputRecord>& outOutputs);
+	static bool DispatchPlan(const AssetCookerProjectCookPlan& plan, AssetCookerDiagnostics& diagnostics, std::vector<AssetCookerOutputRecord>& outOutputs);
 };

@@ -21,6 +21,7 @@ public:
 	explicit EditorViewportSettings(std::filesystem::path path);
 
 	const EditorViewportSettingsState& GetState() const noexcept { return m_state; }
+
 	bool SetMoveSpeed(float speedMetersPerSecond) noexcept;
 	bool SetRotationSpeed(float degreesPerPixel) noexcept;
 	bool SetInvertY(bool invertY) noexcept;

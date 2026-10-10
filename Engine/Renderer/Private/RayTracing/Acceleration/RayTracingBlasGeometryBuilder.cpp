@@ -13,11 +13,9 @@ SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_rayTracingBlasGeometryBuilderLogger, "Rende
 
 bool RayTracingBlasGeometryBuilder::GeometryEquals(const RhiRayTracingGeometryDesc& left, const RhiRayTracingGeometryDesc& right) noexcept
 {
-	return left.VertexBuffer.Resource.Value == right.VertexBuffer.Resource.Value
-	    && left.VertexBuffer.OffsetInBytes == right.VertexBuffer.OffsetInBytes && left.VertexStrideInBytes == right.VertexStrideInBytes
-	    && left.VertexCount == right.VertexCount && left.IndexBuffer.Resource.Value == right.IndexBuffer.Resource.Value
-	    && left.IndexBuffer.OffsetInBytes == right.IndexBuffer.OffsetInBytes && left.IndexCount == right.IndexCount
-	    && left.IndexFormat == right.IndexFormat && left.Opaque == right.Opaque;
+	return left.VertexBuffer.Resource.Value == right.VertexBuffer.Resource.Value && left.VertexBuffer.OffsetInBytes == right.VertexBuffer.OffsetInBytes
+	    && left.VertexStrideInBytes == right.VertexStrideInBytes && left.VertexCount == right.VertexCount && left.IndexBuffer.Resource.Value == right.IndexBuffer.Resource.Value
+	    && left.IndexBuffer.OffsetInBytes == right.IndexBuffer.OffsetInBytes && left.IndexCount == right.IndexCount && left.IndexFormat == right.IndexFormat && left.Opaque == right.Opaque;
 }
 
 std::uint64_t RayTracingBlasGeometryBuilder::AlignRayTracingBufferSize(std::uint64_t sizeInBytes, std::uint64_t alignment) noexcept
@@ -30,20 +28,11 @@ bool RayTracingBlasGeometryBuilder::IsSkinnedDraw(const MeshDraw& draw) noexcept
 	return draw.Geometry.MeshKind == RenderMeshKind::Skeletal;
 }
 
-void RayTracingBlasGeometryBuilder::ComputeSkinnedPositions(
-    const PreparedRenderScene& preparedScene,
-    const MeshDraw& draw,
-    const GpuMesh& mesh,
-    std::vector<DirectX::XMFLOAT3>& outPositions) noexcept
+void RayTracingBlasGeometryBuilder::ComputeSkinnedPositions(const PreparedRenderScene& preparedScene, const MeshDraw& draw, const GpuMesh& mesh, std::vector<DirectX::XMFLOAT3>& outPositions) noexcept
 {
-	if (!mesh.HasRayTracingHitData() || !mesh.HasSkinInfluences()
-	    || mesh.GetRayTracingHitVertices().size() != mesh.GetSkinInfluences().size() || preparedScene.jointMatrices.empty())
+	if (!mesh.HasRayTracingHitData() || !mesh.HasSkinInfluences() || mesh.GetRayTracingHitVertices().size() != mesh.GetSkinInfluences().size() || preparedScene.jointMatrices.empty())
 	{
-		Diagnostics::Fatal(
-		    g_rayTracingBlasGeometryBuilderLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Skinned BLAS input has incomplete hit, skin-influence, or joint-matrix data.");
+		Diagnostics::Fatal(g_rayTracingBlasGeometryBuilderLogger, __FILE__, __LINE__, "Skinned BLAS input has incomplete hit, skin-influence, or joint-matrix data.");
 	}
 
 	const std::span<const RayTracingHitVertex> vertices = mesh.GetRayTracingHitVertices();
@@ -61,15 +50,10 @@ void RayTracingBlasGeometryBuilder::ComputeSkinnedPositions(
 				continue;
 			}
 
-			const std::uint32_t jointMatrixIndex =
-			    draw.Skinning.JointMatrixOffset + skinInfluences[vertexIndex].jointIndices[influenceIndex];
+			const std::uint32_t jointMatrixIndex = draw.Skinning.JointMatrixOffset + skinInfluences[vertexIndex].jointIndices[influenceIndex];
 			if (jointMatrixIndex >= preparedScene.jointMatrices.size())
 			{
-				Diagnostics::Fatal(
-				    g_rayTracingBlasGeometryBuilderLogger,
-				    __FILE__,
-				    __LINE__,
-				    "Skinned BLAS vertex references a joint matrix outside the render scene.");
+				Diagnostics::Fatal(g_rayTracingBlasGeometryBuilderLogger, __FILE__, __LINE__, "Skinned BLAS vertex references a joint matrix outside the render scene.");
 			}
 		}
 
@@ -106,19 +90,13 @@ DirectX::XMFLOAT3 RayTracingBlasGeometryBuilder::TransformSkinnedPosition(
 
 		const std::uint32_t jointMatrixIndex = jointMatrixOffset + influence.jointIndices[influenceIndex];
 		const DirectX::XMMATRIX skinningMatrix = DirectX::XMLoadFloat4x4(&jointMatrices[jointMatrixIndex]);
-		skinnedPosition = DirectX::XMVectorAdd(
-		    skinnedPosition,
-		    DirectX::XMVectorScale(DirectX::XMVector3Transform(sourcePosition, skinningMatrix), weight));
+		skinnedPosition = DirectX::XMVectorAdd(skinnedPosition, DirectX::XMVectorScale(DirectX::XMVector3Transform(sourcePosition, skinningMatrix), weight));
 		totalWeight += weight;
 	}
 
 	if (totalWeight <= 0.0f)
 	{
-		Diagnostics::Fatal(
-		    g_rayTracingBlasGeometryBuilderLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Skinned BLAS vertex has no positive joint influence.");
+		Diagnostics::Fatal(g_rayTracingBlasGeometryBuilderLogger, __FILE__, __LINE__, "Skinned BLAS vertex has no positive joint influence.");
 	}
 
 	DirectX::XMFLOAT3 result;
@@ -126,26 +104,18 @@ DirectX::XMFLOAT3 RayTracingBlasGeometryBuilder::TransformSkinnedPosition(
 	return result;
 }
 
-void RayTracingBlasGeometryBuilder::ValidateMorphInputs(
-    const PreparedRenderScene& preparedScene,
-    const MeshDraw& draw,
-    const GpuMesh& mesh) noexcept
+void RayTracingBlasGeometryBuilder::ValidateMorphInputs(const PreparedRenderScene& preparedScene, const MeshDraw& draw, const GpuMesh& mesh) noexcept
 {
 	if (draw.Morph.TargetCount == 0u)
 	{
 		return;
 	}
 
-	if (draw.Morph.VertexCount != mesh.GetVertexCount() || mesh.GetMorphTargetCount() != draw.Morph.TargetCount
-	    || draw.Morph.WeightOffset > preparedScene.morphWeights.size()
+	if (draw.Morph.VertexCount != mesh.GetVertexCount() || mesh.GetMorphTargetCount() != draw.Morph.TargetCount || draw.Morph.WeightOffset > preparedScene.morphWeights.size()
 	    || draw.Morph.TargetCount > preparedScene.morphWeights.size() - draw.Morph.WeightOffset
 	    || mesh.GetMorphTargetDeltas().size() != static_cast<std::size_t>(draw.Morph.TargetCount) * draw.Morph.VertexCount)
 	{
-		Diagnostics::Fatal(
-		    g_rayTracingBlasGeometryBuilderLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Skinned BLAS morph inputs do not match the mesh and render-scene ranges.");
+		Diagnostics::Fatal(g_rayTracingBlasGeometryBuilderLogger, __FILE__, __LINE__, "Skinned BLAS morph inputs do not match the mesh and render-scene ranges.");
 	}
 }
 

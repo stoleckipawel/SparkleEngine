@@ -21,21 +21,12 @@ private:
 	static void VisitVariable(slang::VariableLayoutReflection* variableLayout, ShaderStage stage, ShaderReflection& outReflection);
 	static void VisitTypeFields(slang::TypeLayoutReflection* typeLayout, ShaderStage stage, ShaderReflection& outReflection);
 
-	static void AddResourceBinding(
-	    slang::VariableLayoutReflection& variableLayout,
-	    slang::ParameterCategory category,
-	    ShaderReflection& outReflection);
-	static void AddConstantBuffer(
-	    slang::VariableLayoutReflection& variableLayout,
-	    ShaderReflectionResourceBinding& binding,
-	    ShaderReflection& outReflection);
+	static void AddResourceBinding(slang::VariableLayoutReflection& variableLayout, slang::ParameterCategory category, ShaderReflection& outReflection);
+	static void AddConstantBuffer(slang::VariableLayoutReflection& variableLayout, ShaderReflectionResourceBinding& binding, ShaderReflection& outReflection);
 	static void AddPushConstantBlock(slang::VariableLayoutReflection& variableLayout, ShaderStage stage, ShaderReflection& outReflection);
 	static void AddVaryingInput(slang::VariableLayoutReflection& variableLayout, ShaderReflection& outReflection);
 
-	static void FlattenMembers(
-	    slang::TypeLayoutReflection* typeLayout,
-	    std::uint32_t parentOffset,
-	    std::vector<ShaderReflectionConstantBufferMember>& outMembers);
+	static void FlattenMembers(slang::TypeLayoutReflection* typeLayout, std::uint32_t parentOffset, std::vector<ShaderReflectionConstantBufferMember>& outMembers);
 	static CookedShaderResourceKind MapResourceKind(slang::TypeLayoutReflection* typeLayout, slang::ParameterCategory category);
 	static CookedShaderResourceDimension MapResourceDimension(slang::TypeLayoutReflection* typeLayout);
 	static CookedShaderScalarType MapScalarType(slang::TypeReflection::ScalarType type);

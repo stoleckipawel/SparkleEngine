@@ -111,13 +111,7 @@ static void DrawShowControl(const ShowControl& control, bool enabled, const CVar
 	}
 }
 
-static void DrawShowControlGroup(
-    const char* label,
-    UiUtil::EditorIcon icon,
-    std::span<const ShowControl> leaves,
-    std::span<const bool> intent,
-    const CVarControlExecutor& executor,
-    std::string& error)
+static void DrawShowControlGroup(const char* label, UiUtil::EditorIcon icon, std::span<const ShowControl> leaves, std::span<const bool> intent, const CVarControlExecutor& executor, std::string& error)
 {
 	float menuWidth = UiUtil::MeasureMenuRow("All", UiUtil::MenuRowKind::Toggle);
 	for (const ShowControl& leaf : leaves)
@@ -135,9 +129,7 @@ static void DrawShowControlGroup(
 		anyEnabled |= enabled;
 		allEnabled &= enabled;
 	}
-	const UiUtil::MenuCheckState groupState = allEnabled ? UiUtil::MenuCheckState::Checked
-	    : anyEnabled                                     ? UiUtil::MenuCheckState::Mixed
-	                                                     : UiUtil::MenuCheckState::Unchecked;
+	const UiUtil::MenuCheckState groupState = allEnabled ? UiUtil::MenuCheckState::Checked : anyEnabled ? UiUtil::MenuCheckState::Mixed : UiUtil::MenuCheckState::Unchecked;
 	if (UiUtil::DrawMenuItem("All", UiUtil::EditorIcon::None, groupState, ImGuiSelectableFlags_NoAutoClosePopups))
 	{
 		SetShowControlIntent(executor, leaves, !anyEnabled, error);
@@ -199,11 +191,7 @@ void DrawViewportShowMenu(const CVarControlExecutor* executor, bool disableInter
 	else
 	{
 		ImGui::BeginDisabled(disableInteraction);
-		if (UiUtil::DrawMenuItem(
-		        "Use Defaults",
-		        UiUtil::EditorIcon::None,
-		        UiUtil::MenuCheckState::Hidden,
-		        ImGuiSelectableFlags_NoAutoClosePopups))
+		if (UiUtil::DrawMenuItem("Use Defaults", UiUtil::EditorIcon::None, UiUtil::MenuCheckState::Hidden, ImGuiSelectableFlags_NoAutoClosePopups))
 		{
 			SetShowControlIntent(*executor, showControls, true, error);
 		}

@@ -61,7 +61,9 @@ class SPARKLE_ENGINE_API WorldReadView final
 {
 public:
 	WorldReadView() noexcept = default;
+
 	bool IsValid() const noexcept { return m_storage != nullptr; }
+
 	std::uint64_t GetGeneration() const noexcept;
 	WorldSequence GetSequence() const noexcept;
 	std::span<const WorldCameraReadData> GetCameras() const noexcept;
@@ -72,9 +74,11 @@ public:
 private:
 	struct Storage;
 	friend class ECS::GameWorldState;
+
 	explicit WorldReadView(std::shared_ptr<const Storage> storage) noexcept :
 	    m_storage(std::move(storage))
 	{
 	}
+
 	std::shared_ptr<const Storage> m_storage;
 };

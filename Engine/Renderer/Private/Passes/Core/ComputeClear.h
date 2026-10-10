@@ -17,8 +17,4 @@ public:
 	END_SHADER_PARAMETER_STRUCT()
 };
 
-void AddComputeClearPass(
-    FrameGraphBuilder& builder,
-    std::string_view label,
-    FrameGraphTextureHandle outputTexture,
-    RenderViewportExtent outputExtent);
+void AddComputeClearPass(FrameGraphBuilder& builder, std::string_view label, FrameGraphTextureHandle outputTexture, RenderViewportExtent outputExtent);

@@ -62,6 +62,7 @@ public:
 	bool Register(ConsoleCommandDescriptor descriptor);
 
 	const ConsoleCommandDescriptor* Find(std::string_view commandName) const;
+
 	const std::vector<ConsoleCommandDescriptor>& GetCommands() const noexcept { return m_commands; }
 
 	ConsoleCommandResult ExecuteLine(std::string_view input, ConsoleCommandScope scope) const;

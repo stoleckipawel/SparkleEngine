@@ -6,8 +6,4 @@ struct RenderFrame;
 
 class FrameGraphBuilder;
 
-void AddRestirIndirectResolvePass(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources);
+void AddRestirIndirectResolvePass(FrameGraphBuilder& builder, const RenderFrame& frame, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources);

@@ -15,6 +15,7 @@ struct alignas(256) ViewTemporalUniformData
 	DirectX::XMFLOAT2 PreviousJitterNdc = {0.0f, 0.0f};
 	std::uint32_t HistoryValid = 0u;
 };
+
 static_assert(std::is_standard_layout_v<ViewTemporalUniformData>);
 static_assert(std::is_trivially_copyable_v<ViewTemporalUniformData>);
 static_assert(alignof(ViewTemporalUniformData) >= 256);

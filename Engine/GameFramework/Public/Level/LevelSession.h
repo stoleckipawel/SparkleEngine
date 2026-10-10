@@ -13,6 +13,7 @@
 class LevelAsset;
 class LevelRegistry;
 class GameWorld;
+
 namespace Assets
 {
 	class SceneLoadExecutor;
@@ -32,18 +33,26 @@ public:
 	LevelSession& operator=(LevelSession&&) = delete;
 
 	bool HasActiveLevel() const noexcept { return m_activeLevel != nullptr; }
+
 	bool IsLevelChangeInProgress() const noexcept { return m_levelChangeInProgress; }
+
 	std::vector<std::string> GetRegisteredLevelNames() const;
+
 	LevelChangeEvents& GetLevelChangeEvents() noexcept { return m_levelChangeEvents; }
+
 	const LevelChangeEvents& GetLevelChangeEvents() const noexcept { return m_levelChangeEvents; }
+
 	LevelLoadOperationProgress GetLoadProgress() const noexcept;
+
 	std::string_view GetLastLoadDiagnostic() const noexcept { return m_lastLoadDiagnostic; }
 
 	void RequestLevelChange(std::string_view requestedLevelName) noexcept;
 	void ProcessPendingLevelChange() noexcept;
 
 	LevelAsset* GetActiveLevel() noexcept { return m_activeLevel; }
+
 	const LevelAsset* GetActiveLevel() const noexcept { return m_activeLevel; }
+
 	bool SaveActiveLevel() noexcept;
 
 private:

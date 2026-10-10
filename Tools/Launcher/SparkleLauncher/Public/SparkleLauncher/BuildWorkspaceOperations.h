@@ -143,10 +143,7 @@ namespace SparkleLauncher
 		std::string RuntimeProfile = "DevelopmentGame";
 		WorkspaceIde PreferredIde = WorkspaceIde::VisualStudio;
 		WorkspaceCompiler Compiler = WorkspaceCompiler::Msvc;
-		std::vector<BuildWorkspaceScope> SelectedScopes = {
-		    BuildWorkspaceScope::Editor,
-		    BuildWorkspaceScope::Runtime,
-		    BuildWorkspaceScope::CookTools};
+		std::vector<BuildWorkspaceScope> SelectedScopes = {BuildWorkspaceScope::Editor, BuildWorkspaceScope::Runtime, BuildWorkspaceScope::CookTools};
 		std::vector<std::string> SelectedTargets;
 		std::string SourceDependencyId;
 		std::string HostToolId;
@@ -195,18 +192,9 @@ namespace SparkleLauncher
 	bool BuildWorkspaceOperationRequiresConfigureStep(const BuildWorkspaceOperationPlan& plan);
 	const std::vector<BuildWorkspaceOperationDefinition>& GetBuildWorkspaceOperationDefinitions();
 	std::optional<BuildWorkspaceOperationDefinition> FindBuildWorkspaceOperationDefinition(std::string_view operationId);
-	BuildToolchainStatus DetectBuildToolchain(
-	    const std::filesystem::path& repositoryRoot,
-	    WorkspaceIde preferredIde,
-	    WorkspaceCompiler compiler = WorkspaceCompiler::Msvc);
+	BuildToolchainStatus DetectBuildToolchain(const std::filesystem::path& repositoryRoot, WorkspaceIde preferredIde, WorkspaceCompiler compiler = WorkspaceCompiler::Msvc);
 	BuildFilesFreshnessStatus CheckBuildFilesFreshness(const std::filesystem::path& repositoryRoot, const BuildToolchainStatus& toolchain);
-	bool UpdateBuildFilesFreshnessStamp(
-	    const std::filesystem::path& repositoryRoot,
-	    const BuildToolchainStatus& toolchain,
-	    std::string& errorMessage);
+	bool UpdateBuildFilesFreshnessStamp(const std::filesystem::path& repositoryRoot, const BuildToolchainStatus& toolchain, std::string& errorMessage);
 	BuildWorkspaceOperationPlan PlanBuildWorkspaceOperation(std::string_view operationId, const BuildWorkspaceOperationRequest& request);
-	OperationRecord RunBuildWorkspaceOperationPlan(
-	    BuildWorkspaceOperationPlan plan,
-	    IProcessRunner& processRunner,
-	    const ProcessOutputCallback& outputCallback = {});
+	OperationRecord RunBuildWorkspaceOperationPlan(BuildWorkspaceOperationPlan plan, IProcessRunner& processRunner, const ProcessOutputCallback& outputCallback = {});
 }

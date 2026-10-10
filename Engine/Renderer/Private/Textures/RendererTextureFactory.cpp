@@ -12,23 +12,18 @@
 
 SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_rendererTextureFactoryLogger, "Renderer.RendererTextureFactory");
 
-RendererTextureFactory::RendererTextureFactory(
-    RhiResourceService& resourceService,
-    RhiDescriptorService& descriptorService,
-    RhiUploadService& uploadService) noexcept :
+RendererTextureFactory::RendererTextureFactory(RhiResourceService& resourceService, RhiDescriptorService& descriptorService, RhiUploadService& uploadService) noexcept :
     m_resourceService(resourceService),
     m_descriptorService(descriptorService),
     m_uploadService(uploadService)
 {
 }
 
-RendererTexture RendererTextureFactory::Create(
-    const std::filesystem::path& texturePath,
-    LoadedTextureData& loadedTexture,
-    RenderCommandList& commandList) const
+RendererTexture RendererTextureFactory::Create(const std::filesystem::path& texturePath, LoadedTextureData& loadedTexture, RenderCommandList& commandList) const
 {
 	const RhiTextureUploadDesc& textureUpload = loadedTexture.Upload;
 	const std::wstring debugName = texturePath.filename().wstring();
+
 	const RhiTextureResourceDesc resourceDesc{
 	    .Width = textureUpload.Width,
 	    .Height = textureUpload.Height,
@@ -36,50 +31,32 @@ RendererTexture RendererTextureFactory::Create(
 	    .MipLevels = textureUpload.GetMipCount(),
 	    .ArraySize = textureUpload.GetArraySize(),
 	    .Dimension = textureUpload.Dimension};
-	RhiOwnedResourceHandle resource = m_resourceService.CreateTextureResource(
-	    resourceDesc,
-	    ResourceState::CopyDest,
-	    RhiMemoryCategory::Texture,
-	    RhiMemoryResidencyClass::DeviceLocal,
-	    debugName);
+
+	RhiOwnedResourceHandle resource = m_resourceService.CreateTextureResource(resourceDesc, ResourceState::CopyDest, RhiMemoryCategory::Texture, RhiMemoryResidencyClass::DeviceLocal, debugName);
 	if (!resource)
 	{
-		Diagnostics::Fatal(
-		    g_rendererTextureFactoryLogger,
-		    __FILE__,
-		    __LINE__,
-		    std::format("Texture resource creation failed for '{}'.", texturePath.string()));
+		Diagnostics::Fatal(g_rendererTextureFactoryLogger, __FILE__, __LINE__, std::format("Texture resource creation failed for '{}'.", texturePath.string()));
 	}
 
 	if (!m_uploadService.UploadTexture(commandList, resource, textureUpload, ResourceState::ShaderResource, debugName))
 	{
 		m_resourceService.ReleaseOwnedResource(resource);
-		Diagnostics::Fatal(
-		    g_rendererTextureFactoryLogger,
-		    __FILE__,
-		    __LINE__,
-		    std::format("Texture upload failed for '{}'.", texturePath.string()));
+		Diagnostics::Fatal(g_rendererTextureFactoryLogger, __FILE__, __LINE__, std::format("Texture upload failed for '{}'.", texturePath.string()));
 	}
 
 	const RhiResourceHandle nativeResource = m_resourceService.GetResourceHandle(resource);
+
 	RhiResourceViewHandle shaderResourceView = m_descriptorService.CreateResourceView(
 	    RhiResourceViewDesc::TextureShaderResource(
 	        nativeResource,
 	        textureUpload.Format,
-	        RhiTextureViewRange{
-	            .MostDetailedMip = 0,
-	            .MipCount = textureUpload.GetMipCount(),
-	            .FirstArraySlice = 0,
-	            .ArraySize = textureUpload.GetArraySize()},
+	        RhiTextureViewRange{.MostDetailedMip = 0, .MipCount = textureUpload.GetMipCount(), .FirstArraySlice = 0, .ArraySize = textureUpload.GetArraySize()},
 	        textureUpload.Dimension));
+
 	if (!shaderResourceView)
 	{
 		m_resourceService.ReleaseOwnedResource(resource);
-		Diagnostics::Fatal(
-		    g_rendererTextureFactoryLogger,
-		    __FILE__,
-		    __LINE__,
-		    std::format("Texture shader-resource view creation failed for '{}'.", texturePath.string()));
+		Diagnostics::Fatal(g_rendererTextureFactoryLogger, __FILE__, __LINE__, std::format("Texture shader-resource view creation failed for '{}'.", texturePath.string()));
 	}
 
 	return RendererTexture{

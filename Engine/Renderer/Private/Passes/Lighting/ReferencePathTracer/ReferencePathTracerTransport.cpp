@@ -27,11 +27,11 @@ template <typename TShader> static auto& BuildReferencePathTracerParameters(
 	parameters->WorkingM2 = builder.CreateUAV(graphResources.WorkingM2);
 	parameters->CommittedMean = builder.CreateSRV(graphResources.CommittedMean);
 	parameters->CommittedM2 = builder.CreateSRV(graphResources.CommittedM2);
+
 	parameters->SamplerLinearWrapClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::None,
-	    .Address =
-	        RhiSamplerAddressModes{.U = RhiSamplerAddressMode::Wrap, .V = RhiSamplerAddressMode::Clamp, .W = RhiSamplerAddressMode::Clamp}};
+	    .Address = RhiSamplerAddressModes{.U = RhiSamplerAddressMode::Wrap, .V = RhiSamplerAddressMode::Clamp, .W = RhiSamplerAddressMode::Clamp}};
 
 	BindSceneShaderParameters(builder, frame, parameters, resources);
 	parameters->SessionSeed = work.SessionSeed;
@@ -64,11 +64,7 @@ void AddReferencePathTracerTransportPass(
 	    builder,
 	    "ReferencePathTracer.SurfaceTransportReference",
 	    rayTracingScene,
-	    ComputeDispatchDesc{
-	        MathUtils::DivideRoundUp(extent.Width, 8u),
-	        MathUtils::DivideRoundUp(ReferencePathTracerSession::WorkRowsPerDispatch, 8u),
-	        1u},
+	    ComputeDispatchDesc{MathUtils::DivideRoundUp(extent.Width, 8u), MathUtils::DivideRoundUp(ReferencePathTracerSession::WorkRowsPerDispatch, 8u), 1u},
 	    RayTracingDispatchDimensions{.Width = extent.Width, .Height = ReferencePathTracerSession::WorkRowsPerDispatch, .Depth = 1u},
-	    [&]<typename TShader>() -> auto&
-	    { return BuildReferencePathTracerParameters<TShader>(builder, frame, resources, graphResources, work); });
+	    [&]<typename TShader>() -> auto& { return BuildReferencePathTracerParameters<TShader>(builder, frame, resources, graphResources, work); });
 }

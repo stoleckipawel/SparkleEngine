@@ -77,14 +77,14 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 		{
 			if (RequiresUsage(m_compiledPlan, handle, ResourceUsage::RenderTarget) && !access.renderTargetView)
 			{
-				access.renderTargetView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
-				    RhiResourceViewDesc::RenderTarget(access.resource, metadata.textureDesc.format));
+				access.renderTargetView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(RhiResourceViewDesc::RenderTarget(access.resource, metadata.textureDesc.format));
 			}
 
 			if (RequiresUsage(m_compiledPlan, handle, ResourceUsage::ShaderRead) && !access.shaderResourceView)
 			{
 				access.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 				    RhiResourceViewDesc::TextureShaderResource(access.resource, metadata.textureDesc.format));
+
 				access.ownsShaderResourceView = static_cast<bool>(access.shaderResourceView);
 			}
 
@@ -106,14 +106,14 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 		{
 			if (!access.depthStencilView)
 			{
-				access.depthStencilView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
-				    RhiResourceViewDesc::DepthStencil(access.resource, metadata.textureDesc.format));
+				access.depthStencilView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(RhiResourceViewDesc::DepthStencil(access.resource, metadata.textureDesc.format));
 			}
 
 			if (RequiresUsage(m_compiledPlan, handle, ResourceUsage::ShaderRead) && !access.shaderResourceView)
 			{
 				access.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
 				    RhiResourceViewDesc::TextureShaderResource(access.resource, metadata.textureDesc.format));
+
 				access.ownsShaderResourceView = static_cast<bool>(access.shaderResourceView);
 			}
 		}
@@ -122,10 +122,8 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 			if (RequiresUsage(m_compiledPlan, handle, ResourceUsage::ShaderRead) && !access.shaderResourceView)
 			{
 				access.shaderResourceView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
-				    RhiResourceViewDesc::BufferShaderResource(
-				        access.resource,
-				        metadata.bufferDesc.sizeInBytes,
-				        metadata.bufferDesc.strideInBytes));
+				    RhiResourceViewDesc::BufferShaderResource(access.resource, metadata.bufferDesc.sizeInBytes, metadata.bufferDesc.strideInBytes));
+
 				access.ownsShaderResourceView = static_cast<bool>(access.shaderResourceView);
 			}
 
@@ -139,10 +137,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 				if (!access.unorderedAccessView)
 				{
 					access.unorderedAccessView = m_renderHardwareInterface->GetDescriptorService().CreateResourceView(
-					    RhiResourceViewDesc::BufferUnorderedAccess(
-					        access.resource,
-					        metadata.bufferDesc.sizeInBytes,
-					        metadata.bufferDesc.strideInBytes));
+					    RhiResourceViewDesc::BufferUnorderedAccess(access.resource, metadata.bufferDesc.sizeInBytes, metadata.bufferDesc.strideInBytes));
 				}
 			}
 		}

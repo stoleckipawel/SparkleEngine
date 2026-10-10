@@ -60,8 +60,7 @@ namespace LevelParsing
 	{
 		output << std::setprecision(9);
 		output << "[Camera]\n";
-		output << "Position = " << levelDesc.cameraDesc.position.x << ", " << levelDesc.cameraDesc.position.y << ", "
-		       << levelDesc.cameraDesc.position.z << "\n";
+		output << "Position = " << levelDesc.cameraDesc.position.x << ", " << levelDesc.cameraDesc.position.y << ", " << levelDesc.cameraDesc.position.z << "\n";
 		output << "YawRadians = " << levelDesc.cameraDesc.yawRadians << "\n";
 		output << "PitchRadians = " << levelDesc.cameraDesc.pitchRadians << "\n";
 		output << "FovYDegrees = " << levelDesc.cameraDesc.fovYDegrees << "\n";

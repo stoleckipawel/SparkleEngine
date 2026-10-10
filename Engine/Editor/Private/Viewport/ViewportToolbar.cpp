@@ -55,10 +55,7 @@ static const ViewModePresentation& DescribeViewMode(RenderViewMode viewMode) noe
 	return found != viewModePresentations.end() ? *found : viewModePresentations.front();
 }
 
-ViewportToolbar::ViewportToolbar(
-    EditorViewportSession& viewportSession,
-    const EngineRenderingSettingsState& renderingDefaults,
-    const CVarControlExecutor& consoleVariables) noexcept :
+ViewportToolbar::ViewportToolbar(EditorViewportSession& viewportSession, const EngineRenderingSettingsState& renderingDefaults, const CVarControlExecutor& consoleVariables) noexcept :
     m_viewportSession(viewportSession),
     m_renderingDefaults(renderingDefaults),
     m_consoleVariables(consoleVariables)
@@ -74,10 +71,7 @@ void ViewportToolbar::SetGeometry(float leftPixels, float topPixels, float width
 	m_widthPixels = widthPixels;
 }
 
-static void DrawViewModeOption(
-    EditorViewportSession& viewportSession,
-    const ViewModePresentation& option,
-    RenderViewMode currentViewMode) noexcept
+static void DrawViewModeOption(EditorViewportSession& viewportSession, const ViewModePresentation& option, RenderViewMode currentViewMode) noexcept
 {
 	const bool selected = option.Mode == currentViewMode;
 	const UiUtil::MenuCheckState checkState = selected ? UiUtil::MenuCheckState::Checked : UiUtil::MenuCheckState::Unchecked;
@@ -122,8 +116,7 @@ void ViewportToolbar::DrawViewModeSelector(bool disableInteraction, bool compact
 	ImGui::BeginDisabled(disableInteraction);
 	const ViewModePresentation& currentPresentation = DescribeViewMode(currentViewMode);
 	const std::string previewLabel = UiUtil::MakeIconLabel(currentPresentation.Icon, currentPresentation.Label);
-	const float previewWidth =
-	    ImGui::CalcTextSize(previewLabel.c_str()).x + ImGui::GetFrameHeight() + ImGui::GetStyle().FramePadding.x * 2.0f;
+	const float previewWidth = ImGui::CalcTextSize(previewLabel.c_str()).x + ImGui::GetFrameHeight() + ImGui::GetStyle().FramePadding.x * 2.0f;
 	ImGui::SetNextItemWidth((std::clamp) (previewWidth, 100.0f, compact ? 145.0f : 260.0f));
 	const UiUtil::MenuStyleScope menuStyle;
 	if (ImGui::BeginCombo("##ViewportViewMode", previewLabel.c_str()))
@@ -168,8 +161,7 @@ void ViewportToolbar::DrawCameraControls(bool disableInteraction, bool compact) 
 {
 	const CameraProjectionKind projectionKind = m_viewportSession.GetSettings().ProjectionKind;
 	const char* projectionLabel = projectionKind == CameraProjectionKind::Orthographic ? "Orthographic" : "Perspective";
-	const std::string cameraText = compact ? UiUtil::GetEditorIconGlyph(UiUtil::EditorIcon::Camera)
-	                                       : UiUtil::MakeIconLabel(UiUtil::EditorIcon::Camera, projectionLabel);
+	const std::string cameraText = compact ? UiUtil::GetEditorIconGlyph(UiUtil::EditorIcon::Camera) : UiUtil::MakeIconLabel(UiUtil::EditorIcon::Camera, projectionLabel);
 	const std::string cameraLabel = cameraText + "##ViewportCameraPropertiesButton";
 
 	ImGui::BeginDisabled(disableInteraction);
@@ -265,11 +257,7 @@ void ViewportToolbar::Draw(std::string_view levelName, bool disableInteraction) 
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
 	const ImVec2 windowMin = ImGui::GetWindowPos();
 	const ImVec2 windowMax(windowMin.x + ImGui::GetWindowWidth(), windowMin.y + ImGui::GetWindowHeight());
-	drawList->AddLine(
-	    ImVec2(windowMin.x, windowMax.y - 1.0f),
-	    ImVec2(windowMax.x, windowMax.y - 1.0f),
-	    SparkleUiPalette::PanelHeaderBorder(),
-	    1.0f);
+	drawList->AddLine(ImVec2(windowMin.x, windowMax.y - 1.0f), ImVec2(windowMax.x, windowMax.y - 1.0f), SparkleUiPalette::PanelHeaderBorder(), 1.0f);
 
 	ImGui::End();
 	ImGui::PopStyleColor(7);

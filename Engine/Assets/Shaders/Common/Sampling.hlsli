@@ -88,9 +88,7 @@ namespace CommonSampling
 		BuildOrthonormalBasis(normal, tangent, bitangent);
 
 		CosineHemisphereSample result;
-		result.DirectionWorld =
-		    SafeNormalize(tangent * (cos(phi) * sinTheta) + bitangent * (sin(phi) * sinTheta) + SafeNormalize(normal) * cosTheta,
-		                  SafeNormalize(normal));
+		result.DirectionWorld = SafeNormalize(tangent * (cos(phi) * sinTheta) + bitangent * (sin(phi) * sinTheta) + SafeNormalize(normal) * cosTheta, SafeNormalize(normal));
 		result.Cosine = saturate(dot(SafeNormalize(normal), result.DirectionWorld));
 		result.Pdf = result.Cosine * INV_PI;
 		return result;

@@ -28,9 +28,13 @@ public:
 	void ResetHistoryNavigation() noexcept;
 
 	const std::vector<ConsoleOutputRecord>& GetOutputRecords() const noexcept { return m_outputRecords; }
+
 	const ConsoleHistoryBuffer& GetHistory() const noexcept { return m_history; }
+
 	ConsoleHistoryBuffer& GetHistory() noexcept { return m_history; }
+
 	ConsoleCommandScope GetScope() const noexcept { return m_scope; }
+
 	void SetScope(ConsoleCommandScope scope) noexcept { m_scope = scope; }
 
 private:

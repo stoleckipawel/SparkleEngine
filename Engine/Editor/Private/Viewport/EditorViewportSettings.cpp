@@ -100,10 +100,7 @@ public:
 
 	static void WriteBool(std::ofstream& output, std::string_view key, bool value) { output << key << '=' << (value ? 1 : 0) << '\n'; }
 
-	template <typename TEnum> static void WriteEnum(std::ofstream& output, std::string_view key, TEnum value)
-	{
-		output << key << '=' << static_cast<int>(value) << '\n';
-	}
+	template <typename TEnum> static void WriteEnum(std::ofstream& output, std::string_view key, TEnum value) { output << key << '=' << static_cast<int>(value) << '\n'; }
 };
 
 EditorViewportSettings::EditorViewportSettings() :
@@ -129,8 +126,7 @@ void EditorViewportSettings::SanitizeExposure(ViewportExposureOverrides& exposur
 	{
 		exposure.Mode = EngineExposureMode::Automatic;
 	}
-	if (exposure.MeteringMethod != EngineExposureMeteringMethod::Histogram
-	    && exposure.MeteringMethod != EngineExposureMeteringMethod::DownsamplePyramid)
+	if (exposure.MeteringMethod != EngineExposureMeteringMethod::Histogram && exposure.MeteringMethod != EngineExposureMeteringMethod::DownsamplePyramid)
 	{
 		exposure.MeteringMethod = EngineExposureMeteringMethod::Histogram;
 	}
@@ -146,12 +142,13 @@ void EditorViewportSettings::SanitizeExposure(ViewportExposureOverrides& exposur
 void EditorViewportSettings::Sanitize(EditorViewportSettingsState& state) noexcept
 {
 	state.Navigation.MinimumMoveSpeedMetersPerSecond = (std::max) (state.Navigation.MinimumMoveSpeedMetersPerSecond, 0.0001f);
-	state.Navigation.MaximumMoveSpeedMetersPerSecond =
-	    (std::max) (state.Navigation.MaximumMoveSpeedMetersPerSecond, state.Navigation.MinimumMoveSpeedMetersPerSecond);
+	state.Navigation.MaximumMoveSpeedMetersPerSecond = (std::max) (state.Navigation.MaximumMoveSpeedMetersPerSecond, state.Navigation.MinimumMoveSpeedMetersPerSecond);
+
 	state.Navigation.MoveSpeedMetersPerSecond = std::clamp(
 	    state.Navigation.MoveSpeedMetersPerSecond,
 	    state.Navigation.MinimumMoveSpeedMetersPerSecond,
 	    state.Navigation.MaximumMoveSpeedMetersPerSecond);
+
 	state.Navigation.RotationSpeedDegreesPerPixel = std::clamp(state.Navigation.RotationSpeedDegreesPerPixel, 0.001f, 10.0f);
 	state.Navigation.SprintMultiplier = (std::max) (state.Navigation.SprintMultiplier, 1.0f);
 	state.OrthographicHeightMeters = std::clamp(state.OrthographicHeightMeters, 0.001f, 1000000.0f);
@@ -164,10 +161,7 @@ void EditorViewportSettings::Sanitize(EditorViewportSettingsState& state) noexce
 
 bool EditorViewportSettings::SetMoveSpeed(float speedMetersPerSecond) noexcept
 {
-	speedMetersPerSecond = std::clamp(
-	    speedMetersPerSecond,
-	    m_state.Navigation.MinimumMoveSpeedMetersPerSecond,
-	    m_state.Navigation.MaximumMoveSpeedMetersPerSecond);
+	speedMetersPerSecond = std::clamp(speedMetersPerSecond, m_state.Navigation.MinimumMoveSpeedMetersPerSecond, m_state.Navigation.MaximumMoveSpeedMetersPerSecond);
 	if (speedMetersPerSecond == m_state.Navigation.MoveSpeedMetersPerSecond)
 	{
 		return true;
@@ -264,10 +258,7 @@ bool EditorViewportSettings::Reload() noexcept
 		const std::size_t separator = trimmed.find('=');
 		if (separator != std::string::npos)
 		{
-			EditorViewportSettingsSerialization::Apply(
-			    std::string_view(trimmed).substr(0, separator),
-			    std::string_view(trimmed).substr(separator + 1),
-			    loaded);
+			EditorViewportSettingsSerialization::Apply(std::string_view(trimmed).substr(0, separator), std::string_view(trimmed).substr(separator + 1), loaded);
 		}
 	}
 	Sanitize(loaded);
@@ -312,10 +303,7 @@ bool EditorViewportSettings::Save() const noexcept
 	output << "ExposureMaximum=" << m_state.Exposure.Maximum << '\n';
 	EditorViewportSettingsSerialization::WriteBool(output, "OverrideExposureAdaptationSpeedUp", m_state.Exposure.OverrideAdaptationSpeedUp);
 	output << "ExposureAdaptationSpeedUp=" << m_state.Exposure.AdaptationSpeedUp << '\n';
-	EditorViewportSettingsSerialization::WriteBool(
-	    output,
-	    "OverrideExposureAdaptationSpeedDown",
-	    m_state.Exposure.OverrideAdaptationSpeedDown);
+	EditorViewportSettingsSerialization::WriteBool(output, "OverrideExposureAdaptationSpeedDown", m_state.Exposure.OverrideAdaptationSpeedDown);
 	output << "ExposureAdaptationSpeedDown=" << m_state.Exposure.AdaptationSpeedDown << '\n';
 	return output.good();
 }

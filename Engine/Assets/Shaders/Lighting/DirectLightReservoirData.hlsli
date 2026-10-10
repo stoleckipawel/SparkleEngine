@@ -31,17 +31,12 @@ namespace DirectLightReservoir
 
 	bool IsValid(Reservoir reservoir)
 	{
-		return reservoir.Valid > 0.5f && DirectLightSampling::IsValid(reservoir.Candidate) && reservoir.WeightSum > 0.0f
-		    && reservoir.TargetPdf > 0.0f && reservoir.M > 0.0f;
+		return reservoir.Valid > 0.5f && DirectLightSampling::IsValid(reservoir.Candidate) && reservoir.WeightSum > 0.0f && reservoir.TargetPdf > 0.0f && reservoir.M > 0.0f;
 	}
 
 	float4 PackReservoirSample(Reservoir reservoir)
 	{
-		return IsValid(reservoir) ? float4((float)reservoir.Candidate.Light.Type,
-		                                   (float)reservoir.Candidate.Light.Index,
-		                                   reservoir.ShapeSample.x,
-		                                   reservoir.ShapeSample.y)
-		                          : 0.0f.xxxx;
+		return IsValid(reservoir) ? float4((float)reservoir.Candidate.Light.Type, (float)reservoir.Candidate.Light.Index, reservoir.ShapeSample.x, reservoir.ShapeSample.y) : 0.0f.xxxx;
 	}
 
 	float4 PackReservoirWeight(Reservoir reservoir)

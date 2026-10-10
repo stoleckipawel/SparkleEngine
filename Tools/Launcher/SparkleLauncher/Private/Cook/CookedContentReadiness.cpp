@@ -22,10 +22,7 @@ namespace SparkleLauncher
 			return false;
 		}
 
-		std::filesystem::recursive_directory_iterator iterator(
-		    directory,
-		    std::filesystem::directory_options::skip_permission_denied,
-		    errorCode);
+		std::filesystem::recursive_directory_iterator iterator(directory, std::filesystem::directory_options::skip_permission_denied, errorCode);
 		const std::filesystem::recursive_directory_iterator end;
 		while (iterator != end)
 		{
@@ -41,14 +38,10 @@ namespace SparkleLauncher
 		return false;
 	}
 
-	static bool CookedAssetScopeHasFiles(
-	    const Filesystem::WorkspaceOutputPaths& outputs,
-	    std::string_view projectId,
-	    std::string_view relativeDirectory)
+	static bool CookedAssetScopeHasFiles(const Filesystem::WorkspaceOutputPaths& outputs, std::string_view projectId, std::string_view relativeDirectory)
 	{
 		const std::string relativeScope(relativeDirectory);
-		return DirectoryHasRegularFiles(outputs.CookedProjectDirectory(projectId) / relativeScope)
-		    || DirectoryHasRegularFiles(outputs.SharedCookedProjectDirectory() / relativeScope);
+		return DirectoryHasRegularFiles(outputs.CookedProjectDirectory(projectId) / relativeScope) || DirectoryHasRegularFiles(outputs.SharedCookedProjectDirectory() / relativeScope);
 	}
 
 	static bool ShaderPublicationMatchesSignal(const std::filesystem::path& cookedShaderDirectory)
@@ -66,27 +59,24 @@ namespace SparkleLauncher
 		std::string status;
 		std::string expectedMapHashText;
 		std::string expectedLibraryHashText;
-		if (!Json::TryReadStringProperty(signal, "schema", schema) || schema != "sparkle.shaderRecookResult"
-		    || !Json::TryReadStringProperty(signal, "status", status) || status != "succeeded"
-		    || !Json::TryReadStringProperty(signal, "globalShaderMapHash", expectedMapHashText)
-		    || !Json::TryReadStringProperty(signal, "cookedShaderLibraryHash", expectedLibraryHashText))
+		if (!Json::TryReadStringProperty(signal, "schema", schema) || schema != "sparkle.shaderRecookResult" || !Json::TryReadStringProperty(signal, "status", status) || status != "succeeded"
+		    || !Json::TryReadStringProperty(signal, "globalShaderMapHash", expectedMapHashText) || !Json::TryReadStringProperty(signal, "cookedShaderLibraryHash", expectedLibraryHashText))
 		{
 			return false;
 		}
 
 		std::uint64_t expectedMapHash = 0;
 		std::uint64_t expectedLibraryHash = 0;
-		if (!Json::TryParseHexUInt64(expectedMapHashText, expectedMapHash)
-		    || !Json::TryParseHexUInt64(expectedLibraryHashText, expectedLibraryHash))
+		if (!Json::TryParseHexUInt64(expectedMapHashText, expectedMapHash) || !Json::TryParseHexUInt64(expectedLibraryHashText, expectedLibraryHash))
 		{
 			return false;
 		}
 
 		std::vector<std::uint8_t> mapBytes;
 		std::vector<std::uint8_t> libraryBytes;
+
 		return Files::TryReadAllBytes(mapPath, mapBytes, fileError) && Files::TryReadAllBytes(libraryPath, libraryBytes, fileError)
-		    && Hash::Fnv1a64(mapBytes.data(), mapBytes.size()) == expectedMapHash
-		    && Hash::Fnv1a64(libraryBytes.data(), libraryBytes.size()) == expectedLibraryHash;
+		    && Hash::Fnv1a64(mapBytes.data(), mapBytes.size()) == expectedMapHash && Hash::Fnv1a64(libraryBytes.data(), libraryBytes.size()) == expectedLibraryHash;
 	}
 
 	static CookedShaderPublicationState InspectCookedShaderPublication(const std::filesystem::path& cookedShaderDirectory)
@@ -100,8 +90,7 @@ namespace SparkleLauncher
 		for (const std::filesystem::path& artifactPath : requiredArtifacts)
 		{
 			std::error_code errorCode;
-			if (!std::filesystem::is_regular_file(artifactPath, errorCode) || errorCode
-			    || std::filesystem::file_size(artifactPath, errorCode) == 0 || errorCode)
+			if (!std::filesystem::is_regular_file(artifactPath, errorCode) || errorCode || std::filesystem::file_size(artifactPath, errorCode) == 0 || errorCode)
 			{
 				return CookedShaderPublicationState::Missing;
 			}
@@ -117,6 +106,7 @@ namespace SparkleLauncher
 	CookedContentReadiness InspectCookedContentReadiness(const std::filesystem::path& repositoryRoot, std::string_view projectId)
 	{
 		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
+
 		return CookedContentReadiness{
 		    .MeshesReady = CookedAssetScopeHasFiles(outputs, projectId, "Meshes"),
 		    .TexturesReady = CookedAssetScopeHasFiles(outputs, projectId, "Textures"),

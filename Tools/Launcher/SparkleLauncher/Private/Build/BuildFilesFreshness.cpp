@@ -66,8 +66,7 @@ namespace SparkleLauncher
 		const std::string selectedToolset = GetCMakeCacheToolsetValue(toolchain);
 		const std::string selectedQtPrefixPath = toolchain.QtRootPath.generic_string();
 		const std::string selectedVulkanSdkRoot = toolchain.VulkanSdkRoot.generic_string();
-		if (cacheGenerator != toolchain.Generator || cachePlatform != selectedPlatform || cacheToolset != selectedToolset
-		    || cacheQtPrefixPath != selectedQtPrefixPath)
+		if (cacheGenerator != toolchain.Generator || cachePlatform != selectedPlatform || cacheToolset != selectedToolset || cacheQtPrefixPath != selectedQtPrefixPath)
 		{
 			status.State = BuildFilesFreshnessState::GeneratorMismatch;
 			status.Summary = "CMake cache generator/platform/toolset/Qt prefix differs from selected launcher toolchain.";
@@ -79,15 +78,12 @@ namespace SparkleLauncher
 		const std::string selectedShaderCompiler = ToCMakeBool(featureSettings.ShaderCompilerEnabled);
 		const std::string selectedKtxSupport = ToCMakeBool(featureSettings.KtxSupportEnabled);
 		const std::string selectedNvidiaStreamline = ToCMakeBool(featureSettings.NvidiaStreamlineEnabled);
-		const std::string cacheContentPipeline =
-		    ReadCMakeCacheValue(status.CachePath, "SPARKLE_ENABLE_CONTENT_PIPELINE").value_or(std::string());
-		const std::string cacheShaderCompiler =
-		    ReadCMakeCacheValue(status.CachePath, "SPARKLE_ENABLE_SHADER_COMPILER").value_or(std::string());
+		const std::string cacheContentPipeline = ReadCMakeCacheValue(status.CachePath, "SPARKLE_ENABLE_CONTENT_PIPELINE").value_or(std::string());
+		const std::string cacheShaderCompiler = ReadCMakeCacheValue(status.CachePath, "SPARKLE_ENABLE_SHADER_COMPILER").value_or(std::string());
 		const std::string cacheKtxSupport = ReadCMakeCacheValue(status.CachePath, "SPARKLE_ENABLE_KTX_SUPPORT").value_or(std::string());
-		const std::string cacheNvidiaStreamline =
-		    ReadCMakeCacheValue(status.CachePath, "SPARKLE_ENABLE_NVIDIA_STREAMLINE").value_or(std::string());
-		if (cacheContentPipeline != selectedContentPipeline || cacheShaderCompiler != selectedShaderCompiler
-		    || cacheKtxSupport != selectedKtxSupport || cacheNvidiaStreamline != selectedNvidiaStreamline)
+		const std::string cacheNvidiaStreamline = ReadCMakeCacheValue(status.CachePath, "SPARKLE_ENABLE_NVIDIA_STREAMLINE").value_or(std::string());
+		if (cacheContentPipeline != selectedContentPipeline || cacheShaderCompiler != selectedShaderCompiler || cacheKtxSupport != selectedKtxSupport
+		    || cacheNvidiaStreamline != selectedNvidiaStreamline)
 		{
 			status.State = BuildFilesFreshnessState::FeatureSetMismatch;
 			status.Summary = "CMake cache workspace feature toggles differ from the launcher feature set.";
@@ -154,10 +150,7 @@ namespace SparkleLauncher
 		return status;
 	}
 
-	bool UpdateBuildFilesFreshnessStamp(
-	    const std::filesystem::path& repositoryRoot,
-	    const BuildToolchainStatus& toolchain,
-	    std::string& errorMessage)
+	bool UpdateBuildFilesFreshnessStamp(const std::filesystem::path& repositoryRoot, const BuildToolchainStatus& toolchain, std::string& errorMessage)
 	{
 		const std::optional<std::string> sourceListHash = ComputeSourceListHash(repositoryRoot);
 		if (!sourceListHash.has_value())

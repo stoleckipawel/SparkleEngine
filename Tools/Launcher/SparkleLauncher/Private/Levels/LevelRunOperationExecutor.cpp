@@ -7,10 +7,7 @@
 
 namespace SparkleLauncher
 {
-	OperationRecord RunLevelRunOperationPlan(
-	    LevelRunOperationPlan plan,
-	    IProcessRunner& processRunner,
-	    const ProcessOutputCallback& outputCallback)
+	OperationRecord RunLevelRunOperationPlan(LevelRunOperationPlan plan, IProcessRunner& processRunner, const ProcessOutputCallback& outputCallback)
 	{
 		OperationRecord operation = plan.Operation;
 		MarkOperationStarted(operation, operation.LogPath);
@@ -21,6 +18,7 @@ namespace SparkleLauncher
 			    OperationProblemKind::Prerequisite,
 			    plan.ReadinessMessages.empty() ? "Level run is not ready." : plan.ReadinessMessages.front(),
 			    "Create the missing executable or cooked output named above, then retry Open.");
+
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
 		}
@@ -38,11 +36,7 @@ namespace SparkleLauncher
 			{
 				if (result.Canceled)
 				{
-					SetOperationFailure(
-					    operation,
-					    OperationProblemKind::Cancellation,
-					    step.DisplayName + " was canceled.",
-					    "Open the level again when ready.");
+					SetOperationFailure(operation, OperationProblemKind::Cancellation, step.DisplayName + " was canceled.", "Open the level again when ready.");
 				}
 				else
 				{

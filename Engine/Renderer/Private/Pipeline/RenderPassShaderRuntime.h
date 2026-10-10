@@ -38,23 +38,10 @@ public:
 		const ShaderRegistrationDesc* registrations[] = {&vertexRegistration, &pixelRegistration};
 		storage.ParameterLayout = BuildShaderPipelineParameterLayout(registrations);
 		storage.Shaders = {vertexShader.GetResolvedShader(), pixelShader.GetResolvedShader()};
-		ValidateResolvedShader(
-		    renderHardwareInterface,
-		    vertexRegistration,
-		    storage.Shaders[0],
-		    BuildShaderParameterLayout(vertexRegistration));
-		ValidateResolvedShader(
-		    renderHardwareInterface,
-		    pixelRegistration,
-		    storage.Shaders[1],
-		    BuildShaderParameterLayout(pixelRegistration));
+		ValidateResolvedShader(renderHardwareInterface, vertexRegistration, storage.Shaders[0], BuildShaderParameterLayout(vertexRegistration));
+		ValidateResolvedShader(renderHardwareInterface, pixelRegistration, storage.Shaders[1], BuildShaderParameterLayout(pixelRegistration));
 		std::wstring debugName = Strings::ToWide(vertexRegistration.ShaderName);
-		storage.BindingLayout = PipelineRuntimeLibrary::CreateBindingLayout(
-		    renderHardwareInterface,
-		    storage.ParameterLayout,
-		    storage.Shaders,
-		    true,
-		    debugName.c_str());
+		storage.BindingLayout = PipelineRuntimeLibrary::CreateBindingLayout(renderHardwareInterface, storage.ParameterLayout, storage.Shaders, true, debugName.c_str());
 	}
 
 	template <typename TShader, typename ConfigurePipeline> static void CreateComputeRuntime(
@@ -73,12 +60,7 @@ public:
 		storage.Shaders = {shader.GetResolvedShader()};
 		ValidateResolvedShader(renderHardwareInterface, registration, storage.Shaders.front(), storage.ParameterLayout);
 		std::wstring debugName = Strings::ToWide(registration.ShaderName);
-		storage.BindingLayout = PipelineRuntimeLibrary::CreateBindingLayout(
-		    renderHardwareInterface,
-		    storage.ParameterLayout,
-		    storage.Shaders,
-		    false,
-		    debugName.c_str());
+		storage.BindingLayout = PipelineRuntimeLibrary::CreateBindingLayout(renderHardwareInterface, storage.ParameterLayout, storage.Shaders, false, debugName.c_str());
 		ComputePipelineDesc pipeline;
 		pipeline.BindingLayout = storage.BindingLayout.get();
 		pipeline.ComputeShader = RhiShaderStageDesc{&storage.Shaders.front()};
@@ -95,11 +77,9 @@ private:
 	    const PassParameterLayout& parameterLayout)
 	{
 		PipelineRuntimeLibrary::ValidateShaderCapabilities(renderHardwareInterface, registration.ShaderName, shader);
-		if (shader.Entry->Stage != registration.Stage || shader.Entry->Features != registration.Features
-		    || shader.Entry->ParameterSignature != BuildShaderParameterSignature(parameterLayout))
+		if (shader.Entry->Stage != registration.Stage || shader.Entry->Features != registration.Features || shader.Entry->ParameterSignature != BuildShaderParameterSignature(parameterLayout))
 		{
-			throw Diagnostics::Error(
-			    std::format("Shader '{}' map metadata does not match its registered contract.", registration.ShaderName));
+			throw Diagnostics::Error(std::format("Shader '{}' map metadata does not match its registered contract.", registration.ShaderName));
 		}
 	}
 };

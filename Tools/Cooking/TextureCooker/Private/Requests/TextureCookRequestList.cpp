@@ -14,10 +14,7 @@ static void SortForSerialization(std::vector<TextureCookRequest>& requests)
 	std::ranges::sort(
 	    requests,
 	    [](const TextureCookRequest& lhs, const TextureCookRequest& rhs)
-	    {
-		    return lhs.assetId != rhs.assetId ? lhs.assetId < rhs.assetId
-		                                      : lhs.outputPath.generic_string() < rhs.outputPath.generic_string();
-	    });
+	    { return lhs.assetId != rhs.assetId ? lhs.assetId < rhs.assetId : lhs.outputPath.generic_string() < rhs.outputPath.generic_string(); });
 }
 
 void WriteTextureCookRequestList(const std::filesystem::path& outputPath, const std::vector<TextureCookRequest>& requests)
@@ -79,8 +76,7 @@ std::vector<TextureCookRequest> LoadTextureCookRequestList(const std::filesystem
 		}
 		catch (const Diagnostics::Error& error)
 		{
-			throw Diagnostics::Error(
-			    std::string(error.what()) + " File: '" + inputPath.string() + "', line " + std::to_string(lineNumber) + ".");
+			throw Diagnostics::Error(std::string(error.what()) + " File: '" + inputPath.string() + "', line " + std::to_string(lineNumber) + ".");
 		}
 	}
 

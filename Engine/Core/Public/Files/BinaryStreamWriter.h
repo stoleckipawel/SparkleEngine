@@ -14,11 +14,7 @@ namespace Files
 	class BinaryStreamWriter final
 	{
 	public:
-		static SPARKLE_CORE_API bool WriteBytes(
-		    std::ofstream& output,
-		    const void* bytes,
-		    std::size_t byteCount,
-		    std::string& outErrorMessage);
+		static SPARKLE_CORE_API bool WriteBytes(std::ofstream& output, const void* bytes, std::size_t byteCount, std::string& outErrorMessage);
 
 		template <typename T> static bool WriteValue(std::ofstream& output, const T& value, std::string& outErrorMessage)
 		{

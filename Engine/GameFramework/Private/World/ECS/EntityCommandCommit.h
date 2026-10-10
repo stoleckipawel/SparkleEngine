@@ -9,9 +9,6 @@ namespace ECS
 	class EntityCommandCommit final
 	{
 	public:
-		static EntityCommandCommitResult Apply(
-		    EntityRegistry& registry,
-		    std::span<EntityCommandBuffer* const> buffers,
-		    EntityCommandConflictPolicy conflictPolicy);
+		static EntityCommandCommitResult Apply(EntityRegistry& registry, std::span<EntityCommandBuffer* const> buffers, EntityCommandConflictPolicy conflictPolicy);
 	};
 }

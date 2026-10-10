@@ -87,16 +87,12 @@ static const ShaderReflectionResourceBinding* FindReflectionBinding(const Shader
 	return nullptr;
 }
 
-static const ShaderReflectionResourceBinding* FindReflectionBinding(
-    const ShaderReflection& reflection,
-    const ShaderParameterStructFieldDescriptor& field) noexcept
+static const ShaderReflectionResourceBinding* FindReflectionBinding(const ShaderReflection& reflection, const ShaderParameterStructFieldDescriptor& field) noexcept
 {
 	return FindReflectionBinding(reflection, field.Name);
 }
 
-static const ShaderParameterStructFieldDescriptor* FindDescriptorField(
-    const ShaderParameterStructDescriptor& descriptor,
-    std::string_view name) noexcept
+static const ShaderParameterStructFieldDescriptor* FindDescriptorField(const ShaderParameterStructDescriptor& descriptor, std::string_view name) noexcept
 {
 	for (const ShaderParameterStructFieldDescriptor& field : descriptor.Fields)
 	{
@@ -133,26 +129,19 @@ std::string ShaderParameterStructVerificationResult::BuildJsonReport() const
 	return stream.str();
 }
 
-ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
-    const ShaderParameterStructDescriptor& descriptor,
-    const ShaderReflection& reflection,
-    bool allowUnreflectedDeclarations)
+ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(const ShaderParameterStructDescriptor& descriptor, const ShaderReflection& reflection, bool allowUnreflectedDeclarations)
 {
 	ShaderParameterStructVerificationResult result;
 
 	if (!descriptor.Values.empty())
 	{
-		const auto block = std::ranges::find_if(
-		    reflection.ConstantBuffers,
-		    [&descriptor](const auto& buffer) { return buffer.Name == descriptor.AutoParametersName; });
+		const auto block = std::ranges::find_if(reflection.ConstantBuffers, [&descriptor](const auto& buffer) { return buffer.Name == descriptor.AutoParametersName; });
 		if (block != reflection.ConstantBuffers.end())
 		{
 			for (const auto& value : descriptor.Values)
 			{
-				const auto member =
-				    std::ranges::find_if(block->Members, [&value](const auto& reflected) { return reflected.Name == value.Name; });
-				if (member == block->Members.end() || member->OffsetInBytes != value.OffsetInBytes
-				    || member->SizeInBytes != value.SizeInBytes)
+				const auto member = std::ranges::find_if(block->Members, [&value](const auto& reflected) { return reflected.Name == value.Name; });
+				if (member == block->Members.end() || member->OffsetInBytes != value.OffsetInBytes || member->SizeInBytes != value.SizeInBytes)
 				{
 					result.mismatches.push_back(
 					    std::format(
@@ -166,8 +155,7 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
 		}
 		else if (!allowUnreflectedDeclarations)
 		{
-			result.mismatches.push_back(
-			    std::format("SC2007 automatic parameter block '{}' has no reflected members.", descriptor.AutoParametersName));
+			result.mismatches.push_back(std::format("SC2007 automatic parameter block '{}' has no reflected members.", descriptor.AutoParametersName));
 		}
 	}
 
@@ -190,6 +178,7 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
 				        field.Name,
 				        GetResourceKindName(field.Kind),
 				        GetResourceDimensionName(field.Dimension)));
+
 				continue;
 			}
 			result.mismatches.push_back(
@@ -198,6 +187,7 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
 			        field.Name,
 			        GetResourceKindName(field.Kind),
 			        GetResourceDimensionName(field.Dimension)));
+
 			continue;
 		}
 
@@ -212,8 +202,7 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
 			        GetResourceKindName(binding->Kind)));
 		}
 
-		if (field.Dimension != CookedShaderResourceDimension::Unknown && binding->Dimension != CookedShaderResourceDimension::Unknown
-		    && binding->Dimension != field.Dimension)
+		if (field.Dimension != CookedShaderResourceDimension::Unknown && binding->Dimension != CookedShaderResourceDimension::Unknown && binding->Dimension != field.Dimension)
 		{
 			result.mismatches.push_back(
 			    std::format(

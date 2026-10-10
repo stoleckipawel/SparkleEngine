@@ -49,8 +49,7 @@ void FrameGraphSubmissionExecutor::SubmitInitializationIfRequired()
 	m_initialGraphicsListAvailable = false;
 }
 
-FrameGraphSubmissionExecutor::BatchWaitTokens FrameGraphSubmissionExecutor::ResolveBatchWaits(
-    const FrameGraphSubmissionBatch& batch) const noexcept
+FrameGraphSubmissionExecutor::BatchWaitTokens FrameGraphSubmissionExecutor::ResolveBatchWaits(const FrameGraphSubmissionBatch& batch) const noexcept
 {
 	RhiSubmissionState waits;
 	for (const FrameGraphSubmissionBatchIndex dependencyBatch : batch.waitForBatches)
@@ -85,25 +84,17 @@ void FrameGraphSubmissionExecutor::ExecuteBatch(const FrameGraphSubmissionBatch&
 	m_batchTokens[batch.index] = RecordAndSubmitBatch(batch, waits, std::move(initializationLease));
 }
 
-RhiSubmissionToken FrameGraphSubmissionExecutor::RecordAndSubmitBatch(
-    const FrameGraphSubmissionBatch& batch,
-    const BatchWaitTokens& waits,
-    RhiCommandRecordingLease initializationLease)
+RhiSubmissionToken FrameGraphSubmissionExecutor::RecordAndSubmitBatch(const FrameGraphSubmissionBatch& batch, const BatchWaitTokens& waits, RhiCommandRecordingLease initializationLease)
 {
 	if (!m_recordingExecutor.RecordBatch(batch, std::move(initializationLease)))
 	{
 		return {};
 	}
 
-	return m_submissionService.SubmitCommandRecordingBatch(
-	    m_recordingExecutor.Aggregate(),
-	    std::span<const RhiSubmissionToken>(waits.Values.data(), waits.Count));
+	return m_submissionService.SubmitCommandRecordingBatch(m_recordingExecutor.Aggregate(), std::span<const RhiSubmissionToken>(waits.Values.data(), waits.Count));
 }
 
 bool FrameGraphSubmissionExecutor::UsesNonGraphicsQueue() const noexcept
 {
-	return std::any_of(
-	    m_plan.submissionBatches.begin(),
-	    m_plan.submissionBatches.end(),
-	    [](const FrameGraphSubmissionBatch& batch) { return batch.queue != ERhiQueueType::Graphics; });
+	return std::any_of(m_plan.submissionBatches.begin(), m_plan.submissionBatches.end(), [](const FrameGraphSubmissionBatch& batch) { return batch.queue != ERhiQueueType::Graphics; });
 }

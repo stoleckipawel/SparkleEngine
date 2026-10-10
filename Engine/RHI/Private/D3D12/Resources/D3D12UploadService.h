@@ -25,28 +25,12 @@ public:
 	D3D12UploadService& operator=(D3D12UploadService&&) = delete;
 
 	void BeginFrame() noexcept;
-	RhiGpuVirtualAddress AllocateUniformConstantBuffer(
-	    RenderCommandList& commandList,
-	    const void* data,
-	    std::uint32_t sizeInBytes) override;
-	bool UploadBuffer(
-	    RenderCommandList& commandList,
-	    RhiOwnedResourceHandle destination,
-	    std::span<const std::byte> data,
-	    ResourceState finalState,
-	    std::wstring_view debugName) override;
-	bool UploadTexture(
-	    RenderCommandList& commandList,
-	    RhiOwnedResourceHandle destination,
-	    const RhiTextureUploadDesc& textureUpload,
-	    ResourceState finalState,
-	    std::wstring_view debugName) override;
+	RhiGpuVirtualAddress AllocateUniformConstantBuffer(RenderCommandList& commandList, const void* data, std::uint32_t sizeInBytes) override;
+	bool UploadBuffer(RenderCommandList& commandList, RhiOwnedResourceHandle destination, std::span<const std::byte> data, ResourceState finalState, std::wstring_view debugName) override;
+	bool UploadTexture(RenderCommandList& commandList, RhiOwnedResourceHandle destination, const RhiTextureUploadDesc& textureUpload, ResourceState finalState, std::wstring_view debugName) override;
 
 private:
-	bool ValidateBufferUploadRequest(
-	    const RenderCommandList& commandList,
-	    const D3D12GpuAllocationRecord* destination,
-	    std::span<const std::byte> data) const noexcept;
+	bool ValidateBufferUploadRequest(const RenderCommandList& commandList, const D3D12GpuAllocationRecord* destination, std::span<const std::byte> data) const noexcept;
 	std::unique_ptr<D3D12GpuAllocationRecord> CreateBufferStagingResource(std::span<const std::byte> data, std::wstring_view debugName);
 	static void RecordBufferUpload(
 	    D3D12RenderCommandList& commandList,
@@ -54,14 +38,8 @@ private:
 	    D3D12GpuAllocationRecord& stagingResource,
 	    std::uint64_t sizeInBytes,
 	    ResourceState finalState) noexcept;
-	bool ValidateTextureUploadRequest(
-	    const RenderCommandList& commandList,
-	    const D3D12GpuAllocationRecord* destination,
-	    const RhiTextureUploadDesc& textureUpload) const noexcept;
-	std::unique_ptr<D3D12GpuAllocationRecord> CreateTextureStagingResource(
-	    const D3D12GpuAllocationRecord& destination,
-	    std::uint32_t subresourceCount,
-	    std::wstring_view debugName);
+	bool ValidateTextureUploadRequest(const RenderCommandList& commandList, const D3D12GpuAllocationRecord* destination, const RhiTextureUploadDesc& textureUpload) const noexcept;
+	std::unique_ptr<D3D12GpuAllocationRecord> CreateTextureStagingResource(const D3D12GpuAllocationRecord& destination, std::uint32_t subresourceCount, std::wstring_view debugName);
 	bool RecordTextureUpload(
 	    D3D12RenderCommandList& commandList,
 	    D3D12GpuAllocationRecord& destination,

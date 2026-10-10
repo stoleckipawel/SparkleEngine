@@ -23,7 +23,5 @@ public:
 private:
 	friend class CookedSceneGenerationWriter;
 
-	static void StageManifestsAndRegistry(
-	    std::span<const CookedSceneBuild* const> builds,
-	    std::vector<Files::FilePublication>& outPublication);
+	static void StageManifestsAndRegistry(std::span<const CookedSceneBuild* const> builds, std::vector<Files::FilePublication>& outPublication);
 };

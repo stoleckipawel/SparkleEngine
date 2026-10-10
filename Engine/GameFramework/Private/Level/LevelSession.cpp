@@ -29,10 +29,7 @@ void LevelSession::InitializeStartupLevel() noexcept
 	LevelAsset* startupLevel = m_levelRegistry->FindLevel(startupName);
 	if (!startupLevel && !requestedName.empty())
 	{
-		SPDLOG_LOGGER_ERROR(
-		    g_levelSessionLogger,
-		    "Requested startup level '{}' is not registered; no level will be activated.",
-		    requestedName);
+		SPDLOG_LOGGER_ERROR(g_levelSessionLogger, "Requested startup level '{}' is not registered; no level will be activated.", requestedName);
 		return;
 	}
 	if (!startupLevel)
@@ -147,11 +144,7 @@ void LevelSession::CompleteLevelChange() noexcept
 		m_levelChangeInProgress = false;
 		if (completion->Stage != LevelLoadOperationStage::Cancelled)
 		{
-			SPDLOG_LOGGER_ERROR(
-			    g_levelSessionLogger,
-			    "Failed to load level '{}': {}",
-			    std::string(loadedLevel->GetName()),
-			    m_lastLoadDiagnostic);
+			SPDLOG_LOGGER_ERROR(g_levelSessionLogger, "Failed to load level '{}': {}", std::string(loadedLevel->GetName()), m_lastLoadDiagnostic);
 			m_levelChangeEvents.OnLevelLoadFailed.Broadcast(loadedLevel->GetName());
 		}
 		return;
@@ -162,17 +155,15 @@ void LevelSession::CompleteLevelChange() noexcept
 		Diagnostics::Fatal(g_levelSessionLogger, __FILE__, __LINE__, "Ready scene-load completion has no package.");
 	}
 	Assets::SceneLoadPackage& package = *completion->Package;
+
 	const bool stale = package.WorldGeneration != m_gameWorld->GetGeneration() || package.DocumentGeneration != m_documentGeneration
 	    || package.CatalogGeneration != m_loadExecutor->GetCatalogGeneration();
+
 	if (stale)
 	{
 		m_lastLoadDiagnostic = "Scene load package was rejected because an owner generation changed.";
 		m_levelChangeInProgress = false;
-		SPDLOG_LOGGER_ERROR(
-		    g_levelSessionLogger,
-		    "Failed to load level '{}': {}",
-		    std::string(loadedLevel->GetName()),
-		    m_lastLoadDiagnostic);
+		SPDLOG_LOGGER_ERROR(g_levelSessionLogger, "Failed to load level '{}': {}", std::string(loadedLevel->GetName()), m_lastLoadDiagnostic);
 		m_levelChangeEvents.OnLevelLoadFailed.Broadcast(loadedLevel->GetName());
 		return;
 	}

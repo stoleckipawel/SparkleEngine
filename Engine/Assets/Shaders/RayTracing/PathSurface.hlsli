@@ -21,13 +21,7 @@ struct RayTracingPathSurface
 	bool EmissionTwoSided;
 };
 
-RayTracingPathSurface BuildPrimaryRayTracingPathSurface(float3 positionWorld,
-                                                        float3 normalWorld,
-                                                        float3 viewDirWorld,
-                                                        float3 baseColor,
-                                                        float roughness,
-                                                        float metallic,
-                                                        float dielectricF0)
+RayTracingPathSurface BuildPrimaryRayTracingPathSurface(float3 positionWorld, float3 normalWorld, float3 viewDirWorld, float3 baseColor, float roughness, float metallic, float dielectricF0)
 {
 	RayTracingPathSurface surface;
 	surface.Valid = true;

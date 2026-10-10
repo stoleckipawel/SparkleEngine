@@ -31,12 +31,7 @@ void GltfTangentFrameValidator::Validate(const ImportedMeshGeometry& geometry)
 		const ImportedMorphTarget& target = geometry.deformation.morphTargets[targetIndex];
 		if (target.deltas.size() != geometry.vertices.size())
 		{
-			throw Diagnostics::Error(
-			    std::format(
-			        "glTF morph target {} contains {} deltas for {} remapped vertices.",
-			        targetIndex,
-			        target.deltas.size(),
-			        geometry.vertices.size()));
+			throw Diagnostics::Error(std::format("glTF morph target {} contains {} deltas for {} remapped vertices.", targetIndex, target.deltas.size(), geometry.vertices.size()));
 		}
 		for (std::size_t vertexIndex = 0; vertexIndex < geometry.vertices.size(); ++vertexIndex)
 		{
@@ -59,35 +54,23 @@ void GltfTangentFrameValidator::ValidateBaseFrame(const ImportedVertex& vertex, 
 	}
 	ValidateDirections(vertex.normal, tangent, std::format("Normal-mapped glTF vertex {}", vertexIndex));
 
-	const float normalLengthSquared =
-	    vertex.normal.x * vertex.normal.x + vertex.normal.y * vertex.normal.y + vertex.normal.z * vertex.normal.z;
+	const float normalLengthSquared = vertex.normal.x * vertex.normal.x + vertex.normal.y * vertex.normal.y + vertex.normal.z * vertex.normal.z;
 	const float tangentLengthSquared = tangent.x * tangent.x + tangent.y * tangent.y + tangent.z * tangent.z;
 	const float tangentNormalDot = vertex.normal.x * tangent.x + vertex.normal.y * tangent.y + vertex.normal.z * tangent.z;
-	if (std::abs(normalLengthSquared - 1.0f) > kUnitFrameTolerance || std::abs(tangentLengthSquared - 1.0f) > kUnitFrameTolerance
-	    || std::abs(tangentNormalDot) > kUnitFrameTolerance)
+	if (std::abs(normalLengthSquared - 1.0f) > kUnitFrameTolerance || std::abs(tangentLengthSquared - 1.0f) > kUnitFrameTolerance || std::abs(tangentNormalDot) > kUnitFrameTolerance)
 	{
 		throw Diagnostics::Error(std::format("Normal-mapped glTF vertex {} does not contain an orthonormal tangent frame.", vertexIndex));
 	}
 }
 
-void GltfTangentFrameValidator::ValidateMorphFrame(
-    const ImportedVertex& vertex,
-    const ImportedMorphTargetDelta& delta,
-    std::size_t targetIndex,
-    std::size_t vertexIndex)
+void GltfTangentFrameValidator::ValidateMorphFrame(const ImportedVertex& vertex, const ImportedMorphTargetDelta& delta, std::size_t targetIndex, std::size_t vertexIndex)
 {
 	const DirectX::XMFLOAT3 normal{vertex.normal.x + delta.normal.x, vertex.normal.y + delta.normal.y, vertex.normal.z + delta.normal.z};
-	const DirectX::XMFLOAT3 tangent{
-	    vertex.tangent.x + delta.tangent.x,
-	    vertex.tangent.y + delta.tangent.y,
-	    vertex.tangent.z + delta.tangent.z};
+	const DirectX::XMFLOAT3 tangent{vertex.tangent.x + delta.tangent.x, vertex.tangent.y + delta.tangent.y, vertex.tangent.z + delta.tangent.z};
 	ValidateDirections(normal, tangent, std::format("Normal-mapped glTF morph target {}, vertex {}", targetIndex, vertexIndex));
 }
 
-void GltfTangentFrameValidator::ValidateDirections(
-    const DirectX::XMFLOAT3& normal,
-    const DirectX::XMFLOAT3& tangent,
-    std::string_view frameLabel)
+void GltfTangentFrameValidator::ValidateDirections(const DirectX::XMFLOAT3& normal, const DirectX::XMFLOAT3& tangent, std::string_view frameLabel)
 {
 	if (!IsFinite(normal) || !IsFinite(tangent))
 	{

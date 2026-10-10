@@ -11,10 +11,7 @@
 
 namespace TextureCookPipeline
 {
-	static WorkingMipLevel DecodeMipLevel(
-	    const TextureMipLevelData& sourceMip,
-	    DXGI_FORMAT sourceFormat,
-	    TextureColorProcessingPolicy colorProcessingPolicy)
+	static WorkingMipLevel DecodeMipLevel(const TextureMipLevelData& sourceMip, DXGI_FORMAT sourceFormat, TextureColorProcessingPolicy colorProcessingPolicy)
 	{
 		WorkingMipLevel workingMip;
 		workingMip.width = sourceMip.width;
@@ -69,8 +66,7 @@ namespace TextureCookPipeline
 			throw Diagnostics::Error("Texture processing only supports uncompressed RGBA8 and RGBA32F source data.");
 		}
 
-		const std::uint32_t mipCountToDecode =
-		    request.policy.mipPolicy == TextureMipPolicy::PreserveExisting ? sourceTexture.GetMipCount() : 1u;
+		const std::uint32_t mipCountToDecode = request.policy.mipPolicy == TextureMipPolicy::PreserveExisting ? sourceTexture.GetMipCount() : 1u;
 		WorkingTexture workingTexture;
 		workingTexture.dimension = sourceTexture.dimension;
 		workingTexture.arraySize = sourceTexture.arraySize;
@@ -85,8 +81,7 @@ namespace TextureCookPipeline
 
 			for (std::uint32_t mipIndex = 0; mipIndex < mipCountToDecode; ++mipIndex)
 			{
-				workingSlice.push_back(
-				    DecodeMipLevel(sourceSlice[mipIndex], sourceTexture.dxgiFormat, request.policy.colorProcessingPolicy));
+				workingSlice.push_back(DecodeMipLevel(sourceSlice[mipIndex], sourceTexture.dxgiFormat, request.policy.colorProcessingPolicy));
 			}
 		}
 

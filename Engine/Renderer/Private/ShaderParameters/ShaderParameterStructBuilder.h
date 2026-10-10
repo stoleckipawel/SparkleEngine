@@ -66,8 +66,7 @@ public:
 	{
 		ShaderParameterStructRegistry<TParameters>::AddField(
 		    name != nullptr ? name : "",
-		    [name, member, visibility, usesGraphResource](ShaderParameterStructBuilder<TParameters>& builder)
-		    { builder.Add(name, member, visibility, usesGraphResource); });
+		    [name, member, visibility, usesGraphResource](ShaderParameterStructBuilder<TParameters>& builder) { builder.Add(name, member, visibility, usesGraphResource); });
 	}
 };
 
@@ -76,9 +75,7 @@ template <typename TParameters, typename TValue> class ShaderParameterValueAutoR
 public:
 	ShaderParameterValueAutoRegister(const char* name, TValue TParameters::* member)
 	{
-		ShaderParameterStructRegistry<TParameters>::AddField(
-		    name,
-		    [name, member](ShaderParameterStructBuilder<TParameters>& builder) { builder.Value(name, member); });
+		ShaderParameterStructRegistry<TParameters>::AddField(name, [name, member](ShaderParameterStructBuilder<TParameters>& builder) { builder.Value(name, member); });
 	}
 };
 
@@ -93,10 +90,7 @@ template <typename TParameters> class ShaderParameterStructMetadata final
 public:
 	ShaderParameterStructMetadata() = default;
 
-	ShaderParameterStructMetadata(
-	    PassParameterLayout layout,
-	    std::vector<ShaderParameterStructBinding<TParameters>> bindings,
-	    std::vector<bool> graphResourceParameters) :
+	ShaderParameterStructMetadata(PassParameterLayout layout, std::vector<ShaderParameterStructBinding<TParameters>> bindings, std::vector<bool> graphResourceParameters) :
 	    m_layout(std::move(layout)),
 	    m_bindings(std::move(bindings)),
 	    m_graphResourceParameters(std::move(graphResourceParameters))
@@ -107,13 +101,10 @@ public:
 	const PassParameterLayout& GetLayout() const noexcept { return m_layout; }
 
 	const std::vector<ShaderParameterStructBinding<TParameters>>& GetBindings() const noexcept { return m_bindings; }
+
 	const std::vector<bool>& GetGraphResourceParameters() const noexcept { return m_graphResourceParameters; }
 
-	bool Commit(
-	    const TParameters& parameters,
-	    PassParameterSet& parameterSet,
-	    std::vector<std::vector<std::byte>>& storage,
-	    std::vector<std::string>* failedBindings = nullptr) const
+	bool Commit(const TParameters& parameters, PassParameterSet& parameterSet, std::vector<std::vector<std::byte>>& storage, std::vector<std::string>* failedBindings = nullptr) const
 	{
 		storage.resize(m_bindings.size());
 		parameterSet.ClearBindings();
@@ -168,36 +159,25 @@ public:
 	{
 	}
 
-	template <typename TField> std::uint32_t Add(
-	    const char* name,
-	    TField TParameters::* member,
-	    ShaderStageVisibility visibility,
-	    bool usesGraphResource = ShaderParameterFieldTraits<TField>::UsesGraphResource)
+	template <typename TField>
+	std::uint32_t Add(const char* name, TField TParameters::* member, ShaderStageVisibility visibility, bool usesGraphResource = ShaderParameterFieldTraits<TField>::UsesGraphResource)
 	{
 		return AddField<typename ShaderParameterFieldTraits<TField>::Semantic>(name, member, visibility, usesGraphResource);
 	}
 
-	template <typename TField> std::uint32_t RenderTarget(
-	    const char* name,
-	    TField TParameters::* member,
-	    ShaderStageVisibility visibility = ShaderStageVisibility::AllGraphics)
+	template <typename TField> std::uint32_t RenderTarget(const char* name, TField TParameters::* member, ShaderStageVisibility visibility = ShaderStageVisibility::AllGraphics)
 	{
 		return AddField<::RenderTarget>(name, member, visibility);
 	}
 
-	template <typename TField> std::uint32_t DepthTarget(
-	    const char* name,
-	    TField TParameters::* member,
-	    ShaderStageVisibility visibility = ShaderStageVisibility::AllGraphics)
+	template <typename TField> std::uint32_t DepthTarget(const char* name, TField TParameters::* member, ShaderStageVisibility visibility = ShaderStageVisibility::AllGraphics)
 	{
 		return AddField<::DepthTarget>(name, member, visibility);
 	}
 
-	template <typename TNestedParameters>
-	void Include(TNestedParameters TParameters::* member, ShaderStageVisibility visibility = ShaderStageVisibility::None)
+	template <typename TNestedParameters> void Include(TNestedParameters TParameters::* member, ShaderStageVisibility visibility = ShaderStageVisibility::None)
 	{
-		static const ShaderParameterStructMetadata<TNestedParameters> nestedMetadata =
-		    ShaderParameterStructBuilder<TNestedParameters>::BuildMetadata("NestedShaderParameters");
+		static const ShaderParameterStructMetadata<TNestedParameters> nestedMetadata = ShaderParameterStructBuilder<TNestedParameters>::BuildMetadata("NestedShaderParameters");
 		const auto& nestedLayout = nestedMetadata.GetLayout().GetParameters();
 		const auto& nestedBindings = nestedMetadata.GetBindings();
 		const auto& nestedGraphResources = nestedMetadata.GetGraphResourceParameters();
@@ -222,11 +202,7 @@ public:
 			m_bindings.push_back(
 			    ShaderParameterStructBinding<TParameters>{
 			        .Name = nestedBinding->Name,
-			        .Bind = [member, nestedBinding](
-			                    PassParameterSet& parameterSet,
-			                    const char* bindingName,
-			                    const TParameters& parameters,
-			                    std::vector<std::byte>& storage)
+			        .Bind = [member, nestedBinding](PassParameterSet& parameterSet, const char* bindingName, const TParameters& parameters, std::vector<std::byte>& storage)
 			        { return nestedBinding->Bind(parameterSet, bindingName, parameters.*member, storage); }});
 			m_graphResourceParameters.push_back(nestedGraphResources[index]);
 		}
@@ -242,8 +218,8 @@ public:
 		{
 			throw std::logic_error("Shader value metadata does not match its parameter field.");
 		}
-		m_valueWriters.push_back([member, offset = value->OffsetInBytes](const TParameters& parameters, std::span<std::byte> storage)
-		    { std::memcpy(storage.data() + offset, &(parameters.*member), sizeof(TValue)); });
+		m_valueWriters.push_back(
+		    [member, offset = value->OffsetInBytes](const TParameters& parameters, std::span<std::byte> storage) { std::memcpy(storage.data() + offset, &(parameters.*member), sizeof(TValue)); });
 	}
 
 	ShaderParameterStructMetadata<TParameters> Build() &&
@@ -265,11 +241,8 @@ public:
 				m_graphResourceParameters.push_back(false);
 				m_bindings.push_back(
 				    {block.Name,
-				        [writers = std::move(m_valueWriters), size = block.ValueSizeInBytes](
-				            PassParameterSet& parameterSet,
-				            const char* name,
-				            const TParameters& parameters,
-				            std::vector<std::byte>& storage)
+				        [writers = std::move(m_valueWriters),
+				            size = block.ValueSizeInBytes](PassParameterSet& parameterSet, const char* name, const TParameters& parameters, std::vector<std::byte>& storage)
 				        {
 					        storage.assign(size, std::byte{});
 					        for (const auto& write : writers)
@@ -283,9 +256,7 @@ public:
 		return ShaderParameterStructMetadata<TParameters>(std::move(m_layout), std::move(m_bindings), std::move(m_graphResourceParameters));
 	}
 
-	static ShaderParameterStructMetadata<TParameters> BuildMetadata(
-	    const char* debugName,
-	    ShaderStageVisibility visibility = ShaderStageVisibility::None)
+	static ShaderParameterStructMetadata<TParameters> BuildMetadata(const char* debugName, ShaderStageVisibility visibility = ShaderStageVisibility::None)
 	{
 		ShaderParameterStructBuilder builder(debugName);
 		if constexpr (requires { TParameters::Describe(builder); })
@@ -305,27 +276,19 @@ public:
 	}
 
 private:
-	template <typename TExpectedSemantic, typename TField> std::uint32_t AddField(
-	    const char* name,
-	    TField TParameters::* member,
-	    ShaderStageVisibility visibility,
-	    bool usesGraphResource = ShaderParameterFieldTraits<TField>::UsesGraphResource)
+	template <typename TExpectedSemantic, typename TField>
+	std::uint32_t AddField(const char* name, TField TParameters::* member, ShaderStageVisibility visibility, bool usesGraphResource = ShaderParameterFieldTraits<TField>::UsesGraphResource)
 	{
 		static_assert(IsShaderParameterFieldV<TField>, "Parameter registration requires a typed shader parameter field.");
 
 		using ActualSemantic = typename ShaderParameterFieldTraits<TField>::Semantic;
-		static_assert(
-		    std::is_same_v<ActualSemantic, TExpectedSemantic>,
-		    "Builder registration method does not match the shader parameter field type.");
+		static_assert(std::is_same_v<ActualSemantic, TExpectedSemantic>, "Builder registration method does not match the shader parameter field type.");
 
 		m_bindings.push_back(
 		    ShaderParameterStructBinding<TParameters>{
 		        .Name = name != nullptr ? name : "",
-		        .Bind = [member](
-		                    PassParameterSet& parameterSet,
-		                    const char* bindingName,
-		                    const TParameters& parameters,
-		                    std::vector<std::byte>&) { return BindParameterField(parameterSet, bindingName, parameters.*member); }});
+		        .Bind = [member](PassParameterSet& parameterSet, const char* bindingName, const TParameters& parameters, std::vector<std::byte>&)
+		        { return BindParameterField(parameterSet, bindingName, parameters.*member); }});
 		m_graphResourceParameters.push_back(usesGraphResource);
 
 		return m_layout.Add<ActualSemantic>(name, visibility, ShaderParameterFieldTraits<TField>::FieldArrayCount);

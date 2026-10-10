@@ -21,8 +21,7 @@ public:
 		for (cgltf_size index = 0; index < data.extensions_required_count; ++index)
 		{
 			const std::string_view extension = data.extensions_required[index];
-			if (extension == "KHR_materials_anisotropy" || extension == "KHR_materials_clearcoat"
-			    || extension == "KHR_materials_sheen" || extension == "KHR_materials_transmission"
+			if (extension == "KHR_materials_anisotropy" || extension == "KHR_materials_clearcoat" || extension == "KHR_materials_sheen" || extension == "KHR_materials_transmission"
 			    || extension == "KHR_materials_volume")
 			{
 				throw Diagnostics::Error(std::format("Required glTF material extension '{}' has no shading implementation.", extension));
@@ -55,11 +54,7 @@ public:
 		}
 		if (!omittedFeatures.empty())
 		{
-			SPDLOG_LOGGER_WARN(
-			    gltfMaterialImporterLogger,
-			    "glTF material {} uses generic metallic-roughness shading; omitted optional lobes: {}.",
-			    materialIndex,
-			    omittedFeatures);
+			SPDLOG_LOGGER_WARN(gltfMaterialImporterLogger, "glTF material {} uses generic metallic-roughness shading; omitted optional lobes: {}.", materialIndex, omittedFeatures);
 		}
 	}
 
@@ -109,16 +104,12 @@ void GltfMaterialImporter::ImportMaterials(const cgltf_data* data, const std::fi
 	GltfMaterialFeatureReporting::ValidateRequiredExtensions(*data);
 	for (cgltf_size materialIndex = 0; materialIndex < data->materials_count; ++materialIndex)
 	{
-		output.scene.materials.push_back(
-		    ExtractMaterial(data->materials[materialIndex], static_cast<ImportedMaterialIndex>(materialIndex), sourceDirectory));
+		output.scene.materials.push_back(ExtractMaterial(data->materials[materialIndex], static_cast<ImportedMaterialIndex>(materialIndex), sourceDirectory));
 		GltfMaterialFeatureReporting::ReportGenericShading(data->materials[materialIndex], static_cast<ImportedMaterialIndex>(materialIndex));
 	}
 }
 
-ImportedMaterial GltfMaterialImporter::ExtractMaterial(
-    const cgltf_material& material,
-    ImportedMaterialIndex materialIndex,
-    const std::filesystem::path& sourceDirectory)
+ImportedMaterial GltfMaterialImporter::ExtractMaterial(const cgltf_material& material, ImportedMaterialIndex materialIndex, const std::filesystem::path& sourceDirectory)
 {
 	ImportedMaterial importedMaterial;
 	GltfMaterialFeatureReporting::ValidateFeatureSupport(material, materialIndex);

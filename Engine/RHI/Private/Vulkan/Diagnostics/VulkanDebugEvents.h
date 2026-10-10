@@ -16,17 +16,9 @@ class VulkanDebugEvents final
 {
 public:
 	static bool SupportsScopes(VkCommandBuffer commandBuffer, const VulkanDebugEventFunctions& functions) noexcept;
-	static void BeginScope(
-	    VkCommandBuffer commandBuffer,
-	    const VulkanDebugEventFunctions& functions,
-	    std::string_view label,
-	    RhiDiagnosticLabelColor color) noexcept;
+	static void BeginScope(VkCommandBuffer commandBuffer, const VulkanDebugEventFunctions& functions, std::string_view label, RhiDiagnosticLabelColor color) noexcept;
 	static void EndScope(VkCommandBuffer commandBuffer, const VulkanDebugEventFunctions& functions) noexcept;
-	static void InsertMarker(
-	    VkCommandBuffer commandBuffer,
-	    const VulkanDebugEventFunctions& functions,
-	    std::string_view label,
-	    RhiDiagnosticLabelColor color) noexcept;
+	static void InsertMarker(VkCommandBuffer commandBuffer, const VulkanDebugEventFunctions& functions, std::string_view label, RhiDiagnosticLabelColor color) noexcept;
 
 	VulkanDebugEvents() = delete;
 	~VulkanDebugEvents() = delete;

@@ -62,19 +62,11 @@ private:
 	    const PassResourceDeclaration& declaration,
 	    FrameGraphResourceNode& compiledResource,
 	    const LastResourceAccess& lastAccess) noexcept;
-	void BuildRequiredResourceBarriers(
-	    FrameGraphPassNode& passRecord,
-	    const PassResourceDeclaration& declaration,
-	    FrameGraphResourceNode& compiledResource) noexcept;
+	void BuildRequiredResourceBarriers(FrameGraphPassNode& passRecord, const PassResourceDeclaration& declaration, FrameGraphResourceNode& compiledResource) noexcept;
 	void BuildFinalResourceBarriers(const LastResourceAccessTable& lastResourceAccesses) noexcept;
-	static bool HasCompiledBarrier(
-	    const FrameGraphPassNode& passRecord,
-	    FrameGraphResourceHandle handle,
-	    FrameGraphBarrier::Type type) noexcept;
+	static bool HasCompiledBarrier(const FrameGraphPassNode& passRecord, FrameGraphResourceHandle handle, FrameGraphBarrier::Type type) noexcept;
 	void ResetCompiledResourceStatesForBarrierPlanning() noexcept;
-	ResourceState InferRequiredResourceState(
-	    const PassResourceDeclaration& declaration,
-	    const FrameGraphResourceNode& resource) const noexcept;
+	ResourceState InferRequiredResourceState(const PassResourceDeclaration& declaration, const FrameGraphResourceNode& resource) const noexcept;
 	bool ShouldRestoreFinalState(const FrameGraphResourceNode& resource) const noexcept;
 	void BuildPassResourceDependencies(FrameGraphPassNode& passRecord) noexcept;
 	void RegisterReadDependency(FrameGraphPassNode& passRecord, FrameGraphResourceNode& resource) noexcept;

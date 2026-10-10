@@ -46,8 +46,7 @@ D3D12Rhi::D3D12Rhi(RhiInterposerHooks interposerHooks) noexcept :
 
 void D3D12Rhi::SelectAdapter() noexcept
 {
-	const DXGI_GPU_PREFERENCE pref =
-	    CVarPreferHighPerformanceAdapter.Get() ? DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE : DXGI_GPU_PREFERENCE_MINIMUM_POWER;
+	const DXGI_GPU_PREFERENCE pref = CVarPreferHighPerformanceAdapter.Get() ? DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE : DXGI_GPU_PREFERENCE_MINIMUM_POWER;
 
 	for (UINT i = 0;; ++i)
 	{
@@ -129,10 +128,7 @@ void D3D12Rhi::CreateFactory()
 	if (m_interposerHooks.ResolveNativeInterface != nullptr)
 	{
 		ComPtr<IDXGIFactory7> nativeFactory;
-		if (TryResolveNativeInterface(
-		        ERhiInterposerInterfaceKind::PresentationFactory,
-		        createdFactory.Get(),
-		        IID_PPV_ARGS(nativeFactory.ReleaseAndGetAddressOf())))
+		if (TryResolveNativeInterface(ERhiInterposerInterfaceKind::PresentationFactory, createdFactory.Get(), IID_PPV_ARGS(nativeFactory.ReleaseAndGetAddressOf())))
 		{
 			m_dxgiFactory = std::move(nativeFactory);
 			return;
@@ -154,10 +150,7 @@ void D3D12Rhi::CreateDevice()
 	if (m_interposerHooks.ResolveNativeInterface != nullptr)
 	{
 		ComPtr<ID3D12Device10> nativeDevice;
-		if (TryResolveNativeInterface(
-		        ERhiInterposerInterfaceKind::GraphicsDevice,
-		        createdDevice.Get(),
-		        IID_PPV_ARGS(nativeDevice.ReleaseAndGetAddressOf())))
+		if (TryResolveNativeInterface(ERhiInterposerInterfaceKind::GraphicsDevice, createdDevice.Get(), IID_PPV_ARGS(nativeDevice.ReleaseAndGetAddressOf())))
 		{
 			m_device = std::move(nativeDevice);
 		}
@@ -168,10 +161,7 @@ void D3D12Rhi::CreateDevice()
 	}
 	if (m_interposerHooks.DeviceCreated != nullptr)
 	{
-		m_interposerActive = m_interposerHooks.DeviceCreated(
-		    NativeGraphicsDeviceHandle{m_device.Get()},
-		    BuildD3D12AdapterIdentity(this),
-		    m_interposerHooks.UserData);
+		m_interposerActive = m_interposerHooks.DeviceCreated(NativeGraphicsDeviceHandle{m_device.Get()}, BuildD3D12AdapterIdentity(this), m_interposerHooks.UserData);
 	}
 	CheckRayTracingSupport();
 }
@@ -189,15 +179,18 @@ void D3D12Rhi::CreateMemoryAllocator()
 void D3D12Rhi::CheckRayTracingSupport() noexcept
 {
 	m_rayTracingCapabilities = {};
+
 	m_rayTracingCapabilities.Groups.PartitionedTlas = RhiPartitionedTlasCapabilities{
 	    .Supported = false,
 	    .Provider = ERhiPartitionedTlasProvider::D3D12NvapiPartitionedTlas,
 	    .NvidiaDeviceOnly = true,
 	    .CurrentDeviceIsNvidia = IsNvidiaAdapter(),
 	    .CapabilityStatusReason = "d3d12-options5-not-queried"};
+
 	m_rayTracingCapabilities.Groups.Provider = RhiRayTracingProviderCapabilities{
 	    .SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::None,
 	    .SelectedTopLevelProviderReason = "ray-tracing-not-queried"};
+
 	if (!m_device)
 	{
 		Diagnostics::Fatal(g_d3d12RhiLogger, __FILE__, __LINE__, "CheckRayTracingSupport called before device creation");
@@ -214,8 +207,7 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 		if (m_rayTracingCapabilities.SupportsAccelerationStructure)
 		{
 			m_rayTracingCapabilities.MaxTraceRecursionDepth = D3D12_RAYTRACING_MAX_DECLARABLE_TRACE_RECURSION_DEPTH;
-			m_rayTracingCapabilities.MaxRayPayloadSizeInBytes =
-			    std::min(kD3D12RayTracingMaxDeclarableShaderPayloadSizeInBytes, kRhiRayTracingMaxPayloadSizeInBytes);
+			m_rayTracingCapabilities.MaxRayPayloadSizeInBytes = std::min(kD3D12RayTracingMaxDeclarableShaderPayloadSizeInBytes, kRhiRayTracingMaxPayloadSizeInBytes);
 			m_rayTracingCapabilities.MaxRayAttributeSizeInBytes = D3D12_RAYTRACING_MAX_ATTRIBUTE_SIZE_IN_BYTES;
 			m_rayTracingCapabilities.ShaderGroupHandleSizeInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 			m_rayTracingCapabilities.ShaderTableAlignmentInBytes = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
@@ -227,16 +219,19 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 		}
 
 		PopulateStandardRayTracingCapabilityGroups(m_rayTracingCapabilities);
+
 		m_rayTracingCapabilities.Groups.PartitionedTlas = RhiPartitionedTlasCapabilities{
 		    .Supported = false,
 		    .Provider = ERhiPartitionedTlasProvider::D3D12NvapiPartitionedTlas,
 		    .NvidiaDeviceOnly = true,
 		    .CurrentDeviceIsNvidia = IsNvidiaAdapter(),
 		    .CapabilityStatusReason = "d3d12-nvapi-ptlas-provider-not-queried"};
+
 		m_rayTracingCapabilities.Groups.PartitionedTlas = m_nvapiRayTracingProvider.QueryPartitionedTlasCapabilities(
 		    m_device.Get(),
 		    IsNvidiaAdapter(),
 		    m_rayTracingCapabilities.SupportsAccelerationStructure);
+
 		SelectRayTracingTopLevelProvider();
 	}
 	else
@@ -244,10 +239,7 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 		m_rayTracingCapabilities.Groups.PartitionedTlas.CapabilityStatusReason = "d3d12-options5-query-failed";
 		m_rayTracingCapabilities.Groups.Provider.SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::None;
 		m_rayTracingCapabilities.Groups.Provider.SelectedTopLevelProviderReason = "d3d12-options5-query-failed";
-		SPDLOG_LOGGER_WARN(
-		    g_d3d12RhiLogger,
-		    "CheckFeatureSupport(OPTIONS5) failed hr={:#010x}; ray tracing assumed unsupported.",
-		    static_cast<uint32_t>(hr));
+		SPDLOG_LOGGER_WARN(g_d3d12RhiLogger, "CheckFeatureSupport(OPTIONS5) failed hr={:#010x}; ray tracing assumed unsupported.", static_cast<uint32_t>(hr));
 	}
 }
 
@@ -256,19 +248,15 @@ void D3D12Rhi::SelectRayTracingTopLevelProvider() noexcept
 	RhiRayTracingProviderCapabilities& provider = m_rayTracingCapabilities.Groups.Provider;
 	if (!m_rayTracingCapabilities.SupportsAccelerationStructure)
 	{
-		provider = RhiRayTracingProviderCapabilities{
-		    .SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::None,
-		    .SelectedTopLevelProviderReason = "ray-tracing-unavailable"};
+		provider = RhiRayTracingProviderCapabilities{.SelectedTopLevelProvider = ERhiRayTracingTopLevelProvider::None, .SelectedTopLevelProviderReason = "ray-tracing-unavailable"};
 		return;
 	}
 
 	const RhiPartitionedTlasCapabilities& partitionedTlas = m_rayTracingCapabilities.Groups.PartitionedTlas;
-	const bool partitionedTlasSelected =
-	    CVarRayTracingPreferPartitionedTlas.Get() && partitionedTlas.Supported && partitionedTlas.SupportsDescriptorAccess;
+	const bool partitionedTlasSelected = CVarRayTracingPreferPartitionedTlas.Get() && partitionedTlas.Supported && partitionedTlas.SupportsDescriptorAccess;
 
 	provider = RhiRayTracingProviderCapabilities{
-	    .SelectedTopLevelProvider =
-	        partitionedTlasSelected ? ERhiRayTracingTopLevelProvider::PartitionedTlas : ERhiRayTracingTopLevelProvider::ClassicTlas,
+	    .SelectedTopLevelProvider = partitionedTlasSelected ? ERhiRayTracingTopLevelProvider::PartitionedTlas : ERhiRayTracingTopLevelProvider::ClassicTlas,
 	    .SelectedTopLevelProviderReason = partitionedTlasSelected ? "d3d12-nvapi-ptlas-selected" : "classic-tlas-selected"};
 }
 
@@ -283,21 +271,14 @@ void D3D12Rhi::CreateCommandQueues()
 	if (m_interposerActive)
 	{
 		ComPtr<ID3D12Device10> externalDevice;
-		if (TryUpgradeInterposerInterface(
-		        ERhiInterposerInterfaceKind::GraphicsDevice,
-		        m_device.Get(),
-		        IID_PPV_ARGS(externalDevice.ReleaseAndGetAddressOf())))
+		if (TryUpgradeInterposerInterface(ERhiInterposerInterfaceKind::GraphicsDevice, m_device.Get(), IID_PPV_ARGS(externalDevice.ReleaseAndGetAddressOf())))
 		{
 			ComPtr<ID3D12CommandQueue> externalQueue;
-			const HRESULT createResult =
-			    externalDevice->CreateCommandQueue(&graphicsQueueDesc, IID_PPV_ARGS(externalQueue.ReleaseAndGetAddressOf()));
+			const HRESULT createResult = externalDevice->CreateCommandQueue(&graphicsQueueDesc, IID_PPV_ARGS(externalQueue.ReleaseAndGetAddressOf()));
 			if (SUCCEEDED(createResult))
 			{
 				ComPtr<ID3D12CommandQueue> nativeQueue;
-				if (TryResolveNativeInterface(
-				        ERhiInterposerInterfaceKind::GraphicsQueue,
-				        externalQueue.Get(),
-				        IID_PPV_ARGS(nativeQueue.ReleaseAndGetAddressOf())))
+				if (TryResolveNativeInterface(ERhiInterposerInterfaceKind::GraphicsQueue, externalQueue.Get(), IID_PPV_ARGS(nativeQueue.ReleaseAndGetAddressOf())))
 				{
 					m_externalDevice = std::move(externalDevice);
 					m_externalCommandQueue = std::move(externalQueue);
@@ -315,8 +296,7 @@ void D3D12Rhi::CreateCommandQueues()
 	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 	{
 		const ERhiQueueType queueType = static_cast<ERhiQueueType>(queueIndex);
-		ComPtr<ID3D12CommandQueue> nativeQueue =
-		    queueType == ERhiQueueType::Graphics ? std::move(nativeGraphicsQueue) : ComPtr<ID3D12CommandQueue>{};
+		ComPtr<ID3D12CommandQueue> nativeQueue = queueType == ERhiQueueType::Graphics ? std::move(nativeGraphicsQueue) : ComPtr<ID3D12CommandQueue>{};
 		m_queues[queueIndex] = std::make_unique<D3D12CommandQueue>(*m_device.Get(), queueType, std::move(nativeQueue));
 	}
 }
@@ -401,11 +381,7 @@ const D3D12GpuMemoryAllocator& D3D12Rhi::GetMemoryAllocator() const noexcept
 	return *m_memoryAllocator;
 }
 
-bool D3D12Rhi::TryUpgradeInterposerInterface(
-    ERhiInterposerInterfaceKind kind,
-    IUnknown* nativeInterface,
-    REFIID requestedInterface,
-    void** upgradedInterface) noexcept
+bool D3D12Rhi::TryUpgradeInterposerInterface(ERhiInterposerInterfaceKind kind, IUnknown* nativeInterface, REFIID requestedInterface, void** upgradedInterface) noexcept
 {
 	if (!m_interposerActive || m_interposerHooks.UpgradeInterface == nullptr || nativeInterface == nullptr || upgradedInterface == nullptr)
 	{
@@ -430,11 +406,7 @@ bool D3D12Rhi::TryUpgradeInterposerInterface(
 	return SUCCEEDED(result) && *upgradedInterface != nullptr;
 }
 
-bool D3D12Rhi::TryResolveNativeInterface(
-    ERhiInterposerInterfaceKind kind,
-    IUnknown* externalInterface,
-    REFIID requestedInterface,
-    void** nativeInterface) noexcept
+bool D3D12Rhi::TryResolveNativeInterface(ERhiInterposerInterfaceKind kind, IUnknown* externalInterface, REFIID requestedInterface, void** nativeInterface) noexcept
 {
 	if (m_interposerHooks.ResolveNativeInterface == nullptr || externalInterface == nullptr || nativeInterface == nullptr)
 	{
@@ -490,10 +462,7 @@ void D3D12Rhi::ShutdownInterposer() noexcept
 	}
 }
 
-RhiSubmissionToken D3D12Rhi::SubmitCommandLists(
-    ERhiQueueType queueType,
-    std::span<ID3D12CommandList* const> commandLists,
-    std::span<const RhiSubmissionToken> waitTokens) noexcept
+RhiSubmissionToken D3D12Rhi::SubmitCommandLists(ERhiQueueType queueType, std::span<ID3D12CommandList* const> commandLists, std::span<const RhiSubmissionToken> waitTokens) noexcept
 {
 	if (!IsRhiQueueTypeValid(queueType))
 	{

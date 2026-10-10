@@ -34,10 +34,7 @@ UiRenderPacketPlayer::~UiRenderPacketPlayer() noexcept = default;
 
 void UiRenderPacketPlayer::SynchronizeTextures(const UiRenderPacket& packet, RhiImGuiRenderer& renderer)
 {
-	const bool hasPendingRelease = std::any_of(
-	    m_storage->Textures.begin(),
-	    m_storage->Textures.end(),
-	    [](const PlaybackStorage::Texture& texture) { return texture.PendingRelease; });
+	const bool hasPendingRelease = std::any_of(m_storage->Textures.begin(), m_storage->Textures.end(), [](const PlaybackStorage::Texture& texture) { return texture.PendingRelease; });
 
 	if (packet.TextureUploads.empty() && packet.TextureReleases.empty() && !hasPendingRelease)
 	{
@@ -108,8 +105,7 @@ void UiRenderPacketPlayer::ApplyTextureChanges(const UiRenderPacket& packet)
 
 		++texture.Data->UnusedFrames;
 
-		if (std::find(m_storage->TextureUpdates.begin(), m_storage->TextureUpdates.end(), texture.Data.get())
-		    == m_storage->TextureUpdates.end())
+		if (std::find(m_storage->TextureUpdates.begin(), m_storage->TextureUpdates.end(), texture.Data.get()) == m_storage->TextureUpdates.end())
 		{
 			m_storage->TextureUpdates.push_back(texture.Data.get());
 		}
@@ -135,8 +131,7 @@ void UiRenderPacketPlayer::ApplyTextureUpload(const UiRenderPacket& packet, cons
 		texture = data.get();
 		m_storage->Textures.push_back(PlaybackStorage::Texture{.Handle = upload.Texture, .Data = std::move(data)});
 	}
-	else if (texture->WantDestroyNextFrame || texture->Width != static_cast<int>(upload.Width)
-	    || texture->Height != static_cast<int>(upload.Height))
+	else if (texture->WantDestroyNextFrame || texture->Width != static_cast<int>(upload.Width) || texture->Height != static_cast<int>(upload.Height))
 	{
 		return;
 	}
@@ -145,8 +140,7 @@ void UiRenderPacketPlayer::ApplyTextureUpload(const UiRenderPacket& packet, cons
 	std::memcpy(texture->Pixels, source, upload.PixelCount);
 	if (!isNewTexture)
 	{
-		texture->UpdateRect =
-		    ImTextureRect{.x = 0, .y = 0, .w = static_cast<unsigned short>(upload.Width), .h = static_cast<unsigned short>(upload.Height)};
+		texture->UpdateRect = ImTextureRect{.x = 0, .y = 0, .w = static_cast<unsigned short>(upload.Width), .h = static_cast<unsigned short>(upload.Height)};
 		texture->SetStatus(ImTextureStatus_WantUpdates);
 	}
 
@@ -190,9 +184,7 @@ ImTextureData* UiRenderPacketPlayer::FindTexture(UiTextureHandle handle) const n
 
 void UiRenderPacketPlayer::RetireReleasedTextures() noexcept
 {
-	std::erase_if(
-	    m_storage->Textures,
-	    [](const PlaybackStorage::Texture& texture) { return texture.PendingRelease && texture.Data->BackendUserData == nullptr; });
+	std::erase_if(m_storage->Textures, [](const PlaybackStorage::Texture& texture) { return texture.PendingRelease && texture.Data->BackendUserData == nullptr; });
 
 	m_storage->TextureUpdates.resize(0);
 }
@@ -205,11 +197,7 @@ void UiRenderPacketPlayer::PrepareDrawLists(std::size_t drawListCount)
 	}
 }
 
-void UiRenderPacketPlayer::CopyDrawList(
-    const UiRenderPacket& packet,
-    const UiDrawList& packetList,
-    std::size_t drawListIndex,
-    const UiTextureRegistry& textures)
+void UiRenderPacketPlayer::CopyDrawList(const UiRenderPacket& packet, const UiDrawList& packetList, std::size_t drawListIndex, const UiTextureRegistry& textures)
 {
 	ImDrawList& drawList = *m_storage->DrawLists[drawListIndex];
 	drawList.VtxBuffer.resize(packetList.VertexCount);
@@ -220,8 +208,7 @@ void UiRenderPacketPlayer::CopyDrawList(
 	for (std::uint32_t index = 0; index < packetList.VertexCount; ++index)
 	{
 		const UiDrawVertex& source = packet.Vertices[packetList.VertexOffset + index];
-		drawList.VtxBuffer[index] =
-		    ImDrawVert{.pos = {source.Position[0], source.Position[1]}, .uv = {source.Uv[0], source.Uv[1]}, .col = source.Color};
+		drawList.VtxBuffer[index] = ImDrawVert{.pos = {source.Position[0], source.Position[1]}, .uv = {source.Uv[0], source.Uv[1]}, .col = source.Color};
 	}
 	for (std::uint32_t index = 0; index < packetList.IndexCount; ++index)
 	{

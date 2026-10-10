@@ -7,21 +7,14 @@
 #include <algorithm>
 #include <utility>
 
-TextureDiagnosticsSnapshotBuilder::TextureDiagnosticsSnapshotBuilder(
-    const RhiDescriptorService& descriptorService,
-    const PreviewTextureResolver& resolvePreviewTexture,
-    std::size_t expectedRowCount) :
+TextureDiagnosticsSnapshotBuilder::TextureDiagnosticsSnapshotBuilder(const RhiDescriptorService& descriptorService, const PreviewTextureResolver& resolvePreviewTexture, std::size_t expectedRowCount) :
     m_descriptorService(descriptorService),
     m_resolvePreviewTexture(resolvePreviewTexture)
 {
 	m_snapshot.reserve(expectedRowCount);
 }
 
-void TextureDiagnosticsSnapshotBuilder::Add(
-    const RendererTexture& texture,
-    TextureDiagnosticsKind kind,
-    std::string key,
-    bool streamManaged)
+void TextureDiagnosticsSnapshotBuilder::Add(const RendererTexture& texture, TextureDiagnosticsKind kind, std::string key, bool streamManaged)
 {
 	if (!texture)
 	{
@@ -58,5 +51,6 @@ TextureDiagnosticsSnapshot TextureDiagnosticsSnapshotBuilder::Build() &&
 		    }
 		    return lhs.Key < rhs.Key;
 	    });
+
 	return std::move(m_snapshot);
 }

@@ -27,11 +27,7 @@ void TextureCache::LoadDefaultTextures(RenderCommandList& commandList, std::vect
 		const std::optional<ResolvedTexturePath> source = ResolveTexturePath(texturePath);
 		if (!source)
 		{
-			Diagnostics::Fatal(
-			    g_textureCacheLogger,
-			    __FILE__,
-			    __LINE__,
-			    std::format("Default texture '{}' could not be resolved.", texturePath.string()));
+			Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, std::format("Default texture '{}' could not be resolved.", texturePath.string()));
 		}
 
 		if (m_defaultTextures.contains(source->CacheKey))
@@ -46,11 +42,7 @@ void TextureCache::LoadDefaultTextures(RenderCommandList& commandList, std::vect
 		}
 		catch (const Diagnostics::Error& error)
 		{
-			Diagnostics::Fatal(
-			    g_textureCacheLogger,
-			    __FILE__,
-			    __LINE__,
-			    std::format("Default texture '{}' failed to load: {}", source->Path.string(), error.what()));
+			Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, std::format("Default texture '{}' failed to load: {}", source->Path.string(), error.what()));
 		}
 
 		RendererTexture texture = m_textureFactory.Create(source->Path, decodedTexture, commandList);
@@ -122,11 +114,7 @@ void TextureCache::SynchronizeSceneTextures(const RenderTextureTable& textures)
 		const std::optional<ResolvedTexturePath> source = ResolveTexturePath(texture.Path);
 		if (!source)
 		{
-			Diagnostics::Fatal(
-			    g_textureCacheLogger,
-			    __FILE__,
-			    __LINE__,
-			    std::format("Cooked scene texture '{}' could not be resolved.", texture.Path.string()));
+			Diagnostics::Fatal(g_textureCacheLogger, __FILE__, __LINE__, std::format("Cooked scene texture '{}' could not be resolved.", texture.Path.string()));
 		}
 
 		m_wantedPathTextureKeys.insert(source->CacheKey);
@@ -166,10 +154,9 @@ void TextureCache::SynchronizeSceneTextures(const RenderTextureTable& textures)
 
 void TextureCache::LaunchPendingRequests()
 {
-	const std::size_t activeLoadCount = static_cast<std::size_t>(std::count_if(
-	    m_requests.begin(),
-	    m_requests.end(),
-	    [](const TextureRequest& request) noexcept { return request.LoadStarted && request.Execution.IsValid(); }));
+	const std::size_t activeLoadCount = static_cast<std::size_t>(
+	    std::count_if(m_requests.begin(), m_requests.end(), [](const TextureRequest& request) noexcept { return request.LoadStarted && request.Execution.IsValid(); }));
+
 	std::size_t availableSlots = activeLoadCount < kMaximumConcurrentLoads ? kMaximumConcurrentLoads - activeLoadCount : 0;
 	for (TextureRequest& request : m_requests)
 	{
@@ -217,11 +204,7 @@ void TextureCache::ConsumeCompletedRequests() noexcept
 			    g_textureCacheLogger,
 			    __FILE__,
 			    __LINE__,
-			    std::format(
-			        "Texture generation {} for '{}' failed: {}",
-			        request.Generation.Generation,
-			        request.Source.Path.string(),
-			        executionResult.GetMessage()));
+			    std::format("Texture generation {} for '{}' failed: {}", request.Generation.Generation, request.Source.Path.string(), executionResult.GetMessage()));
 		}
 		if (request.Payload == nullptr)
 		{

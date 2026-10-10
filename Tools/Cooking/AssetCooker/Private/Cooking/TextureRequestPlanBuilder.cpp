@@ -20,10 +20,7 @@ void TextureRequestPlanBuilder::CollectSceneRequests(const AssetCookerSceneEntry
 	}
 }
 
-bool TextureRequestPlanBuilder::Build(
-    const AssetCookerProjectCookPlan& plan,
-    AssetCookerDiagnostics& diagnostics,
-    const std::filesystem::path& outputPath)
+bool TextureRequestPlanBuilder::Build(const AssetCookerProjectCookPlan& plan, AssetCookerDiagnostics& diagnostics, const std::filesystem::path& outputPath)
 {
 	TextureCookRequestSet requestSet;
 	std::size_t failedSceneCount = 0;
@@ -43,9 +40,7 @@ bool TextureRequestPlanBuilder::Build(
 
 	if (failedSceneCount != 0)
 	{
-		diagnostics.AddError(
-		    AssetCookerCategory::Textures,
-		    "Texture request collection failed for " + std::to_string(failedSceneCount) + " scene(s).");
+		diagnostics.AddError(AssetCookerCategory::Textures, "Texture request collection failed for " + std::to_string(failedSceneCount) + " scene(s).");
 		return false;
 	}
 

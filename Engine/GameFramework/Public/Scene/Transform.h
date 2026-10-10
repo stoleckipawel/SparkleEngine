@@ -9,10 +9,7 @@ class SPARKLE_ENGINE_API Transform
 public:
 	Transform() noexcept;
 	explicit Transform(const DirectX::XMMATRIX& worldTransform) noexcept;
-	Transform(
-	    const DirectX::XMFLOAT3& translation,
-	    const DirectX::XMFLOAT3& rotationEuler = {0.0f, 0.0f, 0.0f},
-	    const DirectX::XMFLOAT3& scale = {1.0f, 1.0f, 1.0f}) noexcept;
+	Transform(const DirectX::XMFLOAT3& translation, const DirectX::XMFLOAT3& rotationEuler = {0.0f, 0.0f, 0.0f}, const DirectX::XMFLOAT3& scale = {1.0f, 1.0f, 1.0f}) noexcept;
 
 	void SetTranslation(const DirectX::XMFLOAT3& translation) noexcept;
 	DirectX::XMFLOAT3 GetTranslation() const noexcept;
@@ -36,6 +33,7 @@ public:
 
 private:
 	DirectX::XMFLOAT3 m_translation{0.0f, 0.0f, 0.0f};
+
 	DirectX::XMFLOAT3 m_rotationEuler{0.0f, 0.0f, 0.0f};
 	DirectX::XMFLOAT3 m_scale{1.0f, 1.0f, 1.0f};
 };

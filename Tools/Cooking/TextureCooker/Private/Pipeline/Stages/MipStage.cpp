@@ -60,6 +60,7 @@ namespace TextureCookPipeline
 		outMip.pixels.resize(static_cast<std::size_t>(outMip.width) * static_cast<std::size_t>(outMip.height) * 4u);
 
 		STBIR_RESIZE resize{};
+
 		stbir_resize_init(
 		    &resize,
 		    sourceMip.pixels.data(),
@@ -72,6 +73,7 @@ namespace TextureCookPipeline
 		    static_cast<int>(outMip.width * 4u * sizeof(float)),
 		    STBIR_4CHANNEL,
 		    STBIR_TYPE_FLOAT);
+
 		stbir_set_edgemodes(&resize, STBIR_EDGE_CLAMP, STBIR_EDGE_CLAMP);
 
 		if (mipFilter == TextureMipFilter::Kaiser)

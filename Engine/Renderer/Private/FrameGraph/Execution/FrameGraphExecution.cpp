@@ -8,11 +8,7 @@
 #include "RHI/Public/Commands/RhiCommandSubmissionService.h"
 #include <algorithm>
 
-void FrameGraph::Execute(
-    const FrameGraphPlan& plan,
-    RhiCommandSubmissionService& submissionService,
-    FrameExecutionDiagnostics& frameDiagnostics,
-    TaskExecutor& taskExecutor) const
+void FrameGraph::Execute(const FrameGraphPlan& plan, RhiCommandSubmissionService& submissionService, FrameExecutionDiagnostics& frameDiagnostics, TaskExecutor& taskExecutor) const
 {
 	EnsureTransientResourcesMaterialized(plan);
 	submissionService.PrepareCommandRecording();
@@ -22,18 +18,14 @@ void FrameGraph::Execute(
 	RenderCommandList& initialGraphicsCommandList = submissionService.GetCurrentGraphicsCommandList();
 	RecordFrameBeginBarriers(plan, initialGraphicsCommandList, frameDiagnostics);
 
-	FrameGraphSubmissionExecutor
-	    submissionExecutor(*this, plan, submissionService, frameDiagnostics, taskExecutor, m_submissionBatchTokens);
+	FrameGraphSubmissionExecutor submissionExecutor(*this, plan, submissionService, frameDiagnostics, taskExecutor, m_submissionBatchTokens);
 	RenderCommandList& finalGraphicsCommandList = submissionExecutor.Execute(initialGraphicsCommandList);
 	RecordFrameEndBarriers(plan, finalGraphicsCommandList, frameDiagnostics);
 
 	CommitTextureHistories();
 }
 
-void FrameGraph::RecordFrameBeginBarriers(
-    const FrameGraphPlan& plan,
-    RenderCommandList& commandList,
-    FrameExecutionDiagnostics& frameDiagnostics) const
+void FrameGraph::RecordFrameBeginBarriers(const FrameGraphPlan& plan, RenderCommandList& commandList, FrameExecutionDiagnostics& frameDiagnostics) const
 {
 	RenderCommandContext commands(commandList);
 	FrameGraphExecutionDiagnostics diagnostics(frameDiagnostics, commands);
@@ -51,10 +43,7 @@ void FrameGraph::RecordFrameBeginBarriers(
 	EmitCompiledBarriers(commands, "FrameBegin", plan.initialBarriers);
 }
 
-void FrameGraph::RecordFrameEndBarriers(
-    const FrameGraphPlan& plan,
-    RenderCommandList& commandList,
-    FrameExecutionDiagnostics& frameDiagnostics) const
+void FrameGraph::RecordFrameEndBarriers(const FrameGraphPlan& plan, RenderCommandList& commandList, FrameExecutionDiagnostics& frameDiagnostics) const
 {
 	RenderCommandContext commands(commandList);
 	FrameGraphExecutionDiagnostics diagnostics(frameDiagnostics, commands);

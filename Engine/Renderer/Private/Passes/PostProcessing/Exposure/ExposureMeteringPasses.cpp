@@ -10,15 +10,11 @@
 
 #include <algorithm>
 
-ExposureMomentTexture AddExposureHistogramPasses(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources)
+ExposureMomentTexture AddExposureHistogramPasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
 	// Bin count matches the fixed layout in ExposureHistogram.hlsli.
 	constexpr std::uint32_t histogramBinCount = 512u;
-	const auto histogram = builder.CreateBuffer(
-	    FrameGraphBufferDesc::Create("ExposureHistogram", histogramBinCount * sizeof(std::uint32_t), sizeof(std::uint32_t)));
+	const auto histogram = builder.CreateBuffer(FrameGraphBufferDesc::Create("ExposureHistogram", histogramBinCount * sizeof(std::uint32_t), sizeof(std::uint32_t)));
 	const auto moments = CreateExposureMomentTexture(builder, "ExposureHistogramMoments", 0u, 1u, 1u);
 	AddExposureHistogramClearPass(builder, histogram);
 	AddExposureHistogramBuildPass(builder, resources.Transient.Scene.SceneColor, sceneExtent, histogram);
@@ -26,10 +22,7 @@ ExposureMomentTexture AddExposureHistogramPasses(
 	return moments;
 }
 
-ExposureMomentTexture AddExposureDownsamplePasses(
-    FrameGraphBuilder& builder,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources)
+ExposureMomentTexture AddExposureDownsamplePasses(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
 	std::uint32_t width = (std::max) (MathUtils::DivideRoundUp(sceneExtent.Width, 2u), 1u);
 	std::uint32_t height = (std::max) (MathUtils::DivideRoundUp(sceneExtent.Height, 2u), 1u);

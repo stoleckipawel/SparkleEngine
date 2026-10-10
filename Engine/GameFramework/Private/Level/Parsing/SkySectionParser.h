@@ -4,6 +4,7 @@
 #include "Level/Parsing/LevelParserCommon.h"
 
 #include <iosfwd>
+
 namespace LevelParsing
 {
 	void ParseSkySectionField(const ParsedLevelLine& parsedLine, LevelDesc& levelDesc);

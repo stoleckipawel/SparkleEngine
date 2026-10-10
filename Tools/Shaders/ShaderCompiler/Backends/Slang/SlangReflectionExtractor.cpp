@@ -22,10 +22,7 @@ ShaderReflection SlangReflectionExtractor::Extract(slang::ProgramLayout& program
 			{
 				SlangUInt sizes[3] = {0, 0, 0};
 				entryPoint->getComputeThreadGroupSize(3, sizes);
-				outReflection.ThreadGroupSize = {
-				    static_cast<std::uint32_t>(sizes[0]),
-				    static_cast<std::uint32_t>(sizes[1]),
-				    static_cast<std::uint32_t>(sizes[2])};
+				outReflection.ThreadGroupSize = {static_cast<std::uint32_t>(sizes[0]), static_cast<std::uint32_t>(sizes[1]), static_cast<std::uint32_t>(sizes[2])};
 			}
 
 			VisitScope(entryPoint->getVarLayout(), stage, outReflection);
@@ -43,10 +40,7 @@ void SlangReflectionExtractor::VisitScope(slang::VariableLayoutReflection* scope
 	VisitVariable(scopeLayout, stage, outReflection);
 }
 
-void SlangReflectionExtractor::VisitVariable(
-    slang::VariableLayoutReflection* variableLayout,
-    ShaderStage stage,
-    ShaderReflection& outReflection)
+void SlangReflectionExtractor::VisitVariable(slang::VariableLayoutReflection* variableLayout, ShaderStage stage, ShaderReflection& outReflection)
 {
 	if (variableLayout == nullptr || variableLayout->getTypeLayout() == nullptr)
 		return;
@@ -102,10 +96,7 @@ void SlangReflectionExtractor::VisitTypeFields(slang::TypeLayoutReflection* type
 	}
 }
 
-void SlangReflectionExtractor::AddResourceBinding(
-    slang::VariableLayoutReflection& variableLayout,
-    slang::ParameterCategory category,
-    ShaderReflection& outReflection)
+void SlangReflectionExtractor::AddResourceBinding(slang::VariableLayoutReflection& variableLayout, slang::ParameterCategory category, ShaderReflection& outReflection)
 {
 	ShaderReflectionResourceBinding binding;
 	const char* bindingName = variableLayout.getName();
@@ -129,8 +120,10 @@ void SlangReflectionExtractor::AddResourceBinding(
 	binding.Name = bindingName ? bindingName : "";
 	binding.Kind = MapResourceKind(variableLayout.getTypeLayout(), category);
 	binding.Dimension = MapResourceDimension(variableLayout.getTypeLayout());
+
 	binding.IsReadOnly = binding.Kind != CookedShaderResourceKind::RWTexture && binding.Kind != CookedShaderResourceKind::RWStructuredBuffer
 	    && binding.Kind != CookedShaderResourceKind::RWByteAddressBuffer && binding.Kind != CookedShaderResourceKind::RWTypedBuffer;
+
 	binding.Set = static_cast<std::uint32_t>(variableLayout.getBindingSpace(category));
 	binding.Slot = static_cast<std::uint32_t>(variableLayout.getOffset(category));
 	binding.ArrayCount = NormalizeArrayCount(variableLayout.getTypeLayout()->getElementCount());
@@ -143,20 +136,15 @@ void SlangReflectionExtractor::AddResourceBinding(
 	const bool duplicate = std::ranges::any_of(
 	    outReflection.Bindings,
 	    [&binding](const ShaderReflectionResourceBinding& existing)
-	    {
-		    return existing.Name == binding.Name && existing.Kind == binding.Kind && existing.Set == binding.Set
-		        && existing.Slot == binding.Slot;
-	    });
+	    { return existing.Name == binding.Name && existing.Kind == binding.Kind && existing.Set == binding.Set && existing.Slot == binding.Slot; });
+
 	if (!duplicate)
 	{
 		outReflection.Bindings.push_back(std::move(binding));
 	}
 }
 
-void SlangReflectionExtractor::AddConstantBuffer(
-    slang::VariableLayoutReflection& variableLayout,
-    ShaderReflectionResourceBinding& binding,
-    ShaderReflection& outReflection)
+void SlangReflectionExtractor::AddConstantBuffer(slang::VariableLayoutReflection& variableLayout, ShaderReflectionResourceBinding& binding, ShaderReflection& outReflection)
 {
 	ShaderReflectionConstantBuffer cb;
 	cb.Name = binding.Name;
@@ -173,10 +161,7 @@ void SlangReflectionExtractor::AddConstantBuffer(
 	outReflection.ConstantBuffers.push_back(std::move(cb));
 }
 
-void SlangReflectionExtractor::AddPushConstantBlock(
-    slang::VariableLayoutReflection& variableLayout,
-    ShaderStage stage,
-    ShaderReflection& outReflection)
+void SlangReflectionExtractor::AddPushConstantBlock(slang::VariableLayoutReflection& variableLayout, ShaderStage stage, ShaderReflection& outReflection)
 {
 	ShaderReflectionPushConstantRange range;
 	range.OffsetInBytes = static_cast<std::uint32_t>(variableLayout.getOffset(slang::ParameterCategory::PushConstantBuffer));
@@ -196,10 +181,7 @@ void SlangReflectionExtractor::AddVaryingInput(slang::VariableLayoutReflection& 
 	outReflection.InputElements.push_back(std::move(element));
 }
 
-void SlangReflectionExtractor::FlattenMembers(
-    slang::TypeLayoutReflection* typeLayout,
-    std::uint32_t parentOffset,
-    std::vector<ShaderReflectionConstantBufferMember>& outMembers)
+void SlangReflectionExtractor::FlattenMembers(slang::TypeLayoutReflection* typeLayout, std::uint32_t parentOffset, std::vector<ShaderReflectionConstantBufferMember>& outMembers)
 {
 	if (typeLayout == nullptr || typeLayout->getKind() != slang::TypeReflection::Kind::Struct)
 		return;
@@ -225,9 +207,7 @@ void SlangReflectionExtractor::FlattenMembers(
 	}
 }
 
-CookedShaderResourceKind SlangReflectionExtractor::MapResourceKind(
-    slang::TypeLayoutReflection* typeLayout,
-    slang::ParameterCategory category)
+CookedShaderResourceKind SlangReflectionExtractor::MapResourceKind(slang::TypeLayoutReflection* typeLayout, slang::ParameterCategory category)
 {
 	if (category == slang::ParameterCategory::ConstantBuffer)
 		return CookedShaderResourceKind::ConstantBuffer;

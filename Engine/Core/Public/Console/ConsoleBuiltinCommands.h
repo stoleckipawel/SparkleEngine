@@ -20,10 +20,7 @@ public:
 	static void Register(ConsoleCommandRegistry& commandRegistry, CVarControlExecutor executor);
 
 private:
-	static ConsoleCommandResult ExecuteHelp(
-	    const ConsoleCommandRegistry& commandRegistry,
-	    ConsoleCommandScope scope,
-	    std::span<const std::string_view> arguments);
+	static ConsoleCommandResult ExecuteHelp(const ConsoleCommandRegistry& commandRegistry, ConsoleCommandScope scope, std::span<const std::string_view> arguments);
 	static ConsoleCommandResult ExecuteListCVars(const CVarControlExecutor& executor, std::span<const std::string_view> arguments);
 	static ConsoleCommandResult ExecuteGetCVar(const CVarControlExecutor& executor, std::span<const std::string_view> arguments);
 	static ConsoleCommandResult ExecuteSetCVar(const CVarControlExecutor& executor, std::span<const std::string_view> arguments);

@@ -12,9 +12,7 @@ struct SkinnedVertexAttributes
 float3 TransformSkinnedNormal(const float3 normal, const float4x4 skinningMatrix)
 {
 	const float3x3 linearTransform = (float3x3)skinningMatrix;
-	const float3x3 cofactorMatrix = float3x3(cross(linearTransform[1], linearTransform[2]),
-	                                         cross(linearTransform[2], linearTransform[0]),
-	                                         cross(linearTransform[0], linearTransform[1]));
+	const float3x3 cofactorMatrix = float3x3(cross(linearTransform[1], linearTransform[2]), cross(linearTransform[2], linearTransform[0]), cross(linearTransform[0], linearTransform[1]));
 	const float determinant = dot(linearTransform[0], cofactorMatrix[0]);
 	if (abs(determinant) <= 1.0e-8f)
 	{
@@ -31,6 +29,7 @@ bool IsSkinnedMeshInstance(const MeshInstanceData meshInstance)
 float4x4 LoadSkinningMatrix(const MeshInstanceData meshInstance, const uint vertexIndex)
 {
 	const VertexSkinInfluenceData skinInfluence = SkinInfluences[vertexIndex];
+
 	return JointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices0.x].Matrix * skinInfluence.JointWeights0.x
 	    + JointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices0.y].Matrix * skinInfluence.JointWeights0.y
 	    + JointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices0.z].Matrix * skinInfluence.JointWeights0.z
@@ -44,6 +43,7 @@ float4x4 LoadSkinningMatrix(const MeshInstanceData meshInstance, const uint vert
 float4x4 LoadPreviousSkinningMatrix(const MeshInstanceData meshInstance, const uint vertexIndex)
 {
 	const VertexSkinInfluenceData skinInfluence = SkinInfluences[vertexIndex];
+
 	return PreviousJointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices0.x].Matrix * skinInfluence.JointWeights0.x
 	    + PreviousJointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices0.y].Matrix * skinInfluence.JointWeights0.y
 	    + PreviousJointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices0.z].Matrix * skinInfluence.JointWeights0.z
@@ -54,11 +54,7 @@ float4x4 LoadPreviousSkinningMatrix(const MeshInstanceData meshInstance, const u
 	    + PreviousJointMatrices[meshInstance.JointMatrixOffset + skinInfluence.JointIndices1.w].Matrix * skinInfluence.JointWeights1.w;
 }
 
-SkinnedVertexAttributes ApplySkinning(const MeshInstanceData meshInstance,
-                                      const uint vertexIndex,
-                                      const float3 position,
-                                      const float3 normal,
-                                      const float3 tangent)
+SkinnedVertexAttributes ApplySkinning(const MeshInstanceData meshInstance, const uint vertexIndex, const float3 position, const float3 normal, const float3 tangent)
 {
 	SkinnedVertexAttributes attributes;
 	attributes.Position = position;
@@ -77,11 +73,7 @@ SkinnedVertexAttributes ApplySkinning(const MeshInstanceData meshInstance,
 	return attributes;
 }
 
-SkinnedVertexAttributes ApplyPreviousSkinning(const MeshInstanceData meshInstance,
-                                              const uint vertexIndex,
-                                              const float3 position,
-                                              const float3 normal,
-                                              const float3 tangent)
+SkinnedVertexAttributes ApplyPreviousSkinning(const MeshInstanceData meshInstance, const uint vertexIndex, const float3 position, const float3 normal, const float3 tangent)
 {
 	SkinnedVertexAttributes attributes;
 	attributes.Position = position;

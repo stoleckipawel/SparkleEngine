@@ -10,10 +10,7 @@
 
 #include <format>
 
-void ShaderParameterStructCookVerifier::Verify(
-    const ShaderCompileJob& job,
-    const CookedStageBuild& compiledStage,
-    ShaderDebugArtifactSet* debugArtifacts)
+void ShaderParameterStructCookVerifier::Verify(const ShaderCompileJob& job, const CookedStageBuild& compiledStage, ShaderDebugArtifactSet* debugArtifacts)
 {
 	if (!job.Request.ParameterStruct.has_value())
 	{
@@ -24,6 +21,7 @@ void ShaderParameterStructCookVerifier::Verify(
 	    *job.Request.ParameterStruct,
 	    compiledStage.reflection,
 	    job.Request.UnitKind == ShaderCompileUnitKind::Library);
+
 	if (debugArtifacts != nullptr)
 	{
 		debugArtifacts->ParameterMatchReportJson = verificationResult.BuildJsonReport();

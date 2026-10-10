@@ -18,9 +18,7 @@ void TextureCache::UploadReadyTextures(RenderCommandList& commandList, std::vect
 {
 	for (TextureRequest& request : m_requests)
 	{
-		if (!request.Wanted || !request.Decoded || request.Uploaded
-		    || m_residency.GetState(request.Generation) != AssetResidencyState::ReadyForUpload
-		    || !m_residency.BeginUpload(request.Generation))
+		if (!request.Wanted || !request.Decoded || request.Uploaded || m_residency.GetState(request.Generation) != AssetResidencyState::ReadyForUpload || !m_residency.BeginUpload(request.Generation))
 		{
 			continue;
 		}
@@ -43,8 +41,8 @@ const TextureCache::TextureRequest* TextureCache::FindRequest(const TextureKey& 
 	const auto request = std::find_if(
 	    m_requests.begin(),
 	    m_requests.end(),
-	    [&cacheKey, generation](const TextureRequest& candidate) noexcept
-	    { return candidate.Source.CacheKey == cacheKey && candidate.Generation.Generation == generation; });
+	    [&cacheKey, generation](const TextureRequest& candidate) noexcept { return candidate.Source.CacheKey == cacheKey && candidate.Generation.Generation == generation; });
+
 	return request != m_requests.end() ? &*request : nullptr;
 }
 
@@ -96,8 +94,7 @@ void TextureCache::ActivateResidentRequests() noexcept
 	    std::remove_if(
 	        m_requests.begin(),
 	        m_requests.end(),
-	        [](const TextureRequest& request) noexcept
-	        { return request.LoadStarted && !request.Execution.IsValid() && !request.Decoded && !request.Uploaded; }),
+	        [](const TextureRequest& request) noexcept { return request.LoadStarted && !request.Execution.IsValid() && !request.Decoded && !request.Uploaded; }),
 	    m_requests.end());
 }
 
@@ -139,22 +136,19 @@ const RendererTexture* TextureCache::FindPathTexture(const std::filesystem::path
 		return &defaultTexture->second;
 	}
 	const auto texture = m_pathTextures.find(resolved->CacheKey);
-	return texture != m_pathTextures.end() && texture->second.Generation.Generation == m_sceneTextureGeneration ? &texture->second.Texture
-	                                                                                                            : nullptr;
+	return texture != m_pathTextures.end() && texture->second.Generation.Generation == m_sceneTextureGeneration ? &texture->second.Texture : nullptr;
 }
 
 bool TextureCache::HasPendingRequest(const std::filesystem::path& texturePath) const noexcept
 {
 	const std::optional<ResolvedTexturePath> resolved = ResolveTexturePath(texturePath);
+
 	return resolved.has_value()
 	    && std::any_of(
 	        m_requests.begin(),
 	        m_requests.end(),
 	        [this, &resolved](const TextureRequest& request) noexcept
-	        {
-		        return request.Wanted && request.Source.CacheKey == resolved->CacheKey
-		            && request.Generation.Generation == m_sceneTextureGeneration;
-	        });
+	        { return request.Wanted && request.Source.CacheKey == resolved->CacheKey && request.Generation.Generation == m_sceneTextureGeneration; });
 }
 
 std::optional<TextureCache::ResolvedTexturePath> TextureCache::ResolveTexturePath(const std::filesystem::path& texturePath) const noexcept

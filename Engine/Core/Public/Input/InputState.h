@@ -18,6 +18,7 @@ class SPARKLE_CORE_API InputState
 {
 public:
 	InputState() = default;
+
 	~InputState() = default;
 
 	InputState(const InputState&) = delete;

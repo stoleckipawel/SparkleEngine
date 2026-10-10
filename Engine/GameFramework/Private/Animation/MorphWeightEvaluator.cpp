@@ -6,14 +6,9 @@
 
 namespace MorphWeightEvaluator
 {
-	bool Evaluate(
-	    const AnimationClipResource& clip,
-	    std::uint32_t channelIndex,
-	    float playbackTimeSeconds,
-	    std::span<float> outputWeights) noexcept
+	bool Evaluate(const AnimationClipResource& clip, std::uint32_t channelIndex, float playbackTimeSeconds, std::span<float> outputWeights) noexcept
 	{
-		if (channelIndex >= clip.channels.size() || outputWeights.size() != 4
-		    || clip.channels[channelIndex].targetPath != Assets::CookedAnimationTargetPath::Weights)
+		if (channelIndex >= clip.channels.size() || outputWeights.size() != 4 || clip.channels[channelIndex].targetPath != Assets::CookedAnimationTargetPath::Weights)
 			return false;
 		DirectX::XMFLOAT4 sampled{};
 		DirectX::XMStoreFloat4(&sampled, AnimationSampler::SampleVectorChannel(clip, clip.channels[channelIndex], playbackTimeSeconds));

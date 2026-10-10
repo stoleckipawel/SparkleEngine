@@ -7,30 +7,21 @@
 
 namespace ShaderPassOperations
 {
-	static void AppendBindingNameIfCompiled(
-	    std::vector<const char*>& bindingNames,
-	    const RenderBindingLayout& bindingLayout,
-	    const char* bindingName) noexcept
+	static void AppendBindingNameIfCompiled(std::vector<const char*>& bindingNames, const RenderBindingLayout& bindingLayout, const char* bindingName) noexcept
 	{
 		if (bindingName == nullptr || bindingName[0] == '\0' || bindingLayout.FindBinding(bindingName) == nullptr)
 		{
 			return;
 		}
 
-		const auto existing = std::ranges::find_if(
-		    bindingNames,
-		    [bindingName](const char* existingName)
-		    { return std::string_view(existingName != nullptr ? existingName : "") == bindingName; });
+		const auto existing = std::ranges::find_if(bindingNames, [bindingName](const char* existingName) { return std::string_view(existingName != nullptr ? existingName : "") == bindingName; });
 		if (existing == bindingNames.end())
 		{
 			bindingNames.push_back(bindingName);
 		}
 	}
 
-	std::vector<const char*> BuildBoundBindingNames(
-	    const RenderBindingLayout& bindingLayout,
-	    const PassParameterSet& parameters,
-	    const PassBindingOverrides* overrides) noexcept
+	std::vector<const char*> BuildBoundBindingNames(const RenderBindingLayout& bindingLayout, const PassParameterSet& parameters, const PassBindingOverrides* overrides) noexcept
 	{
 		std::vector<const char*> bindingNames;
 		if (const PassParameterLayout* parameterLayout = parameters.GetLayout())

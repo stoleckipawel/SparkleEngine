@@ -37,10 +37,7 @@ struct MaterialTextureTableCapabilityReport final
 	std::uint32_t MaxTextureDescriptors = 0;
 	const char* StatusReason = "not-queried";
 
-	bool SupportsMaterialBindingMode(MaterialBindingMode mode) const noexcept
-	{
-		return (SupportedMaterialBindingModeMask & MaterialBindingModeMask(mode)) != 0u;
-	}
+	bool SupportsMaterialBindingMode(MaterialBindingMode mode) const noexcept { return (SupportedMaterialBindingModeMask & MaterialBindingModeMask(mode)) != 0u; }
 };
 
 MaterialTextureTableCapabilityReport BuildMaterialTextureTableCapabilityReport(const RhiCapabilities& capabilities) noexcept;

@@ -13,8 +13,7 @@ namespace SparkleLauncher
 {
 	static const ToolchainItemStatus* FindToolchainItem(const BuildToolchainStatus& toolchain, const std::string& id)
 	{
-		const auto found =
-		    std::find_if(toolchain.Items.begin(), toolchain.Items.end(), [&id](const ToolchainItemStatus& item) { return item.Id == id; });
+		const auto found = std::find_if(toolchain.Items.begin(), toolchain.Items.end(), [&id](const ToolchainItemStatus& item) { return item.Id == id; });
 		return found == toolchain.Items.end() ? nullptr : &*found;
 	}
 
@@ -41,6 +40,7 @@ namespace SparkleLauncher
 	{
 		const bool d3d12Available = IsToolAvailable(toolchain, "windowssdk");
 		const bool vulkanAvailable = IsToolAvailable(toolchain, "vulkan-sdk");
+
 		return {
 		    {"D3D12",
 		        "d3d12",
@@ -49,8 +49,7 @@ namespace SparkleLauncher
 		        d3d12Available},
 		    {"Vulkan",
 		        "vulkan",
-		        vulkanAvailable ? PathDetail(toolchain.VulkanSdkRoot, QStringLiteral("The Vulkan SDK is installed."))
-		                        : QStringLiteral("Install the Vulkan SDK, then reactivate the launcher."),
+		        vulkanAvailable ? PathDetail(toolchain.VulkanSdkRoot, QStringLiteral("The Vulkan SDK is installed.")) : QStringLiteral("Install the Vulkan SDK, then reactivate the launcher."),
 		        vulkanAvailable},
 		};
 	}
@@ -58,12 +57,13 @@ namespace SparkleLauncher
 	static QVector<LauncherSelectionOption> BuildShaderBackendOptions(const BuildToolchainStatus& toolchain)
 	{
 		const ToolchainItemStatus* shaderCompilerSdk = FindToolchainItem(toolchain, "shader-compiler-sdk");
+
 		const QString detail = shaderCompilerSdk == nullptr
 		    ? QStringLiteral("The cook prerequisite check will report any missing shader compiler SDK files.")
 		    : PathDetail(
 		          shaderCompilerSdk->Path,
-		          shaderCompilerSdk->Detail.empty() ? QStringLiteral("The DXC and Slang runtime bundle is installed.")
-		                                            : QString::fromStdString(shaderCompilerSdk->Detail));
+		          shaderCompilerSdk->Detail.empty() ? QStringLiteral("The DXC and Slang runtime bundle is installed.") : QString::fromStdString(shaderCompilerSdk->Detail));
+
 		return {
 		    {"DXC", "dxc", detail, true},
 		    {"Slang", "slang", detail, true},
@@ -85,10 +85,12 @@ namespace SparkleLauncher
 		{
 			const QString displayName = QString::fromStdString(ToString(profile.State));
 			const QString value = displayName.toLower();
+
 			auto found = std::find_if(
 			    supportedConfigurations.begin(),
 			    supportedConfigurations.end(),
 			    [&value](const BuildConfigurationSupport& configuration) { return configuration.Value == value; });
+
 			if (found == supportedConfigurations.end())
 			{
 				supportedConfigurations.push_back({displayName, value});
@@ -116,8 +118,7 @@ namespace SparkleLauncher
 			options.push_back(
 			    {configuration.DisplayName,
 			        configuration.Value,
-			        available ? QStringLiteral("Editor and runtime profiles can be prepared automatically.")
-			                  : QStringLiteral("Missing %1 build profile support.").arg(missingProfiles.join(" and ")),
+			        available ? QStringLiteral("Editor and runtime profiles can be prepared automatically.") : QStringLiteral("Missing %1 build profile support.").arg(missingProfiles.join(" and ")),
 			        available});
 		}
 		return options;
@@ -129,6 +130,7 @@ namespace SparkleLauncher
 		const bool msvcAvailable = visualStudioAvailable && IsToolAvailable(toolchain, "msbuild");
 		const ToolchainItemStatus* clangCl = FindToolchainItem(toolchain, "clangcl");
 		const bool clangClAvailable = visualStudioAvailable && clangCl != nullptr && clangCl->State == ToolchainItemState::Found;
+
 		return {
 		    {"MSVC",
 		        "msvc",
@@ -138,9 +140,8 @@ namespace SparkleLauncher
 		    {"clang-cl",
 		        "clang-cl",
 		        clangClAvailable ? PathDetail(toolchain.ClangClPath, QStringLiteral("clang-cl is installed."))
-		                         : (clangCl != nullptr && clangCl->CanInstall
-		                                   ? QStringLiteral("Open Sync > Sync Code and choose Install for clang-cl.")
-		                                   : QStringLiteral("Install the Visual Studio clang-cl component, then reactivate the launcher.")),
+		                         : (clangCl != nullptr && clangCl->CanInstall ? QStringLiteral("Open Sync > Sync Code and choose Install for clang-cl.")
+		                                                                      : QStringLiteral("Install the Visual Studio clang-cl component, then reactivate the launcher.")),
 		        clangClAvailable},
 		};
 	}
@@ -149,6 +150,7 @@ namespace SparkleLauncher
 	{
 		const bool visualStudioAvailable = IsToolAvailable(toolchain, "visualstudio-ide");
 		const bool riderAvailable = IsToolAvailable(toolchain, "rider");
+
 		return {
 		    {"Visual Studio",
 		        "visual-studio",
@@ -157,8 +159,7 @@ namespace SparkleLauncher
 		        visualStudioAvailable},
 		    {"Rider",
 		        "rider",
-		        riderAvailable ? PathDetail(toolchain.RiderPath, QStringLiteral("Rider is installed."))
-		                       : QStringLiteral("Install Rider, then reactivate the launcher."),
+		        riderAvailable ? PathDetail(toolchain.RiderPath, QStringLiteral("Rider is installed.")) : QStringLiteral("Install Rider, then reactivate the launcher."),
 		        riderAvailable},
 		};
 	}

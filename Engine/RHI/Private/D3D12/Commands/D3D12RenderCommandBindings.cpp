@@ -45,9 +45,7 @@ void D3D12RenderCommandList::BindGraphicsDescriptorTable(std::uint32_t bindingIn
 		return;
 	}
 
-	m_commandList->SetGraphicsRootDescriptorTable(
-	    bindingIndex,
-	    m_owner->ResolveDescriptorTableGpuHandle(tableBinding.Table, tableBinding.DescriptorIndex));
+	m_commandList->SetGraphicsRootDescriptorTable(bindingIndex, m_owner->ResolveDescriptorTableGpuHandle(tableBinding.Table, tableBinding.DescriptorIndex));
 }
 
 void D3D12RenderCommandList::BindGraphicsDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept
@@ -58,11 +56,7 @@ void D3D12RenderCommandList::BindGraphicsDescriptorTable(std::uint32_t bindingIn
 	}
 }
 
-void D3D12RenderCommandList::SetGraphicsPushConstants(
-    std::uint32_t bindingIndex,
-    std::uint32_t num32BitValues,
-    const void* data,
-    std::uint32_t destOffsetIn32BitValues) noexcept
+void D3D12RenderCommandList::SetGraphicsPushConstants(std::uint32_t bindingIndex, std::uint32_t num32BitValues, const void* data, std::uint32_t destOffsetIn32BitValues) noexcept
 {
 	if (m_commandList != nullptr)
 	{
@@ -110,9 +104,7 @@ void D3D12RenderCommandList::BindComputeDescriptorTable(std::uint32_t bindingInd
 		return;
 	}
 
-	m_commandList->SetComputeRootDescriptorTable(
-	    bindingIndex,
-	    m_owner->ResolveDescriptorTableGpuHandle(tableBinding.Table, tableBinding.DescriptorIndex));
+	m_commandList->SetComputeRootDescriptorTable(bindingIndex, m_owner->ResolveDescriptorTableGpuHandle(tableBinding.Table, tableBinding.DescriptorIndex));
 }
 
 void D3D12RenderCommandList::BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept
@@ -123,11 +115,7 @@ void D3D12RenderCommandList::BindComputeDescriptorTable(std::uint32_t bindingInd
 	}
 }
 
-void D3D12RenderCommandList::SetComputePushConstants(
-    std::uint32_t bindingIndex,
-    std::uint32_t num32BitValues,
-    const void* data,
-    std::uint32_t destOffsetIn32BitValues) noexcept
+void D3D12RenderCommandList::SetComputePushConstants(std::uint32_t bindingIndex, std::uint32_t num32BitValues, const void* data, std::uint32_t destOffsetIn32BitValues) noexcept
 {
 	if (m_commandList != nullptr)
 	{
@@ -172,9 +160,7 @@ void D3D12RenderCommandList::BindRayTracingDescriptorTable(std::uint32_t binding
 {
 	if (m_commandList != nullptr && m_owner != nullptr && tableBinding)
 	{
-		m_commandList->SetComputeRootDescriptorTable(
-		    bindingIndex,
-		    m_owner->ResolveDescriptorTableGpuHandle(tableBinding.Table, tableBinding.DescriptorIndex));
+		m_commandList->SetComputeRootDescriptorTable(bindingIndex, m_owner->ResolveDescriptorTableGpuHandle(tableBinding.Table, tableBinding.DescriptorIndex));
 	}
 }
 
@@ -186,11 +172,7 @@ void D3D12RenderCommandList::BindRayTracingDescriptorTable(std::uint32_t binding
 	}
 }
 
-void D3D12RenderCommandList::SetRayTracingPushConstants(
-    std::uint32_t bindingIndex,
-    std::uint32_t num32BitValues,
-    const void* data,
-    std::uint32_t destOffsetIn32BitValues) noexcept
+void D3D12RenderCommandList::SetRayTracingPushConstants(std::uint32_t bindingIndex, std::uint32_t num32BitValues, const void* data, std::uint32_t destOffsetIn32BitValues) noexcept
 {
 	if (m_commandList != nullptr)
 	{

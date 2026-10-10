@@ -9,11 +9,7 @@
 
 #include <format>
 
-void GltfMaterialTextureMapper::Apply(
-    const cgltf_material& material,
-    ImportedMaterialIndex materialIndex,
-    const std::filesystem::path& sourceDirectory,
-    ImportedMaterial& importedMaterial)
+void GltfMaterialTextureMapper::Apply(const cgltf_material& material, ImportedMaterialIndex materialIndex, const std::filesystem::path& sourceDirectory, ImportedMaterial& importedMaterial)
 {
 	AssignTextureByType(material, materialIndex, sourceDirectory, TextureGroup::Diffuse, importedMaterial);
 	AssignTextureByType(material, materialIndex, sourceDirectory, TextureGroup::NormalMap, importedMaterial);
@@ -31,11 +27,7 @@ void GltfMaterialTextureMapper::AssignPackedMetallicRoughness(
 	if (material.has_pbr_metallic_roughness && material.pbr_metallic_roughness.metallic_roughness_texture.texture)
 	{
 		const cgltf_texture_view& textureView = material.pbr_metallic_roughness.metallic_roughness_texture;
-		const std::optional<std::filesystem::path> texturePath = ResolveTexturePath(
-		    textureView,
-		    materialIndex,
-		    sourceDirectory,
-		    "metallic-roughness");
+		const std::optional<std::filesystem::path> texturePath = ResolveTexturePath(textureView, materialIndex, sourceDirectory, "metallic-roughness");
 		const TextureCoordinateMapping mapping = BuildTextureMapping(textureView);
 		SetTextureSource(importedMaterial, TextureGroup::Roughness, texturePath, TextureChannelMask::Green, mapping);
 		SetTextureSource(importedMaterial, TextureGroup::Metallic, texturePath, TextureChannelMask::Blue, mapping);
@@ -55,6 +47,7 @@ void GltfMaterialTextureMapper::AssignTextureByType(
 			if (material.has_pbr_metallic_roughness)
 			{
 				const cgltf_texture_view& textureView = material.pbr_metallic_roughness.base_color_texture;
+
 				SetTextureSource(
 				    importedMaterial,
 				    textureGroup,
@@ -75,36 +68,21 @@ void GltfMaterialTextureMapper::AssignTextureByType(
 		case TextureGroup::NormalMap:
 		{
 			const cgltf_texture_view& textureView = material.normal_texture;
-			SetTextureSource(
-			    importedMaterial,
-			    textureGroup,
-			    ResolveTexturePath(textureView, materialIndex, sourceDirectory, "normal"),
-			    TextureChannelMask::Rgba,
-			    BuildTextureMapping(textureView));
+			SetTextureSource(importedMaterial, textureGroup, ResolveTexturePath(textureView, materialIndex, sourceDirectory, "normal"), TextureChannelMask::Rgba, BuildTextureMapping(textureView));
 			break;
 		}
 
 		case TextureGroup::AmbientOcclusion:
 		{
 			const cgltf_texture_view& textureView = material.occlusion_texture;
-			SetTextureSource(
-			    importedMaterial,
-			    textureGroup,
-			    ResolveTexturePath(textureView, materialIndex, sourceDirectory, "occlusion"),
-			    TextureChannelMask::Red,
-			    BuildTextureMapping(textureView));
+			SetTextureSource(importedMaterial, textureGroup, ResolveTexturePath(textureView, materialIndex, sourceDirectory, "occlusion"), TextureChannelMask::Red, BuildTextureMapping(textureView));
 			break;
 		}
 
 		case TextureGroup::Emissive:
 		{
 			const cgltf_texture_view& textureView = material.emissive_texture;
-			SetTextureSource(
-			    importedMaterial,
-			    textureGroup,
-			    ResolveTexturePath(textureView, materialIndex, sourceDirectory, "emissive"),
-			    TextureChannelMask::Rgba,
-			    BuildTextureMapping(textureView));
+			SetTextureSource(importedMaterial, textureGroup, ResolveTexturePath(textureView, materialIndex, sourceDirectory, "emissive"), TextureChannelMask::Rgba, BuildTextureMapping(textureView));
 			break;
 		}
 	}
@@ -120,13 +98,12 @@ std::optional<std::filesystem::path> GltfMaterialTextureMapper::ResolveTexturePa
 	{
 		return std::nullopt;
 	}
-	const std::uint32_t texCoord = textureView.has_transform && textureView.transform.has_texcoord
-	    ? static_cast<std::uint32_t>(textureView.transform.texcoord)
-	    : static_cast<std::uint32_t>(textureView.texcoord);
+	const std::uint32_t texCoord = textureView.has_transform && textureView.transform.has_texcoord ? static_cast<std::uint32_t>(textureView.transform.texcoord)
+	                                                                                               : static_cast<std::uint32_t>(textureView.texcoord);
+
 	if (texCoord != 0u)
 	{
-		throw Diagnostics::Error(
-		    std::format("glTF material {} uses an unsupported {} texture coordinate mapping.", materialIndex, slotName));
+		throw Diagnostics::Error(std::format("glTF material {} uses an unsupported {} texture coordinate mapping.", materialIndex, slotName));
 	}
 	const cgltf_texture& texture = *textureView.texture;
 	if (texture.has_basisu || texture.has_webp)
@@ -162,8 +139,7 @@ TextureCoordinateMapping GltfMaterialTextureMapper::BuildTextureMapping(const cg
 		mapping.Offset = {textureView.transform.offset[0], textureView.transform.offset[1]};
 		mapping.Scale = {textureView.transform.scale[0], textureView.transform.scale[1]};
 		mapping.Rotation = textureView.transform.rotation;
-		mapping.TexCoord = textureView.transform.has_texcoord ? static_cast<std::uint32_t>(textureView.transform.texcoord)
-		                                                      : static_cast<std::uint32_t>(textureView.texcoord);
+		mapping.TexCoord = textureView.transform.has_texcoord ? static_cast<std::uint32_t>(textureView.transform.texcoord) : static_cast<std::uint32_t>(textureView.texcoord);
 	}
 	else
 	{
@@ -185,6 +161,7 @@ TextureCoordinateMapping GltfMaterialTextureMapper::BuildTextureMapping(const cg
 					return TextureAddressMode::Repeat;
 			}
 		};
+
 		mapping.AddressU = addressMode(textureView.texture->sampler->wrap_s);
 		mapping.AddressV = addressMode(textureView.texture->sampler->wrap_t);
 	}

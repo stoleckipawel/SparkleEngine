@@ -13,6 +13,7 @@ class EntityId final
 {
 public:
 	using Slot = std::uint32_t;
+
 	using Generation = std::uint32_t;
 
 	static constexpr Slot InvalidSlot = (std::numeric_limits<Slot>::max)();
@@ -23,7 +24,9 @@ public:
 	static constexpr EntityId Invalid() noexcept { return EntityId{}; }
 
 	constexpr bool IsValid() const noexcept { return m_slot != InvalidSlot && m_generation != InvalidGeneration; }
+
 	constexpr Slot GetSlot() const noexcept { return m_slot; }
+
 	constexpr Generation GetGeneration() const noexcept { return m_generation; }
 
 	constexpr auto operator<=>(const EntityId&) const noexcept = default;

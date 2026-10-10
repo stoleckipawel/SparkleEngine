@@ -51,12 +51,7 @@ struct RhiResourceViewDesc
 	    RhiTextureViewRange range = {},
 	    TextureResourceDimension dimension = TextureResourceDimension::Texture2D) noexcept
 	{
-		return RhiResourceViewDesc{
-		    .Kind = ERhiResourceViewKind::TextureShaderResource,
-		    .Resource = resource,
-		    .Format = format,
-		    .Texture = range,
-		    .TextureDimension = dimension};
+		return RhiResourceViewDesc{.Kind = ERhiResourceViewKind::TextureShaderResource, .Resource = resource, .Format = format, .Texture = range, .TextureDimension = dimension};
 	}
 
 	static constexpr RhiResourceViewDesc TextureUnorderedAccess(RhiResourceHandle resource, PixelFormat format) noexcept
@@ -74,11 +69,7 @@ struct RhiResourceViewDesc
 		return RhiResourceViewDesc{.Kind = ERhiResourceViewKind::DepthStencil, .Resource = resource, .Format = format};
 	}
 
-	static constexpr RhiResourceViewDesc BufferShaderResource(
-	    RhiResourceHandle resource,
-	    std::uint64_t sizeInBytes,
-	    std::uint32_t strideInBytes = 0,
-	    std::uint64_t offsetInBytes = 0) noexcept
+	static constexpr RhiResourceViewDesc BufferShaderResource(RhiResourceHandle resource, std::uint64_t sizeInBytes, std::uint32_t strideInBytes = 0, std::uint64_t offsetInBytes = 0) noexcept
 	{
 		return RhiResourceViewDesc{
 		    .Kind = ERhiResourceViewKind::BufferShaderResource,
@@ -86,11 +77,7 @@ struct RhiResourceViewDesc
 		    .Buffer = RhiBufferViewRange{.OffsetInBytes = offsetInBytes, .SizeInBytes = sizeInBytes, .StrideInBytes = strideInBytes}};
 	}
 
-	static constexpr RhiResourceViewDesc BufferUnorderedAccess(
-	    RhiResourceHandle resource,
-	    std::uint64_t sizeInBytes,
-	    std::uint32_t strideInBytes = 0,
-	    std::uint64_t offsetInBytes = 0) noexcept
+	static constexpr RhiResourceViewDesc BufferUnorderedAccess(RhiResourceHandle resource, std::uint64_t sizeInBytes, std::uint32_t strideInBytes = 0, std::uint64_t offsetInBytes = 0) noexcept
 	{
 		return RhiResourceViewDesc{
 		    .Kind = ERhiResourceViewKind::BufferUnorderedAccess,

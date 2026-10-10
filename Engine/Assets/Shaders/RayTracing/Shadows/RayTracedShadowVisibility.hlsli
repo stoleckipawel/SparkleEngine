@@ -8,10 +8,7 @@
 
 namespace RayTracedShadowVisibility
 {
-	ShadowVisibilitySample TraceDirectLightSample(float3 positionWorld,
-	                                              float3 normalWorld,
-	                                              LightSampling::DirectLightSample lightSample,
-	                                              bool castsShadow)
+	ShadowVisibilitySample TraceDirectLightSample(float3 positionWorld, float3 normalWorld, LightSampling::DirectLightSample lightSample, bool castsShadow)
 	{
 		RayTracedShadowRequest request = (RayTracedShadowRequest)0;
 		ShadowVisibilitySample signal = RayTracedShadowSignals::BuildUnshadowedSignal(0.0f);

@@ -28,6 +28,7 @@ class RhiResourceService;
 class RhiUploadService;
 class TaskExecutor;
 class TaskScope;
+
 namespace Assets
 {
 	struct CookedTextureReference;
@@ -71,9 +72,8 @@ public:
 	const RendererTexture* GetTexture(TextureId id) const noexcept;
 	const RendererTexture* ResolveDefaultSkyTexture() const noexcept;
 	const RendererTexture* GetSceneTexture(const std::filesystem::path& texturePath) const noexcept;
-	const RendererTexture* ResolveTextureReferenceOrSemanticDefault(
-	    const Assets::CookedTextureReference* textureReference,
-	    DefaultTexture defaultType) const;
+	const RendererTexture* ResolveTextureReferenceOrSemanticDefault(const Assets::CookedTextureReference* textureReference, DefaultTexture defaultType) const;
+
 	std::uint64_t GetBindingRevision() const noexcept { return m_bindingRevision; }
 
 	TextureDiagnosticsSnapshot CaptureDiagnosticsSnapshot(const PreviewTextureResolver& resolvePreviewTexture) const;

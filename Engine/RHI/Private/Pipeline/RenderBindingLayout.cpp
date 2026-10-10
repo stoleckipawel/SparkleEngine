@@ -8,10 +8,7 @@
 #include <string_view>
 #include <utility>
 
-RenderBindingLayout::RenderBindingLayout(
-    const PassParameterLayout& parameterLayout,
-    std::vector<CompiledBinding> bindings,
-    std::vector<std::string> bindingNames) noexcept :
+RenderBindingLayout::RenderBindingLayout(const PassParameterLayout& parameterLayout, std::vector<CompiledBinding> bindings, std::vector<std::string> bindingNames) noexcept :
     m_parameterLayout(&parameterLayout),
     m_bindings(std::move(bindings)),
     m_bindingNames(std::move(bindingNames))

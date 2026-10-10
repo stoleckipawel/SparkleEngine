@@ -29,6 +29,7 @@ void AddDirectLightSample(GBufferData gBuffer,
 	float3 lightDiffuse;
 	float3 lightSpecular;
 	float3 lightSubsurface;
+
 	SurfaceLighting::AccumulateDirectLightSample(viewDirWorld,
 	                                             gBuffer.NormalWorld,
 	                                             gBuffer.BaseColor,
@@ -87,9 +88,10 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 	float3 directDiffuse = 0.0f;
 	float3 directSpecular = 0.0f;
 	float3 directSubsurface = 0.0f;
-	const DirectLightReservoir::Reservoir reservoir =
-	    DirectLightReservoir::UnpackReservoir(CurrentReservoirSample.Load(int3(dispatchThreadId.xy, 0)),
-	                                          CurrentReservoirWeight.Load(int3(dispatchThreadId.xy, 0)));
+
+	const DirectLightReservoir::Reservoir reservoir = DirectLightReservoir::UnpackReservoir(CurrentReservoirSample.Load(int3(dispatchThreadId.xy, 0)),
+	                                                                                        CurrentReservoirWeight.Load(int3(dispatchThreadId.xy, 0)));
+
 	float visibility = 1.0f;
 	if (DirectLightingEvaluateShadows != 0u)
 	{
@@ -101,15 +103,7 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 		const LightSampling::DirectLightSample lightSample = DirectLightReservoir::ReplayLightSample(reservoir, positionWorld);
 		const float reservoirWeight = DirectLightReservoir::GetFinalWeight(reservoir);
 
-		AddDirectLightSample(gBuffer,
-		                     viewDirWorld,
-		                     evaluateSubsurface,
-		                     lightSample,
-		                     visibility,
-		                     reservoirWeight,
-		                     directDiffuse,
-		                     directSpecular,
-		                     directSubsurface);
+		AddDirectLightSample(gBuffer, viewDirWorld, evaluateSubsurface, lightSample, visibility, reservoirWeight, directDiffuse, directSpecular, directSubsurface);
 	}
 
 	if (DirectLightingEvaluateDiffuse != 0u)

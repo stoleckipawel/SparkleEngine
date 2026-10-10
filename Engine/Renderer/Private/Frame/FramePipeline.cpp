@@ -66,8 +66,7 @@ FramePipeline::FramePipeline(
 
 	m_imageProviders = std::make_unique<RendererImageProviderStack>(renderHardwareInterface, m_deviceServices);
 
-	m_referencePathTracerSession =
-	    std::make_unique<ReferencePathTracerSession>(m_deviceServices, m_memoryMonitor, m_renderScene->GetRayTracingScene());
+	m_referencePathTracerSession = std::make_unique<ReferencePathTracerSession>(m_deviceServices, m_memoryMonitor, m_renderScene->GetRayTracingScene());
 
 	m_uiFrameRenderer = std::make_unique<UiFrameRenderer>(m_deviceServices, enableUiRenderPackets);
 	m_viewportCaptureService = std::make_unique<ViewportCaptureService>(m_deviceServices);
@@ -79,8 +78,7 @@ FramePipeline::FramePipeline(
 
 void FramePipeline::InitializeFrameStorage()
 {
-	const std::uint32_t maximumFramesInFlight =
-	    m_deviceServices.GetRenderHardwareInterface().GetCapabilities().Presentation.MaximumFramesInFlight;
+	const std::uint32_t maximumFramesInFlight = m_deviceServices.GetRenderHardwareInterface().GetCapabilities().Presentation.MaximumFramesInFlight;
 
 	m_frameExecutionDiagnostics.resize(maximumFramesInFlight);
 	InitializeRenderFrames();
@@ -111,14 +109,7 @@ UiTextureHandle FramePipeline::GetViewportPresentationTexture() const noexcept
 
 bool FramePipeline::BeginViewportCapture(ViewportCaptureId id, const ViewportCaptureRequest& request) noexcept
 {
-	return m_viewportCaptureService->BeginCapture(
-	    id,
-	    request,
-	    m_viewportRenderProducts,
-	    *m_frameGraph,
-	    m_frameId,
-	    m_renderScene->GetSceneGeneration(),
-	    m_imageProviders->GetGeneration());
+	return m_viewportCaptureService->BeginCapture(id, request, m_viewportRenderProducts, *m_frameGraph, m_frameId, m_renderScene->GetSceneGeneration(), m_imageProviders->GetGeneration());
 }
 
 std::vector<ViewportCaptureCompletion> FramePipeline::TakeCompletedViewportCaptures()
@@ -138,8 +129,7 @@ MeshPreviewGeometry FramePipeline::CaptureMeshPreview(std::uintptr_t meshRuntime
 
 TextureDiagnosticsSnapshot FramePipeline::CaptureTextureDiagnostics()
 {
-	return m_textureCache->CaptureDiagnosticsSnapshot(
-	    [this](std::uint64_t nativeTextureId) { return m_uiFrameRenderer->RegisterUiTexture(nativeTextureId); });
+	return m_textureCache->CaptureDiagnosticsSnapshot([this](std::uint64_t nativeTextureId) { return m_uiFrameRenderer->RegisterUiTexture(nativeTextureId); });
 }
 
 void FramePipeline::RequestResize(RenderViewportExtent extent, bool minimized) noexcept
@@ -236,10 +226,7 @@ void FramePipeline::UploadSceneAssets()
 void FramePipeline::PrepareRenderingState(RenderFrame& frame)
 {
 	UpdateFrameHistory(*m_frameGraph, m_frameResources.History, frame.PreparedScene, frame.View, *m_renderViewState, *m_imageProviders);
-	m_frameGraphExecutable = m_referencePathTracerSession->PrepareFrame(
-	    frame,
-	    m_viewportRenderRequest.RenderAction,
-	    m_viewportRenderRequest.RenderActionSequence);
+	m_frameGraphExecutable = m_referencePathTracerSession->PrepareFrame(frame, m_viewportRenderRequest.RenderAction, m_viewportRenderRequest.RenderActionSequence);
 	if (m_frameGraphExecutable)
 	{
 		m_imageProviders->SetupFrame(frame.View, frame.Identity);
@@ -250,12 +237,7 @@ void FramePipeline::PrepareRenderingState(RenderFrame& frame)
 void FramePipeline::PublishFrameProducts()
 {
 	ViewportFrameProducts products = m_frameResources.ViewportProducts;
-	PublishViewportRenderProducts(
-	    m_viewportRenderProducts,
-	    m_viewportRenderRequest,
-	    products,
-	    m_frameGraphSettings.RenderExtent,
-	    m_frameGraphSettings.OutputExtent);
+	PublishViewportRenderProducts(m_viewportRenderProducts, m_viewportRenderRequest, products, m_frameGraphSettings.RenderExtent, m_frameGraphSettings.OutputExtent);
 }
 
 RenderFrame& FramePipeline::PrepareRenderFrame(const RenderViewInput& viewInput, const RenderFrameTime& time)

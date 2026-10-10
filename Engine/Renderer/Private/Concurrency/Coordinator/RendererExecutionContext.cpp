@@ -10,20 +10,14 @@
 #include "Renderer/Public/Concurrency/RendererExecutionConfig.h"
 #include "Settings/EngineRenderingSettingsRuntime.h"
 
-RendererExecutionContext::RendererExecutionContext(
-    Window& window,
-    const RhiDeviceLaunch& deviceLaunch,
-    const RendererExecutionConfig& executionConfig)
+RendererExecutionContext::RendererExecutionContext(Window& window, const RhiDeviceLaunch& deviceLaunch, const RendererExecutionConfig& executionConfig)
 {
 #if SPARKLE_WITH_EXTERNAL_CAPTURE
 	m_externalCapture = deviceLaunch.ExternalCapture;
 #endif
 	m_rendererHost = std::make_unique<RendererHost>(window, deviceLaunch);
 
-	m_pipeline = m_rendererHost->CreateFramePipeline(
-	    *executionConfig.AssetTaskExecutor,
-	    *executionConfig.AssetTaskParentScope,
-	    executionConfig.EnableUiRenderPackets);
+	m_pipeline = m_rendererHost->CreateFramePipeline(*executionConfig.AssetTaskExecutor, *executionConfig.AssetTaskParentScope, executionConfig.EnableUiRenderPackets);
 }
 
 RendererExecutionContext::~RendererExecutionContext() noexcept
@@ -40,10 +34,7 @@ void RendererExecutionContext::ExecuteFrame(RenderExecutionRequest request) noex
 #if SPARKLE_WITH_EXTERNAL_CAPTURE
 	if (m_externalCapture)
 	{
-		ValidateExternalCaptureContext(
-		    *m_externalCapture,
-		    m_pipeline->GetViewportRequestGeneration(),
-		    request.Submission.Scene.Structural.ResetScene);
+		ValidateExternalCaptureContext(*m_externalCapture, m_pipeline->GetViewportRequestGeneration(), request.Submission.Scene.Structural.ResetScene);
 	}
 #endif
 	m_pipeline->OnRender(std::move(request.Submission), request.Time, request.Ui);
@@ -52,6 +43,7 @@ void RendererExecutionContext::ExecuteFrame(RenderExecutionRequest request) noex
 void RendererExecutionContext::ExecuteControl(RendererExecutionControl control) noexcept
 {
 	m_owner.AssertAccess();
+
 	std::visit(
 	    [this](auto& command)
 	    {

@@ -17,10 +17,7 @@
 class D3D12ClassicTlasTranslation final
 {
 public:
-	static std::wstring MakeDebugName(std::wstring_view debugName, std::wstring_view defaultDebugName)
-	{
-		return debugName.empty() ? std::wstring(defaultDebugName) : std::wstring(debugName);
-	}
+	static std::wstring MakeDebugName(std::wstring_view debugName, std::wstring_view defaultDebugName) { return debugName.empty() ? std::wstring(defaultDebugName) : std::wstring(debugName); }
 
 	static D3D12_RAYTRACING_INSTANCE_FLAGS ToNativeInstanceFlags(RhiRayTracingInstanceFlags flags) noexcept
 	{
@@ -68,10 +65,12 @@ RhiRayTracingAccelerationStructurePrebuildInfo D3D12ClassicTlasServices::GetClas
 
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO nativeInfo{};
 	m_rhi->GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &nativeInfo);
+
 	RhiRayTracingAccelerationStructurePrebuildInfo prebuildInfo{
 	    .ResultDataMaxSizeInBytes = nativeInfo.ResultDataMaxSizeInBytes,
 	    .ScratchDataSizeInBytes = nativeInfo.ScratchDataSizeInBytes,
 	    .UpdateScratchDataSizeInBytes = nativeInfo.UpdateScratchDataSizeInBytes};
+
 	return prebuildInfo;
 }
 
@@ -102,14 +101,15 @@ RhiOwnedResourceHandle D3D12ClassicTlasServices::CreateClassicTopLevelAccelerati
 	}
 
 	const std::uint64_t sizeInBytes = sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * static_cast<std::uint64_t>(nativeInstances.size());
-	const D3D12_RESOURCE_DESC resourceDesc =
-	    D3D12TypeConversions::BuildBufferResourceDesc(RhiBufferResourceDesc{.SizeInBytes = sizeInBytes});
+	const D3D12_RESOURCE_DESC resourceDesc = D3D12TypeConversions::BuildBufferResourceDesc(RhiBufferResourceDesc{.SizeInBytes = sizeInBytes});
+
 	std::unique_ptr<D3D12GpuAllocationRecord> ownedRecord = m_memoryAllocator->CreateBuffer(
 	    resourceDesc,
 	    D3D12_RESOURCE_STATE_GENERIC_READ,
 	    RhiMemoryCategory::RayTracing,
 	    RhiMemoryResidencyClass::HostUpload,
 	    D3D12ClassicTlasTranslation::MakeDebugName(debugName, L"RayTracingClassicTlasInstanceBuffer"));
+
 	if (ownedRecord == nullptr || ownedRecord->Resource == nullptr)
 	{
 		return {};

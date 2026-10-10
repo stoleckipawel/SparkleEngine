@@ -34,11 +34,7 @@ std::uint32_t MaterialTextureTable::GetOrAddTextureIndex(RhiResourceViewHandle t
 
 	if (m_textureViews.size() >= static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()))
 	{
-		Diagnostics::Fatal(
-		    g_materialTextureTableLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Material texture table exceeded the 32-bit shader index range.");
+		Diagnostics::Fatal(g_materialTextureTableLogger, __FILE__, __LINE__, "Material texture table exceeded the 32-bit shader index range.");
 	}
 
 	const std::uint32_t index = static_cast<std::uint32_t>(m_textureViews.size());
@@ -55,29 +51,20 @@ void MaterialTextureTable::BuildBindingSet(RenderHardwareInterface& renderHardwa
 	}
 	if (m_textureViews.size() > MaterialTextureTableFixedCapacity)
 	{
-		Diagnostics::Fatal(
-		    g_materialTextureTableLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Material texture table exceeded the shader descriptor capacity.");
+		Diagnostics::Fatal(g_materialTextureTableLogger, __FILE__, __LINE__, "Material texture table exceeded the shader descriptor capacity.");
 	}
 
 	for (const RhiResourceViewHandle textureView : m_textureViews)
 	{
 		if (!textureView)
 		{
-			Diagnostics::Fatal(
-			    g_materialTextureTableLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Material texture table contains an invalid texture view.");
+			Diagnostics::Fatal(g_materialTextureTableLogger, __FILE__, __LINE__, "Material texture table contains an invalid texture view.");
 		}
 	}
 
 	auto bindingSet = renderHardwareInterface.GetDescriptorService().CreateBindingSet(
-	    RenderBindingSetDesc{
-	        .DescriptorType = ERhiDescriptorAllocatorType::ShaderResource,
-	        .DescriptorCount = static_cast<std::uint32_t>(m_textureViews.size())});
+	    RenderBindingSetDesc{.DescriptorType = ERhiDescriptorAllocatorType::ShaderResource, .DescriptorCount = static_cast<std::uint32_t>(m_textureViews.size())});
+
 	if (!bindingSet || !*bindingSet)
 	{
 		Diagnostics::Fatal(g_materialTextureTableLogger, __FILE__, __LINE__, "Material texture descriptor-table allocation failed.");

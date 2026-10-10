@@ -11,6 +11,7 @@
 namespace SparkleLauncher
 {
 	struct LauncherLevelUiModel;
+
 	struct LauncherCapabilityId final
 	{
 		inline static constexpr std::string_view HostTools = "workspace.host-tools";

@@ -72,20 +72,13 @@ bool AssetCookerStageExecutor::PlanUsesStep(const AssetCookerProjectCookPlan& pl
 	return std::ranges::find(plan.steps, step) != plan.steps.end();
 }
 
-std::filesystem::path AssetCookerStageExecutor::MakeTemporaryPath(
-    const AssetCookerProjectCookPlan& plan,
-    std::string_view stem,
-    std::string_view extension)
+std::filesystem::path AssetCookerStageExecutor::MakeTemporaryPath(const AssetCookerProjectCookPlan& plan, std::string_view stem, std::string_view extension)
 {
 	const auto timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
 	return plan.temporaryRoot / (std::string(stem) + "-" + plan.projectName + "-" + std::to_string(timestamp) + std::string(extension));
 }
 
-void AssetCookerStageExecutor::AppendOutput(
-    std::vector<AssetCookerOutputRecord>& outputs,
-    AssetCookerCategory category,
-    std::string assetId,
-    const std::filesystem::path& path)
+void AssetCookerStageExecutor::AppendOutput(std::vector<AssetCookerOutputRecord>& outputs, AssetCookerCategory category, std::string assetId, const std::filesystem::path& path)
 {
 	AssetCookerOutputRecord output;
 	output.category = category;
@@ -118,10 +111,7 @@ bool AssetCookerStageExecutor::ValidateCapabilities(const AssetCookerProjectCook
 	return valid;
 }
 
-bool AssetCookerStageExecutor::RunShaders(
-    const AssetCookerProjectCookPlan& plan,
-    AssetCookerDiagnostics& diagnostics,
-    std::vector<AssetCookerOutputRecord>& outputs)
+bool AssetCookerStageExecutor::RunShaders(const AssetCookerProjectCookPlan& plan, AssetCookerDiagnostics& diagnostics, std::vector<AssetCookerOutputRecord>& outputs)
 {
 	if (AssetCookerToolProcess::Run(plan.shaderCompilerPath, {"cook"}, plan.projectRoot) != 0)
 	{
@@ -131,18 +121,11 @@ bool AssetCookerStageExecutor::RunShaders(
 
 	const std::filesystem::path cookedShaderRoot = plan.cookedRoot / "Shaders";
 	AppendOutput(outputs, AssetCookerCategory::Shaders, "global-shader-map", Filesystem::BuildGlobalShaderMapPath(cookedShaderRoot));
-	AppendOutput(
-	    outputs,
-	    AssetCookerCategory::Shaders,
-	    "cooked-shader-library",
-	    Filesystem::BuildCookedShaderLibraryPath(cookedShaderRoot));
+	AppendOutput(outputs, AssetCookerCategory::Shaders, "cooked-shader-library", Filesystem::BuildCookedShaderLibraryPath(cookedShaderRoot));
 	return true;
 }
 
-bool AssetCookerStageExecutor::RunTextures(
-    const AssetCookerProjectCookPlan& plan,
-    AssetCookerDiagnostics& diagnostics,
-    std::vector<AssetCookerOutputRecord>& outputs)
+bool AssetCookerStageExecutor::RunTextures(const AssetCookerProjectCookPlan& plan, AssetCookerDiagnostics& diagnostics, std::vector<AssetCookerOutputRecord>& outputs)
 {
 	const AssetCookerTemporaryFile requestFile(MakeTemporaryPath(plan, "assetcooker-texture-requests", ".txt"));
 
@@ -150,10 +133,7 @@ bool AssetCookerStageExecutor::RunTextures(
 	std::filesystem::create_directories(requestFile.GetPath().parent_path(), errorCode);
 	if (errorCode)
 	{
-		diagnostics.AddError(
-		    AssetCookerCategory::Textures,
-		    "Failed to create texture-request temp directory.",
-		    requestFile.GetPath().parent_path());
+		diagnostics.AddError(AssetCookerCategory::Textures, "Failed to create texture-request temp directory.", requestFile.GetPath().parent_path());
 		return false;
 	}
 
@@ -162,8 +142,7 @@ bool AssetCookerStageExecutor::RunTextures(
 		return false;
 	}
 
-	const int exitCode =
-	    AssetCookerToolProcess::Run(plan.textureCookerPath, {"cook-request-file", requestFile.GetPath().string()}, plan.projectRoot);
+	const int exitCode = AssetCookerToolProcess::Run(plan.textureCookerPath, {"cook-request-file", requestFile.GetPath().string()}, plan.projectRoot);
 	if (exitCode != 0)
 	{
 		diagnostics.AddError(AssetCookerCategory::Textures, "Texture asset cooking failed.");
@@ -174,16 +153,10 @@ bool AssetCookerStageExecutor::RunTextures(
 	return true;
 }
 
-bool AssetCookerStageExecutor::RunSceneAssets(
-    const AssetCookerProjectCookPlan& plan,
-    AssetCookerDiagnostics& diagnostics,
-    std::vector<AssetCookerOutputRecord>& outputs)
+bool AssetCookerStageExecutor::RunSceneAssets(const AssetCookerProjectCookPlan& plan, AssetCookerDiagnostics& diagnostics, std::vector<AssetCookerOutputRecord>& outputs)
 {
 	ToolWorkProgressWriter progress(std::cout);
-	if (!AssetCookerSceneBatch::Execute(
-	        plan.sceneEntries,
-	        diagnostics,
-	        [&progress](const ToolWorkProgressEvent& event) { progress.Report(event); }))
+	if (!AssetCookerSceneBatch::Execute(plan.sceneEntries, diagnostics, [&progress](const ToolWorkProgressEvent& event) { progress.Report(event); }))
 	{
 		return false;
 	}
@@ -194,11 +167,7 @@ bool AssetCookerStageExecutor::RunSceneAssets(
 	return true;
 }
 
-bool AssetCookerStageExecutor::Execute(
-    AssetCookerPlanStep step,
-    const AssetCookerProjectCookPlan& plan,
-    AssetCookerDiagnostics& diagnostics,
-    std::vector<AssetCookerOutputRecord>& outOutputs)
+bool AssetCookerStageExecutor::Execute(AssetCookerPlanStep step, const AssetCookerProjectCookPlan& plan, AssetCookerDiagnostics& diagnostics, std::vector<AssetCookerOutputRecord>& outOutputs)
 {
 	switch (step)
 	{

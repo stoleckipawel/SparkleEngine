@@ -69,6 +69,7 @@ void PrepareRenderPrimitives(std::span<const ResolvedRenderPrimitive> inputs, st
 	{
 		const ResolvedRenderPrimitive& input = inputs[index];
 		PreparedRenderPrimitive& output = outputs[index];
+
 		output = PreparedRenderPrimitive{
 		    .Object = input.Object,
 		    .Draw = input.Draw,
@@ -76,9 +77,7 @@ void PrepareRenderPrimitives(std::span<const ResolvedRenderPrimitive> inputs, st
 		    .Material = input.Material,
 		    .InstanceGroupIndex = input.InstanceGroupIndex,
 		    .MaterialAlphaMode = input.MaterialAlphaMode};
-		output.Draw.Transform = MeshDrawTransform{
-		    .WorldMatrix = input.WorldMatrix,
-		    .PreviousWorldMatrix = input.PreviousWorldMatrix,
-		    .WorldInvTranspose = input.WorldInverseTranspose};
+
+		output.Draw.Transform = MeshDrawTransform{.WorldMatrix = input.WorldMatrix, .PreviousWorldMatrix = input.PreviousWorldMatrix, .WorldInvTranspose = input.WorldInverseTranspose};
 	}
 }

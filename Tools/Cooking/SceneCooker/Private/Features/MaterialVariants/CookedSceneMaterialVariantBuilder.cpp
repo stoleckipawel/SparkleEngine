@@ -12,10 +12,7 @@
 class CookedMaterialVariantTranslation final
 {
 public:
-	static void CopyVariantName(std::string_view sourceName, char (&outName)[Assets::kCookedSceneMaterialVariantNameCapacity]) noexcept
-	{
-		std::memcpy(outName, sourceName.data(), sourceName.size());
-	}
+	static void CopyVariantName(std::string_view sourceName, char (&outName)[Assets::kCookedSceneMaterialVariantNameCapacity]) noexcept { std::memcpy(outName, sourceName.data(), sourceName.size()); }
 
 	static Assets::CookedSceneMaterialVariantRecord BuildVariantRecord(const ImportedMaterialVariant& importedVariant)
 	{
@@ -25,15 +22,12 @@ public:
 		return record;
 	}
 
-	static std::uint32_t ResolveCookedMeshAssetIndex(
-	    const SourceImportOutput& importOutput,
-	    const ImportedMaterialVariantMapping& importedMapping)
+	static std::uint32_t ResolveCookedMeshAssetIndex(const SourceImportOutput& importOutput, const ImportedMaterialVariantMapping& importedMapping)
 	{
 		for (std::size_t primitiveIndex = 0; primitiveIndex < importOutput.scene.meshPrimitives.size(); ++primitiveIndex)
 		{
 			const ImportedMeshPrimitive& primitive = importOutput.scene.meshPrimitives[primitiveIndex];
-			if (primitive.sourceMeshIndex == importedMapping.sourceMeshIndex
-			    && primitive.sourcePrimitiveIndex == importedMapping.sourcePrimitiveIndex)
+			if (primitive.sourceMeshIndex == importedMapping.sourceMeshIndex && primitive.sourcePrimitiveIndex == importedMapping.sourcePrimitiveIndex)
 			{
 				return static_cast<std::uint32_t>(primitiveIndex);
 			}
@@ -68,10 +62,7 @@ public:
 			throw Diagnostics::Error("Imported material variant mapping resolved to a mesh asset outside the cooked mesh asset set.");
 		}
 
-		return Assets::CookedSceneMaterialVariantMappingRecord{
-		    .meshAssetIndex = meshAssetIndex,
-		    .variantIndex = importedMapping.variantIndex,
-		    .materialAssetIndex = importedMapping.materialIndex};
+		return Assets::CookedSceneMaterialVariantMappingRecord{.meshAssetIndex = meshAssetIndex, .variantIndex = importedMapping.variantIndex, .materialAssetIndex = importedMapping.materialIndex};
 	}
 };
 
@@ -93,7 +84,6 @@ void CookedSceneMaterialVariantBuilder::BuildMaterialVariants(const SourceImport
 
 	for (const ImportedMaterialVariantMapping& importedMapping : importOutput.scene.materialVariantMappings)
 	{
-		outBuild.manifest.materialVariantMappings.push_back(
-		    CookedMaterialVariantTranslation::BuildMappingRecord(importOutput, outBuild, importedMapping));
+		outBuild.manifest.materialVariantMappings.push_back(CookedMaterialVariantTranslation::BuildMappingRecord(importOutput, outBuild, importedMapping));
 	}
 }

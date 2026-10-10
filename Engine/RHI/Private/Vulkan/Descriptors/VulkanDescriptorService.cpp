@@ -23,10 +23,7 @@ bool VulkanDescriptorService::ResourceViewRecord::IsAllocated() const noexcept
 	return Image != VK_NULL_HANDLE || Buffer != VK_NULL_HANDLE || ImageView != VK_NULL_HANDLE || static_cast<bool>(DescriptorHandle);
 }
 
-VulkanDescriptorService::VulkanDescriptorService(
-    VulkanRhi& rhi,
-    VulkanGpuMemoryAllocator& memoryAllocator,
-    const RhiCapabilities& capabilities) noexcept :
+VulkanDescriptorService::VulkanDescriptorService(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator, const RhiCapabilities& capabilities) noexcept :
     m_rhi(rhi),
     m_memoryAllocator(memoryAllocator),
     m_capabilities(capabilities),
@@ -82,18 +79,12 @@ void VulkanDescriptorService::PublishRecordingReadView() noexcept
 			continue;
 		}
 
-		const RhiResourceViewDesc viewDesc{
-		    .Kind = record.Kind,
-		    .Resource = RhiResourceHandle{record.Image},
-		    .Format = record.Format,
-		    .Texture = record.Texture};
-		readView->ImageViews.push_back(
-		    RecordingImageView{
-		        .ImageViewValue = reinterpret_cast<std::uintptr_t>(record.ImageView),
-		        .AspectMask = ResolveViewAspectMask(viewDesc)});
+		const RhiResourceViewDesc viewDesc{.Kind = record.Kind, .Resource = RhiResourceHandle{record.Image}, .Format = record.Format, .Texture = record.Texture};
+		readView->ImageViews.push_back(RecordingImageView{.ImageViewValue = reinterpret_cast<std::uintptr_t>(record.ImageView), .AspectMask = ResolveViewAspectMask(viewDesc)});
 		if (record.Image != VK_NULL_HANDLE)
 		{
 			const VulkanGpuAllocationRecord* const allocation = m_memoryAllocator.FindAllocationRecord(RhiResourceHandle{record.Image});
+
 			readView->ImageResources.push_back(
 			    RecordingImageResource{
 			        .ResourceHandleValue = reinterpret_cast<std::uintptr_t>(record.Image),
@@ -116,23 +107,17 @@ RhiDescriptorAllocation VulkanDescriptorService::AllocateDescriptor(ERhiDescript
 	return m_allocator.AllocateDescriptor(descriptorType);
 }
 
-void VulkanDescriptorService::ReleaseDescriptor(
-    ERhiDescriptorAllocatorType descriptorType,
-    const RhiDescriptorAllocation& allocation) noexcept
+void VulkanDescriptorService::ReleaseDescriptor(ERhiDescriptorAllocatorType descriptorType, const RhiDescriptorAllocation& allocation) noexcept
 {
 	m_allocator.ReleaseDescriptor(descriptorType, allocation);
 }
 
-RhiDescriptorTableHandle VulkanDescriptorService::AllocateDescriptorTable(
-    ERhiDescriptorAllocatorType descriptorType,
-    std::uint32_t descriptorCount)
+RhiDescriptorTableHandle VulkanDescriptorService::AllocateDescriptorTable(ERhiDescriptorAllocatorType descriptorType, std::uint32_t descriptorCount)
 {
 	return m_allocator.AllocateDescriptorTable(descriptorType, descriptorCount);
 }
 
-RhiCpuDescriptorHandle VulkanDescriptorService::GetDescriptorTableCpuHandle(
-    RhiDescriptorTableHandle tableHandle,
-    std::uint32_t descriptorIndex) const noexcept
+RhiCpuDescriptorHandle VulkanDescriptorService::GetDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex) const noexcept
 {
 	return m_allocator.GetDescriptorTableCpuHandle(tableHandle, descriptorIndex);
 }
@@ -151,11 +136,7 @@ RhiDescriptorTableBinding VulkanDescriptorService::GetSharedSamplerBinding(const
 {
 	if (m_samplerLibrary == nullptr)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanDescriptorServiceLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan shared sampler binding was requested before sampler-library initialization.");
+		Diagnostics::Fatal(g_vulkanDescriptorServiceLogger, __FILE__, __LINE__, "Vulkan shared sampler binding was requested before sampler-library initialization.");
 	}
 	return m_samplerLibrary->GetSharedSamplerBinding(samplerDesc);
 }
@@ -222,17 +203,15 @@ RhiResourceViewHandle VulkanDescriptorService::CreateAttachmentView(const RhiRes
 	        .ImageView = imageView,
 	        .Format = desc.Format,
 	        .Texture = desc.Texture,
-	        .Usage = desc.Kind == ERhiResourceViewKind::DepthStencil
-	            ? static_cast<VkImageUsageFlags>(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
-	            : static_cast<VkImageUsageFlags>(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT),
+	        .Usage = desc.Kind == ERhiResourceViewKind::DepthStencil ? static_cast<VkImageUsageFlags>(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+	                                                                 : static_cast<VkImageUsageFlags>(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT),
 	        .OwnsImageView = true});
 }
 
 RhiResourceViewHandle VulkanDescriptorService::CreateBufferDescriptorView(const RhiResourceViewDesc& desc)
 {
 	const VkBuffer buffer = static_cast<VkBuffer>(desc.Resource.Value);
-	const RhiGpuDescriptorHandle descriptorHandle =
-	    m_allocator.RegisterBufferDescriptor(desc.Kind, buffer, desc.Buffer.OffsetInBytes, desc.Buffer.SizeInBytes);
+	const RhiGpuDescriptorHandle descriptorHandle = m_allocator.RegisterBufferDescriptor(desc.Kind, buffer, desc.Buffer.OffsetInBytes, desc.Buffer.SizeInBytes);
 	if (!descriptorHandle)
 	{
 		return {};
@@ -261,10 +240,7 @@ void VulkanDescriptorService::ReleaseResourceView(RhiResourceViewHandle view) no
 	record->Generation = preservedGeneration;
 }
 
-bool VulkanDescriptorService::WriteResourceView(
-    RhiDescriptorTableHandle tableHandle,
-    std::uint32_t descriptorIndex,
-    RhiResourceViewHandle view) noexcept
+bool VulkanDescriptorService::WriteResourceView(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex, RhiResourceViewHandle view) noexcept
 {
 	const ResourceViewRecord* const resourceView = FindResourceViewRecord(view);
 	if (resourceView == nullptr || !resourceView->DescriptorHandle)
@@ -288,10 +264,7 @@ RhiGpuDescriptorHandle VulkanDescriptorService::GetResourceViewGpuHandle(RhiReso
 	return record != nullptr ? record->DescriptorHandle : RhiGpuDescriptorHandle{};
 }
 
-NativeTextureViewInfo VulkanDescriptorService::ResolveNativeTextureViewInfo(
-    RhiResourceViewHandle view,
-    RhiResourceHandle,
-    ResourceState state) const noexcept
+NativeTextureViewInfo VulkanDescriptorService::ResolveNativeTextureViewInfo(RhiResourceViewHandle view, RhiResourceHandle, ResourceState state) const noexcept
 {
 	const ResourceViewRecord* const record = FindResourceViewRecord(view);
 	if (record == nullptr || record->Image == VK_NULL_HANDLE || record->ImageView == VK_NULL_HANDLE)
@@ -301,18 +274,13 @@ NativeTextureViewInfo VulkanDescriptorService::ResolveNativeTextureViewInfo(
 
 	const VulkanGpuAllocationRecord* const allocation = m_memoryAllocator.FindAllocationRecord(RhiResourceHandle{record->Image});
 	const VulkanResourceStateMapping stateMapping = VulkanTypeConversions::ToResourceStateMapping(state);
-	const RhiResourceViewDesc viewDesc{
-	    .Kind = record->Kind,
-	    .Resource = RhiResourceHandle{record->Image},
-	    .Format = record->Format,
-	    .Texture = record->Texture};
+	const RhiResourceViewDesc viewDesc{.Kind = record->Kind, .Resource = RhiResourceHandle{record->Image}, .Format = record->Format, .Texture = record->Texture};
 	const VkImageAspectFlags aspectMask = ResolveViewAspectMask(viewDesc);
 	const VkExtent3D extent = allocation != nullptr ? allocation->Extent : record->Extent;
-	const VkFormat format = allocation != nullptr && allocation->Format != VK_FORMAT_UNDEFINED
-	    ? allocation->Format
-	    : VulkanTypeConversions::ToVkFormat(record->Format);
+	const VkFormat format = allocation != nullptr && allocation->Format != VK_FORMAT_UNDEFINED ? allocation->Format : VulkanTypeConversions::ToVkFormat(record->Format);
 	const VkImageUsageFlags allocationUsage = allocation != nullptr ? allocation->Usage : 0;
 	const VkImageUsageFlags usage = allocationUsage != 0 ? allocationUsage : record->Usage;
+
 	return NativeTextureViewInfo{
 	    .Resource = NativeResourceHandle{record->Image},
 	    .View = NativeTextureViewHandle{record->ImageView},
@@ -367,9 +335,7 @@ VkImageAspectFlags VulkanDescriptorService::ResolveImageViewAspectMask(VkImageVi
 	return found != readView->ImageViews.end() && found->ImageViewValue == imageViewValue ? found->AspectMask : 0;
 }
 
-bool VulkanDescriptorService::ResolveRegisteredImageResource(
-    RhiResourceHandle resource,
-    VulkanRecordingResource& outResource) const noexcept
+bool VulkanDescriptorService::ResolveRegisteredImageResource(RhiResourceHandle resource, VulkanRecordingResource& outResource) const noexcept
 {
 	if (!resource)
 	{
@@ -411,6 +377,7 @@ bool VulkanDescriptorService::ResolveRegisteredImageResource(
 	    .AspectMask = aspectMask,
 	    .Usage = usage,
 	    .ResourceKind = VulkanGpuAllocationResourceKind::Image};
+
 	return true;
 }
 
@@ -506,8 +473,7 @@ VulkanDescriptorService::ResourceViewRecord* VulkanDescriptorService::FindResour
 	return record.IsAllocated() && record.Generation == generation ? &record : nullptr;
 }
 
-const VulkanDescriptorService::ResourceViewRecord* VulkanDescriptorService::FindResourceViewRecord(
-    RhiResourceViewHandle view) const noexcept
+const VulkanDescriptorService::ResourceViewRecord* VulkanDescriptorService::FindResourceViewRecord(RhiResourceViewHandle view) const noexcept
 {
 	std::uint32_t recordIndex = 0;
 	std::uint16_t generation = 0;
@@ -545,12 +511,7 @@ VkImageView VulkanDescriptorService::CreateImageView(const RhiResourceViewDesc& 
 	    .image = static_cast<VkImage>(desc.Resource.Value),
 	    .viewType = desc.TextureDimension == TextureResourceDimension::TextureCube ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D,
 	    .format = ResolveViewFormat(desc),
-	    .components =
-	        VkComponentMapping{
-	            .r = VK_COMPONENT_SWIZZLE_IDENTITY,
-	            .g = VK_COMPONENT_SWIZZLE_IDENTITY,
-	            .b = VK_COMPONENT_SWIZZLE_IDENTITY,
-	            .a = VK_COMPONENT_SWIZZLE_IDENTITY},
+	    .components = VkComponentMapping{.r = VK_COMPONENT_SWIZZLE_IDENTITY, .g = VK_COMPONENT_SWIZZLE_IDENTITY, .b = VK_COMPONENT_SWIZZLE_IDENTITY, .a = VK_COMPONENT_SWIZZLE_IDENTITY},
 	    .subresourceRange = VkImageSubresourceRange{
 	        .aspectMask = ResolveViewAspectMask(desc),
 	        .baseMipLevel = desc.Texture.MostDetailedMip,
@@ -588,18 +549,10 @@ VkImageAspectFlags VulkanDescriptorService::ResolveViewAspectMask(const RhiResou
 			}
 			if (desc.Format == PixelFormat::Unknown)
 			{
-				Diagnostics::Fatal(
-				    g_vulkanDescriptorServiceLogger,
-				    __FILE__,
-				    __LINE__,
-				    "Vulkan texture views require an explicit format when resolving their image aspect.");
+				Diagnostics::Fatal(g_vulkanDescriptorServiceLogger, __FILE__, __LINE__, "Vulkan texture views require an explicit format when resolving their image aspect.");
 			}
 			return VK_IMAGE_ASPECT_COLOR_BIT;
 		default:
-			Diagnostics::Fatal(
-			    g_vulkanDescriptorServiceLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Cannot resolve an image aspect for a non-image Vulkan resource view.");
+			Diagnostics::Fatal(g_vulkanDescriptorServiceLogger, __FILE__, __LINE__, "Cannot resolve an image aspect for a non-image Vulkan resource view.");
 	}
 }

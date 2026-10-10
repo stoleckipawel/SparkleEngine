@@ -33,9 +33,7 @@ public:
 	    RhiGpuVirtualAddress instanceWriteAddress,
 	    RhiGpuVirtualAddress instanceUpdateAddress,
 	    RhiGpuVirtualAddress partitionTranslationAddress) noexcept;
-	static std::uint64_t ResolveArgumentStride(
-	    const RhiPartitionedTlasOperationHeader& operation,
-	    const RhiPartitionedTlasNativeOperationLayout& nativeLayout) noexcept;
+	static std::uint64_t ResolveArgumentStride(const RhiPartitionedTlasOperationHeader& operation, const RhiPartitionedTlasNativeOperationLayout& nativeLayout) noexcept;
 
 	static std::uint64_t AlignUp(std::uint64_t value, std::uint64_t alignment) noexcept;
 };

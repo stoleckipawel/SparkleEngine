@@ -80,8 +80,7 @@ bool UiFrameRenderer::BeginViewportPresentation(FrameGraph& frameGraph, Viewport
 
 	TransitionViewportProduct(frameGraph, viewportProducts, ResourceState::ShaderResource);
 	const FrameGraphResourceHandle resource = ToFrameGraphResourceHandle(product->Handle);
-	const std::uint64_t textureId =
-	    m_deviceServices.GetImGuiRenderer().ResolveTextureId(frameGraph.ResolveShaderResourceView(FrameGraphTextureHandle{resource}));
+	const std::uint64_t textureId = m_deviceServices.GetImGuiRenderer().ResolveTextureId(frameGraph.ResolveShaderResourceView(FrameGraphTextureHandle{resource}));
 	if (textureId == 0u)
 	{
 		m_viewportTexture = {};
@@ -103,13 +102,9 @@ void UiFrameRenderer::EndViewportPresentation(FrameGraph& frameGraph, const View
 	TransitionViewportProduct(frameGraph, viewportProducts, ResourceState::Common);
 }
 
-void UiFrameRenderer::RenderViewport(
-    const UiRenderPacket& packet,
-    FrameGraph* frameGraph,
-    ViewportRenderProducts& viewportProducts) noexcept
+void UiFrameRenderer::RenderViewport(const UiRenderPacket& packet, FrameGraph* frameGraph, ViewportRenderProducts& viewportProducts) noexcept
 {
-	const bool presentingViewport = frameGraph != nullptr && packet.ViewportGeneration == viewportProducts.GetGeneration()
-	    && BeginViewportPresentation(*frameGraph, viewportProducts);
+	const bool presentingViewport = frameGraph != nullptr && packet.ViewportGeneration == viewportProducts.GetGeneration() && BeginViewportPresentation(*frameGraph, viewportProducts);
 	if (!presentingViewport)
 	{
 		m_textureRegistry->RetireViewportTexture();
@@ -148,10 +143,7 @@ void UiFrameRenderer::Play(const UiRenderPacket& packet) noexcept
 	m_packetPlayer->Render(packet, *m_textureRegistry, m_deviceServices.GetImGuiRenderer());
 }
 
-void UiFrameRenderer::TransitionViewportProduct(
-    FrameGraph& frameGraph,
-    const ViewportRenderProducts& viewportProducts,
-    ResourceState after) noexcept
+void UiFrameRenderer::TransitionViewportProduct(FrameGraph& frameGraph, const ViewportRenderProducts& viewportProducts, ResourceState after) noexcept
 {
 	const RenderProduct* product = viewportProducts.FindProduct(RenderOutputFlags::FinalColorLdr);
 	if (product == nullptr || !product->Handle)

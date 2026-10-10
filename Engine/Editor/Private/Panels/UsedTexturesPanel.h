@@ -12,7 +12,9 @@ public:
 	using DiagnosticsProvider = std::function<TextureDiagnosticsSnapshot()>;
 
 	void SetOpen(bool open) noexcept { m_isOpen = open; }
+
 	bool IsOpen() const noexcept { return m_isOpen; }
+
 	void SetDiagnosticsProvider(DiagnosticsProvider provider);
 	void BuildUI(bool disableInteraction);
 

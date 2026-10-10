@@ -82,6 +82,7 @@ namespace Hash
 
 	private:
 		BCRYPT_ALG_HANDLE m_algorithm = nullptr;
+
 		BCRYPT_HASH_HANDLE m_hash = nullptr;
 	};
 #endif
@@ -156,8 +157,7 @@ namespace Hash
 
 #if defined(_WIN32)
 		Sha256Context context;
-		return context.Initialize(outErrorMessage) && context.Update(data, size, outErrorMessage)
-		    && context.Finish(outHash, outErrorMessage);
+		return context.Initialize(outErrorMessage) && context.Update(data, size, outErrorMessage) && context.Finish(outHash, outErrorMessage);
 #else
 		(void) data;
 		(void) size;

@@ -14,10 +14,7 @@ namespace ECS
 		m_current.clear();
 	}
 
-	void RenderObjectDeltaExtractor::Extract(
-	    std::span<const WorldExtractionStorage::MeshSlot> meshes,
-	    RenderObjectIdentityMap& identities,
-	    RenderSceneDelta& delta)
+	void RenderObjectDeltaExtractor::Extract(std::span<const WorldExtractionStorage::MeshSlot> meshes, RenderObjectIdentityMap& identities, RenderSceneDelta& delta)
 	{
 		m_current.clear();
 		m_current.reserve(meshes.size());
@@ -83,31 +80,20 @@ namespace ECS
 
 	void RenderObjectDeltaExtractor::SortDeltaObjects(RenderSceneDelta& delta)
 	{
-		std::sort(
-		    delta.Creates.begin(),
-		    delta.Creates.end(),
-		    [](const RenderObjectCreate& left, const RenderObjectCreate& right) { return left.Object < right.Object; });
-		std::sort(
-		    delta.Updates.begin(),
-		    delta.Updates.end(),
-		    [](const RenderObjectUpdate& left, const RenderObjectUpdate& right) { return left.Object < right.Object; });
+		std::sort(delta.Creates.begin(), delta.Creates.end(), [](const RenderObjectCreate& left, const RenderObjectCreate& right) { return left.Object < right.Object; });
+		std::sort(delta.Updates.begin(), delta.Updates.end(), [](const RenderObjectUpdate& left, const RenderObjectUpdate& right) { return left.Object < right.Object; });
 		std::sort(delta.Destroys.begin(), delta.Destroys.end());
 	}
 
 	RenderObjectId RenderObjectDeltaExtractor::FindObject(EntityId entity) const noexcept
 	{
-		const auto object = std::lower_bound(
-		    m_published.begin(),
-		    m_published.end(),
-		    entity,
-		    [](const PublishedObject& candidate, EntityId identity) { return candidate.Entity < identity; });
+		const auto object = std::lower_bound(m_published.begin(), m_published.end(), entity, [](const PublishedObject& candidate, EntityId identity) { return candidate.Entity < identity; });
 		return object == m_published.end() || object->Entity != entity ? RenderObjectId{} : object->Object;
 	}
 
 	bool RenderObjectDeltaExtractor::HasSameStaticData(const RenderObjectStaticData& left, const RenderObjectStaticData& right) noexcept
 	{
-		return left.Mesh.RefersToSameResource(right.Mesh) && left.Material == right.Material && left.Skeleton == right.Skeleton
-		    && left.MeshKind == right.MeshKind && left.MeshAssetIndex == right.MeshAssetIndex
-		    && left.InstanceGroupIndex == right.InstanceGroupIndex;
+		return left.Mesh.RefersToSameResource(right.Mesh) && left.Material == right.Material && left.Skeleton == right.Skeleton && left.MeshKind == right.MeshKind
+		    && left.MeshAssetIndex == right.MeshAssetIndex && left.InstanceGroupIndex == right.InstanceGroupIndex;
 	}
 }

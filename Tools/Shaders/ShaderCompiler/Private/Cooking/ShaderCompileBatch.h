@@ -14,11 +14,7 @@ class ShaderCompileBatch final
 public:
 	ShaderCompileBatch() = delete;
 
-	static std::vector<ShaderCompileResult> Execute(
-	    const ShaderCookSettings& settings,
-	    std::span<const ShaderCompileJob> jobs,
-	    std::size_t totalWork,
-	    const ToolWorkProgressCallback& progress);
+	static std::vector<ShaderCompileResult> Execute(const ShaderCookSettings& settings, std::span<const ShaderCompileJob> jobs, std::size_t totalWork, const ToolWorkProgressCallback& progress);
 
 private:
 	struct ProducerMap final
@@ -34,10 +30,7 @@ private:
 	    const ProducerMap& producerMap,
 	    std::size_t totalWork,
 	    const ToolWorkProgressCallback& progress);
-	static std::vector<ShaderCompileResult> FanOutResults(
-	    std::span<const ShaderCompileJob> jobs,
-	    std::span<const ShaderCompileResult> producerResults,
-	    std::span<const std::size_t> producerForJob);
+	static std::vector<ShaderCompileResult> FanOutResults(std::span<const ShaderCompileJob> jobs, std::span<const ShaderCompileResult> producerResults, std::span<const std::size_t> producerForJob);
 	static void FinalizeResults(
 	    const ShaderCookSettings& settings,
 	    std::span<const ShaderCompileJob> jobs,

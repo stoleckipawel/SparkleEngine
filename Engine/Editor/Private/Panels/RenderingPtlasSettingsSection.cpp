@@ -13,19 +13,14 @@ void DrawPtlasSettingsSection(EngineRenderingSettingsController& settingsControl
 	static constexpr RenderingSettingsUi::ComboOption<RayTracingPtlasPartitionUpdateMode> partitionUpdateModeOptions[] = {
 	    {"Always update partition", RayTracingPtlasPartitionUpdateMode::AlwaysUpdatePartition},
 	    {"Always move dynamic to global", RayTracingPtlasPartitionUpdateMode::AlwaysMoveDynamicToGlobal},
-	    {"Update partition nearby, move to global otherwise",
-	        RayTracingPtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise},
+	    {"Update partition nearby, move to global otherwise", RayTracingPtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise},
 	};
 
 	if (ImGui::TreeNodeEx("PTLAS", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		if (RenderingSettingsUi::BeginSettingsTable("##RenderingPtlasSettings"))
 		{
-			RenderingSettingsUi::DrawBooleanRow(
-			    "##PtlasActive",
-			    "Enabled",
-			    settings.PtlasActive,
-			    [&settingsController](bool value) { settingsController.SetPtlasActive(value); });
+			RenderingSettingsUi::DrawBooleanRow("##PtlasActive", "Enabled", settings.PtlasActive, [&settingsController](bool value) { settingsController.SetPtlasActive(value); });
 			if (settings.PtlasActive)
 			{
 				RenderingSettingsUi::DrawUnsignedIntSliderRow(
@@ -35,18 +30,20 @@ void DrawPtlasSettingsSection(EngineRenderingSettingsController& settingsControl
 				    1u,
 				    64u,
 				    [&settingsController](std::uint32_t value) { settingsController.SetPtlasPartitionsPerAxis(value); });
+
 				RenderingSettingsUi::DrawComboOptionRow(
 				    "##PtlasPartitionUpdateMode",
 				    "Partition update mode",
 				    settings.PtlasPartitionUpdateMode,
 				    partitionUpdateModeOptions,
-				    [&settingsController](RayTracingPtlasPartitionUpdateMode value)
-				    { settingsController.SetPtlasPartitionUpdateMode(value); });
+				    [&settingsController](RayTracingPtlasPartitionUpdateMode value) { settingsController.SetPtlasPartitionUpdateMode(value); });
+
 				RenderingSettingsUi::DrawBooleanRow(
 				    "##PtlasMarkAllDynamicInPartition",
 				    "Mark all dynamic in partition",
 				    settings.PtlasMarkAllDynamicInPartition,
 				    [&settingsController](bool value) { settingsController.SetPtlasMarkAllDynamicInPartition(value); });
+
 				RenderingSettingsUi::DrawFloatInputRow(
 				    "##PtlasModeChangeDistance",
 				    "Mode change distance",

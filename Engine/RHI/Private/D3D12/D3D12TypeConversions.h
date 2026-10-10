@@ -27,5 +27,6 @@ public:
 
 private:
 	D3D12TypeConversions() = delete;
+
 	~D3D12TypeConversions() = delete;
 };

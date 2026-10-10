@@ -110,11 +110,7 @@ void RenderCoordinator::ProcessThreadedCommand(RenderThreadCommand command)
 {
 	if (command.SequenceNumber <= m_lastConsumedThreadCommandSequence)
 	{
-		Diagnostics::Fatal(
-		    g_renderCoordinatorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Render-thread command sequence was consumed more than once or out of order.");
+		Diagnostics::Fatal(g_renderCoordinatorLogger, __FILE__, __LINE__, "Render-thread command sequence was consumed more than once or out of order.");
 	}
 	m_lastConsumedThreadCommandSequence = command.SequenceNumber;
 	if (const auto* frame = std::get_if<RenderFrameReadyCommand>(&command.Payload))
@@ -139,11 +135,7 @@ void RenderCoordinator::ExecuteThreadedFrame(RenderFrameQueueTicket ticket)
 	PublishReadState();
 	if (!m_frameQueue->Retire(ticket))
 	{
-		Diagnostics::Fatal(
-		    g_renderCoordinatorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Render frame queue rejected retirement for the frame being rendered.");
+		Diagnostics::Fatal(g_renderCoordinatorLogger, __FILE__, __LINE__, "Render frame queue rejected retirement for the frame being rendered.");
 	}
 }
 
@@ -180,20 +172,11 @@ void RenderCoordinator::SettleAbandonedWork() noexcept
 	std::lock_guard lock(m_readStateMutex);
 	for (ViewportCaptureId id : m_outstandingViewportCaptures)
 	{
-		if (!id
-		    || std::any_of(
-		        m_publishedViewportCaptures.begin(),
-		        m_publishedViewportCaptures.end(),
-		        [id](const ViewportCaptureCompletion& completion) { return completion.Id.Value == id.Value; }))
+		if (!id || std::any_of(m_publishedViewportCaptures.begin(), m_publishedViewportCaptures.end(), [id](const ViewportCaptureCompletion& completion) { return completion.Id.Value == id.Value; }))
 		{
 			continue;
 		}
 		m_publishedViewportCaptures.push_back(
-		    ViewportCaptureCompletion{
-		        .Id = id,
-		        .Readback = {
-		            .Result = {
-		                .Status = ViewportCaptureStatus::Failed,
-		                .FailureReason = "Render owner stopped before viewport readback completed"}}});
+		    ViewportCaptureCompletion{.Id = id, .Readback = {.Result = {.Status = ViewportCaptureStatus::Failed, .FailureReason = "Render owner stopped before viewport readback completed"}}});
 	}
 }

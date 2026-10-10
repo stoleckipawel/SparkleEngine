@@ -7,8 +7,4 @@ struct RenderFrame;
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
 
-void AddExposurePasses(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    const RenderFrameGraphSettings& settings,
-    const RenderFrameGraphResources& resources);
+void AddExposurePasses(FrameGraphBuilder& builder, const RenderFrame& frame, const RenderFrameGraphSettings& settings, const RenderFrameGraphResources& resources);

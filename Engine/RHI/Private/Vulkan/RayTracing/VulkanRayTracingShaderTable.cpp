@@ -44,10 +44,7 @@ std::vector<std::byte> VulkanRayTracingShaderTable::CollectShaderIdentifiers(
 	return identifiers;
 }
 
-VulkanRayTracingShaderTable::VulkanRayTracingShaderTable(
-    VulkanRhi& rhi,
-    VulkanGpuMemoryAllocator& memoryAllocator,
-    const RayTracingShaderTableDesc& desc) :
+VulkanRayTracingShaderTable::VulkanRayTracingShaderTable(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator, const RayTracingShaderTableDesc& desc) :
     RayTracingShaderTable(desc.Generation, desc.Pipeline != nullptr ? desc.Pipeline->GetGeneration() : 0),
     m_memoryAllocator(&memoryAllocator)
 {
@@ -58,20 +55,13 @@ VulkanRayTracingShaderTable::VulkanRayTracingShaderTable(
 	{
 		throw Diagnostics::Error("Vulkan shader-table creation requires a ready Vulkan pipeline.");
 	}
-	const std::uint64_t handleBytes =
-	    static_cast<std::uint64_t>(pipeline->GetShaderGroupCount()) * capabilities.ShaderGroupHandleSizeInBytes;
+	const std::uint64_t handleBytes = static_cast<std::uint64_t>(pipeline->GetShaderGroupCount()) * capabilities.ShaderGroupHandleSizeInBytes;
 	if (handleBytes == 0 || handleBytes > std::numeric_limits<std::size_t>::max())
 	{
 		throw Diagnostics::Error("Vulkan shader-group handle size is invalid.");
 	}
 	std::vector<std::byte> groupHandles(static_cast<std::size_t>(handleBytes));
-	const VkResult handleResult = rhi.GetRayTracingShaderGroupHandles()(
-	    rhi.GetDevice(),
-	    pipeline->GetPipeline(),
-	    0,
-	    pipeline->GetShaderGroupCount(),
-	    groupHandles.size(),
-	    groupHandles.data());
+	const VkResult handleResult = rhi.GetRayTracingShaderGroupHandles()(rhi.GetDevice(), pipeline->GetPipeline(), 0, pipeline->GetShaderGroupCount(), groupHandles.size(), groupHandles.data());
 	if (!VulkanResult::Succeeded(handleResult))
 	{
 		throw Diagnostics::Error(VulkanResult::FormatFailure("vkGetRayTracingShaderGroupHandlesKHR", handleResult));
@@ -81,22 +71,27 @@ VulkanRayTracingShaderTable::VulkanRayTracingShaderTable(
 	    .RecordAlignmentInBytes = capabilities.ShaderTableRecordAlignmentInBytes,
 	    .TableAlignmentInBytes = capabilities.ShaderTableAlignmentInBytes,
 	    .MaximumRecordStrideInBytes = capabilities.MaxShaderTableRecordStrideInBytes};
+
 	std::vector<std::byte> bytes;
+
 	m_rayGeneration = RhiRayTracingShaderTablePacking::AppendRegion(
 	    desc.RayGenerationRecords,
 	    CollectShaderIdentifiers(*pipeline, desc.RayGenerationRecords, groupHandles, capabilities.ShaderGroupHandleSizeInBytes),
 	    packingRules,
 	    bytes);
+
 	m_miss = RhiRayTracingShaderTablePacking::AppendRegion(
 	    desc.MissRecords,
 	    CollectShaderIdentifiers(*pipeline, desc.MissRecords, groupHandles, capabilities.ShaderGroupHandleSizeInBytes),
 	    packingRules,
 	    bytes);
+
 	m_hitGroup = RhiRayTracingShaderTablePacking::AppendRegion(
 	    desc.HitGroupRecords,
 	    CollectShaderIdentifiers(*pipeline, desc.HitGroupRecords, groupHandles, capabilities.ShaderGroupHandleSizeInBytes),
 	    packingRules,
 	    bytes);
+
 	m_callable = RhiRayTracingShaderTablePacking::AppendRegion(
 	    desc.CallableRecords,
 	    CollectShaderIdentifiers(*pipeline, desc.CallableRecords, groupHandles, capabilities.ShaderGroupHandleSizeInBytes),
@@ -112,14 +107,16 @@ VulkanRayTracingShaderTable::VulkanRayTracingShaderTable(
 	    .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
 	    .queueFamilyIndexCount = 0,
 	    .pQueueFamilyIndices = nullptr};
+
 	rhi.ConfigureResourceQueueSharing(bufferInfo);
+
 	m_allocation = memoryAllocator.CreateBuffer(
 	    bufferInfo,
 	    RhiMemoryCategory::RayTracing,
 	    RhiMemoryResidencyClass::HostUpload,
 	    desc.DebugName != nullptr ? std::wstring_view(desc.DebugName) : std::wstring_view(L"RHI_RayTracingShaderTable"));
-	if (m_allocation == nullptr || m_allocation->Buffer == VK_NULL_HANDLE || m_allocation->BufferDeviceAddress == 0
-	    || !memoryAllocator.WriteAllocation(*m_allocation, bytes.data(), bytes.size()))
+
+	if (m_allocation == nullptr || m_allocation->Buffer == VK_NULL_HANDLE || m_allocation->BufferDeviceAddress == 0 || !memoryAllocator.WriteAllocation(*m_allocation, bytes.data(), bytes.size()))
 	{
 		throw Diagnostics::Error("Vulkan shader-table allocation or upload failed.");
 	}

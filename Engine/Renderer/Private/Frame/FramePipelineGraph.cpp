@@ -127,9 +127,8 @@ void FramePipeline::RefreshGraphForTopology() noexcept
 	const std::uint64_t rayTracingGraphGeneration = m_renderScene->GetRayTracingScene().GetGraphGeneration();
 	const std::uint64_t shaderGeneration = m_renderPassRuntimeCache.GetShaderGeneration();
 	const std::uint64_t sceneRenderingGraphRebuildKey = GetSceneRenderingGraphRebuildKey(m_viewportRenderRequest.ViewMode);
-	if (providerChanged || settings != m_frameGraphSettings || gBufferAlgorithm != m_builtGBufferAlgorithm
-	    || rayTracingGraphGeneration != m_builtRayTracingGraphGeneration || shaderGeneration != m_builtShaderGeneration
-	    || sceneRenderingGraphRebuildKey != m_builtSceneRenderingGraphRebuildKey)
+	if (providerChanged || settings != m_frameGraphSettings || gBufferAlgorithm != m_builtGBufferAlgorithm || rayTracingGraphGeneration != m_builtRayTracingGraphGeneration
+	    || shaderGeneration != m_builtShaderGeneration || sceneRenderingGraphRebuildKey != m_builtSceneRenderingGraphRebuildKey)
 	{
 		InvalidateViewHistory(RenderViewInvalidationReason::GraphTopology);
 		RefreshFrameExecution(settings);

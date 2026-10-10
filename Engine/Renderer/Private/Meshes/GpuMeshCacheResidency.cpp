@@ -69,8 +69,8 @@ void GpuMeshCache::LaunchPendingPreparations()
 		    const MeshRequest& request = entry.second;
 		    return request.PreparationStarted && request.Execution.IsValid();
 	    }));
-	std::size_t availableSlots =
-	    activePreparationCount < kMaximumConcurrentPreparations ? kMaximumConcurrentPreparations - activePreparationCount : 0;
+
+	std::size_t availableSlots = activePreparationCount < kMaximumConcurrentPreparations ? kMaximumConcurrentPreparations - activePreparationCount : 0;
 	for (auto& entry : m_requests)
 	{
 		MeshRequest& request = entry.second;
@@ -92,6 +92,7 @@ void GpuMeshCache::LaunchPreparation(MeshRequest& request)
 {
 	const ImmutableRenderMeshHandle mesh = request.Source;
 	const std::shared_ptr<GpuMeshPreparedData> prepared = request.Prepared;
+
 	request.Execution = m_taskExecutor->Launch(
 	    *m_taskScope,
 	    TaskDesc{.Name = TaskName("Prepare immutable mesh generation"), .Lane = TaskLane::Background},
@@ -105,6 +106,7 @@ void GpuMeshCache::LaunchPreparation(MeshRequest& request)
 		    *prepared = GpuMeshPreparation::Build(mesh);
 		    return TaskResult::Success();
 	    });
+
 	request.PreparationStarted = true;
 	if (!request.Execution.IsValid())
 	{
@@ -135,11 +137,7 @@ void GpuMeshCache::ConsumeCompletedPreparations() noexcept
 
 		if (status != TaskExecutionStatus::Succeeded)
 		{
-			Diagnostics::Fatal(
-			    g_gpuMeshCacheLogger,
-			    __FILE__,
-			    __LINE__,
-			    result.GetMessage().empty() ? "GPU mesh preparation task failed." : result.GetMessage());
+			Diagnostics::Fatal(g_gpuMeshCacheLogger, __FILE__, __LINE__, result.GetMessage().empty() ? "GPU mesh preparation task failed." : result.GetMessage());
 		}
 		if (request.Prepared == nullptr)
 		{
@@ -181,9 +179,7 @@ void GpuMeshCache::ActivateResidentMeshes() noexcept
 		}
 
 		const Mesh* const source = request.Source.GetResource().get();
-		const auto [active, inserted] = m_cache.emplace(
-		    request.Key,
-		    ActiveMesh{.Generation = request.Generation, .Source = source, .Mesh = std::move(request.Uploaded)});
+		const auto [active, inserted] = m_cache.emplace(request.Key, ActiveMesh{.Generation = request.Generation, .Source = source, .Mesh = std::move(request.Uploaded)});
 		if (!inserted)
 		{
 			Diagnostics::Fatal(g_gpuMeshCacheLogger, __FILE__, __LINE__, "GPU mesh generation was activated twice.");
@@ -199,8 +195,10 @@ void GpuMeshCache::RemoveTerminalRequests() noexcept
 	for (auto request = m_requests.begin(); request != m_requests.end();)
 	{
 		const AssetResidencyState state = m_residency.GetState(request->second.Generation);
-		const bool terminal = !request->second.Execution.IsValid() && request->second.Prepared == nullptr
-		    && request->second.Uploaded == nullptr && (state == AssetResidencyState::Resident || state == AssetResidencyState::Retired);
+
+		const bool terminal = !request->second.Execution.IsValid() && request->second.Prepared == nullptr && request->second.Uploaded == nullptr
+		    && (state == AssetResidencyState::Resident || state == AssetResidencyState::Retired);
+
 		if (terminal)
 		{
 			request = m_requests.erase(request);

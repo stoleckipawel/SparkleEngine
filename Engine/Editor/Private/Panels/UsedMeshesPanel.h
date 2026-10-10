@@ -13,10 +13,13 @@ class UsedMeshesPanel final
 {
 public:
 	using DiagnosticsProvider = std::function<MeshDiagnosticsSnapshot()>;
+
 	using PreviewGeometryProvider = std::function<MeshPreviewGeometry(std::uintptr_t)>;
 
 	void SetOpen(bool open) noexcept { m_isOpen = open; }
+
 	bool IsOpen() const noexcept { return m_isOpen; }
+
 	void SetDiagnosticsProvider(DiagnosticsProvider provider);
 	void SetPreviewGeometryProvider(PreviewGeometryProvider provider);
 	void BuildUI(bool disableInteraction);

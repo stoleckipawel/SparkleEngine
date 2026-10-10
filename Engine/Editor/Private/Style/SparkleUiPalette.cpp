@@ -14,6 +14,7 @@ namespace SparkleUiPalette
 		    ImVec4(0.30f, 0.30f, 0.30f, 1.0f),
 		    ImVec4(0.34f, 0.34f, 0.34f, 1.0f),
 		    ImVec4(0.32f, 0.32f, 0.32f, 1.0f)};
+
 		return colors;
 	}
 

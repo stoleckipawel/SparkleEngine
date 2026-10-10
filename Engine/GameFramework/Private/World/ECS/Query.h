@@ -46,37 +46,28 @@ namespace ECS
 
 		static std::array<ComponentAccessDesc, sizeof...(AccessSpecs)> GetAccessMetadata() noexcept
 		{
-			return {ComponentAccessDesc{
-			    ComponentTypeRegistry::GetTypeId<typename QueryAccessTraits<AccessSpecs>::Component>(),
-			    QueryAccessTraits<AccessSpecs>::Mode}...};
+			return {ComponentAccessDesc{ComponentTypeRegistry::GetTypeId<typename QueryAccessTraits<AccessSpecs>::Component>(), QueryAccessTraits<AccessSpecs>::Mode}...};
 		}
 
 		template <typename T> static consteval bool ReadsComponent() noexcept
 		{
-			return (
-			    (std::is_same_v<T, typename QueryAccessTraits<AccessSpecs>::Component>
-			        && QueryAccessTraits<AccessSpecs>::Mode == ComponentAccessMode::Read)
-			    || ...);
+			return ((std::is_same_v<T, typename QueryAccessTraits<AccessSpecs>::Component> && QueryAccessTraits<AccessSpecs>::Mode == ComponentAccessMode::Read) || ...);
 		}
 
 		template <typename T> static consteval bool WritesComponent() noexcept
 		{
-			return (
-			    (std::is_same_v<T, typename QueryAccessTraits<AccessSpecs>::Component>
-			        && QueryAccessTraits<AccessSpecs>::Mode == ComponentAccessMode::Write)
-			    || ...);
+			return ((std::is_same_v<T, typename QueryAccessTraits<AccessSpecs>::Component> && QueryAccessTraits<AccessSpecs>::Mode == ComponentAccessMode::Write) || ...);
 		}
 
 		template <typename T> static consteval bool ExcludesComponent() noexcept
 		{
-			return (
-			    (std::is_same_v<T, typename QueryAccessTraits<AccessSpecs>::Component>
-			        && QueryAccessTraits<AccessSpecs>::Mode == ComponentAccessMode::Exclude)
-			    || ...);
+			return ((std::is_same_v<T, typename QueryAccessTraits<AccessSpecs>::Component> && QueryAccessTraits<AccessSpecs>::Mode == ComponentAccessMode::Exclude) || ...);
 		}
 
 		bool IsValid() const noexcept { return GetValidity() == QueryIterationStatus::Success; }
+
 		std::size_t GetEstimatedEntityCount() const noexcept { return m_leadingEntities.size(); }
+
 		bool PrepareWriteTraversal() noexcept
 		{
 			if (GetValidity() != QueryIterationStatus::Success)
@@ -136,11 +127,7 @@ namespace ECS
 			return {.Status = GetValidity(), .EntityCount = entityCount};
 		}
 
-		template <typename Function> QueryIterationResult ForEachEntityRange(
-		    std::span<const EntityId> entities,
-		    std::size_t begin,
-		    std::size_t end,
-		    Function&& function) const
+		template <typename Function> QueryIterationResult ForEachEntityRange(std::span<const EntityId> entities, std::size_t begin, std::size_t end, Function&& function) const
 		{
 			const QueryIterationStatus initialStatus = GetValidity();
 			if (initialStatus != QueryIterationStatus::Success)
@@ -162,8 +149,7 @@ namespace ECS
 		}
 
 	private:
-		template <typename AccessSpec>
-		void ConsiderLeadingStorage(ComponentStorage<typename QueryAccessTraits<AccessSpec>::Component>* storage) noexcept
+		template <typename AccessSpec> void ConsiderLeadingStorage(ComponentStorage<typename QueryAccessTraits<AccessSpec>::Component>* storage) noexcept
 		{
 			if constexpr (QueryAccessTraits<AccessSpec>::Included)
 			{
@@ -185,17 +171,14 @@ namespace ECS
 		template <std::size_t... Indices> void InitializePlan(std::index_sequence<Indices...>) noexcept
 		{
 			(ConsiderLeadingStorage<AccessSpecs>(std::get<Indices>(m_storages)), ...);
-			m_storageStructureVersions = {
-			    (std::get<Indices>(m_storages) != nullptr ? std::get<Indices>(m_storages)->GetVersion().Structure : 0)...};
+			m_storageStructureVersions = {(std::get<Indices>(m_storages) != nullptr ? std::get<Indices>(m_storages)->GetVersion().Structure : 0)...};
 			if (!m_allIncludedStoragesExist)
 			{
 				m_leadingEntities = {};
 			}
 		}
 
-		template <typename AccessSpec> bool MatchesAccess(
-		    EntityId entity,
-		    const ComponentStorage<typename QueryAccessTraits<AccessSpec>::Component>* storage) const noexcept
+		template <typename AccessSpec> bool MatchesAccess(EntityId entity, const ComponentStorage<typename QueryAccessTraits<AccessSpec>::Component>* storage) const noexcept
 		{
 			if constexpr (QueryAccessTraits<AccessSpec>::Included)
 			{
@@ -212,8 +195,7 @@ namespace ECS
 			return (MatchesAccess<AccessSpecs>(entity, std::get<Indices>(m_storages)) && ...);
 		}
 
-		template <typename AccessSpec>
-		auto BuildArgument(EntityId entity, ComponentStorage<typename QueryAccessTraits<AccessSpec>::Component>* storage) const
+		template <typename AccessSpec> auto BuildArgument(EntityId entity, ComponentStorage<typename QueryAccessTraits<AccessSpec>::Component>* storage) const
 		{
 			using Component = typename QueryAccessTraits<AccessSpec>::Component;
 			if constexpr (QueryAccessTraits<AccessSpec>::Mode == ComponentAccessMode::Read)
@@ -246,10 +228,7 @@ namespace ECS
 			}
 		}
 
-		template <std::size_t... Indices> void MarkWrites(std::index_sequence<Indices...>) noexcept
-		{
-			(MarkWrite<AccessSpecs>(std::get<Indices>(m_storages)), ...);
-		}
+		template <std::size_t... Indices> void MarkWrites(std::index_sequence<Indices...>) noexcept { (MarkWrite<AccessSpecs>(std::get<Indices>(m_storages)), ...); }
 
 		QueryIterationStatus GetValidity() const noexcept
 		{
@@ -257,8 +236,7 @@ namespace ECS
 			{
 				return QueryIterationStatus::InvalidEpoch;
 			}
-			if (m_registry->GetStructureVersion() != m_registryStructureVersion
-			    || !StorageVersionsMatch(std::index_sequence_for<AccessSpecs...>{}))
+			if (m_registry->GetStructureVersion() != m_registryStructureVersion || !StorageVersionsMatch(std::index_sequence_for<AccessSpecs...>{}))
 			{
 				return QueryIterationStatus::StaleView;
 			}
@@ -267,10 +245,7 @@ namespace ECS
 
 		template <std::size_t... Indices> bool StorageVersionsMatch(std::index_sequence<Indices...>) const noexcept
 		{
-			return (
-			    (std::get<Indices>(m_storages) == nullptr
-			        || std::get<Indices>(m_storages)->GetVersion().Structure == m_storageStructureVersions[Indices])
-			    && ...);
+			return ((std::get<Indices>(m_storages) == nullptr || std::get<Indices>(m_storages)->GetVersion().Structure == m_storageStructureVersions[Indices]) && ...);
 		}
 
 		EntityRegistry* m_registry = nullptr;

@@ -24,11 +24,7 @@ public:
 	    std::uint32_t registerSpace,
 	    D3D12_SHADER_VISIBILITY visibility);
 
-	std::uint32_t AddRootConstants(
-	    std::uint32_t num32BitValues,
-	    std::uint32_t shaderRegister,
-	    std::uint32_t registerSpace,
-	    D3D12_SHADER_VISIBILITY visibility);
+	std::uint32_t AddRootConstants(std::uint32_t num32BitValues, std::uint32_t shaderRegister, std::uint32_t registerSpace, D3D12_SHADER_VISIBILITY visibility);
 
 	void SetFlags(D3D12_ROOT_SIGNATURE_FLAGS flags);
 

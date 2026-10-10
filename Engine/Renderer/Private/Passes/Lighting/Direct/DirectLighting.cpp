@@ -9,11 +9,7 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "ShaderData/SceneShaderParameters.h"
 
-void AddDirectLightingPass(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources)
+void AddDirectLightingPass(FrameGraphBuilder& builder, const RenderFrame& frame, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
 	const LightingRenderTargets& lighting = resources.Transient.Lighting;
 	const GBufferRenderTargets& gbuffer = resources.Transient.GBuffer;
@@ -40,7 +36,5 @@ void AddDirectLightingPass(
 	parameters->DirectLightingEvaluateSubsurface = IsDirectSubsurfaceActive(gbuffer.Subsurface, lighting.DirectSubsurface) ? 1u : 0u;
 	parameters->DirectLightingEvaluateShadows = IsDirectShadowsActive() ? 1u : 0u;
 
-	builder.Dispatch<DirectLightingCS>(
-	    parameters,
-	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
+	builder.Dispatch<DirectLightingCS>(parameters, ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 }

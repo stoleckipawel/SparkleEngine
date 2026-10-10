@@ -17,6 +17,7 @@ class SceneLightInspectorConstants final
 {
 public:
 	static constexpr float kAngularSizeDragSpeedDegrees = 0.1f;
+
 	static constexpr float kAngularSizeSliderMaxDegrees = 30.0f;
 	static constexpr float kRadiusSliderMax = 25.0f;
 	static constexpr float kAreaLightSizeSliderMax = 100.0f;
@@ -62,11 +63,8 @@ void SceneLightInspector::BuildGenericLight(
 
 	if (!changed)
 		return;
-	(void) transactionHistory.Execute(
-	    {0, SetLightDescriptionCommand{lightEntity, std::move(lightDesc)}},
-	    {0, SetLightDescriptionCommand{lightEntity, sceneLight}},
-	    worldGeneration,
-	    "light-description");
+	(void)
+	    transactionHistory.Execute({0, SetLightDescriptionCommand{lightEntity, std::move(lightDesc)}}, {0, SetLightDescriptionCommand{lightEntity, sceneLight}}, worldGeneration, "light-description");
 }
 
 bool SceneLightInspector::BuildLightCommonCategory(const std::string& filterText, SceneLightDesc& lightDesc) noexcept
@@ -102,9 +100,7 @@ bool SceneLightInspector::BuildLightCommonCategory(const std::string& filterText
 	return changed;
 }
 
-bool SceneLightInspector::BuildDirectionalLightTransformCategory(
-    const std::string& filterText,
-    SceneDirectionalLightDesc& lightDesc) noexcept
+bool SceneLightInspector::BuildDirectionalLightTransformCategory(const std::string& filterText, SceneDirectionalLightDesc& lightDesc) noexcept
 {
 	if (!UiUtil::MatchesDetailsFilter(filterText, "Transform", "rotation direction transform"))
 	{
@@ -122,8 +118,7 @@ bool SceneLightInspector::BuildDirectionalLightTransformCategory(
 	const float defaultRotationValues[3] = {defaultRotation.x, defaultRotation.y, defaultRotation.z};
 	if (UiUtil::EditDetailsFloat3("Rotation", rotationValues, 0.1f, -360.0f, 360.0f, "%.2f", defaultRotationValues))
 	{
-		lightDesc.direction =
-		    MathUtils::RotationDegreesToDirection(DirectX::XMFLOAT3{rotationValues[0], rotationValues[1], rotationValues[2]});
+		lightDesc.direction = MathUtils::RotationDegreesToDirection(DirectX::XMFLOAT3{rotationValues[0], rotationValues[1], rotationValues[2]});
 		UiUtil::EndDetailsCategory();
 		return true;
 	}
@@ -231,10 +226,7 @@ bool SceneLightInspector::BuildPointLightCategory(const std::string& filterText,
 bool SceneLightInspector::BuildSpotLightCategory(const std::string& filterText, SpotLightDesc& lightDesc) noexcept
 {
 	bool changed = false;
-	if (!UiUtil::MatchesDetailsFilter(
-	        filterText,
-	        "Spot Light",
-	        "luminous intensity candela direction range radius distance attenuation inner outer angle spot"))
+	if (!UiUtil::MatchesDetailsFilter(filterText, "Spot Light", "luminous intensity candela direction range radius distance attenuation inner outer angle spot"))
 	{
 		return false;
 	}
@@ -299,10 +291,7 @@ bool SceneLightInspector::BuildSpotLightCategory(const std::string& filterText, 
 bool SceneLightInspector::BuildRectLightCategory(const std::string& filterText, RectLightDesc& lightDesc) noexcept
 {
 	bool changed = false;
-	if (!UiUtil::MatchesDetailsFilter(
-	        filterText,
-	        "Rect Light",
-	        "luminance candela square meter direction tangent width height area rectangle quad shadow"))
+	if (!UiUtil::MatchesDetailsFilter(filterText, "Rect Light", "luminance candela square meter direction tangent width height area rectangle quad shadow"))
 	{
 		return false;
 	}
@@ -345,14 +334,7 @@ bool SceneLightInspector::BuildRectLightCategory(const std::string& filterText, 
 	}
 
 	float height = lightDesc.height;
-	if (UiUtil::EditDetailsFloat(
-	        "Height",
-	        height,
-	        0.05f,
-	        0.0f,
-	        SceneLightInspectorConstants::kAreaLightSizeSliderMax,
-	        "%.3f",
-	        &kDefaultSize))
+	if (UiUtil::EditDetailsFloat("Height", height, 0.05f, 0.0f, SceneLightInspectorConstants::kAreaLightSizeSliderMax, "%.3f", &kDefaultSize))
 	{
 		lightDesc.height = height;
 		changed = true;

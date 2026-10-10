@@ -26,14 +26,11 @@ const char* RayTracingClassicTlasStrategy::GetActiveProviderReason() const noexc
 	return "classic-tlas-strategy-selected";
 }
 
-RenderRayTracingFrameBindings RayTracingClassicTlasStrategy::Prepare(
-    const PreparedRenderScene& preparedScene,
-    const RayTracingPtlasPartitionPlan& viewPlan) noexcept
+RenderRayTracingFrameBindings RayTracingClassicTlasStrategy::Prepare(const PreparedRenderScene& preparedScene, const RayTracingPtlasPartitionPlan& viewPlan) noexcept
 {
 	(void) viewPlan;
 	RenderRayTracingFrameBindings frameBindings{};
-	const std::uint32_t estimatedInstanceCount =
-	    static_cast<std::uint32_t>(preparedScene.rayTracingWork.ClassicTlasBlasInputIndices.size());
+	const std::uint32_t estimatedInstanceCount = static_cast<std::uint32_t>(preparedScene.rayTracingWork.ClassicTlasBlasInputIndices.size());
 	m_classicTlasBuilder.Prepare(estimatedInstanceCount);
 
 	frameBindings.TlasResource = m_classicTlasBuilder.GetTlas().resource;

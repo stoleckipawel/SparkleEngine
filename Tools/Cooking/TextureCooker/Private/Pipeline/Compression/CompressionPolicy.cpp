@@ -40,10 +40,7 @@ namespace TextureCookPipeline
 		Diagnostics::Fatal(g_textureCompressionPolicyLogger, __FILE__, __LINE__, "Unknown texture group.");
 	}
 
-	DXGI_FORMAT ResolveCompressedOutputFormat(
-	    const TextureCookRequest& request,
-	    const WorkingTexture& workingTexture,
-	    CompressionTarget target) noexcept
+	DXGI_FORMAT ResolveCompressedOutputFormat(const TextureCookRequest& request, const WorkingTexture& workingTexture, CompressionTarget target) noexcept
 	{
 		switch (target)
 		{
@@ -56,8 +53,7 @@ namespace TextureCookPipeline
 			case CompressionTarget::BC6H:
 				return DXGI_FORMAT_BC6H_UF16;
 			case CompressionTarget::BC7:
-				if (request.policy.textureGroup == TextureGroup::Roughness || request.policy.textureGroup == TextureGroup::Metallic
-				    || request.policy.textureGroup == TextureGroup::AmbientOcclusion
+				if (request.policy.textureGroup == TextureGroup::Roughness || request.policy.textureGroup == TextureGroup::Metallic || request.policy.textureGroup == TextureGroup::AmbientOcclusion
 				    || request.policy.textureGroup == TextureGroup::SubsurfaceStrength)
 				{
 					return DXGI_FORMAT_BC7_UNORM;
@@ -65,11 +61,7 @@ namespace TextureCookPipeline
 
 				return request.policy.colorSpace == TextureColorSpace::Srgb ? DXGI_FORMAT_BC7_UNORM_SRGB : DXGI_FORMAT_BC7_UNORM;
 			case CompressionTarget::None:
-				Diagnostics::Fatal(
-				    g_textureCompressionPolicyLogger,
-				    __FILE__,
-				    __LINE__,
-				    "Compressed output format was requested without a compression target.");
+				Diagnostics::Fatal(g_textureCompressionPolicyLogger, __FILE__, __LINE__, "Compressed output format was requested without a compression target.");
 		}
 		Diagnostics::Fatal(g_textureCompressionPolicyLogger, __FILE__, __LINE__, "Unknown texture compression target.");
 	}
@@ -82,18 +74,17 @@ namespace TextureCookPipeline
 			case CompressionTarget::BC1:
 			case CompressionTarget::BC4:
 				blockBytes = 8;
+
 				break;
+
 			case CompressionTarget::BC5:
 			case CompressionTarget::BC6H:
 			case CompressionTarget::BC7:
 				blockBytes = 16;
+
 				break;
 			case CompressionTarget::None:
-				Diagnostics::Fatal(
-				    g_textureCompressionPolicyLogger,
-				    __FILE__,
-				    __LINE__,
-				    "Block-compressed row pitch was requested without a compression target.");
+				Diagnostics::Fatal(g_textureCompressionPolicyLogger, __FILE__, __LINE__, "Block-compressed row pitch was requested without a compression target.");
 			default:
 				Diagnostics::Fatal(g_textureCompressionPolicyLogger, __FILE__, __LINE__, "Unknown texture compression target.");
 		}

@@ -86,9 +86,7 @@ ResourceUsage PassResourceBuilder::GetFrameGraphUsage(const PassParameterDesc& p
 	}
 }
 
-void PassResourceBuilder::DeclareAccelerationStructureBinding(
-    const PassParameterDesc& parameter,
-    const PassParameterBinding& binding) noexcept
+void PassResourceBuilder::DeclareAccelerationStructureBinding(const PassParameterDesc& parameter, const PassParameterBinding& binding) noexcept
 {
 	assert(parameter.ResourceDomain == ShaderParameterResourceDomain::AccelerationStructure);
 	const FrameGraphAccelerationStructureHandle* accelerationStructure = binding.AsAccelerationStructureHandle();
@@ -108,6 +106,7 @@ void PassResourceBuilder::DeclareTextureBinding(const PassParameterDesc& paramet
 	        && textureData->Attachment.DepthStencilAccess == FrameGraphDepthStencilAccess::ReadOnly
 	    ? ResourceUsage::DepthRead
 	    : GetFrameGraphUsage(parameter);
+
 	if (textureData->IsAttachment())
 	{
 		DeclareResourceHandle(textureData->Attachment.Handle.GetResourceHandle(), usage, parameter, 0);
@@ -132,11 +131,7 @@ void PassResourceBuilder::DeclareBufferBinding(const PassParameterDesc& paramete
 	}
 }
 
-void PassResourceBuilder::DeclareResourceHandle(
-    FrameGraphResourceHandle handle,
-    ResourceUsage usage,
-    const PassParameterDesc& parameter,
-    std::uint32_t arrayIndex) noexcept
+void PassResourceBuilder::DeclareResourceHandle(FrameGraphResourceHandle handle, ResourceUsage usage, const PassParameterDesc& parameter, std::uint32_t arrayIndex) noexcept
 {
 	assert(handle.IsValid());
 	assert(m_declarations != nullptr);

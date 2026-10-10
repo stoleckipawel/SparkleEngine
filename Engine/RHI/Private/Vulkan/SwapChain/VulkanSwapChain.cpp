@@ -18,11 +18,7 @@
 
 SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanSwapChainLogger, "RHI.Vulkan.SwapChain");
 
-VulkanSwapChain::VulkanSwapChain(
-    VulkanRhi& rhi,
-    Window& window,
-    PixelFormat backBufferFormat,
-    const RhiPresentationConfiguration& presentationConfiguration) :
+VulkanSwapChain::VulkanSwapChain(VulkanRhi& rhi, Window& window, PixelFormat backBufferFormat, const RhiPresentationConfiguration& presentationConfiguration) :
     m_rhi(rhi),
     m_window(&window),
     m_backBufferFormat(backBufferFormat),
@@ -54,13 +50,9 @@ bool VulkanSwapChain::AcquireNextImage(std::uint32_t frameIndex) noexcept
 		return false;
 	}
 
-	const VkResult result = vkAcquireNextImageKHR(
-	    m_rhi.GetDevice(),
-	    m_swapChain,
-	    std::numeric_limits<std::uint64_t>::max(),
-	    GetImageAvailableSemaphore(frameIndex),
-	    VK_NULL_HANDLE,
-	    &m_currentBackBufferIndex);
+	const VkResult
+	    result = vkAcquireNextImageKHR(m_rhi.GetDevice(), m_swapChain, std::numeric_limits<std::uint64_t>::max(), GetImageAvailableSemaphore(frameIndex), VK_NULL_HANDLE, &m_currentBackBufferIndex);
+
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
 		m_resizeRequested = true;
@@ -83,6 +75,7 @@ bool VulkanSwapChain::Present(VkSemaphore renderFinishedSemaphore) noexcept
 	}
 
 	const VkSemaphore waitSemaphores[] = {renderFinishedSemaphore};
+
 	const VkPresentInfoKHR presentInfo{
 	    .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 	    .pNext = nullptr,
@@ -155,8 +148,7 @@ VkSemaphore VulkanSwapChain::GetImageAvailableSemaphore(std::uint32_t frameIndex
 
 VkSemaphore VulkanSwapChain::GetCurrentRenderFinishedSemaphore() const noexcept
 {
-	return m_currentBackBufferIndex < m_backBuffers.size() ? m_backBuffers[m_currentBackBufferIndex].RenderFinishedSemaphore
-	                                                       : VK_NULL_HANDLE;
+	return m_currentBackBufferIndex < m_backBuffers.size() ? m_backBuffers[m_currentBackBufferIndex].RenderFinishedSemaphore : VK_NULL_HANDLE;
 }
 
 VkImage VulkanSwapChain::GetBackBufferImage(std::uint32_t index) const noexcept
@@ -171,22 +163,12 @@ VkImageView VulkanSwapChain::GetBackBufferImageView(std::uint32_t index) const n
 
 RhiViewport VulkanSwapChain::GetDefaultViewport() const noexcept
 {
-	return RhiViewport{
-	    .X = 0.0f,
-	    .Y = 0.0f,
-	    .Width = static_cast<float>(m_extent.width),
-	    .Height = static_cast<float>(m_extent.height),
-	    .MinDepth = 0.0f,
-	    .MaxDepth = 1.0f};
+	return RhiViewport{.X = 0.0f, .Y = 0.0f, .Width = static_cast<float>(m_extent.width), .Height = static_cast<float>(m_extent.height), .MinDepth = 0.0f, .MaxDepth = 1.0f};
 }
 
 RhiRect VulkanSwapChain::GetDefaultScissorRect() const noexcept
 {
-	return RhiRect{
-	    .Left = 0,
-	    .Top = 0,
-	    .Right = static_cast<std::int32_t>(m_extent.width),
-	    .Bottom = static_cast<std::int32_t>(m_extent.height)};
+	return RhiRect{.Left = 0, .Top = 0, .Right = static_cast<std::int32_t>(m_extent.width), .Bottom = static_cast<std::int32_t>(m_extent.height)};
 }
 
 void VulkanSwapChain::CreateSurface()
@@ -205,15 +187,10 @@ void VulkanSwapChain::CreateSurface()
 	}
 
 	VkBool32 supportsPresent = VK_FALSE;
-	(void)
-	    vkGetPhysicalDeviceSurfaceSupportKHR(m_rhi.GetPhysicalDevice(), m_rhi.GetGraphicsQueueFamilyIndex(), m_surface, &supportsPresent);
+	(void) vkGetPhysicalDeviceSurfaceSupportKHR(m_rhi.GetPhysicalDevice(), m_rhi.GetGraphicsQueueFamilyIndex(), m_surface, &supportsPresent);
 	if (supportsPresent != VK_TRUE)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanSwapChainLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Selected Vulkan graphics queue family does not support the Win32 surface.");
+		Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, "Selected Vulkan graphics queue family does not support the Win32 surface.");
 	}
 }
 
@@ -223,11 +200,7 @@ void VulkanSwapChain::CreateSwapChain(VkSwapchainKHR oldSwapChain)
 	VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_rhi.GetPhysicalDevice(), m_surface, &capabilities);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fatal(
-		    g_vulkanSwapChainLogger,
-		    __FILE__,
-		    __LINE__,
-		    VulkanResult::FormatFailure("vkGetPhysicalDeviceSurfaceCapabilitiesKHR", result));
+		Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkGetPhysicalDeviceSurfaceCapabilitiesKHR", result));
 	}
 
 	m_surfaceFormat = SelectSurfaceFormat();
@@ -254,6 +227,7 @@ void VulkanSwapChain::CreateSwapChain(VkSwapchainKHR oldSwapChain)
 	    .presentMode = m_presentMode,
 	    .clipped = VK_TRUE,
 	    .oldSwapchain = oldSwapChain};
+
 	m_rhi.ConfigureResourceQueueSharing(createInfo);
 
 	result = vkCreateSwapchainKHR(m_rhi.GetDevice(), &createInfo, nullptr, &m_swapChain);
@@ -288,11 +262,7 @@ void VulkanSwapChain::CreateBackBufferImageViews()
 		const VkResult semaphoreResult = vkCreateSemaphore(m_rhi.GetDevice(), &semaphoreInfo, nullptr, &record.RenderFinishedSemaphore);
 		if (!VulkanResult::Succeeded(semaphoreResult))
 		{
-			Diagnostics::Fatal(
-			    g_vulkanSwapChainLogger,
-			    __FILE__,
-			    __LINE__,
-			    VulkanResult::FormatFailure("vkCreateSemaphore", semaphoreResult));
+			Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateSemaphore", semaphoreResult));
 		}
 		m_backBuffers.push_back(record);
 	}
@@ -307,11 +277,7 @@ void VulkanSwapChain::CreatePresentationSemaphores()
 		const VkResult result = vkCreateSemaphore(m_rhi.GetDevice(), &createInfo, nullptr, &semaphore);
 		if (!VulkanResult::Succeeded(result))
 		{
-			Diagnostics::Fatal(
-			    g_vulkanSwapChainLogger,
-			    __FILE__,
-			    __LINE__,
-			    VulkanResult::FormatFailure("vkCreateSemaphore(imageAvailable)", result));
+			Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateSemaphore(imageAvailable)", result));
 		}
 	}
 }
@@ -375,29 +341,22 @@ VkSurfaceFormatKHR VulkanSwapChain::SelectSurfaceFormat() const
 	result = vkGetPhysicalDeviceSurfaceFormatsKHR(m_rhi.GetPhysicalDevice(), m_surface, &formatCount, formats.data());
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fatal(
-		    g_vulkanSwapChainLogger,
-		    __FILE__,
-		    __LINE__,
-		    VulkanResult::FormatFailure("vkGetPhysicalDeviceSurfaceFormatsKHR", result));
+		Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkGetPhysicalDeviceSurfaceFormatsKHR", result));
 	}
 
 	const VkFormat requestedFormat = VulkanTypeConversions::ToVkFormat(m_backBufferFormat);
+
 	const auto requestedIt = std::find_if(
 	    formats.begin(),
 	    formats.end(),
-	    [requestedFormat](const VkSurfaceFormatKHR& format) noexcept
-	    { return format.format == requestedFormat && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR; });
+	    [requestedFormat](const VkSurfaceFormatKHR& format) noexcept { return format.format == requestedFormat && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR; });
+
 	if (requestedIt != formats.end())
 	{
 		return *requestedIt;
 	}
 
-	Diagnostics::Fatal(
-	    g_vulkanSwapChainLogger,
-	    __FILE__,
-	    __LINE__,
-	    std::format("Requested Vulkan present format '{}' is not supported by the surface.", PixelFormatName(m_backBufferFormat)));
+	Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, std::format("Requested Vulkan present format '{}' is not supported by the surface.", PixelFormatName(m_backBufferFormat)));
 }
 
 VkPresentModeKHR VulkanSwapChain::SelectPresentMode(bool vsyncEnabled) const
@@ -411,33 +370,21 @@ VkPresentModeKHR VulkanSwapChain::SelectPresentMode(bool vsyncEnabled) const
 	VkResult result = vkGetPhysicalDeviceSurfacePresentModesKHR(m_rhi.GetPhysicalDevice(), m_surface, &presentModeCount, nullptr);
 	if (!VulkanResult::Succeeded(result) || presentModeCount == 0)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanSwapChainLogger,
-		    __FILE__,
-		    __LINE__,
-		    "VSync is disabled, but Vulkan present modes could not be queried.");
+		Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, "VSync is disabled, but Vulkan present modes could not be queried.");
 	}
 
 	std::vector<VkPresentModeKHR> presentModes(presentModeCount);
 	result = vkGetPhysicalDeviceSurfacePresentModesKHR(m_rhi.GetPhysicalDevice(), m_surface, &presentModeCount, presentModes.data());
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fatal(
-		    g_vulkanSwapChainLogger,
-		    __FILE__,
-		    __LINE__,
-		    VulkanResult::FormatFailure("vkGetPhysicalDeviceSurfacePresentModesKHR", result));
+		Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkGetPhysicalDeviceSurfacePresentModesKHR", result));
 	}
 
 	if (std::find(presentModes.begin(), presentModes.end(), VK_PRESENT_MODE_IMMEDIATE_KHR) != presentModes.end())
 	{
 		return VK_PRESENT_MODE_IMMEDIATE_KHR;
 	}
-	Diagnostics::Fatal(
-	    g_vulkanSwapChainLogger,
-	    __FILE__,
-	    __LINE__,
-	    "VSync is disabled, but the Vulkan surface does not expose immediate presentation.");
+	Diagnostics::Fatal(g_vulkanSwapChainLogger, __FILE__, __LINE__, "VSync is disabled, but the Vulkan surface does not expose immediate presentation.");
 }
 
 VkExtent2D VulkanSwapChain::SelectExtent(const VkSurfaceCapabilitiesKHR& capabilities) const noexcept
@@ -480,18 +427,8 @@ VkImageView VulkanSwapChain::CreateImageView(VkImage image, VkFormat format) con
 	    .image = image,
 	    .viewType = VK_IMAGE_VIEW_TYPE_2D,
 	    .format = format,
-	    .components =
-	        VkComponentMapping{
-	            .r = VK_COMPONENT_SWIZZLE_IDENTITY,
-	            .g = VK_COMPONENT_SWIZZLE_IDENTITY,
-	            .b = VK_COMPONENT_SWIZZLE_IDENTITY,
-	            .a = VK_COMPONENT_SWIZZLE_IDENTITY},
-	    .subresourceRange = VkImageSubresourceRange{
-	        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-	        .baseMipLevel = 0,
-	        .levelCount = 1,
-	        .baseArrayLayer = 0,
-	        .layerCount = 1}};
+	    .components = VkComponentMapping{.r = VK_COMPONENT_SWIZZLE_IDENTITY, .g = VK_COMPONENT_SWIZZLE_IDENTITY, .b = VK_COMPONENT_SWIZZLE_IDENTITY, .a = VK_COMPONENT_SWIZZLE_IDENTITY},
+	    .subresourceRange = VkImageSubresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1}};
 
 	VkImageView imageView = VK_NULL_HANDLE;
 	const VkResult result = vkCreateImageView(m_rhi.GetDevice(), &createInfo, nullptr, &imageView);

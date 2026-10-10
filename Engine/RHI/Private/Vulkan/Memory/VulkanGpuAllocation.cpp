@@ -63,8 +63,10 @@ RhiResourceHandle GetVulkanResourceHandle(const VulkanGpuAllocationRecord& recor
 	{
 		case VulkanGpuAllocationResourceKind::Buffer:
 			return RhiResourceHandle{record.Buffer};
+
 		case VulkanGpuAllocationResourceKind::Image:
 			return RhiResourceHandle{record.Image};
+
 		case VulkanGpuAllocationResourceKind::Unknown:
 		default:
 			return {};

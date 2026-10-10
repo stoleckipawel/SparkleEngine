@@ -16,6 +16,7 @@ namespace SparkleLauncher
 		    m_processRunnerFactory(std::move(processRunnerFactory))
 		{
 		}
+
 		~Implementation()
 		{
 			m_rootScope.Cancel();
@@ -44,11 +45,7 @@ namespace SparkleLauncher
 		}
 
 		ProcessRunnerFactory m_processRunnerFactory;
-		TaskExecutor m_executor{TaskExecutorConfig{
-		    .FrameCriticalWorkerCount = 1,
-		    .BackgroundWorkerCount = 1,
-		    .BlockingIoWorkerCount = 2,
-		    .MaximumActiveExecutions = 16}};
+		TaskExecutor m_executor{TaskExecutorConfig{.FrameCriticalWorkerCount = 1, .BackgroundWorkerCount = 1, .BlockingIoWorkerCount = 2, .MaximumActiveExecutions = 16}};
 		TaskScope m_rootScope{TaskScopeDesc{TaskScopeKind::Application, "Launcher operations"}};
 		std::map<std::string, std::unique_ptr<TaskScope>, std::less<>> m_operationScopes;
 	};
@@ -60,12 +57,7 @@ namespace SparkleLauncher
 
 	LauncherOperationService::~LauncherOperationService() = default;
 
-	void LauncherOperationService::Launch(
-	    LauncherOperationCategory category,
-	    LauncherOperationRequest request,
-	    std::string title,
-	    OutputCallback outputCallback,
-	    CompletionCallback completionCallback)
+	void LauncherOperationService::Launch(LauncherOperationCategory category, LauncherOperationRequest request, std::string title, OutputCallback outputCallback, CompletionCallback completionCallback)
 	{
 		m_implementation->ReapSettledOperations();
 		const std::string runId = request.RunId.isEmpty() ? request.OperationId.toStdString() : request.RunId.toStdString();
@@ -74,9 +66,7 @@ namespace SparkleLauncher
 			throw std::logic_error("Launcher operation run identity is empty or already active.");
 		}
 
-		auto operationScope = std::make_unique<TaskScope>(
-		    TaskScopeDesc{TaskScopeKind::ToolInvocation, "Launcher operation " + runId},
-		    &m_implementation->m_rootScope);
+		auto operationScope = std::make_unique<TaskScope>(TaskScopeDesc{TaskScopeKind::ToolInvocation, "Launcher operation " + runId}, &m_implementation->m_rootScope);
 		TaskScope& scope = *operationScope;
 		m_implementation->m_operationScopes.emplace(runId, std::move(operationScope));
 		ProcessRunnerFactory processRunnerFactory = m_implementation->m_processRunnerFactory;
@@ -106,11 +96,9 @@ namespace SparkleLauncher
 					    completionCallback(std::move(record));
 					    return TaskResult::Failure("No process runner is available.");
 				    }
-				    OperationRecord record =
-				        ExecuteLauncherOperation(category, operationId, request, *processRunner, context, outputCallback);
+				    OperationRecord record = ExecuteLauncherOperation(category, operationId, request, *processRunner, context, outputCallback);
 				    completionCallback(std::move(record));
-				    return context.IsCancellationRequested() ? TaskResult::Cancelled("Launcher operation was cancelled.")
-				                                             : TaskResult::Success();
+				    return context.IsCancellationRequested() ? TaskResult::Cancelled("Launcher operation was cancelled.") : TaskResult::Success();
 			    });
 		}
 		catch (...)

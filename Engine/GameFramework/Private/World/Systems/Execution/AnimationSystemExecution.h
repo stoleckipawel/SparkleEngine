@@ -13,11 +13,7 @@ namespace ECS
 	class AnimationSystemExecution final
 	{
 	public:
-		AnimationSystemExecution(
-		    GameWorldState& state,
-		    GameWorldResourceStores& resources,
-		    float deltaSeconds,
-		    const StructureFrozenEpoch& epoch);
+		AnimationSystemExecution(GameWorldState& state, GameWorldResourceStores& resources, float deltaSeconds, const StructureFrozenEpoch& epoch);
 
 		std::uint32_t GetPlaybackCount() const noexcept;
 		std::uint32_t GetPoseCount() const noexcept;

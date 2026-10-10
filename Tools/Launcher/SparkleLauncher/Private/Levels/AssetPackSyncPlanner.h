@@ -8,7 +8,5 @@ struct ProjectLevelCatalog;
 
 namespace SparkleLauncher
 {
-	std::vector<std::string> BuildAssetPackSyncPlan(
-	    const ProjectLevelCatalog& catalog,
-	    std::span<const std::string> requestedLevelIds = {});
+	std::vector<std::string> BuildAssetPackSyncPlan(const ProjectLevelCatalog& catalog, std::span<const std::string> requestedLevelIds = {});
 }

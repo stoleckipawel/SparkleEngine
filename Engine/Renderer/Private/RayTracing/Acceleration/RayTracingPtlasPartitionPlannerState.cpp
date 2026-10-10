@@ -23,22 +23,14 @@ void RayTracingPtlasPartitionPlanner::Clear() noexcept
 
 void RayTracingPtlasPartitionPlanner::ValidateConfig(const RayTracingPtlasPartitionPlannerConfig& config) noexcept
 {
-	if (config.PartitionsPerAxis == 0u
-	    || config.PartitionsPerAxis > RayTracingPtlasPartitionPlannerStateConstants::kMaxPlannerPartitionsPerAxis
-	    || config.ModeChangeDistance < 0.0f || config.TransformDirtyEpsilon < 0.0f)
+	if (config.PartitionsPerAxis == 0u || config.PartitionsPerAxis > RayTracingPtlasPartitionPlannerStateConstants::kMaxPlannerPartitionsPerAxis || config.ModeChangeDistance < 0.0f
+	    || config.TransformDirtyEpsilon < 0.0f)
 	{
-		Diagnostics::Fatal(
-		    g_rayTracingPtlasPartitionPlannerStateLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Partitioned TLAS planner configuration is outside its structural bounds.");
+		Diagnostics::Fatal(g_rayTracingPtlasPartitionPlannerStateLogger, __FILE__, __LINE__, "Partitioned TLAS planner configuration is outside its structural bounds.");
 	}
 }
 
-bool RayTracingPtlasPartitionPlanner::IsTransformDirty(
-    const DirectX::XMFLOAT4X4& current,
-    const DirectX::XMFLOAT4X4& previous,
-    float epsilon) noexcept
+bool RayTracingPtlasPartitionPlanner::IsTransformDirty(const DirectX::XMFLOAT4X4& current, const DirectX::XMFLOAT4X4& previous, float epsilon) noexcept
 {
 	const float* currentValues = &current._11;
 	const float* previousValues = &previous._11;

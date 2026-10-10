@@ -85,18 +85,10 @@ std::unique_ptr<VulkanPipelineLayout> VulkanPipelineLayoutBuilder::Build(VulkanR
 		    g_vulkanPipelineLayoutBuilderLogger,
 		    __FILE__,
 		    __LINE__,
-		    std::format(
-		        "Failed to create Vulkan pipeline layout '{}': {}",
-		        debugName,
-		        VulkanResult::FormatFailure("vkCreatePipelineLayout", result)));
+		    std::format("Failed to create Vulkan pipeline layout '{}': {}", debugName, VulkanResult::FormatFailure("vkCreatePipelineLayout", result)));
 	}
 
-	VulkanDebugNames::SetObjectName(
-	    rhi.GetSetDebugUtilsObjectName(),
-	    rhi.GetDevice(),
-	    VK_OBJECT_TYPE_PIPELINE_LAYOUT,
-	    reinterpret_cast<std::uint64_t>(layout),
-	    std::format("{} Layout", debugName));
+	VulkanDebugNames::SetObjectName(rhi.GetSetDebugUtilsObjectName(), rhi.GetDevice(), VK_OBJECT_TYPE_PIPELINE_LAYOUT, reinterpret_cast<std::uint64_t>(layout), std::format("{} Layout", debugName));
 
 	return std::make_unique<VulkanPipelineLayout>(rhi.GetDevice(), layout);
 }

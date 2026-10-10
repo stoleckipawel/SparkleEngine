@@ -36,8 +36,7 @@ ShaderReflection DxilReflectionExtractor::ExtractLibrary(IDxcUtils& utils, IDxcR
 	}
 
 	Microsoft::WRL::ComPtr<IDxcBlob> reflectionBlob;
-	if (FAILED(result->GetOutput(DXC_OUT_REFLECTION, IID_PPV_ARGS(reflectionBlob.ReleaseAndGetAddressOf()), nullptr)) || !reflectionBlob
-	    || reflectionBlob->GetBufferSize() == 0)
+	if (FAILED(result->GetOutput(DXC_OUT_REFLECTION, IID_PPV_ARGS(reflectionBlob.ReleaseAndGetAddressOf()), nullptr)) || !reflectionBlob || reflectionBlob->GetBufferSize() == 0)
 	{
 		throw Diagnostics::Error("DXIL library reflection: DXC produced no reflection part.");
 	}
@@ -79,10 +78,7 @@ ShaderReflection DxilReflectionExtractor::ExtractLibrary(IDxcUtils& utils, IDxcR
 	if (function == nullptr)
 	{
 		throw Diagnostics::Error(
-		    std::format(
-		        "DXIL library reflection did not contain requested export '{}'; reflected functions: {}.",
-		        entryPoint,
-		        reflectedFunctionNames.empty() ? "<none>" : reflectedFunctionNames));
+		    std::format("DXIL library reflection did not contain requested export '{}'; reflected functions: {}.", entryPoint, reflectedFunctionNames.empty() ? "<none>" : reflectedFunctionNames));
 	}
 
 	ShaderReflection reflection;
@@ -114,6 +110,7 @@ ShaderReflection DxilReflectionExtractor::ExtractLibrary(IDxcUtils& utils, IDxcR
 				throw Diagnostics::Error("DXIL library reflection could not read a constant-buffer member type.");
 			}
 			const std::uint32_t arrayCount = typeDesc.Elements > 0 ? typeDesc.Elements : 1u;
+
 			reflectedBuffer.Members.push_back(
 			    ShaderReflectionConstantBufferMember{
 			        .Name = variableDesc.Name != nullptr ? variableDesc.Name : "",

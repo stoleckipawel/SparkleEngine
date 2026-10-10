@@ -10,12 +10,7 @@
 class FbxSkinImporter final
 {
 public:
-	static ImportedSkeletonIndex ImportSkeleton(
-	    const aiScene& scene,
-	    const aiNode& meshNode,
-	    const aiMesh& mesh,
-	    std::uint32_t sourceMeshIndex,
-	    SourceImportOutput& output);
+	static ImportedSkeletonIndex ImportSkeleton(const aiScene& scene, const aiNode& meshNode, const aiMesh& mesh, std::uint32_t sourceMeshIndex, SourceImportOutput& output);
 	static void ImportSkinInfluences(const aiMesh& mesh, const ImportedSkeleton& skeleton, ImportedMeshGeometry& geometry);
 
 private:

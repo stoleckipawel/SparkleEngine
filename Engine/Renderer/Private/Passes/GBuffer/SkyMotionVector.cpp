@@ -9,11 +9,7 @@
 #include "Passes/Lighting/Sky/Sky.h"
 #include "View/RenderView.h"
 
-void AddSkyMotionVectorPass(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources)
+void AddSkyMotionVectorPass(FrameGraphBuilder& builder, const RenderFrame& frame, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
 	if (!CVarSkyEnabled.Get())
 	{

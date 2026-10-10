@@ -11,13 +11,9 @@
 #include <format>
 #include <unordered_set>
 
-std::vector<ShaderCookDesc> ShaderCookPlanner::BuildShaders(
-    const ShaderCookSettings& settings,
-    const ShaderDependencyManifest& dependencyManifest,
-    const ShaderContractCatalog& catalog)
+std::vector<ShaderCookDesc> ShaderCookPlanner::BuildShaders(const ShaderCookSettings& settings, const ShaderDependencyManifest& dependencyManifest, const ShaderContractCatalog& catalog)
 {
-	const std::uint32_t selectionCount =
-	    static_cast<std::uint32_t>(!settings.shaderId.empty()) + static_cast<std::uint32_t>(!settings.changedVirtualPaths.empty());
+	const std::uint32_t selectionCount = static_cast<std::uint32_t>(!settings.shaderId.empty()) + static_cast<std::uint32_t>(!settings.changedVirtualPaths.empty());
 	if (selectionCount > 1)
 	{
 		throw Diagnostics::Error("Use one shader cook selection: shader id or changed virtual paths.");
@@ -26,9 +22,7 @@ std::vector<ShaderCookDesc> ShaderCookPlanner::BuildShaders(
 	std::unordered_set<ShaderTypeId> affectedShaderTypes;
 	if (!settings.changedVirtualPaths.empty())
 	{
-		const ShaderSourceMountTable sourceMounts(
-		    Filesystem::GetShaderPath(PathRoot::Engine),
-		    Filesystem::GetShaderPath(PathRoot::Project));
+		const ShaderSourceMountTable sourceMounts(Filesystem::GetShaderPath(PathRoot::Engine), Filesystem::GetShaderPath(PathRoot::Project));
 		std::vector<std::string> canonicalChangedPaths;
 		canonicalChangedPaths.reserve(settings.changedVirtualPaths.size());
 		for (const std::string& changedPath : settings.changedVirtualPaths)

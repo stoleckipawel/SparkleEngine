@@ -27,11 +27,12 @@ public:
 	    const RayTracingPipelineComposition& composition);
 
 	RenderBindingLayout& GetBindingLayout() const noexcept { return *m_bindingLayout; }
+
 	RayTracingPipeline& GetPipeline() const noexcept { return *m_pipeline; }
+
 	std::uint64_t GetGeneration() const noexcept { return m_generation; }
-	std::unique_ptr<RayTracingShaderTable> CreateShaderTable(
-	    RenderHardwareInterface& renderHardwareInterface,
-	    const RayTracingPipelineComposition& composition) const;
+
+	std::unique_ptr<RayTracingShaderTable> CreateShaderTable(RenderHardwareInterface& renderHardwareInterface, const RayTracingPipelineComposition& composition) const;
 	std::unique_ptr<RayTracingShaderTable> CreateShaderTable(
 	    RenderHardwareInterface& renderHardwareInterface,
 	    const RayTracingPipelineComposition& composition,

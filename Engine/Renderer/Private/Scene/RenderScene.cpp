@@ -26,17 +26,12 @@ RenderScene::RenderScene(
 
 RenderScene::~RenderScene() noexcept = default;
 
-const RenderSceneGpuBindings& RenderScene::UpdateGpuScene(
-    const PreparedRenderScene& preparedScene,
-    const RenderView& view,
-    std::uint32_t frameIndex)
+const RenderSceneGpuBindings& RenderScene::UpdateGpuScene(const PreparedRenderScene& preparedScene, const RenderView& view, std::uint32_t frameIndex)
 {
 	return m_renderGpuScene->Update(preparedScene, view, frameIndex);
 }
 
-RenderRayTracingFrameBindings RenderScene::PrepareRayTracingFrame(
-    const PreparedRenderScene& preparedScene,
-    const RayTracingPtlasPartitionPlan& viewPlan) noexcept
+RenderRayTracingFrameBindings RenderScene::PrepareRayTracingFrame(const PreparedRenderScene& preparedScene, const RayTracingPtlasPartitionPlan& viewPlan) noexcept
 {
 	return m_renderRayTracingScene->Prepare(preparedScene, viewPlan);
 }

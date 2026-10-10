@@ -37,7 +37,9 @@ struct ImportedMeshGeometry
 	ImportedMeshDeformation deformation;
 
 	bool IsValid() const noexcept { return !vertices.empty() && !indices.empty(); }
+
 	bool HasSkinInfluences() const noexcept { return deformation.HasSkinInfluences(); }
+
 	bool HasMorphTargets() const noexcept { return deformation.HasMorphTargets(); }
 
 	void Reserve(std::uint32_t vertexCount, std::uint32_t indexCount)
@@ -67,7 +69,9 @@ struct ImportedMeshInstance
 	std::string sourceNodeName;
 
 	bool HasPrimitiveBinding() const noexcept { return primitiveIndex != kInvalidImportedMeshPrimitiveIndex; }
+
 	bool HasMaterialBinding() const noexcept { return materialIndex != kInvalidImportedMaterialIndex; }
+
 	bool HasSkeletonBinding() const noexcept { return skeletonIndex != kInvalidImportedSkeletonIndex; }
 };
 
@@ -81,6 +85,8 @@ struct ImportedMeshInstanceGroup
 	std::uint32_t flags = 0;
 
 	bool HasPrimitiveBinding() const noexcept { return primitiveIndex != kInvalidImportedMeshPrimitiveIndex; }
+
 	bool HasMaterialBinding() const noexcept { return materialIndex != kInvalidImportedMaterialIndex; }
+
 	bool HasInstanceRange() const noexcept { return firstInstanceIndex != kInvalidImportedMeshInstanceIndex && instanceCount > 0; }
 };

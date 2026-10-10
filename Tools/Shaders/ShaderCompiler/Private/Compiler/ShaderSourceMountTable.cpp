@@ -17,10 +17,7 @@ std::string ShaderSourceMountTable::FoldAsciiCase(std::string_view value)
 	return folded;
 }
 
-void ShaderSourceMountTable::ValidatePhysicalPathCase(
-    const std::filesystem::path& root,
-    const std::filesystem::path& relativePath,
-    std::string_view virtualPath)
+void ShaderSourceMountTable::ValidatePhysicalPathCase(const std::filesystem::path& root, const std::filesystem::path& relativePath, std::string_view virtualPath)
 {
 	std::filesystem::path parent = root;
 	for (const std::filesystem::path& segment : relativePath)
@@ -42,9 +39,7 @@ void ShaderSourceMountTable::ValidatePhysicalPathCase(
 		if (caseCollision)
 		{
 			throw Diagnostics::Error(
-			    exactMatch ? std::format(
-			                     "Shader source path '{}' collides with another authored file under the virtual-path case policy.",
-			                     virtualPath)
+			    exactMatch ? std::format("Shader source path '{}' collides with another authored file under the virtual-path case policy.", virtualPath)
 			               : std::format("Shader source path '{}' does not match the authored file casing.", virtualPath));
 		}
 		if (!exactMatch)
@@ -66,10 +61,7 @@ bool ShaderSourceMountTable::IsWithinRoot(const std::filesystem::path& path, con
 	return pathKey == Paths::MakePathKey(root) || pathKey.starts_with(rootKey);
 }
 
-ShaderSourceMountTable::ShaderSourceMountTable(
-    const std::filesystem::path& engineRoot,
-    const std::filesystem::path& projectRoot,
-    std::span<const PluginMount> pluginMounts)
+ShaderSourceMountTable::ShaderSourceMountTable(const std::filesystem::path& engineRoot, const std::filesystem::path& projectRoot, std::span<const PluginMount> pluginMounts)
 {
 	auto addMount = [this](std::string_view virtualRoot, const std::filesystem::path& physicalRoot)
 	{
@@ -83,19 +75,11 @@ ShaderSourceMountTable::ShaderSourceMountTable(
 		{
 			if (FoldAsciiCase(existing.VirtualRoot) == FoldAsciiCase(mount.VirtualRoot))
 			{
-				throw Diagnostics::Error(
-				    std::format(
-				        "Shader source mounts '{}' and '{}' collide under the virtual-path case policy.",
-				        existing.VirtualRoot,
-				        mount.VirtualRoot));
+				throw Diagnostics::Error(std::format("Shader source mounts '{}' and '{}' collide under the virtual-path case policy.", existing.VirtualRoot, mount.VirtualRoot));
 			}
 			if (IsWithinRoot(existing.PhysicalRoot, mount.PhysicalRoot) || IsWithinRoot(mount.PhysicalRoot, existing.PhysicalRoot))
 			{
-				throw Diagnostics::Error(
-				    std::format(
-				        "Shader source mounts '{}' and '{}' have overlapping physical ownership.",
-				        existing.VirtualRoot,
-				        mount.VirtualRoot));
+				throw Diagnostics::Error(std::format("Shader source mounts '{}' and '{}' have overlapping physical ownership.", existing.VirtualRoot, mount.VirtualRoot));
 			}
 		}
 		m_mounts.push_back(std::move(mount));
@@ -188,8 +172,7 @@ std::filesystem::path ShaderSourceMountTable::ResolvePhysicalPath(std::string_vi
 		relative.remove_prefix(1u);
 	}
 	ValidatePhysicalPathCase(mount.PhysicalRoot, std::filesystem::path(relative), canonical);
-	const std::filesystem::path physical =
-	    ShaderCompilerPaths::CanonicalizeForCompiler(mount.PhysicalRoot / std::filesystem::path(relative));
+	const std::filesystem::path physical = ShaderCompilerPaths::CanonicalizeForCompiler(mount.PhysicalRoot / std::filesystem::path(relative));
 	if (!IsWithinRoot(physical, mount.PhysicalRoot))
 	{
 		throw Diagnostics::Error(std::format("Shader source path '{}' escapes mount '{}'.", canonical, mount.VirtualRoot));
@@ -199,8 +182,7 @@ std::filesystem::path ShaderSourceMountTable::ResolvePhysicalPath(std::string_vi
 
 std::string ShaderSourceMountTable::CanonicalizeMountRoot(std::string_view root)
 {
-	if (root.empty() || root.front() != '/' || root.back() == '/' || root.find('\\') != std::string_view::npos
-	    || root.find("//") != std::string_view::npos)
+	if (root.empty() || root.front() != '/' || root.back() == '/' || root.find('\\') != std::string_view::npos || root.find("//") != std::string_view::npos)
 	{
 		throw Diagnostics::Error(std::format("Shader source mount '{}' is not canonical.", root));
 	}
@@ -214,8 +196,7 @@ std::filesystem::path ShaderSourceMountTable::CanonicalizePhysicalRoot(const std
 
 bool ShaderSourceMountTable::IsPluginNameValid(std::string_view name) noexcept
 {
-	return !name.empty()
-	    && std::ranges::all_of(name, [](unsigned char value) { return std::isalnum(value) != 0 || value == '_' || value == '-'; });
+	return !name.empty() && std::ranges::all_of(name, [](unsigned char value) { return std::isalnum(value) != 0 || value == '_' || value == '-'; });
 }
 
 const ShaderSourceMountTable::Mount& ShaderSourceMountTable::ResolveMount(std::string_view canonicalVirtualPath) const
@@ -223,8 +204,7 @@ const ShaderSourceMountTable::Mount& ShaderSourceMountTable::ResolveMount(std::s
 	for (const Mount& mount : m_mounts)
 	{
 		if (canonicalVirtualPath == mount.VirtualRoot
-		    || (canonicalVirtualPath.starts_with(mount.VirtualRoot) && canonicalVirtualPath.size() > mount.VirtualRoot.size()
-		        && canonicalVirtualPath[mount.VirtualRoot.size()] == '/'))
+		    || (canonicalVirtualPath.starts_with(mount.VirtualRoot) && canonicalVirtualPath.size() > mount.VirtualRoot.size() && canonicalVirtualPath[mount.VirtualRoot.size()] == '/'))
 		{
 			return mount;
 		}

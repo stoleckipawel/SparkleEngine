@@ -83,10 +83,7 @@ public:
 		}
 	}
 
-	static bool IsFeatureSupported(
-	    sl::Feature feature,
-	    const RhiCapabilities& capabilities,
-	    RhiNativeDeviceQueueInterop nativeInterop) noexcept
+	static bool IsFeatureSupported(sl::Feature feature, const RhiCapabilities& capabilities, RhiNativeDeviceQueueInterop nativeInterop) noexcept
 	{
 		if (!ValidateBackend(capabilities, nativeInterop))
 		{
@@ -105,10 +102,7 @@ public:
 		return slIsFeatureSupported(feature, adapterInfo) == sl::Result::eOk;
 	}
 
-	static void SetApplicationFrameMarker(ERhiFrameLatencyMarker marker, std::uint64_t frameId) noexcept
-	{
-		SetFrameMarker(marker, frameId, nullptr);
-	}
+	static void SetApplicationFrameMarker(ERhiFrameLatencyMarker marker, std::uint64_t frameId) noexcept { SetFrameMarker(marker, frameId, nullptr); }
 
 private:
 	enum class CallRequirement : std::uint8_t
@@ -180,11 +174,7 @@ private:
 			reflexSupported = slIsFeatureSupported(sl::kFeatureReflex, adapterInfo) == sl::Result::eOk;
 			if (reflexSupported && slReflexSetOptions(sl::ReflexOptions{}) != sl::Result::eOk)
 			{
-				Diagnostics::Fatal(
-				    g_streamlineRuntimeLogger,
-				    __FILE__,
-				    __LINE__,
-				    "Streamline Reflex rejected its initial latency configuration.");
+				Diagnostics::Fatal(g_streamlineRuntimeLogger, __FILE__, __LINE__, "Streamline Reflex rejected its initial latency configuration.");
 			}
 		}
 		{
@@ -205,8 +195,7 @@ private:
 	static bool ResolveNativeInterface(ERhiInterposerInterfaceKind, void* externalInterface, void** nativeInterface, void*) noexcept
 	{
 		CallLease call(CallRequirement::Initialized);
-		return call && externalInterface != nullptr && nativeInterface != nullptr
-		    && slGetNativeInterface(externalInterface, nativeInterface) == sl::Result::eOk;
+		return call && externalInterface != nullptr && nativeInterface != nullptr && slGetNativeInterface(externalInterface, nativeInterface) == sl::Result::eOk;
 	}
 
 	static void SetPresentationReady(bool ready, void*) noexcept
@@ -267,25 +256,25 @@ private:
 		preferences = {};
 		preferences.featuresToLoad = features;
 		preferences.numFeaturesToLoad = static_cast<std::uint32_t>(std::size(features));
-		preferences.flags = sl::PreferenceFlags::eDisableCLStateTracking | sl::PreferenceFlags::eUseManualHooking
-		    | sl::PreferenceFlags::eUseFrameBasedResourceTagging | sl::PreferenceFlags::eAllowOTA
+
+		preferences.flags = sl::PreferenceFlags::eDisableCLStateTracking | sl::PreferenceFlags::eUseManualHooking | sl::PreferenceFlags::eUseFrameBasedResourceTagging | sl::PreferenceFlags::eAllowOTA
 		    | sl::PreferenceFlags::eLoadDownloadedPlugins;
+
 		preferences.engine = sl::EngineType::eCustom;
 		preferences.engineVersion = "SparkleEngine-Development";
 		preferences.projectId = "535041524B4C45454E47494E45303031";
 		preferences.renderAPI = sl::RenderAPI::eD3D12;
 	}
 
-	static bool HasAdapterLuid(const RhiAdapterIdentity& adapter) noexcept
-	{
-		return adapter.NativeLuidSizeInBytes > 0u && adapter.NativeLuidSizeInBytes <= adapter.NativeLuid.size();
-	}
+	static bool HasAdapterLuid(const RhiAdapterIdentity& adapter) noexcept { return adapter.NativeLuidSizeInBytes > 0u && adapter.NativeLuidSizeInBytes <= adapter.NativeLuid.size(); }
 
 	static bool ValidateBackend(const RhiCapabilities& capabilities, RhiNativeDeviceQueueInterop nativeInterop) noexcept
 	{
 		const RhiExternalFeatureInteropCapabilities& interop = capabilities.ExternalFeatureInterop;
-		const bool commonInterop = interop.ExposesNativeDevice && interop.ExposesNativeGraphicsQueue
-		    && interop.ExposesNativeGraphicsCommandList && interop.ExposesNativeResources && interop.SupportsExternalProviderEvaluation;
+
+		const bool commonInterop = interop.ExposesNativeDevice && interop.ExposesNativeGraphicsQueue && interop.ExposesNativeGraphicsCommandList && interop.ExposesNativeResources
+		    && interop.SupportsExternalProviderEvaluation;
+
 		return capabilities.BackendApi == ERhiBackendApi::D3D12 && commonInterop && nativeInterop && HasAdapterLuid(interop.Adapter);
 	}
 
@@ -345,10 +334,7 @@ void SetSharedStreamlineFrameMarker(ERhiFrameLatencyMarker marker, std::uint64_t
 }
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-bool IsStreamlineFeatureSupported(
-    sl::Feature feature,
-    const RhiCapabilities& capabilities,
-    RhiNativeDeviceQueueInterop nativeInterop) noexcept
+bool IsStreamlineFeatureSupported(sl::Feature feature, const RhiCapabilities& capabilities, RhiNativeDeviceQueueInterop nativeInterop) noexcept
 {
 	return StreamlineRuntime::IsFeatureSupported(feature, capabilities, nativeInterop);
 }

@@ -36,13 +36,11 @@ public:
 				throw Diagnostics::Error("D3D12 ray-tracing pipeline requires valid DXIL library code.");
 			}
 			m_exportNames.push_back(Strings::ToWide(shaderExport.ExportName));
-			m_exportDescs.push_back(
-			    D3D12_EXPORT_DESC{.Name = m_exportNames.back().c_str(), .ExportToRename = nullptr, .Flags = D3D12_EXPORT_FLAG_NONE});
+			m_exportDescs.push_back(D3D12_EXPORT_DESC{.Name = m_exportNames.back().c_str(), .ExportToRename = nullptr, .Flags = D3D12_EXPORT_FLAG_NONE});
+
 			m_libraryDescs.push_back(
-			    D3D12_DXIL_LIBRARY_DESC{
-			        .DXILLibrary = D3D12_SHADER_BYTECODE{.pShaderBytecode = bytecode.Data, .BytecodeLength = bytecode.Size},
-			        .NumExports = 1,
-			        .pExports = &m_exportDescs.back()});
+			    D3D12_DXIL_LIBRARY_DESC{.DXILLibrary = D3D12_SHADER_BYTECODE{.pShaderBytecode = bytecode.Data, .BytecodeLength = bytecode.Size}, .NumExports = 1, .pExports = &m_exportDescs.back()});
+
 			m_subobjects.push_back(D3D12_STATE_SUBOBJECT{.Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, .pDesc = &m_libraryDescs.back()});
 		}
 
@@ -52,41 +50,34 @@ public:
 			m_closestHitNames.push_back(Strings::ToWide(hitGroup.ClosestHitExport));
 			m_anyHitNames.push_back(Strings::ToWide(hitGroup.AnyHitExport));
 			m_intersectionNames.push_back(Strings::ToWide(hitGroup.IntersectionExport));
+
 			m_hitGroupDescs.push_back(
 			    D3D12_HIT_GROUP_DESC{
 			        .HitGroupExport = m_hitGroupNames.back().c_str(),
-			        .Type = hitGroup.Kind == ERhiRayTracingHitGroupKind::Triangles ? D3D12_HIT_GROUP_TYPE_TRIANGLES
-			                                                                       : D3D12_HIT_GROUP_TYPE_PROCEDURAL_PRIMITIVE,
+			        .Type = hitGroup.Kind == ERhiRayTracingHitGroupKind::Triangles ? D3D12_HIT_GROUP_TYPE_TRIANGLES : D3D12_HIT_GROUP_TYPE_PROCEDURAL_PRIMITIVE,
 			        .AnyHitShaderImport = hitGroup.AnyHitExport.empty() ? nullptr : m_anyHitNames.back().c_str(),
 			        .ClosestHitShaderImport = hitGroup.ClosestHitExport.empty() ? nullptr : m_closestHitNames.back().c_str(),
 			        .IntersectionShaderImport = hitGroup.IntersectionExport.empty() ? nullptr : m_intersectionNames.back().c_str()});
+
 			m_subobjects.push_back(D3D12_STATE_SUBOBJECT{.Type = D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP, .pDesc = &m_hitGroupDescs.back()});
 		}
 
-		m_shaderConfig = D3D12_RAYTRACING_SHADER_CONFIG{
-		    .MaxPayloadSizeInBytes = desc.MaxPayloadSizeInBytes,
-		    .MaxAttributeSizeInBytes = desc.MaxAttributeSizeInBytes};
-		m_subobjects.push_back(
-		    D3D12_STATE_SUBOBJECT{.Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG, .pDesc = &m_shaderConfig});
+		m_shaderConfig = D3D12_RAYTRACING_SHADER_CONFIG{.MaxPayloadSizeInBytes = desc.MaxPayloadSizeInBytes, .MaxAttributeSizeInBytes = desc.MaxAttributeSizeInBytes};
+		m_subobjects.push_back(D3D12_STATE_SUBOBJECT{.Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG, .pDesc = &m_shaderConfig});
 		const auto* bindingLayout = dynamic_cast<const D3D12BindingLayout*>(desc.GlobalBindingLayout);
 		if (bindingLayout == nullptr)
 		{
 			throw Diagnostics::Error("D3D12 ray-tracing pipeline received a foreign global binding layout.");
 		}
 		m_globalRootSignature = bindingLayout->GetRootSignature().GetRaw();
-		m_subobjects.push_back(
-		    D3D12_STATE_SUBOBJECT{.Type = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE, .pDesc = &m_globalRootSignature});
+		m_subobjects.push_back(D3D12_STATE_SUBOBJECT{.Type = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE, .pDesc = &m_globalRootSignature});
 		m_pipelineConfig = D3D12_RAYTRACING_PIPELINE_CONFIG{.MaxTraceRecursionDepth = desc.MaxRecursionDepth};
-		m_subobjects.push_back(
-		    D3D12_STATE_SUBOBJECT{.Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG, .pDesc = &m_pipelineConfig});
+		m_subobjects.push_back(D3D12_STATE_SUBOBJECT{.Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG, .pDesc = &m_pipelineConfig});
 	}
 
 	D3D12_STATE_OBJECT_DESC BuildDesc() const noexcept
 	{
-		return D3D12_STATE_OBJECT_DESC{
-		    .Type = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE,
-		    .NumSubobjects = static_cast<UINT>(m_subobjects.size()),
-		    .pSubobjects = m_subobjects.data()};
+		return D3D12_STATE_OBJECT_DESC{.Type = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE, .NumSubobjects = static_cast<UINT>(m_subobjects.size()), .pSubobjects = m_subobjects.data()};
 	}
 
 private:
@@ -108,8 +99,7 @@ D3D12RayTracingPipeline::D3D12RayTracingPipeline(D3D12Rhi& rhi, const RayTracing
     RayTracingPipeline(desc)
 {
 	const RhiRayTracingCapabilities capabilities = rhi.GetRayTracingCapabilities();
-	if (!capabilities.SupportsRayTracingPipeline || desc.MaxPayloadSizeInBytes > capabilities.MaxRayPayloadSizeInBytes
-	    || desc.MaxAttributeSizeInBytes > capabilities.MaxRayAttributeSizeInBytes
+	if (!capabilities.SupportsRayTracingPipeline || desc.MaxPayloadSizeInBytes > capabilities.MaxRayPayloadSizeInBytes || desc.MaxAttributeSizeInBytes > capabilities.MaxRayAttributeSizeInBytes
 	    || desc.MaxRecursionDepth > capabilities.MaxTraceRecursionDepth)
 	{
 		throw Diagnostics::Error("D3D12 ray-tracing pipeline exceeds device readiness or limits.");

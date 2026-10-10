@@ -11,8 +11,7 @@ using SceneMeshInstanceGroupIndex = std::uint32_t;
 
 inline constexpr SceneMeshAssetIndex kInvalidSceneMeshAssetIndex = (std::numeric_limits<SceneMeshAssetIndex>::max)();
 inline constexpr SceneMeshInstanceIndex kInvalidSceneMeshInstanceIndex = (std::numeric_limits<SceneMeshInstanceIndex>::max)();
-inline constexpr SceneMeshInstanceGroupIndex kInvalidSceneMeshInstanceGroupIndex =
-    (std::numeric_limits<SceneMeshInstanceGroupIndex>::max)();
+inline constexpr SceneMeshInstanceGroupIndex kInvalidSceneMeshInstanceGroupIndex = (std::numeric_limits<SceneMeshInstanceGroupIndex>::max)();
 
 enum class SceneMeshInstanceGroupKind : std::uint32_t
 {

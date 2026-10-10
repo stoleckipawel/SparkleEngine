@@ -6,10 +6,7 @@
 
   #include <array>
 
-sl::Result TagRayReconstructionResourcesForFrame(
-    const sl::FrameToken& frameToken,
-    sl::ViewportHandle viewport,
-    const RayReconstructionEvaluationDesc& evaluation) noexcept
+sl::Result TagRayReconstructionResourcesForFrame(const sl::FrameToken& frameToken, sl::ViewportHandle viewport, const RayReconstructionEvaluationDesc& evaluation) noexcept
 {
 	sl::Extent renderExtent = BuildStreamlineExtent(evaluation.RenderExtent);
 	sl::Extent outputExtent = BuildStreamlineExtent(evaluation.OutputExtent);
@@ -34,11 +31,7 @@ sl::Result TagRayReconstructionResourcesForFrame(
 	    sl::ResourceTag{specularAlbedo.Get(), sl::kBufferTypeSpecularAlbedo, sl::ResourceLifecycle::eValidUntilEvaluate, &renderExtent},
 	    sl::ResourceTag{normals.Get(), sl::kBufferTypeNormals, sl::ResourceLifecycle::eValidUntilEvaluate, &renderExtent},
 	    sl::ResourceTag{roughness.Get(), sl::kBufferTypeRoughness, sl::ResourceLifecycle::eValidUntilEvaluate, &renderExtent},
-	    sl::ResourceTag{
-	        specularHitDistance.Get(),
-	        sl::kBufferTypeSpecularHitDistance,
-	        sl::ResourceLifecycle::eValidUntilEvaluate,
-	        &renderExtent},
+	    sl::ResourceTag{specularHitDistance.Get(), sl::kBufferTypeSpecularHitDistance, sl::ResourceLifecycle::eValidUntilEvaluate, &renderExtent},
 	    sl::ResourceTag{exposure.Get(), sl::kBufferTypeExposure, sl::ResourceLifecycle::eValidUntilEvaluate, &exposureExtent}};
 
 	auto* commandBuffer = static_cast<sl::CommandBuffer*>(evaluation.NativeCommandList.Value);

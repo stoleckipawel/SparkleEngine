@@ -27,10 +27,7 @@ namespace SparkleLauncher
 		std::uintmax_t directoryCount = 0;
 		if (std::filesystem::is_directory(path, errorCode))
 		{
-			std::filesystem::recursive_directory_iterator iterator(
-			    path,
-			    std::filesystem::directory_options::skip_permission_denied,
-			    errorCode);
+			std::filesystem::recursive_directory_iterator iterator(path, std::filesystem::directory_options::skip_permission_denied, errorCode);
 			const std::filesystem::recursive_directory_iterator end;
 			while (iterator != end)
 			{
@@ -113,6 +110,7 @@ namespace SparkleLauncher
 			case BuildFilesFreshnessState::SourceListChanged:
 			case BuildFilesFreshnessState::BuildInputChanged:
 				return "Next action: run Generate Build Files to refresh generated CMake and IDE state.";
+
 			case BuildFilesFreshnessState::Current:
 			case BuildFilesFreshnessState::Unsupported:
 				return {};

@@ -40,17 +40,21 @@ public:
 
 	RhiSubmissionToken GetLastSubmittedToken() const noexcept;
 	std::uint64_t GetCompletedSubmissionValue() const noexcept;
+
 	ERhiQueueType GetQueueType() const noexcept { return m_queueType; }
+
 	const Microsoft::WRL::ComPtr<ID3D12CommandQueue>& GetNativeQueue() const noexcept
 	{
 		m_owner.AssertAccess();
 		return m_queue;
 	}
+
 	const Microsoft::WRL::ComPtr<ID3D12Fence1>& GetFence() const noexcept
 	{
 		m_owner.AssertAccess();
 		return m_fence;
 	}
+
 	HANDLE GetFenceEvent() const noexcept
 	{
 		m_owner.AssertAccess();
@@ -59,6 +63,7 @@ public:
 
 private:
 	Threading::OwnerThread m_owner{"D3D12 command queue"};
+
 	ERhiQueueType m_queueType = ERhiQueueType::Graphics;
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_queue;
 	Microsoft::WRL::ComPtr<ID3D12Fence1> m_fence;

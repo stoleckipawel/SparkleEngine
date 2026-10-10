@@ -30,10 +30,7 @@ namespace SparkleLauncher
 		TaskExecutionContext& m_context;
 	};
 
-	LauncherOperationPlan PlanLauncherOperation(
-	    LauncherOperationCategory category,
-	    std::string_view operationId,
-	    const LauncherOperationRequest& request)
+	LauncherOperationPlan PlanLauncherOperation(LauncherOperationCategory category, std::string_view operationId, const LauncherOperationRequest& request)
 	{
 		switch (category)
 		{
@@ -62,6 +59,7 @@ namespace SparkleLauncher
 	{
 		TaskContextProcessRunner taskProcessRunner(processRunner, context);
 		LauncherOperationPlan plan = PlanLauncherOperation(category, operationId, request);
+
 		return std::visit(
 		    [&taskProcessRunner, &outputCallback](auto&& typedPlan) -> OperationRecord
 		    {

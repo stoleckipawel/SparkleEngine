@@ -11,9 +11,7 @@
 
 SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_vulkanImGuiBackendLogger, "RHI.Vulkan.ImGui");
 
-VulkanImGuiBackend::VulkanImGuiBackend(
-    VulkanRenderHardwareInterface& renderHardwareInterface,
-    VulkanDescriptorService& descriptorService) noexcept :
+VulkanImGuiBackend::VulkanImGuiBackend(VulkanRenderHardwareInterface& renderHardwareInterface, VulkanDescriptorService& descriptorService) noexcept :
     m_renderHardwareInterface(renderHardwareInterface),
     m_descriptorService(descriptorService)
 {
@@ -65,6 +63,7 @@ void VulkanImGuiBackend::Initialize()
 	initInfo.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 	initInfo.PipelineInfoMain.PipelineRenderingCreateInfo = pipelineRenderingInfo;
 	initInfo.UseDynamicRendering = true;
+
 	initInfo.CheckVkResultFn = [](VkResult result)
 	{
 		if (result != VK_SUCCESS)
@@ -73,8 +72,7 @@ void VulkanImGuiBackend::Initialize()
 		}
 	};
 
-	if (initInfo.Instance == VK_NULL_HANDLE || initInfo.PhysicalDevice == VK_NULL_HANDLE || initInfo.Device == VK_NULL_HANDLE
-	    || initInfo.Queue == VK_NULL_HANDLE || initInfo.QueueFamily == UINT32_MAX)
+	if (initInfo.Instance == VK_NULL_HANDLE || initInfo.PhysicalDevice == VK_NULL_HANDLE || initInfo.Device == VK_NULL_HANDLE || initInfo.Queue == VK_NULL_HANDLE || initInfo.QueueFamily == UINT32_MAX)
 	{
 		RestoreContext(previousContext);
 		Diagnostics::Fatal(g_vulkanImGuiBackendLogger, __FILE__, __LINE__, "Cannot initialize ImGui with incomplete Vulkan device state.");
@@ -105,6 +103,7 @@ void VulkanImGuiBackend::Initialize()
 	    .maxLod = VK_LOD_CLAMP_NONE,
 	    .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK,
 	    .unnormalizedCoordinates = VK_FALSE};
+
 	const VkResult samplerResult = vkCreateSampler(m_renderHardwareInterface.GetVulkanDevice(), &samplerInfo, nullptr, &m_imguiSampler);
 	if (!VulkanResult::Succeeded(samplerResult) || m_imguiSampler == VK_NULL_HANDLE)
 	{
@@ -148,12 +147,10 @@ void VulkanImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 
 	ImGuiContext* previousContext = ActivateContext();
 	RenderCommandList& commandList = m_renderHardwareInterface.GetGraphicsCommandList(m_renderHardwareInterface.GetCurrentFrameIndex());
-	VkCommandBuffer commandBuffer = static_cast<VkCommandBuffer>(commandList
-	        .GetNativeHandle(
-	            RhiNativeInteropRequest{
-	                .Consumer = ERhiNativeInteropConsumer::Presentation,
-	                .Reason = "Render ImGui draw data through Vulkan backend"})
-	        .Value);
+
+	VkCommandBuffer commandBuffer = static_cast<VkCommandBuffer>(
+	    commandList.GetNativeHandle(RhiNativeInteropRequest{.Consumer = ERhiNativeInteropConsumer::Presentation, .Reason = "Render ImGui draw data through Vulkan backend"}).Value);
+
 	if (commandBuffer == VK_NULL_HANDLE)
 	{
 		RestoreContext(previousContext);

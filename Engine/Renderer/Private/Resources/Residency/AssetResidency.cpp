@@ -21,10 +21,7 @@ std::optional<AssetGenerationHandle> AssetResidency::BeginGeneration(std::uint64
 	}
 
 	const AssetGenerationHandle handle{.AssetKey = assetKey, .Generation = generation};
-	const auto existing = std::find_if(
-	    m_generations.begin(),
-	    m_generations.end(),
-	    [handle](const AssetGenerationStatus& candidate) noexcept { return candidate.Handle == handle; });
+	const auto existing = std::find_if(m_generations.begin(), m_generations.end(), [handle](const AssetGenerationStatus& candidate) noexcept { return candidate.Handle == handle; });
 	if (existing != m_generations.end() && existing->State != AssetResidencyState::Retired)
 	{
 		return handle;
@@ -37,8 +34,8 @@ std::optional<AssetGenerationHandle> AssetResidency::BeginGeneration(std::uint64
 	const auto newerGeneration = std::find_if(
 	    m_generations.begin(),
 	    m_generations.end(),
-	    [handle](const AssetGenerationStatus& candidate) noexcept
-	    { return candidate.Handle.AssetKey == handle.AssetKey && candidate.Handle.Generation > handle.Generation; });
+	    [handle](const AssetGenerationStatus& candidate) noexcept { return candidate.Handle.AssetKey == handle.AssetKey && candidate.Handle.Generation > handle.Generation; });
+
 	if (newerGeneration != m_generations.end())
 	{
 		return std::nullopt;
@@ -68,8 +65,7 @@ bool AssetResidency::BeginDecoding(AssetGenerationHandle handle) noexcept
 bool AssetResidency::PublishReadyForUpload(AssetGenerationHandle handle, std::uint64_t decodedBytes, std::uint64_t uploadBytes) noexcept
 {
 	AssetGenerationStatus* generation = FindMutable(handle);
-	if (generation == nullptr || (generation->State != AssetResidencyState::Reading && generation->State != AssetResidencyState::Decoding)
-	    || !CanPublishDecoded(decodedBytes, uploadBytes))
+	if (generation == nullptr || (generation->State != AssetResidencyState::Reading && generation->State != AssetResidencyState::Decoding) || !CanPublishDecoded(decodedBytes, uploadBytes))
 	{
 		return false;
 	}
@@ -84,8 +80,7 @@ bool AssetResidency::PublishReadyForUpload(AssetGenerationHandle handle, std::ui
 bool AssetResidency::BeginUpload(AssetGenerationHandle handle) noexcept
 {
 	AssetGenerationStatus* generation = FindMutable(handle);
-	if (generation == nullptr || generation->State != AssetResidencyState::ReadyForUpload
-	    || generation->UploadBytes > m_budget.MaximumPendingUploadBytes - m_counters.PendingUploadBytes
+	if (generation == nullptr || generation->State != AssetResidencyState::ReadyForUpload || generation->UploadBytes > m_budget.MaximumPendingUploadBytes - m_counters.PendingUploadBytes
 	    || generation->UploadBytes > m_budget.MaximumResidentBytes - m_counters.ResidentBytes)
 	{
 		return false;
@@ -97,14 +92,11 @@ bool AssetResidency::BeginUpload(AssetGenerationHandle handle) noexcept
 	return true;
 }
 
-bool AssetResidency::RecordUploadSubmission(
-    AssetGenerationHandle handle,
-    RhiSubmissionToken completionToken,
-    std::uint64_t residentBytes) noexcept
+bool AssetResidency::RecordUploadSubmission(AssetGenerationHandle handle, RhiSubmissionToken completionToken, std::uint64_t residentBytes) noexcept
 {
 	AssetGenerationStatus* generation = FindMutable(handle);
-	if (generation == nullptr || (generation->State != AssetResidencyState::Uploading && generation->State != AssetResidencyState::Evicting)
-	    || !completionToken.IsValid() || residentBytes > m_budget.MaximumResidentBytes - m_counters.ResidentBytes)
+	if (generation == nullptr || (generation->State != AssetResidencyState::Uploading && generation->State != AssetResidencyState::Evicting) || !completionToken.IsValid()
+	    || residentBytes > m_budget.MaximumResidentBytes - m_counters.ResidentBytes)
 	{
 		return false;
 	}
@@ -143,8 +135,7 @@ bool AssetResidency::Cancel(AssetGenerationHandle handle) noexcept
 bool AssetResidency::BeginEviction(AssetGenerationHandle handle, const RhiSubmissionState& lastUse) noexcept
 {
 	AssetGenerationStatus* generation = FindMutable(handle);
-	if (generation == nullptr
-	    || (generation->State != AssetResidencyState::Resident && generation->State != AssetResidencyState::Uploading))
+	if (generation == nullptr || (generation->State != AssetResidencyState::Resident && generation->State != AssetResidencyState::Uploading))
 	{
 		return false;
 	}
@@ -180,10 +171,7 @@ void AssetResidency::Poll(RhiCommandSubmissionService& submissions) noexcept
 
 const AssetGenerationStatus* AssetResidency::Find(AssetGenerationHandle handle) const noexcept
 {
-	const auto generation = std::find_if(
-	    m_generations.begin(),
-	    m_generations.end(),
-	    [handle](const AssetGenerationStatus& candidate) noexcept { return candidate.Handle == handle; });
+	const auto generation = std::find_if(m_generations.begin(), m_generations.end(), [handle](const AssetGenerationStatus& candidate) noexcept { return candidate.Handle == handle; });
 	return generation != m_generations.end() ? &*generation : nullptr;
 }
 
@@ -260,9 +248,6 @@ void AssetResidency::PruneTerminalGenerations() noexcept
 	}
 
 	m_generations.erase(
-	    std::remove_if(
-	        m_generations.begin(),
-	        m_generations.end(),
-	        [](const AssetGenerationStatus& generation) noexcept { return generation.State == AssetResidencyState::Retired; }),
+	    std::remove_if(m_generations.begin(), m_generations.end(), [](const AssetGenerationStatus& generation) noexcept { return generation.State == AssetResidencyState::Retired; }),
 	    m_generations.end());
 }

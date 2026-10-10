@@ -24,6 +24,7 @@ public:
 
 private:
 	Threading::OwnerThread m_owner{"Renderer external runtime"};
+
 	RhiDeviceLaunch m_deviceLaunch;
 #if SPARKLE_WITH_EXTERNAL_CAPTURE
 	std::unique_ptr<RhiExternalCapture> m_externalCapture;

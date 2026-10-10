@@ -16,11 +16,7 @@ struct SPARKLE_ENGINE_API CameraNavigationState final
 class SPARKLE_ENGINE_API CameraNavigation final
 {
 public:
-	static bool Apply(
-	    const CameraInputIntent& intent,
-	    const CameraNavigationSettings& settings,
-	    float deltaSeconds,
-	    CameraNavigationState& state) noexcept;
+	static bool Apply(const CameraInputIntent& intent, const CameraNavigationSettings& settings, float deltaSeconds, CameraNavigationState& state) noexcept;
 
 	static DirectX::XMFLOAT3 BuildDirection(const CameraNavigationState& state) noexcept;
 	static float ApplySpeedSteps(float speedMetersPerSecond, float stepCount, float minimumSpeed, float maximumSpeed) noexcept;

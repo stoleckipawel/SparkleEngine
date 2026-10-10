@@ -25,8 +25,7 @@ namespace ReferencePathTracer
 		uint height;
 		WorkingMean.GetDimensions(width, height);
 		const uint2 pixelCoord = uint2(dispatchCoord.x, FirstRow + dispatchCoord.y);
-		if (pixelCoord.x >= width || pixelCoord.y >= height || dispatchCoord.y >= RowCount
-		    || (WorkFlags & ReferencePathTracerWorkFlag_Trace) == 0u)
+		if (pixelCoord.x >= width || pixelCoord.y >= height || dispatchCoord.y >= RowCount || (WorkFlags & ReferencePathTracerWorkFlag_Trace) == 0u)
 		{
 			return;
 		}
@@ -36,11 +35,9 @@ namespace ReferencePathTracer
 		sampleIdentity.SampleOrdinal = SampleOrdinal;
 		sampleIdentity.SessionSeed = SessionSeed;
 		sampleIdentity.ReplicateId = ReplicateId;
-		const float2 filmSample = float2(CommonRandom::OpenUnitInterval(RandomWord(sampleIdentity, FilmXDimension)),
-		                                 CommonRandom::OpenUnitInterval(RandomWord(sampleIdentity, FilmYDimension)));
+		const float2 filmSample = float2(CommonRandom::OpenUnitInterval(RandomWord(sampleIdentity, FilmXDimension)), CommonRandom::OpenUnitInterval(RandomWord(sampleIdentity, FilmYDimension)));
 		const ViewCameraRay cameraRay = BuildPerspectiveViewCameraRay(pixelCoord, uint2(width, height), filmSample);
-		const RayEndpoints::Ray primaryRay =
-		    RayEndpoints::Primary(cameraRay.OriginWorld, cameraRay.DirectionWorld, cameraRay.TMin, cameraRay.TMax);
+		const RayEndpoints::Ray primaryRay = RayEndpoints::Primary(cameraRay.OriginWorld, cameraRay.DirectionWorld, cameraRay.TMin, cameraRay.TMax);
 		const float3 contribution = TraceSurfaceTransport(SceneTlas, SkyTexture, SamplerLinearWrapClamp, primaryRay, sampleIdentity);
 
 		float3 mean = PriorSampleCount == 0u ? 0.0f.xxx : CommittedMean[pixelCoord].rgb;

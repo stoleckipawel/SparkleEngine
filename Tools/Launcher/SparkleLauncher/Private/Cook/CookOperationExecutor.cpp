@@ -91,6 +91,7 @@ namespace SparkleLauncher
 			    OperationProblemKind::Prerequisite,
 			    plan.ReadinessMessages.empty() ? "Cook operation is not ready to run." : plan.ReadinessMessages.front(),
 			    "Build the required cooking tools or acquire the missing source content named above, then retry this cook operation.");
+
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
 		}
@@ -110,6 +111,7 @@ namespace SparkleLauncher
 					    OperationProblemKind::Filesystem,
 					    std::move(errorMessage),
 					    "Close processes using the cooked output, verify write permission for that path, then retry.");
+
 					MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 					return operation;
 				}
@@ -131,19 +133,11 @@ namespace SparkleLauncher
 			{
 				if (result.Canceled)
 				{
-					SetOperationFailure(
-					    operation,
-					    OperationProblemKind::Cancellation,
-					    step.DisplayName + " was canceled.",
-					    "Run the cook operation again when ready.");
+					SetOperationFailure(operation, OperationProblemKind::Cancellation, step.DisplayName + " was canceled.", "Run the cook operation again when ready.");
 				}
 				else
 				{
-					SetProcessOperationFailure(
-					    operation,
-					    result.StartFailure,
-					    MakeCookFailureSummary(step, result),
-					    CookRecoveryAction(step));
+					SetProcessOperationFailure(operation, result.StartFailure, MakeCookFailureSummary(step, result), CookRecoveryAction(step));
 				}
 				MarkOperationFinished(operation, result.Canceled ? OperationStatus::Canceled : OperationStatus::Failed, result.ExitCode);
 				return operation;

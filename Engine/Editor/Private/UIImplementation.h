@@ -37,6 +37,7 @@ public:
 	void SetViewportFinalColorTexture(UiTextureHandle texture) noexcept;
 	void SetDiagnosticsProviders(EditorDiagnosticsProviders providers);
 	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
+
 	EditorConsoleSystem* GetEditorConsoleSystem() noexcept { return m_editorConsoleSystem.get(); }
 
 	bool ConsumeShaderReloadRequest() noexcept;

@@ -40,11 +40,7 @@ public:
 			return {};
 		}
 
-		RhiAdapterIdentity identity{
-		    .Name = NarrowAdapterDescription(adapterDesc.Description),
-		    .DriverDescription = "DXGI",
-		    .VendorId = adapterDesc.VendorId,
-		    .DeviceId = adapterDesc.DeviceId};
+		RhiAdapterIdentity identity{.Name = NarrowAdapterDescription(adapterDesc.Description), .DriverDescription = "DXGI", .VendorId = adapterDesc.VendorId, .DeviceId = adapterDesc.DeviceId};
 		static_assert(sizeof(adapterDesc.AdapterLuid) <= identity.NativeLuid.size());
 		std::memcpy(identity.NativeLuid.data(), &adapterDesc.AdapterLuid, sizeof(adapterDesc.AdapterLuid));
 		identity.NativeLuidSizeInBytes = static_cast<std::uint32_t>(sizeof(adapterDesc.AdapterLuid));
@@ -57,21 +53,17 @@ RhiAdapterIdentity BuildD3D12AdapterIdentity(const D3D12Rhi* rhi) noexcept
 	return D3D12ExternalFeatureAdapterIdentity::Build(rhi);
 }
 
-RhiExternalFeatureInteropCapabilities BuildD3D12ExternalFeatureInteropCapabilities(
-    const D3D12Rhi* rhi,
-    bool hasGraphicsCommandList) noexcept
+RhiExternalFeatureInteropCapabilities BuildD3D12ExternalFeatureInteropCapabilities(const D3D12Rhi* rhi, bool hasGraphicsCommandList) noexcept
 {
 	RhiExternalFeatureInteropCapabilities capabilities{};
-	capabilities.BridgeKind =
-	    rhi != nullptr && rhi->IsInterposerActive() ? ERhiExternalFeatureBridgeKind::Interposer : ERhiExternalFeatureBridgeKind::None;
+	capabilities.BridgeKind = rhi != nullptr && rhi->IsInterposerActive() ? ERhiExternalFeatureBridgeKind::Interposer : ERhiExternalFeatureBridgeKind::None;
 	capabilities.Adapter = BuildD3D12AdapterIdentity(rhi);
 	capabilities.ExposesNativeDevice = rhi != nullptr && rhi->GetDevice() != nullptr;
 	capabilities.ExposesNativeGraphicsQueue = rhi != nullptr && rhi->GetCommandQueue() != nullptr;
 	capabilities.ExposesNativeGraphicsCommandList = hasGraphicsCommandList;
 	capabilities.ExposesNativeResources = true;
 	capabilities.SupportsExplicitResourceStates = true;
-	capabilities.SupportsExternalProviderEvaluation =
-	    capabilities.ExposesNativeDevice && capabilities.ExposesNativeGraphicsQueue && capabilities.ExposesNativeGraphicsCommandList;
+	capabilities.SupportsExternalProviderEvaluation = capabilities.ExposesNativeDevice && capabilities.ExposesNativeGraphicsQueue && capabilities.ExposesNativeGraphicsCommandList;
 	capabilities.SupportsRuntimeProviderChecks = capabilities.SupportsExternalProviderEvaluation;
 	return capabilities;
 }

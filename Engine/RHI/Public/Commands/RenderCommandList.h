@@ -30,7 +30,9 @@ public:
 	virtual ERhiBackendApi GetBackendApi() const noexcept = 0;
 	virtual ERhiQueueType GetQueueType() const noexcept = 0;
 	void TrackResource(RhiResourceHandle resource);
+
 	std::span<const RhiResourceHandle> GetTrackedResources() const noexcept { return m_trackedResources; }
+
 	void ResolveTrackedResources(RhiSubmissionToken submissionToken) noexcept;
 	void ResetTrackedResources() noexcept;
 	virtual NativeGraphicsCommandListHandle GetNativeHandle(const struct RhiNativeInteropRequest& request) const noexcept = 0;
@@ -50,69 +52,51 @@ public:
 	virtual void BindGraphicsAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept = 0;
 	virtual void BindGraphicsDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept = 0;
 	virtual void BindGraphicsDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept = 0;
-	virtual void SetGraphicsPushConstants(
-	    std::uint32_t bindingIndex,
-	    std::uint32_t num32BitValues,
-	    const void* data,
-	    std::uint32_t destOffsetIn32BitValues) noexcept = 0;
+	virtual void SetGraphicsPushConstants(std::uint32_t bindingIndex, std::uint32_t num32BitValues, const void* data, std::uint32_t destOffsetIn32BitValues) noexcept = 0;
 	virtual void BindComputeConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
 	virtual void BindComputeShaderResource(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
 	virtual void BindComputeUnorderedAccess(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
 	virtual void BindComputeAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept = 0;
 	virtual void BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept = 0;
 	virtual void BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept = 0;
-	virtual void SetComputePushConstants(
-	    std::uint32_t bindingIndex,
-	    std::uint32_t num32BitValues,
-	    const void* data,
-	    std::uint32_t destOffsetIn32BitValues) noexcept = 0;
+	virtual void SetComputePushConstants(std::uint32_t bindingIndex, std::uint32_t num32BitValues, const void* data, std::uint32_t destOffsetIn32BitValues) noexcept = 0;
 	virtual void BindRayTracingConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
 	virtual void BindRayTracingShaderResource(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
 	virtual void BindRayTracingUnorderedAccess(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
 	virtual void BindRayTracingAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept = 0;
 	virtual void BindRayTracingDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept = 0;
 	virtual void BindRayTracingDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept = 0;
-	virtual void SetRayTracingPushConstants(
-	    std::uint32_t bindingIndex,
-	    std::uint32_t num32BitValues,
-	    const void* data,
-	    std::uint32_t destOffsetIn32BitValues) noexcept = 0;
+	virtual void SetRayTracingPushConstants(std::uint32_t bindingIndex, std::uint32_t num32BitValues, const void* data, std::uint32_t destOffsetIn32BitValues) noexcept = 0;
 	virtual void SetPrimitiveTopology(RhiPrimitiveTopology topology) noexcept = 0;
 	virtual void BindVertexBuffer(const RhiVertexBufferView& view) noexcept = 0;
 	virtual void BindIndexBuffer(const RhiIndexBufferView& view) noexcept = 0;
 	virtual void SetRenderTarget(RhiCpuDescriptorHandle renderTarget, const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept = 0;
-	virtual void SetRenderTargets(
-	    std::uint32_t renderTargetCount,
-	    const RhiCpuDescriptorHandle* renderTargets,
-	    const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept = 0;
+	virtual void SetRenderTargets(std::uint32_t renderTargetCount, const RhiCpuDescriptorHandle* renderTargets, const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept = 0;
 	virtual void ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, RhiClearColorView color) noexcept = 0;
 	virtual void ClearDepthStencil(RhiCpuDescriptorHandle depthStencil, float depth, std::uint8_t stencil = 0) noexcept = 0;
 	virtual void EndRasterPass() noexcept = 0;
 	virtual void SetViewport(const RhiViewport& viewport) noexcept = 0;
 	virtual void SetScissorRect(const RhiRect& rect) noexcept = 0;
+
 	virtual void DrawIndexedInstanced(
 	    std::uint32_t indexCountPerInstance,
 	    std::uint32_t instanceCount,
 	    std::uint32_t startIndexLocation,
 	    std::int32_t baseVertexLocation,
 	    std::uint32_t startInstanceLocation) noexcept = 0;
-	virtual void DrawInstanced(
-	    std::uint32_t vertexCountPerInstance,
-	    std::uint32_t instanceCount,
-	    std::uint32_t startVertexLocation,
-	    std::uint32_t startInstanceLocation) noexcept = 0;
+
+	virtual void DrawInstanced(std::uint32_t vertexCountPerInstance, std::uint32_t instanceCount, std::uint32_t startVertexLocation, std::uint32_t startInstanceLocation) noexcept = 0;
 	virtual void Dispatch(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept = 0;
 	virtual void TraceRays(const TraceRaysDesc& desc) noexcept = 0;
-	virtual void BuildBottomLevelAccelerationStructure(
-	    const RhiRayTracingGeometryDesc& geometry,
-	    RhiGpuVirtualAddress scratchGpuAddress,
-	    RhiGpuVirtualAddress resultGpuAddress) noexcept = 0;
+	virtual void BuildBottomLevelAccelerationStructure(const RhiRayTracingGeometryDesc& geometry, RhiGpuVirtualAddress scratchGpuAddress, RhiGpuVirtualAddress resultGpuAddress) noexcept = 0;
+
 	virtual void BuildTopLevelAccelerationStructure(
 	    RhiGpuVirtualAddress instanceDescsGpuAddress,
 	    std::uint32_t instanceCount,
 	    RhiGpuVirtualAddress scratchGpuAddress,
 	    RhiGpuVirtualAddress resultGpuAddress,
 	    ERhiClassicTlasBuildMode buildMode = ERhiClassicTlasBuildMode::Build) noexcept = 0;
+
 	virtual void BuildPartitionedTopLevelAccelerationStructure(const RhiPartitionedTlasBuildCommandDesc& desc) noexcept = 0;
 	virtual void CopyResource(RhiResourceHandle destinationResource, RhiResourceHandle sourceResource) noexcept = 0;
 	virtual void AliasResource(RhiResourceHandle beforeResource, RhiResourceHandle afterResource) noexcept = 0;
@@ -121,6 +105,7 @@ public:
 
 protected:
 	RenderCommandList() noexcept = default;
+
 	virtual void OnResourceTrackingStarted(RhiResourceHandle resource) noexcept = 0;
 	virtual void OnResourceTrackingFinished(RhiResourceHandle resource, RhiSubmissionToken submissionToken) noexcept = 0;
 

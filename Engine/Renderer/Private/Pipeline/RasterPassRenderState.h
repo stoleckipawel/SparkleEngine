@@ -11,11 +11,14 @@ public:
 	void DisableStencil() noexcept;
 
 	const RhiBlendState& GetBlend() const noexcept { return m_blend; }
+
 	const RhiDepthState& GetDepth() const noexcept { return m_depth; }
+
 	const RhiStencilState& GetStencil() const noexcept { return m_stencil; }
 
 private:
 	RhiBlendState m_blend = {};
+
 	RhiDepthState m_depth = {};
 	RhiStencilState m_stencil = {};
 };

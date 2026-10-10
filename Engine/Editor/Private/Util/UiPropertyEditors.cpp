@@ -17,13 +17,7 @@
 
 namespace UiUtil
 {
-	bool EditFloatSliderWithInput(
-	    const char* label,
-	    float& value,
-	    float minValue,
-	    float maxValue,
-	    const char* sliderFormat,
-	    const char* inputFormat)
+	bool EditFloatSliderWithInput(const char* label, float& value, float minValue, float maxValue, const char* sliderFormat, const char* inputFormat)
 	{
 		ImFont* monoFont = SparkleUiTheme::GetMonoFont();
 		const char* sliderValueFormat = (inputFormat != nullptr && inputFormat[0] != '\0') ? "" : sliderFormat;
@@ -44,10 +38,7 @@ namespace UiUtil
 			PopFontIfAvailable(monoFont);
 
 			ImGui::TableSetColumnIndex(1);
-			if (ImGui::BeginTable(
-			        "##float_editor",
-			        2,
-			        ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX))
+			if (ImGui::BeginTable("##float_editor", 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX))
 			{
 				ImGui::TableSetupColumn("slider", ImGuiTableColumnFlags_WidthStretch);
 				ImGui::TableSetupColumn("input", ImGuiTableColumnFlags_WidthFixed, ScalarInputWidth);
@@ -71,13 +62,7 @@ namespace UiUtil
 		return changedBySlider || changedByInput;
 	}
 
-	bool EditFloat3SliderWithInput(
-	    const char* label,
-	    float values[3],
-	    float minValue,
-	    float maxValue,
-	    const char* sliderFormat,
-	    const char* inputFormat)
+	bool EditFloat3SliderWithInput(const char* label, float values[3], float minValue, float maxValue, const char* sliderFormat, const char* inputFormat)
 	{
 		ImFont* monoFont = SparkleUiTheme::GetMonoFont();
 		const char* sliderValueFormat = (inputFormat != nullptr && inputFormat[0] != '\0') ? "" : sliderFormat;
@@ -85,10 +70,7 @@ namespace UiUtil
 		bool changedByInput = false;
 
 		ImGui::PushID(label);
-		if (ImGui::BeginTable(
-		        "##float3_row",
-		        2,
-		        ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX))
+		if (ImGui::BeginTable("##float3_row", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX))
 		{
 			ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, PropertyLabelWidth);
 			ImGui::TableSetupColumn("editor", ImGuiTableColumnFlags_WidthStretch);
@@ -101,10 +83,7 @@ namespace UiUtil
 			PopFontIfAvailable(monoFont);
 
 			ImGui::TableSetColumnIndex(1);
-			if (ImGui::BeginTable(
-			        "##float3_editor",
-			        1,
-			        ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX))
+			if (ImGui::BeginTable("##float3_editor", 1, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX))
 			{
 				ImGui::TableSetupColumn("editor", ImGuiTableColumnFlags_WidthStretch);
 				ImGui::TableNextRow();
@@ -134,10 +113,7 @@ namespace UiUtil
 		bool changed = false;
 
 		ImGui::PushID(label);
-		if (ImGui::BeginTable(
-		        "##color3_row",
-		        2,
-		        ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX))
+		if (ImGui::BeginTable("##color3_row", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX))
 		{
 			ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, PropertyLabelWidth);
 			ImGui::TableSetupColumn("editor", ImGuiTableColumnFlags_WidthStretch);
@@ -151,11 +127,7 @@ namespace UiUtil
 
 			ImGui::TableSetColumnIndex(1);
 			ImGui::SetNextItemWidth(-1.0f);
-			changed = ImGui::ColorEdit3(
-			    "##color",
-			    values,
-			    ImGuiColorEditFlags_Float | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB
-			        | ImGuiColorEditFlags_PickerHueBar);
+			changed = ImGui::ColorEdit3("##color", values, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_PickerHueBar);
 
 			ImGui::EndTable();
 		}
@@ -170,10 +142,7 @@ namespace UiUtil
 		bool changed = false;
 
 		ImGui::PushID(label);
-		if (ImGui::BeginTable(
-		        "##checkbox_row",
-		        2,
-		        ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX))
+		if (ImGui::BeginTable("##checkbox_row", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX))
 		{
 			ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, PropertyLabelWidth);
 			ImGui::TableSetupColumn("editor", ImGuiTableColumnFlags_WidthStretch);

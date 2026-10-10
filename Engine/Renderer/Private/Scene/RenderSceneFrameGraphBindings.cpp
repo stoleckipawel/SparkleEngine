@@ -14,11 +14,7 @@
 
 SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_renderSceneFrameGraphLogger, "Renderer.RenderSceneFrameGraph");
 
-static void BindRayTracingScene(
-    FrameGraph& frameGraph,
-    const RenderFrameGraphResources& resources,
-    const PreparedRenderScene& scene,
-    const RenderRayTracingFrameBindings& bindings)
+static void BindRayTracingScene(FrameGraph& frameGraph, const RenderFrameGraphResources& resources, const PreparedRenderScene& scene, const RenderRayTracingFrameBindings& bindings)
 {
 	if (!resources.SceneTlas.IsValid() || !bindings.HasBoundTlas())
 	{
@@ -28,11 +24,7 @@ static void BindRayTracingScene(
 	const RenderSceneGpuBindings& gpuBindings = *scene.gpuBindings;
 	if (bindings.HasTraceableInstances() && (gpuBindings.RayTracing.InstanceCount == 0u || gpuBindings.RayTracing.MaterialCount == 0u))
 	{
-		Diagnostics::Fatal(
-		    g_renderSceneFrameGraphLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Traceable SceneTlas instances have no matching hit-instance or material records.");
+		Diagnostics::Fatal(g_renderSceneFrameGraphLogger, __FILE__, __LINE__, "Traceable SceneTlas instances have no matching hit-instance or material records.");
 	}
 
 	frameGraph.BindPersistentAccelerationStructure(resources.SceneTlas, bindings.TlasResource);
@@ -50,11 +42,7 @@ static void BindSkyTexture(FrameGraph& frameGraph, const RenderFrameGraphResourc
 	    ResourceState::ShaderResource);
 }
 
-void BindRenderSceneFrameGraphResources(
-    FrameGraph& frameGraph,
-    const RenderFrameGraphResources& resources,
-    const PreparedRenderScene& scene,
-    const RenderRayTracingFrameBindings& rayTracingBindings)
+void BindRenderSceneFrameGraphResources(FrameGraph& frameGraph, const RenderFrameGraphResources& resources, const PreparedRenderScene& scene, const RenderRayTracingFrameBindings& rayTracingBindings)
 {
 	BindRayTracingScene(frameGraph, resources, scene, rayTracingBindings);
 	BindSkyTexture(frameGraph, resources, scene);

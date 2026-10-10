@@ -35,8 +35,7 @@ struct RayTracingHitGroupComposition final
 		return result;
 	}
 
-	template <typename TClosestHit, typename TIntersection, typename TAnyHit = void>
-	static RayTracingHitGroupComposition Procedural(std::string exportName)
+	template <typename TClosestHit, typename TIntersection, typename TAnyHit = void> static RayTracingHitGroupComposition Procedural(std::string exportName)
 	{
 		RayTracingHitGroupComposition result = Triangles<TClosestHit, TAnyHit>(std::move(exportName));
 		result.Kind = ERhiRayTracingHitGroupKind::Procedural;
@@ -56,36 +55,31 @@ class RayTracingPipelineComposition final
 {
 public:
 	RayTracingPipelineComposition(const RayTracingPipelineComposition&) = default;
+
 	RayTracingPipelineComposition& operator=(const RayTracingPipelineComposition&) = default;
 	RayTracingPipelineComposition(RayTracingPipelineComposition&&) noexcept = default;
 	RayTracingPipelineComposition& operator=(RayTracingPipelineComposition&&) noexcept = default;
 
-	template <typename TRayGeneration> static RayTracingPipelineComposition Create(
-	    std::vector<ShaderTypeId> missShaders,
-	    std::vector<RayTracingHitGroupComposition> hitGroups,
-	    std::vector<ShaderTypeId> callableShaders = {})
+	template <typename TRayGeneration>
+	static RayTracingPipelineComposition Create(std::vector<ShaderTypeId> missShaders, std::vector<RayTracingHitGroupComposition> hitGroups, std::vector<ShaderTypeId> callableShaders = {})
 	{
-		return RayTracingPipelineComposition(
-		    GlobalShader<TRayGeneration>::GetRegistration().TypeId,
-		    std::move(missShaders),
-		    std::move(hitGroups),
-		    std::move(callableShaders));
+		return RayTracingPipelineComposition(GlobalShader<TRayGeneration>::GetRegistration().TypeId, std::move(missShaders), std::move(hitGroups), std::move(callableShaders));
 	}
 
 	template <typename TShader> static ShaderTypeId Shader() { return GlobalShader<TShader>::GetRegistration().TypeId; }
 
 	ShaderTypeId GetRayGeneration() const noexcept { return m_rayGeneration; }
+
 	std::span<const ShaderTypeId> GetMissShaders() const noexcept { return m_missShaders; }
+
 	std::span<const RayTracingHitGroupComposition> GetHitGroups() const noexcept { return m_hitGroups; }
+
 	std::span<const ShaderTypeId> GetCallableShaders() const noexcept { return m_callableShaders; }
+
 	bool operator==(const RayTracingPipelineComposition&) const noexcept = default;
 
 private:
-	RayTracingPipelineComposition(
-	    ShaderTypeId rayGeneration,
-	    std::vector<ShaderTypeId> missShaders,
-	    std::vector<RayTracingHitGroupComposition> hitGroups,
-	    std::vector<ShaderTypeId> callableShaders);
+	RayTracingPipelineComposition(ShaderTypeId rayGeneration, std::vector<ShaderTypeId> missShaders, std::vector<RayTracingHitGroupComposition> hitGroups, std::vector<ShaderTypeId> callableShaders);
 
 	ShaderTypeId m_rayGeneration = 0;
 	std::vector<ShaderTypeId> m_missShaders;

@@ -45,9 +45,5 @@ public:
 private:
 	static std::uintmax_t RequiredFreeSpace(std::uintmax_t publicationBytes) noexcept;
 	static bool IsRelativeFilePath(const std::filesystem::path& path) noexcept;
-	static bool WriteFile(
-	    const std::filesystem::path& stagingDirectory,
-	    const ArtifactBundleFile& file,
-	    ArtifactBundlePublishedFile& published,
-	    std::string& errorMessage);
+	static bool WriteFile(const std::filesystem::path& stagingDirectory, const ArtifactBundleFile& file, ArtifactBundlePublishedFile& published, std::string& errorMessage);
 };

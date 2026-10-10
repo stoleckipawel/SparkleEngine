@@ -15,10 +15,7 @@
 
 namespace Assets
 {
-	void SceneAssetPayloadMaterialAppender::AppendMaterials(
-	    const LoadedSceneManifest& sceneManifest,
-	    CookedAssetFileSet& files,
-	    SceneAssetPayload& sceneAssetPayload)
+	void SceneAssetPayloadMaterialAppender::AppendMaterials(const LoadedSceneManifest& sceneManifest, CookedAssetFileSet& files, SceneAssetPayload& sceneAssetPayload)
 	{
 		MaterialAssetLoader materialAssetLoader;
 		CookedMaterialTranslator materialTranslator;

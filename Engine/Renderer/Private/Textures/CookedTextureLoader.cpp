@@ -19,11 +19,9 @@ public:
 		if (!header.HasExpectedMagic())
 			throw Diagnostics::Error("Invalid cooked texture asset header for '" + resolvedPath.string() + "'");
 
-		if (header.width == 0 || header.height == 0 || header.mipCount == 0
-		    || PixelFormatFromSerializedTextureFormat(header.format) == PixelFormat::Unknown)
+		if (header.width == 0 || header.height == 0 || header.mipCount == 0 || PixelFormatFromSerializedTextureFormat(header.format) == PixelFormat::Unknown)
 		{
-			throw Diagnostics::Error(
-			    "Cooked texture asset header has invalid dimensions, mip count, or format for '" + resolvedPath.string() + "'");
+			throw Diagnostics::Error("Cooked texture asset header has invalid dimensions, mip count, or format for '" + resolvedPath.string() + "'");
 		}
 
 		if (header.GetArraySize() == 0)
@@ -42,27 +40,17 @@ public:
 		}
 	}
 
-	static void ValidateMipHeader(
-	    const CookedTextureMipHeader& mipHeader,
-	    std::uint32_t mipIndex,
-	    const std::filesystem::path& resolvedPath)
+	static void ValidateMipHeader(const CookedTextureMipHeader& mipHeader, std::uint32_t mipIndex, const std::filesystem::path& resolvedPath)
 	{
-		if (mipHeader.width == 0 || mipHeader.height == 0 || mipHeader.rowPitch == 0 || mipHeader.slicePitch == 0
-		    || mipHeader.dataSize == 0)
+		if (mipHeader.width == 0 || mipHeader.height == 0 || mipHeader.rowPitch == 0 || mipHeader.slicePitch == 0 || mipHeader.dataSize == 0)
 		{
-			throw Diagnostics::Error(
-			    std::format("Cooked texture asset '{}' has an invalid mip header at index {}", resolvedPath.string(), mipIndex));
+			throw Diagnostics::Error(std::format("Cooked texture asset '{}' has an invalid mip header at index {}", resolvedPath.string(), mipIndex));
 		}
 
 		if (mipHeader.dataSize != mipHeader.slicePitch)
 		{
 			throw Diagnostics::Error(
-			    std::format(
-			        "Cooked texture asset '{}' stores mip {} with {} payload bytes but {} slice pitch bytes",
-			        resolvedPath.string(),
-			        mipIndex,
-			        mipHeader.dataSize,
-			        mipHeader.slicePitch));
+			    std::format("Cooked texture asset '{}' stores mip {} with {} payload bytes but {} slice pitch bytes", resolvedPath.string(), mipIndex, mipHeader.dataSize, mipHeader.slicePitch));
 		}
 	}
 
@@ -134,8 +122,7 @@ LoadedTextureData CookedTextureLoader::Decode(const CookedTextureFilePayload& pa
 		std::span<const std::uint8_t> mipPayload;
 		if (!reader.ReadBytes(mipHeader.dataSize, mipPayload, errorMessage))
 		{
-			throw Diagnostics::Error(
-			    std::format("Cooked texture asset '{}' ended before mip payload data could be read.", payload.ResolvedPath.string()));
+			throw Diagnostics::Error(std::format("Cooked texture asset '{}' ended before mip payload data could be read.", payload.ResolvedPath.string()));
 		}
 		mipLevel.Data.assign(mipPayload.begin(), mipPayload.end());
 
@@ -145,15 +132,10 @@ LoadedTextureData CookedTextureLoader::Decode(const CookedTextureFilePayload& pa
 
 	if (reader.GetRemainingByteCount() != 0)
 	{
-		throw Diagnostics::Error(
-		    std::format(
-		        "Cooked texture asset '{}' contains {} unexpected trailing byte(s)",
-		        payload.ResolvedPath.string(),
-		        reader.GetRemainingByteCount()));
+		throw Diagnostics::Error(std::format("Cooked texture asset '{}' contains {} unexpected trailing byte(s)", payload.ResolvedPath.string(), reader.GetRemainingByteCount()));
 	}
 	if (!textureUpload.IsValid())
-		throw Diagnostics::Error(
-		    std::format("Cooked texture asset '{}' produced an invalid upload layout.", payload.ResolvedPath.string()));
+		throw Diagnostics::Error(std::format("Cooked texture asset '{}' produced an invalid upload layout.", payload.ResolvedPath.string()));
 
 	return LoadedTextureData{.Upload = std::move(textureUpload), .FormatIntent = formatIntent};
 }

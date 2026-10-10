@@ -25,6 +25,7 @@
 namespace SparkleLauncher
 {
 	static constexpr int kMaxOperationOutputCharacters = 1000000;
+
 	static int ProgressPercentage(quint64 completed, quint64 total)
 	{
 		if (total == 0)
@@ -35,10 +36,7 @@ namespace SparkleLauncher
 		return static_cast<int>(static_cast<long double>(boundedCompleted) * 100.0L / static_cast<long double>(total));
 	}
 
-	LauncherActivityPanel::LauncherActivityPanel(
-	    const LauncherIconLibrary& icons,
-	    const std::function<void(QWidget*)>& registerFocusable,
-	    QWidget* parent) :
+	LauncherActivityPanel::LauncherActivityPanel(const LauncherIconLibrary& icons, const std::function<void(QWidget*)>& registerFocusable, QWidget* parent) :
 	    QFrame(parent),
 	    m_queuedIcon(icons.Icon(LauncherIcon::Queued, QColor(LauncherUi::Color::StateQueued))),
 	    m_runningIcon(icons.Icon(LauncherIcon::Running, QColor(LauncherUi::Color::StateRunning))),
@@ -100,11 +98,7 @@ namespace SparkleLauncher
 		m_runList->setAccessibleName("Activity runs");
 		m_runList->setAccessibleDescription("Recent runs. Select one to review its summary and output.");
 		registerFocusable(m_runList);
-		connect(
-		    m_runList,
-		    &QListWidget::currentItemChanged,
-		    this,
-		    [this](QListWidgetItem* current, QListWidgetItem*) { DisplaySelectedRunOutput(current); });
+		connect(m_runList, &QListWidget::currentItemChanged, this, [this](QListWidgetItem* current, QListWidgetItem*) { DisplaySelectedRunOutput(current); });
 		activityRailLayout->addWidget(m_runList, 1);
 		activityLayout->addWidget(activityRail, 0);
 
@@ -227,17 +221,11 @@ namespace SparkleLauncher
 		}
 	}
 
-	QString LauncherActivityPanel::DisplayOperationFinished(
-	    const QString& runId,
-	    const QString& title,
-	    const LauncherOperationResult& result)
+	QString LauncherActivityPanel::DisplayOperationFinished(const QString& runId, const QString& title, const LauncherOperationResult& result)
 	{
 		auto run = m_runs.find(runId);
 		const QString effectiveTitle = run == m_runs.end() ? title : run->Title;
-		const RunState terminalState = result.Succeeded ? RunState::Done
-		    : result.Skipped                            ? RunState::Blocked
-		    : result.Canceled                           ? RunState::Canceled
-		                                                : RunState::Failed;
+		const RunState terminalState = result.Succeeded ? RunState::Done : result.Skipped ? RunState::Blocked : result.Canceled ? RunState::Canceled : RunState::Failed;
 		SetRunState(runId, terminalState, effectiveTitle);
 
 		if (result.Succeeded)
@@ -275,12 +263,14 @@ namespace SparkleLauncher
 	{
 		RegisterRun(runId, title);
 		SetRunState(runId, RunState::Blocked, title);
+
 		AppendRunOutput(
 		    runId,
 		    QStringLiteral(
 		        "Result: Blocked\nProblem type: Prerequisite\nWhat failed: %1\nNext action: Resolve the reported prerequisite, then retry "
 		        "Quick Start.\n")
 		        .arg(message));
+
 		ShowRunOutput(runId);
 		SetExpanded(true);
 	}
@@ -337,10 +327,13 @@ namespace SparkleLauncher
 		{
 			case RunState::Queued:
 				stateName = "queued";
+
 				m_selectedRunSummary->setText("Queued: " + title + ". Waiting to start.");
 				break;
+
 			case RunState::Running:
 				stateName = "running";
+
 				if (run->HasProgress)
 				{
 					QString progressText = run->ProgressPhase;
@@ -358,20 +351,28 @@ namespace SparkleLauncher
 					m_selectedRunSummary->setText("Running: " + title + ". Waiting for progress from the active tool.");
 				}
 				break;
+
 			case RunState::Done:
 				stateName = "done";
+
 				m_selectedRunSummary->setText("Done: " + title + ". Output is available below.");
 				break;
+
 			case RunState::Blocked:
 				stateName = "blocked";
+
 				m_selectedRunSummary->setText("Blocked: " + title + ". Follow the next action below.");
 				break;
+
 			case RunState::Canceled:
 				stateName = "canceled";
+
 				m_selectedRunSummary->setText("Canceled: " + title + ". Run it again when ready.");
 				break;
+
 			case RunState::Failed:
 				stateName = "failed";
+
 				m_selectedRunSummary->setText("Failed: " + title + ". Follow the next action below.");
 				break;
 		}
@@ -398,19 +399,15 @@ namespace SparkleLauncher
 		}
 
 		const bool compactOutput = state == RunState::Done;
-		m_operationOutput->setMinimumHeight(
-		    compactOutput ? LauncherUi::OperationOutput::MinHeight : LauncherUi::OperationOutput::ProminentMinHeight);
-		m_operationOutput->setMaximumHeight(
-		    compactOutput ? LauncherUi::OperationOutput::CompactMaxHeight : LauncherUi::OperationOutput::MaxHeight);
+		m_operationOutput->setMinimumHeight(compactOutput ? LauncherUi::OperationOutput::MinHeight : LauncherUi::OperationOutput::ProminentMinHeight);
+		m_operationOutput->setMaximumHeight(compactOutput ? LauncherUi::OperationOutput::CompactMaxHeight : LauncherUi::OperationOutput::MaxHeight);
 		m_operationOutput->setPlainText(run->Output);
 		m_operationOutput->moveCursor(QTextCursor::End);
 
 		const bool canCopyOutput = m_expanded && !m_operationOutput->toPlainText().isEmpty();
 		m_copyOutputButton->setVisible(!runId.isEmpty());
 		m_copyOutputButton->setEnabled(canCopyOutput);
-		m_copyOutputButton->setToolTip(
-		    canCopyOutput ? "Copy output for the selected run. Shortcut: Ctrl+Shift+C."
-		                  : "Select a run to copy its output. Shortcut: Ctrl+Shift+C.");
+		m_copyOutputButton->setToolTip(canCopyOutput ? "Copy output for the selected run. Shortcut: Ctrl+Shift+C." : "Select a run to copy its output. Shortcut: Ctrl+Shift+C.");
 	}
 
 	LauncherActivityPanel::RunWidgets LauncherActivityPanel::CreateRunWidgets(const QString& title)
@@ -515,21 +512,32 @@ namespace SparkleLauncher
 		{
 			case RunState::Queued:
 				stateText = "Queued";
+
 				break;
+
 			case RunState::Running:
 				stateText = "Running";
+
 				break;
+
 			case RunState::Done:
 				stateText = "Done";
+
 				break;
+
 			case RunState::Blocked:
 				stateText = "Blocked";
+
 				break;
+
 			case RunState::Canceled:
 				stateText = "Canceled";
+
 				break;
+
 			case RunState::Failed:
 				stateText = "Failed";
+
 				break;
 		}
 
@@ -576,12 +584,8 @@ namespace SparkleLauncher
 
 		m_toggleOutputButton->setEnabled(hasRuns);
 		m_toggleOutputButton->setVisible(hasRuns);
-		m_toggleOutputButton->setText(
-		    QString::fromLatin1(expanded ? LauncherUi::Activity::CollapseGlyph : LauncherUi::Activity::ExpandGlyph));
-		m_toggleOutputButton->setToolTip(
-		    !hasRuns       ? "Run a workflow to view its activity."
-		        : expanded ? "Minimize recent runs and raw process output."
-		                   : "Show recent runs and raw process output.");
+		m_toggleOutputButton->setText(QString::fromLatin1(expanded ? LauncherUi::Activity::CollapseGlyph : LauncherUi::Activity::ExpandGlyph));
+		m_toggleOutputButton->setToolTip(!hasRuns ? "Run a workflow to view its activity." : expanded ? "Minimize recent runs and raw process output." : "Show recent runs and raw process output.");
 		m_toggleOutputButton->setAccessibleDescription(m_toggleOutputButton->toolTip());
 
 		const bool canCopyOutput = expanded && !m_operationOutput->toPlainText().isEmpty();

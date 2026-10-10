@@ -77,12 +77,10 @@ namespace RayTracingGBuffer
 	void StoreHit(uint2 pixelCoord, RayTracingHitSurfaceData surface)
 	{
 		const float3 baseColor = InstanceView::ApplyInstanceVisualization(surface.BaseColor, surface.GpuSceneSlot);
-		GBufferBaseColor[pixelCoord] =
-		    GBufferPacking::PackBaseColor(baseColor, surface.Alpha, surface.AlphaMode, RayTracingHitSurface::AlphaModeBlended);
+		GBufferBaseColor[pixelCoord] = GBufferPacking::PackBaseColor(baseColor, surface.Alpha, surface.AlphaMode, RayTracingHitSurface::AlphaModeBlended);
 		GBufferWorldNormal[pixelCoord] = GBufferPacking::PackWorldNormal(surface.NormalWorld);
 		GBufferWorldTangent[pixelCoord] = GBufferPacking::PackWorldTangent(surface.TangentWorld);
-		GBufferMaterial[pixelCoord] =
-		    GBufferPacking::PackMaterial(surface.Metallic, surface.Roughness, surface.AmbientOcclusion, surface.DielectricF0);
+		GBufferMaterial[pixelCoord] = GBufferPacking::PackMaterial(surface.Metallic, surface.Roughness, surface.AmbientOcclusion, surface.DielectricF0);
 		GBufferEmissive[pixelCoord] = GBufferPacking::PackEmissive(surface.EmissiveColor);
 		GBufferSubsurface[pixelCoord] = GBufferPacking::PackSubsurface(surface.SubsurfaceColor, surface.SubsurfaceStrength);
 		GBufferDeviceZ[pixelCoord] = ComputeDeviceZ(surface.PositionWorld);
@@ -108,13 +106,7 @@ namespace RayTracingGBuffer
 	void TraceAndStore(uint2 pixelCoord)
 	{
 		const PrimaryRay ray = BuildPrimaryRay(pixelCoord);
-		const RayTracingTraceResult trace = TraceSceneRay(SceneTlas,
-		                                                  ray.OriginWorld,
-		                                                  ray.DirectionWorld,
-		                                                  ray.Description.TMin,
-		                                                  ray.Description.TMax,
-		                                                  CullFlags,
-		                                                  InstanceMask);
+		const RayTracingTraceResult trace = TraceSceneRay(SceneTlas, ray.OriginWorld, ray.DirectionWorld, ray.Description.TMin, ray.Description.TMax, CullFlags, InstanceMask);
 		StoreTraceResult(pixelCoord, trace, ray);
 	}
 }

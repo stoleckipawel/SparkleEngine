@@ -86,15 +86,9 @@ namespace SparkleLauncher
 			return;
 		}
 
-		const QSize targetSize(
-		    std::max(1, static_cast<int>(std::ceil(targetRect.width()))),
-		    std::max(1, static_cast<int>(std::ceil(targetRect.height()))));
+		const QSize targetSize(std::max(1, static_cast<int>(std::ceil(targetRect.width()))), std::max(1, static_cast<int>(std::ceil(targetRect.height()))));
 		const QPixmap scaled = source.scaled(targetSize, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
-		const QRect cropRect(
-		    std::max(0, (scaled.width() - targetSize.width()) / 2),
-		    std::max(0, (scaled.height() - targetSize.height()) / 2),
-		    targetSize.width(),
-		    targetSize.height());
+		const QRect cropRect(std::max(0, (scaled.width() - targetSize.width()) / 2), std::max(0, (scaled.height() - targetSize.height()) / 2), targetSize.width(), targetSize.height());
 		painter.drawPixmap(targetRect.toRect(), scaled, cropRect);
 	}
 
@@ -108,9 +102,11 @@ namespace SparkleLauncher
 		{
 			case LauncherArtworkPreset::HeroPanorama:
 				spec.AspectRatio = static_cast<double>(LauncherUi::Hero::DesignWidth) / static_cast<double>(LauncherUi::Hero::DesignHeight);
+
 				spec.AccentLineX = static_cast<double>(LauncherUi::Hero::CopyDividerX) / static_cast<double>(LauncherUi::Hero::DesignWidth);
 				spec.AccentLineColor = AccentColor(105);
 				spec.AccentLineWidth = 1.0;
+
 				AddLayer(
 				    spec.Layers,
 				    LauncherArtworkGradientAxis::Horizontal,
@@ -120,6 +116,7 @@ namespace SparkleLauncher
 				        {1.00, NeutralShade(0)},
 				    },
 				    QRectF(0.0, 0.0, spec.AccentLineX, 1.0));
+
 				AddLayer(
 				    spec.Layers,
 				    LauncherArtworkGradientAxis::Horizontal,
@@ -128,6 +125,7 @@ namespace SparkleLauncher
 				        {1.00, NeutralShade(84)},
 				    },
 				    QRectF(0.80, 0.0, 0.20, 1.0));
+
 				AddLayer(
 				    spec.TopLayers,
 				    LauncherArtworkGradientAxis::Vertical,
@@ -138,10 +136,12 @@ namespace SparkleLauncher
 				        {0.86, SurfaceShade(172)},
 				        {1.00, SurfaceShade(255)},
 				    });
+
 				break;
 
 			case LauncherArtworkPreset::WorkflowBanner:
 				spec.AspectRatio = 2.4;
+
 				AddLayer(
 				    spec.Layers,
 				    LauncherArtworkGradientAxis::Horizontal,
@@ -151,6 +151,7 @@ namespace SparkleLauncher
 				        {0.74, NeutralShade(8)},
 				        {1.00, NeutralShade(0)},
 				    });
+
 				AddLayer(
 				    spec.Layers,
 				    LauncherArtworkGradientAxis::Vertical,
@@ -159,6 +160,7 @@ namespace SparkleLauncher
 				        {0.58, NeutralShade(0)},
 				        {1.00, NeutralShade(56)},
 				    });
+
 				break;
 		}
 

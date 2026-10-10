@@ -19,11 +19,7 @@ struct MousePosition
 
 	constexpr DirectX::XMFLOAT2 AsNDC() const noexcept { return DirectX::XMFLOAT2{NormalizedX * 2.0f - 1.0f, 1.0f - NormalizedY * 2.0f}; }
 
-	static constexpr MousePosition FromPixels(
-	    std::int32_t x,
-	    std::int32_t y,
-	    std::uint32_t windowWidth,
-	    std::uint32_t windowHeight) noexcept
+	static constexpr MousePosition FromPixels(std::int32_t x, std::int32_t y, std::uint32_t windowWidth, std::uint32_t windowHeight) noexcept
 	{
 		MousePosition pos;
 		pos.X = x;

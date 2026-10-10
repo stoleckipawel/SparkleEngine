@@ -22,9 +22,8 @@ TextureLoadResult LoadTextureSource(const std::filesystem::path& sourcePath)
 	{
 		return LoadHdrTextureSource(sourcePath);
 	}
-	if (extension == L".png" || extension == L".jpg" || extension == L".jpeg" || extension == L".bmp" || extension == L".tga"
-	    || extension == L".gif" || extension == L".psd" || extension == L".pic" || extension == L".pnm" || extension == L".ppm"
-	    || extension == L".pgm")
+	if (extension == L".png" || extension == L".jpg" || extension == L".jpeg" || extension == L".bmp" || extension == L".tga" || extension == L".gif" || extension == L".psd" || extension == L".pic"
+	    || extension == L".pnm" || extension == L".ppm" || extension == L".pgm")
 	{
 		return LoadRasterTextureSource(sourcePath);
 	}

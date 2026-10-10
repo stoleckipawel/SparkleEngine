@@ -7,10 +7,7 @@
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 #include "Vulkan/VulkanTypeConversions.h"
 
-VulkanResourceService::VulkanResourceService(
-    VulkanRhi& rhi,
-    VulkanGpuMemoryAllocator& memoryAllocator,
-    const RhiCapabilities& capabilities) noexcept :
+VulkanResourceService::VulkanResourceService(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator, const RhiCapabilities& capabilities) noexcept :
     m_rhi(&rhi),
     m_memoryAllocator(&memoryAllocator),
     m_capabilities(&capabilities)
@@ -36,8 +33,7 @@ RhiOwnedResourceHandle VulkanResourceService::CreateTextureResource(
 	}
 
 	const VkImageCreateInfo imageCreateInfo = VulkanTypeConversions::BuildTextureCreateInfo(desc);
-	std::unique_ptr<VulkanGpuAllocationRecord> record =
-	    m_memoryAllocator->CreateImage(imageCreateInfo, category, residencyClass, debugName);
+	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateImage(imageCreateInfo, category, residencyClass, debugName);
 	return record != nullptr ? MakeVulkanOwnedResourceHandle(std::move(record)) : RhiOwnedResourceHandle{};
 }
 
@@ -55,8 +51,7 @@ RhiOwnedResourceHandle VulkanResourceService::CreateBufferResource(
 	}
 
 	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(desc);
-	std::unique_ptr<VulkanGpuAllocationRecord> record =
-	    m_memoryAllocator->CreateBuffer(bufferCreateInfo, category, residencyClass, debugName);
+	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(bufferCreateInfo, category, residencyClass, debugName);
 	return record != nullptr ? MakeVulkanOwnedResourceHandle(std::move(record)) : RhiOwnedResourceHandle{};
 }
 
@@ -75,20 +70,18 @@ bool VulkanResourceService::CreateVertexBuffer(
 		return false;
 	}
 
-	const RhiBufferResourceDesc desc{
-	    .SizeInBytes = sizeInBytes,
-	    .StrideInBytes = strideInBytes,
-	    .Kind = RhiBufferKind::Vertex,
-	    .AllowRayTracingBuildInput = true};
+	const RhiBufferResourceDesc desc{.SizeInBytes = sizeInBytes, .StrideInBytes = strideInBytes, .Kind = RhiBufferKind::Vertex, .AllowRayTracingBuildInput = true};
+
 	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(
 	    desc,
-	    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
-	        | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
+	    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
+
 	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(
 	    bufferCreateInfo,
 	    RhiMemoryCategory::Mesh,
 	    RhiMemoryResidencyClass::HostUpload,
 	    debugName.empty() ? L"VertexBuffer" : debugName);
+
 	if (record == nullptr || record->Buffer == VK_NULL_HANDLE || !m_memoryAllocator->WriteAllocation(*record, data, sizeInBytes))
 	{
 		return false;
@@ -98,16 +91,12 @@ bool VulkanResourceService::CreateVertexBuffer(
 	    .BufferLocation = record->DeviceAddress != 0 ? record->DeviceAddress : reinterpret_cast<std::uint64_t>(record->Buffer),
 	    .SizeInBytes = static_cast<std::uint32_t>(sizeInBytes),
 	    .StrideInBytes = strideInBytes};
+
 	outResource = MakeVulkanOwnedResourceHandle(std::move(record));
 	return true;
 }
 
-bool VulkanResourceService::CreateStructuredBufferResource(
-    const void* data,
-    std::size_t sizeInBytes,
-    std::uint32_t strideInBytes,
-    std::wstring_view debugName,
-    RhiOwnedResourceHandle& outResource)
+bool VulkanResourceService::CreateStructuredBufferResource(const void* data, std::size_t sizeInBytes, std::uint32_t strideInBytes, std::wstring_view debugName, RhiOwnedResourceHandle& outResource)
 {
 	outResource = {};
 	if (m_memoryAllocator == nullptr || data == nullptr || sizeInBytes == 0 || strideInBytes == 0)
@@ -117,11 +106,13 @@ bool VulkanResourceService::CreateStructuredBufferResource(
 
 	const RhiBufferResourceDesc desc{.SizeInBytes = sizeInBytes, .StrideInBytes = strideInBytes, .Kind = RhiBufferKind::Structured};
 	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(desc);
+
 	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(
 	    bufferCreateInfo,
 	    RhiMemoryCategory::Mesh,
 	    RhiMemoryResidencyClass::HostUpload,
 	    debugName.empty() ? L"StructuredBuffer" : debugName);
+
 	if (record == nullptr || record->Buffer == VK_NULL_HANDLE || !m_memoryAllocator->WriteAllocation(*record, data, sizeInBytes))
 	{
 		return false;
@@ -131,15 +122,10 @@ bool VulkanResourceService::CreateStructuredBufferResource(
 	return static_cast<bool>(outResource);
 }
 
-bool VulkanResourceService::WriteBufferResource(
-    RhiOwnedResourceHandle resource,
-    std::size_t destinationOffsetInBytes,
-    const void* data,
-    std::size_t sizeInBytes) noexcept
+bool VulkanResourceService::WriteBufferResource(RhiOwnedResourceHandle resource, std::size_t destinationOffsetInBytes, const void* data, std::size_t sizeInBytes) noexcept
 {
 	VulkanGpuAllocationRecord* const record = GetVulkanGpuAllocationRecord(resource);
-	return record != nullptr && m_memoryAllocator != nullptr
-	    && m_memoryAllocator->WriteAllocation(*record, data, sizeInBytes, destinationOffsetInBytes);
+	return record != nullptr && m_memoryAllocator != nullptr && m_memoryAllocator->WriteAllocation(*record, data, sizeInBytes, destinationOffsetInBytes);
 }
 
 bool VulkanResourceService::CreateIndexBuffer(
@@ -158,15 +144,17 @@ bool VulkanResourceService::CreateIndexBuffer(
 	}
 
 	const RhiBufferResourceDesc desc{.SizeInBytes = sizeInBytes, .Kind = RhiBufferKind::Index, .AllowRayTracingBuildInput = true};
+
 	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(
 	    desc,
-	    VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
-	        | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
+	    VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
+
 	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(
 	    bufferCreateInfo,
 	    RhiMemoryCategory::Mesh,
 	    RhiMemoryResidencyClass::HostUpload,
 	    debugName.empty() ? L"IndexBuffer" : debugName);
+
 	if (record == nullptr || record->Buffer == VK_NULL_HANDLE || !m_memoryAllocator->WriteAllocation(*record, data, sizeInBytes))
 	{
 		return false;
@@ -176,6 +164,7 @@ bool VulkanResourceService::CreateIndexBuffer(
 	    .BufferLocation = record->DeviceAddress != 0 ? record->DeviceAddress : reinterpret_cast<std::uint64_t>(record->Buffer),
 	    .SizeInBytes = static_cast<std::uint32_t>(sizeInBytes),
 	    .Format = format};
+
 	outResource = MakeVulkanOwnedResourceHandle(std::move(record));
 	return true;
 }
@@ -251,16 +240,16 @@ RhiResourceAllocationInfo VulkanResourceService::GetTextureAllocationInfo(const 
 	}
 
 	const VkImageCreateInfo imageCreateInfo = VulkanTypeConversions::BuildTextureCreateInfo(desc);
+
 	const VkDeviceImageMemoryRequirements requirementsInfo{
 	    .sType = VK_STRUCTURE_TYPE_DEVICE_IMAGE_MEMORY_REQUIREMENTS,
 	    .pNext = nullptr,
 	    .pCreateInfo = &imageCreateInfo,
 	    .planeAspect = static_cast<VkImageAspectFlagBits>(0)};
+
 	VkMemoryRequirements2 memoryRequirements{.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
 	vkGetDeviceImageMemoryRequirements(m_rhi->GetDevice(), &requirementsInfo, &memoryRequirements);
-	return RhiResourceAllocationInfo{
-	    .SizeInBytes = memoryRequirements.memoryRequirements.size,
-	    .Alignment = memoryRequirements.memoryRequirements.alignment};
+	return RhiResourceAllocationInfo{.SizeInBytes = memoryRequirements.memoryRequirements.size, .Alignment = memoryRequirements.memoryRequirements.alignment};
 }
 
 RhiResourceAllocationInfo VulkanResourceService::GetBufferAllocationInfo(const RhiBufferResourceDesc& desc) const noexcept
@@ -271,30 +260,20 @@ RhiResourceAllocationInfo VulkanResourceService::GetBufferAllocationInfo(const R
 	}
 
 	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(desc);
-	const VkDeviceBufferMemoryRequirements requirementsInfo{
-	    .sType = VK_STRUCTURE_TYPE_DEVICE_BUFFER_MEMORY_REQUIREMENTS,
-	    .pNext = nullptr,
-	    .pCreateInfo = &bufferCreateInfo};
+	const VkDeviceBufferMemoryRequirements requirementsInfo{.sType = VK_STRUCTURE_TYPE_DEVICE_BUFFER_MEMORY_REQUIREMENTS, .pNext = nullptr, .pCreateInfo = &bufferCreateInfo};
 	VkMemoryRequirements2 memoryRequirements{.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
 	vkGetDeviceBufferMemoryRequirements(m_rhi->GetDevice(), &requirementsInfo, &memoryRequirements);
-	return RhiResourceAllocationInfo{
-	    .SizeInBytes = memoryRequirements.memoryRequirements.size,
-	    .Alignment = memoryRequirements.memoryRequirements.alignment};
+	return RhiResourceAllocationInfo{.SizeInBytes = memoryRequirements.memoryRequirements.size, .Alignment = memoryRequirements.memoryRequirements.alignment};
 }
 
-RhiOwnedMemoryBlockHandle VulkanResourceService::CreateTransientMemoryBlock(
-    RhiTransientAllocationPool pool,
-    std::uint64_t sizeInBytes,
-    std::uint64_t alignment,
-    std::wstring_view debugName)
+RhiOwnedMemoryBlockHandle VulkanResourceService::CreateTransientMemoryBlock(RhiTransientAllocationPool pool, std::uint64_t sizeInBytes, std::uint64_t alignment, std::wstring_view debugName)
 {
 	if (m_memoryAllocator == nullptr || sizeInBytes == 0)
 	{
 		return {};
 	}
 
-	std::unique_ptr<VulkanGpuMemoryBlockRecord> record =
-	    m_memoryAllocator->CreateTransientMemoryBlock(pool, sizeInBytes, alignment, debugName);
+	std::unique_ptr<VulkanGpuMemoryBlockRecord> record = m_memoryAllocator->CreateTransientMemoryBlock(pool, sizeInBytes, alignment, debugName);
 	return record != nullptr ? MakeVulkanOwnedMemoryBlockHandle(std::move(record)) : RhiOwnedMemoryBlockHandle{};
 }
 
@@ -323,8 +302,7 @@ RhiOwnedResourceHandle VulkanResourceService::CreateAliasingTextureResource(
 {
 	(void) desc.InitialState;
 	(void) desc.ClearValue;
-	if (m_memoryAllocator == nullptr || m_capabilities == nullptr || !memoryBlock
-	    || !RhiContract::IsTextureResourceDescUsable(*m_capabilities, desc.ResourceDesc))
+	if (m_memoryAllocator == nullptr || m_capabilities == nullptr || !memoryBlock || !RhiContract::IsTextureResourceDescUsable(*m_capabilities, desc.ResourceDesc))
 	{
 		return {};
 	}
@@ -336,8 +314,7 @@ RhiOwnedResourceHandle VulkanResourceService::CreateAliasingTextureResource(
 	}
 
 	const VkImageCreateInfo imageCreateInfo = VulkanTypeConversions::BuildTextureCreateInfo(desc.ResourceDesc);
-	std::unique_ptr<VulkanGpuAllocationRecord> record =
-	    m_memoryAllocator->CreateAliasingImage(*memoryBlockRecord, memoryBlockOffset, imageCreateInfo, debugName);
+	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateAliasingImage(*memoryBlockRecord, memoryBlockOffset, imageCreateInfo, debugName);
 	return record != nullptr ? MakeVulkanOwnedResourceHandle(std::move(record)) : RhiOwnedResourceHandle{};
 }
 
@@ -360,15 +337,13 @@ RhiOwnedResourceHandle VulkanResourceService::CreateAliasingBufferResource(
 	}
 
 	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(desc.ResourceDesc);
-	std::unique_ptr<VulkanGpuAllocationRecord> record =
-	    m_memoryAllocator->CreateAliasingBuffer(*memoryBlockRecord, memoryBlockOffset, bufferCreateInfo, debugName);
+	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateAliasingBuffer(*memoryBlockRecord, memoryBlockOffset, bufferCreateInfo, debugName);
 	return record != nullptr ? MakeVulkanOwnedResourceHandle(std::move(record)) : RhiOwnedResourceHandle{};
 }
 
 bool VulkanResourceService::SupportsUnorderedAccess(RhiResourceHandle resource) const noexcept
 {
-	const VulkanGpuAllocationRecord* const record =
-	    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecord(resource) : nullptr;
+	const VulkanGpuAllocationRecord* const record = m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecord(resource) : nullptr;
 	if (record == nullptr)
 	{
 		return false;

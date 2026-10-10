@@ -35,9 +35,5 @@ namespace MeshDiagnosticsPresentation
 	std::uint64_t SumCpuBytes(const MeshDiagnosticsSnapshot& snapshot) noexcept;
 	std::uint64_t SumGpuBytes(const MeshDiagnosticsSnapshot& snapshot) noexcept;
 	PreviewBounds ComputePreviewBounds(const MeshPreviewGeometry& geometry) noexcept;
-	MeshPreviewVertex RotatePreviewVertex(
-	    const MeshPreviewVertex& vertex,
-	    const MeshPreviewVertex& center,
-	    float yaw,
-	    float pitch) noexcept;
+	MeshPreviewVertex RotatePreviewVertex(const MeshPreviewVertex& vertex, const MeshPreviewVertex& center, float yaw, float pitch) noexcept;
 }

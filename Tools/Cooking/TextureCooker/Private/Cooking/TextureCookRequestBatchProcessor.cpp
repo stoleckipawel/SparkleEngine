@@ -27,6 +27,7 @@ int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::pat
 		    ToolConsoleSeverity::Error,
 		    "Failed to load texture request file",
 		    {ToolConsole::PathField("requestFile", requestFilePath), ToolConsole::QuotedField("reason", error.what())});
+
 		return TextureCookerConstants::ExitLoadRequestFileFailed;
 	}
 
@@ -34,11 +35,13 @@ int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::pat
 	const std::size_t totalWork = requests.size() + 1;
 	ToolWorkProgressWriter progress(std::cout);
 	progress.Report("Cooking textures", 0, totalWork);
+
 	std::vector<TextureCookBatchItemResult> results = TextureCookBatchExecutor::Execute(
 	    requests,
 	    textureCookMemoryBudget,
 	    [&progress, &requests, totalWork](std::size_t requestIndex, std::size_t completed)
 	    { progress.Report("Cooked texture", requests[requestIndex].sourcePath.filename().string(), completed, totalWork); });
+
 	if (ReportFailures(requests, results) != 0)
 	{
 		CleanupStagedOutputs(results);
@@ -58,17 +61,11 @@ int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::pat
 	}
 	progress.Report("Cooked textures published", totalWork, totalWork);
 
-	ToolConsole::Message(
-	    std::cout,
-	    ToolConsoleSeverity::Info,
-	    "Cooked texture generation",
-	    {ToolConsole::Field("textures", std::to_string(requests.size()))});
+	ToolConsole::Message(std::cout, ToolConsoleSeverity::Info, "Cooked texture generation", {ToolConsole::Field("textures", std::to_string(requests.size()))});
 	return TextureCookerConstants::ExitSuccess;
 }
 
-std::size_t TextureCookRequestBatchProcessor::ReportFailures(
-    const std::vector<TextureCookRequest>& requests,
-    const std::vector<TextureCookBatchItemResult>& results)
+std::size_t TextureCookRequestBatchProcessor::ReportFailures(const std::vector<TextureCookRequest>& requests, const std::vector<TextureCookBatchItemResult>& results)
 {
 	std::size_t failureCount = 0;
 	for (std::size_t index = 0; index < requests.size(); ++index)
@@ -80,6 +77,7 @@ std::size_t TextureCookRequestBatchProcessor::ReportFailures(
 		}
 
 		++failureCount;
+
 		ToolConsole::Message(
 		    std::cerr,
 		    ToolConsoleSeverity::Error,
@@ -92,9 +90,7 @@ std::size_t TextureCookRequestBatchProcessor::ReportFailures(
 	return failureCount;
 }
 
-void TextureCookRequestBatchProcessor::PublishGeneration(
-    const std::vector<TextureCookRequest>& requests,
-    const std::vector<TextureCookBatchItemResult>& results)
+void TextureCookRequestBatchProcessor::PublishGeneration(const std::vector<TextureCookRequest>& requests, const std::vector<TextureCookBatchItemResult>& results)
 {
 	std::vector<Files::FilePublication> publication;
 	publication.reserve(requests.size());

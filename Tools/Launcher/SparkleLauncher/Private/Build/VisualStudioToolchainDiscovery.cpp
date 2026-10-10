@@ -110,15 +110,9 @@ namespace SparkleLauncher
 		const Process::ChildProcessResult result = Process::ChildProcess::Run(
 		    Process::ChildProcessRequest{
 		        .ExecutablePath = vswherePath,
-		        .Arguments =
-		            {"-latest",
-		                "-products",
-		                "*",
-		                "-requires",
-		                "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
-		                "-property",
-		                "installationPath"},
+		        .Arguments = {"-latest", "-products", "*", "-requires", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "-property", "installationPath"},
 		    });
+
 		if (!result.Succeeded())
 		{
 			return std::nullopt;
@@ -202,8 +196,7 @@ namespace SparkleLauncher
 	{
 		VisualStudioToolchainDiscovery discovery;
 		discovery.DiscoveryPath = ResolveVswherePath().value_or(std::filesystem::path());
-		discovery.InstallationPath = FindVisualStudioInstallWithCppTools().value_or(
-		    QueryVisualStudioInstallWithCppTools(discovery.DiscoveryPath).value_or(std::filesystem::path()));
+		discovery.InstallationPath = FindVisualStudioInstallWithCppTools().value_or(QueryVisualStudioInstallWithCppTools(discovery.DiscoveryPath).value_or(std::filesystem::path()));
 		discovery.IdePath = FindVisualStudioIde(discovery.InstallationPath).value_or(std::filesystem::path());
 		discovery.InstallerPath = ResolveVisualStudioInstallerPath().value_or(std::filesystem::path());
 		discovery.ClangClPath = FindVisualStudioClangCl(discovery.InstallationPath).value_or(std::filesystem::path());
@@ -217,8 +210,7 @@ namespace SparkleLauncher
 		{
 			const std::filesystem::path visualStudioRoot = root / "Microsoft Visual Studio";
 			std::error_code errorCode;
-			if (std::filesystem::exists(visualStudioRoot / "18", errorCode)
-			    || std::filesystem::exists(visualStudioRoot / "2026", errorCode))
+			if (std::filesystem::exists(visualStudioRoot / "18", errorCode) || std::filesystem::exists(visualStudioRoot / "2026", errorCode))
 			{
 				return "Visual Studio 18 2026";
 			}

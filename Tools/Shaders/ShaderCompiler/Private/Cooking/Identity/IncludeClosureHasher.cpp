@@ -16,11 +16,7 @@
 
 SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_includeClosureHasherLogger, "ShaderCompiler.IncludeClosureHasher");
 
-void IncludeClosureHasher::VisitFile(
-    std::string_view filePath,
-    const ShaderCompileRequest& request,
-    std::unordered_set<std::string>& visitedPathKeys,
-    std::vector<HashPair>& outFileHashes)
+void IncludeClosureHasher::VisitFile(std::string_view filePath, const ShaderCompileRequest& request, std::unordered_set<std::string>& visitedPathKeys, std::vector<HashPair>& outFileHashes)
 {
 	const std::string pathKey = request.SourceMounts.get().CanonicalizeVirtualPath(filePath);
 	if (!visitedPathKeys.insert(pathKey).second)

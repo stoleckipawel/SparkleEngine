@@ -22,12 +22,7 @@ namespace SparkleLauncher
 {
 	static constexpr int kSpaceSmall = LauncherUi::Space::Small;
 
-	static QWidget* CreateLauncherVisualArtworkWidget(
-	    const QPixmap& pixmap,
-	    const QString& objectName,
-	    const QSize& minimumSize,
-	    LauncherArtworkPreset preset,
-	    QWidget* parent);
+	static QWidget* CreateLauncherVisualArtworkWidget(const QPixmap& pixmap, const QString& objectName, const QSize& minimumSize, LauncherArtworkPreset preset, QWidget* parent);
 
 	std::filesystem::path FindLauncherVisualAsset(const std::filesystem::path& repositoryRoot, const QString& fileName)
 	{
@@ -37,15 +32,15 @@ namespace SparkleLauncher
 		}
 
 		const std::string assetName = fileName.toStdString();
-		const std::filesystem::path applicationVisualPath =
-		    std::filesystem::path(QCoreApplication::applicationDirPath().toStdString()) / "Visuals" / assetName;
+		const std::filesystem::path applicationVisualPath = std::filesystem::path(QCoreApplication::applicationDirPath().toStdString()) / "Visuals" / assetName;
 		const Filesystem::WorkspaceOutputPaths outputs = Filesystem::ResolveWorkspaceOutputPaths(repositoryRoot);
+
 		const std::array<std::filesystem::path, 4> candidates = {
 		    repositoryRoot / "Tools" / "Launcher" / "SparkleLauncher" / "Assets" / "Visuals" / assetName,
 		    applicationVisualPath,
 		    outputs.DiagnosticsRoot / "launcher-visual-assets" / assetName,
-		    outputs.DiagnosticsRoot / "launcher-visual-assets"
-		        / (std::filesystem::path(assetName).stem().string() + ".png")};
+		    outputs.DiagnosticsRoot / "launcher-visual-assets" / (std::filesystem::path(assetName).stem().string() + ".png")};
+
 		for (const std::filesystem::path& candidate : candidates)
 		{
 			std::error_code errorCode;
@@ -83,12 +78,7 @@ namespace SparkleLauncher
 		return artwork;
 	}
 
-	static QWidget* CreateLauncherVisualArtworkWidget(
-	    const QPixmap& pixmap,
-	    const QString& objectName,
-	    const QSize& minimumSize,
-	    LauncherArtworkPreset preset,
-	    QWidget* parent)
+	static QWidget* CreateLauncherVisualArtworkWidget(const QPixmap& pixmap, const QString& objectName, const QSize& minimumSize, LauncherArtworkPreset preset, QWidget* parent)
 	{
 		if (pixmap.isNull())
 		{

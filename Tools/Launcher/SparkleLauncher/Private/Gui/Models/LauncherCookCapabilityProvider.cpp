@@ -41,6 +41,7 @@ namespace SparkleLauncher
 		}
 
 		const LauncherOperationRequest request = context.Request;
+
 		std::string error = registry.Register(
 		    {std::string(LauncherCapabilityId::CookingTools),
 		        {std::string(LauncherCapabilityId::BuildFiles)},
@@ -55,12 +56,11 @@ namespace SparkleLauncher
 
 			        LauncherOperationRequest buildRequest = BuildQuickStartOperationRequest(request, "cook.tools.prepare");
 			        buildRequest.EditorProfile = QString::fromStdString(cookPlan.ToolProfile);
-			        const BuildWorkspaceOperationPlan buildPlan =
-			            PlanBuildWorkspaceOperation("cook.tools.prepare", LauncherOperationRequestMapping::BuildWorkspace(buildRequest));
-			        return buildPlan.CanRun
-			            ? LauncherCapabilityEvaluation::RunOperation(std::move(buildRequest))
-			            : LauncherCapabilityEvaluation::DependenciesRequired(BuildCapabilityReadinessSummary(buildPlan.ReadinessMessages));
+			        const BuildWorkspaceOperationPlan buildPlan = PlanBuildWorkspaceOperation("cook.tools.prepare", LauncherOperationRequestMapping::BuildWorkspace(buildRequest));
+			        return buildPlan.CanRun ? LauncherCapabilityEvaluation::RunOperation(std::move(buildRequest))
+			                                : LauncherCapabilityEvaluation::DependenciesRequired(BuildCapabilityReadinessSummary(buildPlan.ReadinessMessages));
 		        }});
+
 		if (!error.empty())
 		{
 			return error;
@@ -71,10 +71,8 @@ namespace SparkleLauncher
 		        {std::string(LauncherCapabilityId::SelectedLevels), std::string(LauncherCapabilityId::CookingTools)},
 		        [request]()
 		        {
-			        const LevelRunOperationPlan runPlan =
-			            PlanLevelRunOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::LevelRun(request));
-			        const bool cookedContentReady = runPlan.Readiness.CookedMeshesReady && runPlan.Readiness.CookedTexturesReady
-			            && runPlan.Readiness.CookedShadersReady;
+			        const LevelRunOperationPlan runPlan = PlanLevelRunOperation(request.OperationId.toStdString(), LauncherOperationRequestMapping::LevelRun(request));
+			        const bool cookedContentReady = runPlan.Readiness.CookedMeshesReady && runPlan.Readiness.CookedTexturesReady && runPlan.Readiness.CookedShadersReady;
 			        if (cookedContentReady)
 			        {
 				        return LauncherCapabilityEvaluation::Ready();
@@ -82,11 +80,9 @@ namespace SparkleLauncher
 
 			        const QString cookOperationId = SelectCookOperationId(runPlan.Readiness);
 			        LauncherOperationRequest cookRequest = BuildQuickStartOperationRequest(request, cookOperationId);
-			        const CookOperationPlan cookPlan =
-			            PlanCookOperation(cookOperationId.toStdString(), LauncherOperationRequestMapping::Cook(cookRequest));
-			        return cookPlan.CanRun && !cookPlan.Steps.empty()
-			            ? LauncherCapabilityEvaluation::RunOperation(std::move(cookRequest))
-			            : LauncherCapabilityEvaluation::DependenciesRequired(BuildCapabilityReadinessSummary(cookPlan.ReadinessMessages));
+			        const CookOperationPlan cookPlan = PlanCookOperation(cookOperationId.toStdString(), LauncherOperationRequestMapping::Cook(cookRequest));
+			        return cookPlan.CanRun && !cookPlan.Steps.empty() ? LauncherCapabilityEvaluation::RunOperation(std::move(cookRequest))
+			                                                          : LauncherCapabilityEvaluation::DependenciesRequired(BuildCapabilityReadinessSummary(cookPlan.ReadinessMessages));
 		        }});
 	}
 }

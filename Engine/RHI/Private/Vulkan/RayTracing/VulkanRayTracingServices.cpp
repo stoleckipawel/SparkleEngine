@@ -13,8 +13,7 @@
 
 #include <memory>
 
-VkAccelerationStructureTypeKHR VulkanRayTracingServices::ToVkAccelerationStructureType(
-    ERhiRayTracingAccelerationStructureType type) noexcept
+VkAccelerationStructureTypeKHR VulkanRayTracingServices::ToVkAccelerationStructureType(ERhiRayTracingAccelerationStructureType type) noexcept
 {
 	switch (type)
 	{
@@ -38,6 +37,7 @@ VkAccelerationStructureGeometryKHR VulkanRayTracingServices::BuildBottomLevelGeo
 	    .indexType = VulkanTypeConversions::ToVkIndexType(geometry.IndexFormat),
 	    .indexData = VkDeviceOrHostAddressConstKHR{.deviceAddress = 0},
 	    .transformData = VkDeviceOrHostAddressConstKHR{.deviceAddress = 0}};
+
 	return VkAccelerationStructureGeometryKHR{
 	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR,
 	    .pNext = nullptr,
@@ -79,16 +79,16 @@ RhiRayTracingCapabilities VulkanRayTracingServices::GetCapabilities() const noex
 	return m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
 }
 
-RhiRayTracingAccelerationStructurePrebuildInfo VulkanRayTracingServices::GetBottomLevelAccelerationStructurePrebuildInfo(
-    const RhiRayTracingGeometryDesc& geometry) const noexcept
+RhiRayTracingAccelerationStructurePrebuildInfo VulkanRayTracingServices::GetBottomLevelAccelerationStructurePrebuildInfo(const RhiRayTracingGeometryDesc& geometry) const noexcept
 {
-	if (m_rhi == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsAccelerationStructure
-	    || m_rhi->GetAccelerationStructureBuildSizes() == nullptr || !RhiContract::IsRayTracingGeometryDescUsable(geometry))
+	if (m_rhi == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsAccelerationStructure || m_rhi->GetAccelerationStructureBuildSizes() == nullptr
+	    || !RhiContract::IsRayTracingGeometryDescUsable(geometry))
 	{
 		return {};
 	}
 
 	const VkAccelerationStructureGeometryKHR nativeGeometry = BuildBottomLevelGeometry(geometry);
+
 	const VkAccelerationStructureBuildGeometryInfoKHR buildInfo{
 	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR,
 	    .pNext = nullptr,
@@ -101,43 +101,33 @@ RhiRayTracingAccelerationStructurePrebuildInfo VulkanRayTracingServices::GetBott
 	    .pGeometries = &nativeGeometry,
 	    .ppGeometries = nullptr,
 	    .scratchData = VkDeviceOrHostAddressKHR{.deviceAddress = 0}};
+
 	const std::uint32_t primitiveCount = geometry.IndexCount / 3u;
 	VkAccelerationStructureBuildSizesInfoKHR nativeInfo{.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR};
-	m_rhi->GetAccelerationStructureBuildSizes()(
-	    m_rhi->GetDevice(),
-	    VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
-	    &buildInfo,
-	    &primitiveCount,
-	    &nativeInfo);
+	m_rhi->GetAccelerationStructureBuildSizes()(m_rhi->GetDevice(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &buildInfo, &primitiveCount, &nativeInfo);
+
 	return RhiRayTracingAccelerationStructurePrebuildInfo{
 	    .ResultDataMaxSizeInBytes = nativeInfo.accelerationStructureSize,
 	    .ScratchDataSizeInBytes = nativeInfo.buildScratchSize,
 	    .UpdateScratchDataSizeInBytes = nativeInfo.updateScratchSize};
 }
 
-RhiRayTracingAccelerationStructurePrebuildInfo VulkanRayTracingServices::GetTopLevelAccelerationStructurePrebuildInfo(
-    std::uint32_t instanceCount,
-    ERhiClassicTlasBuildFlags buildFlags) const noexcept
+RhiRayTracingAccelerationStructurePrebuildInfo VulkanRayTracingServices::GetTopLevelAccelerationStructurePrebuildInfo(std::uint32_t instanceCount, ERhiClassicTlasBuildFlags buildFlags) const noexcept
 {
 	return m_classicTlasServices.GetClassicTopLevelAccelerationStructurePrebuildInfo(instanceCount, buildFlags);
 }
 
-RhiPartitionedTlasBuildSizes VulkanRayTracingServices::GetPartitionedTopLevelAccelerationStructureBuildSizes(
-    const RhiPartitionedTlasDesc& desc) const noexcept
+RhiPartitionedTlasBuildSizes VulkanRayTracingServices::GetPartitionedTopLevelAccelerationStructureBuildSizes(const RhiPartitionedTlasDesc& desc) const noexcept
 {
 	return m_partitionedTlasServices.GetPartitionedTopLevelAccelerationStructureBuildSizes(desc);
 }
 
-RhiOwnedResourceHandle VulkanRayTracingServices::CreatePartitionedTopLevelAccelerationStructureBuffer(
-    const RhiPartitionedTlasBuildSizes& sizes,
-    std::wstring_view debugName)
+RhiOwnedResourceHandle VulkanRayTracingServices::CreatePartitionedTopLevelAccelerationStructureBuffer(const RhiPartitionedTlasBuildSizes& sizes, std::wstring_view debugName)
 {
 	return m_partitionedTlasServices.CreatePartitionedTopLevelAccelerationStructureBuffer(sizes, debugName);
 }
 
-RhiOwnedResourceHandle VulkanRayTracingServices::CreatePartitionedTopLevelAccelerationStructureOperationBuffer(
-    const RhiPartitionedTlasOperationPackDesc& operationPack,
-    std::wstring_view debugName)
+RhiOwnedResourceHandle VulkanRayTracingServices::CreatePartitionedTopLevelAccelerationStructureOperationBuffer(const RhiPartitionedTlasOperationPackDesc& operationPack, std::wstring_view debugName)
 {
 	return m_partitionedTlasServices.CreatePartitionedTopLevelAccelerationStructureOperationBuffer(operationPack, debugName);
 }
@@ -152,13 +142,14 @@ RhiOwnedResourceHandle VulkanRayTracingServices::CreateScratchBuffer(std::uint64
 	}
 
 	const RhiBufferResourceDesc desc{.SizeInBytes = sizeInBytes, .AllowUnorderedAccess = true};
-	const VkBufferCreateInfo bufferCreateInfo =
-	    VulkanTypeConversions::BuildBufferCreateInfo(desc, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(desc, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
 	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(
 	    bufferCreateInfo,
 	    RhiMemoryCategory::RayTracing,
 	    RhiMemoryResidencyClass::DeviceLocal,
 	    debugName.empty() ? L"RayTracingScratch" : debugName);
+
 	return record != nullptr ? MakeVulkanOwnedResourceHandle(std::move(record)) : RhiOwnedResourceHandle{};
 }
 
@@ -167,30 +158,28 @@ RhiOwnedResourceHandle VulkanRayTracingServices::CreateRayTracingScratchBuffer(s
 	return CreateScratchBuffer(sizeInBytes, debugName);
 }
 
-RhiOwnedResourceHandle VulkanRayTracingServices::CreateAccelerationStructureBuffer(
-    std::uint64_t sizeInBytes,
-    ERhiRayTracingAccelerationStructureType type,
-    std::wstring_view debugName)
+RhiOwnedResourceHandle VulkanRayTracingServices::CreateAccelerationStructureBuffer(std::uint64_t sizeInBytes, ERhiRayTracingAccelerationStructureType type, std::wstring_view debugName)
 {
 	const std::uint64_t asAlignment = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities().AccelerationStructureByteAlignment : 0;
-	if (m_rhi == nullptr || m_memoryAllocator == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsAccelerationStructure
-	    || m_rhi->GetCreateAccelerationStructure() == nullptr || m_rhi->GetAccelerationStructureDeviceAddress() == nullptr
-	    || !RhiContract::IsRayTracingBufferSizeUsable(sizeInBytes, asAlignment))
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsAccelerationStructure || m_rhi->GetCreateAccelerationStructure() == nullptr
+	    || m_rhi->GetAccelerationStructureDeviceAddress() == nullptr || !RhiContract::IsRayTracingBufferSizeUsable(sizeInBytes, asAlignment))
 	{
 		return {};
 	}
 
 	const VkAccelerationStructureTypeKHR nativeType = ToVkAccelerationStructureType(type);
 	const RhiBufferResourceDesc desc{.SizeInBytes = sizeInBytes, .AllowUnorderedAccess = true};
+
 	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(
 	    desc,
-	    VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
-	        | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+	    VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
 	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(
 	    bufferCreateInfo,
 	    RhiMemoryCategory::RayTracing,
 	    RhiMemoryResidencyClass::DeviceLocal,
 	    debugName.empty() ? L"RayTracingAccelerationStructure" : debugName);
+
 	if (record == nullptr || record->Buffer == VK_NULL_HANDLE)
 	{
 		return {};
@@ -205,6 +194,7 @@ RhiOwnedResourceHandle VulkanRayTracingServices::CreateAccelerationStructureBuff
 	    .size = sizeInBytes,
 	    .type = nativeType,
 	    .deviceAddress = 0};
+
 	VkAccelerationStructureKHR accelerationStructure = VK_NULL_HANDLE;
 	const VkResult result = m_rhi->GetCreateAccelerationStructure()(m_rhi->GetDevice(), &createInfo, nullptr, &accelerationStructure);
 	if (!VulkanResult::Succeeded(result) || accelerationStructure == VK_NULL_HANDLE)
@@ -214,35 +204,28 @@ RhiOwnedResourceHandle VulkanRayTracingServices::CreateAccelerationStructureBuff
 
 	record->AccelerationStructure = accelerationStructure;
 	record->AccelerationStructureType = nativeType;
+
 	const VkAccelerationStructureDeviceAddressInfoKHR addressInfo{
 	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR,
 	    .pNext = nullptr,
 	    .accelerationStructure = accelerationStructure};
+
 	record->DeviceAddress = m_rhi->GetAccelerationStructureDeviceAddress()(m_rhi->GetDevice(), &addressInfo);
 	SetVulkanAllocationRecordDebugName(*record, debugName.empty() ? L"RayTracingAccelerationStructure" : debugName);
 	return record->DeviceAddress != 0 ? MakeVulkanOwnedResourceHandle(std::move(record)) : RhiOwnedResourceHandle{};
 }
 
-RhiOwnedResourceHandle VulkanRayTracingServices::CreateRayTracingAccelerationStructureBuffer(
-    std::uint64_t sizeInBytes,
-    ERhiRayTracingAccelerationStructureType type,
-    std::wstring_view debugName)
+RhiOwnedResourceHandle VulkanRayTracingServices::CreateRayTracingAccelerationStructureBuffer(std::uint64_t sizeInBytes, ERhiRayTracingAccelerationStructureType type, std::wstring_view debugName)
 {
 	return CreateAccelerationStructureBuffer(sizeInBytes, type, debugName);
 }
 
-RhiOwnedResourceHandle VulkanRayTracingServices::CreateInstanceBuffer(
-    const RhiRayTracingInstanceDesc* instances,
-    std::uint32_t instanceCount,
-    std::wstring_view debugName)
+RhiOwnedResourceHandle VulkanRayTracingServices::CreateInstanceBuffer(const RhiRayTracingInstanceDesc* instances, std::uint32_t instanceCount, std::wstring_view debugName)
 {
 	return m_classicTlasServices.CreateClassicTopLevelAccelerationStructureInstanceBuffer(instances, instanceCount, debugName);
 }
 
-RhiOwnedResourceHandle VulkanRayTracingServices::CreateRayTracingInstanceBuffer(
-    const RhiRayTracingInstanceDesc* instances,
-    std::uint32_t instanceCount,
-    std::wstring_view debugName)
+RhiOwnedResourceHandle VulkanRayTracingServices::CreateRayTracingInstanceBuffer(const RhiRayTracingInstanceDesc* instances, std::uint32_t instanceCount, std::wstring_view debugName)
 {
 	return CreateInstanceBuffer(instances, instanceCount, debugName);
 }

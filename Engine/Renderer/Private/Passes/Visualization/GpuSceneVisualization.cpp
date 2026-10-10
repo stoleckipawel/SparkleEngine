@@ -12,7 +12,5 @@ void AddGpuSceneVisualizationPass(FrameGraphBuilder& builder, RenderViewportExte
 	parameters->SceneColor = builder.CreateUAV(resources.Transient.Scene.SceneColor);
 	parameters->GBufferBaseColor = builder.CreateSRV(resources.Transient.GBuffer.BaseColor);
 
-	builder.Dispatch<GpuSceneVisualizationCS>(
-	    parameters,
-	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
+	builder.Dispatch<GpuSceneVisualizationCS>(parameters, ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 }

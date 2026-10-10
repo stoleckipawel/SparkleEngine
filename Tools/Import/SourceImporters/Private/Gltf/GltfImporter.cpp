@@ -38,8 +38,7 @@ SourceImportOutput ImportGltfScene(const std::filesystem::path& filePath)
 	GltfAnimationImporter::ImportAnimations(scene.data, output);
 
 	if (output.scene.meshPrimitives.empty() != output.scene.meshInstances.empty()
-	    || (output.scene.meshPrimitives.empty() && output.scene.cameras.empty() && output.scene.lights.empty()
-	        && output.scene.animations.empty()))
+	    || (output.scene.meshPrimitives.empty() && output.scene.cameras.empty() && output.scene.lights.empty() && output.scene.animations.empty()))
 	{
 		throw Diagnostics::Error("glTF import produced incomplete mesh content or no supported scene content.");
 	}

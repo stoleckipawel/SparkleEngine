@@ -43,23 +43,8 @@ aiMatrix4x4 FbxNodeTransformConverter::ComputeNodeWorldTransform(const aiNode& n
 
 DirectX::XMMATRIX FbxNodeTransformConverter::ConvertAssimpMatrixToEngine(const aiMatrix4x4& matrix) noexcept
 {
-	return DirectX::XMMATRIX(
-	    matrix.a1,
-	    matrix.b1,
-	    matrix.c1,
-	    matrix.d1,
-	    matrix.a2,
-	    matrix.b2,
-	    matrix.c2,
-	    matrix.d2,
-	    matrix.a3,
-	    matrix.b3,
-	    matrix.c3,
-	    matrix.d3,
-	    matrix.a4,
-	    matrix.b4,
-	    matrix.c4,
-	    matrix.d4);
+	return DirectX::
+	    XMMATRIX(matrix.a1, matrix.b1, matrix.c1, matrix.d1, matrix.a2, matrix.b2, matrix.c2, matrix.d2, matrix.a3, matrix.b3, matrix.c3, matrix.d3, matrix.a4, matrix.b4, matrix.c4, matrix.d4);
 }
 
 DirectX::XMFLOAT4X4 FbxNodeTransformConverter::ConvertAssimpTransformToEngine(const aiMatrix4x4& matrix) noexcept
@@ -79,25 +64,19 @@ DirectX::XMFLOAT4X4 FbxNodeTransformConverter::BuildNodeAttachedTranslation(cons
 	return result;
 }
 
-DirectX::XMFLOAT4X4 FbxNodeTransformConverter::BuildNodeAttachedOrientation(
-    const aiNode& node,
-    const aiVector3D& position,
-    const aiVector3D& direction,
-    const aiVector3D& up)
+DirectX::XMFLOAT4X4 FbxNodeTransformConverter::BuildNodeAttachedOrientation(const aiNode& node, const aiVector3D& position, const aiVector3D& direction, const aiVector3D& up)
 {
 	const DirectX::XMVECTOR localPosition = DirectX::XMVectorSet(position.x, position.y, position.z, 1.0f);
 	const DirectX::XMVECTOR localDirection = DirectX::XMVectorSet(direction.x, direction.y, direction.z, 0.0f);
 	const DirectX::XMVECTOR localUp = DirectX::XMVectorSet(up.x, up.y, up.z, 0.0f);
-	if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(localDirection)) <= 1.0e-8f
-	    || DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(localUp)) <= 1.0e-8f
+	if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(localDirection)) <= 1.0e-8f || DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(localUp)) <= 1.0e-8f
 	    || DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(DirectX::XMVector3Cross(localUp, localDirection))) <= 1.0e-8f)
 	{
 		throw Diagnostics::Error("FBX node attachment has no usable orientation basis.");
 	}
 
 	DirectX::XMVECTOR determinant;
-	const DirectX::XMMATRIX localWorld =
-	    DirectX::XMMatrixInverse(&determinant, DirectX::XMMatrixLookToLH(localPosition, localDirection, localUp));
+	const DirectX::XMMATRIX localWorld = DirectX::XMMatrixInverse(&determinant, DirectX::XMMatrixLookToLH(localPosition, localDirection, localUp));
 	if (std::abs(DirectX::XMVectorGetX(determinant)) <= 1.0e-8f)
 	{
 		throw Diagnostics::Error("FBX node attachment orientation is singular.");
@@ -126,11 +105,7 @@ const aiNode* FbxNodeTransformConverter::FindNode(const aiNode& node, const aiSt
 	return nullptr;
 }
 
-bool FbxNodeTransformConverter::FindNodeIndex(
-    const aiNode& node,
-    const aiNode& target,
-    std::uint32_t& nextIndex,
-    std::uint32_t& outIndex) noexcept
+bool FbxNodeTransformConverter::FindNodeIndex(const aiNode& node, const aiNode& target, std::uint32_t& nextIndex, std::uint32_t& outIndex) noexcept
 {
 	const std::uint32_t nodeIndex = nextIndex++;
 	if (&node == &target)

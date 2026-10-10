@@ -6,8 +6,7 @@ RWTexture2D<float4> CurrentReservoirSample;
 RWTexture2D<float4> CurrentReservoirWeight;
 RWTexture2D<float4> CurrentReservoirSurface;
 
-static const int2 SpatialOffsets[8] =
-    {int2(1, 0), int2(-1, 0), int2(0, 1), int2(0, -1), int2(2, 1), int2(-2, 1), int2(2, -1), int2(-2, -1)};
+static const int2 SpatialOffsets[8] = {int2(1, 0), int2(-1, 0), int2(0, 1), int2(0, -1), int2(2, 1), int2(-2, 1), int2(2, -1), int2(-2, -1)};
 
 [numthreads(8, 8, 1)]
 void main(uint3 dispatchThreadId : SV_DispatchThreadID)
@@ -32,8 +31,7 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 		return;
 	}
 
-	DirectLightReservoir::Reservoir reservoir = DirectLightReservoir::UnpackReservoir(TemporalReservoirSample.Load(int3(pixelCoord, 0)),
-	                                                                                  TemporalReservoirWeight.Load(int3(pixelCoord, 0)));
+	DirectLightReservoir::Reservoir reservoir = DirectLightReservoir::UnpackReservoir(TemporalReservoirSample.Load(int3(pixelCoord, 0)), TemporalReservoirWeight.Load(int3(pixelCoord, 0)));
 
 	uint rng = RestirReservoirCommon::BuildSeed(pixelCoord, 0x5A71A1u);
 	const uint offsetStart = (uint)(CommonRandom::Random01(rng) * 8.0f) & 7u;
@@ -52,14 +50,10 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 			continue;
 		}
 
-		const DirectLightReservoir::Reservoir neighborReservoir =
-		    DirectLightReservoir::UnpackReservoir(TemporalReservoirSample.Load(int3(neighborCoord, 0)),
-		                                          TemporalReservoirWeight.Load(int3(neighborCoord, 0)));
-		DirectLightReservoir::CombineReservoir(reservoir,
-		                                       neighborReservoir,
-		                                       surface,
-		                                       RestirReservoirCommon::MaxSpatialM,
-		                                       CommonRandom::Random01(rng));
+		const DirectLightReservoir::Reservoir neighborReservoir = DirectLightReservoir::UnpackReservoir(TemporalReservoirSample.Load(int3(neighborCoord, 0)),
+		                                                                                                TemporalReservoirWeight.Load(int3(neighborCoord, 0)));
+
+		DirectLightReservoir::CombineReservoir(reservoir, neighborReservoir, surface, RestirReservoirCommon::MaxSpatialM, CommonRandom::Random01(rng));
 	}
 
 	CurrentReservoirSample[pixelCoord] = DirectLightReservoir::PackReservoirSample(reservoir);

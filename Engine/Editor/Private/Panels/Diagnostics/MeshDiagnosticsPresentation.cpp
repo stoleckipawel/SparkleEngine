@@ -73,10 +73,7 @@ namespace MeshDiagnosticsPresentation
 
 	std::string FormatMemorySummary(const MeshDiagnosticsRow& row)
 	{
-		return std::format(
-		    "GPU {} / CPU {}",
-		    PanelDiagnosticsFormatting::FormatByteSize(row.EstimatedGpuByteSize),
-		    PanelDiagnosticsFormatting::FormatByteSize(row.EstimatedCpuByteSize));
+		return std::format("GPU {} / CPU {}", PanelDiagnosticsFormatting::FormatByteSize(row.EstimatedGpuByteSize), PanelDiagnosticsFormatting::FormatByteSize(row.EstimatedCpuByteSize));
 	}
 
 	std::string FormatMaterial(const MeshDiagnosticsRow& row)
@@ -91,11 +88,7 @@ namespace MeshDiagnosticsPresentation
 			return "unknown";
 		}
 
-		return std::format(
-		    "{:.2f} x {:.2f} x {:.2f}",
-		    bounds.Max[0] - bounds.Min[0],
-		    bounds.Max[1] - bounds.Min[1],
-		    bounds.Max[2] - bounds.Min[2]);
+		return std::format("{:.2f} x {:.2f} x {:.2f}", bounds.Max[0] - bounds.Min[0], bounds.Max[1] - bounds.Min[1], bounds.Max[2] - bounds.Min[2]);
 	}
 
 	std::string FormatBoundsPoint(const std::array<float, 3>& point)

@@ -37,6 +37,7 @@ class ScopedGpuEvent final
 {
 public:
 	ScopedGpuEvent() noexcept = default;
+
 	~ScopedGpuEvent() noexcept;
 
 	ScopedGpuEvent(const ScopedGpuEvent&) = delete;
@@ -59,6 +60,7 @@ class ScopedGpuTimer final
 {
 public:
 	ScopedGpuTimer() noexcept = default;
+
 	~ScopedGpuTimer() noexcept;
 
 	ScopedGpuTimer(const ScopedGpuTimer&) = delete;
@@ -93,6 +95,7 @@ class ScopedGpuScope final
 {
 public:
 	ScopedGpuScope() noexcept = default;
+
 	ScopedGpuScope(ScopedGpuEvent eventScope, ScopedGpuTimer timerScope) noexcept;
 	~ScopedGpuScope() noexcept = default;
 
@@ -137,12 +140,7 @@ private:
 	RhiTimestampQueryHandle AllocateTimestampQuery(ERhiQueueType queueType) noexcept;
 	void ReleaseTimestampQuery(RhiTimestampQueryHandle query) noexcept;
 	bool WriteTimestamp(RenderCommandContext& commands, RhiTimestampQueryHandle query) noexcept;
-	void RecordCompletedTimer(
-	    std::string label,
-	    RhiTimestampQueryHandle beginQuery,
-	    RhiTimestampQueryHandle endQuery,
-	    ERhiQueueType queueType,
-	    std::uint16_t depth) noexcept;
+	void RecordCompletedTimer(std::string label, RhiTimestampQueryHandle beginQuery, RhiTimestampQueryHandle endQuery, ERhiQueueType queueType, std::uint16_t depth) noexcept;
 	void ResetRecordedTimers() noexcept;
 
 	RenderDiagnostics* m_backendDiagnostics = nullptr;

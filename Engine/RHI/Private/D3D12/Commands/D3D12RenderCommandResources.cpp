@@ -11,11 +11,7 @@ void D3D12RenderCommandList::CopyResource(RhiResourceHandle destinationResource,
 {
 	if (m_commandList == nullptr || !destinationResource || !sourceResource)
 	{
-		Diagnostics::Fatal(
-		    g_d3d12RenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "D3D12 CopyResource requires an active command list and two valid resources.");
+		Diagnostics::Fatal(g_d3d12RenderCommandListLogger, __FILE__, __LINE__, "D3D12 CopyResource requires an active command list and two valid resources.");
 	}
 	TrackResource(destinationResource);
 	TrackResource(sourceResource);
@@ -26,11 +22,7 @@ void D3D12RenderCommandList::AliasResource(RhiResourceHandle beforeResource, Rhi
 {
 	if (m_commandList == nullptr || !beforeResource || !afterResource)
 	{
-		Diagnostics::Fatal(
-		    g_d3d12RenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "D3D12 aliasing barriers require an active command list and two valid resources.");
+		Diagnostics::Fatal(g_d3d12RenderCommandListLogger, __FILE__, __LINE__, "D3D12 aliasing barriers require an active command list and two valid resources.");
 	}
 
 	TrackResource(beforeResource);
@@ -48,11 +40,7 @@ void D3D12RenderCommandList::TransitionResource(RhiResourceHandle resource, Reso
 {
 	if (m_commandList == nullptr || !resource)
 	{
-		Diagnostics::Fatal(
-		    g_d3d12RenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "D3D12 resource transitions require an active command list and a valid resource.");
+		Diagnostics::Fatal(g_d3d12RenderCommandListLogger, __FILE__, __LINE__, "D3D12 resource transitions require an active command list and a valid resource.");
 	}
 	if (before == after)
 	{
@@ -78,11 +66,7 @@ void D3D12RenderCommandList::UnorderedAccessBarrier(RhiResourceHandle resource) 
 {
 	if (m_commandList == nullptr || !resource)
 	{
-		Diagnostics::Fatal(
-		    g_d3d12RenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "D3D12 unordered-access barriers require an active command list and a valid resource.");
+		Diagnostics::Fatal(g_d3d12RenderCommandListLogger, __FILE__, __LINE__, "D3D12 unordered-access barriers require an active command list and a valid resource.");
 	}
 	TrackResource(resource);
 

@@ -32,11 +32,10 @@ bool OpenNsightCaptureInDesktopShell(const wchar_t* path)
 		VARIANT empty{};
 		long window = 0;
 		if (SUCCEEDED(CoCreateInstance(CLSID_ShellWindows, nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&windows)))
-		    && windows->FindWindowSW(&empty, &empty, SWC_DESKTOP, &window, SWFO_NEEDDISPATCH, &desktop) == S_OK
-		    && SUCCEEDED(desktop.As(&services)) && SUCCEEDED(services->QueryService(SID_STopLevelBrowser, IID_PPV_ARGS(&browser)))
-		    && SUCCEEDED(browser->QueryActiveShellView(&view))
-		    && SUCCEEDED(view->GetItemObject(SVGIO_BACKGROUND, IID_PPV_ARGS(&background))) && SUCCEEDED(background.As(&folder))
-		    && SUCCEEDED(folder->get_Application(&application)) && SUCCEEDED(application.As(&shell)))
+		    && windows->FindWindowSW(&empty, &empty, SWC_DESKTOP, &window, SWFO_NEEDDISPATCH, &desktop) == S_OK && SUCCEEDED(desktop.As(&services))
+		    && SUCCEEDED(services->QueryService(SID_STopLevelBrowser, IID_PPV_ARGS(&browser))) && SUCCEEDED(browser->QueryActiveShellView(&view))
+		    && SUCCEEDED(view->GetItemObject(SVGIO_BACKGROUND, IID_PPV_ARGS(&background))) && SUCCEEDED(background.As(&folder)) && SUCCEEDED(folder->get_Application(&application))
+		    && SUCCEEDED(application.As(&shell)))
 		{
 			if (BSTR filename = SysAllocString(path))
 			{

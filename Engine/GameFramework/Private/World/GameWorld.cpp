@@ -96,6 +96,7 @@ void GameWorld::Update(float deltaSeconds)
 	            .DeltaSeconds = deltaSeconds,
 	        },
 	};
+
 	if (!m_state->ExecuteSystems(executionContext))
 	{
 		Diagnostics::Fatal(g_gameWorldLogger, __FILE__, __LINE__, "Game-system graph execution failed.");
@@ -120,16 +121,11 @@ void GameWorld::CommitSceneLoadPackage(Assets::SceneLoadPackage package)
 	std::size_t expectedEntityCount = 1 + package.Level.lights.size();
 	for (const SceneAssetPayload& payload : package.AssetPayloads)
 	{
-		expectedEntityCount += payload.animations.size() + payload.staticMeshInstances.size() + payload.skeletalMeshInstances.size()
-		    + payload.cameras.size() + payload.lights.size();
+		expectedEntityCount += payload.animations.size() + payload.staticMeshInstances.size() + payload.skeletalMeshInstances.size() + payload.cameras.size() + payload.lights.size();
 	}
 	if (package.Entities.size() != expectedEntityCount)
 	{
-		Diagnostics::Fatal(
-		    g_gameWorldLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Scene load blueprint count does not match the entity construction records.");
+		Diagnostics::Fatal(g_gameWorldLogger, __FILE__, __LINE__, "Scene load blueprint count does not match the entity construction records.");
 	}
 
 	GameWorld stagedWorld(m_taskExecutor);
@@ -168,11 +164,7 @@ void GameWorld::CommitSceneLoadPackage(Assets::SceneLoadPackage package)
 	}
 	if (stagedWorld.m_state->GetEntityCount() != package.Entities.size())
 	{
-		Diagnostics::Fatal(
-		    g_gameWorldLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Staged world entity count does not match the validated blueprint package.");
+		Diagnostics::Fatal(g_gameWorldLogger, __FILE__, __LINE__, "Staged world entity count does not match the validated blueprint package.");
 	}
 
 	m_state.swap(stagedWorld.m_state);

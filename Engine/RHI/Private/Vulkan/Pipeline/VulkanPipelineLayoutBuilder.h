@@ -13,6 +13,7 @@ class VulkanPipelineLayout final
 {
 public:
 	VulkanPipelineLayout() noexcept = default;
+
 	VulkanPipelineLayout(VkDevice device, VkPipelineLayout layout) noexcept;
 	~VulkanPipelineLayout() noexcept;
 
@@ -22,6 +23,7 @@ public:
 	VulkanPipelineLayout& operator=(VulkanPipelineLayout&& other) noexcept;
 
 	VkPipelineLayout Get() const noexcept { return m_layout; }
+
 	explicit operator bool() const noexcept { return m_layout != VK_NULL_HANDLE; }
 
 private:

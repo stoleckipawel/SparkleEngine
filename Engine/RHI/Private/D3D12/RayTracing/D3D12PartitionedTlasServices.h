@@ -13,21 +13,12 @@ class D3D12Rhi;
 class D3D12PartitionedTlasServices final : public RhiPartitionedTlasService
 {
 public:
-	D3D12PartitionedTlasServices(
-	    D3D12Rhi& rhi,
-	    D3D12GpuMemoryAllocator& memoryAllocator,
-	    D3D12NvapiRayTracingProvider& nvapiProvider) noexcept;
+	D3D12PartitionedTlasServices(D3D12Rhi& rhi, D3D12GpuMemoryAllocator& memoryAllocator, D3D12NvapiRayTracingProvider& nvapiProvider) noexcept;
 
-	RhiPartitionedTlasBuildSizes GetPartitionedTopLevelAccelerationStructureBuildSizes(
-	    const RhiPartitionedTlasDesc& desc) const noexcept override;
-	RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureBuffer(
-	    const RhiPartitionedTlasBuildSizes& sizes,
-	    std::wstring_view debugName) override;
-	RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureOperationBuffer(
-	    const RhiPartitionedTlasOperationPackDesc& operationPack,
-	    std::wstring_view debugName) override;
-	RhiPartitionedTlasOperationBufferLayout GetPartitionedTopLevelAccelerationStructureOperationBufferLayout(
-	    const RhiPartitionedTlasDesc& desc) const noexcept override;
+	RhiPartitionedTlasBuildSizes GetPartitionedTopLevelAccelerationStructureBuildSizes(const RhiPartitionedTlasDesc& desc) const noexcept override;
+	RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureBuffer(const RhiPartitionedTlasBuildSizes& sizes, std::wstring_view debugName) override;
+	RhiOwnedResourceHandle CreatePartitionedTopLevelAccelerationStructureOperationBuffer(const RhiPartitionedTlasOperationPackDesc& operationPack, std::wstring_view debugName) override;
+	RhiPartitionedTlasOperationBufferLayout GetPartitionedTopLevelAccelerationStructureOperationBufferLayout(const RhiPartitionedTlasDesc& desc) const noexcept override;
 
 private:
 	static std::uint32_t ToNvapiPartitionedInstanceFlags(RhiPartitionedTlasInstanceFlags flags) noexcept;

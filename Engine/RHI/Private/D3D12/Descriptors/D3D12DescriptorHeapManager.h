@@ -28,11 +28,7 @@ public:
 	void FreeResourceViewCopySource(const D3D12DescriptorHandle& handle) noexcept;
 
 	D3D12DescriptorHandle AllocateContiguous(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t count);
-	void FreeContiguous(
-	    D3D12_DESCRIPTOR_HEAP_TYPE type,
-	    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
-	    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle,
-	    uint32_t count);
+	void FreeContiguous(D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle, uint32_t count);
 	void FreeContiguous(D3D12_DESCRIPTOR_HEAP_TYPE type, const D3D12DescriptorHandle& handle, uint32_t count);
 
 	D3D12DescriptorHeap* GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE type) const noexcept;

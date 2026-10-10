@@ -8,8 +8,5 @@
 class ViewportCaptureWriter final
 {
 public:
-	static ViewportCaptureResult Write(
-	    ViewportCaptureReadback readback,
-	    const std::filesystem::path& outputPath,
-	    std::stop_token cancellationToken) noexcept;
+	static ViewportCaptureResult Write(ViewportCaptureReadback readback, const std::filesystem::path& outputPath, std::stop_token cancellationToken) noexcept;
 };

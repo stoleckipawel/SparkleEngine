@@ -75,8 +75,6 @@ namespace Assets
 
 static_assert(std::is_trivially_copyable_v<Assets::CookedMeshSkinInfluence>, "CookedMeshSkinInfluence must stay trivially copyable.");
 static_assert(std::is_trivially_copyable_v<Assets::CookedMeshVertex>, "CookedMeshVertex must stay trivially copyable.");
-static_assert(
-    std::is_trivially_copyable_v<Assets::CookedMeshMorphTargetRecord>,
-    "CookedMeshMorphTargetRecord must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Assets::CookedMeshMorphTargetRecord>, "CookedMeshMorphTargetRecord must stay trivially copyable.");
 static_assert(std::is_trivially_copyable_v<Assets::CookedMeshMorphTargetDelta>, "CookedMeshMorphTargetDelta must stay trivially copyable.");
 static_assert(std::is_trivially_copyable_v<Assets::CookedMeshAssetHeader>, "CookedMeshAssetHeader must stay trivially copyable.");

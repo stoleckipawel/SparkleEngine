@@ -10,21 +10,13 @@ namespace ECS::EntityCommandDetail
 		m_entities.reserve(commandCount);
 	}
 
-	bool EntityCommandConflictTracker::TryClaim(
-	    EntityId entity,
-	    EntityCommandBufferId bufferId,
-	    EntityCommandKind kind,
-	    RuntimeComponentTypeId componentType,
-	    bool hasComponentType)
+	bool EntityCommandConflictTracker::TryClaim(EntityId entity, EntityCommandBufferId bufferId, EntityCommandKind kind, RuntimeComponentTypeId componentType, bool hasComponentType)
 	{
 		EntityConflictState& state = m_entities[PackEntity(entity)];
 		if (kind == EntityCommandKind::Destroy)
 		{
 			if ((state.HasEntityWideOwner && state.EntityWideOwner != bufferId)
-			    || std::any_of(
-			        state.ComponentOwners.begin(),
-			        state.ComponentOwners.end(),
-			        [&](const ComponentOwner& owner) { return owner.Buffer != bufferId; }))
+			    || std::any_of(state.ComponentOwners.begin(), state.ComponentOwners.end(), [&](const ComponentOwner& owner) { return owner.Buffer != bufferId; }))
 			{
 				return false;
 			}
@@ -55,14 +47,9 @@ namespace ECS::EntityCommandDetail
 		return (static_cast<std::uint64_t>(entity.GetGeneration()) << 32u) | entity.GetSlot();
 	}
 
-	const EntityCommandConflictTracker::ComponentOwner* EntityCommandConflictTracker::FindComponentOwner(
-	    const EntityConflictState& state,
-	    RuntimeComponentTypeId type) noexcept
+	const EntityCommandConflictTracker::ComponentOwner* EntityCommandConflictTracker::FindComponentOwner(const EntityConflictState& state, RuntimeComponentTypeId type) noexcept
 	{
-		const auto owner = std::find_if(
-		    state.ComponentOwners.begin(),
-		    state.ComponentOwners.end(),
-		    [&](const ComponentOwner& candidate) { return candidate.Type == type; });
+		const auto owner = std::find_if(state.ComponentOwners.begin(), state.ComponentOwners.end(), [&](const ComponentOwner& candidate) { return candidate.Type == type; });
 		return owner == state.ComponentOwners.end() ? nullptr : &*owner;
 	}
 }

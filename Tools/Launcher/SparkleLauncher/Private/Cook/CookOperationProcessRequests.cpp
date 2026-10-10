@@ -11,8 +11,7 @@ namespace SparkleLauncher
 {
 	static bool IncludesScope(const CookOperationPlan& plan, CookWorkspaceScope scope)
 	{
-		return std::find(plan.Request.SelectedScopes.begin(), plan.Request.SelectedScopes.end(), scope)
-		    != plan.Request.SelectedScopes.end();
+		return std::find(plan.Request.SelectedScopes.begin(), plan.Request.SelectedScopes.end(), scope) != plan.Request.SelectedScopes.end();
 	}
 
 	static void AppendCommonShaderCompilerArguments(const CookOperationPlan& plan, std::vector<std::string>& arguments)
@@ -42,14 +41,7 @@ namespace SparkleLauncher
 		process.ExecutablePath = ResolveSparkleToolPath(plan.RepositoryRoot, plan.ToolProfile, "AssetCooker");
 		process.WorkingDirectory = plan.RepositoryRoot;
 		process.LogPath = ResolveLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, logFileName);
-		process.Arguments = {
-		    std::string(command),
-		    plan.Request.ContentId,
-		    plan.Request.RuntimeProfile,
-		    "--tool-profile",
-		    plan.ToolProfile,
-		    "--root",
-		    plan.RepositoryRoot.string()};
+		process.Arguments = {std::string(command), plan.Request.ContentId, plan.Request.RuntimeProfile, "--tool-profile", plan.ToolProfile, "--root", plan.RepositoryRoot.string()};
 		return process;
 	}
 

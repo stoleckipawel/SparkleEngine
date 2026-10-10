@@ -20,12 +20,14 @@ std::unique_ptr<D3D12GpuAllocationRecord> D3D12UploadBuffer::Upload(D3D12Rhi& rh
 	resourceDesc.SampleDesc.Quality = 0;
 	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 	resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
 	std::unique_ptr<D3D12GpuAllocationRecord> uploadBuffer = rhi.GetMemoryAllocator().CreateBuffer(
 	    resourceDesc,
 	    D3D12_RESOURCE_STATE_GENERIC_READ,
 	    RhiMemoryCategory::Upload,
 	    RhiMemoryResidencyClass::HostUpload,
 	    L"RHI_UploadBuffer");
+
 	if (uploadBuffer == nullptr || uploadBuffer->Resource == nullptr)
 	{
 		Diagnostics::Fatal(g_d3d12UploadBufferLogger, __FILE__, __LINE__, "D3D12UploadBuffer: failed to allocate upload buffer.");

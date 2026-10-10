@@ -22,6 +22,7 @@ public:
 	    m_userType(&typeid(T))
 	{
 	}
+
 	template <typename T> explicit TaskExecutionContext(std::shared_ptr<T> value) noexcept :
 	    m_userData(value.get()),
 	    m_userType(&typeid(T)),
@@ -29,21 +30,20 @@ public:
 	{
 	}
 
-	template <typename T> T* TryGet() noexcept
-	{
-		return m_userType != nullptr && *m_userType == typeid(T) ? static_cast<T*>(m_userData) : nullptr;
-	}
+	template <typename T> T* TryGet() noexcept { return m_userType != nullptr && *m_userType == typeid(T) ? static_cast<T*>(m_userData) : nullptr; }
 
-	template <typename T> const T* TryGet() const noexcept
-	{
-		return m_userType != nullptr && *m_userType == typeid(T) ? static_cast<const T*>(m_userData) : nullptr;
-	}
+	template <typename T> const T* TryGet() const noexcept { return m_userType != nullptr && *m_userType == typeid(T) ? static_cast<const T*>(m_userData) : nullptr; }
 
 	std::uint64_t GetExecutionGeneration() const noexcept { return m_executionGeneration; }
+
 	TaskLane GetLane() const noexcept { return m_lane; }
+
 	bool IsCancellationRequested() const noexcept { return m_cancellation.stop_requested(); }
+
 	std::stop_token GetCancellationToken() const noexcept { return m_cancellation; }
+
 	bool HasUserData() const noexcept { return m_userData != nullptr; }
+
 	bool HasOwnedUserData() const noexcept { return m_userOwner != nullptr; }
 
 private:

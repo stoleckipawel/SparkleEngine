@@ -32,18 +32,13 @@ bool ArtifactBundlePublication::IsRelativeFilePath(const std::filesystem::path& 
 	return path.filename() != ".";
 }
 
-bool ArtifactBundlePublication::WriteFile(
-    const std::filesystem::path& stagingDirectory,
-    const ArtifactBundleFile& file,
-    ArtifactBundlePublishedFile& published,
-    std::string& errorMessage)
+bool ArtifactBundlePublication::WriteFile(const std::filesystem::path& stagingDirectory, const ArtifactBundleFile& file, ArtifactBundlePublishedFile& published, std::string& errorMessage)
 {
 	const std::filesystem::path stagedPath = stagingDirectory / file.RelativePath;
 	Hash::Sha256Digest sourceHash{};
 	Hash::Sha256Digest storedHash{};
-	if (!Hash::TrySha256(file.Bytes.data(), file.Bytes.size(), sourceHash, errorMessage)
-	    || !Files::TryWriteAllBytes(stagedPath, file.Bytes, errorMessage) || !Hash::TrySha256File(stagedPath, storedHash, errorMessage)
-	    || sourceHash != storedHash)
+	if (!Hash::TrySha256(file.Bytes.data(), file.Bytes.size(), sourceHash, errorMessage) || !Files::TryWriteAllBytes(stagedPath, file.Bytes, errorMessage)
+	    || !Hash::TrySha256File(stagedPath, storedHash, errorMessage) || sourceHash != storedHash)
 	{
 		if (errorMessage.empty())
 		{
@@ -51,20 +46,16 @@ bool ArtifactBundlePublication::WriteFile(
 		}
 		return false;
 	}
-	published = ArtifactBundlePublishedFile{
-	    .RelativePath = file.RelativePath,
-	    .Size = static_cast<std::uint64_t>(file.Bytes.size()),
-	    .Sha256 = Hash::Sha256ToHex(sourceHash)};
+	published = ArtifactBundlePublishedFile{.RelativePath = file.RelativePath, .Size = static_cast<std::uint64_t>(file.Bytes.size()), .Sha256 = Hash::Sha256ToHex(sourceHash)};
 	return true;
 }
 
-ArtifactBundlePublicationResult ArtifactBundlePublication::Publish(
-    ArtifactBundlePublicationRequest request,
-    std::stop_token cancellationToken) noexcept
+ArtifactBundlePublicationResult ArtifactBundlePublication::Publish(ArtifactBundlePublicationRequest request, std::stop_token cancellationToken) noexcept
 {
 	ArtifactBundlePublicationResult result{.PublicationDirectory = request.PublicationDirectory};
 	std::filesystem::path stagingDirectory;
 	bool ownsStagingDirectory = false;
+
 	auto fail = [&](std::string message)
 	{
 		result.ErrorMessage = std::move(message);
@@ -120,8 +111,7 @@ ArtifactBundlePublicationResult ArtifactBundlePublication::Publish(
 		}
 		fileError.clear();
 		const std::filesystem::path publicationDirectory = std::filesystem::weakly_canonical(request.PublicationDirectory, fileError);
-		if (fileError || publicationDirectory == allowedRoot || !Paths::IsUnderRoot(publicationDirectory, allowedRoot)
-		    || std::filesystem::exists(publicationDirectory, fileError) || fileError)
+		if (fileError || publicationDirectory == allowedRoot || !Paths::IsUnderRoot(publicationDirectory, allowedRoot) || std::filesystem::exists(publicationDirectory, fileError) || fileError)
 		{
 			return fail("Artifact publication path is outside its allowed root or already exists.");
 		}
@@ -133,8 +123,7 @@ ArtifactBundlePublicationResult ArtifactBundlePublication::Publish(
 
 		stagingDirectory = publicationDirectory;
 		stagingDirectory += ".staging";
-		if (std::filesystem::exists(stagingDirectory, fileError) || fileError
-		    || !std::filesystem::create_directories(stagingDirectory, fileError) || fileError)
+		if (std::filesystem::exists(stagingDirectory, fileError) || fileError || !std::filesystem::create_directories(stagingDirectory, fileError) || fileError)
 		{
 			return fail("Artifact staging directory could not be created.");
 		}

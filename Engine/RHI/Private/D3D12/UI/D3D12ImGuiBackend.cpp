@@ -86,12 +86,7 @@ void D3D12ImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
 {
 	ImGuiContext* previousContext = ActivateContext();
 	RenderCommandList& commandList = m_renderHardwareInterface.GetGraphicsCommandList(m_renderHardwareInterface.GetCurrentFrameIndex());
-	Render(
-	    commandList.GetNativeHandle(
-	        RhiNativeInteropRequest{
-	            .Consumer = ERhiNativeInteropConsumer::Presentation,
-	            .Reason = "Render ImGui draw data through D3D12 backend"}),
-	    drawData);
+	Render(commandList.GetNativeHandle(RhiNativeInteropRequest{.Consumer = ERhiNativeInteropConsumer::Presentation, .Reason = "Render ImGui draw data through D3D12 backend"}), drawData);
 	RestoreContext(previousContext);
 }
 
@@ -136,24 +131,18 @@ void D3D12ImGuiBackend::RestoreContext(ImGuiContext* context) noexcept
 	ImGui::SetCurrentContext(context);
 }
 
-void D3D12ImGuiBackend::AllocateDescriptor(
-    ImGui_ImplDX12_InitInfo* info,
-    D3D12_CPU_DESCRIPTOR_HANDLE* outCpuHandle,
-    D3D12_GPU_DESCRIPTOR_HANDLE* outGpuHandle)
+void D3D12ImGuiBackend::AllocateDescriptor(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* outCpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE* outGpuHandle)
 {
 	auto* renderHardwareInterface = static_cast<D3D12RenderHardwareInterface*>(info->UserData);
-	const RhiDescriptorAllocation allocation =
-	    renderHardwareInterface->GetDescriptorService().AllocateDescriptor(ERhiDescriptorAllocatorType::ShaderResource);
+	const RhiDescriptorAllocation allocation = renderHardwareInterface->GetDescriptorService().AllocateDescriptor(ERhiDescriptorAllocatorType::ShaderResource);
 	*outCpuHandle = ToD3D12CpuDescriptor(allocation.CpuHandle);
 	*outGpuHandle = ToD3D12GpuDescriptor(allocation.GpuHandle);
 }
 
-void D3D12ImGuiBackend::ReleaseDescriptor(
-    ImGui_ImplDX12_InitInfo* info,
-    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
-    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
+void D3D12ImGuiBackend::ReleaseDescriptor(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
 {
 	auto* renderHardwareInterface = static_cast<D3D12RenderHardwareInterface*>(info->UserData);
+
 	renderHardwareInterface->GetDescriptorService().ReleaseDescriptor(
 	    ERhiDescriptorAllocatorType::ShaderResource,
 	    RhiDescriptorAllocation{.CpuHandle = RhiCpuDescriptorHandle{cpuHandle.ptr}, .GpuHandle = RhiGpuDescriptorHandle{gpuHandle.ptr}});

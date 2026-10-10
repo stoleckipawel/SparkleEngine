@@ -37,11 +37,7 @@ VulkanCommandQueue::VulkanCommandQueue(VulkanRhi& rhi, ERhiQueueType queueType, 
     m_queueType(queueType),
     m_nativeQueue(std::move(nativeQueue))
 {
-	const VkSemaphoreTypeCreateInfo timelineCreateInfo{
-	    .sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
-	    .pNext = nullptr,
-	    .semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE,
-	    .initialValue = 0};
+	const VkSemaphoreTypeCreateInfo timelineCreateInfo{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO, .pNext = nullptr, .semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE, .initialValue = 0};
 	const VkSemaphoreCreateInfo semaphoreInfo{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, .pNext = &timelineCreateInfo, .flags = 0};
 	const VkResult result = vkCreateSemaphore(rhi.GetDevice(), &semaphoreInfo, nullptr, &m_timelineSemaphore);
 	if (!VulkanResult::Succeeded(result))
@@ -110,11 +106,8 @@ bool VulkanCommandQueue::ResolveWaitState(std::span<const RhiSubmissionToken> wa
 	return true;
 }
 
-void VulkanCommandQueue::BuildNativeSubmission(
-    const VulkanQueueSubmission& submission,
-    const RhiSubmissionState& waitState,
-    std::uint64_t submissionValue,
-    NativeSubmission& nativeSubmission) const noexcept
+void VulkanCommandQueue::BuildNativeSubmission(const VulkanQueueSubmission& submission, const RhiSubmissionState& waitState, std::uint64_t submissionValue, NativeSubmission& nativeSubmission)
+    const noexcept
 {
 	for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 	{
@@ -149,6 +142,7 @@ void VulkanCommandQueue::BuildNativeSubmission(
 	    .pWaitSemaphoreValues = nativeSubmission.WaitCount != 0 ? nativeSubmission.WaitValues.data() : nullptr,
 	    .signalSemaphoreValueCount = nativeSubmission.SignalCount,
 	    .pSignalSemaphoreValues = nativeSubmission.SignalValues.data()};
+
 	nativeSubmission.SubmitInfo = VkSubmitInfo{
 	    .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
 	    .pNext = &nativeSubmission.TimelineInfo,
@@ -210,13 +204,9 @@ void VulkanCommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexce
 		return;
 	}
 
-	const VkSemaphoreWaitInfo waitInfo{
-	    .sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
-	    .pNext = nullptr,
-	    .flags = 0,
-	    .semaphoreCount = 1,
-	    .pSemaphores = &m_timelineSemaphore,
-	    .pValues = &submissionValue};
+	const VkSemaphoreWaitInfo
+	    waitInfo{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO, .pNext = nullptr, .flags = 0, .semaphoreCount = 1, .pSemaphores = &m_timelineSemaphore, .pValues = &submissionValue};
+
 	const VkResult result = vkWaitSemaphores(m_rhi.GetDevice(), &waitInfo, GetWaitTimeoutNanoseconds());
 	if (!VulkanResult::Succeeded(result))
 	{
@@ -224,11 +214,7 @@ void VulkanCommandQueue::WaitForSubmission(std::uint64_t submissionValue) noexce
 		    LogVulkanCommandQueue,
 		    __FILE__,
 		    __LINE__,
-		    std::format(
-		        "{} while waiting for Vulkan {} queue submission {}.",
-		        VulkanResult::FormatFailure("vkWaitSemaphores", result),
-		        static_cast<std::uint32_t>(m_queueType),
-		        submissionValue));
+		    std::format("{} while waiting for Vulkan {} queue submission {}.", VulkanResult::FormatFailure("vkWaitSemaphores", result), static_cast<std::uint32_t>(m_queueType), submissionValue));
 	}
 }
 

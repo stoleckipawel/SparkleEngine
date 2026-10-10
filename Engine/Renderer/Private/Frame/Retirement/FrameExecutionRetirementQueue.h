@@ -20,10 +20,7 @@ public:
 	FrameExecutionRetirementQueue(FrameExecutionRetirementQueue&&) = delete;
 	FrameExecutionRetirementQueue& operator=(FrameExecutionRetirementQueue&&) = delete;
 
-	void Retire(
-	    const RenderDeviceServices& deviceServices,
-	    std::unique_ptr<FrameGraph> graph,
-	    std::vector<std::unique_ptr<RenderFrame>> renderFrames) noexcept;
+	void Retire(const RenderDeviceServices& deviceServices, std::unique_ptr<FrameGraph> graph, std::vector<std::unique_ptr<RenderFrame>> renderFrames) noexcept;
 	void Poll(const RenderDeviceServices& deviceServices) noexcept;
 
 private:

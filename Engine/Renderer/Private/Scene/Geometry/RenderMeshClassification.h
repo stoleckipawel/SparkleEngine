@@ -18,8 +18,7 @@ enum class RenderMeshInstanceGroupKind : std::uint32_t
 
 using RenderMeshInstanceGroupIndex = std::uint32_t;
 
-inline constexpr RenderMeshInstanceGroupIndex kInvalidRenderMeshInstanceGroupIndex =
-    (std::numeric_limits<RenderMeshInstanceGroupIndex>::max)();
+inline constexpr RenderMeshInstanceGroupIndex kInvalidRenderMeshInstanceGroupIndex = (std::numeric_limits<RenderMeshInstanceGroupIndex>::max)();
 
 struct RenderMeshInstanceGroup final
 {

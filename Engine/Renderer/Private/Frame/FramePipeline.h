@@ -70,6 +70,7 @@ private:
 	void SubmitViewportRenderRequest(ViewportRenderRequest request) noexcept { m_viewportRenderRequest = std::move(request); }
 
 	void RequestResize(RenderViewportExtent extent, bool minimized) noexcept;
+
 	std::uint64_t GetViewportRequestGeneration() const noexcept { return m_viewportRenderRequest.Generation; }
 
 	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept { return m_viewportRenderProducts; }

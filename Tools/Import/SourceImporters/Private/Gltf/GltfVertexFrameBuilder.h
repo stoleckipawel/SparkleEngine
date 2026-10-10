@@ -10,6 +10,7 @@ public:
 
 private:
 	static constexpr float kMinimumDirectionLengthSquared = 1.0e-12f;
+
 	static constexpr float kUnitFrameTolerance = 1.0e-3f;
 
 	static bool IsFinite(const DirectX::XMFLOAT3& value) noexcept;

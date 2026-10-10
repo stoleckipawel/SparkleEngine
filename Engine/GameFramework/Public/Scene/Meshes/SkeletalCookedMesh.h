@@ -17,6 +17,7 @@ public:
 	SkeletalCookedMesh& operator=(SkeletalCookedMesh&&) noexcept;
 
 	Assets::CookedAssetId GetAssetId() const noexcept { return m_assetId; }
+
 	const SkeletalMeshData& GetSkeletalMeshData() const noexcept { return m_skeletalData; }
 
 private:

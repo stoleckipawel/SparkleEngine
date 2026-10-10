@@ -24,6 +24,7 @@ namespace ECS
 	class GameWorldState;
 	class RenderFrameSubmissionExtractor;
 }
+
 namespace Assets
 {
 	struct SceneLoadPackage;
@@ -49,8 +50,11 @@ public:
 	WorldReadView AcquireReadView() const noexcept;
 	WorldChangeBatch ReadChanges(const WorldChangeCursor& cursor) const;
 	bool AcknowledgeChanges(WorldChangeCursor& cursor, WorldSequence sequence) const noexcept;
+
 	std::string_view GetActiveLevelName() const noexcept { return m_activeLevelName; }
+
 	std::uint64_t GetGeneration() const noexcept { return m_generation; }
+
 	void PublishCameraInputIntent(const CameraInputIntent& intent) noexcept;
 	std::size_t GetMaterialVariantCount() const noexcept;
 	std::string_view GetMaterialVariantName(std::size_t index) const noexcept;

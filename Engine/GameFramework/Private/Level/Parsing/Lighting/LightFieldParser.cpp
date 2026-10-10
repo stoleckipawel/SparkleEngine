@@ -82,15 +82,22 @@ namespace LevelParsing
 		{
 			case SceneLightKind::Directional:
 				light.payload = SceneDirectionalLightDesc{};
+
 				return light;
+
 			case SceneLightKind::Point:
 				light.payload = PointLightDesc{};
+
 				return light;
+
 			case SceneLightKind::Spot:
 				light.payload = SpotLightDesc{};
+
 				return light;
+
 			case SceneLightKind::Rect:
 				light.payload = RectLightDesc{};
+
 				return light;
 			case SceneLightKind::Unknown:
 			default:

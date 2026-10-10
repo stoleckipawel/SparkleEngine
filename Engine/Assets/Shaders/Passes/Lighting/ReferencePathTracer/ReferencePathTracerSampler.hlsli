@@ -29,8 +29,7 @@ namespace ReferencePathTracer
 	{
 		const uint dimensionBlock = dimensionId >> 2u;
 		const uint packedPixel = (identity.PixelCoord.y << 14u) | identity.PixelCoord.x;
-		const uint4 result = CommonRandom::Philox4x32(uint4(packedPixel, identity.SampleOrdinal, dimensionBlock, 0x52505431u),
-		                                              uint2(identity.SessionSeed, identity.ReplicateId));
+		const uint4 result = CommonRandom::Philox4x32(uint4(packedPixel, identity.SampleOrdinal, dimensionBlock, 0x52505431u), uint2(identity.SessionSeed, identity.ReplicateId));
 		return result[dimensionId & 3u];
 	}
 

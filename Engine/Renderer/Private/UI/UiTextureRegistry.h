@@ -16,10 +16,12 @@ public:
 private:
 	UiTextureHandle m_viewportHandle;
 	std::uint64_t m_viewportNativeTextureId = 0;
+
 	struct Binding final
 	{
 		UiTextureHandle Handle;
 		std::uint64_t NativeTextureId = 0;
 	};
+
 	std::vector<Binding> m_bindings;
 };

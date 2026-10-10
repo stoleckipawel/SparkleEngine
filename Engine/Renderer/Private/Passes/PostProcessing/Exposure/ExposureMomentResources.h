@@ -13,9 +13,4 @@ struct ExposureMomentTexture final
 	std::uint32_t Height = 1u;
 };
 
-ExposureMomentTexture CreateExposureMomentTexture(
-    FrameGraphBuilder& builder,
-    const char* prefix,
-    std::uint32_t level,
-    std::uint32_t width,
-    std::uint32_t height);
+ExposureMomentTexture CreateExposureMomentTexture(FrameGraphBuilder& builder, const char* prefix, std::uint32_t level, std::uint32_t width, std::uint32_t height);

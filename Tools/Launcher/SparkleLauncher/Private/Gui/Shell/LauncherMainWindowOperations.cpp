@@ -41,8 +41,7 @@ namespace SparkleLauncher
 			m_activityPanel->ShowMessage(message);
 			return;
 		}
-		const QString cleanScopeError =
-		    m_selectedOperationId == "workspace.clean" ? CleanScopeSelectionError(m_settings.CleanScope()) : QString();
+		const QString cleanScopeError = m_selectedOperationId == "workspace.clean" ? CleanScopeSelectionError(m_settings.CleanScope()) : QString();
 		if (!cleanScopeError.isEmpty())
 		{
 			m_activityPanel->ShowMessage(cleanScopeError);
@@ -56,13 +55,9 @@ namespace SparkleLauncher
 		}
 
 		LauncherOperationRequest request = m_selectedOperationId == "workspace.clean"
-		    ? BuildScopedCleanOperationRequest(
-		          m_repositoryRoot,
-		          m_contentModel,
-		          m_settings,
-		          m_settings.CleanScope(),
-		          std::filesystem::path(QCoreApplication::applicationFilePath().toStdString()))
+		    ? BuildScopedCleanOperationRequest(m_repositoryRoot, m_contentModel, m_settings, m_settings.CleanScope(), std::filesystem::path(QCoreApplication::applicationFilePath().toStdString()))
 		    : BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, m_selectedOperationId);
+
 		if (!ConfirmRunRequest(request))
 		{
 			return;
@@ -95,11 +90,12 @@ namespace SparkleLauncher
 		    m_settings,
 		    std::filesystem::path(QCoreApplication::applicationFilePath().toStdString()),
 		    m_selectedOperationId);
+
 		if (request.CleanTargets.isEmpty())
 		{
-			const QString message = OperationNeedsContent(m_selectedOperationId) && m_contentModel.ContentId().isEmpty()
-			    ? "Repository content is unavailable for this workflow's generated outputs."
-			    : "No generated outputs were resolved for this workflow.";
+			const QString message = OperationNeedsContent(m_selectedOperationId) && m_contentModel.ContentId().isEmpty() ? "Repository content is unavailable for this workflow's generated outputs."
+			                                                                                                             : "No generated outputs were resolved for this workflow.";
+
 			m_activityPanel->ShowMessage(message);
 			return;
 		}
@@ -112,30 +108,18 @@ namespace SparkleLauncher
 		StartOperation(std::move(request), "Clean " + DisplayNameForOperation(m_selectedOperationId));
 	}
 
-	QPushButton* LauncherMainWindow::CreateStatusActionButton(
-	    const QString& actionId,
-	    const QString& actionLabel,
-	    const QString& actionTitle,
-	    bool navigateInsteadOfRun)
+	QPushButton* LauncherMainWindow::CreateStatusActionButton(const QString& actionId, const QString& actionLabel, const QString& actionTitle, bool navigateInsteadOfRun)
 	{
 		QPushButton* button = new QPushButton(this);
 		ApplyStatusActionButtonPresentation(*button, actionLabel, "warning");
 		button->setAccessibleName(actionTitle);
 		button->setToolTip(actionTitle + ".");
 		RegisterFocusable(button);
-		connect(
-		    button,
-		    &QPushButton::clicked,
-		    this,
-		    [this, actionId, actionTitle, navigateInsteadOfRun]()
-		    { TriggerActionDependencyRegenerate(actionId, actionTitle, navigateInsteadOfRun); });
+		connect(button, &QPushButton::clicked, this, [this, actionId, actionTitle, navigateInsteadOfRun]() { TriggerActionDependencyRegenerate(actionId, actionTitle, navigateInsteadOfRun); });
 		return button;
 	}
 
-	void LauncherMainWindow::TriggerActionDependencyRegenerate(
-	    const QString& actionId,
-	    const QString& actionTitle,
-	    bool navigateInsteadOfRun)
+	void LauncherMainWindow::TriggerActionDependencyRegenerate(const QString& actionId, const QString& actionTitle, bool navigateInsteadOfRun)
 	{
 		if (navigateInsteadOfRun)
 		{
@@ -187,8 +171,7 @@ namespace SparkleLauncher
 			return m_settings.BuildScopes().contains("editor") || m_settings.BuildScopes().contains("runtime");
 		}
 
-		return operationId == LauncherHomeOperationId() || operationId == "levels.sync" || operationId == "levels.run"
-		    || operationId.startsWith("workspace.build.") || operationId.startsWith("cook.");
+		return operationId == LauncherHomeOperationId() || operationId == "levels.sync" || operationId == "levels.run" || operationId.startsWith("workspace.build.") || operationId.startsWith("cook.");
 	}
 
 	bool LauncherMainWindow::ConfirmRunRequest(LauncherOperationRequest& request) const
@@ -202,10 +185,7 @@ namespace SparkleLauncher
 		}
 		if (request.ForceRecook && !request.ConfirmForceRecook)
 		{
-			QMessageBox::warning(
-			    const_cast<LauncherMainWindow*>(this),
-			    "Confirmation Required",
-			    "Enable Confirm clean cook before removing cooked outputs.");
+			QMessageBox::warning(const_cast<LauncherMainWindow*>(this), "Confirmation Required", "Enable Confirm clean cook before removing cooked outputs.");
 			return false;
 		}
 		if (cleanRequested && !request.ConfirmClean)
@@ -226,16 +206,18 @@ namespace SparkleLauncher
 				}
 			}
 
-			QString message = customCleanRequested ? "Generated outputs to clean:\n\n" + scopeNames.join("\n\n")
-			                                       : "Clean scopes:\n" + scopeNames.join('\n');
+			QString message = customCleanRequested ? "Generated outputs to clean:\n\n" + scopeNames.join("\n\n") : "Clean scopes:\n" + scopeNames.join('\n');
+
 			message += customCleanRequested ? "\n\nThis removes only the generated outputs mapped to the selected action. Continue?"
 			                                : "\n\nThis removes generated files for the selected scope. Continue?";
+
 			const QMessageBox::StandardButton result = QMessageBox::question(
 			    const_cast<LauncherMainWindow*>(this),
 			    customCleanRequested ? "Confirm Action Clean" : "Confirm Clean Workspace",
 			    message,
 			    QMessageBox::Ok | QMessageBox::Cancel,
 			    QMessageBox::Cancel);
+
 			if (result != QMessageBox::Ok)
 			{
 				return false;
@@ -251,6 +233,7 @@ namespace SparkleLauncher
 		    "This workflow will remove cooked outputs before cooking. Continue?",
 		    QMessageBox::Yes | QMessageBox::No,
 		    QMessageBox::No);
+
 		return result == QMessageBox::Yes;
 	}
 
@@ -262,16 +245,15 @@ namespace SparkleLauncher
 		    "Sparkle Launcher was rebuilt successfully. Restart now to run the new binary?",
 		    QMessageBox::Yes | QMessageBox::No,
 		    QMessageBox::Yes);
+
 		if (result != QMessageBox::Yes)
 		{
 			return;
 		}
 
 		const Filesystem::WorkspaceOutputPaths workspaceOutputs = Filesystem::ResolveWorkspaceOutputPaths(m_repositoryRoot);
-		const Filesystem::WorkspaceTargetOutputPaths launcherOutputs =
-		    workspaceOutputs.LauncherTargetOutputs(m_settings.EditorProfile().toStdString());
-		const std::filesystem::path relaunchedExecutablePath =
-		    launcherOutputs.BinaryDirectory / std::filesystem::path(QCoreApplication::applicationFilePath().toStdString()).filename();
+		const Filesystem::WorkspaceTargetOutputPaths launcherOutputs = workspaceOutputs.LauncherTargetOutputs(m_settings.EditorProfile().toStdString());
+		const std::filesystem::path relaunchedExecutablePath = launcherOutputs.BinaryDirectory / std::filesystem::path(QCoreApplication::applicationFilePath().toStdString()).filename();
 		const QString executablePath = QString::fromStdString(relaunchedExecutablePath.string());
 		const bool started = QProcess::startDetached(executablePath, {});
 		if (!started)

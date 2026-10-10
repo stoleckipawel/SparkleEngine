@@ -17,8 +17,7 @@ struct GraphicsAttachmentSignature final
 
 	bool operator==(const GraphicsAttachmentSignature& other) const noexcept
 	{
-		if (ColorCount != other.ColorCount || DepthStencilAttachmentFormat != other.DepthStencilAttachmentFormat
-		    || SampleCount != other.SampleCount)
+		if (ColorCount != other.ColorCount || DepthStencilAttachmentFormat != other.DepthStencilAttachmentFormat || SampleCount != other.SampleCount)
 		{
 			return false;
 		}

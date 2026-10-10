@@ -33,12 +33,12 @@ RhiResourceHandle FrameGraph::ResolveResource(FrameGraphResourceHandle handle) c
 	switch (metadata.kind)
 	{
 		case FrameGraphResourceKind::BackBuffer:
-			return m_renderHardwareInterface != nullptr ? m_renderHardwareInterface->GetPresentationService().GetBackBufferResource()
-			                                            : RhiResourceHandle{};
+			return m_renderHardwareInterface != nullptr ? m_renderHardwareInterface->GetPresentationService().GetBackBufferResource() : RhiResourceHandle{};
 		case FrameGraphResourceKind::DepthStencil:
 		case FrameGraphResourceKind::ColorRenderTarget:
 		case FrameGraphResourceKind::Buffer:
 			return access.resource;
+
 		default:
 			return {};
 	}

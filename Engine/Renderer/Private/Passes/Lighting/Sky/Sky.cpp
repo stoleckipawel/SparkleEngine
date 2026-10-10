@@ -11,11 +11,7 @@
 
 ConsoleVariable<bool> CVarSkyEnabled("r.Sky.Enabled", true, "Render the sky and evaluate its environment illumination.");
 
-void AddSkyPass(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderViewportExtent sceneExtent,
-    const RenderFrameGraphResources& resources)
+void AddSkyPass(FrameGraphBuilder& builder, const RenderFrame& frame, RenderViewportExtent sceneExtent, const RenderFrameGraphResources& resources)
 {
 	if (!CVarSkyEnabled.Get())
 	{
@@ -25,6 +21,7 @@ void AddSkyPass(
 	parameters->SceneColor = builder.CreateUAV(resources.Transient.Scene.SceneColor);
 	parameters->SceneDepth = builder.CreateSRV(resources.Transient.Scene.SceneDepth);
 	parameters->SkyTexture = builder.CreateSRV(resources.ImportedScene.Sky);
+
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,
@@ -35,7 +32,5 @@ void AddSkyPass(
 	parameters->ViewTemporal = frame.View.temporalUniform;
 	parameters->Sky = MakeSkyUniformData(frame.PreparedScene.sky);
 
-	builder.Dispatch<SkyCS>(
-	    parameters,
-	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
+	builder.Dispatch<SkyCS>(parameters, ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 }

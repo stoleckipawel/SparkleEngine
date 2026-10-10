@@ -3,12 +3,6 @@
 
 #include "/Engine/RayTracing/RayTracingTraceResult.hlsli"
 
-RayTracingTraceResult TraceSceneRay(RaytracingAccelerationStructure sceneTlas,
-                                    float3 originWorld,
-                                    float3 directionWorld,
-                                    float tMin,
-                                    float tMax,
-                                    uint rayFlags,
-                                    uint instanceMask);
+RayTracingTraceResult TraceSceneRay(RaytracingAccelerationStructure sceneTlas, float3 originWorld, float3 directionWorld, float tMin, float tMax, uint rayFlags, uint instanceMask);
 
 #endif

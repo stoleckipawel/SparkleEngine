@@ -22,9 +22,13 @@ namespace ECS
 		bool IsAlive(EntityId entity) const noexcept;
 		bool Reserve(std::size_t entityCapacity);
 		bool Clear() noexcept;
+
 		std::size_t GetLiveCount() const noexcept { return m_liveCount; }
+
 		std::uint64_t GetStructureVersion() const noexcept { return m_structureVersion; }
+
 		bool IsStructureFrozen() const noexcept { return m_structureFrozen; }
+
 		StructureFrozenEpoch FreezeStructure() noexcept;
 
 		template <ComponentStorageCompatible T> bool Add(EntityId entity, T component)
@@ -90,10 +94,7 @@ namespace ECS
 			return IsAlive(entity) && storage != nullptr ? storage->Get(entity) : nullptr;
 		}
 
-		template <ComponentStorageCompatible T> const ComponentStorage<T>* FindStorage() const noexcept
-		{
-			return m_componentTypes.Find<T>();
-		}
+		template <ComponentStorageCompatible T> const ComponentStorage<T>* FindStorage() const noexcept { return m_componentTypes.Find<T>(); }
 
 	private:
 		friend class StructureFrozenEpoch;
@@ -107,11 +108,11 @@ namespace ECS
 		};
 
 		bool CanMutateStructure() const noexcept { return !m_structureFrozen; }
-		bool IsFrozenEpochCurrent(std::uint64_t generation) const noexcept
-		{
-			return m_structureFrozen && generation != 0 && m_frozenEpochGeneration == generation;
-		}
+
+		bool IsFrozenEpochCurrent(std::uint64_t generation) const noexcept { return m_structureFrozen && generation != 0 && m_frozenEpochGeneration == generation; }
+
 		void ReleaseFrozenEpoch(std::uint64_t generation) noexcept;
+
 		void AdvanceStructureVersion() noexcept { ++m_structureVersion; }
 
 		template <ComponentStorageCompatible T> ComponentStorage<T>* FindStorageForQuery() noexcept { return m_componentTypes.Find<T>(); }

@@ -73,31 +73,10 @@ private:
 	static void BindResourceTable(const BindingRequest& request, bool readWrite);
 	static void BindSamplerTable(const BindingRequest& request);
 	static void BindPushConstantData(const BindingRequest& request);
-	static void BindGpuAddress(
-	    RenderCommandContext& commandContext,
-	    const CompiledBinding& compiledBinding,
-	    RhiGpuVirtualAddress gpuAddress,
-	    BindingDomain domain);
-	static void BindDescriptorTableOverride(
-	    RenderCommandContext& commandContext,
-	    const CompiledBinding& compiledBinding,
-	    const PassBindingOverride& bindingOverride,
-	    BindingDomain domain);
-	static void BindDescriptorTable(
-	    RenderCommandContext& commandContext,
-	    const CompiledBinding& compiledBinding,
-	    RhiGpuDescriptorHandle descriptorTable,
-	    BindingDomain domain);
-	static void BindDescriptorTable(
-	    RenderCommandContext& commandContext,
-	    const CompiledBinding& compiledBinding,
-	    RhiDescriptorTableBinding descriptorTable,
-	    BindingDomain domain);
-	static void BindPushConstants(
-	    RenderCommandContext& commandContext,
-	    const CompiledBinding& compiledBinding,
-	    const void* data,
-	    std::uint32_t constantCount,
-	    BindingDomain domain);
+	static void BindGpuAddress(RenderCommandContext& commandContext, const CompiledBinding& compiledBinding, RhiGpuVirtualAddress gpuAddress, BindingDomain domain);
+	static void BindDescriptorTableOverride(RenderCommandContext& commandContext, const CompiledBinding& compiledBinding, const PassBindingOverride& bindingOverride, BindingDomain domain);
+	static void BindDescriptorTable(RenderCommandContext& commandContext, const CompiledBinding& compiledBinding, RhiGpuDescriptorHandle descriptorTable, BindingDomain domain);
+	static void BindDescriptorTable(RenderCommandContext& commandContext, const CompiledBinding& compiledBinding, RhiDescriptorTableBinding descriptorTable, BindingDomain domain);
+	static void BindPushConstants(RenderCommandContext& commandContext, const CompiledBinding& compiledBinding, const void* data, std::uint32_t constantCount, BindingDomain domain);
 	static void Require(bool condition, std::string_view message);
 };

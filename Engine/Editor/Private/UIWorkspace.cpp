@@ -96,8 +96,7 @@ void UI::Implementation::BuildCenterWorkspace(bool disableInteraction, float mai
 	const float outlinerWidth = m_sceneOutlinerPanel ? m_sceneOutlinerPanel->GetWidth() : EditorWorkspaceLayout::SceneOutlinerWidth;
 	const float inspectorWidth = m_sceneInspectorPanel ? m_sceneInspectorPanel->GetWidth() : EditorWorkspaceLayout::SceneInspectorWidth;
 	const float availableCenterHeight = (std::max) (0.0f, io.DisplaySize.y - mainMenuBarHeight);
-	const float viewportWidth =
-	    (std::max) (EditorWorkspaceLayout::MinimumViewportExtent, io.DisplaySize.x - outlinerWidth - inspectorWidth);
+	const float viewportWidth = (std::max) (EditorWorkspaceLayout::MinimumViewportExtent, io.DisplaySize.x - outlinerWidth - inspectorWidth);
 
 	float viewportToolbarHeight = 0.0f;
 	if (m_viewportToolbar)
@@ -114,21 +113,11 @@ void UI::Implementation::BuildCenterWorkspace(bool disableInteraction, float mai
 
 	if (m_editorConsoleSystem)
 	{
-		m_editorConsoleSystem->BuildDockedUI(
-		    outlinerWidth,
-		    mainMenuBarHeight + availableCenterHeight,
-		    viewportWidth,
-		    availableViewportHeight,
-		    disableInteraction);
+		m_editorConsoleSystem->BuildDockedUI(outlinerWidth, mainMenuBarHeight + availableCenterHeight, viewportWidth, availableViewportHeight, disableInteraction);
 	}
 }
 
-void UI::Implementation::BuildViewport(
-    bool disableInteraction,
-    float topInset,
-    float bottomInset,
-    float outlinerWidth,
-    float inspectorWidth)
+void UI::Implementation::BuildViewport(bool disableInteraction, float topInset, float bottomInset, float outlinerWidth, float inspectorWidth)
 {
 	if (!m_viewportPanel)
 	{
@@ -158,8 +147,7 @@ void UI::Implementation::RegisterViewportInputRegion()
 		return;
 	}
 
-	m_inputSystem
-	    ->RegisterInputTargetRegion(viewportLeft, viewportTop, viewportRight, viewportBottom, m_viewportPanel->GetTargetInputLayer());
+	m_inputSystem->RegisterInputTargetRegion(viewportLeft, viewportTop, viewportRight, viewportBottom, m_viewportPanel->GetTargetInputLayer());
 }
 
 void UI::Implementation::BuildSceneInspector(bool disableInteraction, float mainMenuBarHeight)

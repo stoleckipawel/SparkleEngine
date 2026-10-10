@@ -38,9 +38,7 @@ namespace SparkleLauncher
 		    .arg(QString::fromStdString(toolchain.Generator))
 		    .arg(QString::fromStdString(toolchain.Platform))
 		    .arg(toolchain.Toolset.empty() ? QString() : QStringLiteral(" · %1").arg(QString::fromStdString(toolchain.Toolset)))
-		    .arg(
-		        toolchain.QtRootPath.empty() ? QString()
-		                                     : QStringLiteral(" · Qt %1").arg(QString::fromStdString(toolchain.QtRootPath.string())));
+		    .arg(toolchain.QtRootPath.empty() ? QString() : QStringLiteral(" · Qt %1").arg(QString::fromStdString(toolchain.QtRootPath.string())));
 	}
 
 	QString RequiredToolProblemSummary(const BuildToolchainStatus& toolchain)

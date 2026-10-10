@@ -93,13 +93,7 @@ public:
 		Snapshot.ArtifactPath = result.Artifact.string();
 		Snapshot.Message = result.Message;
 
-		SPDLOG_LOGGER_INFO(
-		    g_externalCaptureLogger.GetLogger(),
-		    "Capture request={} state={} artifact={} {}",
-		    requestId,
-		    static_cast<int>(result.State),
-		    Snapshot.ArtifactPath,
-		    Snapshot.Message);
+		SPDLOG_LOGGER_INFO(g_externalCaptureLogger.GetLogger(), "Capture request={} state={} artifact={} {}", requestId, static_cast<int>(result.State), Snapshot.ArtifactPath, Snapshot.Message);
 	}
 
 	void Quarantine(std::uint64_t requestId, const char* reason)
@@ -124,8 +118,7 @@ static std::filesystem::path CreateCaptureArtifactPath(std::uint64_t requestId, 
 		return {};
 	}
 
-	return root
-	    / std::format("capture-{}-{}-{}", GetCurrentProcessId(), std::chrono::system_clock::now().time_since_epoch().count(), requestId);
+	return root / std::format("capture-{}-{}-{}", GetCurrentProcessId(), std::chrono::system_clock::now().time_since_epoch().count(), requestId);
 }
 
 RhiExternalCapture::RhiExternalCapture(ERhiBackendApi api, ExternalCaptureProvider provider) :
@@ -136,12 +129,7 @@ RhiExternalCapture::RhiExternalCapture(ERhiBackendApi api, ExternalCaptureProvid
 	state.Snapshot.Provider = provider;
 	state.Adapter = CreateExternalCaptureAdapter(api, provider, state.Snapshot.Message);
 
-	SPDLOG_LOGGER_INFO(
-	    g_externalCaptureLogger.GetLogger(),
-	    "Early capture bootstrap provider={} available={} {}",
-	    static_cast<int>(provider),
-	    state.Adapter != nullptr,
-	    state.Snapshot.Message);
+	SPDLOG_LOGGER_INFO(g_externalCaptureLogger.GetLogger(), "Early capture bootstrap provider={} available={} {}", static_cast<int>(provider), state.Adapter != nullptr, state.Snapshot.Message);
 }
 
 RhiExternalCapture::~RhiExternalCapture() noexcept = default;

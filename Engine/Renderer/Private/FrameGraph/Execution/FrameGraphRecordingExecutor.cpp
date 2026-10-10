@@ -38,8 +38,7 @@ bool FrameGraphRecordingExecutor::RecordBatch(const FrameGraphSubmissionBatch& b
 
 bool FrameGraphRecordingExecutor::ShouldRecordBatchInParallel(const FrameGraphSubmissionBatch& batch) const noexcept
 {
-	return CVarRendererParallelFrameGraphRecording.Get() && !CVarRendererDiagnosticGpuTiming.Get() && batch.recordingChunkCount >= 2
-	    && m_taskExecutor.GetWorkerCount(TaskLane::FrameCritical) >= 2;
+	return CVarRendererParallelFrameGraphRecording.Get() && !CVarRendererDiagnosticGpuTiming.Get() && batch.recordingChunkCount >= 2 && m_taskExecutor.GetWorkerCount(TaskLane::FrameCritical) >= 2;
 }
 
 void FrameGraphRecordingExecutor::RecordBatchSerial(const FrameGraphSubmissionBatch& batch, RhiCommandRecordingLease initializationLease)

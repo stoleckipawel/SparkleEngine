@@ -62,11 +62,7 @@ namespace ReferencePathTracer
 		return result;
 	}
 
-	LightSampling::DirectLightSample SampleLight(LightSelection selection,
-	                                             float3 positionWorld,
-	                                             float2 shapeSample,
-	                                             Texture2D skyTexture,
-	                                             SamplerState skySampler)
+	LightSampling::DirectLightSample SampleLight(LightSelection selection, float3 positionWorld, float2 shapeSample, Texture2D skyTexture, SamplerState skySampler)
 	{
 		LightSampling::DirectLightSample result;
 		if (selection.Kind == KindAnalytic)
@@ -87,9 +83,7 @@ namespace ReferencePathTracer
 
 	float EnvironmentPdfW(LightCounts counts)
 	{
-		return counts.Environment == 0u
-		    ? 0.0f
-		    : CommonRandom::CategoricalProbabilityMass(counts.Analytic + counts.EmissiveTriangle, counts.Total) * 0.07957747154594766788f;
+		return counts.Environment == 0u ? 0.0f : CommonRandom::CategoricalProbabilityMass(counts.Analytic + counts.EmissiveTriangle, counts.Total) * 0.07957747154594766788f;
 	}
 
 	float EmissiveTrianglePdfW(LightCounts counts, float3 previousPositionWorld, RayTracingPathSurface surface)
@@ -101,10 +95,7 @@ namespace ReferencePathTracer
 			ordinal += PathLightSampling::CountEmissiveTriangles(instanceId);
 		}
 		return CommonRandom::CategoricalProbabilityMass(counts.Analytic + ordinal, counts.Total)
-		    * PathLightSampling::EmissiveTrianglePdfW(previousPositionWorld,
-		                                              surface.PositionWorld,
-		                                              surface.InstanceId,
-		                                              surface.PrimitiveIndex);
+		    * PathLightSampling::EmissiveTrianglePdfW(previousPositionWorld, surface.PositionWorld, surface.InstanceId, surface.PrimitiveIndex);
 	}
 }
 

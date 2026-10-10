@@ -17,16 +17,12 @@ RhiPartitionedTlasOperationBufferLayout RhiPartitionedTlasOperationLayout::Build
 	    .PartitionTranslationStrideInBytes = nativeLayout.PartitionTranslationStrideInBytes};
 
 	layout.OperationHeadersOffsetInBytes = AlignUp(nativeLayout.OperationCountSizeInBytes, nativeLayout.OperationHeaderAlignmentInBytes);
-	layout.InstanceWriteRecordsOffsetInBytes = AlignUp(
-	    layout.OperationHeadersOffsetInBytes + layout.OperationHeaderStrideInBytes * operationCount,
-	    nativeLayout.InstanceWriteAlignmentInBytes);
+	layout.InstanceWriteRecordsOffsetInBytes = AlignUp(layout.OperationHeadersOffsetInBytes + layout.OperationHeaderStrideInBytes * operationCount, nativeLayout.InstanceWriteAlignmentInBytes);
 
 	std::uint64_t cursor = layout.InstanceWriteRecordsOffsetInBytes + layout.InstanceWriteStrideInBytes * instanceWriteCount;
-	layout.InstanceUpdateRecordsOffsetInBytes =
-	    instanceUpdateCount > 0 ? AlignUp(cursor, nativeLayout.InstanceUpdateAlignmentInBytes) : cursor;
+	layout.InstanceUpdateRecordsOffsetInBytes = instanceUpdateCount > 0 ? AlignUp(cursor, nativeLayout.InstanceUpdateAlignmentInBytes) : cursor;
 	cursor = layout.InstanceUpdateRecordsOffsetInBytes + layout.InstanceUpdateStrideInBytes * instanceUpdateCount;
-	layout.PartitionTranslationRecordsOffsetInBytes =
-	    partitionTranslationCount > 0 ? AlignUp(cursor, nativeLayout.PartitionTranslationAlignmentInBytes) : cursor;
+	layout.PartitionTranslationRecordsOffsetInBytes = partitionTranslationCount > 0 ? AlignUp(cursor, nativeLayout.PartitionTranslationAlignmentInBytes) : cursor;
 	cursor = layout.PartitionTranslationRecordsOffsetInBytes + layout.PartitionTranslationStrideInBytes * partitionTranslationCount;
 	layout.TotalSizeInBytes = AlignUp(cursor, nativeLayout.BufferAlignmentInBytes);
 	return layout;
@@ -55,9 +51,7 @@ RhiGpuVirtualAddress RhiPartitionedTlasOperationLayout::ResolveArgumentAddress(
 	}
 }
 
-std::uint64_t RhiPartitionedTlasOperationLayout::ResolveArgumentStride(
-    const RhiPartitionedTlasOperationHeader& operation,
-    const RhiPartitionedTlasNativeOperationLayout& nativeLayout) noexcept
+std::uint64_t RhiPartitionedTlasOperationLayout::ResolveArgumentStride(const RhiPartitionedTlasOperationHeader& operation, const RhiPartitionedTlasNativeOperationLayout& nativeLayout) noexcept
 {
 	if (operation.ArgumentStrideInBytes != 0)
 	{

@@ -15,14 +15,12 @@ void FrameGraphCompiler::AssignPassQueues() noexcept
 			continue;
 		}
 
-		if (passRecord.queuePreference == EFrameGraphQueuePreference::AsyncCompute
-		    && m_queueCapabilities.SupportsIndependent(ERhiQueueType::Compute))
+		if (passRecord.queuePreference == EFrameGraphQueuePreference::AsyncCompute && m_queueCapabilities.SupportsIndependent(ERhiQueueType::Compute))
 		{
 			assert(passRecord.kind == EFrameGraphPassKind::Compute);
 			passRecord.queue = ERhiQueueType::Compute;
 		}
-		else if (passRecord.queuePreference == EFrameGraphQueuePreference::Copy
-		    && m_queueCapabilities.SupportsIndependent(ERhiQueueType::Copy))
+		else if (passRecord.queuePreference == EFrameGraphQueuePreference::Copy && m_queueCapabilities.SupportsIndependent(ERhiQueueType::Copy))
 		{
 			assert(passRecord.kind == EFrameGraphPassKind::Transfer);
 			passRecord.queue = ERhiQueueType::Copy;
@@ -36,8 +34,7 @@ void FrameGraphCompiler::AddSynchronizationDependency(FrameGraphPassNode& passRe
 	{
 		return;
 	}
-	if (std::find(passRecord.synchronizationDependencies.begin(), passRecord.synchronizationDependencies.end(), dependency)
-	    == passRecord.synchronizationDependencies.end())
+	if (std::find(passRecord.synchronizationDependencies.begin(), passRecord.synchronizationDependencies.end(), dependency) == passRecord.synchronizationDependencies.end())
 	{
 		passRecord.synchronizationDependencies.push_back(dependency);
 	}
@@ -78,8 +75,7 @@ void FrameGraphCompiler::BuildSubmissionBatches() noexcept
 			const FrameGraphSubmissionBatch& currentBatch = m_plan.submissionBatches.back();
 			for (const FrameGraphSubmissionBatchIndex dependencyBatch : crossQueueDependencies)
 			{
-				if (std::find(currentBatch.waitForBatches.begin(), currentBatch.waitForBatches.end(), dependencyBatch)
-				    == currentBatch.waitForBatches.end())
+				if (std::find(currentBatch.waitForBatches.begin(), currentBatch.waitForBatches.end(), dependencyBatch) == currentBatch.waitForBatches.end())
 				{
 					startNewBatch = true;
 					break;
@@ -90,12 +86,7 @@ void FrameGraphCompiler::BuildSubmissionBatches() noexcept
 		if (startNewBatch)
 		{
 			const auto batchIndex = static_cast<FrameGraphSubmissionBatchIndex>(m_plan.submissionBatches.size());
-			m_plan.submissionBatches.push_back(
-			    FrameGraphSubmissionBatch{
-			        .index = batchIndex,
-			        .queue = passRecord.queue,
-			        .passes = {},
-			        .waitForBatches = std::move(crossQueueDependencies)});
+			m_plan.submissionBatches.push_back(FrameGraphSubmissionBatch{.index = batchIndex, .queue = passRecord.queue, .passes = {}, .waitForBatches = std::move(crossQueueDependencies)});
 		}
 
 		FrameGraphSubmissionBatch& batch = m_plan.submissionBatches.back();

@@ -3,12 +3,10 @@
 #include "SimulationSystemExecution.h"
 
 #include "World/GameWorldState.h"
+
 namespace ECS
 {
-	SimulationSystemExecution::SimulationSystemExecution(
-	    GameWorldState& state,
-	    const CameraSimulationInput& cameraInput,
-	    const StructureFrozenEpoch& epoch) :
+	SimulationSystemExecution::SimulationSystemExecution(GameWorldState& state, const CameraSimulationInput& cameraInput, const StructureFrozenEpoch& epoch) :
 	    m_state(state),
 	    m_cameraMovement(state.m_activeCamera, cameraInput),
 	    m_cameraQuery(state.m_registry, epoch)

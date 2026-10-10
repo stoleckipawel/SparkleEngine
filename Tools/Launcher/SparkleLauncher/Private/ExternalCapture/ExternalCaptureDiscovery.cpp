@@ -14,16 +14,11 @@ namespace SparkleLauncher
 		return std::filesystem::is_regular_file(path, error);
 	}
 
-	static std::filesystem::path FindToolDirectory(
-	    const std::filesystem::path& parent,
-	    std::string_view prefix,
-	    const std::filesystem::path& library,
-	    const std::filesystem::path& viewer)
+	static std::filesystem::path FindToolDirectory(const std::filesystem::path& parent, std::string_view prefix, const std::filesystem::path& library, const std::filesystem::path& viewer)
 	{
 		std::error_code error;
 		std::filesystem::directory_iterator directory(parent, error), end;
-		for (unsigned visited = 0; !error && directory != end && visited < MaxCaptureInstallationEntries;
-		    directory.increment(error), ++visited)
+		for (unsigned visited = 0; !error && directory != end && visited < MaxCaptureInstallationEntries; directory.increment(error), ++visited)
 		{
 			const auto path = directory->path();
 			if (path.filename().string().starts_with(prefix) && IsInstalledToolFile(path / library) && IsInstalledToolFile(path / viewer))
@@ -60,19 +55,14 @@ namespace SparkleLauncher
 			{
 				const auto directory = programFiles / "RenderDoc";
 
-				return IsInstalledToolFile(directory / "renderdoc.dll") && IsInstalledToolFile(directory / "qrenderdoc.exe")
-				    ? directory
-				    : std::filesystem::path{};
+				return IsInstalledToolFile(directory / "renderdoc.dll") && IsInstalledToolFile(directory / "qrenderdoc.exe") ? directory : std::filesystem::path{};
 			}
 			default:
 				return {};
 		}
 	}
 
-	static std::string_view GetUnsupportedCaptureReason(
-	    ExternalCaptureProvider provider,
-	    std::string_view graphicsApi,
-	    std::string_view productProfile)
+	static std::string_view GetUnsupportedCaptureReason(ExternalCaptureProvider provider, std::string_view graphicsApi, std::string_view productProfile)
 	{
 		if (productProfile != "DebugEditor" && productProfile != "DevelopmentEditor")
 		{
@@ -94,10 +84,7 @@ namespace SparkleLauncher
 		return {};
 	}
 
-	ExternalCaptureAvailability InspectExternalCaptureProvider(
-	    ExternalCaptureProvider provider,
-	    std::string_view graphicsApi,
-	    std::string_view productProfile)
+	ExternalCaptureAvailability InspectExternalCaptureProvider(ExternalCaptureProvider provider, std::string_view graphicsApi, std::string_view productProfile)
 	{
 		if (provider == ExternalCaptureProvider::None)
 		{

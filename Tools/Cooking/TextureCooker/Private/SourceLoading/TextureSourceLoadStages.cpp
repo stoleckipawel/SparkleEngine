@@ -30,14 +30,8 @@ TextureSourceFile ReadTextureSourceFile(const std::filesystem::path& sourcePath)
 	return sourceFile;
 }
 
-template <typename T> static TextureLoadResult BuildDecodedTexture(
-    int width,
-    int height,
-    const T* pixels,
-    std::size_t elementCount,
-    DXGI_FORMAT format,
-    TextureFormatIntent intent,
-    std::string_view sourceKind)
+template <typename T>
+static TextureLoadResult BuildDecodedTexture(int width, int height, const T* pixels, std::size_t elementCount, DXGI_FORMAT format, TextureFormatIntent intent, std::string_view sourceKind)
 {
 	if (pixels == nullptr || width <= 0 || height <= 0)
 	{
@@ -56,8 +50,7 @@ template <typename T> static TextureLoadResult BuildDecodedTexture(
 	}
 	if (elementCount < slicePitch / sizeof(T))
 	{
-		throw Diagnostics::Error(
-		    std::format("Decoded {} texture payload is smaller than its RGBA{} surface.", sourceKind, sizeof(T) == 1 ? "" : " float"));
+		throw Diagnostics::Error(std::format("Decoded {} texture payload is smaller than its RGBA{} surface.", sourceKind, sizeof(T) == 1 ? "" : " float"));
 	}
 
 	TextureMipLevelData baseMip;
@@ -87,12 +80,5 @@ TextureLoadResult BuildByteTextureLoadResult(int width, int height, const std::u
 
 TextureLoadResult BuildFloatTextureLoadResult(int width, int height, const float* pixels, std::size_t pixelFloatCount)
 {
-	return BuildDecodedTexture(
-	    width,
-	    height,
-	    pixels,
-	    pixelFloatCount,
-	    DXGI_FORMAT_R32G32B32A32_FLOAT,
-	    TextureFormatIntent::DataLinear,
-	    "HDR");
+	return BuildDecodedTexture(width, height, pixels, pixelFloatCount, DXGI_FORMAT_R32G32B32A32_FLOAT, TextureFormatIntent::DataLinear, "HDR");
 }

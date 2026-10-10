@@ -47,6 +47,7 @@ namespace ECS
 		{
 			if (!camera.Active)
 				continue;
+
 			return {
 			    .Position = camera.LocalTransform.GetTranslation(),
 			    .Direction = camera.Direction,

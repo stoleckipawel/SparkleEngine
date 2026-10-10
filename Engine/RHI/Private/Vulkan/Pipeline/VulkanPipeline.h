@@ -22,7 +22,9 @@ public:
 	VulkanPipeline& operator=(VulkanPipeline&&) = delete;
 
 	VkPipeline GetPipeline() const noexcept { return m_pipeline; }
+
 	VkPipelineLayout GetPipelineLayout() const noexcept;
+
 	VkPipelineBindPoint GetBindPoint() const noexcept { return m_bindPoint; }
 
 private:

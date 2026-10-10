@@ -43,9 +43,7 @@ void SpirVBindingNormalizer::Normalize(std::vector<std::uint8_t>& bytecode, std:
 			spvReflectDestroyShaderModule(&module);
 			throw Diagnostics::Error("SPIR-V descriptor has no canonical binding name");
 		}
-		const auto remap = std::ranges::find_if(
-		    remaps,
-		    [binding](const ShaderDescriptorBindingRemap& candidate) { return candidate.Name == binding->name; });
+		const auto remap = std::ranges::find_if(remaps, [binding](const ShaderDescriptorBindingRemap& candidate) { return candidate.Name == binding->name; });
 		if (remap == remaps.end())
 		{
 			const std::string name = binding->name;

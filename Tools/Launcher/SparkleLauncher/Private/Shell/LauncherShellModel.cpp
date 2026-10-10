@@ -67,10 +67,7 @@ namespace SparkleLauncher
 
 		std::optional<std::filesystem::path> latestLogPath;
 		std::filesystem::file_time_type latestWriteTime = {};
-		std::filesystem::recursive_directory_iterator logIterator(
-		    logsDirectory,
-		    std::filesystem::directory_options::skip_permission_denied,
-		    errorCode);
+		std::filesystem::recursive_directory_iterator logIterator(logsDirectory, std::filesystem::directory_options::skip_permission_denied, errorCode);
 		if (errorCode)
 		{
 			return std::nullopt;
@@ -112,8 +109,7 @@ namespace SparkleLauncher
 		}
 
 		const std::optional<std::filesystem::path> latestLogPath = FindLatestLauncherShellLog(statePaths.LogsRoot);
-		model.Activity.push_back(
-		    {"local", latestLogPath.has_value() ? "Latest launcher log: " + latestLogPath->string() : "No launcher logs discovered yet."});
+		model.Activity.push_back({"local", latestLogPath.has_value() ? "Latest launcher log: " + latestLogPath->string() : "No launcher logs discovered yet."});
 	}
 
 	LauncherShellModel BuildLauncherShellModel(RepositoryRoot repository, SparkleContent content, const LauncherShellArguments& arguments)
@@ -132,10 +128,7 @@ namespace SparkleLauncher
 
 	const LauncherShellOperationRow* FindLauncherShellOperation(const LauncherShellModel& model, std::string_view operationId) noexcept
 	{
-		const auto found = std::find_if(
-		    model.Operations.begin(),
-		    model.Operations.end(),
-		    [operationId](const LauncherShellOperationRow& operation) { return operation.Id == operationId; });
+		const auto found = std::find_if(model.Operations.begin(), model.Operations.end(), [operationId](const LauncherShellOperationRow& operation) { return operation.Id == operationId; });
 		return found == model.Operations.end() ? nullptr : &*found;
 	}
 

@@ -38,10 +38,7 @@ public:
 		return hash;
 	}
 
-	template <typename... Components> static std::vector<ECS::ComponentSchema> Schemas() noexcept
-	{
-		return {ECS::GetComponentSchema<Components>()...};
-	}
+	template <typename... Components> static std::vector<ECS::ComponentSchema> Schemas() noexcept { return {ECS::GetComponentSchema<Components>()...}; }
 
 	static void AddCount(std::size_t& total, std::size_t amount, std::string_view description)
 	{
@@ -69,56 +66,29 @@ public:
 		{
 			work.Entities.push_back(Assets::EntityBlueprint{std::move(identity), std::move(schemas)});
 		};
+
 		for (const AnimationClipResource& animation : work.Payload.animations)
-			add(std::format("{}:animation:{}", work.Id.value, animation.sourceAnimationIndex),
-			    Schemas<ECS::AnimationState, ECS::Name, ECS::AuthoredIdentity, ECS::EditorMetadata>());
+			add(std::format("{}:animation:{}", work.Id.value, animation.sourceAnimationIndex), Schemas<ECS::AnimationState, ECS::Name, ECS::AuthoredIdentity, ECS::EditorMetadata>());
 		for (std::size_t index = 0; index < work.Payload.staticMeshInstances.size(); ++index)
 		{
 			const SceneAssetPayload::StaticMeshInstance& instance = work.Payload.staticMeshInstances[index];
+
 			add(std::format("{}:mesh:{}:{}", work.Id.value, instance.sourceNodeIndex, index),
-			    Schemas<
-			        ECS::LocalTransform,
-			        ECS::WorldTransform,
-			        ECS::MeshInstance,
-			        ECS::Visibility,
-			        ECS::AuthoredIdentity,
-			        ECS::EditorMetadata>());
+			    Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::MeshInstance, ECS::Visibility, ECS::AuthoredIdentity, ECS::EditorMetadata>());
 		}
 		for (std::size_t index = 0; index < work.Payload.skeletalMeshInstances.size(); ++index)
 		{
 			const SceneAssetPayload::SkeletalMeshInstance& instance = work.Payload.skeletalMeshInstances[index];
+
 			add(std::format("{}:skinned-mesh:{}:{}", work.Id.value, instance.sourceNodeIndex, index),
-			    Schemas<
-			        ECS::LocalTransform,
-			        ECS::WorldTransform,
-			        ECS::MeshInstance,
-			        ECS::Visibility,
-			        ECS::MorphState,
-			        ECS::SkinningState,
-			        ECS::AuthoredIdentity,
-			        ECS::EditorMetadata>());
+			    Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::MeshInstance, ECS::Visibility, ECS::MorphState, ECS::SkinningState, ECS::AuthoredIdentity, ECS::EditorMetadata>());
 		}
 		for (std::size_t index = 0; index < work.Payload.cameras.size(); ++index)
 			add(std::format("{}:camera:{}", work.Id.value, index),
-			    Schemas<
-			        ECS::LocalTransform,
-			        ECS::WorldTransform,
-			        ECS::Camera,
-			        ECS::CameraDerivedState,
-			        ECS::Visibility,
-			        ECS::Name,
-			        ECS::AuthoredIdentity,
-			        ECS::EditorMetadata>());
+			    Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::Camera, ECS::CameraDerivedState, ECS::Visibility, ECS::Name, ECS::AuthoredIdentity, ECS::EditorMetadata>());
 		for (std::size_t index = 0; index < work.Payload.lights.size(); ++index)
 			add(std::format("{}:light:{}", work.Id.value, index),
-			    Schemas<
-			        ECS::LocalTransform,
-			        ECS::WorldTransform,
-			        ECS::Light,
-			        ECS::Visibility,
-			        ECS::Name,
-			        ECS::AuthoredIdentity,
-			        ECS::EditorMetadata>());
+			    Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::Light, ECS::Visibility, ECS::Name, ECS::AuthoredIdentity, ECS::EditorMetadata>());
 	}
 
 	static void ValidateBlueprintContract(const std::vector<Assets::EntityBlueprint>& entities)
@@ -128,35 +98,22 @@ public:
 		{
 			if (entity.AuthoredIdentity.empty())
 			{
-				Diagnostics::Fatal(
-				    g_sceneLoadPackageBuilderLogger,
-				    __FILE__,
-				    __LINE__,
-				    "Scene package assembly produced an empty authored entity identity.");
+				Diagnostics::Fatal(g_sceneLoadPackageBuilderLogger, __FILE__, __LINE__, "Scene package assembly produced an empty authored entity identity.");
 			}
 			if (!identities.insert(entity.AuthoredIdentity).second)
 			{
-				throw Diagnostics::Error(
-				    std::format("Scene load package contains duplicate authored entity identity '{}'.", entity.AuthoredIdentity));
+				throw Diagnostics::Error(std::format("Scene load package contains duplicate authored entity identity '{}'.", entity.AuthoredIdentity));
 			}
 			if (entity.Components.empty())
 			{
-				Diagnostics::Fatal(
-				    g_sceneLoadPackageBuilderLogger,
-				    __FILE__,
-				    __LINE__,
-				    std::format("Scene package entity '{}' has no component contract.", entity.AuthoredIdentity));
+				Diagnostics::Fatal(g_sceneLoadPackageBuilderLogger, __FILE__, __LINE__, std::format("Scene package entity '{}' has no component contract.", entity.AuthoredIdentity));
 			}
 			std::unordered_set<std::uint64_t> componentIds;
 			for (const ECS::ComponentSchema component : entity.Components)
 			{
 				if (!component.Id.IsValid() || !componentIds.insert(component.Id.Value).second)
 				{
-					Diagnostics::Fatal(
-					    g_sceneLoadPackageBuilderLogger,
-					    __FILE__,
-					    __LINE__,
-					    "Scene package assembly produced an invalid or duplicate component schema record.");
+					Diagnostics::Fatal(g_sceneLoadPackageBuilderLogger, __FILE__, __LINE__, "Scene package assembly produced an invalid or duplicate component schema record.");
 				}
 			}
 		}
@@ -197,27 +154,14 @@ namespace Assets
 		state.Package->Entities.push_back(
 		    EntityBlueprint{
 		        std::format("level:{}:camera:0", state.Package->Level.name),
-		        SceneLoadPackageAssembly::Schemas<
-		            ECS::LocalTransform,
-		            ECS::WorldTransform,
-		            ECS::Camera,
-		            ECS::CameraDerivedState,
-		            ECS::Visibility,
-		            ECS::Name,
-		            ECS::AuthoredIdentity,
-		            ECS::EditorMetadata>()});
+		        SceneLoadPackageAssembly::
+		            Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::Camera, ECS::CameraDerivedState, ECS::Visibility, ECS::Name, ECS::AuthoredIdentity, ECS::EditorMetadata>()});
+
 		for (std::size_t index = 0; index < state.Package->Level.lights.size(); ++index)
 			state.Package->Entities.push_back(
 			    EntityBlueprint{
 			        std::format("level:{}:light:{}", state.Package->Level.name, index),
-			        SceneLoadPackageAssembly::Schemas<
-			            ECS::LocalTransform,
-			            ECS::WorldTransform,
-			            ECS::Light,
-			            ECS::Visibility,
-			            ECS::Name,
-			            ECS::AuthoredIdentity,
-			            ECS::EditorMetadata>()});
+			        SceneLoadPackageAssembly::Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::Light, ECS::Visibility, ECS::Name, ECS::AuthoredIdentity, ECS::EditorMetadata>()});
 		for (SceneAssetLoadWork& work : state.Assets)
 		{
 			for (EntityBlueprint& entity : work.Entities)

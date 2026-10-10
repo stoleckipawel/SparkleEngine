@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "Console/EditorConsoleSystem.h"
 
@@ -19,6 +19,7 @@ class EditorConsoleSystemConstants final
 {
 public:
 	static constexpr std::uint32_t kWindowsKeyDownMessage = 0x0100;
+
 	static constexpr std::uintptr_t kTildeKey = 0xC0;
 	static constexpr float kMinimumDockHeight = 160.0f;
 	static constexpr float kMinimumViewportHeight = 64.0f;
@@ -62,8 +63,7 @@ void EditorConsoleSystem::OpenConsole() noexcept
 
 bool EditorConsoleSystem::HandleShortcut(std::uint32_t message, std::uintptr_t key, bool wantsTextInput) noexcept
 {
-	if (message == EditorConsoleSystemConstants::kWindowsKeyDownMessage && key == EditorConsoleSystemConstants::kTildeKey
-	    && !wantsTextInput)
+	if (message == EditorConsoleSystemConstants::kWindowsKeyDownMessage && key == EditorConsoleSystemConstants::kTildeKey && !wantsTextInput)
 	{
 		if (m_consolePanel->IsOpen())
 		{
@@ -114,17 +114,17 @@ void EditorConsoleSystem::BuildDockedUI(float left, float bottom, float width, f
 	const float minDockHeight = (std::min) (EditorConsoleSystemConstants::kMinimumDockHeight, maxDockHeight);
 	ImGui::SetNextWindowPos(ImVec2(left, top), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
-	ImGui::SetNextWindowSizeConstraints(
-	    ImVec2(width, m_consolePanel->IsOpen() ? minDockHeight : height),
-	    ImVec2(width, m_consolePanel->IsOpen() ? maxDockHeight : height));
+	ImGui::SetNextWindowSizeConstraints(ImVec2(width, m_consolePanel->IsOpen() ? minDockHeight : height), ImVec2(width, m_consolePanel->IsOpen() ? maxDockHeight : height));
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 6.0f));
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.0f, 4.0f));
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, SparkleUiPalette::WindowBackground());
 	ImGui::PushStyleColor(ImGuiCol_Tab, SparkleUiPalette::TabBackground());
 	ImGui::PushStyleColor(ImGuiCol_TabHovered, SparkleUiPalette::TabBackgroundHovered());
 	ImGui::PushStyleColor(ImGuiCol_TabActive, SparkleUiPalette::TabBackgroundActive());
-	const ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar
-	    | ImGuiWindowFlags_NoSavedSettings | (m_consolePanel->IsOpen() ? ImGuiWindowFlags_None : ImGuiWindowFlags_NoResize);
+
+	const ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings
+	    | (m_consolePanel->IsOpen() ? ImGuiWindowFlags_None : ImGuiWindowFlags_NoResize);
+
 	if (!ImGui::Begin("Viewport Console Dock", nullptr, windowFlags))
 	{
 		ImGui::End();
@@ -158,8 +158,7 @@ void EditorConsoleSystem::BuildDockedUI(float left, float bottom, float width, f
 		m_consolePanel->BuildContent(disableInteraction);
 		m_dockHeight = ImGui::GetWindowHeight();
 		GetDockHeight(availableHeight);
-		if (!disableInteraction && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)
-		    && !ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId) && ImGui::IsKeyPressed(ImGuiKey_Escape))
+		if (!disableInteraction && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && !ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId) && ImGui::IsKeyPressed(ImGuiKey_Escape))
 		{
 			m_consolePanel->SetOpen(false);
 		}

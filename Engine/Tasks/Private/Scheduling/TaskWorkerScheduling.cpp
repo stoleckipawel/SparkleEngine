@@ -130,9 +130,7 @@ bool TaskExecutor::Implementation::Runtime::WaitForWork(TaskWorker& worker, Read
 		}
 
 		lock.lock();
-		laneState.WakeCondition.wait(
-		    lock,
-		    [&laneState, observedWakeEpoch] { return laneState.WorkersStopping || laneState.WakeEpoch != observedWakeEpoch; });
+		laneState.WakeCondition.wait(lock, [&laneState, observedWakeEpoch] { return laneState.WorkersStopping || laneState.WakeEpoch != observedWakeEpoch; });
 		if (laneState.WorkersStopping)
 		{
 			return false;

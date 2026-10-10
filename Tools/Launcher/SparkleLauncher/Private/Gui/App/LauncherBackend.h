@@ -51,17 +51,8 @@ namespace SparkleLauncher
 		void OperationPreviewFailed(const QString& operationId, const QString& message);
 		void OperationStarted(const QString& runId, const QString& operationId, const QString& title);
 		void OperationOutputReceived(const QString& runId, const QString& operationId, const QString& outputText);
-		void OperationProgressReceived(
-		    const QString& runId,
-		    const QString& operationId,
-		    const QString& phase,
-		    quint64 completed,
-		    quint64 total);
-		void OperationFinished(
-		    const QString& runId,
-		    const QString& operationId,
-		    const QString& title,
-		    const LauncherOperationResult& result);
+		void OperationProgressReceived(const QString& runId, const QString& operationId, const QString& phase, quint64 completed, quint64 total);
+		void OperationFinished(const QString& runId, const QString& operationId, const QString& title, const LauncherOperationResult& result);
 
 	private:
 		void PopulateOperationCatalog();

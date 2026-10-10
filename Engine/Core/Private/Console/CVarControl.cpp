@@ -19,8 +19,7 @@ CVarControlResult ExecuteCVarControl(ConsoleVariableRegistry& registry, CVarCont
 			return {.Error = "List does not accept entries."};
 		for (ConsoleVariableBase* variable : registry.GetVariables())
 			if (variable != nullptr
-			    && (request.Filter.empty() || Strings::ContainsIgnoreCase(variable->GetName(), request.Filter)
-			        || Strings::ContainsIgnoreCase(variable->GetDescription(), request.Filter)))
+			    && (request.Filter.empty() || Strings::ContainsIgnoreCase(variable->GetName(), request.Filter) || Strings::ContainsIgnoreCase(variable->GetDescription(), request.Filter)))
 				variables.push_back(variable);
 	}
 	else
@@ -56,18 +55,10 @@ CVarControlResult ExecuteCVarControl(ConsoleVariableRegistry& registry, CVarCont
 		{
 			std::string error;
 			if (!variables[index]->TrySetValueFromString(request.Entries[index].Value, error))
-				Diagnostics::Fatal(
-				    LogCoreCVarControl,
-				    __FILE__,
-				    __LINE__,
-				    "Previously validated CVar input failed during commit: " + error);
+				Diagnostics::Fatal(LogCoreCVarControl, __FILE__, __LINE__, "Previously validated CVar input failed during commit: " + error);
 		}
 	result.Values.reserve(variables.size());
 	for (const ConsoleVariableBase* variable : variables)
-		result.Values.push_back(
-		    {std::string(variable->GetName()),
-		        variable->GetValueAsString(),
-		        variable->GetValueTypeName(),
-		        std::string(variable->GetDescription())});
+		result.Values.push_back({std::string(variable->GetName()), variable->GetValueAsString(), variable->GetValueTypeName(), std::string(variable->GetDescription())});
 	return result;
 }

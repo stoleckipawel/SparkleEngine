@@ -19,12 +19,7 @@ static std::string FormatHandle(FrameGraphResourceHandle handle)
 	return handle.IsValid() ? std::format("{}", handle.index) : "invalid";
 }
 
-static void FailInvalidAccelerationStructureBinding(
-    std::string_view operation,
-    std::string_view resourceName,
-    FrameGraphResourceHandle handle,
-    ResourceState state,
-    bool hasResource) noexcept
+static void FailInvalidAccelerationStructureBinding(std::string_view operation, std::string_view resourceName, FrameGraphResourceHandle handle, ResourceState state, bool hasResource) noexcept
 {
 	Diagnostics::Fatal(
 	    g_frameGraphAccelerationStructureLogger,
@@ -40,13 +35,10 @@ static void FailInvalidAccelerationStructureBinding(
 	        hasResource));
 }
 
-FrameGraphAccelerationStructureHandle FrameGraph::ReservePersistentAccelerationStructure(
-    std::string_view name,
-    ResourceState initialState) noexcept
+FrameGraphAccelerationStructureHandle FrameGraph::ReservePersistentAccelerationStructure(std::string_view name, ResourceState initialState) noexcept
 {
 	const std::string resolvedName = ResolveName(name, "PersistentAccelerationStructure");
-	const auto existing =
-	    FindResource(resolvedName, FrameGraphResourceKind::AccelerationStructure, FrameGraphResourceOwnership::ExternalPersistent);
+	const auto existing = FindResource(resolvedName, FrameGraphResourceKind::AccelerationStructure, FrameGraphResourceOwnership::ExternalPersistent);
 	if (existing.IsValid())
 	{
 		return FrameGraphAccelerationStructureHandle{existing};
@@ -59,10 +51,7 @@ FrameGraphAccelerationStructureHandle FrameGraph::ReservePersistentAccelerationS
 	return FrameGraphAccelerationStructureHandle{handle};
 }
 
-void FrameGraph::BindPersistentAccelerationStructure(
-    FrameGraphAccelerationStructureHandle handle,
-    RhiResourceHandle resource,
-    ResourceState currentState) noexcept
+void FrameGraph::BindPersistentAccelerationStructure(FrameGraphAccelerationStructureHandle handle, RhiResourceHandle resource, ResourceState currentState) noexcept
 {
 	if (!handle.IsValid())
 	{
@@ -71,35 +60,19 @@ void FrameGraph::BindPersistentAccelerationStructure(
 
 	if (!resource)
 	{
-		FailInvalidAccelerationStructureBinding(
-		    "BindPersistentAccelerationStructure",
-		    {},
-		    handle.GetResourceHandle(),
-		    currentState,
-		    static_cast<bool>(resource));
+		FailInvalidAccelerationStructureBinding("BindPersistentAccelerationStructure", {}, handle.GetResourceHandle(), currentState, static_cast<bool>(resource));
 	}
 
 	const FrameGraphResourceHandle resourceHandle = handle.GetResourceHandle();
 	if (!m_resourceRegistry.IsRegistered(resourceHandle))
 	{
-		FailInvalidAccelerationStructureBinding(
-		    "BindPersistentAccelerationStructure",
-		    {},
-		    resourceHandle,
-		    currentState,
-		    static_cast<bool>(resource));
+		FailInvalidAccelerationStructureBinding("BindPersistentAccelerationStructure", {}, resourceHandle, currentState, static_cast<bool>(resource));
 	}
 
 	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(resourceHandle);
-	if (metadata.kind != FrameGraphResourceKind::AccelerationStructure
-	    || metadata.ownership != FrameGraphResourceOwnership::ExternalPersistent)
+	if (metadata.kind != FrameGraphResourceKind::AccelerationStructure || metadata.ownership != FrameGraphResourceOwnership::ExternalPersistent)
 	{
-		FailInvalidAccelerationStructureBinding(
-		    "BindPersistentAccelerationStructure",
-		    metadata.debugName,
-		    resourceHandle,
-		    currentState,
-		    static_cast<bool>(resource));
+		FailInvalidAccelerationStructureBinding("BindPersistentAccelerationStructure", metadata.debugName, resourceHandle, currentState, static_cast<bool>(resource));
 	}
 
 	FrameGraphResourceAccess access{};
@@ -109,10 +82,7 @@ void FrameGraph::BindPersistentAccelerationStructure(
 	m_resourceStateTracker.UpdateCurrentState(resourceHandle, currentState);
 }
 
-void FrameGraph::BindPersistentAccelerationStructure(
-    FrameGraphAccelerationStructureHandle handle,
-    RhiOwnedResourceHandle resource,
-    ResourceState currentState) noexcept
+void FrameGraph::BindPersistentAccelerationStructure(FrameGraphAccelerationStructureHandle handle, RhiOwnedResourceHandle resource, ResourceState currentState) noexcept
 {
 	if (m_renderHardwareInterface == nullptr || !resource)
 	{

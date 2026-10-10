@@ -9,6 +9,7 @@ class EngineRenderingSettingsController final
 {
 public:
 	using CommitHandler = std::function<void(EngineRenderingSettingsState)>;
+
 	using RefreshHandler = std::function<EngineRenderingSettingsState()>;
 
 	EngineRenderingSettingsController(EngineRenderingSettingsState state, CommitHandler commitHandler, RefreshHandler refreshHandler);

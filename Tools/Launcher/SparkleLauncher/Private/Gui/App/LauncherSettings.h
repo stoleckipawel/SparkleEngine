@@ -64,6 +64,7 @@ namespace SparkleLauncher
 
 	private:
 		QString m_runMode = "editor";
+
 		QString m_buildConfiguration = "development";
 		QString m_workspaceIde = "rider";
 		QString m_workspaceCompiler = "msvc";

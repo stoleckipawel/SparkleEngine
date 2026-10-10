@@ -10,11 +10,7 @@
 
 namespace SparkleLauncher
 {
-	ProcessRequest MakeCMakeConfigureRequest(
-	    const std::filesystem::path& repositoryRoot,
-	    const BuildToolchainStatus& toolchain,
-	    std::string_view operationId,
-	    std::string_view logFileName);
+	ProcessRequest MakeCMakeConfigureRequest(const std::filesystem::path& repositoryRoot, const BuildToolchainStatus& toolchain, std::string_view operationId, std::string_view logFileName);
 
 	ProcessRequest MakeCMakeDependencySyncRequest(
 	    const std::filesystem::path& repositoryRoot,
@@ -23,11 +19,7 @@ namespace SparkleLauncher
 	    std::string_view sourceDependencyId,
 	    std::string_view logFileName);
 
-	ProcessRequest MakeCMakeLauncherConfigureRequest(
-	    const std::filesystem::path& repositoryRoot,
-	    const BuildToolchainStatus& toolchain,
-	    std::string_view operationId,
-	    std::string_view logFileName);
+	ProcessRequest MakeCMakeLauncherConfigureRequest(const std::filesystem::path& repositoryRoot, const BuildToolchainStatus& toolchain, std::string_view operationId, std::string_view logFileName);
 
 	ProcessRequest MakeCMakeBuildRequest(
 	    const std::filesystem::path& repositoryRoot,

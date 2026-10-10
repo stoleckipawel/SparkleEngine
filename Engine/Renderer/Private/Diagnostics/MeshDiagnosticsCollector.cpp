@@ -95,9 +95,7 @@ void MeshDiagnosticsCollector::SortRows(MeshDiagnosticsSnapshot& snapshot)
 	    });
 }
 
-MeshGeometryInstancingDiagnostics MeshDiagnosticsCollector::CaptureGeometryInstancing(
-    const RenderScene& scene,
-    const GpuMeshCache* gpuMeshCache)
+MeshGeometryInstancingDiagnostics MeshDiagnosticsCollector::CaptureGeometryInstancing(const RenderScene& scene, const GpuMeshCache* gpuMeshCache)
 {
 	std::vector<MeshRenderItem> renderItems;
 	renderItems.reserve(scene.GetPrimitives().size());
@@ -108,8 +106,7 @@ MeshGeometryInstancingDiagnostics MeshDiagnosticsCollector::CaptureGeometryInsta
 	std::vector<RenderMeshInstanceGroup> renderInstanceGroups;
 	for (const RenderMeshInstanceGroupData& group : scene.GetInstanceGroups())
 	{
-		renderInstanceGroups.push_back(
-		    {RenderMeshClassificationConversion::ToRenderMeshInstanceGroupKind(group.Kind), group.InstanceCount});
+		renderInstanceGroups.push_back({RenderMeshClassificationConversion::ToRenderMeshInstanceGroupKind(group.Kind), group.InstanceCount});
 	}
 
 	MeshGeometryInstancingDiagnostics instancingDiagnostics;
@@ -137,6 +134,7 @@ MeshGeometryInstancingDiagnostics MeshDiagnosticsCollector::CaptureGeometryInsta
 		const GpuMesh* gpuMesh = gpuMeshCache != nullptr ? gpuMeshCache->Find(*mesh) : nullptr;
 
 		const std::uint32_t drawIndex = static_cast<std::uint32_t>(primitives.size());
+
 		primitives.push_back(
 		    PreparedRenderPrimitive{
 		        .Object = primitive.Object,
@@ -148,25 +146,23 @@ MeshGeometryInstancingDiagnostics MeshDiagnosticsCollector::CaptureGeometryInsta
 		            .Geometry = MeshDrawGeometry{
 		                .MeshKind = RenderMeshClassificationConversion::ToRenderMeshKind(primitive.Static.MeshKind),
 		                .Mesh = gpuMesh != nullptr ? gpuMesh->GetHandle() : GpuMeshHandle{}}}});
+
 		renderItems.push_back(
 		    MeshRenderItem{
 		        .Object = primitive.Object,
 		        .DrawIndex = drawIndex,
-		        .InstanceGroupIndex =
-		            RenderMeshClassificationConversion::ToRenderMeshInstanceGroupIndex(primitive.Static.InstanceGroupIndex),
+		        .InstanceGroupIndex = RenderMeshClassificationConversion::ToRenderMeshInstanceGroupIndex(primitive.Static.InstanceGroupIndex),
 		        .Classification = RenderMaterialClassification::Opaque});
 	}
 
 	MeshInstanceBatchBuilder batchBuilder;
 	MeshInstanceBatchBuildResult batchResult;
+
 	batchBuilder.Build(
 	    renderItems,
 	    primitives,
 	    renderInstanceGroups,
-	    MeshInstanceBatchBuildOptions{
-	        .EnableAutoBatching = CVarRendererMeshAutoBatching.Get(),
-	        .RequireMaterialBindingSet = false,
-	        .CollectDiagnostics = true},
+	    MeshInstanceBatchBuildOptions{.EnableAutoBatching = CVarRendererMeshAutoBatching.Get(), .RequireMaterialBindingSet = false, .CollectDiagnostics = true},
 	    batchResult);
 
 	MeshGeometryInstancingDiagnostics diagnostics = batchResult.Diagnostics;
@@ -252,7 +248,6 @@ void MeshDiagnosticsCollector::PopulateMeshRow(MeshDiagnosticsRow& row, const Me
 	{
 		row.GpuMeshRuntimeId = reinterpret_cast<std::uintptr_t>(gpuMesh);
 		row.GpuResident = gpuMesh->IsValid();
-		row.EstimatedGpuByteSize = static_cast<std::uint64_t>(gpuMesh->GetVertexBufferView().SizeInBytes)
-		    + static_cast<std::uint64_t>(gpuMesh->GetIndexBufferView().SizeInBytes);
+		row.EstimatedGpuByteSize = static_cast<std::uint64_t>(gpuMesh->GetVertexBufferView().SizeInBytes) + static_cast<std::uint64_t>(gpuMesh->GetIndexBufferView().SizeInBytes);
 	}
 }

@@ -13,11 +13,7 @@
 class TaskExecutor::Implementation::Runtime::ScheduledTaskExecution final : public std::enable_shared_from_this<ScheduledTaskExecution>
 {
 public:
-	ScheduledTaskExecution(
-	    Runtime& owner,
-	    std::shared_ptr<const TaskGraphStorage> graph,
-	    TaskExecutionContext context,
-	    std::shared_ptr<TaskExecution::State> execution);
+	ScheduledTaskExecution(Runtime& owner, std::shared_ptr<const TaskGraphStorage> graph, TaskExecutionContext context, std::shared_ptr<TaskExecution::State> execution);
 
 	void Start();
 	void Execute(std::uint32_t index, TaskWorker& worker);

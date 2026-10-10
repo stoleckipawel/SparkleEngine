@@ -54,11 +54,7 @@ namespace D3D12DebugLayerDiagnostics
 		return Formatting::FormatPrefixedHexUInt32(static_cast<std::uint32_t>(hr));
 	}
 
-	void AppendDiagnosticMessage(
-	    std::deque<RhiDiagnosticMessage>& messages,
-	    ERhiDiagnosticMessageSeverity severity,
-	    ERhiDiagnosticMessageCategory category,
-	    std::string text)
+	void AppendDiagnosticMessage(std::deque<RhiDiagnosticMessage>& messages, ERhiDiagnosticMessageSeverity severity, ERhiDiagnosticMessageCategory category, std::string text)
 	{
 		messages.push_back(RhiDiagnosticMessage{.Severity = severity, .Category = category, .Text = std::move(text)});
 	}
@@ -196,20 +192,16 @@ namespace D3D12DebugLayerDiagnostics
 	void AppendBreadcrumbMessages(std::deque<RhiDiagnosticMessage>& messages, const D3D12_AUTO_BREADCRUMB_NODE1* node) noexcept
 	{
 		std::size_t reportedNodes = 0;
-		for (const D3D12_AUTO_BREADCRUMB_NODE1* currentNode = node; currentNode != nullptr && reportedNodes < kMaxBreadcrumbNodes;
-		    currentNode = currentNode->pNext, ++reportedNodes)
+		for (const D3D12_AUTO_BREADCRUMB_NODE1* currentNode = node; currentNode != nullptr && reportedNodes < kMaxBreadcrumbNodes; currentNode = currentNode->pNext, ++reportedNodes)
 		{
 			const UINT completedOperations = currentNode->pLastBreadcrumbValue != nullptr ? *currentNode->pLastBreadcrumbValue : 0u;
-			const UINT historyIndex = completedOperations > 0 && currentNode->BreadcrumbCount > 0
-			    ? (std::min) (completedOperations, currentNode->BreadcrumbCount) - 1
-			    : 0u;
-			const D3D12_AUTO_BREADCRUMB_OP lastOperation = currentNode->pCommandHistory != nullptr && currentNode->BreadcrumbCount > 0
-			    ? currentNode->pCommandHistory[historyIndex]
-			    : D3D12_AUTO_BREADCRUMB_OP_BEGINSUBMISSION;
-			const std::string commandListName =
-			    ResolveDebugName(currentNode->pCommandListDebugNameA, currentNode->pCommandListDebugNameW, "UnnamedCommandList");
-			const std::string commandQueueName =
-			    ResolveDebugName(currentNode->pCommandQueueDebugNameA, currentNode->pCommandQueueDebugNameW, "UnnamedCommandQueue");
+			const UINT historyIndex = completedOperations > 0 && currentNode->BreadcrumbCount > 0 ? (std::min) (completedOperations, currentNode->BreadcrumbCount) - 1 : 0u;
+
+			const D3D12_AUTO_BREADCRUMB_OP lastOperation = currentNode->pCommandHistory != nullptr && currentNode->BreadcrumbCount > 0 ? currentNode->pCommandHistory[historyIndex]
+			                                                                                                                           : D3D12_AUTO_BREADCRUMB_OP_BEGINSUBMISSION;
+
+			const std::string commandListName = ResolveDebugName(currentNode->pCommandListDebugNameA, currentNode->pCommandListDebugNameW, "UnnamedCommandList");
+			const std::string commandQueueName = ResolveDebugName(currentNode->pCommandQueueDebugNameA, currentNode->pCommandQueueDebugNameW, "UnnamedCommandQueue");
 			const std::string breadcrumbContext = ResolveBreadcrumbContext(*currentNode, completedOperations);
 
 			std::string message = std::format(
@@ -219,16 +211,13 @@ namespace D3D12DebugLayerDiagnostics
 			    completedOperations,
 			    currentNode->BreadcrumbCount,
 			    GetBreadcrumbOperationName(lastOperation));
+
 			if (!breadcrumbContext.empty())
 			{
 				message += std::format(" context='{}'", breadcrumbContext);
 			}
 
-			AppendDiagnosticMessage(
-			    messages,
-			    ERhiDiagnosticMessageSeverity::Error,
-			    ERhiDiagnosticMessageCategory::Driver,
-			    std::move(message));
+			AppendDiagnosticMessage(messages, ERhiDiagnosticMessageSeverity::Error, ERhiDiagnosticMessageCategory::Driver, std::move(message));
 		}
 
 		if (node != nullptr)
@@ -250,14 +239,10 @@ namespace D3D12DebugLayerDiagnostics
 		}
 	}
 
-	template <typename TAllocationNode> void AppendAllocationMessages(
-	    std::deque<RhiDiagnosticMessage>& messages,
-	    const TAllocationNode* node,
-	    std::string_view allocationListName) noexcept
+	template <typename TAllocationNode> void AppendAllocationMessages(std::deque<RhiDiagnosticMessage>& messages, const TAllocationNode* node, std::string_view allocationListName) noexcept
 	{
 		std::size_t reportedAllocations = 0;
-		for (const TAllocationNode* currentNode = node; currentNode != nullptr && reportedAllocations < kMaxAllocationNodes;
-		    currentNode = currentNode->pNext, ++reportedAllocations)
+		for (const TAllocationNode* currentNode = node; currentNode != nullptr && reportedAllocations < kMaxAllocationNodes; currentNode = currentNode->pNext, ++reportedAllocations)
 		{
 			AppendDiagnosticMessage(
 			    messages,
@@ -310,9 +295,7 @@ void D3D12DebugLayer::InitializeInfoQueue(ID3D12Device* device)
 	{
 		m_infoQueue.Reset();
 		m_messages.clear();
-		SPDLOG_LOGGER_WARN(
-		    g_d3d12DiagnosticsLogger,
-		    "D3D12 debug messages unavailable: no device was available when attaching the info queue.");
+		SPDLOG_LOGGER_WARN(g_d3d12DiagnosticsLogger, "D3D12 debug messages unavailable: no device was available when attaching the info queue.");
 		return;
 	}
 
@@ -321,10 +304,7 @@ void D3D12DebugLayer::InitializeInfoQueue(ID3D12Device* device)
 	{
 		m_infoQueue.Reset();
 		m_messages.clear();
-		SPDLOG_LOGGER_WARN(
-		    g_d3d12DiagnosticsLogger,
-		    "D3D12 debug messages unavailable: ID3D12InfoQueue query failed with HRESULT {}.",
-		    FormatHRESULT(infoQueueHr));
+		SPDLOG_LOGGER_WARN(g_d3d12DiagnosticsLogger, "D3D12 debug messages unavailable: ID3D12InfoQueue query failed with HRESULT {}.", FormatHRESULT(infoQueueHr));
 		return;
 	}
 
@@ -403,6 +383,7 @@ void D3D12DebugLayer::CollectCrashDiagnostics(ID3D12Device* device) noexcept
 	}
 
 	DrainStoredMessages();
+
 	AppendDiagnosticMessage(
 	    m_messages,
 	    ERhiDiagnosticMessageSeverity::Fatal,
@@ -426,6 +407,7 @@ void D3D12DebugLayer::CollectCrashDiagnostics(ID3D12Device* device) noexcept
 			    ERhiDiagnosticMessageSeverity::Fatal,
 			    ERhiDiagnosticMessageCategory::Driver,
 			    std::format("DRED page fault at GPU VA {}", Formatting::FormatPrefixedHexUInt64(pageFaultOutput.PageFaultVA)));
+
 			AppendAllocationMessages(m_messages, pageFaultOutput.pHeadExistingAllocationNode, "existing");
 			AppendAllocationMessages(m_messages, pageFaultOutput.pHeadRecentFreedAllocationNode, "recent-freed");
 		}
@@ -443,12 +425,11 @@ void D3D12DebugLayer::CollectCrashDiagnostics(ID3D12Device* device) noexcept
 			for (; currentNode != nullptr && reportedNodes < kMaxBreadcrumbNodes; currentNode = currentNode->pNext, ++reportedNodes)
 			{
 				const UINT completedOperations = currentNode->pLastBreadcrumbValue != nullptr ? *currentNode->pLastBreadcrumbValue : 0u;
-				const UINT historyIndex = completedOperations > 0 && currentNode->BreadcrumbCount > 0
-				    ? (std::min) (completedOperations, currentNode->BreadcrumbCount) - 1
-				    : 0u;
-				const D3D12_AUTO_BREADCRUMB_OP lastOperation = currentNode->pCommandHistory != nullptr && currentNode->BreadcrumbCount > 0
-				    ? currentNode->pCommandHistory[historyIndex]
-				    : D3D12_AUTO_BREADCRUMB_OP_BEGINSUBMISSION;
+				const UINT historyIndex = completedOperations > 0 && currentNode->BreadcrumbCount > 0 ? (std::min) (completedOperations, currentNode->BreadcrumbCount) - 1 : 0u;
+
+				const D3D12_AUTO_BREADCRUMB_OP lastOperation = currentNode->pCommandHistory != nullptr && currentNode->BreadcrumbCount > 0 ? currentNode->pCommandHistory[historyIndex]
+				                                                                                                                           : D3D12_AUTO_BREADCRUMB_OP_BEGINSUBMISSION;
+
 				AppendDiagnosticMessage(
 				    m_messages,
 				    ERhiDiagnosticMessageSeverity::Error,
@@ -471,6 +452,7 @@ void D3D12DebugLayer::CollectCrashDiagnostics(ID3D12Device* device) noexcept
 			    ERhiDiagnosticMessageSeverity::Fatal,
 			    ERhiDiagnosticMessageCategory::Driver,
 			    std::format("DRED page fault at GPU VA {}", Formatting::FormatPrefixedHexUInt64(pageFaultOutput.PageFaultVA)));
+
 			AppendAllocationMessages(m_messages, pageFaultOutput.pHeadExistingAllocationNode, "existing");
 			AppendAllocationMessages(m_messages, pageFaultOutput.pHeadRecentFreedAllocationNode, "recent-freed");
 		}
@@ -484,10 +466,7 @@ void D3D12DebugLayer::InitDredSettings() noexcept
 	if (FAILED(dredHr))
 	{
 		m_supportsCrashDiagnostics = false;
-		SPDLOG_LOGGER_WARN(
-		    g_d3d12DiagnosticsLogger,
-		    "D3D12 crash diagnostics unavailable: DRED settings interface query failed with HRESULT {}.",
-		    FormatHRESULT(dredHr));
+		SPDLOG_LOGGER_WARN(g_d3d12DiagnosticsLogger, "D3D12 crash diagnostics unavailable: DRED settings interface query failed with HRESULT {}.", FormatHRESULT(dredHr));
 		return;
 	}
 

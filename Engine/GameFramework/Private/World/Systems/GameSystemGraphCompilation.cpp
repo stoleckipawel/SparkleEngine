@@ -57,25 +57,32 @@ namespace ECS
 			{
 				case GameSystemResourceDomain::UpdateInputs:
 					return {GameSystemPhase::Simulation, GameSystemPhase::Animation};
+
 				case GameSystemResourceDomain::CameraInputIntent:
 				case GameSystemResourceDomain::CameraNavigationSettings:
 					return {GameSystemPhase::Simulation, GameSystemPhase::Simulation};
+
 				case GameSystemResourceDomain::SystemChangeScratch:
 					return {GameSystemPhase::Simulation, GameSystemPhase::Deformation};
+
 				case GameSystemResourceDomain::AnimationClips:
 				case GameSystemResourceDomain::SkeletonResources:
 					return {GameSystemPhase::Animation, GameSystemPhase::Extraction};
+
 				case GameSystemResourceDomain::PoseScratch:
 				case GameSystemResourceDomain::MorphScratch:
 					return {GameSystemPhase::Animation, GameSystemPhase::Deformation};
+
 				case GameSystemResourceDomain::SkinningOutput:
 				case GameSystemResourceDomain::MorphOutput:
 				case GameSystemResourceDomain::DirtyTransforms:
 				case GameSystemResourceDomain::WorldChanges:
 					return {GameSystemPhase::Deformation, GameSystemPhase::Extraction};
+
 				case GameSystemResourceDomain::TransformScratch:
 				case GameSystemResourceDomain::CameraDerivedScratch:
 					return {GameSystemPhase::Transform, GameSystemPhase::Extraction};
+
 				case GameSystemResourceDomain::MeshResources:
 				case GameSystemResourceDomain::ExtractionScratch:
 				case GameSystemResourceDomain::ExtractionOutput:
@@ -170,18 +177,14 @@ namespace ECS
 				}
 				if (system.Components.empty() && system.Resources.empty())
 				{
-					m_data->Error = {
-					    GameSystemGraphErrorCode::UndeclaredAccess,
-					    std::format("Game system '{}' declares no component query or resource access.", system.Name)};
+					m_data->Error = {GameSystemGraphErrorCode::UndeclaredAccess, std::format("Game system '{}' declares no component query or resource access.", system.Name)};
 					return false;
 				}
 				for (std::uint32_t prior = 0; prior < index; ++prior)
 				{
 					if (m_data->Systems[prior].Name == system.Name)
 					{
-						m_data->Error = {
-						    GameSystemGraphErrorCode::DuplicateSystem,
-						    std::format("Duplicate game system '{}'.", system.Name)};
+						m_data->Error = {GameSystemGraphErrorCode::DuplicateSystem, std::format("Duplicate game system '{}'.", system.Name)};
 						return false;
 					}
 				}
@@ -202,10 +205,9 @@ namespace ECS
 					if (system.Components[left].Type == system.Components[right].Type)
 					{
 						m_data->Error = {
-						    system.Components[left].Mode == system.Components[right].Mode
-						        ? GameSystemGraphErrorCode::DuplicateAccess
-						        : GameSystemGraphErrorCode::ConflictingAccessDeclaration,
+						    system.Components[left].Mode == system.Components[right].Mode ? GameSystemGraphErrorCode::DuplicateAccess : GameSystemGraphErrorCode::ConflictingAccessDeclaration,
 						    std::format("Game system '{}' declares one component domain more than once.", system.Name)};
+
 						return false;
 					}
 				}
@@ -216,9 +218,7 @@ namespace ECS
 				const ResourcePhaseRange range = GetResourcePhaseRange(system.Resources[left].Domain);
 				if (system.Phase < range.First || system.Phase > range.Last)
 				{
-					m_data->Error = {
-					    GameSystemGraphErrorCode::UnavailablePhaseResource,
-					    std::format("Game system '{}' declares a resource unavailable in its phase.", system.Name)};
+					m_data->Error = {GameSystemGraphErrorCode::UnavailablePhaseResource, std::format("Game system '{}' declares a resource unavailable in its phase.", system.Name)};
 					return false;
 				}
 				for (std::size_t right = left + 1; right < system.Resources.size(); ++right)
@@ -226,10 +226,9 @@ namespace ECS
 					if (system.Resources[left].Domain == system.Resources[right].Domain)
 					{
 						m_data->Error = {
-						    system.Resources[left].Mode == system.Resources[right].Mode
-						        ? GameSystemGraphErrorCode::DuplicateAccess
-						        : GameSystemGraphErrorCode::ConflictingAccessDeclaration,
+						    system.Resources[left].Mode == system.Resources[right].Mode ? GameSystemGraphErrorCode::DuplicateAccess : GameSystemGraphErrorCode::ConflictingAccessDeclaration,
 						    std::format("Game system '{}' declares one resource domain more than once.", system.Name)};
+
 						return false;
 					}
 				}
@@ -239,12 +238,9 @@ namespace ECS
 
 		bool ValidateExecutionPolicy(const GameSystemDesc& system)
 		{
-			if (system.RangePolicy.GrainSize == 0 || system.RangePolicy.MaximumPartitions == 0 || !system.GetItemCount
-			    || !system.ExecuteRange)
+			if (system.RangePolicy.GrainSize == 0 || system.RangePolicy.MaximumPartitions == 0 || !system.GetItemCount || !system.ExecuteRange)
 			{
-				m_data->Error = {
-				    GameSystemGraphErrorCode::TaskGraphRejected,
-				    std::format("Game system '{}' has an invalid range policy or missing execution functions.", system.Name)};
+				m_data->Error = {GameSystemGraphErrorCode::TaskGraphRejected, std::format("Game system '{}' has an invalid range policy or missing execution functions.", system.Name)};
 				return false;
 			}
 			return true;
@@ -259,16 +255,12 @@ namespace ECS
 				{
 					if (prerequisite >= m_data->Systems.size())
 					{
-						m_data->Error = {
-						    GameSystemGraphErrorCode::MissingPrerequisite,
-						    std::format("Game system '{}' has a missing prerequisite.", system.Name)};
+						m_data->Error = {GameSystemGraphErrorCode::MissingPrerequisite, std::format("Game system '{}' has a missing prerequisite.", system.Name)};
 						return false;
 					}
 					if (m_data->Systems[prerequisite].Phase > system.Phase)
 					{
-						m_data->Error = {
-						    GameSystemGraphErrorCode::InvalidPhaseDependency,
-						    std::format("Game system '{}' depends on a later phase.", system.Name)};
+						m_data->Error = {GameSystemGraphErrorCode::InvalidPhaseDependency, std::format("Game system '{}' depends on a later phase.", system.Name)};
 						return false;
 					}
 					AddEdge(m_edges, prerequisite, index);
@@ -311,9 +303,7 @@ namespace ECS
 					}
 					if (!HasPath(m_edges, left, right) && !HasPath(m_edges, right, left))
 					{
-						m_data->Error = {
-						    GameSystemGraphErrorCode::AmbiguousHazard,
-						    std::format("Game systems '{}' and '{}' have an unordered write hazard.", lhs.Name, rhs.Name)};
+						m_data->Error = {GameSystemGraphErrorCode::AmbiguousHazard, std::format("Game systems '{}' and '{}' have an unordered write hazard.", lhs.Name, rhs.Name)};
 						return false;
 					}
 				}

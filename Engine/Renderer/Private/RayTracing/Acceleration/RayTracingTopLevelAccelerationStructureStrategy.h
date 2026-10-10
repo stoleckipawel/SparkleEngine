@@ -35,9 +35,8 @@ public:
 	virtual const char* GetStrategyName() const noexcept = 0;
 	virtual ERhiRayTracingTopLevelProvider GetActiveProvider() const noexcept = 0;
 	virtual const char* GetActiveProviderReason() const noexcept = 0;
-	virtual RenderRayTracingFrameBindings Prepare(
-	    const PreparedRenderScene& preparedScene,
-	    const RayTracingPtlasPartitionPlan& viewPlan) noexcept = 0;
+	virtual RenderRayTracingFrameBindings Prepare(const PreparedRenderScene& preparedScene, const RayTracingPtlasPartitionPlan& viewPlan) noexcept = 0;
+
 	virtual RayTracingTopLevelAccelerationStructureBuildResult Build(
 	    RenderCommandContext& commandContext,
 	    const PreparedRenderScene& preparedScene,
@@ -45,6 +44,7 @@ public:
 	    const RayTracingShaderTablePlan& shaderTablePlan,
 	    const RayTracingPtlasPartitionPlan& viewPlan,
 	    RayTracingPerformanceDiagnostics* diagnostics) noexcept = 0;
+
 	virtual bool HasValidSceneTlas() const noexcept = 0;
 	virtual void Clear() noexcept = 0;
 

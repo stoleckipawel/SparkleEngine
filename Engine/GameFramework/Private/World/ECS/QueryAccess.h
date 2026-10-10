@@ -92,8 +92,7 @@ namespace ECS
 		}
 		else
 		{
-			return ((!std::is_same_v<Component, typename QueryAccessTraits<Rest>::Component>) && ...)
-			    && HaveUniqueQueryComponents<Rest...>();
+			return ((!std::is_same_v<Component, typename QueryAccessTraits<Rest>::Component>) && ...) && HaveUniqueQueryComponents<Rest...>();
 		}
 	}
 }

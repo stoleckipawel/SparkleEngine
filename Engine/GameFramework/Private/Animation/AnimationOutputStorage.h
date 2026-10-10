@@ -46,20 +46,22 @@ namespace ECS
 			AnimationOutputSlotHandle TargetWeights;
 		};
 
-		bool Prepare(
-		    EntityRegistry& registry,
-		    const AnimationClipResourceStore& clips,
-		    const SkeletonResourceStore& skeletons,
-		    MorphWeightStorage& morphWeights,
-		    std::uint32_t targetGeneration);
+		bool Prepare(EntityRegistry& registry, const AnimationClipResourceStore& clips, const SkeletonResourceStore& skeletons, MorphWeightStorage& morphWeights, std::uint32_t targetGeneration);
 
 		PoseWorkSlot* FindPoseWork(EntityId entity) noexcept;
+
 		std::span<PoseWorkSlot> GetPoseWork() noexcept { return m_poseWork; }
+
 		std::span<MorphSampleSlot> GetMorphSamples() noexcept { return m_morphSamples; }
+
 		std::span<const EntityId> GetMorphEntities() const noexcept { return m_morphEntities; }
+
 		std::span<const MorphTargetBinding> GetMorphBindings() const noexcept { return m_morphBindings; }
+
 		AnimationOutput& GetMutableOutput() noexcept { return m_output; }
+
 		const AnimationOutput& GetOutput() const noexcept { return m_output; }
+
 		std::uint32_t GetTargetGeneration() const noexcept { return m_targetGeneration; }
 
 	private:

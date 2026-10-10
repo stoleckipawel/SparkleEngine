@@ -17,12 +17,7 @@ struct VertexData
 
 	constexpr VertexData() noexcept = default;
 
-	constexpr VertexData(
-	    const DirectX::XMFLOAT3& pos,
-	    const DirectX::XMFLOAT2& tex,
-	    const DirectX::XMFLOAT4& col,
-	    const DirectX::XMFLOAT3& norm,
-	    const DirectX::XMFLOAT4& tan) noexcept :
+	constexpr VertexData(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT2& tex, const DirectX::XMFLOAT4& col, const DirectX::XMFLOAT3& norm, const DirectX::XMFLOAT4& tan) noexcept :
 	    position(pos),
 	    uv(tex),
 	    color(col),
@@ -47,11 +42,15 @@ struct MeshData
 	bool IsValid() const noexcept { return !vertices.empty() && !indices.empty(); }
 
 	uint32 GetVertexCount() const noexcept { return static_cast<uint32>(vertices.size()); }
+
 	uint32 GetIndexCount() const noexcept { return static_cast<uint32>(indices.size()); }
+
 	SizeType GetVertexBufferSize() const noexcept { return vertices.size() * sizeof(VertexData); }
+
 	SizeType GetIndexBufferSize() const noexcept { return indices.size() * sizeof(uint32); }
 
 	const VertexData* GetVertexData() const noexcept { return vertices.data(); }
+
 	const uint32* GetIndexData() const noexcept { return indices.data(); }
 
 	void Clear() noexcept

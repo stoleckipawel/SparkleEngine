@@ -43,10 +43,13 @@ The clang-tidy naming configuration follows the binding scope in [Naming and Voc
 
 clang-format owns whitespace and line layout. It MUST NOT insert or remove braces, reorder qualifiers, remove parentheses, sort includes or `using` declarations, or perform other semantic-looking rewrites. Run version 22.1.3 with `--Werror`; a version change is a deliberate formatting migration.
 
-Two accepted source-format rules are outside clang-format alone and are canonicalized by the repository entry point after shader formatting:
+These accepted source-format rules are outside clang-format alone and are enforced by the repository entry point:
 
 1. **No namespace-end comments.** Close named namespaces with `}` only. `FixNamespaceComments: false` prevents automatic additions but does not delete existing comments; `CodeStyle.ps1` removes them in `Format` mode and rejects them in `Check` mode.
 2. **HLSL attributes use their own line.** Place `[numthreads]`, `[loop]`, `[unroll]`, and equivalent shader attributes immediately above the declaration or statement they govern. clang-format 22.1.3 parses HLSL through its C++ fallback and can join these attributes to the governed construct; `CodeStyle.ps1` restores the accepted shader layout before writing or comparing canonical text.
+3. **Multiline statements form visual paragraphs.** The [paragraph-spacing helper](../../../CMake/CodeStyleParagraphSpacing.cs) adds a blank line before and after a wrapped call, assignment, return, or aggregate initializer when adjacent code does not already supply a boundary. `Format` writes this canonical spacing and `Check` rejects missing boundaries for the selected files. The enclosing block's opening/closing brace, existing blank lines, access labels, and preprocessor lines supply the relevant boundaries. A preceding completed block does not replace the gap before a new wrapped statement. Leading comments belong to the statement's paragraph: the gap goes before the comment, never between it and its statement. Parameter/argument continuations remain together; function signatures are excluded. The helper masks literals, comments, preprocessor continuations, and `clang-format off` regions before identifying statement boundaries; it changes whitespace only.
+
+For C++, `Check` compares clang-format's XML replacements against the original UTF-8 bytes. clang-format 22.1.3 can report unchanged replacements with `SeparateDefinitionBlocks: Always`; these are ignored while actual formatting changes, incomplete formatting, and tool errors remain failures. Shader checks compare canonical formatted text as before.
 
 ### Repository Commands
 
@@ -58,6 +61,16 @@ The Windows [batch entry point](../../../CMake/CodeStyle.bat) forwards arguments
 .\CMake\CodeStyle.bat -Mode Check
 .\CMake\CodeStyle.bat -Mode Format
 ```
+
+Use `-Staged` to select source files staged for the next check-in, or `-Path` for one repository-relative tracked source file:
+
+```powershell
+.\CMake\CodeStyle.bat -Mode Check -Staged
+.\CMake\CodeStyle.bat -Mode Format -Staged
+.\CMake\CodeStyle.bat -Mode Format -Path "Engine/Renderer/Public/ExternalCapture/RendererGraphicsLaunch.h"
+```
+
+These selectors use the same source-family and ownership filters as the full manifest. `-Staged` reads the staged path list but checks or formats the working-tree files; it does not update the index. Review and stage formatting changes before committing, especially when a file is partially staged. An empty staged source selection succeeds without running the tools. `-Path` and `-Staged` are mutually exclusive. With neither selector, the command retains its whole-manifest behavior.
 
 The equivalent configured targets are `code_style_check` and `code_style_format`. Pass `-ClangFormatPath <path>` to the script, set `SPARKLE_CLANG_FORMAT`, or configure `SPARKLE_CLANG_FORMAT_EXECUTABLE`; every route rejects versions other than 22.1.3. For the default or `Cpp` check, pass `-ClangTidyPath <path>`, set `SPARKLE_CLANG_TIDY`, or configure `SPARKLE_CLANG_TIDY_EXECUTABLE`; the check requires clang-tidy 22.1.3 and verifies that [`.clang-tidy`](../../../.clang-tidy) is valid for that toolchain. The check also rejects namespace-end comments, anonymous namespaces, multiple inheritance, and shader attributes that share a line with their declaration or statement. Configuration verification does not analyze translation units: clang-tidy invocations and compiler targets remain the semantic diagnostic owners, and the format target does not substitute for compiling affected code.
 
@@ -82,13 +95,54 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 
 ## Readability Rules
 
-- Use one blank line as a semantic paragraph boundary when a function changes phase: acquire inputs, declare resources, derive state, schedule a cohesive pass group, resolve/present, and publish or return the result.
-- In frame-building code, keep consecutive calls that form one subpipeline together and separate different subpipelines or resource/publication phases. Do not put a blank line after every declaration or call.
-- A call, assignment, return, or aggregate-initialization statement that wraps across multiple lines is its own visual paragraph. Leave one blank line before and after it; the opening or closing brace of its block already supplies that boundary. Separate adjacent wrapped statements from each other as well. Function declarations/signatures and the lines inside one wrapped statement are not separate paragraphs.
-- Keep consecutive initialization or mutation of one record together.
-- Do not fragment one cohesive condition, expression, or initialization sequence with arbitrary whitespace.
-- Keep a declaration, call, assignment, return type, or signature on one line when it fits the configured limit and remains readable.
+### Visual Spacing Contract
+
+Use **one blank line** for a paragraph boundary, **zero** inside a cohesive group, and never use stacked blank lines to suggest larger sections. A paragraph should have one readable purpose. Whitespace exposes the workflow; it does not create new scopes or replace a meaningful function boundary.
+
+| Context | Required spacing | Enforcement |
+| --- | --- | --- |
+| Function/type definitions | One blank line between definition blocks. | clang-format `SeparateDefinitionBlocks: Always` |
+| Wrapped call, assignment, return, or aggregate initializer | Its own paragraph, separated from adjacent code. The enclosing block's braces already supply its outer boundary. Keep all continuation lines together. | Repository `Format`/`Check` paragraph helper |
+| Acquire inputs → validate → derive → execute → publish | One blank line when the purpose changes. Keep dependent preparation and its immediate use in one paragraph when they express one operation. | Author and review |
+| Guard clauses | Group related entry checks; separate the validation group from the normal workflow. Separate an independent recovery/terminal block from subsequent work. Keep `else`, `catch`, and a trailing `do`/`while` attached to their construct. | Author and review; helper also separates a following wrapped statement |
+| Local declarations | Group declarations that prepare one operation; separate unrelated resource, state, or output preparation. Declare near use. Do not separate every scalar declaration. | Author and review |
+| Record initialization/mutation | Keep consecutive fields of one record together. A wrapped field expression still follows the wrapped-statement rule. | Author and review; helper for wrapped expressions |
+| Consecutive operations/subpipelines | Keep short calls of one operation together; separate different phases or pass groups. Do not stack unrelated calls merely because they are short. | Author and review |
+| Header APIs and member data | Separate types, lifecycle operations, cohesive API groups, and data with one blank line where the group changes. Keep related declarations/fields together; do not pad every member. No empty line immediately after an access label. | Author and review; clang-format preserves groups |
+| Includes | One blank line between authored include groups. Preserve ownership-sensitive order. | Author and review; clang-format preserves groups/order |
+| Comments | Keep explanatory comments attached to the following declaration/operation. Put a paragraph gap before the comment when its operation starts a new group. Do not use separator banners or comments that only narrate obvious code. | Author and review; helper preserves leading comment attachment |
+| Block/list interiors | No padding immediately inside braces; no arbitrary gaps inside one parameter list, condition, or cohesive initializer. Use named operations or helpers when the group has become hard to follow. | clang-format for block padding; author and review for meaning |
+| Consecutive empty lines | At most one. | clang-format `MaxEmptyLinesToKeep: 1` |
+
+The mechanical rules apply equally across owned C++ and shaders. The formatter cannot infer that two short statements belong to different domain phases; reviewers must check that boundary rather than adding heuristics based on names, line counts, or every `if`/declaration.
+
+This follows the C++ Core Guidelines' [NL.15 guidance on well-placed whitespace](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Rl-space), [LLVM's consistency and readability guidance](https://llvm.org/docs/CodingStandards.html#introduction), and [Epic's grouping of variable declarations](https://dev.epicgames.com/documentation/unreal-engine/epic-cplusplus-coding-standard-for-unreal-engine#namingconventions). The precise one-line budget and paragraph contexts above are Sparkle policy, not a universal vendor rule. Preserve Sparkle's Allman braces, required control-flow braces, tabs, and existing ownership conventions when using these precedents.
+
+```cpp
+const auto sourcePath = ResolveSourcePath(request);
+if (!IsReadable(sourcePath))
+{
+    return Failure::MissingSource;
+}
+
+const auto source = ReadSource(sourcePath);
+const auto compiled = CompileSource(source, request.Options);
+
+Publication publication;
+publication.Code = compiled.Code;
+publication.Reflection = compiled.Reflection;
+
+Publish(publication);
+return Success;
+```
+
+The example separates validation, compilation, output assembly, and publication while keeping each phase cohesive. It illustrates layout only; ownership and copying still follow [Data And Memory](DataAndMemory.md).
+
+### Expressions And Wrapping
+
+- Keep a variable declaration, call, assignment, return expression, or function signature on one line when it fits the configured limit and remains readable. When a parameter or argument list must wrap, use one item per continuation line.
 - When a call initializer must wrap, keep the declaration, `=`, and call head through its opening `(` together, then put each argument on its own continuation line. Apply the same layout to assignment calls. The formatter strongly prefers this boundary; if the head itself exceeds 200 columns, shorten the expression or introduce a meaningful local rather than relying on assignment splitting.
+- Prefer named input variables at callsites. Compute, resolve, format, or validate meaningful inputs in preceding statements instead of nesting those operations inside another call's argument list. Names should explain the result's role; preserve evaluation order, short-circuit behavior, ownership, and temporary lifetimes. Simple member access, inexpensive accessors such as `data()`/`size()`, casts, and `std::move` may remain inline when clear. This is an authored code-review rule; clang-format must not introduce variables or restructure expressions.
 - When a call or aggregate wraps, group elements by meaning; avoid stair-step fragmentation of simple access, casts, names, and ternaries.
 - Apply readability whitespace while changing the surrounding logic; do not create repository-wide whitespace churn. `.clang-format` remains authoritative and preserves at most one consecutive empty line.
 
@@ -114,9 +168,15 @@ const auto captureRequest = BuildCaptureRequest(
     outputDirectory);
 ```
 
-The 200-column limit leaves more complete expressions visible on wide displays. It does not replace meaningful names, semantic paragraphs, or the decomposition rules in [Module Ownership](ModuleOwnership.md).
+Give computed inputs names before the consuming operation:
 
-This rule follows the maintenance and big-picture readability rationale in the [Epic C++ Coding Standard](https://dev.epicgames.com/documentation/unreal-engine/epic-cplusplus-coding-standard-for-unreal-engine) and LLVM's [local-uniformity guidance](https://llvm.org/docs/CodingStandards.html). Sparkle's semantic paragraph rule is repository policy; the external documents are precedent, not additional formatting authorities.
+```cpp
+const auto outputDirectory = ResolveCaptureDirectory(project);
+const auto captureRequest = BuildCaptureRequest(provider, outputDirectory);
+SubmitCapture(captureRequest);
+```
+
+The 200-column limit leaves more complete expressions visible on wide displays. It does not replace meaningful names, semantic paragraphs, or the decomposition rules in [Module Ownership](ModuleOwnership.md).
 
 [Repository Structure and Ownership](ModuleOwnership.md) owns function/class decomposition and orchestration/mechanism boundaries; formatting does not substitute for that review.
 

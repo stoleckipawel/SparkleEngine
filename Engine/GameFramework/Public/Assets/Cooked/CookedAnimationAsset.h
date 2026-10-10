@@ -63,9 +63,5 @@ namespace Assets
 }
 
 static_assert(std::is_trivially_copyable_v<Assets::CookedAnimationAssetHeader>, "CookedAnimationAssetHeader must stay trivially copyable.");
-static_assert(
-    std::is_trivially_copyable_v<Assets::CookedAnimationChannelRecord>,
-    "CookedAnimationChannelRecord must stay trivially copyable.");
-static_assert(
-    std::is_trivially_copyable_v<Assets::CookedAnimationKeyframeRecord>,
-    "CookedAnimationKeyframeRecord must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Assets::CookedAnimationChannelRecord>, "CookedAnimationChannelRecord must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Assets::CookedAnimationKeyframeRecord>, "CookedAnimationKeyframeRecord must stay trivially copyable.");

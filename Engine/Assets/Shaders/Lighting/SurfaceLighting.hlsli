@@ -38,16 +38,8 @@ namespace SurfaceLighting
 			return;
 		}
 
-		const BRDF::Direct::Response response = BRDF::Direct::Evaluate(shadingData,
-		                                                               baseColor,
-		                                                               roughness,
-		                                                               metallic,
-		                                                               f0,
-		                                                               subsurfaceColor,
-		                                                               subsurfaceStrength,
-		                                                               evaluateDiffuse,
-		                                                               evaluateSpecular,
-		                                                               evaluateSubsurface);
+		const BRDF::Direct::Response
+		    response = BRDF::Direct::Evaluate(shadingData, baseColor, roughness, metallic, f0, subsurfaceColor, subsurfaceStrength, evaluateDiffuse, evaluateSpecular, evaluateSubsurface);
 
 		const float3 incidentRadiance = radiance * shadingData.NoL;
 		outDiffuse = response.Diffuse * incidentRadiance;
@@ -73,6 +65,7 @@ namespace SurfaceLighting
 	                         out float3 outSubsurface)
 	{
 		const float3 f0 = BuildF0(baseColor, metallic, dielectricF0);
+
 		EvaluateDirectLightWithF0(viewDirWorld,
 		                          normalWorld,
 		                          baseColor,

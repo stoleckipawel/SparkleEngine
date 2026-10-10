@@ -33,6 +33,7 @@ public:
 
 	void Update();
 	UiRenderPacket ConsumeRenderPacket();
+
 	bool IsVisible() const noexcept { return m_isVisible; }
 
 private:

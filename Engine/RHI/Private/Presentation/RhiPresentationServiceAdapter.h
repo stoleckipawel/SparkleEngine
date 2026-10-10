@@ -14,19 +14,25 @@ public:
 	}
 
 	RhiViewport GetBackBufferViewport() const noexcept override { return m_owner.GetBackBufferViewport(); }
+
 	RhiRect GetBackBufferScissorRect() const noexcept override { return m_owner.GetBackBufferScissorRect(); }
+
 	RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept override { return m_owner.GetBackBufferRenderTargetView(); }
+
 	RhiResourceHandle GetBackBufferResource() const noexcept override { return m_owner.GetBackBufferResource(); }
+
 	void BeginPresentRenderPass(RhiClearColorView clearColor) noexcept override
 	{
 		Begin();
 		m_owner.BeginPresentRenderPass(clearColor);
 	}
+
 	void BeginPresentOverlayPass() noexcept override
 	{
 		Begin();
 		m_owner.BeginPresentOverlayPass();
 	}
+
 	void EndPresentRenderPass() noexcept override
 	{
 		if (!m_rendering)
@@ -36,6 +42,7 @@ public:
 		m_owner.EndPresentRenderPass();
 		m_rendering = false;
 	}
+
 	PixelFormat GetPresentColorFormat() const noexcept override { return m_owner.GetPresentColorFormat(); }
 
 private:

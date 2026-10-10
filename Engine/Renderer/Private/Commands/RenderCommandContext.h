@@ -17,6 +17,7 @@ public:
 	RenderCommandContext& operator=(RenderCommandContext&&) = delete;
 
 	void EnableDrawDispatchDiagnostics() noexcept;
+
 	bool IsDrawDispatchDiagnosticsEnabled() const noexcept { return m_drawDispatchDiagnosticsEnabled; }
 
 	void SetPipeline(const RenderPipeline& pipeline) noexcept;
@@ -32,11 +33,7 @@ public:
 	void BindIndexBuffer(const RhiIndexBufferView& view) noexcept;
 
 	void BindConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
-	void SetPushConstants(
-	    std::uint32_t bindingIndex,
-	    std::uint32_t num32BitValues,
-	    const void* data,
-	    std::uint32_t destOffsetIn32BitValues) noexcept;
+	void SetPushConstants(std::uint32_t bindingIndex, std::uint32_t num32BitValues, const void* data, std::uint32_t destOffsetIn32BitValues) noexcept;
 	void BindShaderResourceAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 	void BindUnorderedAccessAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 	void BindAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept;
@@ -46,32 +43,21 @@ public:
 	void BindComputeConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 	void BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept;
 	void BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept;
-	void SetComputePushConstants(
-	    std::uint32_t bindingIndex,
-	    std::uint32_t num32BitValues,
-	    const void* data,
-	    std::uint32_t destOffsetIn32BitValues) noexcept;
+	void SetComputePushConstants(std::uint32_t bindingIndex, std::uint32_t num32BitValues, const void* data, std::uint32_t destOffsetIn32BitValues) noexcept;
 	void BindComputeShaderResourceAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 	void BindComputeUnorderedAccessAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 	void BindComputeAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept;
 	void BindRayTracingConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 	void BindRayTracingDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept;
 	void BindRayTracingDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept;
-	void SetRayTracingPushConstants(
-	    std::uint32_t bindingIndex,
-	    std::uint32_t num32BitValues,
-	    const void* data,
-	    std::uint32_t destOffsetIn32BitValues) noexcept;
+	void SetRayTracingPushConstants(std::uint32_t bindingIndex, std::uint32_t num32BitValues, const void* data, std::uint32_t destOffsetIn32BitValues) noexcept;
 	void BindRayTracingShaderResourceAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 	void BindRayTracingUnorderedAccessAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 	void BindRayTracingAccelerationStructure(std::uint32_t bindingIndex, RhiResourceHandle resource) noexcept;
 
 	void SetRenderTarget(RhiCpuDescriptorHandle renderTarget, const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept;
 
-	void SetRenderTargets(
-	    std::uint32_t renderTargetCount,
-	    const RhiCpuDescriptorHandle* renderTargets,
-	    const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept;
+	void SetRenderTargets(std::uint32_t renderTargetCount, const RhiCpuDescriptorHandle* renderTargets, const RhiCpuDescriptorHandle* depthStencil = nullptr) noexcept;
 
 	void ClearRenderTarget(RhiCpuDescriptorHandle renderTarget, RhiClearColorView color) noexcept;
 
@@ -91,18 +77,11 @@ public:
 	    std::int32_t baseVertexLocation,
 	    std::uint32_t startInstanceLocation) noexcept;
 
-	void DrawInstanced(
-	    std::uint32_t vertexCountPerInstance,
-	    std::uint32_t instanceCount,
-	    std::uint32_t startVertexLocation,
-	    std::uint32_t startInstanceLocation) noexcept;
+	void DrawInstanced(std::uint32_t vertexCountPerInstance, std::uint32_t instanceCount, std::uint32_t startVertexLocation, std::uint32_t startInstanceLocation) noexcept;
 
 	void Dispatch(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept;
 	void TraceRays(const TraceRaysDesc& desc) noexcept;
-	void BuildBottomLevelAccelerationStructure(
-	    const RhiRayTracingGeometryDesc& geometry,
-	    RhiGpuVirtualAddress scratchGpuAddress,
-	    RhiGpuVirtualAddress resultGpuAddress) noexcept;
+	void BuildBottomLevelAccelerationStructure(const RhiRayTracingGeometryDesc& geometry, RhiGpuVirtualAddress scratchGpuAddress, RhiGpuVirtualAddress resultGpuAddress) noexcept;
 	void BuildTopLevelAccelerationStructure(
 	    RhiGpuVirtualAddress instanceDescsGpuAddress,
 	    std::uint32_t instanceCount,

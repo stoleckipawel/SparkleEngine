@@ -36,10 +36,7 @@ private:
 	void SubmitInitializationIfRequired();
 	BatchWaitTokens ResolveBatchWaits(const FrameGraphSubmissionBatch& batch) const noexcept;
 	void ExecuteBatch(const FrameGraphSubmissionBatch& batch);
-	RhiSubmissionToken RecordAndSubmitBatch(
-	    const FrameGraphSubmissionBatch& batch,
-	    const BatchWaitTokens& waits,
-	    RhiCommandRecordingLease initializationLease);
+	RhiSubmissionToken RecordAndSubmitBatch(const FrameGraphSubmissionBatch& batch, const BatchWaitTokens& waits, RhiCommandRecordingLease initializationLease);
 	bool UsesNonGraphicsQueue() const noexcept;
 
 	const FrameGraphPlan& m_plan;

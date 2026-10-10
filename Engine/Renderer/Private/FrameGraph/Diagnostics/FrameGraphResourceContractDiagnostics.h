@@ -9,13 +9,7 @@
 
 namespace FrameGraphResourceContractDiagnostics
 {
-	bool ValidatePassDeclarations(
-	    std::string_view passName,
-	    EFrameGraphPassKind passKind,
-	    const std::vector<PassResourceDeclaration>& declarations) noexcept;
+	bool ValidatePassDeclarations(std::string_view passName, EFrameGraphPassKind passKind, const std::vector<PassResourceDeclaration>& declarations) noexcept;
 
-	bool ValidatePassParameterBinding(
-	    std::string_view passName,
-	    const PassParameterDesc& parameter,
-	    const PassParameterBinding& binding) noexcept;
+	bool ValidatePassParameterBinding(std::string_view passName, const PassParameterDesc& parameter, const PassParameterBinding& binding) noexcept;
 }

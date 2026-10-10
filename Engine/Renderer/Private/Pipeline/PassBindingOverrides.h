@@ -46,6 +46,7 @@ public:
 	void SetPushConstants(const char* name, const void* data, std::uint32_t constantCount);
 
 	std::span<const PassBindingOverride> GetOverrides() const noexcept { return m_overrides; }
+
 	const PassBindingOverride* Find(const char* name, PassBindingOverrideType type) const noexcept;
 
 private:

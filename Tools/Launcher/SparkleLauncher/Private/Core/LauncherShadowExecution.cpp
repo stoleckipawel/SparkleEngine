@@ -50,10 +50,7 @@ namespace SparkleLauncher
 		return result;
 	}
 
-	LauncherShadowStartResult StartLauncherShadow(
-	    const std::filesystem::path& repositoryRoot,
-	    const std::vector<std::string>& arguments,
-	    LauncherShadowCompletionPolicy completionPolicy)
+	LauncherShadowStartResult StartLauncherShadow(const std::filesystem::path& repositoryRoot, const std::vector<std::string>& arguments, LauncherShadowCompletionPolicy completionPolicy)
 	{
 		LauncherShadowStartResult result;
 		const std::filesystem::path currentExecutable = CurrentLauncherExecutable();
@@ -80,8 +77,7 @@ namespace SparkleLauncher
 			return result;
 		}
 
-		const std::filesystem::path shadowDirectory =
-		    shadowRoot / ("Generation-" + std::to_string(writeTime.time_since_epoch().count()));
+		const std::filesystem::path shadowDirectory = shadowRoot / ("Generation-" + std::to_string(writeTime.time_since_epoch().count()));
 		const std::filesystem::path shadowExecutable = shadowDirectory / currentExecutable.filename();
 		if (!std::filesystem::exists(shadowExecutable, errorCode))
 		{
@@ -89,11 +85,7 @@ namespace SparkleLauncher
 			std::filesystem::create_directories(shadowDirectory, errorCode);
 			if (!errorCode)
 			{
-				std::filesystem::copy(
-				    currentDirectory,
-				    shadowDirectory,
-				    std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing,
-				    errorCode);
+				std::filesystem::copy(currentDirectory, shadowDirectory, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing, errorCode);
 			}
 			if (errorCode)
 			{

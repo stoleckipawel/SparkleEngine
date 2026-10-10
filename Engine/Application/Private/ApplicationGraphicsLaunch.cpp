@@ -51,8 +51,7 @@ namespace ApplicationGraphicsLaunch
 				}
 			}
 
-			if (Strings::EqualsIgnoreCase(token, "--renderer") || Strings::EqualsIgnoreCase(token, "--rhi")
-			    || Strings::EqualsIgnoreCase(token, "--graphics-api"))
+			if (Strings::EqualsIgnoreCase(token, "--renderer") || Strings::EqualsIgnoreCase(token, "--rhi") || Strings::EqualsIgnoreCase(token, "--graphics-api"))
 			{
 				api = ParseSelection(Strings::ToNarrow(CommandLine::ReadToken(commandLine, offset)));
 				return true;
@@ -73,19 +72,11 @@ RendererGraphicsLaunch ResolveApplicationGraphicsLaunch() noexcept
 	ApplicationGraphicsLaunch::TryResolveCommandLineSelection(api);
 	if (api == ERhiBackendApi::Unknown)
 	{
-		Diagnostics::Fatal(
-		    g_applicationGraphicsLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Invalid graphics backend selection. Use D3D12 or Vulkan with SPARKLE_RHI_BACKEND or --graphics-api.");
+		Diagnostics::Fatal(g_applicationGraphicsLogger, __FILE__, __LINE__, "Invalid graphics backend selection. Use D3D12 or Vulkan with SPARKLE_RHI_BACKEND or --graphics-api.");
 	}
 	if (!IsRhiBackendApiCompiled(api))
 	{
-		Diagnostics::Fatal(
-		    g_applicationGraphicsLogger,
-		    __FILE__,
-		    __LINE__,
-		    std::string("Graphics backend '") + RhiBackendApiToString(api) + "' is not compiled into this product.");
+		Diagnostics::Fatal(g_applicationGraphicsLogger, __FILE__, __LINE__, std::string("Graphics backend '") + RhiBackendApiToString(api) + "' is not compiled into this product.");
 	}
 
 	RendererGraphicsLaunch launch{.BackendApi = api};

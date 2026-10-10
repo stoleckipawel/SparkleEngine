@@ -32,10 +32,7 @@ namespace SparkleLauncher
 		QString SelectedTargets;
 	};
 
-	std::filesystem::path ResolveCleanScopePreviewPath(
-	    const std::filesystem::path& repositoryRoot,
-	    const QString& projectId,
-	    const QString& scope);
+	std::filesystem::path ResolveCleanScopePreviewPath(const std::filesystem::path& repositoryRoot, const QString& projectId, const QString& scope);
 
 	QString CleanScopeDisplayName(const QString& scopeValue);
 	QString CleanScopeSelectionError(const QString& scopeSelection);
@@ -45,11 +42,7 @@ namespace SparkleLauncher
 
 	QVector<LauncherCleanTarget> BuildActionSpecificCleanTargets(const ActionCleanTargetContext& context);
 
-	void AddExplicitCleanTarget(
-	    QVector<LauncherCleanTarget>& targets,
-	    const QString& displayName,
-	    const std::filesystem::path& path,
-	    const QString& detail);
+	void AddExplicitCleanTarget(QVector<LauncherCleanTarget>& targets, const QString& displayName, const std::filesystem::path& path, const QString& detail);
 
 	void AddTargetArtifactOutputs(
 	    QVector<LauncherCleanTarget>& targets,

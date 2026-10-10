@@ -14,12 +14,7 @@ class ShaderCompileJobBuilder final
 public:
 	ShaderCompileJobBuilder() = delete;
 
-	static void BuildAndAdd(
-	    const ShaderCookSettings& settings,
-	    std::size_t shaderIndex,
-	    ShaderTarget target,
-	    ShaderBackendPool& backendPool,
-	    ShaderCookPipelinePlan& plan);
+	static void BuildAndAdd(const ShaderCookSettings& settings, std::size_t shaderIndex, ShaderTarget target, ShaderBackendPool& backendPool, ShaderCookPipelinePlan& plan);
 
 private:
 	static ShaderCompileRequest BuildRequest(const ShaderCookSettings& settings, const ShaderCookDesc& shader, ShaderTarget target);

@@ -32,7 +32,5 @@ void AddRestirIndirectSpatialPass(
 
 	BindRestirIndirectParameters(parameters, resources);
 
-	builder.Dispatch<RestirIndirectSpatialCS>(
-	    parameters,
-	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
+	builder.Dispatch<RestirIndirectSpatialCS>(parameters, ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 }

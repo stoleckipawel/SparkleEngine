@@ -112,11 +112,7 @@ std::vector<ShaderCompileResult> ShaderCompileBatch::CompileProducers(
 				    {
 					    std::lock_guard lock(progressMutex);
 					    completedWork += consumerCountByProducer[producerIndex];
-					    progress(
-					        {.Action = "Compiled shader",
-					            .Item = jobs[jobIndex].Request.ShaderTypeName,
-					            .Completed = completedWork,
-					            .Total = totalWork});
+					    progress({.Action = "Compiled shader", .Item = jobs[jobIndex].Request.ShaderTypeName, .Completed = completedWork, .Total = totalWork});
 				    }
 				    return TaskResult::Success();
 			    }
@@ -139,10 +135,7 @@ std::vector<ShaderCompileResult> ShaderCompileBatch::CompileProducers(
 	{
 		if (!failureDiagnostics[producerIndex].empty())
 		{
-			ShaderCompileFailureReplay::Write(
-			    Filesystem::GetCookedShaderRootPath(),
-			    jobs[producerJobIndices[producerIndex]],
-			    failureDiagnostics[producerIndex]);
+			ShaderCompileFailureReplay::Write(Filesystem::GetCookedShaderRootPath(), jobs[producerJobIndices[producerIndex]], failureDiagnostics[producerIndex]);
 			break;
 		}
 	}
@@ -197,26 +190,19 @@ void ShaderCompileBatch::FinalizeResults(
 		}
 		if (progress)
 		{
-			progress(
-			    {.Action = "Verified shader",
-			        .Item = job.Request.ShaderTypeName,
-			        .Completed = jobs.size() + jobIndex + 1,
-			        .Total = totalWork});
+			progress({.Action = "Verified shader", .Item = job.Request.ShaderTypeName, .Completed = jobs.size() + jobIndex + 1, .Total = totalWork});
 		}
 	}
 }
 
 bool ShaderCompileBatch::HasSameCompilerInput(const ShaderCompileJob& lhs, const ShaderCompileJob& rhs) noexcept
 {
-	if (lhs.SourceContentHash != rhs.SourceContentHash || lhs.DependencyClosureHash != rhs.DependencyClosureHash
-	    || lhs.RequestHash != rhs.RequestHash || lhs.VirtualDependencies != rhs.VirtualDependencies || lhs.BackendName != rhs.BackendName
-	    || lhs.BackendVersion != rhs.BackendVersion || lhs.TargetProfile != rhs.TargetProfile
-	    || lhs.Request.VirtualSourcePath != rhs.Request.VirtualSourcePath || lhs.Request.SourceCode != rhs.Request.SourceCode
-	    || lhs.Request.EntryPoint != rhs.Request.EntryPoint || lhs.Request.Stage != rhs.Request.Stage
-	    || lhs.Request.Target != rhs.Request.Target || lhs.Request.UnitKind != rhs.Request.UnitKind
+	if (lhs.SourceContentHash != rhs.SourceContentHash || lhs.DependencyClosureHash != rhs.DependencyClosureHash || lhs.RequestHash != rhs.RequestHash
+	    || lhs.VirtualDependencies != rhs.VirtualDependencies || lhs.BackendName != rhs.BackendName || lhs.BackendVersion != rhs.BackendVersion || lhs.TargetProfile != rhs.TargetProfile
+	    || lhs.Request.VirtualSourcePath != rhs.Request.VirtualSourcePath || lhs.Request.SourceCode != rhs.Request.SourceCode || lhs.Request.EntryPoint != rhs.Request.EntryPoint
+	    || lhs.Request.Stage != rhs.Request.Stage || lhs.Request.Target != rhs.Request.Target || lhs.Request.UnitKind != rhs.Request.UnitKind
 	    || lhs.Request.RequiredFeatures != rhs.Request.RequiredFeatures || lhs.Request.EnableDebugInfo != rhs.Request.EnableDebugInfo
-	    || lhs.Request.EnableOptimizations != rhs.Request.EnableOptimizations
-	    || lhs.Request.TreatWarningsAsErrors != rhs.Request.TreatWarningsAsErrors
+	    || lhs.Request.EnableOptimizations != rhs.Request.EnableOptimizations || lhs.Request.TreatWarningsAsErrors != rhs.Request.TreatWarningsAsErrors
 	    || lhs.Request.StripDebugInfo != rhs.Request.StripDebugInfo || lhs.Request.Defines != rhs.Request.Defines
 	    || lhs.Request.DescriptorBindingRemaps.size() != rhs.Request.DescriptorBindingRemaps.size())
 	{

@@ -20,9 +20,7 @@ namespace RayTracingCompositionValidation
 	const RayTracingShaderMetadata& GetRayGenerationMetadata(ShaderTypeId shaderType)
 	{
 		const ShaderRegistrationDesc* registration = GlobalShaderRegistry::FindById(shaderType);
-		Require(
-		    registration != nullptr && registration->Stage == ShaderStage::RayGeneration,
-		    "Ray-tracing composition requires a registered ray-generation shader.");
+		Require(registration != nullptr && registration->Stage == ShaderStage::RayGeneration, "Ray-tracing composition requires a registered ray-generation shader.");
 		return registration->RayTracing;
 	}
 
@@ -33,14 +31,13 @@ namespace RayTracingCompositionValidation
 	    std::unordered_map<std::string, ShaderTypeId>& shaderTypesByExport)
 	{
 		const ShaderRegistrationDesc* registration = GlobalShaderRegistry::FindById(shader);
+
 		Require(
-		    registration != nullptr && registration->Stage == expectedStage && !registration->ShaderName.empty()
-		        && !registration->EntryPoint.empty(),
+		    registration != nullptr && registration->Stage == expectedStage && !registration->ShaderName.empty() && !registration->EntryPoint.empty(),
 		    "Ray-tracing composition contains an invalid typed shader selection.");
+
 		const auto [shaderByType, insertedType] = shadersByType.emplace(shader, expectedStage);
-		Require(
-		    insertedType || shaderByType->second == expectedStage,
-		    "One ray-tracing shader type resolves to conflicting composition contracts.");
+		Require(insertedType || shaderByType->second == expectedStage, "One ray-tracing shader type resolves to conflicting composition contracts.");
 		const auto [typeByExport, insertedExport] = shaderTypesByExport.emplace(std::string(registration->EntryPoint), shader);
 		Require(insertedExport || typeByExport->second == shader, "One ray-tracing export name resolves to multiple shader types.");
 	}
@@ -72,9 +69,9 @@ RayTracingPipelineComposition::RayTracingPipelineComposition(
 	for (const RayTracingHitGroupComposition& group : m_hitGroups)
 	{
 		RayTracingCompositionValidation::Require(
-		    !group.ExportName.empty() && shaderTypesByExport.find(group.ExportName) == shaderTypesByExport.end()
-		        && hitGroupNames.insert(group.ExportName).second,
+		    !group.ExportName.empty() && shaderTypesByExport.find(group.ExportName) == shaderTypesByExport.end() && hitGroupNames.insert(group.ExportName).second,
 		    "Ray-tracing composition contains an invalid or duplicate hit-group export.");
+
 		RayTracingCompositionValidation::ValidateShader(group.ClosestHit, ShaderStage::ClosestHit, shadersByType, shaderTypesByExport);
 		if (group.AnyHit != 0)
 		{
@@ -82,23 +79,16 @@ RayTracingPipelineComposition::RayTracingPipelineComposition(
 		}
 		if (group.Kind == ERhiRayTracingHitGroupKind::Procedural)
 		{
-			RayTracingCompositionValidation::ValidateShader(
-			    group.Intersection,
-			    ShaderStage::Intersection,
-			    shadersByType,
-			    shaderTypesByExport);
+			RayTracingCompositionValidation::ValidateShader(group.Intersection, ShaderStage::Intersection, shadersByType, shaderTypesByExport);
 		}
 		else
 		{
 			RayTracingCompositionValidation::Require(group.Intersection == 0, "Triangle hit group contains an intersection shader.");
 		}
 		const RayTracingShaderMetadata& localOwner = GlobalShaderRegistry::FindById(group.ClosestHit)->RayTracing;
-		RayTracingCompositionValidation::Require(
-		    group.LocalData.size() == localOwner.LocalRecordSizeInBytes,
-		    "Ray-tracing hit-group local data does not match its declared record schema.");
+		RayTracingCompositionValidation::Require(group.LocalData.size() == localOwner.LocalRecordSizeInBytes, "Ray-tracing hit-group local data does not match its declared record schema.");
 	}
 	RayTracingCompositionValidation::Require(
-	    rayGenerationMetadata.PayloadSizeInBytes != 0 && rayGenerationMetadata.AttributeSizeInBytes != 0
-	        && rayGenerationMetadata.MinimumRecursionDepth != 0,
+	    rayGenerationMetadata.PayloadSizeInBytes != 0 && rayGenerationMetadata.AttributeSizeInBytes != 0 && rayGenerationMetadata.MinimumRecursionDepth != 0,
 	    "Ray-tracing composition has an incomplete payload, attribute, or recursion contract.");
 }

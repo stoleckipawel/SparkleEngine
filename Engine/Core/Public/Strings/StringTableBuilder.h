@@ -14,6 +14,7 @@ namespace Strings
 		std::uint32_t SizeInBytes = 0;
 
 		constexpr bool IsValid() const noexcept { return SizeInBytes > 0; }
+
 		explicit constexpr operator bool() const noexcept { return IsValid(); }
 	};
 
@@ -23,7 +24,9 @@ namespace Strings
 		StringTableEntry Add(std::string_view value);
 
 		const std::vector<std::uint8_t>& GetBytes() const noexcept { return m_bytes; }
+
 		std::vector<std::uint8_t>& GetBytes() noexcept { return m_bytes; }
+
 		std::uint32_t SizeInBytes() const noexcept { return static_cast<std::uint32_t>(m_bytes.size()); }
 
 	private:

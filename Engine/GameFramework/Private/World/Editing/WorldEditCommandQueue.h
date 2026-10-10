@@ -17,12 +17,7 @@ struct GameWorldResourceStores;
 class WorldEditCommandQueue final
 {
 public:
-	WorldEditResult Submit(
-	    WorldEditCommand command,
-	    std::uint64_t expectedGeneration,
-	    std::uint64_t currentGeneration,
-	    const ECS::GameWorldState& state,
-	    const GameWorldResourceStores& resources);
+	WorldEditResult Submit(WorldEditCommand command, std::uint64_t expectedGeneration, std::uint64_t currentGeneration, const ECS::GameWorldState& state, const GameWorldResourceStores& resources);
 	void Apply(std::uint64_t currentGeneration, ECS::GameWorldState& state, GameWorldResourceStores& resources);
 	void Clear() noexcept;
 
@@ -33,10 +28,7 @@ private:
 		WorldEditCommand Command;
 	};
 
-	static bool IsTargetAvailable(
-	    const WorldEditPayload& payload,
-	    const ECS::GameWorldState& state,
-	    const GameWorldResourceStores& resources);
+	static bool IsTargetAvailable(const WorldEditPayload& payload, const ECS::GameWorldState& state, const GameWorldResourceStores& resources);
 	static void ApplyPayload(WorldEditPayload& payload, ECS::GameWorldState& state, GameWorldResourceStores& resources);
 
 	static constexpr std::size_t MaximumPendingEditCount = 4096;

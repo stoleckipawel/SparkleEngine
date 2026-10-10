@@ -2,6 +2,7 @@
 #include "Editor/ExternalCapture/ExternalCaptureUiComposition.h"
 #include "Editor/Public/ExternalCapture/ExternalCaptureOverlay.h"
 #include "Renderer.h"
+
 class RendererCaptureCommands final : public EditorExternalCaptureCommands
 {
 public:
@@ -22,6 +23,7 @@ public:
 private:
 	Renderer& m_renderer;
 };
+
 std::unique_ptr<ViewportOverlay> CreateEditorExternalCaptureOverlay(Renderer& renderer)
 {
 	return CreateExternalCaptureOverlay(std::make_unique<RendererCaptureCommands>(renderer));

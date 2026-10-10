@@ -73,8 +73,7 @@ void EditorApplication::InitializeEditorOperations()
 {
 	if (!m_state->OperationRuntime)
 	{
-		m_state->OperationRuntime =
-		    std::make_unique<EditorOperationRuntime>(m_state->Runtime->GetTaskExecutor(), m_state->Runtime->GetApplicationTaskScope());
+		m_state->OperationRuntime = std::make_unique<EditorOperationRuntime>(m_state->Runtime->GetTaskExecutor(), m_state->Runtime->GetApplicationTaskScope());
 	}
 
 	if (!m_state->ShaderRecook)
@@ -99,17 +98,16 @@ void EditorApplication::InitializeUi()
 
 	Renderer& renderer = m_state->Runtime->GetRenderer();
 	GameWorld& world = m_state->Runtime->GetWorldForEditor();
+
 	m_state->Ui = std::make_unique<UI>(EditorHostServices{
 	    .RuntimeTimer = m_state->Runtime->GetTimer(),
 	    .Levels = m_state->Runtime->GetLevelSession(),
 	    .AcquireWorldReadView = [&world]() { return world.AcquireReadView(); },
 	    .ReadWorldChanges = [&world](const WorldChangeCursor& cursor) { return world.ReadChanges(cursor); },
-	    .AcknowledgeWorldChanges = [&world](WorldChangeCursor& cursor, WorldSequence sequence)
-	    { return world.AcknowledgeChanges(cursor, sequence); },
+	    .AcknowledgeWorldChanges = [&world](WorldChangeCursor& cursor, WorldSequence sequence) { return world.AcknowledgeChanges(cursor, sequence); },
 	    .WorldGeneration = [&world]() noexcept { return world.GetGeneration(); },
 	    .MaterialVariants = [&world]() { return world.CaptureMaterialVariants(); },
-	    .SubmitWorldEdit = [&world](WorldEditCommand command, std::uint64_t generation)
-	    { return world.SubmitEdit(std::move(command), generation); },
+	    .SubmitWorldEdit = [&world](WorldEditCommand command, std::uint64_t generation) { return world.SubmitEdit(std::move(command), generation); },
 	    .RenderingSettings = renderer.CaptureRenderingSettings(),
 	    .SubmitRenderingSettings =
 	        [&renderer](EngineRenderingSettingsState settings)
@@ -158,9 +156,7 @@ bool EditorApplication::Tick()
 	Renderer& renderer = m_state->Runtime->GetRenderer();
 	UpdateEditorOperations(renderer);
 	const ViewportRenderRequest& viewportRequest = m_state->Ui->GetViewportRenderRequest();
-	const float aspectRatio = viewportRequest.Extent.IsValid()
-	    ? static_cast<float>(viewportRequest.Extent.Width) / static_cast<float>(viewportRequest.Extent.Height)
-	    : 1.0f;
+	const float aspectRatio = viewportRequest.Extent.IsValid() ? static_cast<float>(viewportRequest.Extent.Width) / static_cast<float>(viewportRequest.Extent.Height) : 1.0f;
 	const CameraInputIntent cameraIntent = m_state->Runtime->CollectCameraInputIntent(aspectRatio);
 	const float deltaSeconds = static_cast<float>(m_state->Runtime->GetTimer().GetDelta(TimeDomain::Scaled, TimeUnit::Seconds));
 	const RenderViewCameraData renderCamera = m_state->Ui->UpdateViewportCamera(cameraIntent, deltaSeconds);

@@ -17,28 +17,17 @@ static TaskName DerivedTaskName(const TaskName& base, std::string_view suffix)
 	return TaskName(value);
 }
 
-TaskNodeHandle ParallelFor(
-    TaskGraphBuilder& graph,
-    TaskDesc desc,
-    std::uint32_t itemCount,
-    ParallelForPolicy policy,
-    ParallelForFunction function)
+TaskNodeHandle ParallelFor(TaskGraphBuilder& graph, TaskDesc desc, std::uint32_t itemCount, ParallelForPolicy policy, ParallelForFunction function)
 {
 	if (policy.GrainSize == 0 || policy.MaximumPartitions == 0)
 	{
-		TaskGraphAccess::RecordError(
-		    graph,
-		    TaskGraphErrorCode::InvalidParallelForPolicy,
-		    "ParallelFor grain size and maximum partitions must be non-zero.");
+		TaskGraphAccess::RecordError(graph, TaskGraphErrorCode::InvalidParallelForPolicy, "ParallelFor grain size and maximum partitions must be non-zero.");
 		return {};
 	}
 
 	if (itemCount <= policy.SerialThreshold || itemCount <= policy.GrainSize)
 	{
-		return graph.Add(
-		    std::move(desc),
-		    [itemCount, function = std::move(function)](TaskExecutionContext& context)
-		    { return function ? function(0, itemCount, context) : TaskResult::Success(); });
+		return graph.Add(std::move(desc), [itemCount, function = std::move(function)](TaskExecutionContext& context) { return function ? function(0, itemCount, context) : TaskResult::Success(); });
 	}
 
 	TaskDesc groupDesc = desc;
@@ -53,6 +42,7 @@ TaskNodeHandle ParallelFor(
 	{
 		return static_cast<std::uint32_t>((static_cast<std::uint64_t>(value) + divisor - 1u) / divisor);
 	};
+
 	const std::uint32_t partitionCount = std::min(policy.MaximumPartitions, divideRoundUp(itemCount, policy.GrainSize));
 	for (std::uint32_t partition = 0; partition < partitionCount; ++partition)
 	{
@@ -60,11 +50,7 @@ TaskNodeHandle ParallelFor(
 		const std::uint32_t end = static_cast<std::uint32_t>(static_cast<std::uint64_t>(itemCount) * (partition + 1u) / partitionCount);
 		TaskDesc partitionDesc = desc;
 		partitionDesc.Name = DerivedTaskName(desc.Name, ".Range" + std::to_string(partition));
-		if (!graph.AddNested(
-		        group,
-		        std::move(partitionDesc),
-		        [begin, end, function](TaskExecutionContext& context)
-		        { return function ? function(begin, end, context) : TaskResult::Success(); }))
+		if (!graph.AddNested(group, std::move(partitionDesc), [begin, end, function](TaskExecutionContext& context) { return function ? function(begin, end, context) : TaskResult::Success(); }))
 		{
 			return {};
 		}

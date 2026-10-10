@@ -45,8 +45,7 @@ namespace SparkleLauncher
 		if (!arguments.RunOperationId.empty())
 		{
 			LauncherShadowCompletionPolicy completionPolicy = LauncherShadowCompletionPolicy::WaitForCompletion;
-			const std::optional<BuildWorkspaceOperationDefinition> buildOperation =
-			    FindBuildWorkspaceOperationDefinition(arguments.RunOperationId);
+			const std::optional<BuildWorkspaceOperationDefinition> buildOperation = FindBuildWorkspaceOperationDefinition(arguments.RunOperationId);
 			if (buildOperation.has_value() && buildOperation->ReplacesLauncherArtifact)
 			{
 				completionPolicy = LauncherShadowCompletionPolicy::ReleaseCallingArtifact;
@@ -57,8 +56,7 @@ namespace SparkleLauncher
 			{
 				shadowArguments.emplace_back(argv[index]);
 			}
-			const LauncherShadowStartResult shadow =
-			    StartLauncherShadow(repository->RootPath, shadowArguments, completionPolicy);
+			const LauncherShadowStartResult shadow = StartLauncherShadow(repository->RootPath, shadowArguments, completionPolicy);
 			if (shadow.State == LauncherShadowStartState::Started)
 			{
 				if (completionPolicy == LauncherShadowCompletionPolicy::ReleaseCallingArtifact)

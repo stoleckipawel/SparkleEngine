@@ -54,25 +54,25 @@ public:
 	{
 		const float peak = (std::max) ({source.mColorDiffuse.r, source.mColorDiffuse.g, source.mColorDiffuse.b});
 		PhotometricProperties properties;
-		properties.Color = peak > 0.0f
-		    ? DirectX::XMFLOAT3(source.mColorDiffuse.r / peak, source.mColorDiffuse.g / peak, source.mColorDiffuse.b / peak)
-		    : DirectX::XMFLOAT3{};
+		properties.Color = peak > 0.0f ? DirectX::XMFLOAT3(source.mColorDiffuse.r / peak, source.mColorDiffuse.g / peak, source.mColorDiffuse.b / peak) : DirectX::XMFLOAT3{};
 
 		switch (kind)
 		{
 			case ImportedLightKind::Directional:
 				properties.Illuminance = peak;
+
 				break;
+
 			case ImportedLightKind::Point:
 			case ImportedLightKind::Spot:
 				properties.LuminousIntensity = peak;
-				properties.DistanceAttenuationCoefficients = {
-				    source.mAttenuationConstant,
-				    source.mAttenuationLinear,
-				    source.mAttenuationQuadratic};
+
+				properties.DistanceAttenuationCoefficients = {source.mAttenuationConstant, source.mAttenuationLinear, source.mAttenuationQuadratic};
 				break;
+
 			case ImportedLightKind::Rect:
 				properties.Luminance = peak;
+
 				break;
 			case ImportedLightKind::Unknown:
 				break;
@@ -86,17 +86,17 @@ public:
 		const aiVector3D localDirection(source.mDirection.x, source.mDirection.y, -source.mDirection.z);
 		const aiVector3D up(source.mUp.x, source.mUp.y, -source.mUp.z);
 		WorldPose pose;
-		pose.Transform = kind == ImportedLightKind::Point
-		    ? FbxNodeTransformConverter::BuildNodeAttachedTranslation(node, position)
-		    : FbxNodeTransformConverter::BuildNodeAttachedOrientation(node, position, localDirection, up);
+
+		pose.Transform = kind == ImportedLightKind::Point ? FbxNodeTransformConverter::BuildNodeAttachedTranslation(node, position)
+		                                                  : FbxNodeTransformConverter::BuildNodeAttachedOrientation(node, position, localDirection, up);
 
 		const DirectX::XMMATRIX lightWorld = DirectX::XMLoadFloat4x4(&pose.Transform);
+
 		const DirectX::XMVECTOR direction = DirectX::XMVector3TransformNormal(
 		    DirectX::XMVectorSet(WorldCoordinates::kForwardX, WorldCoordinates::kForwardY, WorldCoordinates::kForwardZ, 0.0f),
 		    lightWorld);
-		const DirectX::XMVECTOR tangent = DirectX::XMVector3TransformNormal(
-		    DirectX::XMVectorSet(WorldCoordinates::kRightX, WorldCoordinates::kRightY, WorldCoordinates::kRightZ, 0.0f),
-		    lightWorld);
+
+		const DirectX::XMVECTOR tangent = DirectX::XMVector3TransformNormal(DirectX::XMVectorSet(WorldCoordinates::kRightX, WorldCoordinates::kRightY, WorldCoordinates::kRightZ, 0.0f), lightWorld);
 		DirectX::XMStoreFloat3(&pose.Direction, DirectX::XMVector3Normalize(direction));
 		DirectX::XMStoreFloat3(&pose.Tangent, DirectX::XMVector3Normalize(tangent));
 		return pose;
@@ -110,8 +110,7 @@ void FbxLightImporter::ImportLights(const aiScene& scene, float sourceMetersPerU
 	{
 		const aiLight* sourceLight = scene.mLights[lightIndex];
 		const aiNode* node = sourceLight != nullptr ? FbxNodeTransformConverter::FindNode(scene, sourceLight->mName) : nullptr;
-		const ImportedLightKind kind =
-		    sourceLight != nullptr ? FbxLightTranslation::ToImportedLightKind(sourceLight->mType) : ImportedLightKind::Unknown;
+		const ImportedLightKind kind = sourceLight != nullptr ? FbxLightTranslation::ToImportedLightKind(sourceLight->mType) : ImportedLightKind::Unknown;
 		if (sourceLight == nullptr || sourceLight->mName.length == 0 || node == nullptr || kind == ImportedLightKind::Unknown)
 		{
 			throw Diagnostics::Error(std::format("FBX light {} has incomplete source data or an unsupported kind.", lightIndex));
@@ -129,8 +128,7 @@ void FbxLightImporter::ImportLights(const aiScene& scene, float sourceMetersPerU
 		{
 			throw Diagnostics::Error(std::format("FBX light '{}' has no source node index.", light.name));
 		}
-		const FbxLightTranslation::PhotometricProperties photometry =
-		    FbxLightTranslation::ComputePhotometricProperties(*sourceLight, light.kind);
+		const FbxLightTranslation::PhotometricProperties photometry = FbxLightTranslation::ComputePhotometricProperties(*sourceLight, light.kind);
 		light.color = photometry.Color;
 		light.illuminance = photometry.Illuminance;
 		light.luminousIntensity = photometry.LuminousIntensity;
@@ -139,8 +137,7 @@ void FbxLightImporter::ImportLights(const aiScene& scene, float sourceMetersPerU
 		light.distanceAttenuationCoefficients.y /= sourceMetersPerUnit;
 		light.distanceAttenuationCoefficients.z /= sourceMetersPerUnit * sourceMetersPerUnit;
 
-		const FbxLightTranslation::WorldPose worldPose =
-		    FbxLightTranslation::ComputeWorldPose(*sourceLight, light.kind, *node, sourceMetersPerUnit);
+		const FbxLightTranslation::WorldPose worldPose = FbxLightTranslation::ComputeWorldPose(*sourceLight, light.kind, *node, sourceMetersPerUnit);
 		light.worldTransform = worldPose.Transform;
 		light.direction = worldPose.Direction;
 		light.tangent = worldPose.Tangent;

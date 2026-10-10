@@ -74,14 +74,12 @@ void TaskExecutor::Implementation::Runtime::ScheduledTaskExecution::Execute(std:
 	const std::stop_token cancellation = m_execution->Cancellation.get_token();
 	const TaskProfiler::TimePoint taskStart = TaskProfiler::Begin(node.Desc, m_generation, index, worker.LaneWorkerIndex);
 
-	const bool blocked = task.BlockedByPrerequisite.load(std::memory_order_acquire) || task.BlockedByParent.load(std::memory_order_acquire)
-	    || cancellation.stop_requested();
+	const bool blocked = task.BlockedByPrerequisite.load(std::memory_order_acquire) || task.BlockedByParent.load(std::memory_order_acquire) || cancellation.stop_requested();
 	TaskExecutionContext taskContext = m_context;
 	TaskExecutionContextBinding::Bind(taskContext, m_generation, node.Desc.Lane, cancellation);
 
-	const TaskResult result = blocked && node.Desc.CompletionPolicy == TaskCompletionPolicy::Normal
-	    ? TaskResult::Cancelled("Task execution was cancelled or a prerequisite did not succeed.")
-	    : TaskFunctionInvoker::Invoke(node, taskContext);
+	const TaskResult result = blocked && node.Desc.CompletionPolicy == TaskCompletionPolicy::Normal ? TaskResult::Cancelled("Task execution was cancelled or a prerequisite did not succeed.")
+	                                                                                                : TaskFunctionInvoker::Invoke(node, taskContext);
 
 	RecordTaskResult(index, node, result);
 	TaskProfiler::End(node.Desc, m_generation, index, worker.LaneWorkerIndex, result, taskStart);
@@ -90,10 +88,7 @@ void TaskExecutor::Implementation::Runtime::ScheduledTaskExecution::Execute(std:
 	ReleaseUnfinished(index, &worker);
 }
 
-void TaskExecutor::Implementation::Runtime::ScheduledTaskExecution::RecordTaskResult(
-    std::uint32_t index,
-    const TaskGraphNode& node,
-    const TaskResult& result)
+void TaskExecutor::Implementation::Runtime::ScheduledTaskExecution::RecordTaskResult(std::uint32_t index, const TaskGraphNode& node, const TaskResult& result)
 {
 	std::lock_guard lock(m_resultMutex);
 	m_taskResults[index] = result;
@@ -108,10 +103,7 @@ void TaskExecutor::Implementation::Runtime::ScheduledTaskExecution::RecordTaskRe
 	}
 }
 
-void TaskExecutor::Implementation::Runtime::ScheduledTaskExecution::ReleaseNestedTasks(
-    const TaskGraphNode& node,
-    const TaskResult& result,
-    TaskWorker& worker)
+void TaskExecutor::Implementation::Runtime::ScheduledTaskExecution::ReleaseNestedTasks(const TaskGraphNode& node, const TaskResult& result, TaskWorker& worker)
 {
 	for (const std::uint32_t childIndex : node.NestedChildren)
 	{
@@ -138,10 +130,7 @@ void TaskExecutor::Implementation::Runtime::ScheduledTaskExecution::TrySchedule(
 	if (task.Scheduled.compare_exchange_strong(expected, true, std::memory_order_acq_rel))
 	{
 		const TaskLane lane = m_graph->Nodes[index].Desc.Lane;
-		m_owner.Enqueue(
-		    ReadyTask{.Execution = shared_from_this(), .TaskIndex = index},
-		    preferredWorker != nullptr && preferredWorker->Lane == lane ? preferredWorker : nullptr,
-		    lane);
+		m_owner.Enqueue(ReadyTask{.Execution = shared_from_this(), .TaskIndex = index}, preferredWorker != nullptr && preferredWorker->Lane == lane ? preferredWorker : nullptr, lane);
 	}
 }
 

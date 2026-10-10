@@ -29,10 +29,7 @@ private:
 
 	void SetStreamOutput(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc) noexcept;
 	void SetRasterizerState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, const RhiRasterizerState& rasterizer) noexcept;
-	void SetRenderTargetBlendState(
-	    D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc,
-	    const RhiBlendState& blend,
-	    std::uint32_t colorAttachmentCount) noexcept;
+	void SetRenderTargetBlendState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, const RhiBlendState& blend, std::uint32_t colorAttachmentCount) noexcept;
 	void SetDepthTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, const RhiDepthState& depthDesc) noexcept;
 	void SetStencilTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, const RhiStencilState& stencilDesc) noexcept;
 	void Create(const GraphicsPipelineDesc& desc);

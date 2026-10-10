@@ -16,12 +16,7 @@ MainMenuBarPanel::MainMenuBarPanel(LevelSession* levelSession, Window* window) n
 	SetWindow(window);
 }
 
-bool MainMenuBarPanel::DrawTitleBarButton(
-    const char* id,
-    const ImVec2& size,
-    const ImVec4& baseColor,
-    const ImVec4& hoveredColor,
-    const ImVec4& activeColor) noexcept
+bool MainMenuBarPanel::DrawTitleBarButton(const char* id, const ImVec2& size, const ImVec4& baseColor, const ImVec4& hoveredColor, const ImVec4& activeColor) noexcept
 {
 	ImGui::PushStyleColor(ImGuiCol_Button, baseColor);
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hoveredColor);

@@ -35,19 +35,12 @@ public:
 	{
 		SetDebugName(
 		    VK_OBJECT_TYPE_COMMAND_BUFFER,
-		    reinterpret_cast<std::uint64_t>(commandList
-		            .GetNativeHandle(
-		                RhiNativeInteropRequest{
-		                    .Consumer = ERhiNativeInteropConsumer::Diagnostics,
-		                    .Reason = "Assign Vulkan command buffer debug name"})
-		            .Value),
+		    reinterpret_cast<std::uint64_t>(
+		        commandList.GetNativeHandle(RhiNativeInteropRequest{.Consumer = ERhiNativeInteropConsumer::Diagnostics, .Reason = "Assign Vulkan command buffer debug name"}).Value),
 		    debugName);
 	}
 
-	void SetDebugName(RhiResourceHandle resource, std::wstring_view debugName) noexcept override
-	{
-		SetDebugName(VK_OBJECT_TYPE_UNKNOWN, reinterpret_cast<std::uint64_t>(resource.Value), debugName);
-	}
+	void SetDebugName(RhiResourceHandle resource, std::wstring_view debugName) noexcept override { SetDebugName(VK_OBJECT_TYPE_UNKNOWN, reinterpret_cast<std::uint64_t>(resource.Value), debugName); }
 
 	void SetDebugName(RhiOwnedMemoryBlockHandle memoryBlock, std::wstring_view debugName) noexcept override
 	{
@@ -108,31 +101,20 @@ public:
 		}
 	}
 
-	bool SupportsTimestampQueries() const noexcept override
-	{
-		return m_queueStates[RhiQueueTypeToIndex(ERhiQueueType::Graphics)].QueryPool != VK_NULL_HANDLE;
-	}
+	bool SupportsTimestampQueries() const noexcept override { return m_queueStates[RhiQueueTypeToIndex(ERhiQueueType::Graphics)].QueryPool != VK_NULL_HANDLE; }
 
 	RhiTimestampQueryHandle AllocateTimestampQuery(ERhiQueueType queueType) override
 	{
 		if (!IsRhiQueueTypeValid(queueType))
 		{
-			Diagnostics::Fatal(
-			    g_vulkanRenderDiagnosticsLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Timestamp query requested for an invalid Vulkan queue.");
+			Diagnostics::Fatal(g_vulkanRenderDiagnosticsLogger, __FILE__, __LINE__, "Timestamp query requested for an invalid Vulkan queue.");
 		}
 
 		const std::uint32_t poolIndex = static_cast<std::uint32_t>(RhiQueueTypeToIndex(queueType));
 		QueueTimingState& queueState = m_queueStates[poolIndex];
 		if (queueState.QueryPool == VK_NULL_HANDLE)
 		{
-			Diagnostics::Fatal(
-			    g_vulkanRenderDiagnosticsLogger,
-			    __FILE__,
-			    __LINE__,
-			    std::string("Vulkan queue does not support timestamp queries: ") + RhiQueueTypeToString(queueType));
+			Diagnostics::Fatal(g_vulkanRenderDiagnosticsLogger, __FILE__, __LINE__, std::string("Vulkan queue does not support timestamp queries: ") + RhiQueueTypeToString(queueType));
 		}
 
 		const RhiTimestampQueryHandle query = m_queryAllocator.Allocate(poolIndex);
@@ -150,27 +132,18 @@ public:
 		const ERhiQueueType queueType = static_cast<ERhiQueueType>(location.PoolIndex);
 		if (commandList.GetQueueType() != queueType)
 		{
-			Diagnostics::Fatal(
-			    g_vulkanRenderDiagnosticsLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Vulkan timestamp query was written on a different queue than it was allocated for.");
+			Diagnostics::Fatal(g_vulkanRenderDiagnosticsLogger, __FILE__, __LINE__, "Vulkan timestamp query was written on a different queue than it was allocated for.");
 		}
 
-		const VkCommandBuffer commandBuffer = static_cast<VkCommandBuffer>(commandList
-		        .GetNativeHandle(
-		            RhiNativeInteropRequest{.Consumer = ERhiNativeInteropConsumer::Diagnostics, .Reason = "Write Vulkan timestamp query"})
-		        .Value);
+		const VkCommandBuffer commandBuffer = static_cast<VkCommandBuffer>(
+		    commandList.GetNativeHandle(RhiNativeInteropRequest{.Consumer = ERhiNativeInteropConsumer::Diagnostics, .Reason = "Write Vulkan timestamp query"}).Value);
+
 		if (commandBuffer == VK_NULL_HANDLE)
 		{
 			Diagnostics::Fatal(g_vulkanRenderDiagnosticsLogger, __FILE__, __LINE__, "Vulkan timestamp query has no native command buffer.");
 		}
 
-		vkCmdWriteTimestamp2(
-		    commandBuffer,
-		    VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-		    m_queueStates[location.PoolIndex].QueryPool,
-		    location.QueryIndex);
+		vkCmdWriteTimestamp2(commandBuffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, m_queueStates[location.PoolIndex].QueryPool, location.QueryIndex);
 		return true;
 	}
 
@@ -179,26 +152,14 @@ public:
 		const RhiTimestampQueryLocation location = m_queryAllocator.Resolve(query);
 		const QueueTimingState& queueState = m_queueStates[location.PoolIndex];
 		std::lock_guard lock(m_queryPoolMutex);
-		const VkResult result = vkGetQueryPoolResults(
-		    m_rhi.GetDevice(),
-		    queueState.QueryPool,
-		    location.QueryIndex,
-		    1,
-		    sizeof(outTicks),
-		    &outTicks,
-		    sizeof(outTicks),
-		    VK_QUERY_RESULT_64_BIT);
+		const VkResult result = vkGetQueryPoolResults(m_rhi.GetDevice(), queueState.QueryPool, location.QueryIndex, 1, sizeof(outTicks), &outTicks, sizeof(outTicks), VK_QUERY_RESULT_64_BIT);
 		if (result == VK_NOT_READY)
 		{
 			return false;
 		}
 		if (!VulkanResult::Succeeded(result))
 		{
-			Diagnostics::Fatal(
-			    g_vulkanRenderDiagnosticsLogger,
-			    __FILE__,
-			    __LINE__,
-			    VulkanResult::FormatFailure("vkGetQueryPoolResults", result));
+			Diagnostics::Fatal(g_vulkanRenderDiagnosticsLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkGetQueryPoolResults", result));
 		}
 		if (queueState.TimestampValidBits < 64)
 		{
@@ -208,10 +169,8 @@ public:
 	}
 
 	double GetTimestampPeriodNanoseconds(RhiTimestampQueryHandle) const noexcept override { return m_timestampPeriodNanoseconds; }
-	std::uint32_t GetTimestampValidBits(RhiTimestampQueryHandle query) const noexcept override
-	{
-		return m_queueStates[m_queryAllocator.Resolve(query).PoolIndex].TimestampValidBits;
-	}
+
+	std::uint32_t GetTimestampValidBits(RhiTimestampQueryHandle query) const noexcept override { return m_queueStates[m_queryAllocator.Resolve(query).PoolIndex].TimestampValidBits; }
 
 private:
 	static constexpr std::uint32_t kQueriesPerQueue = 8192;
@@ -226,11 +185,7 @@ private:
 	{
 		if (m_rhi.GetPhysicalDevice() == VK_NULL_HANDLE || m_rhi.GetDevice() == VK_NULL_HANDLE)
 		{
-			Diagnostics::Fatal(
-			    g_vulkanRenderDiagnosticsLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Cannot initialize Vulkan timing without a physical device and logical device.");
+			Diagnostics::Fatal(g_vulkanRenderDiagnosticsLogger, __FILE__, __LINE__, "Cannot initialize Vulkan timing without a physical device and logical device.");
 		}
 
 		// Host resets keep timestamp writes valid inside render passes as well as outside them.
@@ -248,11 +203,7 @@ private:
 		vkGetPhysicalDeviceQueueFamilyProperties(m_rhi.GetPhysicalDevice(), &queueFamilyCount, queueFamilyProperties.data());
 		if (physicalDeviceProperties.limits.timestampPeriod <= 0.0f)
 		{
-			Diagnostics::Fatal(
-			    g_vulkanRenderDiagnosticsLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Vulkan physical device reported an invalid timestamp period.");
+			Diagnostics::Fatal(g_vulkanRenderDiagnosticsLogger, __FILE__, __LINE__, "Vulkan physical device reported an invalid timestamp period.");
 		}
 
 		const VkQueryPoolCreateInfo queryPoolCreateInfo{
@@ -262,6 +213,7 @@ private:
 		    .queryType = VK_QUERY_TYPE_TIMESTAMP,
 		    .queryCount = kQueriesPerQueue,
 		    .pipelineStatistics = 0};
+
 		for (std::size_t queueIndex = 0; queueIndex < RhiQueueTypeCount; ++queueIndex)
 		{
 			const ERhiQueueType queueType = static_cast<ERhiQueueType>(queueIndex);
@@ -280,19 +232,11 @@ private:
 			const VkResult result = vkCreateQueryPool(m_rhi.GetDevice(), &queryPoolCreateInfo, nullptr, &queueState.QueryPool);
 			if (!VulkanResult::Succeeded(result))
 			{
-				Diagnostics::Fatal(
-				    g_vulkanRenderDiagnosticsLogger,
-				    __FILE__,
-				    __LINE__,
-				    VulkanResult::FormatFailure("vkCreateQueryPool", result));
+				Diagnostics::Fatal(g_vulkanRenderDiagnosticsLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateQueryPool", result));
 			}
 			const std::string queryPoolName = std::string("VulkanTimestampQueryPool_") + RhiQueueTypeToString(queueType);
-			(void) VulkanDebugNames::SetObjectName(
-			    m_rhi.GetSetDebugUtilsObjectName(),
-			    m_rhi.GetDevice(),
-			    VK_OBJECT_TYPE_QUERY_POOL,
-			    reinterpret_cast<std::uint64_t>(queueState.QueryPool),
-			    queryPoolName);
+			(void)
+			    VulkanDebugNames::SetObjectName(m_rhi.GetSetDebugUtilsObjectName(), m_rhi.GetDevice(), VK_OBJECT_TYPE_QUERY_POOL, reinterpret_cast<std::uint64_t>(queueState.QueryPool), queryPoolName);
 		}
 
 		m_timestampPeriodNanoseconds = static_cast<double>(physicalDeviceProperties.limits.timestampPeriod);
@@ -343,8 +287,9 @@ private:
 
 std::unique_ptr<RenderDiagnostics> CreateVulkanRenderDiagnostics(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator)
 {
-	const bool supportsGpuEvents = rhi.GetSetDebugUtilsObjectName() != nullptr && rhi.GetCmdBeginDebugUtilsLabel() != nullptr
-	    && rhi.GetCmdEndDebugUtilsLabel() != nullptr && rhi.GetCmdInsertDebugUtilsLabel() != nullptr;
+	const bool supportsGpuEvents = rhi.GetSetDebugUtilsObjectName() != nullptr && rhi.GetCmdBeginDebugUtilsLabel() != nullptr && rhi.GetCmdEndDebugUtilsLabel() != nullptr
+	    && rhi.GetCmdInsertDebugUtilsLabel() != nullptr;
+
 	return CreateRhiDiagnosticsComposition(
 	    std::make_unique<VulkanRenderObjectDiagnostics>(rhi),
 	    std::make_unique<VulkanRenderTimingDiagnostics>(rhi),

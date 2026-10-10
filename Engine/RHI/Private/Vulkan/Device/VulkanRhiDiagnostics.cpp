@@ -43,19 +43,13 @@ void VulkanRhi::LoadDeviceDebugFunctions() noexcept
 		return;
 	}
 
-	m_setDebugUtilsObjectName =
-	    reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(vkGetDeviceProcAddr(m_device, "vkSetDebugUtilsObjectNameEXT"));
-	m_cmdBeginDebugUtilsLabel =
-	    reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(vkGetDeviceProcAddr(m_device, "vkCmdBeginDebugUtilsLabelEXT"));
+	m_setDebugUtilsObjectName = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(vkGetDeviceProcAddr(m_device, "vkSetDebugUtilsObjectNameEXT"));
+	m_cmdBeginDebugUtilsLabel = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(vkGetDeviceProcAddr(m_device, "vkCmdBeginDebugUtilsLabelEXT"));
 	m_cmdEndDebugUtilsLabel = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(vkGetDeviceProcAddr(m_device, "vkCmdEndDebugUtilsLabelEXT"));
-	m_cmdInsertDebugUtilsLabel =
-	    reinterpret_cast<PFN_vkCmdInsertDebugUtilsLabelEXT>(vkGetDeviceProcAddr(m_device, "vkCmdInsertDebugUtilsLabelEXT"));
+	m_cmdInsertDebugUtilsLabel = reinterpret_cast<PFN_vkCmdInsertDebugUtilsLabelEXT>(vkGetDeviceProcAddr(m_device, "vkCmdInsertDebugUtilsLabelEXT"));
 }
 
-void VulkanRhi::PushDiagnosticMessage(
-    ERhiDiagnosticMessageSeverity severity,
-    ERhiDiagnosticMessageCategory category,
-    std::string text) noexcept
+void VulkanRhi::PushDiagnosticMessage(ERhiDiagnosticMessageSeverity severity, ERhiDiagnosticMessageCategory category, std::string text) noexcept
 {
 	m_diagnosticMessageQueue.Push(RhiDiagnosticMessage{.Severity = severity, .Category = category, .Text = std::move(text)});
 }

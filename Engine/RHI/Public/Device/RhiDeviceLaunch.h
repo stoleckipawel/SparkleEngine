@@ -3,6 +3,7 @@
 #include "../Core/RhiBackendApi.h"
 #include "../Interop/RhiInterposerHooks.h"
 class RhiExternalCapture;
+
 struct RhiDeviceLaunch final
 {
 	ERhiBackendApi BackendApi = ERhiBackendApi::Unknown;

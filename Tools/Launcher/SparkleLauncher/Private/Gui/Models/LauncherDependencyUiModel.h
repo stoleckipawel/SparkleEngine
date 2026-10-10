@@ -27,7 +27,5 @@ namespace SparkleLauncher
 	};
 
 	const std::vector<ThirdPartyDependencyUiEntry>& GetTrackedThirdPartyDependencies();
-	ThirdPartyDependencyUiStatus BuildThirdPartyDependencyStatus(
-	    const ThirdPartyDependencyUiEntry& dependency,
-	    const std::filesystem::path& dependencyCachePath);
+	ThirdPartyDependencyUiStatus BuildThirdPartyDependencyStatus(const ThirdPartyDependencyUiEntry& dependency, const std::filesystem::path& dependencyCachePath);
 }

@@ -14,6 +14,7 @@ class MaterialTextureTable final
 {
 public:
 	MaterialTextureTable() noexcept = default;
+
 	~MaterialTextureTable() noexcept = default;
 
 	MaterialTextureTable(const MaterialTextureTable&) = delete;
@@ -26,7 +27,9 @@ public:
 	void BuildBindingSet(RenderHardwareInterface& renderHardwareInterface);
 
 	bool IsValid() const noexcept { return m_bindingSet != nullptr && !m_textureViews.empty(); }
+
 	RhiDescriptorTableBinding GetTableBinding() const noexcept;
+
 	std::uint32_t GetTextureCount() const noexcept { return static_cast<std::uint32_t>(m_textureViews.size()); }
 
 private:

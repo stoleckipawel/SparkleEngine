@@ -44,8 +44,7 @@ void FbxCameraImporter::ImportCameras(const aiScene& scene, float sourceMetersPe
 		// rewrites LookAt as 2 * Position - LookAt. Recover the authored direction,
 		// then reflect camera-local spatial values exactly once to match meshes/nodes.
 		const aiVector3D authoredDirection = sourceCamera->mPosition * 2.0f - sourceCamera->mLookAt;
-		const aiVector3D position =
-		    aiVector3D(sourceCamera->mPosition.x, sourceCamera->mPosition.y, -sourceCamera->mPosition.z) * sourceMetersPerUnit;
+		const aiVector3D position = aiVector3D(sourceCamera->mPosition.x, sourceCamera->mPosition.y, -sourceCamera->mPosition.z) * sourceMetersPerUnit;
 		const aiVector3D direction(authoredDirection.x, authoredDirection.y, -authoredDirection.z);
 		const aiVector3D up(sourceCamera->mUp.x, sourceCamera->mUp.y, -sourceCamera->mUp.z);
 		camera.worldTransform = FbxNodeTransformConverter::BuildNodeAttachedOrientation(*node, position, direction, up);

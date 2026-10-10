@@ -14,15 +14,8 @@ class QObject;
 
 namespace SparkleLauncher
 {
-	QString PopulateLauncherSelectionCombo(
-	    QComboBox& combo,
-	    const QVector<LauncherSelectionOption>& options,
-	    const QString& preferredValue);
+	QString PopulateLauncherSelectionCombo(QComboBox& combo, const QVector<LauncherSelectionOption>& options, const QString& preferredValue);
 
-	void ConnectSelectAllScopeBox(
-	    QCheckBox* selectAllBox,
-	    const QVector<QCheckBox*>& scopeBoxes,
-	    QObject* context,
-	    std::function<void(bool)> commitSelection);
+	void ConnectSelectAllScopeBox(QCheckBox* selectAllBox, const QVector<QCheckBox*>& scopeBoxes, QObject* context, std::function<void(bool)> commitSelection);
 	QStringList CollectSelectedScopeValues(const QVector<QCheckBox*>& scopeBoxes);
 }

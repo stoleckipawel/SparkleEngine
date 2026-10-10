@@ -77,8 +77,7 @@ private:
 		return {
 		    .State = ExternalCaptureState::Completed,
 		    .Artifact = m_artifact,
-		    .Message = opened ? "PIX native open confirmed finalization; capture handed to PIX."
-		                      : "PIX native open confirmed finalization; viewer handoff failed. Open the artifact manually."};
+		    .Message = opened ? "PIX native open confirmed finalization; capture handed to PIX." : "PIX native open confirmed finalization; viewer handoff failed. Open the artifact manually."};
 	}
 
 	void TryStartNativeInspector()
@@ -98,17 +97,7 @@ private:
 		startup.dwFlags = STARTF_USESHOWWINDOW;
 		startup.wShowWindow = SW_HIDE;
 		PROCESS_INFORMATION process{};
-		if (CreateProcessW(
-		        m_tool.c_str(),
-		        command.data(),
-		        nullptr,
-		        nullptr,
-		        FALSE,
-		        CREATE_NO_WINDOW,
-		        nullptr,
-		        m_tool.parent_path().c_str(),
-		        &startup,
-		        &process))
+		if (CreateProcessW(m_tool.c_str(), command.data(), nullptr, nullptr, FALSE, CREATE_NO_WINDOW, nullptr, m_tool.parent_path().c_str(), &startup, &process))
 		{
 			CloseHandle(process.hThread);
 			m_inspector = process.hProcess;
@@ -169,8 +158,7 @@ bool IsPixCaptureInstalled() noexcept
 	for (unsigned count = 0; !error && versions != end && count < 32; ++count, versions.increment(error))
 	{
 		std::error_code fileError;
-		if (std::filesystem::is_regular_file(versions->path() / L"WinPixGpuCapturer.dll", fileError)
-		    && std::filesystem::is_regular_file(versions->path() / L"pixtool.exe", fileError))
+		if (std::filesystem::is_regular_file(versions->path() / L"WinPixGpuCapturer.dll", fileError) && std::filesystem::is_regular_file(versions->path() / L"pixtool.exe", fileError))
 		{
 			return true;
 		}

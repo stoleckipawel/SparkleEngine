@@ -43,9 +43,8 @@ namespace SparkleLauncher
 
 	bool LauncherMainWindow::UsesBuildEnvironmentStatus(const QString& operationId)
 	{
-		return operationId == "workspace.generate-build-files" || operationId == "workspace.sync-code" || operationId == "workspace.build"
-		    || operationId == "workspace.build.editor" || operationId == "launcher.build.self" || operationId == "workspace.build.runtime"
-		    || operationId.startsWith("cook.");
+		return operationId == "workspace.generate-build-files" || operationId == "workspace.sync-code" || operationId == "workspace.build" || operationId == "workspace.build.editor"
+		    || operationId == "launcher.build.self" || operationId == "workspace.build.runtime" || operationId.startsWith("cook.");
 	}
 
 	void LauncherMainWindow::AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId)
@@ -90,8 +89,7 @@ namespace SparkleLauncher
 		const QStringList selectedScopes = m_settings.BuildScopes().split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts);
 		QVector<QCheckBox*> scopeBoxes;
 
-		QVBoxLayout* buildLayout =
-		    AddOptionGroup(layout, "Choose products", "Select the products to build. CMake resolves their shared dependencies.");
+		QVBoxLayout* buildLayout = AddOptionGroup(layout, "Choose products", "Select the products to build. CMake resolves their shared dependencies.");
 
 		QFrame* selectionPanel = new QFrame(buildLayout->parentWidget());
 		selectionPanel->setObjectName("WorkflowSelectionPanel");
@@ -101,54 +99,23 @@ namespace SparkleLauncher
 		selectionLayout->setContentsMargins(0, 0, 0, 0);
 		selectionLayout->setSpacing(0);
 		QVector<QCheckBox*> selectAllBoxes;
-		AddWorkflowScopeRow(
-		    *selectionLayout,
-		    "All",
-		    QString(),
-		    "Select every available product.",
-		    QString(),
-		    true,
-		    QStringList(),
-		    selectAllBoxes);
+		AddWorkflowScopeRow(*selectionLayout, "All", QString(), "Select every available product.", QString(), true, QStringList(), selectAllBoxes);
 		QCheckBox* selectAllBox = selectAllBoxes.front();
 
-		AddWorkflowScopeRow(
-		    *selectionLayout,
-		    "Editor",
-		    "editor",
-		    "Authoring, inspection, and developer tools.",
-		    m_settings.EditorProfile(),
-		    true,
-		    selectedScopes,
-		    scopeBoxes);
-		AddWorkflowScopeRow(
-		    *selectionLayout,
-		    "Game",
-		    "runtime",
-		    "Standalone runtime used by Game mode.",
-		    m_settings.RuntimeProfile(),
-		    true,
-		    selectedScopes,
-		    scopeBoxes);
+		AddWorkflowScopeRow(*selectionLayout, "Editor", "editor", "Authoring, inspection, and developer tools.", m_settings.EditorProfile(), true, selectedScopes, scopeBoxes);
+		AddWorkflowScopeRow(*selectionLayout, "Game", "runtime", "Standalone runtime used by Game mode.", m_settings.RuntimeProfile(), true, selectedScopes, scopeBoxes);
+
 		AddWorkflowScopeRow(
 		    *selectionLayout,
 		    "Cooking tools",
 		    "cook-tools",
-		    cookToolsAvailable ? "Asset, texture, and shader cooking tools."
-		                       : "No cooking-tool targets are enabled by this workspace configuration.",
+		    cookToolsAvailable ? "Asset, texture, and shader cooking tools." : "No cooking-tool targets are enabled by this workspace configuration.",
 		    cookToolsAvailable ? m_settings.EditorProfile() : QStringLiteral("Unavailable"),
 		    cookToolsAvailable,
 		    selectedScopes,
 		    scopeBoxes);
-		AddWorkflowScopeRow(
-		    *selectionLayout,
-		    "Launcher",
-		    "launcher",
-		    "Sparkle Launcher; the new build is used after restart.",
-		    m_settings.EditorProfile(),
-		    true,
-		    selectedScopes,
-		    scopeBoxes);
+
+		AddWorkflowScopeRow(*selectionLayout, "Launcher", "launcher", "Sparkle Launcher; the new build is used after restart.", m_settings.EditorProfile(), true, selectedScopes, scopeBoxes);
 		buildLayout->addWidget(selectionPanel);
 
 		AddWorkflowAutomationNote(*buildLayout, "CMake refreshes stale build files and skips current targets.");
@@ -198,6 +165,7 @@ namespace SparkleLauncher
 		scopeRowLayout->addWidget(scopeMetadata, 0);
 
 		scopeRow->setProperty("Selected", scopeBox->isChecked());
+
 		connect(
 		    scopeBox,
 		    &QCheckBox::toggled,
@@ -255,55 +223,45 @@ namespace SparkleLauncher
 		selectionLayout->setContentsMargins(0, 0, 0, 0);
 		selectionLayout->setSpacing(0);
 		QVector<QCheckBox*> selectAllBoxes;
-		AddWorkflowScopeRow(
-		    *selectionLayout,
-		    "All",
-		    QString(),
-		    "Select every available output.",
-		    QString(),
-		    true,
-		    QStringList(),
-		    selectAllBoxes);
+		AddWorkflowScopeRow(*selectionLayout, "All", QString(), "Select every available output.", QString(), true, QStringList(), selectAllBoxes);
 		QCheckBox* selectAllBox = selectAllBoxes.front();
 
 		AddWorkflowScopeRow(
 		    *selectionLayout,
 		    "Shaders",
 		    "shaders",
-		    features.ShaderCompilerEnabled ? "Compile every registered shader into the cooked map and code library."
-		                                   : "Shader cooking is not enabled by this workspace configuration.",
+		    features.ShaderCompilerEnabled ? "Compile every registered shader into the cooked map and code library." : "Shader cooking is not enabled by this workspace configuration.",
 		    features.ShaderCompilerEnabled ? QStringLiteral("DXIL + SPIR-V") : QStringLiteral("Unavailable"),
 		    features.ShaderCompilerEnabled,
 		    selectedScopes,
 		    scopeBoxes);
+
 		AddWorkflowScopeRow(
 		    *selectionLayout,
 		    "Textures",
 		    "textures",
-		    features.ContentPipelineEnabled ? "Create runtime-ready texture products."
-		                                    : "Texture cooking is not enabled by this workspace configuration.",
+		    features.ContentPipelineEnabled ? "Create runtime-ready texture products." : "Texture cooking is not enabled by this workspace configuration.",
 		    features.ContentPipelineEnabled ? QStringLiteral("Asset + Texture cooker") : QStringLiteral("Unavailable"),
 		    features.ContentPipelineEnabled,
 		    selectedScopes,
 		    scopeBoxes);
+
 		AddWorkflowScopeRow(
 		    *selectionLayout,
 		    "Scene assets",
 		    "assets",
-		    features.ContentPipelineEnabled ? "Cook scenes, meshes, and materials."
-		                                    : "Scene-asset cooking is not enabled by this workspace configuration.",
+		    features.ContentPipelineEnabled ? "Cook scenes, meshes, and materials." : "Scene-asset cooking is not enabled by this workspace configuration.",
 		    features.ContentPipelineEnabled ? QStringLiteral("Asset cooker") : QStringLiteral("Unavailable"),
 		    features.ContentPipelineEnabled,
 		    selectedScopes,
 		    scopeBoxes);
+
 		cookLayout->addWidget(selectionPanel);
 
 		AddWorkflowAutomationNote(
 		    *cookLayout,
-		    selectedScopes.contains("shaders")
-		        ? QStringLiteral(
-		              "ShaderCompiler discovers typed shaders and canonical targets. Incremental cooking preserves unaffected map entries.")
-		        : QStringLiteral("Incremental cooking reuses current outputs."));
+		    selectedScopes.contains("shaders") ? QStringLiteral("ShaderCompiler discovers typed shaders and canonical targets. Incremental cooking preserves unaffected map entries.")
+		                                       : QStringLiteral("Incremental cooking reuses current outputs."));
 
 		ConnectSelectAllScopeBox(selectAllBox, scopeBoxes, this, [this, scopeBoxes](bool) { UpdateCookScopeSetting(scopeBoxes); });
 		UpdateCookScopeSetting(scopeBoxes);
@@ -327,21 +285,13 @@ namespace SparkleLauncher
 		        "Remove build intermediates and generated CMake or IDE files; keep downloaded dependencies.",
 		        "build content except build/_deps and generated workspace files",
 		        "Build outputs"},
-		    {"Generated artifacts",
-		        "artifacts",
-		        "Remove executables, libraries, symbols, diagnostics, and all cooked content.",
-		        QString(),
-		        "Build outputs"},
+		    {"Generated artifacts", "artifacts", "Remove executables, libraries, symbols, diagnostics, and all cooked content.", QString(), "Build outputs"},
 		    {"IDE and workspace state",
 		        "workspace-state",
 		        "Reset local Visual Studio, Rider, VS Code, and ImGui workspace state.",
 		        ".vs, .vscode, .idea, and ImGui workspace state",
 		        "Local state and caches"},
-		    {"Source dependency cache",
-		        "deps",
-		        "Remove downloaded code dependencies; the next sync or configure downloads them again.",
-		        QString(),
-		        "Local state and caches"},
+		    {"Source dependency cache", "deps", "Remove downloaded code dependencies; the next sync or configure downloads them again.", QString(), "Local state and caches"},
 		    {"Logs",
 		        "logs",
 		        "Remove product and launcher logs from per-user state plus any legacy repository/content logs; keep the current launcher "
@@ -358,6 +308,7 @@ namespace SparkleLauncher
 		QVector<QCheckBox*> scopeBoxes;
 		const QString contentId = m_contentModel.ContentId();
 		QStringList selectedScopes = m_settings.CleanScope().split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts);
+
 		QVBoxLayout* cleanLayout = AddOptionGroup(
 		    layout,
 		    "Choose generated data",
@@ -372,6 +323,7 @@ namespace SparkleLauncher
 		selectionLayout->setContentsMargins(0, 0, 0, 0);
 		selectionLayout->setSpacing(0);
 		QVector<QCheckBox*> selectAllBoxes;
+
 		AddCleanScopeRow(
 		    *selectionLayout,
 		    {"All",
@@ -383,6 +335,7 @@ namespace SparkleLauncher
 		    contentId,
 		    selectedScopes,
 		    selectAllBoxes);
+
 		QCheckBox* selectAllBox = selectAllBoxes.front();
 
 		for (const QString& cleanGroup : cleanGroups)
@@ -402,20 +355,11 @@ namespace SparkleLauncher
 		}
 		cleanLayout->addWidget(selectionPanel);
 
-		ConnectSelectAllScopeBox(
-		    selectAllBox,
-		    scopeBoxes,
-		    this,
-		    [this, scopeBoxes](bool cleanAllRequested) { UpdateCleanScopeSetting(scopeBoxes, cleanAllRequested); });
+		ConnectSelectAllScopeBox(selectAllBox, scopeBoxes, this, [this, scopeBoxes](bool cleanAllRequested) { UpdateCleanScopeSetting(scopeBoxes, cleanAllRequested); });
 		UpdateCleanScopeSetting(scopeBoxes, selectedScopes.contains("clean-all"));
 	}
 
-	void LauncherMainWindow::AddCleanScopeRow(
-	    QVBoxLayout& layout,
-	    const CleanScopeUiOption& scope,
-	    const QString& contentId,
-	    const QStringList& selectedScopes,
-	    QVector<QCheckBox*>& scopeBoxes)
+	void LauncherMainWindow::AddCleanScopeRow(QVBoxLayout& layout, const CleanScopeUiOption& scope, const QString& contentId, const QStringList& selectedScopes, QVector<QCheckBox*>& scopeBoxes)
 	{
 		QFrame* scopeRow = new QFrame(layout.parentWidget());
 		scopeRow->setObjectName("CleanScopeRow");
@@ -442,10 +386,10 @@ namespace SparkleLauncher
 		scopeRowLayout->addLayout(descriptionLayout, 3);
 
 		const std::filesystem::path previewPath = ResolveCleanScopePreviewPath(m_repositoryRoot, contentId, scope.Value);
-		const QString previewText = scope.Value == "cooked"
-		    ? QStringLiteral("Generated content - ") + FormatDirectoryInventory(previewPath)
-		    : (scope.Preview.isEmpty() ? ToDisplayPath(m_repositoryRoot, previewPath) + " - " + FormatDirectoryInventory(previewPath)
-		                               : scope.Preview);
+
+		const QString previewText = scope.Value == "cooked" ? QStringLiteral("Generated content - ") + FormatDirectoryInventory(previewPath)
+		                                                    : (scope.Preview.isEmpty() ? ToDisplayPath(m_repositoryRoot, previewPath) + " - " + FormatDirectoryInventory(previewPath) : scope.Preview);
+
 		ElidedLabel* scopeDetail = new ElidedLabel(previewText, scopeRow);
 		scopeDetail->setObjectName("CleanScopePreview");
 		scopeDetail->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
@@ -453,6 +397,7 @@ namespace SparkleLauncher
 		scopeRowLayout->addWidget(scopeDetail, 2);
 
 		scopeRow->setProperty("Selected", scopeBox->isChecked());
+
 		connect(
 		    scopeBox,
 		    &QCheckBox::toggled,

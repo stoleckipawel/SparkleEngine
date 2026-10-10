@@ -54,12 +54,19 @@ public:
 	RhiCommandRecordingLease& operator=(RhiCommandRecordingLease&& other) noexcept;
 
 	ERhiQueueType GetQueueType() const noexcept { return m_queueType; }
+
 	std::uint32_t GetFrameSlot() const noexcept { return m_frameSlot; }
+
 	RhiCommandRecordingContextId GetContextId() const noexcept { return m_contextId; }
+
 	RhiCommandRecordingOwner GetOwner() const noexcept { return m_owner; }
+
 	const RhiCommandRecordingDescriptorPage& GetDescriptorPage() const noexcept { return m_descriptorPage; }
+
 	RhiSubmissionToken GetRetirementToken() const noexcept { return m_retirementToken; }
+
 	bool IsValid() const noexcept { return m_commandList != nullptr; }
+
 	bool IsClosed() const noexcept { return m_closed; }
 
 	RenderCommandList& GetCommandList() noexcept;

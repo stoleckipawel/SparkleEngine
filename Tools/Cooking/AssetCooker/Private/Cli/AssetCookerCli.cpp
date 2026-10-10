@@ -27,8 +27,7 @@ bool AssetCookerCli::IsHelp(std::string_view argument) noexcept
 
 bool AssetCookerCli::IsConfiguration(std::string_view argument) noexcept
 {
-	static constexpr std::array<std::string_view, 6> Profiles =
-	    {"DebugEditor", "DebugGame", "DevelopmentEditor", "DevelopmentGame", "ShippingEditor", "ShippingGame"};
+	static constexpr std::array<std::string_view, 6> Profiles = {"DebugEditor", "DebugGame", "DevelopmentEditor", "DevelopmentGame", "ShippingEditor", "ShippingGame"};
 
 	return std::ranges::find(Profiles, argument) != Profiles.end();
 }
@@ -135,20 +134,12 @@ void AssetCookerCli::PrintResult(const AssetCookerServiceResult& result)
 			continue;
 		}
 
-		ToolConsole::Message(
-		    std::cerr,
-		    ToolConsoleSeverity::Error,
-		    diagnostic.message,
-		    {ToolConsole::QuotedField("source", diagnostic.sourcePath)});
+		ToolConsole::Message(std::cerr, ToolConsoleSeverity::Error, diagnostic.message, {ToolConsole::QuotedField("source", diagnostic.sourcePath)});
 	}
 
 	if (result.exitCode == 0)
 	{
-		ToolConsole::Message(
-		    std::cout,
-		    ToolConsoleSeverity::Info,
-		    "Cook completed",
-		    {ToolConsole::Field("products", std::to_string(result.outputs.size()))});
+		ToolConsole::Message(std::cout, ToolConsoleSeverity::Info, "Cook completed", {ToolConsole::Field("products", std::to_string(result.outputs.size()))});
 	}
 }
 
@@ -167,10 +158,7 @@ int AssetCookerCli::Run(int argc, char** argv) const
 	    arguments.Configuration.c_str(),
 	    arguments.ToolProfile.empty() ? nullptr : arguments.ToolProfile.c_str());
 
-	const AssetCookerServiceResult result = service.Cook(
-	    arguments.ProjectName.empty() ? nullptr : arguments.ProjectName.c_str(),
-	    arguments.Configuration.c_str(),
-	    arguments.Category);
+	const AssetCookerServiceResult result = service.Cook(arguments.ProjectName.empty() ? nullptr : arguments.ProjectName.c_str(), arguments.Configuration.c_str(), arguments.Category);
 
 	PrintResult(result);
 	return result.exitCode;

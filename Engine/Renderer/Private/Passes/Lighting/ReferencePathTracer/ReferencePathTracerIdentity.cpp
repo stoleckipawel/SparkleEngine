@@ -25,8 +25,7 @@ enum IdentityComponentIndex : std::size_t
 
 static_assert(BackendComponent + 1u == ReferencePathTracerIdentity::ComponentCount);
 
-ReferencePathTracerIdentityComponent ReferencePathTracerIdentity::FindFirstDifference(
-    const ReferencePathTracerIdentity& other) const noexcept
+ReferencePathTracerIdentityComponent ReferencePathTracerIdentity::FindFirstDifference(const ReferencePathTracerIdentity& other) const noexcept
 {
 	for (std::size_t componentIndex = 0; componentIndex < Components.size(); ++componentIndex)
 	{
@@ -38,10 +37,7 @@ ReferencePathTracerIdentityComponent ReferencePathTracerIdentity::FindFirstDiffe
 	return ReferencePathTracerIdentityComponent::None;
 }
 
-ReferencePathTracerIdentity BuildReferencePathTracerIdentity(
-    const RenderFrame& frame,
-    RayTracingExecutionFrontend executionFrontend,
-    ERhiBackendApi backendApi) noexcept
+ReferencePathTracerIdentity BuildReferencePathTracerIdentity(const RenderFrame& frame, RayTracingExecutionFrontend executionFrontend, ERhiBackendApi backendApi) noexcept
 {
 	const RenderView& view = frame.View;
 	const PreparedRenderScene& scene = frame.PreparedScene;

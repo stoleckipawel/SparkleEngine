@@ -15,12 +15,10 @@ void main(in VS::Input Input, out VS::Output Output)
 	const float4x4 previousWorldMatrix = meshInstance.PreviousWorldMatrix;
 	const float3x3 worldInverseTranspose = (float3x3)meshInstance.WorldInverseTranspose;
 
-	const MorphedVertexAttributes morphedVertex =
-	    ApplyMorphing(meshInstance, 0u, Input.VertexId, Input.Position, Input.Normal, Input.Tangent.xyz);
-	const MorphedVertexAttributes previousMorphedVertex =
-	    ApplyPreviousMorphing(meshInstance, 0u, Input.VertexId, Input.Position, Input.Normal, Input.Tangent.xyz);
-	const SkinnedVertexAttributes localVertex =
-	    ApplySkinning(meshInstance, Input.VertexId, morphedVertex.Position, morphedVertex.Normal, morphedVertex.Tangent);
+	const MorphedVertexAttributes morphedVertex = ApplyMorphing(meshInstance, 0u, Input.VertexId, Input.Position, Input.Normal, Input.Tangent.xyz);
+	const MorphedVertexAttributes previousMorphedVertex = ApplyPreviousMorphing(meshInstance, 0u, Input.VertexId, Input.Position, Input.Normal, Input.Tangent.xyz);
+	const SkinnedVertexAttributes localVertex = ApplySkinning(meshInstance, Input.VertexId, morphedVertex.Position, morphedVertex.Normal, morphedVertex.Tangent);
+
 	const SkinnedVertexAttributes previousLocalVertex = ApplyPreviousSkinning(meshInstance,
 	                                                                          Input.VertexId,
 	                                                                          previousMorphedVertex.Position,

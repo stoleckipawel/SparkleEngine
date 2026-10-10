@@ -12,5 +12,6 @@ struct ShaderBytecode
 	std::size_t Size = 0;
 
 	bool IsValid() const noexcept { return Data != nullptr && Size > 0; }
+
 	explicit operator bool() const noexcept { return IsValid(); }
 };

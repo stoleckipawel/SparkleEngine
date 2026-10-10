@@ -18,11 +18,16 @@ struct SceneObjectSelection final
 	EntityId entity;
 
 	static SceneObjectSelection None() noexcept { return {}; }
+
 	static SceneObjectSelection Camera(EntityId entity) noexcept { return {SceneObjectType::Camera, entity}; }
+
 	static SceneObjectSelection Sky() noexcept { return {SceneObjectType::Sky, EntityId::Invalid()}; }
+
 	static SceneObjectSelection Light(EntityId entity) noexcept { return {SceneObjectType::Light, entity}; }
+
 	static SceneObjectSelection Mesh(EntityId entity) noexcept { return {SceneObjectType::Mesh, entity}; }
 
 	bool IsNone() const noexcept { return type == SceneObjectType::None; }
+
 	bool operator==(const SceneObjectSelection& other) const noexcept { return type == other.type && entity == other.entity; }
 };

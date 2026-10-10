@@ -29,12 +29,7 @@ public:
 
 private:
 	struct CaptureSource;
-	static bool ResolveSource(
-	    const ViewportRenderProducts& products,
-	    FrameGraph& frameGraph,
-	    RenderOutputFlags output,
-	    CaptureSource& source,
-	    std::string& failureReason);
+	static bool ResolveSource(const ViewportRenderProducts& products, FrameGraph& frameGraph, RenderOutputFlags output, CaptureSource& source, std::string& failureReason);
 
 	struct PendingCapture final
 	{

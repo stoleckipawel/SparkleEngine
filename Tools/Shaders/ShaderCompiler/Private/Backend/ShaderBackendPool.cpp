@@ -32,8 +32,7 @@ IShaderBackend& ShaderBackendPool::Acquire(std::string_view backendName, ShaderT
 	const std::string resolvedName(backend->GetBackendName());
 	if (!backend->GetCapabilities().SupportsTarget(target))
 	{
-		throw Diagnostics::Error(
-		    std::string{"Shader backend '"} + resolvedName + "' does not support target '" + GetShaderTargetName(target) + "'.");
+		throw Diagnostics::Error(std::string{"Shader backend '"} + resolvedName + "' does not support target '" + GetShaderTargetName(target) + "'.");
 	}
 
 	IShaderBackend& backendReference = *backend;

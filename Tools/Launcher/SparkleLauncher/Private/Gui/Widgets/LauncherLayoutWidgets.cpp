@@ -89,8 +89,7 @@ namespace SparkleLauncher
 
 	void ProportionalCardFrame::keyPressEvent(QKeyEvent* event)
 	{
-		if (m_activationButton != nullptr && event != nullptr
-		    && (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter || event->key() == Qt::Key_Space))
+		if (m_activationButton != nullptr && event != nullptr && (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter || event->key() == Qt::Key_Space))
 		{
 			m_activationButton->click();
 			event->accept();
@@ -132,8 +131,7 @@ namespace SparkleLauncher
 
 	int HomeHeroCardWidget::heightForWidth(int width) const
 	{
-		const int proportionalHeight =
-		    static_cast<int>(std::round(static_cast<double>(width) * LauncherUi::Hero::DesignHeight / LauncherUi::Hero::DesignWidth));
+		const int proportionalHeight = static_cast<int>(std::round(static_cast<double>(width) * LauncherUi::Hero::DesignHeight / LauncherUi::Hero::DesignWidth));
 		return std::max(proportionalHeight, LauncherUi::Hero::MinimumHeight);
 	}
 
@@ -209,12 +207,9 @@ namespace SparkleLauncher
 		const int top = static_cast<int>(std::round(sceneRect.top() + LauncherUi::Hero::CopyTop * scale));
 		const int bottom = static_cast<int>(std::round(LauncherUi::Hero::CopyBottom * scale));
 		const int desiredPaneWidth = static_cast<int>(std::round(LauncherUi::Hero::CopyWidth * scale));
-		const int maximumPaneWidth =
-		    std::max(300, static_cast<int>(std::round((LauncherUi::Hero::CopyDividerX - LauncherUi::Hero::CopyLeft - 54) * scale)));
+		const int maximumPaneWidth = std::max(300, static_cast<int>(std::round((LauncherUi::Hero::CopyDividerX - LauncherUi::Hero::CopyLeft - 54) * scale)));
 		const int paneWidth = std::clamp(desiredPaneWidth, 300, std::min(460, maximumPaneWidth));
-		const int paneHeight = std::max(
-		    140,
-		    static_cast<int>(std::round(sceneRect.height())) - static_cast<int>(std::round(LauncherUi::Hero::CopyTop * scale)) - bottom);
+		const int paneHeight = std::max(140, static_cast<int>(std::round(sceneRect.height())) - static_cast<int>(std::round(LauncherUi::Hero::CopyTop * scale)) - bottom);
 
 		if (QLayout* copyLayout = m_copyPane->layout())
 		{
@@ -243,18 +238,10 @@ namespace SparkleLauncher
 		{
 			return 1.0;
 		}
-		return std::min(
-		    static_cast<double>(width()) / LauncherUi::Hero::DesignWidth,
-		    static_cast<double>(height()) / LauncherUi::Hero::DesignHeight);
+		return std::min(static_cast<double>(width()) / LauncherUi::Hero::DesignWidth, static_cast<double>(height()) / LauncherUi::Hero::DesignHeight);
 	}
 
-	ResponsiveCardGridWidget::ResponsiveCardGridWidget(
-	    int minimumCardWidth,
-	    int maximumCardWidth,
-	    int maximumColumns,
-	    int horizontalSpacing,
-	    int verticalSpacing,
-	    QWidget* parent) :
+	ResponsiveCardGridWidget::ResponsiveCardGridWidget(int minimumCardWidth, int maximumCardWidth, int maximumColumns, int horizontalSpacing, int verticalSpacing, QWidget* parent) :
 	    QWidget(parent),
 	    m_minimumCardWidth(std::max(1, minimumCardWidth)),
 	    m_maximumCardWidth(std::max(m_minimumCardWidth, maximumCardWidth)),

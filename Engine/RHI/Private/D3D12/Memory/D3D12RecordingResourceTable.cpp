@@ -73,8 +73,7 @@ void D3D12RecordingResourceTable::Release(D3D12RecordingResourceUseToken use, Rh
 	ReleaseReference(*record, submissionToken);
 }
 
-std::shared_ptr<D3D12RecordingResourceTable::ReadView> D3D12RecordingResourceTable::BuildReadView(
-    std::span<D3D12GpuAllocationRecord* const> records)
+std::shared_ptr<D3D12RecordingResourceTable::ReadView> D3D12RecordingResourceTable::BuildReadView(std::span<D3D12GpuAllocationRecord* const> records)
 {
 	auto readView = std::make_shared<ReadView>();
 	readView->Resources.reserve(records.size());
@@ -87,17 +86,14 @@ std::shared_ptr<D3D12RecordingResourceTable::ReadView> D3D12RecordingResourceTab
 		}
 
 		RetainReference(*record);
-		readView->Resources.push_back(
-		    ResourceEntry{.ResourceValue = reinterpret_cast<std::uintptr_t>(record->Resource.Get()), .Record = record});
+		readView->Resources.push_back(ResourceEntry{.ResourceValue = reinterpret_cast<std::uintptr_t>(record->Resource.Get()), .Record = record});
 	}
 
 	std::ranges::sort(readView->Resources, {}, &ResourceEntry::ResourceValue);
 	return readView;
 }
 
-const D3D12RecordingResourceTable::ResourceEntry* D3D12RecordingResourceTable::FindResource(
-    const ReadView& readView,
-    RhiResourceHandle resource) noexcept
+const D3D12RecordingResourceTable::ResourceEntry* D3D12RecordingResourceTable::FindResource(const ReadView& readView, RhiResourceHandle resource) noexcept
 {
 	if (!resource)
 	{

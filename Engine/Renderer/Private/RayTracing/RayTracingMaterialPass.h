@@ -32,8 +32,8 @@ template <typename TInlineShader, typename TRayGenerationShader, typename TBuild
 			    std::vector{RayTracingPipelineComposition::Shader<RayTracingMaterialMiss>()},
 			    std::vector{
 			        RayTracingHitGroupComposition::Triangles<RayTracingMaterialClosestHit>("RayTracingMaterialOpaqueHitGroup"),
-			        RayTracingHitGroupComposition::Triangles<RayTracingMaterialClosestHit, RayTracingMaterialAnyHit>(
-			            "RayTracingMaterialAlphaTestedHitGroup")});
+			        RayTracingHitGroupComposition::Triangles<RayTracingMaterialClosestHit, RayTracingMaterialAnyHit>("RayTracingMaterialAlphaTestedHitGroup")});
+
 			auto& parameters = buildParameters.template operator()<TRayGenerationShader>();
 			builder.TraceRays<TRayGenerationShader>(label, composition, scene.GetShaderTablePlan(), parameters, pipelineDimensions);
 			return;

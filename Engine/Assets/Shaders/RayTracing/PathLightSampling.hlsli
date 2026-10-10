@@ -25,8 +25,7 @@ namespace PathLightSampling
 
 	uint CountAnalyticLights()
 	{
-		return SceneLighting.DirectionalLightCount + SceneLighting.PointLightCount + SceneLighting.SpotLightCount
-		    + SceneLighting.RectLightCount;
+		return SceneLighting.DirectionalLightCount + SceneLighting.PointLightCount + SceneLighting.SpotLightCount + SceneLighting.RectLightCount;
 	}
 
 	uint CountEmissiveTriangles(uint instanceId)
@@ -36,8 +35,8 @@ namespace PathLightSampling
 			return 0u;
 		}
 		const RayTracingHitInstance instance = RayTracingHitInstances[instanceId];
-		return (instance.Flags & RayTracingHitSurface::InstanceFlagValid) != 0u
-		        && (RayTracingHitMaterials[instance.MaterialSlot].Flags & RayTracingHitSurface::MaterialFlagEmissive) != 0u
+
+		return (instance.Flags & RayTracingHitSurface::InstanceFlagValid) != 0u && (RayTracingHitMaterials[instance.MaterialSlot].Flags & RayTracingHitSurface::MaterialFlagEmissive) != 0u
 		    ? instance.IndexCount / 3u
 		    : 0u;
 	}
@@ -130,8 +129,7 @@ namespace PathLightSampling
 	{
 		if (lightType == LightSampling::LightTypeDirectional)
 		{
-			return LightSampling::RadiometricDirectionalLightSample(-DirectionalLights[lightIndex].Direction,
-			                                                        DirectionalIrradiance(lightIndex));
+			return LightSampling::RadiometricDirectionalLightSample(-DirectionalLights[lightIndex].Direction, DirectionalIrradiance(lightIndex));
 		}
 		if (lightType == LightSampling::LightTypePoint)
 		{
@@ -140,12 +138,12 @@ namespace PathLightSampling
 		if (lightType == LightSampling::LightTypeSpot)
 		{
 			const SpotLightGpuData light = SpotLights[lightIndex];
-			LightSampling::DirectLightSample result =
-			    LightSampling::RadiometricPointLightSample(positionWorld, light.Position, SpotIntensity(lightIndex));
+			LightSampling::DirectLightSample result = LightSampling::RadiometricPointLightSample(positionWorld, light.Position, SpotIntensity(lightIndex));
 			const float coneCosine = dot(normalize(light.Direction), -result.DirectionWorld);
-			const float angular = light.InnerAngleCosine == light.OuterAngleCosine
-			    ? (coneCosine >= light.OuterAngleCosine ? 1.0f : 0.0f)
-			    : smoothstep(light.OuterAngleCosine, light.InnerAngleCosine, coneCosine);
+
+			const float angular = light.InnerAngleCosine == light.OuterAngleCosine ? (coneCosine >= light.OuterAngleCosine ? 1.0f : 0.0f)
+			                                                                       : smoothstep(light.OuterAngleCosine, light.InnerAngleCosine, coneCosine);
+
 			result.IncidentRadiance *= angular;
 			return result;
 		}
@@ -154,14 +152,8 @@ namespace PathLightSampling
 		const float3 normal = normalize(light.Direction);
 		const float3 tangent = normalize(light.Tangent - normal * dot(light.Tangent, normal));
 		const float3 bitangent = cross(normal, tangent);
-		const float3 samplePosition =
-		    light.Position + tangent * ((sample.x - 0.5f) * light.Width) + bitangent * ((sample.y - 0.5f) * light.Height);
-		LightSampling::DirectLightSample result = LightSampling::RadiometricAreaLightSample(positionWorld,
-		                                                                                    samplePosition,
-		                                                                                    normal,
-		                                                                                    RectRadiance(lightIndex),
-		                                                                                    rcp(light.Width * light.Height),
-		                                                                                    false);
+		const float3 samplePosition = light.Position + tangent * ((sample.x - 0.5f) * light.Width) + bitangent * ((sample.y - 0.5f) * light.Height);
+		LightSampling::DirectLightSample result = LightSampling::RadiometricAreaLightSample(positionWorld, samplePosition, normal, RectRadiance(lightIndex), rcp(light.Width * light.Height), false);
 		return result;
 	}
 
@@ -196,32 +188,26 @@ namespace PathLightSampling
 		const RayTracingEvaluatedTriangle sampledTriangle = EvaluateRayTracingTriangle(instanceId, primitiveIndex, barycentrics12);
 		const float3 positionObject = InterpolateRayTracingPosition(sampledTriangle);
 		const float3 samplePosition = RayEndpoints::TransformPosition(positionObject, emissiveTriangle.Mesh.WorldMatrix);
-		if (!PassesRayTracingMaterialAlpha(emissiveTriangle.Material,
-		                                   InterpolateRayTracingTexCoord0(sampledTriangle),
-		                                   InterpolateRayTracingColor(sampledTriangle)))
+		if (!PassesRayTracingMaterialAlpha(emissiveTriangle.Material, InterpolateRayTracingTexCoord0(sampledTriangle), InterpolateRayTracingColor(sampledTriangle)))
 		{
 			return (LightSampling::DirectLightSample)0;
 		}
 		float3 emittedRadiance = emissiveTriangle.Material.EmissiveColor;
-		if (MaterialTextureTableSampling::HasTexture(emissiveTriangle.Material.TextureFlags,
-		                                             MaterialTextureTableSampling::TextureSlotEmissive))
+		if (MaterialTextureTableSampling::HasTexture(emissiveTriangle.Material.TextureFlags, MaterialTextureTableSampling::TextureSlotEmissive))
 		{
-			emittedRadiance *= SampleRayTracingMaterialTexture(emissiveTriangle.Material,
-			                                                   MaterialTextureTableSampling::TextureSlotEmissive,
-			                                                   InterpolateRayTracingTexCoord0(sampledTriangle))
-			                       .rgb;
+			emittedRadiance *= SampleRayTracingMaterialTexture(emissiveTriangle.Material, MaterialTextureTableSampling::TextureSlotEmissive, InterpolateRayTracingTexCoord0(sampledTriangle)).rgb;
 		}
 		const bool twoSided = (emissiveTriangle.Instance.Flags & RayTracingHitSurface::InstanceFlagTwoSided) != 0u;
+
 		LightSampling::DirectLightSample result = LightSampling::RadiometricAreaLightSample(positionWorld,
 		                                                                                    samplePosition,
 		                                                                                    emissiveTriangle.Normal,
 		                                                                                    emittedRadiance,
 		                                                                                    rcp(emissiveTriangle.Area),
 		                                                                                    twoSided);
-		const float3 normalObject =
-		    cross(sampledTriangle.V1.Position - sampledTriangle.V0.Position, sampledTriangle.V2.Position - sampledTriangle.V0.Position);
-		const RayEndpoints::SurfaceEndpointError endpointError =
-		    RayEndpoints::BuildSurfaceEndpointError(sampledTriangle, emissiveTriangle.Mesh, positionObject, normalObject);
+
+		const float3 normalObject = cross(sampledTriangle.V1.Position - sampledTriangle.V0.Position, sampledTriangle.V2.Position - sampledTriangle.V0.Position);
+		const RayEndpoints::SurfaceEndpointError endpointError = RayEndpoints::BuildSurfaceEndpointError(sampledTriangle, emissiveTriangle.Mesh, positionObject, normalObject);
 		result.EmitterEndpointBaseOffset = endpointError.BaseOffset;
 		result.EmitterEndpointTraversalSensitivity = endpointError.TraversalSensitivity;
 		result.TargetInstanceId = instanceId;
@@ -237,12 +223,14 @@ namespace PathLightSampling
 		}
 		const EmissiveTriangle emissiveTriangle = LoadEmissiveTriangle(instanceId, primitiveIndex);
 		const bool twoSided = (emissiveTriangle.Instance.Flags & RayTracingHitSurface::InstanceFlagTwoSided) != 0u;
+
 		const LightSampling::DirectLightSample sample = LightSampling::RadiometricAreaLightSample(positionWorld,
 		                                                                                          hitPositionWorld,
 		                                                                                          emissiveTriangle.Normal,
 		                                                                                          emissiveTriangle.Material.EmissiveColor,
 		                                                                                          rcp(emissiveTriangle.Area),
 		                                                                                          twoSided);
+
 		return sample.PdfW;
 	}
 }

@@ -59,6 +59,7 @@ std::span<const std::string_view> EngineRenderingSettingsPersistence::GetPersist
 	    "r.RayTracing.Ptlas.PartitionUpdateMode",
 	    "r.RayTracing.Ptlas.MarkAllDynamicInPartition",
 	    "r.RayTracing.Ptlas.ModeChangeDistance"};
+
 	return persistedNames;
 }
 
@@ -133,6 +134,7 @@ void EngineRenderingSettingsPersistence::Write(const EngineRenderingSettingsStat
 	std::vector<std::string> sectionLines;
 	sectionLines.reserve(GetPersistedNames().size() + 1u);
 	sectionLines.emplace_back("[" + std::string(GetSectionName()) + "]");
+
 	const auto appendConfigValue = [&sectionLines]<typename TValue>(std::string_view key, TValue value)
 	{
 		std::string persistedValue;
@@ -150,6 +152,7 @@ void EngineRenderingSettingsPersistence::Write(const EngineRenderingSettingsStat
 		}
 		sectionLines.emplace_back(std::string(key) + "=" + persistedValue);
 	};
+
 	appendConfigValue("r.VSync", state.VSync);
 #if SPARKLE_WITH_EXTERNAL_CAPTURE
 	appendConfigValue("r.ExternalCapture.StartupProvider", state.StartupCaptureProvider);

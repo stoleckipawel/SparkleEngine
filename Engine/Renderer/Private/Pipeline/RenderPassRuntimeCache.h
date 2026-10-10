@@ -70,11 +70,9 @@ public:
 		return *holder->Runtime;
 	}
 
-	template <typename TVertexShader, typename TPixelShader>
-	void MaterializeGraphicsShaderRuntime(const GraphicsPipelineRequest& request) const noexcept
+	template <typename TVertexShader, typename TPixelShader> void MaterializeGraphicsShaderRuntime(const GraphicsPipelineRequest& request) const noexcept
 	{
-		GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>& holder =
-		    GetOrCreateGraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>();
+		GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>& holder = GetOrCreateGraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>();
 		try
 		{
 			holder.Materialize(*m_renderHardwareInterface, *m_activeGeneration, request);
@@ -85,8 +83,7 @@ public:
 		}
 	}
 
-	template <typename TVertexShader, typename TPixelShader>
-	RasterPassRuntime GetGraphicsShaderRuntime(const GraphicsPipelineRequest& request) const noexcept
+	template <typename TVertexShader, typename TPixelShader> RasterPassRuntime GetGraphicsShaderRuntime(const GraphicsPipelineRequest& request) const noexcept
 	{
 		using RuntimeType = GraphicsRuntimeTypeTag<TVertexShader, TPixelShader>;
 		const auto& holders = m_activeGeneration->RuntimeStorageByShaderType;
@@ -105,8 +102,7 @@ public:
 		return RasterPassRuntime{*bindingLayout, *pipeline};
 	}
 
-	template <typename TRayGenerationShader>
-	void MaterializeRayTracingRuntime(const RayTracingPipelineComposition& composition) const noexcept
+	template <typename TRayGenerationShader> void MaterializeRayTracingRuntime(const RayTracingPipelineComposition& composition) const noexcept
 	{
 		RayTracingRuntimeStorageHolder<TRayGenerationShader>& holder = GetOrCreateRayTracingRuntimeStorageHolder<TRayGenerationShader>();
 		if (holder.Find(composition) == nullptr)
@@ -122,8 +118,7 @@ public:
 		}
 	}
 
-	template <typename TRayGenerationShader>
-	RayTracingPassPipelineRuntime GetRayTracingRuntime(const RayTracingPipelineComposition& composition) const noexcept
+	template <typename TRayGenerationShader> RayTracingPassPipelineRuntime GetRayTracingRuntime(const RayTracingPipelineComposition& composition) const noexcept
 	{
 		using RuntimeType = RayTracingRuntimeTypeTag<TRayGenerationShader>;
 		const auto storage = m_activeGeneration->RuntimeStorageByShaderType.find(typeid(RuntimeType));
@@ -137,14 +132,10 @@ public:
 		{
 			HandleRuntimeCreationFailure("Ray-tracing composition lookup preceded exact materialization.");
 		}
-		return RayTracingPassPipelineRuntime{
-		    .BindingLayout = runtime->GetBindingLayout(),
-		    .Pipeline = runtime->GetPipeline(),
-		    .Generation = runtime->GetGeneration()};
+		return RayTracingPassPipelineRuntime{.BindingLayout = runtime->GetBindingLayout(), .Pipeline = runtime->GetPipeline(), .Generation = runtime->GetGeneration()};
 	}
 
-	template <typename TRayGenerationShader>
-	std::unique_ptr<RayTracingShaderTable> CreateRayTracingShaderTable(const RayTracingPipelineComposition& composition) const noexcept
+	template <typename TRayGenerationShader> std::unique_ptr<RayTracingShaderTable> CreateRayTracingShaderTable(const RayTracingPipelineComposition& composition) const noexcept
 	{
 		using RuntimeType = RayTracingRuntimeTypeTag<TRayGenerationShader>;
 		const auto storage = m_activeGeneration->RuntimeStorageByShaderType.find(typeid(RuntimeType));
@@ -168,9 +159,8 @@ public:
 		}
 	}
 
-	template <typename TRayGenerationShader> std::unique_ptr<RayTracingShaderTable> CreateRayTracingShaderTable(
-	    const RayTracingPipelineComposition& composition,
-	    const RayTracingShaderTablePlan& plan) const noexcept
+	template <typename TRayGenerationShader>
+	std::unique_ptr<RayTracingShaderTable> CreateRayTracingShaderTable(const RayTracingPipelineComposition& composition, const RayTracingShaderTablePlan& plan) const noexcept
 	{
 		using RuntimeType = RayTracingRuntimeTypeTag<TRayGenerationShader>;
 		const auto storage = m_activeGeneration->RuntimeStorageByShaderType.find(typeid(RuntimeType));
@@ -196,6 +186,7 @@ public:
 
 private:
 	struct ShaderRuntimeGeneration;
+
 	struct IRuntimeStorageHolder
 	{
 		virtual ~IRuntimeStorageHolder() noexcept;
@@ -204,9 +195,7 @@ private:
 		IRuntimeStorageHolder(IRuntimeStorageHolder&&) = delete;
 		IRuntimeStorageHolder& operator=(IRuntimeStorageHolder&&) = delete;
 
-		virtual std::unique_ptr<IRuntimeStorageHolder> CreateReplacement(
-		    RenderHardwareInterface& renderHardwareInterface,
-		    const ShaderRuntimeGeneration& generation) const = 0;
+		virtual std::unique_ptr<IRuntimeStorageHolder> CreateReplacement(RenderHardwareInterface& renderHardwareInterface, const ShaderRuntimeGeneration& generation) const = 0;
 
 	protected:
 		IRuntimeStorageHolder() noexcept = default;
@@ -218,19 +207,11 @@ private:
 		{
 			const ShaderRegistrationDesc& shader = GlobalShader<TShader>::GetRegistration();
 			const ShaderRef<TShader> shaderRef = ShaderRef<TShader>::Resolve(generation.Map, generation.Library, generation.Target);
-			RenderPassShaderRuntime::CreateComputeRuntime(
-			    renderHardwareInterface,
-			    shader,
-			    shaderRef,
-			    Storage,
-			    Pipeline,
-			    [](ComputePipelineDesc&) {});
+			RenderPassShaderRuntime::CreateComputeRuntime(renderHardwareInterface, shader, shaderRef, Storage, Pipeline, [](ComputePipelineDesc&) {});
 			Runtime.emplace(*Storage.BindingLayout, *Pipeline);
 		}
 
-		std::unique_ptr<IRuntimeStorageHolder> CreateReplacement(
-		    RenderHardwareInterface& renderHardwareInterface,
-		    const ShaderRuntimeGeneration& generation) const override
+		std::unique_ptr<IRuntimeStorageHolder> CreateReplacement(RenderHardwareInterface& renderHardwareInterface, const ShaderRuntimeGeneration& generation) const override
 		{
 			auto replacement = std::make_unique<RuntimeStorageHolder<TShader>>();
 			replacement->Create(renderHardwareInterface, generation);
@@ -253,23 +234,12 @@ private:
 			Generation = generation.Generation;
 			const ShaderRegistrationDesc& vertexShader = GlobalShader<TVertexShader>::GetRegistration();
 			const ShaderRegistrationDesc& pixelShader = GlobalShader<TPixelShader>::GetRegistration();
-			const ShaderRef<TVertexShader> vertexRef =
-			    ShaderRef<TVertexShader>::Resolve(generation.Map, generation.Library, generation.Target);
-			const ShaderRef<TPixelShader> pixelRef =
-			    ShaderRef<TPixelShader>::Resolve(generation.Map, generation.Library, generation.Target);
-			RenderPassShaderRuntime::CreateGraphicsRuntime(
-			    renderHardwareInterface,
-			    vertexShader,
-			    vertexRef,
-			    pixelShader,
-			    pixelRef,
-			    Storage);
+			const ShaderRef<TVertexShader> vertexRef = ShaderRef<TVertexShader>::Resolve(generation.Map, generation.Library, generation.Target);
+			const ShaderRef<TPixelShader> pixelRef = ShaderRef<TPixelShader>::Resolve(generation.Map, generation.Library, generation.Target);
+			RenderPassShaderRuntime::CreateGraphicsRuntime(renderHardwareInterface, vertexShader, vertexRef, pixelShader, pixelRef, Storage);
 		}
 
-		void Materialize(
-		    RenderHardwareInterface& renderHardwareInterface,
-		    const ShaderRuntimeGeneration& generation,
-		    const GraphicsPipelineRequest& request)
+		void Materialize(RenderHardwareInterface& renderHardwareInterface, const ShaderRuntimeGeneration& generation, const GraphicsPipelineRequest& request)
 		{
 			if (Storage.BindingLayout == nullptr)
 			{
@@ -291,9 +261,7 @@ private:
 			return pipeline != Pipelines.end() ? pipeline->second.get() : nullptr;
 		}
 
-		std::unique_ptr<IRuntimeStorageHolder> CreateReplacement(
-		    RenderHardwareInterface& renderHardwareInterface,
-		    const ShaderRuntimeGeneration& generation) const override
+		std::unique_ptr<IRuntimeStorageHolder> CreateReplacement(RenderHardwareInterface& renderHardwareInterface, const ShaderRuntimeGeneration& generation) const override
 		{
 			auto replacement = std::make_unique<GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>>();
 			replacement->Create(renderHardwareInterface, generation);
@@ -303,10 +271,7 @@ private:
 			{
 				requestedKeys.push_back(&entry.first);
 			}
-			std::ranges::sort(
-			    requestedKeys,
-			    [](const GraphicsPipelineKey* left, const GraphicsPipelineKey* right)
-			    { return GraphicsPipelineKeyHash{}(*left) < GraphicsPipelineKeyHash{}(*right); });
+			std::ranges::sort(requestedKeys, [](const GraphicsPipelineKey* left, const GraphicsPipelineKey* right) { return GraphicsPipelineKeyHash{}(*left) < GraphicsPipelineKeyHash{}(*right); });
 			for (const GraphicsPipelineKey* key : requestedKeys)
 			{
 				replacement->MaterializePipeline(renderHardwareInterface, key->Request);
@@ -340,8 +305,7 @@ private:
 			std::wstring debugName = Strings::ToWide(GlobalShader<TVertexShader>::GetRegistration().ShaderName);
 			debugName += L"_GraphicsKey_";
 			debugName += std::to_wstring(keyHash);
-			const GraphicsPipelineDesc desc =
-			    BuildGraphicsPipelineDesc(request, *Storage.BindingLayout, Storage.Shaders[0], Storage.Shaders[1], debugName.c_str());
+			const GraphicsPipelineDesc desc = BuildGraphicsPipelineDesc(request, *Storage.BindingLayout, Storage.Shaders[0], Storage.Shaders[1], debugName.c_str());
 			Pipelines.emplace(key, PipelineRuntimeLibrary::CreateGraphicsPipeline(renderHardwareInterface, desc));
 		}
 
@@ -362,10 +326,7 @@ private:
 			std::unique_ptr<RayTracingPipelineRuntime> Runtime;
 		};
 
-		void Materialize(
-		    RenderHardwareInterface& renderHardwareInterface,
-		    const ShaderRuntimeGeneration& generation,
-		    const RayTracingPipelineComposition& composition)
+		void Materialize(RenderHardwareInterface& renderHardwareInterface, const ShaderRuntimeGeneration& generation, const RayTracingPipelineComposition& composition)
 		{
 			if (composition.GetRayGeneration() != GlobalShader<TRayGenerationShader>::GetRegistration().TypeId)
 			{
@@ -374,13 +335,7 @@ private:
 			Entries.push_back(
 			    Entry{
 			        .Definition = composition,
-			        .Runtime = RayTracingPipelineRuntime::Create(
-			            renderHardwareInterface,
-			            generation.Map,
-			            generation.Library,
-			            generation.Target,
-			            generation.Generation,
-			            composition)});
+			        .Runtime = RayTracingPipelineRuntime::Create(renderHardwareInterface, generation.Map, generation.Library, generation.Target, generation.Generation, composition)});
 		}
 
 		const RayTracingPipelineRuntime* Find(const RayTracingPipelineComposition& composition) const noexcept
@@ -389,9 +344,7 @@ private:
 			return entry != Entries.end() ? entry->Runtime.get() : nullptr;
 		}
 
-		std::unique_ptr<IRuntimeStorageHolder> CreateReplacement(
-		    RenderHardwareInterface& renderHardwareInterface,
-		    const ShaderRuntimeGeneration& generation) const override
+		std::unique_ptr<IRuntimeStorageHolder> CreateReplacement(RenderHardwareInterface& renderHardwareInterface, const ShaderRuntimeGeneration& generation) const override
 		{
 			auto replacement = std::make_unique<RayTracingRuntimeStorageHolder<TRayGenerationShader>>();
 			for (const Entry& entry : Entries)
@@ -441,24 +394,21 @@ private:
 		return runtime != holders.end() ? static_cast<const RuntimeStorageHolder<TShader>*>(runtime->second.get()) : nullptr;
 	}
 
-	template <typename TVertexShader, typename TPixelShader>
-	GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>& GetOrCreateGraphicsRuntimeStorageHolder() const noexcept
+	template <typename TVertexShader, typename TPixelShader> GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>& GetOrCreateGraphicsRuntimeStorageHolder() const noexcept
 	{
 		using RuntimeType = GraphicsRuntimeTypeTag<TVertexShader, TPixelShader>;
 		auto& holders = m_activeGeneration->RuntimeStorageByShaderType;
 		auto runtime = holders.find(typeid(RuntimeType));
 		if (runtime == holders.end())
 		{
-			runtime =
-			    holders.emplace(typeid(RuntimeType), std::make_unique<GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>>()).first;
+			runtime = holders.emplace(typeid(RuntimeType), std::make_unique<GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>>()).first;
 		}
 		auto* const holder = static_cast<GraphicsRuntimeStorageHolder<TVertexShader, TPixelShader>*>(runtime->second.get());
 		assert(holder != nullptr);
 		return *holder;
 	}
 
-	template <typename TRayGenerationShader>
-	RayTracingRuntimeStorageHolder<TRayGenerationShader>& GetOrCreateRayTracingRuntimeStorageHolder() const noexcept
+	template <typename TRayGenerationShader> RayTracingRuntimeStorageHolder<TRayGenerationShader>& GetOrCreateRayTracingRuntimeStorageHolder() const noexcept
 	{
 		using RuntimeType = RayTracingRuntimeTypeTag<TRayGenerationShader>;
 		auto& holders = m_activeGeneration->RuntimeStorageByShaderType;

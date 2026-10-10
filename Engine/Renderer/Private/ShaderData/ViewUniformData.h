@@ -12,6 +12,7 @@ struct alignas(256) ViewUniformData
 	DirectX::XMFLOAT2 ViewportSizeInv = {1.0f, 1.0f};
 	std::uint32_t RenderViewModeIndex = 0u;
 };
+
 static_assert(std::is_standard_layout_v<ViewUniformData>);
 static_assert(std::is_trivially_copyable_v<ViewUniformData>);
 static_assert(alignof(ViewUniformData) >= 256);

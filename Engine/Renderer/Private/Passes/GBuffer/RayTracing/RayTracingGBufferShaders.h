@@ -44,6 +44,7 @@ public:
 	END_SHADER_PARAMETER_STRUCT()
 
 	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
+
 	static constexpr RayTracingShaderMetadata kRayTracingMetadata = kRayTracingMaterialShaderMetadata;
 };
 
@@ -51,5 +52,6 @@ class RayTracingGBufferInlineCS final : public GlobalShader<RayTracingGBufferInl
 {
 public:
 	using Parameters = RayTracingGBufferRGS::Parameters;
+
 	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::InlineRayQuery;
 };

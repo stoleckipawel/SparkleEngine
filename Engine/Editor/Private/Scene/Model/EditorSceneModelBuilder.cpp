@@ -8,13 +8,8 @@ class EditorSceneModelPatching final
 public:
 	template <typename T> static void PatchEntity(std::vector<T>& destination, std::span<const T> source, EntityId entity)
 	{
-		auto destinationIterator = std::lower_bound(
-		    destination.begin(),
-		    destination.end(),
-		    entity,
-		    [](const T& value, EntityId key) { return value.Entity < key; });
-		const auto sourceIterator =
-		    std::lower_bound(source.begin(), source.end(), entity, [](const T& value, EntityId key) { return value.Entity < key; });
+		auto destinationIterator = std::lower_bound(destination.begin(), destination.end(), entity, [](const T& value, EntityId key) { return value.Entity < key; });
+		const auto sourceIterator = std::lower_bound(source.begin(), source.end(), entity, [](const T& value, EntityId key) { return value.Entity < key; });
 		if (sourceIterator != source.end() && sourceIterator->Entity == entity)
 		{
 			if (destinationIterator != destination.end() && destinationIterator->Entity == entity)
@@ -43,10 +38,7 @@ std::shared_ptr<EditorSceneModel> EditorSceneModelBuilder::BuildFull(const World
 	return model;
 }
 
-std::shared_ptr<EditorSceneModel> EditorSceneModelBuilder::BuildIncremental(
-    const WorldReadView& view,
-    const WorldChangeBatch& changes,
-    std::uint64_t worldGeneration)
+std::shared_ptr<EditorSceneModel> EditorSceneModelBuilder::BuildIncremental(const WorldReadView& view, const WorldChangeBatch& changes, std::uint64_t worldGeneration)
 {
 	auto model = std::make_shared<EditorSceneModel>(*m_current);
 	model->m_modelGeneration = m_nextModelGeneration++;
@@ -86,8 +78,7 @@ std::shared_ptr<const EditorSceneModel> EditorSceneModelBuilder::Update()
 	WorldChangeBatch changes;
 	if (m_source.ReadChanges)
 		changes = m_source.ReadChanges(m_cursor);
-	const bool full =
-	    !m_current || m_current->GetWorldGeneration() != worldGeneration || changes.GetStatus() == WorldChangeReadStatus::ResyncRequired;
+	const bool full = !m_current || m_current->GetWorldGeneration() != worldGeneration || changes.GetStatus() == WorldChangeReadStatus::ResyncRequired;
 	if (!full && changes.GetStatus() == WorldChangeReadStatus::UpToDate && m_current->GetWorldSequence() == view.GetSequence())
 		return m_current;
 	m_current = full ? BuildFull(view, worldGeneration) : BuildIncremental(view, changes, worldGeneration);

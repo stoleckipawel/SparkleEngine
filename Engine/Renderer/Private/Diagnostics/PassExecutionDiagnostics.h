@@ -10,11 +10,7 @@
 class PassExecutionDiagnostics final
 {
 public:
-	PassExecutionDiagnostics(
-	    FrameExecutionDiagnostics& frameDiagnostics,
-	    RenderCommandContext& commands,
-	    std::string_view passScopeLabel,
-	    EFrameGraphPassKind passKind) noexcept;
+	PassExecutionDiagnostics(FrameExecutionDiagnostics& frameDiagnostics, RenderCommandContext& commands, std::string_view passScopeLabel, EFrameGraphPassKind passKind) noexcept;
 
 	ScopedGpuScope BeginPassGpuScope() noexcept;
 	ScopedGpuScope BeginGpuScope(std::string_view label) noexcept;

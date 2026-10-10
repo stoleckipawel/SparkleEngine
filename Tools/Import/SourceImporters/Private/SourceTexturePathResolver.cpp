@@ -7,12 +7,9 @@
 
 #include <format>
 
-std::filesystem::path SourceTexturePathResolver::ResolveExistingFile(
-    const std::filesystem::path& sourceDirectory,
-    std::string_view authoredPath)
+std::filesystem::path SourceTexturePathResolver::ResolveExistingFile(const std::filesystem::path& sourceDirectory, std::string_view authoredPath)
 {
-	const std::optional<std::filesystem::path> resolvedPath =
-	    Paths::ResolveRelativePath(sourceDirectory, std::filesystem::path(authoredPath));
+	const std::optional<std::filesystem::path> resolvedPath = Paths::ResolveRelativePath(sourceDirectory, std::filesystem::path(authoredPath));
 	if (!resolvedPath)
 	{
 		throw Diagnostics::Error(std::format("Invalid texture path '{}'.", authoredPath));

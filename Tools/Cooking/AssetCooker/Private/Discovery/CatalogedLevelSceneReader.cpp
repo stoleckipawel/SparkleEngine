@@ -5,10 +5,7 @@
 #include <fstream>
 #include <utility>
 
-bool CatalogedLevelSceneReader::AppendSceneIds(
-    const std::filesystem::path& levelPath,
-    std::vector<std::string>& outSceneIds,
-    std::string& outErrorMessage)
+bool CatalogedLevelSceneReader::AppendSceneIds(const std::filesystem::path& levelPath, std::vector<std::string>& outSceneIds, std::string& outErrorMessage)
 {
 	std::ifstream input(levelPath);
 	if (!input.is_open())

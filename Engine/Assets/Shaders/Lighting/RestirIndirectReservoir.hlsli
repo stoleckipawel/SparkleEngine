@@ -43,10 +43,7 @@ namespace RestirIndirectReservoir
 
 	bool AreSurfacesCompatible(Surface surface, float4 packedSurface)
 	{
-		return RestirReservoirCommon::AreSurfacesCompatible(surface.Valid,
-		                                                    surface.GBuffer.NormalWorld,
-		                                                    surface.ViewDistance,
-		                                                    packedSurface);
+		return RestirReservoirCommon::AreSurfacesCompatible(surface.Valid, surface.GBuffer.NormalWorld, surface.ViewDistance, packedSurface);
 	}
 
 	Reservoir EmptyReservoir()
@@ -62,11 +59,9 @@ namespace RestirIndirectReservoir
 
 	float4 PackSample(Reservoir reservoir)
 	{
-		return IsValid(reservoir) ? float4(float(reservoir.Selected.RandomPixel.x),
-		                                   float(reservoir.Selected.RandomPixel.y),
-		                                   float(reservoir.Selected.SampleIndex),
-		                                   float(reservoir.Selected.RandomFrameIndex))
-		                          : 0.0f.xxxx;
+		return IsValid(reservoir)
+		    ? float4(float(reservoir.Selected.RandomPixel.x), float(reservoir.Selected.RandomPixel.y), float(reservoir.Selected.SampleIndex), float(reservoir.Selected.RandomFrameIndex))
+		    : 0.0f.xxxx;
 	}
 
 	float4 PackWeight(Reservoir reservoir)
@@ -136,13 +131,7 @@ namespace RestirIndirectReservoir
 		return selected;
 	}
 
-	bool CombineReservoir(inout Reservoir reservoir,
-	                      Reservoir candidateReservoir,
-	                      Surface surface,
-	                      Texture2D skyTexture,
-	                      SamplerState skySampler,
-	                      float maxM,
-	                      float random)
+	bool CombineReservoir(inout Reservoir reservoir, Reservoir candidateReservoir, Surface surface, Texture2D skyTexture, SamplerState skySampler, float maxM, float random)
 	{
 		if (!surface.Valid || candidateReservoir.M <= 0.0f)
 		{
@@ -161,8 +150,7 @@ namespace RestirIndirectReservoir
 		{
 			return false;
 		}
-		const float sampleWeight =
-		    candidateReservoir.WeightSum * (acceptedM / candidateM) * target / max(candidateReservoir.Target, MinTarget);
+		const float sampleWeight = candidateReservoir.WeightSum * (acceptedM / candidateM) * target / max(candidateReservoir.Target, MinTarget);
 		const float newWeightSum = reservoir.WeightSum + sampleWeight;
 		const bool selected = random * newWeightSum <= sampleWeight;
 		reservoir.WeightSum = newWeightSum;

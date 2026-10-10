@@ -20,9 +20,7 @@ EngineExposureMode ResolvedViewportDisplaySettings::ResolveMode(EngineExposureMo
 	}
 }
 
-EngineExposureMeteringMethod ResolvedViewportDisplaySettings::ResolveMeteringMethod(
-    EngineExposureMeteringMethod requested,
-    EngineExposureMeteringMethod fallback) noexcept
+EngineExposureMeteringMethod ResolvedViewportDisplaySettings::ResolveMeteringMethod(EngineExposureMeteringMethod requested, EngineExposureMeteringMethod fallback) noexcept
 {
 	switch (requested)
 	{
@@ -47,6 +45,7 @@ ResolvedViewportDisplaySettings ResolvedViewportDisplaySettings::Resolve(const V
 	    .ExposureMax = CVarExposureMax.Get(),
 	    .ExposureAdaptationSpeedUp = CVarExposureAdaptationSpeedUp.Get(),
 	    .ExposureAdaptationSpeedDown = CVarExposureAdaptationSpeedDown.Get()};
+
 	if (overrides.OverrideMode)
 	{
 		resolved.ExposureMode = ResolveMode(overrides.Mode, resolved.ExposureMode);
@@ -110,10 +109,12 @@ ResolvedViewportDisplaySettings ResolvedViewportDisplaySettings::Resolve(const V
 
 	constexpr EngineRenderingSettingsState defaults;
 	constexpr float maximumExposureMultiplier = 65536.0f;
+
 	const auto finiteOrDefault = [](float value, float fallback)
 	{
 		return std::isfinite(value) ? value : fallback;
 	};
+
 	resolved.ManualExposure = finiteOrDefault(resolved.ManualExposure, defaults.ManualExposure);
 	resolved.ExposureCompensation = finiteOrDefault(resolved.ExposureCompensation, defaults.ExposureCompensation);
 	resolved.ExposureTargetLuminance = finiteOrDefault(resolved.ExposureTargetLuminance, defaults.ExposureTargetLuminance);

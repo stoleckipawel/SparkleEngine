@@ -18,9 +18,5 @@ public:
 		LoadedTextureData Texture;
 	};
 
-	static TaskExecution Launch(
-	    TaskExecutor& taskExecutor,
-	    TaskScope& taskScope,
-	    const std::filesystem::path& path,
-	    const std::shared_ptr<Payload>& payload);
+	static TaskExecution Launch(TaskExecutor& taskExecutor, TaskScope& taskScope, const std::filesystem::path& path, const std::shared_ptr<Payload>& payload);
 };

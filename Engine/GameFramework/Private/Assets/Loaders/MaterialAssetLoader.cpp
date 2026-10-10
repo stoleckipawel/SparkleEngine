@@ -23,8 +23,7 @@ namespace Assets
 		}
 
 		materialAsset.name = reader.ReadString(materialAsset.header.nameByteCount);
-		const std::vector<CookedTextureReferenceRecord> textureReferenceRecords =
-		    reader.ReadArray<CookedTextureReferenceRecord>(materialAsset.header.textureReferenceCount);
+		const std::vector<CookedTextureReferenceRecord> textureReferenceRecords = reader.ReadArray<CookedTextureReferenceRecord>(materialAsset.header.textureReferenceCount);
 
 		materialAsset.textureReferences.reserve(textureReferenceRecords.size());
 		for (const CookedTextureReferenceRecord& textureReferenceRecord : textureReferenceRecords)
@@ -38,10 +37,7 @@ namespace Assets
 
 		if (reader.GetRemainingByteCount() != 0)
 		{
-			throw diagnostics.MakeError(
-			    "payload",
-			    "no trailing bytes after declared material records",
-			    "Cooked material asset contains unexpected trailing bytes");
+			throw diagnostics.MakeError("payload", "no trailing bytes after declared material records", "Cooked material asset contains unexpected trailing bytes");
 		}
 
 		return materialAsset;

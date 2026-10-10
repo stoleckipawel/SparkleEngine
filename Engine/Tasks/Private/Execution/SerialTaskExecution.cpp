@@ -47,11 +47,7 @@ private:
 	bool m_cancellationObserved = false;
 };
 
-SerialTaskExecution::RunState::RunState(
-    const TaskGraphStorage& graph,
-    TaskExecutionContext& context,
-    std::uint64_t generation,
-    std::stop_token cancellation) :
+SerialTaskExecution::RunState::RunState(const TaskGraphStorage& graph, TaskExecutionContext& context, std::uint64_t generation, std::stop_token cancellation) :
     m_graph(graph),
     m_context(context),
     m_generation(generation),
@@ -131,9 +127,9 @@ void SerialTaskExecution::RunState::ExecuteTask(std::uint32_t index)
 	const bool blocked = task.BlockedByPrerequisite || task.BlockedByParent || m_cancellation.stop_requested();
 	TaskExecutionContext taskContext = m_context;
 	TaskExecutionContextBinding::Bind(taskContext, m_generation, node.Desc.Lane, m_cancellation);
-	TaskResult bodyResult = blocked && node.Desc.CompletionPolicy == TaskCompletionPolicy::Normal
-	    ? TaskResult::Cancelled("A prerequisite or nested parent did not succeed.")
-	    : TaskFunctionInvoker::Invoke(node, taskContext);
+
+	TaskResult bodyResult = blocked && node.Desc.CompletionPolicy == TaskCompletionPolicy::Normal ? TaskResult::Cancelled("A prerequisite or nested parent did not succeed.")
+	                                                                                              : TaskFunctionInvoker::Invoke(node, taskContext);
 
 	TaskProfiler::End(node.Desc, m_generation, index, 0, bodyResult, taskStart);
 
@@ -221,11 +217,7 @@ void SerialTaskExecution::RunState::PublishFinalStatus()
 	}
 }
 
-TaskExecutionCompletion SerialTaskExecution::Execute(
-    const TaskGraphStorage& graph,
-    TaskExecutionContext& context,
-    std::uint64_t generation,
-    std::stop_token cancellation)
+TaskExecutionCompletion SerialTaskExecution::Execute(const TaskGraphStorage& graph, TaskExecutionContext& context, std::uint64_t generation, std::stop_token cancellation)
 {
 	return RunState(graph, context, generation, std::move(cancellation)).Execute();
 }

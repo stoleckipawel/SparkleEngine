@@ -17,6 +17,7 @@
 #endif
 
 static constexpr std::array<std::string_view, 1> kSlangSourceExtensions = {{".slang"}};
+
 static constexpr std::array<ShaderTarget, 11> kSlangCodegenTargets = {{
     ShaderTarget::DxilSm60,
     ShaderTarget::DxilSm61,
@@ -30,7 +31,9 @@ static constexpr std::array<ShaderTarget, 11> kSlangCodegenTargets = {{
     ShaderTarget::SpirV15,
     ShaderTarget::SpirV16,
 }};
+
 static constexpr std::array<std::string_view, 2> kSlangBinaryFormats = {{"Dxil", "SpirV"}};
+
 static constexpr std::array<std::string_view, 3> kSlangDependencyLocations = {{
     "include=" SPARKLE_SHADER_COMPILER_SLANG_INCLUDE_DIR,
     "importLibrary=" SPARKLE_SHADER_COMPILER_SLANG_IMPORT_LIBRARY,
@@ -57,8 +60,7 @@ ShaderBackendRegistration GetSlangBackendRegistration() noexcept
 	            .SourceExtensions = std::span<const std::string_view>(kSlangSourceExtensions.data(), kSlangSourceExtensions.size()),
 	            .CodegenTargets = std::span<const ShaderTarget>(kSlangCodegenTargets.data(), kSlangCodegenTargets.size()),
 	            .BinaryFormats = std::span<const std::string_view>(kSlangBinaryFormats.data(), kSlangBinaryFormats.size()),
-	            .DependencyLocations =
-	                std::span<const std::string_view>(kSlangDependencyLocations.data(), kSlangDependencyLocations.size()),
+	            .DependencyLocations = std::span<const std::string_view>(kSlangDependencyLocations.data(), kSlangDependencyLocations.size()),
 	            .Capabilities = SlangShaderBackend::GetStaticCapabilities(),
 	            .QueryVersion = &SlangShaderBackend::QueryBackendVersion,
 	            .QueryAvailability = &QueryBackendAvailability,

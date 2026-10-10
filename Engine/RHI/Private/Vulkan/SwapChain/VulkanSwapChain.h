@@ -15,11 +15,7 @@ class Window;
 class VulkanSwapChain final
 {
 public:
-	VulkanSwapChain(
-	    VulkanRhi& rhi,
-	    Window& window,
-	    PixelFormat backBufferFormat,
-	    const RhiPresentationConfiguration& presentationConfiguration);
+	VulkanSwapChain(VulkanRhi& rhi, Window& window, PixelFormat backBufferFormat, const RhiPresentationConfiguration& presentationConfiguration);
 	~VulkanSwapChain() noexcept;
 
 	VulkanSwapChain(const VulkanSwapChain&) = delete;
@@ -41,6 +37,7 @@ public:
 	VkSemaphore GetCurrentRenderFinishedSemaphore() const noexcept;
 	VkImage GetBackBufferImage(std::uint32_t index) const noexcept;
 	VkImageView GetBackBufferImageView(std::uint32_t index) const noexcept;
+
 	std::uint32_t GetBackBufferCount() const noexcept { return static_cast<std::uint32_t>(m_backBuffers.size()); }
 
 	std::uint32_t GetMaximumFramesInFlight() const noexcept { return m_maximumFramesInFlight; }
@@ -49,6 +46,7 @@ public:
 
 	RhiViewport GetDefaultViewport() const noexcept;
 	RhiRect GetDefaultScissorRect() const noexcept;
+
 	PixelFormat GetBackBufferFormat() const noexcept { return m_backBufferFormat; }
 
 	VkFormat GetNativeBackBufferFormat() const noexcept { return m_surfaceFormat.format; }

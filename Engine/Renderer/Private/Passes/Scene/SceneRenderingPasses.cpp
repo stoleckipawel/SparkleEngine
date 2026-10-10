@@ -20,8 +20,7 @@
 std::uint64_t GetSceneRenderingGraphRebuildKey(RenderViewMode viewMode) noexcept
 {
 	constexpr std::uint32_t viewModeBitOffset = 8u;
-	const std::uint64_t realTimePathTracerKey =
-	    viewMode == RenderViewMode::ReferencePathTracer ? 0u : GetRealTimePathTracerGraphRebuildKey();
+	const std::uint64_t realTimePathTracerKey = viewMode == RenderViewMode::ReferencePathTracer ? 0u : GetRealTimePathTracerGraphRebuildKey();
 	return (static_cast<std::uint64_t>(viewMode) << viewModeBitOffset) | realTimePathTracerKey;
 }
 

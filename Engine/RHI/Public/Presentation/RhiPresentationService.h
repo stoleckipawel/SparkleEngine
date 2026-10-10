@@ -10,6 +10,7 @@ class SPARKLE_RHI_API RhiPresentationService
 {
 public:
 	virtual ~RhiPresentationService() noexcept = default;
+
 	RhiPresentationService(const RhiPresentationService&) = delete;
 	RhiPresentationService& operator=(const RhiPresentationService&) = delete;
 	RhiPresentationService(RhiPresentationService&&) = delete;

@@ -23,8 +23,5 @@ private:
 	static CookedShaderResourceDimension MapImageDim(SpvDim dim, std::uint32_t arrayed, std::uint32_t ms);
 	static CookedShaderScalarType MapInputFormat(SpvReflectFormat format, std::uint8_t& outComponentCount);
 	static CookedShaderScalarType MapNumericScalar(const SpvReflectNumericTraits& traits, bool isSigned);
-	static void FlattenBlockMembers(
-	    const SpvReflectBlockVariable& block,
-	    std::uint32_t parentAbsoluteOffset,
-	    std::vector<ShaderReflectionConstantBufferMember>& outMembers);
+	static void FlattenBlockMembers(const SpvReflectBlockVariable& block, std::uint32_t parentAbsoluteOffset, std::vector<ShaderReflectionConstantBufferMember>& outMembers);
 };

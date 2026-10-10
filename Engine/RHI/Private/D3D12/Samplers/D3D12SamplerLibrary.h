@@ -61,17 +61,16 @@ public:
 	D3D12SamplerLibrary& operator=(D3D12SamplerLibrary&&) = delete;
 
 	bool IsInitialized() const noexcept { return m_bInitialized; }
+
 	RhiDescriptorTableHandle GetTableHandle() const noexcept { return m_tableHandle; }
+
 	static constexpr uint32_t GetSamplerCount() noexcept { return static_cast<uint32_t>(Slot::Count); }
+
 	static bool TryGetSlot(const RhiSamplerDesc& samplerDesc, Slot& outSlot) noexcept;
 
 private:
 	void CreateSampler(Slot slot, const RhiSamplerDesc& desc);
-	static RhiSamplerDesc MakeSamplerDesc(
-	    RhiSamplerMinMagFilter minMagFilter,
-	    RhiSamplerMipFilter mipFilter,
-	    RhiSamplerAddressMode addressMode,
-	    RhiSamplerAnisotropy maxAnisotropy) noexcept;
+	static RhiSamplerDesc MakeSamplerDesc(RhiSamplerMinMagFilter minMagFilter, RhiSamplerMipFilter mipFilter, RhiSamplerAddressMode addressMode, RhiSamplerAnisotropy maxAnisotropy) noexcept;
 	static bool TryGetAddressOffset(RhiSamplerAddressMode addressMode, std::uint32_t& outOffset) noexcept;
 	static bool TryGetUniformAddressMode(const RhiSamplerDesc& samplerDesc, RhiSamplerAddressMode& outAddressMode) noexcept;
 	static bool TryGetPointSlot(RhiSamplerMipFilter mipFilter, RhiSamplerAddressMode addressMode, Slot& outSlot) noexcept;

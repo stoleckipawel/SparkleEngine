@@ -11,6 +11,7 @@ namespace ECS
 	{
 	public:
 		StructureFrozenEpoch() noexcept = default;
+
 		~StructureFrozenEpoch();
 
 		StructureFrozenEpoch(const StructureFrozenEpoch&) = delete;

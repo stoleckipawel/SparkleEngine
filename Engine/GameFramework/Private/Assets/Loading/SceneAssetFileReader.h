@@ -3,6 +3,7 @@
 #include "Level/LevelDesc.h"
 
 #include <filesystem>
+
 namespace Assets
 {
 	struct LoadedSceneManifest;
@@ -11,10 +12,6 @@ namespace Assets
 	class SceneAssetFileReader final
 	{
 	public:
-		static void Read(
-		    const SceneAssetId& sceneAssetId,
-		    const std::filesystem::path& manifestRelativePath,
-		    LoadedSceneManifest& manifest,
-		    CookedAssetFileSet& files);
+		static void Read(const SceneAssetId& sceneAssetId, const std::filesystem::path& manifestRelativePath, LoadedSceneManifest& manifest, CookedAssetFileSet& files);
 	};
 }

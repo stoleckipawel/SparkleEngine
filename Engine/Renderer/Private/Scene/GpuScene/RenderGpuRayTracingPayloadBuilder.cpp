@@ -30,9 +30,7 @@ struct RenderGpuRayTracingPayloadBuilder::BuildState final
 	RenderGpuMeshHitDataOffsets ResolveMeshOffsets(const GpuMesh& mesh, RenderGpuRayTracingPayloads& payloads);
 };
 
-RenderGpuMeshHitDataOffsets RenderGpuRayTracingPayloadBuilder::BuildState::ResolveMeshOffsets(
-    const GpuMesh& mesh,
-    RenderGpuRayTracingPayloads& payloads)
+RenderGpuMeshHitDataOffsets RenderGpuRayTracingPayloadBuilder::BuildState::ResolveMeshOffsets(const GpuMesh& mesh, RenderGpuRayTracingPayloads& payloads)
 {
 	if (const auto existing = MeshOffsets.find(&mesh); existing != MeshOffsets.end())
 	{
@@ -44,19 +42,12 @@ RenderGpuMeshHitDataOffsets RenderGpuRayTracingPayloadBuilder::BuildState::Resol
 	const std::span<const VertexSkinInfluence> skinInfluences = mesh.GetSkinInfluences();
 	const std::span<const MorphTargetDeltaData> morphTargetDeltas = mesh.GetMorphTargetDeltas();
 	constexpr std::size_t maximumPayloadElementCount = (std::numeric_limits<std::uint32_t>::max)();
-	if (!mesh.HasRayTracingHitData() || meshVertices.empty() || meshIndices.size() < 3u || meshIndices.size() % 3u != 0u
-	    || (mesh.HasSkinInfluences() && skinInfluences.size() != meshVertices.size())
-	    || payloads.Vertices.size() > maximumPayloadElementCount || payloads.Indices.size() > maximumPayloadElementCount
-	    || payloads.MorphTargetDeltas.size() > maximumPayloadElementCount
-	    || meshVertices.size() > maximumPayloadElementCount - payloads.Vertices.size()
-	    || meshIndices.size() > maximumPayloadElementCount - payloads.Indices.size()
+	if (!mesh.HasRayTracingHitData() || meshVertices.empty() || meshIndices.size() < 3u || meshIndices.size() % 3u != 0u || (mesh.HasSkinInfluences() && skinInfluences.size() != meshVertices.size())
+	    || payloads.Vertices.size() > maximumPayloadElementCount || payloads.Indices.size() > maximumPayloadElementCount || payloads.MorphTargetDeltas.size() > maximumPayloadElementCount
+	    || meshVertices.size() > maximumPayloadElementCount - payloads.Vertices.size() || meshIndices.size() > maximumPayloadElementCount - payloads.Indices.size()
 	    || morphTargetDeltas.size() > maximumPayloadElementCount - payloads.MorphTargetDeltas.size())
 	{
-		Diagnostics::Fatal(
-		    g_renderGpuRayTracingPayloadBuilderLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Ray-tracing work references invalid mesh hit data.");
+		Diagnostics::Fatal(g_renderGpuRayTracingPayloadBuilderLogger, __FILE__, __LINE__, "Ray-tracing work references invalid mesh hit data.");
 	}
 
 	const RenderGpuMeshHitDataOffsets offsets{
@@ -65,6 +56,7 @@ RenderGpuMeshHitDataOffsets RenderGpuRayTracingPayloadBuilder::BuildState::Resol
 	    .FirstMorphTargetDelta = static_cast<std::uint32_t>(payloads.MorphTargetDeltas.size()),
 	    .VertexCount = static_cast<std::uint32_t>(meshVertices.size()),
 	    .IndexCount = static_cast<std::uint32_t>(meshIndices.size())};
+
 	payloads.Vertices.insert(payloads.Vertices.end(), meshVertices.begin(), meshVertices.end());
 	if (mesh.HasSkinInfluences())
 	{
@@ -113,14 +105,12 @@ void RenderGpuRayTracingPayloadBuilder::AppendMaterials(const PreparedRenderScen
 		            material.materialTextureIndices[MaterialTextureSlots::SubsurfaceColor],
 		            material.materialTextureIndices[MaterialTextureSlots::SubsurfaceStrength]},
 		    .TextureMappings = material.materialTextureMappings};
+
 		payloads.Materials.push_back(rayTracingMaterial);
 	}
 }
 
-void RenderGpuRayTracingPayloadBuilder::PrepareInstances(
-    const PreparedRenderScene& preparedScene,
-    RenderGpuRayTracingPayloads& payloads,
-    BuildState& state)
+void RenderGpuRayTracingPayloadBuilder::PrepareInstances(const PreparedRenderScene& preparedScene, RenderGpuRayTracingPayloads& payloads, BuildState& state)
 {
 	std::uint32_t instanceCapacity = 1;
 	std::unordered_set<std::uint32_t> occupiedGpuSceneSlots;
@@ -128,11 +118,7 @@ void RenderGpuRayTracingPayloadBuilder::PrepareInstances(
 	{
 		if (input.GpuSceneSlot == (std::numeric_limits<std::uint32_t>::max)() || !occupiedGpuSceneSlots.insert(input.GpuSceneSlot).second)
 		{
-			Diagnostics::Fatal(
-			    g_renderGpuRayTracingPayloadBuilderLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Ray-tracing work contains an invalid or duplicate GPU-scene slot.");
+			Diagnostics::Fatal(g_renderGpuRayTracingPayloadBuilderLogger, __FILE__, __LINE__, "Ray-tracing work contains an invalid or duplicate GPU-scene slot.");
 		}
 		instanceCapacity = std::max(instanceCapacity, input.GpuSceneSlot + 1u);
 	}
@@ -150,38 +136,28 @@ void RenderGpuRayTracingPayloadBuilder::AppendInstance(
 {
 	if (input.PrimitiveIndex >= preparedScene.primitives.size())
 	{
-		Diagnostics::Fatal(
-		    g_renderGpuRayTracingPayloadBuilderLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Ray-tracing work references a mesh instance outside the render scene.");
+		Diagnostics::Fatal(g_renderGpuRayTracingPayloadBuilderLogger, __FILE__, __LINE__, "Ray-tracing work references a mesh instance outside the render scene.");
 	}
 	const MeshDraw& draw = preparedScene.primitives[input.PrimitiveIndex].Draw;
 	if (draw.MaterialSlot >= preparedScene.materials.size())
 	{
-		Diagnostics::Fatal(
-		    g_renderGpuRayTracingPayloadBuilderLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Ray-tracing work references a material outside the render scene.");
+		Diagnostics::Fatal(g_renderGpuRayTracingPayloadBuilderLogger, __FILE__, __LINE__, "Ray-tracing work references a material outside the render scene.");
 	}
 
 	const GpuMesh* gpuMesh = meshes.Resolve(draw.Geometry.Mesh);
+
 	const bool missingSkinning = draw.Geometry.MeshKind == RenderMeshKind::Skeletal
-	    && (draw.Skinning.JointMatrixOffset == kInvalidMeshInstanceJointMatrixOffset || gpuMesh == nullptr
-	        || !gpuMesh->HasSkinInfluences());
+	    && (draw.Skinning.JointMatrixOffset == kInvalidMeshInstanceJointMatrixOffset || gpuMesh == nullptr || !gpuMesh->HasSkinInfluences());
+
 	if (gpuMesh == nullptr || missingSkinning)
 	{
-		Diagnostics::Fatal(
-		    g_renderGpuRayTracingPayloadBuilderLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Ray-tracing work references incomplete mesh or skinning data.");
+		Diagnostics::Fatal(g_renderGpuRayTracingPayloadBuilderLogger, __FILE__, __LINE__, "Ray-tracing work references incomplete mesh or skinning data.");
 	}
 
 	const MaterialData& material = preparedScene.materials[draw.MaterialSlot];
 	const RenderGpuMeshHitDataOffsets offsets = state.ResolveMeshOffsets(*gpuMesh, payloads);
 	RayTracingHitInstance& instance = payloads.Instances[input.GpuSceneSlot];
+
 	instance = RayTracingHitInstance{
 	    .FirstVertex = offsets.FirstVertex,
 	    .FirstIndex = offsets.FirstIndex,
@@ -189,19 +165,16 @@ void RenderGpuRayTracingPayloadBuilder::AppendInstance(
 	    .IndexCount = offsets.IndexCount,
 	    .MaterialSlot = draw.MaterialSlot,
 	    .Flags = RayTracingHitData::InstanceFlag_Valid | (material.alphaMode == 0 ? RayTracingHitData::InstanceFlag_Opaque : 0u)
-	        | (draw.Geometry.MeshKind == RenderMeshKind::Static ? RayTracingHitData::InstanceFlag_StaticMesh : 0u)
-	        | (material.doubleSided ? RayTracingHitData::InstanceFlag_TwoSided : 0u),
+	        | (draw.Geometry.MeshKind == RenderMeshKind::Static ? RayTracingHitData::InstanceFlag_StaticMesh : 0u) | (material.doubleSided ? RayTracingHitData::InstanceFlag_TwoSided : 0u),
 	    .GeometryFlags = BuildGeometryFlags(draw, material),
 	    .RejectionReason = RayTracingHitData::Reason_None,
 	    .AlphaMode = material.alphaMode,
 	    .MaterialTextureFlags = material.textureFlags};
+
 	instance.MorphTargetDeltaOffset = offsets.FirstMorphTargetDelta;
 }
 
-void RenderGpuRayTracingPayloadBuilder::Build(
-    const PreparedRenderScene& preparedScene,
-    const GpuMeshCache& meshes,
-    RenderGpuRayTracingPayloads& payloads)
+void RenderGpuRayTracingPayloadBuilder::Build(const PreparedRenderScene& preparedScene, const GpuMeshCache& meshes, RenderGpuRayTracingPayloads& payloads)
 {
 	Clear(payloads);
 
@@ -212,11 +185,7 @@ void RenderGpuRayTracingPayloadBuilder::Build(
 	}
 	if (preparedScene.materials.empty())
 	{
-		Diagnostics::Fatal(
-		    g_renderGpuRayTracingPayloadBuilderLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Ray-tracing work exists without any material records.");
+		Diagnostics::Fatal(g_renderGpuRayTracingPayloadBuilderLogger, __FILE__, __LINE__, "Ray-tracing work exists without any material records.");
 	}
 
 	AppendMaterials(preparedScene, payloads);
@@ -264,8 +233,7 @@ std::uint32_t RenderGpuRayTracingPayloadBuilder::BuildMaterialFlags(const Materi
 
 std::uint32_t RenderGpuRayTracingPayloadBuilder::BuildGeometryFlags(const MeshDraw& draw, const MaterialData& material) noexcept
 {
-	std::uint32_t flags = draw.Geometry.MeshKind == RenderMeshKind::Skeletal ? RayTracingHitData::GeometryFlag_SkinnedMesh
-	                                                                         : RayTracingHitData::GeometryFlag_StaticMesh;
+	std::uint32_t flags = draw.Geometry.MeshKind == RenderMeshKind::Skeletal ? RayTracingHitData::GeometryFlag_SkinnedMesh : RayTracingHitData::GeometryFlag_StaticMesh;
 	if (material.alphaMode == 1)
 	{
 		flags |= RayTracingHitData::GeometryFlag_AlphaTested;

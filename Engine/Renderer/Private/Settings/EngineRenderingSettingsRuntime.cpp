@@ -55,6 +55,7 @@ void EngineRenderingSettingsRuntime::Apply(const EngineRenderingSettingsState& s
 			cvar.Set(value);
 		}
 	};
+
 	setCVarIfChanged(CVarVSync, state.VSync);
 	setCVarIfChanged(CVarBackBufferFormat, state.BackBufferFormat);
 	setCVarIfChanged(CVarPreferHighPerformanceAdapter, state.PreferHighPerformanceAdapter);

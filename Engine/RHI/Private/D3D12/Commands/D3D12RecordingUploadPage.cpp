@@ -20,12 +20,7 @@ void D3D12RecordingUploadPage::Initialize(D3D12Rhi& rhi, std::uint64_t capacityI
 	assert(capacityInBytes != 0);
 
 	const D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(capacityInBytes);
-	m_allocation = rhi.GetMemoryAllocator().CreateBuffer(
-	    resourceDesc,
-	    D3D12_RESOURCE_STATE_GENERIC_READ,
-	    RhiMemoryCategory::ConstantBuffer,
-	    RhiMemoryResidencyClass::HostUpload,
-	    debugName);
+	m_allocation = rhi.GetMemoryAllocator().CreateBuffer(resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, RhiMemoryCategory::ConstantBuffer, RhiMemoryResidencyClass::HostUpload, debugName);
 	if (m_allocation == nullptr || m_allocation->Resource == nullptr)
 	{
 		throw std::runtime_error("Failed to allocate a D3D12 command-recording upload page.");

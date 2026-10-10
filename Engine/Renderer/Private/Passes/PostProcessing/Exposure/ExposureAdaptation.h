@@ -7,8 +7,4 @@ struct RenderFrame;
 class FrameGraphBuilder;
 struct RenderFrameGraphResources;
 
-void AddExposureAdaptationPass(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    const ExposureMomentTexture& luminanceMoments,
-    const RenderFrameGraphResources& resources);
+void AddExposureAdaptationPass(FrameGraphBuilder& builder, const RenderFrame& frame, const ExposureMomentTexture& luminanceMoments, const RenderFrameGraphResources& resources);

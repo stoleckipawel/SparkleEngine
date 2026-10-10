@@ -52,14 +52,8 @@ struct SetMaterialVariantCommand final
 	MaterialVariantIndex Value = 0;
 };
 
-using WorldEditPayload = std::variant<
-    SetActiveCameraCommand,
-    SetLocalTransformCommand,
-    SetCameraDescriptionCommand,
-    SetEntityVisibilityCommand,
-    SetLightDescriptionCommand,
-    SetSkyEnvironmentCommand,
-    SetMaterialVariantCommand>;
+using WorldEditPayload = std::
+    variant<SetActiveCameraCommand, SetLocalTransformCommand, SetCameraDescriptionCommand, SetEntityVisibilityCommand, SetLightDescriptionCommand, SetSkyEnvironmentCommand, SetMaterialVariantCommand>;
 
 struct WorldEditCommand final
 {

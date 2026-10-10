@@ -17,10 +17,7 @@ struct TaskExecutorConfig;
 class AssetCookerSceneBatch final
 {
 public:
-	static bool Execute(
-	    const std::vector<AssetCookerSceneEntry>& sceneEntries,
-	    AssetCookerDiagnostics& diagnostics,
-	    const ToolWorkProgressCallback& progress = {});
+	static bool Execute(const std::vector<AssetCookerSceneEntry>& sceneEntries, AssetCookerDiagnostics& diagnostics, const ToolWorkProgressCallback& progress = {});
 
 private:
 	struct Item;
@@ -32,16 +29,8 @@ private:
 	    std::vector<Item>& items,
 	    std::uint32_t taskCapacity,
 	    const std::function<void(std::uint32_t)>& itemCompleted);
-	static TaskResult BuildProduct(
-	    const std::vector<AssetCookerSceneEntry>& sceneEntries,
-	    std::vector<Item>& items,
-	    std::uint32_t index,
-	    TaskExecutionContext& context);
-	static bool BuildProducts(
-	    const std::vector<AssetCookerSceneEntry>& sceneEntries,
-	    std::vector<Item>& items,
-	    const ToolWorkProgressCallback& progress,
-	    std::size_t totalWork);
+	static TaskResult BuildProduct(const std::vector<AssetCookerSceneEntry>& sceneEntries, std::vector<Item>& items, std::uint32_t index, TaskExecutionContext& context);
+	static bool BuildProducts(const std::vector<AssetCookerSceneEntry>& sceneEntries, std::vector<Item>& items, const ToolWorkProgressCallback& progress, std::size_t totalWork);
 	static void MergeDiagnostics(std::vector<Item>& items, AssetCookerDiagnostics& diagnostics);
 	static bool PublishProducts(std::vector<Item>& items, AssetCookerDiagnostics& diagnostics);
 };

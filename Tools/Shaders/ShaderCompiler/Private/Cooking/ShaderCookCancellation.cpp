@@ -17,8 +17,7 @@ bool ShaderCookCancellation::IsRequested(const std::filesystem::path& signalPath
 	const bool requested = std::filesystem::is_regular_file(signalPath, errorCode);
 	if (errorCode)
 	{
-		throw Diagnostics::Error(
-		    std::format("Failed to inspect shader cook cancellation signal '{}': {}", signalPath.string(), errorCode.message()));
+		throw Diagnostics::Error(std::format("Failed to inspect shader cook cancellation signal '{}': {}", signalPath.string(), errorCode.message()));
 	}
 	return requested;
 }

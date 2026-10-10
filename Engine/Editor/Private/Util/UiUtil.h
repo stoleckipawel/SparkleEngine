@@ -92,11 +92,7 @@ namespace UiUtil
 	// Pair successful calls with native EndPopup/EndMenu; MenuStyleScope owns style restoration.
 	bool BeginMenuPopup(const char* id, ImVec2 anchor, float width);
 	bool BeginMenu(const char* label, EditorIcon icon, float childWidth, bool enabled = true);
-	bool DrawMenuItem(
-	    const char* label,
-	    EditorIcon icon = EditorIcon::None,
-	    MenuCheckState checkState = MenuCheckState::Hidden,
-	    ImGuiSelectableFlags flags = ImGuiSelectableFlags_None);
+	bool DrawMenuItem(const char* label, EditorIcon icon = EditorIcon::None, MenuCheckState checkState = MenuCheckState::Hidden, ImGuiSelectableFlags flags = ImGuiSelectableFlags_None);
 	void DrawMenuSection(const char* label);
 
 	bool MatchesDetailsFilter(const std::string& filterText, const char* title, const char* keywords) noexcept;
@@ -113,21 +109,9 @@ namespace UiUtil
 	void EndSectionCard();
 	void DrawKeyValueRow(const char* label, const char* value);
 
-	bool EditFloatSliderWithInput(
-	    const char* label,
-	    float& value,
-	    float minValue,
-	    float maxValue,
-	    const char* sliderFormat,
-	    const char* inputFormat);
+	bool EditFloatSliderWithInput(const char* label, float& value, float minValue, float maxValue, const char* sliderFormat, const char* inputFormat);
 
-	bool EditFloat3SliderWithInput(
-	    const char* label,
-	    float values[3],
-	    float minValue,
-	    float maxValue,
-	    const char* sliderFormat,
-	    const char* inputFormat);
+	bool EditFloat3SliderWithInput(const char* label, float values[3], float minValue, float maxValue, const char* sliderFormat, const char* inputFormat);
 
 	bool EditColor3(const char* label, float values[3]);
 
@@ -140,22 +124,8 @@ namespace UiUtil
 	void DrawDetailsEmptyState(const char* text = "Select an object from the scene outliner to inspect its properties.");
 	void DrawDetailsValueRow(const char* label, const char* value);
 	void DrawDetailsAssetRow(const char* label, EditorIcon thumbnailIcon, const char* value, const char* typeText = nullptr);
-	bool EditDetailsFloat(
-	    const char* label,
-	    float& value,
-	    float speed,
-	    float minValue,
-	    float maxValue,
-	    const char* format,
-	    const float* resetValue = nullptr);
-	bool EditDetailsFloat3(
-	    const char* label,
-	    float values[3],
-	    float speed,
-	    float minValue,
-	    float maxValue,
-	    const char* format,
-	    const float* resetValues = nullptr);
+	bool EditDetailsFloat(const char* label, float& value, float speed, float minValue, float maxValue, const char* format, const float* resetValue = nullptr);
+	bool EditDetailsFloat3(const char* label, float values[3], float speed, float minValue, float maxValue, const char* format, const float* resetValues = nullptr);
 	bool EditDetailsColor3(const char* label, float values[3], const float* resetValues = nullptr);
 	bool EditDetailsCheckbox(const char* label, bool& value, const bool* resetValue = nullptr);
 	bool EditDetailsText(const char* label, std::string& value, const std::string* resetValue = nullptr);

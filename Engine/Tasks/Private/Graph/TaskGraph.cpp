@@ -36,12 +36,7 @@ std::uint32_t TaskGraphAccess::GetIndex(TaskNodeHandle handle) noexcept
 	return handle.m_indexPlusOne - 1u;
 }
 
-bool TaskGraphAccess::Decode(
-    TaskNodeHandle handle,
-    std::uint64_t builderIdentity,
-    std::uint32_t builderGeneration,
-    std::uint32_t taskCount,
-    std::uint32_t& outIndex) noexcept
+bool TaskGraphAccess::Decode(TaskNodeHandle handle, std::uint64_t builderIdentity, std::uint32_t builderGeneration, std::uint32_t taskCount, std::uint32_t& outIndex) noexcept
 {
 	if (!handle || handle.m_builderIdentity != builderIdentity || handle.m_builderGeneration != builderGeneration)
 	{
@@ -68,9 +63,7 @@ bool CompiledTaskGraph::IsValid() const noexcept
 
 const TaskGraphError& CompiledTaskGraph::GetError() const noexcept
 {
-	static const TaskGraphError invalidGraphError{
-	    .Code = TaskGraphErrorCode::InvalidHandle,
-	    .Message = "No compiled task graph is present."};
+	static const TaskGraphError invalidGraphError{.Code = TaskGraphErrorCode::InvalidHandle, .Message = "No compiled task graph is present."};
 	return m_data != nullptr ? m_data->Error : invalidGraphError;
 }
 

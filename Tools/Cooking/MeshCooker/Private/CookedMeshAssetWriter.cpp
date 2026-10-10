@@ -46,12 +46,9 @@ void CookedMeshAssetStager::WriteMeshAsset(const CookedMeshAssetBuild& meshAsset
 
 	std::string errorMessage;
 	std::ofstream output;
-	if (!Files::TryOpenBinaryOutput(outputPath, output, errorMessage)
-	    || !Files::BinaryStreamWriter::WriteValue(output, header, errorMessage)
-	    || !Files::BinaryStreamWriter::WriteArray(output, meshAsset.vertices, errorMessage)
-	    || !Files::BinaryStreamWriter::WriteArray(output, meshAsset.indices, errorMessage)
-	    || !Files::BinaryStreamWriter::WriteArray(output, meshAsset.skinInfluences, errorMessage)
-	    || !Files::BinaryStreamWriter::WriteArray(output, meshAsset.morphTargets, errorMessage)
+	if (!Files::TryOpenBinaryOutput(outputPath, output, errorMessage) || !Files::BinaryStreamWriter::WriteValue(output, header, errorMessage)
+	    || !Files::BinaryStreamWriter::WriteArray(output, meshAsset.vertices, errorMessage) || !Files::BinaryStreamWriter::WriteArray(output, meshAsset.indices, errorMessage)
+	    || !Files::BinaryStreamWriter::WriteArray(output, meshAsset.skinInfluences, errorMessage) || !Files::BinaryStreamWriter::WriteArray(output, meshAsset.morphTargets, errorMessage)
 	    || !Files::BinaryStreamWriter::WriteArray(output, meshAsset.morphTargetDeltas, errorMessage))
 	{
 		throw Diagnostics::Error(errorMessage);
@@ -103,9 +100,7 @@ std::filesystem::path CookedMeshAssetStager::BuildMetadataPath(Assets::CookedAss
 	return metadataPath;
 }
 
-void CookedMeshAssetWriter::StageMeshAssets(
-    const std::vector<CookedMeshAssetBuild>& meshAssets,
-    std::vector<Files::FilePublication>& outPublication)
+void CookedMeshAssetWriter::StageMeshAssets(const std::vector<CookedMeshAssetBuild>& meshAssets, std::vector<Files::FilePublication>& outPublication)
 {
 	for (const CookedMeshAssetBuild& meshAsset : meshAssets)
 	{

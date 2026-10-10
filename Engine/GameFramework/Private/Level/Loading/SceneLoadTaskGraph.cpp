@@ -20,13 +20,9 @@ namespace Assets
 	CompiledTaskGraph BuildSceneLoadTaskGraph(const std::shared_ptr<SceneLoadWorkState>& state)
 	{
 		const std::size_t assetCount = state->Assets.size();
-		const std::size_t throttlingEdgeCount = assetCount > SceneLoadTaskGraphDetail::MaximumSceneAssetsInFlight
-		    ? assetCount - SceneLoadTaskGraphDetail::MaximumSceneAssetsInFlight
-		    : 0;
+		const std::size_t throttlingEdgeCount = assetCount > SceneLoadTaskGraphDetail::MaximumSceneAssetsInFlight ? assetCount - SceneLoadTaskGraphDetail::MaximumSceneAssetsInFlight : 0;
 		TaskGraphBuilder graph(
-		    TaskGraphLimits{
-		        .MaximumTasks = static_cast<std::uint32_t>(assetCount * 2u + 2u),
-		        .MaximumEdges = static_cast<std::uint32_t>(assetCount * 2u + throttlingEdgeCount + 1u)});
+		    TaskGraphLimits{.MaximumTasks = static_cast<std::uint32_t>(assetCount * 2u + 2u), .MaximumEdges = static_cast<std::uint32_t>(assetCount * 2u + throttlingEdgeCount + 1u)});
 		std::vector<TaskNodeHandle> decodedNodes;
 		decodedNodes.reserve(assetCount);
 		for (std::size_t index = 0; index < state->Assets.size(); ++index)
@@ -42,6 +38,7 @@ namespace Assets
 				    state->Stage.store(LevelLoadOperationStage::Decoding, std::memory_order_release);
 				    return TaskResult::Success();
 			    });
+
 			const TaskNodeHandle decode = graph.Add(
 			    TaskDesc{TaskName(std::format("Decode scene asset {}", index)), TaskLane::Background},
 			    [state, index](TaskExecutionContext& context)
@@ -56,6 +53,7 @@ namespace Assets
 				    state->CompletedDecodes.fetch_add(1, std::memory_order_relaxed);
 				    return TaskResult::Success();
 			    });
+
 			graph.DependsOn(decode, read);
 			if (index >= SceneLoadTaskGraphDetail::MaximumSceneAssetsInFlight)
 			{
@@ -65,6 +63,7 @@ namespace Assets
 		}
 
 		const TaskNodeHandle decoded = graph.WhenAll(TaskDesc{TaskName("Join decoded scene assets"), TaskLane::Background}, decodedNodes);
+
 		graph.ContinueWith(
 		    decoded,
 		    TaskDesc{TaskName("Finalize scene load package"), TaskLane::Background},
@@ -77,6 +76,7 @@ namespace Assets
 			    state->Stage.store(LevelLoadOperationStage::Ready, std::memory_order_release);
 			    return TaskResult::Success();
 		    });
+
 		return graph.Compile();
 	}
 }

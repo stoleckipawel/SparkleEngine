@@ -7,8 +7,7 @@ Texture2D MaterialTextureTable[4096] : register(t0, space1);
 
 float4 SampleRayTracingMaterialTexture(RayTracingHitMaterial material, uint textureSlot, float2 uv)
 {
-	const uint textureIndex =
-	    MaterialTextureTableSampling::ResolveTextureIndex(material.TextureIndices0, material.TextureIndices1, textureSlot);
+	const uint textureIndex = MaterialTextureTableSampling::ResolveTextureIndex(material.TextureIndices0, material.TextureIndices1, textureSlot);
 	const MaterialTextureMappingData mapping = material.TextureMappings[textureSlot];
 	const float2 mappedUv = MaterialTextureTableSampling::TransformUv(uv, mapping.UvLinear, mapping.UvOffset);
 	return MaterialTextureTableSampling::SampleBaseLevelBilinear(MaterialTextureTable, textureIndex, mappedUv, mapping.AddressModes);
@@ -36,7 +35,5 @@ bool ResolveRayTracingCandidateAlpha(uint instanceId, uint primitiveIndex, float
 	{
 		return false;
 	}
-	return PassesRayTracingMaterialAlpha(hitTriangle.Material,
-	                                     InterpolateRayTracingHitTexCoord0(hitTriangle),
-	                                     InterpolateRayTracingHitColor(hitTriangle));
+	return PassesRayTracingMaterialAlpha(hitTriangle.Material, InterpolateRayTracingHitTexCoord0(hitTriangle), InterpolateRayTracingHitColor(hitTriangle));
 }

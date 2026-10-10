@@ -11,9 +11,7 @@ EUpscalerQualityMode StreamlineDlssFrameState::GetRequestedQualityMode() const n
 	return CVarUpscalerQualityMode.Get();
 }
 
-RenderViewportExtent StreamlineDlssFrameState::StoreResolution(
-    RenderViewportExtent outputExtent,
-    RenderViewportExtent providerRenderExtent) noexcept
+RenderViewportExtent StreamlineDlssFrameState::StoreResolution(RenderViewportExtent outputExtent, RenderViewportExtent providerRenderExtent) noexcept
 {
 	m_resolvedOutputExtent = outputExtent;
 	m_resolvedRenderExtent = providerRenderExtent;
@@ -31,8 +29,7 @@ void StreamlineDlssFrameState::SetupFrame(const ImageProviderFrameInput& frameIn
 		m_frameInput.ResetHistory = true;
 	}
 
-	m_frameValid = m_resolvedRenderExtent.IsValid() && frameInput.OutputExtent == m_resolvedOutputExtent
-	    && frameInput.RenderExtent == m_resolvedRenderExtent;
+	m_frameValid = m_resolvedRenderExtent.IsValid() && frameInput.OutputExtent == m_resolvedOutputExtent && frameInput.RenderExtent == m_resolvedRenderExtent;
 }
 
 void StreamlineDlssFrameState::Reset() noexcept

@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "Cooking/ReflectionSerializer.h"
 
@@ -26,6 +26,7 @@ void ReflectionSerializer::Build(std::span<const ShaderReflection> reflections, 
 			for (const ShaderReflectionConstantBufferMember& member : cb.Members)
 			{
 				const auto memberNameEntry = stringTable.Add(member.Name);
+
 				outOutput.constantBufferMembers.push_back(
 				    CookedShaderConstantBufferMemberRecord{
 				        .NameOffsetInBytes = memberNameEntry.OffsetInBytes,
@@ -75,6 +76,7 @@ void ReflectionSerializer::Build(std::span<const ShaderReflection> reflections, 
 		for (const ShaderReflectionInputElement& element : reflection.InputElements)
 		{
 			const auto semanticEntry = stringTable.Add(element.Semantic);
+
 			outOutput.inputElements.push_back(
 			    CookedShaderInputElementRecord{
 			        .SemanticOffsetInBytes = semanticEntry.OffsetInBytes,
@@ -88,17 +90,14 @@ void ReflectionSerializer::Build(std::span<const ShaderReflection> reflections, 
 		const std::uint32_t pushOffset = static_cast<std::uint32_t>(outOutput.pushConstantRanges.size());
 		for (const ShaderReflectionPushConstantRange& range : reflection.PushConstants)
 		{
-			outOutput.pushConstantRanges.push_back(
-			    CookedShaderPushConstantRangeRecord{
-			        .OffsetInBytes = range.OffsetInBytes,
-			        .SizeInBytes = range.SizeInBytes,
-			        .VisibilityMask = range.VisibilityMask});
+			outOutput.pushConstantRanges.push_back(CookedShaderPushConstantRangeRecord{.OffsetInBytes = range.OffsetInBytes, .SizeInBytes = range.SizeInBytes, .VisibilityMask = range.VisibilityMask});
 		}
 
 		const std::uint32_t specOffset = static_cast<std::uint32_t>(outOutput.specializationConstants.size());
 		for (const ShaderReflectionSpecializationConstant& spec : reflection.SpecializationConstants)
 		{
 			const auto nameEntry = stringTable.Add(spec.Name);
+
 			outOutput.specializationConstants.push_back(
 			    CookedShaderSpecializationConstantRecord{
 			        .NameOffsetInBytes = nameEntry.OffsetInBytes,

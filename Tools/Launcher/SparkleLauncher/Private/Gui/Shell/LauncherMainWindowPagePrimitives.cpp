@@ -49,13 +49,7 @@ namespace SparkleLauncher
 	static constexpr int kSpaceSmall = LauncherUi::Space::Small;
 	static constexpr int kSpaceMedium = LauncherUi::Space::Medium;
 
-	QLabel* LauncherMainWindow::AddStatusRow(
-	    QVBoxLayout& layout,
-	    const QString& label,
-	    const QString& status,
-	    const QString& detail,
-	    const QString& state,
-	    QWidget* accessory)
+	QLabel* LauncherMainWindow::AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state, QWidget* accessory)
 	{
 		QFrame* row = new QFrame(this);
 		row->setObjectName("StatusRow");
@@ -110,11 +104,7 @@ namespace SparkleLauncher
 		return statusLabel;
 	}
 
-	QPushButton* LauncherMainWindow::CreateCommandActionButton(
-	    const QString& operationId,
-	    const QString& label,
-	    bool primary,
-	    bool runImmediately)
+	QPushButton* LauncherMainWindow::CreateCommandActionButton(const QString& operationId, const QString& label, bool primary, bool runImmediately)
 	{
 		QPushButton* button = new QPushButton(label, this);
 		button->setObjectName(primary ? "CommandPrimaryButton" : "CommandSecondaryButton");
@@ -122,6 +112,7 @@ namespace SparkleLauncher
 		button->setAccessibleName(label);
 		button->setToolTip(runImmediately ? "Run this workflow now." : "Open this workflow.");
 		RegisterFocusable(button);
+
 		connect(
 		    button,
 		    &QPushButton::clicked,
@@ -134,6 +125,7 @@ namespace SparkleLauncher
 				    RunSelectedOperation();
 			    }
 		    });
+
 		return button;
 	}
 }

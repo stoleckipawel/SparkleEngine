@@ -53,10 +53,7 @@ void WorldEditCommandQueue::Clear() noexcept
 	m_pendingEdits.clear();
 }
 
-bool WorldEditCommandQueue::IsTargetAvailable(
-    const WorldEditPayload& payload,
-    const ECS::GameWorldState& state,
-    const GameWorldResourceStores& resources)
+bool WorldEditCommandQueue::IsTargetAvailable(const WorldEditPayload& payload, const ECS::GameWorldState& state, const GameWorldResourceStores& resources)
 {
 	return std::visit(
 	    [&state, &resources](const auto& command)

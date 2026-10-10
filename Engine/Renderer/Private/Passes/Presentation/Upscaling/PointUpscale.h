@@ -5,8 +5,4 @@
 
 class FrameGraphBuilder;
 
-void AddPointUpscalePass(
-    FrameGraphBuilder& builder,
-    FrameGraphTextureHandle inputColor,
-    FrameGraphTextureHandle outputColor,
-    RenderViewportExtent outputExtent);
+void AddPointUpscalePass(FrameGraphBuilder& builder, FrameGraphTextureHandle inputColor, FrameGraphTextureHandle outputColor, RenderViewportExtent outputExtent);

@@ -59,6 +59,7 @@ void FrameGraph::Setup()
 		pass.active = pass.setupCallback(builder);
 		FrameGraphResourceContractDiagnostics::ValidatePassDeclarations(pass.name, pass.kind, declarations);
 		assert(IsQueuePreferenceCompatible(pass.kind, pass.queuePreference));
+
 		m_compiledPlan.passes.push_back(
 		    FrameGraphPassNode{
 		        .index = static_cast<FrameGraphPassIndex>(passIndex),

@@ -14,10 +14,13 @@ public:
 	    m_generation(generation)
 	{
 	}
+
 	MaterialHandle Append(std::vector<MaterialDesc> descriptions);
 	MaterialHandle GetOrCreateDefault();
 	bool Contains(MaterialHandle handle) const noexcept;
+
 	std::uint64_t GetContentRevision() const noexcept { return m_contentRevision; }
+
 	RenderMaterialTable CaptureRenderTable() const;
 
 private:

@@ -43,19 +43,9 @@ void GltfMeshInstanceAppender::AppendMeshGpuInstancingGroup(
 
 	for (std::size_t instanceIndex = 0; instanceIndex < transforms.instanceCount; ++instanceIndex)
 	{
-		const DirectX::XMMATRIX authoredInstanceTransform =
-		    GltfMeshInstancingImporter::BuildMeshGpuInstancingTransform(transforms, instanceIndex);
+		const DirectX::XMMATRIX authoredInstanceTransform = GltfMeshInstancingImporter::BuildMeshGpuInstancingTransform(transforms, instanceIndex);
 		const DirectX::XMMATRIX worldTransform = DirectX::XMMatrixMultiply(authoredInstanceTransform, nodeWorldTransform);
-		AppendMeshInstance(
-		    output,
-		    importedPrimitiveIndex,
-		    materialIndex,
-		    worldTransform,
-		    groupIndex,
-		    skeletonIndex,
-		    sourceNodeIndex,
-		    sourceNodeName,
-		    morphWeights);
+		AppendMeshInstance(output, importedPrimitiveIndex, materialIndex, worldTransform, groupIndex, skeletonIndex, sourceNodeIndex, sourceNodeName, morphWeights);
 	}
 
 	ImportedMeshInstanceGroup groupEntry;

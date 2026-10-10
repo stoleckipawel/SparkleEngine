@@ -18,6 +18,7 @@ class ShaderRecookCoordinator final
 {
 public:
 	using StatusHandler = std::function<void(std::string)>;
+
 	explicit ShaderRecookCoordinator(EditorOperationRuntime& operations);
 	~ShaderRecookCoordinator();
 
@@ -49,10 +50,7 @@ private:
 	void PublishStatus(std::string status) noexcept;
 	std::uint64_t ReadCurrentPublicationId() noexcept;
 	ShaderRecookPublicationReadResult ReadRecookPublication() noexcept;
-	const ShaderRecookPublication* FindFreshPublication(
-	    const ShaderRecookPublicationReadResult& readResult,
-	    std::uint64_t minimumPublicationId,
-	    std::string& outDiagnostic) const noexcept;
+	const ShaderRecookPublication* FindFreshPublication(const ShaderRecookPublicationReadResult& readResult, std::uint64_t minimumPublicationId, std::string& outDiagnostic) const noexcept;
 
 	StatusHandler m_statusHandler;
 	EditorOperationSlot<ExecutionResult> m_operation;

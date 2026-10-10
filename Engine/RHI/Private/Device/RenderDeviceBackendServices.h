@@ -34,12 +34,8 @@ public:
 	virtual RenderCommandList& BeginCurrentGraphicsCommandList() noexcept = 0;
 	virtual RhiCommandRecordingLease AcquireCommandRecordingLease(ERhiQueueType queueType, RhiCommandRecordingOwner owner) noexcept = 0;
 	virtual RhiCommandRecordingLease TakeCurrentGraphicsCommandRecordingLease() noexcept = 0;
-	virtual RhiSubmissionToken SubmitCommandRecordingLease(
-	    RhiCommandRecordingLease&& lease,
-	    std::span<const RhiSubmissionToken> waitTokens) noexcept = 0;
-	virtual RhiSubmissionToken SubmitCommandRecordingBatch(
-	    std::span<RhiCommandRecordingLease> leases,
-	    std::span<const RhiSubmissionToken> waitTokens) noexcept = 0;
+	virtual RhiSubmissionToken SubmitCommandRecordingLease(RhiCommandRecordingLease&& lease, std::span<const RhiSubmissionToken> waitTokens) noexcept = 0;
+	virtual RhiSubmissionToken SubmitCommandRecordingBatch(std::span<RhiCommandRecordingLease> leases, std::span<const RhiSubmissionToken> waitTokens) noexcept = 0;
 	virtual RhiSubmissionToken SubmitCurrentGraphicsCommandList(std::span<const RhiSubmissionToken> waitTokens) noexcept = 0;
 	virtual void QueueWait(ERhiQueueType waitQueue, RhiSubmissionToken executionToken) noexcept = 0;
 	virtual void WaitForSubmission(RhiSubmissionToken token) noexcept = 0;

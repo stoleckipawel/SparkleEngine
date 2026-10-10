@@ -22,8 +22,7 @@ DirectX::XMFLOAT4X4 RenderScene::ResolvePreviousWorldMatrix(const RenderPrimitiv
 std::span<const DirectX::XMFLOAT4X4> RenderScene::FindPreviousJointMatrices(RenderObjectId primitiveId) const noexcept
 {
 	const auto history = m_jointMatrixHistory.find(primitiveId);
-	return history != m_jointMatrixHistory.end() ? std::span<const DirectX::XMFLOAT4X4>{history->second}
-	                                             : std::span<const DirectX::XMFLOAT4X4>{};
+	return history != m_jointMatrixHistory.end() ? std::span<const DirectX::XMFLOAT4X4>{history->second} : std::span<const DirectX::XMFLOAT4X4>{};
 }
 
 std::span<const float> RenderScene::FindPreviousMorphWeights(RenderObjectId primitiveId) const noexcept
@@ -54,8 +53,7 @@ void RenderScene::CommitPreviousWorldTransforms(std::span<const PreparedRenderPr
 	{
 		if (primitive.Object.IsValid())
 		{
-			m_previousWorldTransforms[primitive.Draw.Source.GpuSceneSlot] =
-			    PreviousWorldTransform{.Object = primitive.Object, .WorldMatrix = primitive.Draw.Transform.WorldMatrix};
+			m_previousWorldTransforms[primitive.Draw.Source.GpuSceneSlot] = PreviousWorldTransform{.Object = primitive.Object, .WorldMatrix = primitive.Draw.Transform.WorldMatrix};
 		}
 	}
 }
@@ -65,13 +63,11 @@ void RenderScene::CommitJointMatrixContinuity(const RenderDeformationWork& defor
 	std::size_t jointRangeIndex = 0u;
 	for (auto history = m_jointMatrixHistory.begin(); history != m_jointMatrixHistory.end();)
 	{
-		while (jointRangeIndex < deformation.JointMatrixCopyRanges.size()
-		    && deformation.JointMatrixCopyRanges[jointRangeIndex].Object < history->first)
+		while (jointRangeIndex < deformation.JointMatrixCopyRanges.size() && deformation.JointMatrixCopyRanges[jointRangeIndex].Object < history->first)
 		{
 			++jointRangeIndex;
 		}
-		if (jointRangeIndex >= deformation.JointMatrixCopyRanges.size()
-		    || deformation.JointMatrixCopyRanges[jointRangeIndex].Object != history->first)
+		if (jointRangeIndex >= deformation.JointMatrixCopyRanges.size() || deformation.JointMatrixCopyRanges[jointRangeIndex].Object != history->first)
 		{
 			history = m_jointMatrixHistory.erase(history);
 		}
@@ -110,14 +106,13 @@ void RenderScene::CommitMorphWeightContinuity(const RenderDeformationWork& defor
 	std::size_t morphRangeIndex = 0u;
 	for (auto history = m_morphWeightHistory.begin(); history != m_morphWeightHistory.end();)
 	{
-		while (morphRangeIndex < deformation.MorphWeightCopyRanges.size()
-		    && deformation.MorphWeightCopyRanges[morphRangeIndex].Object < history->first)
+		while (morphRangeIndex < deformation.MorphWeightCopyRanges.size() && deformation.MorphWeightCopyRanges[morphRangeIndex].Object < history->first)
 		{
 			++morphRangeIndex;
 		}
-		const bool retain = morphRangeIndex < deformation.MorphWeightCopyRanges.size()
-		    && deformation.MorphWeightCopyRanges[morphRangeIndex].Object == history->first
+		const bool retain = morphRangeIndex < deformation.MorphWeightCopyRanges.size() && deformation.MorphWeightCopyRanges[morphRangeIndex].Object == history->first
 		    && retainsMorphHistory(deformation.MorphWeightCopyRanges[morphRangeIndex]);
+
 		if (!retain)
 		{
 			history = m_morphWeightHistory.erase(history);

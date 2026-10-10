@@ -16,9 +16,8 @@ CookedShaderStatsReport CookedShaderStatsPass::WriteCsv(const ShaderCookOutput& 
 	csv << "ShaderTypeId,ShaderName,Target,ShaderCodeHash,BytecodeBytes\n";
 	for (const ShaderCookedEntry& entry : output.entries)
 	{
-		csv << Formatting::FormatHexUInt64(entry.shaderType) << ',' << Strings::EscapeCsvField(entry.shaderName) << ','
-		    << GetShaderTargetName(entry.target) << ',' << Formatting::FormatHexUInt64(entry.codeHash) << ',' << entry.codeSizeInBytes
-		    << '\n';
+		csv << Formatting::FormatHexUInt64(entry.shaderType) << ',' << Strings::EscapeCsvField(entry.shaderName) << ',' << GetShaderTargetName(entry.target) << ','
+		    << Formatting::FormatHexUInt64(entry.codeHash) << ',' << entry.codeSizeInBytes << '\n';
 		++report.rowCount;
 	}
 	std::string error;

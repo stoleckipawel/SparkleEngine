@@ -45,22 +45,16 @@ namespace SparkleLauncher
 	const std::vector<LevelOperationDefinition>& GetLevelOperationDefinitions()
 	{
 		static const std::vector<LevelOperationDefinition> definitions = {
-		    {LevelOperationKind::Sync,
-		        "levels.sync",
-		        "Levels",
-		        "Sync Levels",
-		        "Select levels and acquire their asset packs without changing code, workspace, or SDK dependencies."},
+		    {LevelOperationKind::Sync, "levels.sync", "Levels", "Sync Levels", "Select levels and acquire their asset packs without changing code, workspace, or SDK dependencies."},
 		};
+
 		return definitions;
 	}
 
 	std::optional<LevelOperationDefinition> FindLevelOperationDefinition(std::string_view operationId)
 	{
 		const std::vector<LevelOperationDefinition>& definitions = GetLevelOperationDefinitions();
-		const auto found = std::find_if(
-		    definitions.begin(),
-		    definitions.end(),
-		    [operationId](const LevelOperationDefinition& definition) { return definition.Id == operationId; });
+		const auto found = std::find_if(definitions.begin(), definitions.end(), [operationId](const LevelOperationDefinition& definition) { return definition.Id == operationId; });
 		return found == definitions.end() ? std::nullopt : std::optional<LevelOperationDefinition>(*found);
 	}
 
@@ -71,11 +65,7 @@ namespace SparkleLauncher
 		if (!definition.has_value())
 		{
 			plan.Operation = MakeOperationRecord(std::string(operationId), "Unknown level operation");
-			SetOperationFailure(
-			    plan.Operation,
-			    OperationProblemKind::Planning,
-			    "Unknown level operation id.",
-			    "Choose a registered level Sync operation, then retry.");
+			SetOperationFailure(plan.Operation, OperationProblemKind::Planning, "Unknown level operation id.", "Choose a registered level Sync operation, then retry.");
 			AddReadiness(plan, plan.Operation.Failure->Summary);
 			return plan;
 		}
@@ -113,10 +103,10 @@ namespace SparkleLauncher
 		}
 
 		plan.PlannedEffects.push_back(
-		    request.RequestedLevelIds.empty()
-		        ? "Acquire asset packs referenced by selected maps into gitignored content roots; unselected packs remain untouched."
-		        : "Acquire asset packs referenced by the requested maps into gitignored content roots; map selection and runtime support "
-		          "remain unchanged.");
+		    request.RequestedLevelIds.empty() ? "Acquire asset packs referenced by selected maps into gitignored content roots; unselected packs remain untouched."
+		                                      : "Acquire asset packs referenced by the requested maps into gitignored content roots; map selection and runtime support "
+		                                        "remain unchanged.");
+
 		if (cmake.Found && !request.ContentId.empty())
 		{
 			try
@@ -139,9 +129,7 @@ namespace SparkleLauncher
 		}
 		if (plan.Steps.empty())
 		{
-			dryRun
-			    << (plan.CanRun ? "\n  All requested level asset packs are already present."
-			                    : "\n  No acquisition step available until readiness issues are resolved.");
+			dryRun << (plan.CanRun ? "\n  All requested level asset packs are already present." : "\n  No acquisition step available until readiness issues are resolved.");
 		}
 		plan.Operation.DryRunText = dryRun.str();
 		return plan;

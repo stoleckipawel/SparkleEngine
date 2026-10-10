@@ -56,10 +56,7 @@ void VulkanRenderCommandList::SetRenderTarget(RhiCpuDescriptorHandle renderTarge
 	m_depthStencilAspectMask = ResolveDepthStencilAspectMask(m_depthStencil);
 }
 
-void VulkanRenderCommandList::SetRenderTargets(
-    std::uint32_t renderTargetCount,
-    const RhiCpuDescriptorHandle* renderTargets,
-    const RhiCpuDescriptorHandle* depthStencil) noexcept
+void VulkanRenderCommandList::SetRenderTargets(std::uint32_t renderTargetCount, const RhiCpuDescriptorHandle* renderTargets, const RhiCpuDescriptorHandle* depthStencil) noexcept
 {
 	EndDynamicRenderingIfNeeded();
 	m_renderTargets = {};
@@ -68,11 +65,7 @@ void VulkanRenderCommandList::SetRenderTargets(
 	m_depthStencilAspectMask = ResolveDepthStencilAspectMask(m_depthStencil);
 	if (renderTargetCount > MaxRenderTargets || (renderTargetCount != 0 && renderTargets == nullptr))
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan SetRenderTargets received an invalid render-target count or array.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan SetRenderTargets received an invalid render-target count or array.");
 	}
 
 	for (std::uint32_t index = 0; index < renderTargetCount; ++index)
@@ -117,18 +110,14 @@ void VulkanRenderCommandList::ClearRenderTarget(RhiCpuDescriptorHandle renderTar
 	clearValue.color.float32[1] = color[1];
 	clearValue.color.float32[2] = color[2];
 	clearValue.color.float32[3] = color[3];
-	const VkClearAttachment clearAttachment{
-	    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-	    .colorAttachment = colorAttachment,
-	    .clearValue = clearValue};
+	const VkClearAttachment clearAttachment{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .colorAttachment = colorAttachment, .clearValue = clearValue};
 	const VkClearRect clearRect{.rect = m_scissorRect, .baseArrayLayer = 0, .layerCount = 1};
 	vkCmdClearAttachments(m_commandBuffer, 1, &clearAttachment, 1, &clearRect);
 }
 
 void VulkanRenderCommandList::ClearDepthStencil(RhiCpuDescriptorHandle depthStencil, float depth, std::uint8_t stencil) noexcept
 {
-	if (m_commandBuffer == VK_NULL_HANDLE || !m_hasScissorRect
-	    || VulkanDescriptorHandles::DecodeImageViewCpuHandle(depthStencil) != m_depthStencil)
+	if (m_commandBuffer == VK_NULL_HANDLE || !m_hasScissorRect || VulkanDescriptorHandles::DecodeImageViewCpuHandle(depthStencil) != m_depthStencil)
 	{
 		return;
 	}
@@ -141,10 +130,7 @@ void VulkanRenderCommandList::ClearDepthStencil(RhiCpuDescriptorHandle depthSten
 	VkClearValue clearValue = {};
 	clearValue.depthStencil.depth = depth;
 	clearValue.depthStencil.stencil = stencil;
-	const VkClearAttachment clearAttachment{
-	    .aspectMask = m_depthStencilAspectMask != 0 ? m_depthStencilAspectMask : VK_IMAGE_ASPECT_DEPTH_BIT,
-	    .colorAttachment = 0,
-	    .clearValue = clearValue};
+	const VkClearAttachment clearAttachment{.aspectMask = m_depthStencilAspectMask != 0 ? m_depthStencilAspectMask : VK_IMAGE_ASPECT_DEPTH_BIT, .colorAttachment = 0, .clearValue = clearValue};
 	const VkClearRect clearRect{.rect = m_scissorRect, .baseArrayLayer = 0, .layerCount = 1};
 	vkCmdClearAttachments(m_commandBuffer, 1, &clearAttachment, 1, &clearRect);
 }
@@ -161,13 +147,9 @@ void VulkanRenderCommandList::SetViewport(const RhiViewport& viewport) noexcept
 		return;
 	}
 
-	const VkViewport nativeViewport{
-	    .x = viewport.X,
-	    .y = viewport.Y + viewport.Height,
-	    .width = viewport.Width,
-	    .height = -viewport.Height,
-	    .minDepth = viewport.MinDepth,
-	    .maxDepth = viewport.MaxDepth};
+	const VkViewport
+	    nativeViewport{.x = viewport.X, .y = viewport.Y + viewport.Height, .width = viewport.Width, .height = -viewport.Height, .minDepth = viewport.MinDepth, .maxDepth = viewport.MaxDepth};
+
 	vkCmdSetViewport(m_commandBuffer, 0, 1, &nativeViewport);
 }
 
@@ -180,9 +162,8 @@ void VulkanRenderCommandList::SetScissorRect(const RhiRect& rect) noexcept
 
 	const VkRect2D nativeRect{
 	    .offset = VkOffset2D{.x = rect.Left, .y = rect.Top},
-	    .extent = VkExtent2D{
-	        .width = static_cast<std::uint32_t>(rect.Right - rect.Left),
-	        .height = static_cast<std::uint32_t>(rect.Bottom - rect.Top)}};
+	    .extent = VkExtent2D{.width = static_cast<std::uint32_t>(rect.Right - rect.Left), .height = static_cast<std::uint32_t>(rect.Bottom - rect.Top)}};
+
 	m_scissorRect = nativeRect;
 	m_hasScissorRect = nativeRect.extent.width > 0 && nativeRect.extent.height > 0;
 	vkCmdSetScissor(m_commandBuffer, 0, 1, &nativeRect);
@@ -209,11 +190,7 @@ void VulkanRenderCommandList::DrawIndexedInstanced(
 	vkCmdDrawIndexed(m_commandBuffer, indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
 }
 
-void VulkanRenderCommandList::DrawInstanced(
-    std::uint32_t vertexCountPerInstance,
-    std::uint32_t instanceCount,
-    std::uint32_t startVertexLocation,
-    std::uint32_t startInstanceLocation) noexcept
+void VulkanRenderCommandList::DrawInstanced(std::uint32_t vertexCountPerInstance, std::uint32_t instanceCount, std::uint32_t startVertexLocation, std::uint32_t startInstanceLocation) noexcept
 {
 	if (m_commandBuffer == VK_NULL_HANDLE)
 	{
@@ -243,8 +220,7 @@ void VulkanRenderCommandList::Dispatch(std::uint32_t groupCountX, std::uint32_t 
 
 void VulkanRenderCommandList::BeginDynamicRenderingIfNeeded() noexcept
 {
-	if (m_dynamicRenderingActive || m_commandBuffer == VK_NULL_HANDLE || !m_hasScissorRect
-	    || (m_renderTargetCount == 0 && m_depthStencil == VK_NULL_HANDLE))
+	if (m_dynamicRenderingActive || m_commandBuffer == VK_NULL_HANDLE || !m_hasScissorRect || (m_renderTargetCount == 0 && m_depthStencil == VK_NULL_HANDLE))
 	{
 		return;
 	}
@@ -279,6 +255,7 @@ void VulkanRenderCommandList::BeginDynamicRenderingIfNeeded() noexcept
 
 	const bool hasDepthAttachment = (m_depthStencilAspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
 	const bool hasStencilAttachment = (m_depthStencilAspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
+
 	const VkRenderingInfo renderingInfo{
 	    .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
 	    .pNext = nullptr,
@@ -290,6 +267,7 @@ void VulkanRenderCommandList::BeginDynamicRenderingIfNeeded() noexcept
 	    .pColorAttachments = m_renderTargetCount > 0 ? colorAttachments.data() : nullptr,
 	    .pDepthAttachment = hasDepthAttachment ? &depthStencilAttachment : nullptr,
 	    .pStencilAttachment = hasStencilAttachment ? &depthStencilAttachment : nullptr};
+
 	vkCmdBeginRendering(m_commandBuffer, &renderingInfo);
 	m_dynamicRenderingActive = true;
 }
@@ -303,20 +281,12 @@ VkImageAspectFlags VulkanRenderCommandList::ResolveDepthStencilAspectMask(VkImag
 
 	if (m_descriptorService == nullptr)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan depth-stencil aspect resolution requires an active descriptor manager.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan depth-stencil aspect resolution requires an active descriptor manager.");
 	}
 	const VkImageAspectFlags aspectMask = m_descriptorService->ResolveImageViewAspectMask(imageView);
 	if (aspectMask == 0)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan depth-stencil view has no registered image aspect.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan depth-stencil view has no registered image aspect.");
 	}
 	return aspectMask;
 }

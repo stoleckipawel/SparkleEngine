@@ -9,8 +9,11 @@ class SPARKLE_TASKS_API TaskEventToken final
 {
 public:
 	TaskEventToken() noexcept;
+
 	bool IsValid() const noexcept { return m_identity != 0 && m_generation != 0; }
+
 	explicit operator bool() const noexcept { return IsValid(); }
+
 	bool operator==(const TaskEventToken&) const noexcept;
 
 private:

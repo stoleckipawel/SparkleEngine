@@ -13,12 +13,7 @@ namespace ECS::EntityCommandDetail
 	{
 	public:
 		void Reserve(std::size_t commandCount);
-		bool TryClaim(
-		    EntityId entity,
-		    EntityCommandBufferId bufferId,
-		    EntityCommandKind kind,
-		    RuntimeComponentTypeId componentType,
-		    bool hasComponentType);
+		bool TryClaim(EntityId entity, EntityCommandBufferId bufferId, EntityCommandKind kind, RuntimeComponentTypeId componentType, bool hasComponentType);
 
 	private:
 		struct ComponentOwner final

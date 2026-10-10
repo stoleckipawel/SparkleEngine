@@ -15,6 +15,7 @@ enum class AlphaMode : std::uint32_t
 	Mask = 1,
 	Blend = 2,
 };
+
 struct SPARKLE_ENGINE_API MaterialDesc
 {
 	std::string name;

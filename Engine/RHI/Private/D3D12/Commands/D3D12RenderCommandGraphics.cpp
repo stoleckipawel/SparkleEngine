@@ -24,10 +24,7 @@ void D3D12RenderCommandList::BindVertexBuffer(const RhiVertexBufferView& view) n
 		return;
 	}
 
-	const D3D12_VERTEX_BUFFER_VIEW nativeView{
-	    .BufferLocation = view.BufferLocation,
-	    .SizeInBytes = view.SizeInBytes,
-	    .StrideInBytes = view.StrideInBytes};
+	const D3D12_VERTEX_BUFFER_VIEW nativeView{.BufferLocation = view.BufferLocation, .SizeInBytes = view.SizeInBytes, .StrideInBytes = view.StrideInBytes};
 	m_commandList->IASetVertexBuffers(0, 1, &nativeView);
 }
 
@@ -38,10 +35,7 @@ void D3D12RenderCommandList::BindIndexBuffer(const RhiIndexBufferView& view) noe
 		return;
 	}
 
-	const D3D12_INDEX_BUFFER_VIEW nativeView{
-	    .BufferLocation = view.BufferLocation,
-	    .SizeInBytes = view.SizeInBytes,
-	    .Format = D3D12TypeConversions::ToIndexFormat(view.Format)};
+	const D3D12_INDEX_BUFFER_VIEW nativeView{.BufferLocation = view.BufferLocation, .SizeInBytes = view.SizeInBytes, .Format = D3D12TypeConversions::ToIndexFormat(view.Format)};
 	m_commandList->IASetIndexBuffer(&nativeView);
 }
 
@@ -53,15 +47,11 @@ void D3D12RenderCommandList::SetRenderTarget(RhiCpuDescriptorHandle renderTarget
 	}
 
 	const D3D12_CPU_DESCRIPTOR_HANDLE nativeRtv = D3D12TypeConversions::ToCpuDescriptor(renderTarget);
-	const D3D12_CPU_DESCRIPTOR_HANDLE nativeDsv =
-	    depthStencil != nullptr ? D3D12TypeConversions::ToCpuDescriptor(*depthStencil) : D3D12_CPU_DESCRIPTOR_HANDLE{};
+	const D3D12_CPU_DESCRIPTOR_HANDLE nativeDsv = depthStencil != nullptr ? D3D12TypeConversions::ToCpuDescriptor(*depthStencil) : D3D12_CPU_DESCRIPTOR_HANDLE{};
 	m_commandList->OMSetRenderTargets(1, &nativeRtv, FALSE, depthStencil != nullptr ? &nativeDsv : nullptr);
 }
 
-void D3D12RenderCommandList::SetRenderTargets(
-    std::uint32_t renderTargetCount,
-    const RhiCpuDescriptorHandle* renderTargets,
-    const RhiCpuDescriptorHandle* depthStencil) noexcept
+void D3D12RenderCommandList::SetRenderTargets(std::uint32_t renderTargetCount, const RhiCpuDescriptorHandle* renderTargets, const RhiCpuDescriptorHandle* depthStencil) noexcept
 {
 	if (m_commandList == nullptr)
 	{
@@ -69,11 +59,7 @@ void D3D12RenderCommandList::SetRenderTargets(
 	}
 	if (renderTargetCount > D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT || (renderTargetCount != 0 && renderTargets == nullptr))
 	{
-		Diagnostics::Fatal(
-		    g_d3d12RenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "D3D12 SetRenderTargets received an invalid render-target count or array.");
+		Diagnostics::Fatal(g_d3d12RenderCommandListLogger, __FILE__, __LINE__, "D3D12 SetRenderTargets received an invalid render-target count or array.");
 	}
 
 	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> nativeRtvs(renderTargetCount);
@@ -82,8 +68,7 @@ void D3D12RenderCommandList::SetRenderTargets(
 		nativeRtvs[index] = D3D12TypeConversions::ToCpuDescriptor(renderTargets[index]);
 	}
 
-	const D3D12_CPU_DESCRIPTOR_HANDLE nativeDsv =
-	    depthStencil != nullptr ? D3D12TypeConversions::ToCpuDescriptor(*depthStencil) : D3D12_CPU_DESCRIPTOR_HANDLE{};
+	const D3D12_CPU_DESCRIPTOR_HANDLE nativeDsv = depthStencil != nullptr ? D3D12TypeConversions::ToCpuDescriptor(*depthStencil) : D3D12_CPU_DESCRIPTOR_HANDLE{};
 	m_commandList->OMSetRenderTargets(renderTargetCount, nativeRtvs.data(), FALSE, depthStencil != nullptr ? &nativeDsv : nullptr);
 }
 
@@ -99,13 +84,7 @@ void D3D12RenderCommandList::ClearDepthStencil(RhiCpuDescriptorHandle depthStenc
 {
 	if (m_commandList != nullptr)
 	{
-		m_commandList->ClearDepthStencilView(
-		    D3D12TypeConversions::ToCpuDescriptor(depthStencil),
-		    D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-		    depth,
-		    stencil,
-		    0,
-		    nullptr);
+		m_commandList->ClearDepthStencilView(D3D12TypeConversions::ToCpuDescriptor(depthStencil), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, depth, stencil, 0, nullptr);
 	}
 }
 
@@ -120,13 +99,9 @@ void D3D12RenderCommandList::SetViewport(const RhiViewport& viewport) noexcept
 		return;
 	}
 
-	const D3D12_VIEWPORT nativeViewport{
-	    .TopLeftX = viewport.X,
-	    .TopLeftY = viewport.Y,
-	    .Width = viewport.Width,
-	    .Height = viewport.Height,
-	    .MinDepth = viewport.MinDepth,
-	    .MaxDepth = viewport.MaxDepth};
+	const D3D12_VIEWPORT
+	    nativeViewport{.TopLeftX = viewport.X, .TopLeftY = viewport.Y, .Width = viewport.Width, .Height = viewport.Height, .MinDepth = viewport.MinDepth, .MaxDepth = viewport.MaxDepth};
+
 	m_commandList->RSSetViewports(1, &nativeViewport);
 }
 
@@ -150,16 +125,11 @@ void D3D12RenderCommandList::DrawIndexedInstanced(
 {
 	if (m_commandList != nullptr)
 	{
-		m_commandList
-		    ->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
+		m_commandList->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
 	}
 }
 
-void D3D12RenderCommandList::DrawInstanced(
-    std::uint32_t vertexCountPerInstance,
-    std::uint32_t instanceCount,
-    std::uint32_t startVertexLocation,
-    std::uint32_t startInstanceLocation) noexcept
+void D3D12RenderCommandList::DrawInstanced(std::uint32_t vertexCountPerInstance, std::uint32_t instanceCount, std::uint32_t startVertexLocation, std::uint32_t startInstanceLocation) noexcept
 {
 	if (m_commandList != nullptr)
 	{

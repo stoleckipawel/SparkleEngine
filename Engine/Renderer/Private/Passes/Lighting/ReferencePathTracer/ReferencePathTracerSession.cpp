@@ -16,10 +16,7 @@
 
 #include <algorithm>
 
-ReferencePathTracerSession::ReferencePathTracerSession(
-    RenderDeviceServices& deviceServices,
-    RendererMemoryMonitor& memoryMonitor,
-    RenderRayTracingScene& rayTracingScene) noexcept :
+ReferencePathTracerSession::ReferencePathTracerSession(RenderDeviceServices& deviceServices, RendererMemoryMonitor& memoryMonitor, RenderRayTracingScene& rayTracingScene) noexcept :
     m_deviceServices(deviceServices),
     m_rayTracingScene(rayTracingScene),
     m_resources(deviceServices, memoryMonitor)
@@ -38,14 +35,9 @@ void ReferencePathTracerSession::PublishFrameProducts(ViewportFrameProducts& pro
 	products.RadianceSamplePrefix = GetRadianceSamplePrefix();
 }
 
-static_assert(
-    static_cast<std::uint8_t>(ReferencePathTracerIdentityComponent::Backend)
-    == static_cast<std::uint8_t>(ViewportRenderProgressReason::BackendChanged));
+static_assert(static_cast<std::uint8_t>(ReferencePathTracerIdentityComponent::Backend) == static_cast<std::uint8_t>(ViewportRenderProgressReason::BackendChanged));
 
-ViewportRenderProgressReason ReferencePathTracerSession::ResolveAvailability(
-    const RenderView& view,
-    const PreparedRenderScene& scene,
-    RayTracingExecutionFrontend executionFrontend) const noexcept
+ViewportRenderProgressReason ReferencePathTracerSession::ResolveAvailability(const RenderView& view, const PreparedRenderScene& scene, RayTracingExecutionFrontend executionFrontend) const noexcept
 {
 	const RhiCapabilities& capabilities = m_deviceServices.GetCapabilities();
 	const RhiFormatSupport* format = capabilities.FindFormatSupport(PixelFormat::R32G32B32A32_Float);
@@ -64,14 +56,11 @@ ViewportRenderProgressReason ReferencePathTracerSession::ResolveAvailability(
 	    scene.materials.begin(),
 	    scene.materials.end(),
 	    [](const MaterialData& material) { return material.alphaMode == 2u || material.subsurfaceStrength != 0.0f; });
+
 	return unsupportedContent ? ViewportRenderProgressReason::UnsupportedContent : ViewportRenderProgressReason::None;
 }
 
-void ReferencePathTracerSession::BeginIdentity(
-    const ReferencePathTracerIdentity& identity,
-    RenderViewportExtent extent,
-    ViewportRenderProgressReason reason,
-    std::uint32_t discardedSamples) noexcept
+void ReferencePathTracerSession::BeginIdentity(const ReferencePathTracerIdentity& identity, RenderViewportExtent extent, ViewportRenderProgressReason reason, std::uint32_t discardedSamples) noexcept
 {
 	m_identity = identity;
 	Hash::Sha256Digest identityHash{};
@@ -107,14 +96,12 @@ void ReferencePathTracerSession::UpdateIdentity(const RenderFrame& frame, RayTra
 {
 	const RenderView& view = frame.View;
 	const PreparedRenderScene& scene = frame.PreparedScene;
-	const ReferencePathTracerIdentity identity =
-	    BuildReferencePathTracerIdentity(frame, executionFrontend, m_deviceServices.GetCapabilities().BackendApi);
+	const ReferencePathTracerIdentity identity = BuildReferencePathTracerIdentity(frame, executionFrontend, m_deviceServices.GetCapabilities().BackendApi);
 	if (m_hasIdentity && identity == m_identity)
 	{
 		return;
 	}
-	const ViewportRenderProgressReason reason =
-	    m_hasIdentity ? static_cast<ViewportRenderProgressReason>(m_identity.FindFirstDifference(identity)) : m_lastReason;
+	const ViewportRenderProgressReason reason = m_hasIdentity ? static_cast<ViewportRenderProgressReason>(m_identity.FindFirstDifference(identity)) : m_lastReason;
 	const std::uint32_t discardedSamples = m_hasIdentity ? m_committedSamples : m_discardedSamples;
 	const ViewportRenderProgressReason availability = ResolveAvailability(view, scene, executionFrontend);
 	if (availability != ViewportRenderProgressReason::None)
@@ -176,6 +163,7 @@ void ReferencePathTracerSession::PrepareWork(RenderViewportExtent extent) noexce
 	    .RowCount = (std::min) (WorkRowsPerDispatch, extent.Height - m_nextRow),
 	    .PriorSampleCount = m_committedSamples,
 	    .WorkFlags = ReferencePathTracerWork::WorkFlagTrace | (m_clearDisplay ? ReferencePathTracerWork::WorkFlagClearDisplay : 0u)};
+
 	m_preparedRowCount = m_work.RowCount;
 	if (m_nextRow + m_preparedRowCount == extent.Height)
 	{
@@ -231,11 +219,7 @@ void ReferencePathTracerSession::ApplyAction(ViewportRenderAction action, std::u
 	}
 }
 
-void ReferencePathTracerSession::Update(
-    const RenderFrame& frame,
-    ViewportRenderAction action,
-    std::uint64_t actionSequence,
-    RayTracingExecutionFrontend executionFrontend) noexcept
+void ReferencePathTracerSession::Update(const RenderFrame& frame, ViewportRenderAction action, std::uint64_t actionSequence, RayTracingExecutionFrontend executionFrontend) noexcept
 {
 	const RenderView& view = frame.View;
 	CompletePendingCommit();
@@ -323,8 +307,7 @@ void ReferencePathTracerSession::OnFrameSubmitted(RhiSubmissionToken token) noex
 	{
 		if ((m_work.WorkFlags & ReferencePathTracerWork::WorkFlagCommitPrefix) != 0u)
 		{
-			m_pendingCommit =
-			    PendingCommit{.Submission = token, .ExecutionGeneration = m_executionGeneration, .Prefix = m_committedSamples + 1u};
+			m_pendingCommit = PendingCommit{.Submission = token, .ExecutionGeneration = m_executionGeneration, .Prefix = m_committedSamples + 1u};
 			m_nextRow = 0u;
 		}
 		else
@@ -396,11 +379,11 @@ ViewportRenderProgress ReferencePathTracerSession::GetProgress() const noexcept
 	    ? ViewportRenderProgressState::Unavailable
 	    : (m_paused ? ViewportRenderProgressState::Paused
 	                : (m_resetVisible ? ViewportRenderProgressState::Resetting
-	                                  : (m_committedSamples >= TargetSampleCount ? ViewportRenderProgressState::Complete
-	                                                                             : ViewportRenderProgressState::Accumulating)));
+	                                  : (m_committedSamples >= TargetSampleCount ? ViewportRenderProgressState::Complete : ViewportRenderProgressState::Accumulating)));
+
 	const double remainingSamples = static_cast<double>(TargetSampleCount - (std::min) (m_committedSamples, TargetSampleCount));
-	const double estimatedSeconds =
-	    m_samplesPerSecond > 0.0 && m_pixelCount > 0u ? (remainingSamples * static_cast<double>(m_pixelCount)) / m_samplesPerSecond : 0.0;
+	const double estimatedSeconds = m_samplesPerSecond > 0.0 && m_pixelCount > 0u ? (remainingSamples * static_cast<double>(m_pixelCount)) / m_samplesPerSecond : 0.0;
+
 	return ViewportRenderProgress{
 	    .State = state,
 	    .Reason = m_unavailableReason != ViewportRenderProgressReason::None ? m_unavailableReason : m_lastReason,
@@ -415,8 +398,5 @@ ViewportRenderProgress ReferencePathTracerSession::GetProgress() const noexcept
 
 RenderProductSamplePrefix ReferencePathTracerSession::GetRadianceSamplePrefix() const noexcept
 {
-	return RenderProductSamplePrefix{
-	    .RenderIdentitySha256 = m_identitySha256,
-	    .SampleCount = m_committedSamples,
-	    .TargetSampleCount = TargetSampleCount};
+	return RenderProductSamplePrefix{.RenderIdentitySha256 = m_identitySha256, .SampleCount = m_committedSamples, .TargetSampleCount = TargetSampleCount};
 }

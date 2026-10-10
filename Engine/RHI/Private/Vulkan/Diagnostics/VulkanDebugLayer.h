@@ -6,6 +6,7 @@ class VulkanDebugLayer final
 {
 public:
 	VulkanDebugLayer() noexcept = default;
+
 	~VulkanDebugLayer() noexcept;
 
 	VulkanDebugLayer(const VulkanDebugLayer&) = delete;
@@ -20,6 +21,7 @@ public:
 
 private:
 	VkInstance m_instance = VK_NULL_HANDLE;
+
 	VkDebugUtilsMessengerEXT m_messenger = VK_NULL_HANDLE;
 	PFN_vkDestroyDebugUtilsMessengerEXT m_destroyMessenger = nullptr;
 };

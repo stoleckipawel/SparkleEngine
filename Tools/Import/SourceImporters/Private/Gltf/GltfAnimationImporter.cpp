@@ -102,30 +102,24 @@ public:
 	static float ReadInputTime(const cgltf_accessor* accessor, std::size_t index)
 	{
 		float time = 0.0f;
-		if (accessor == nullptr || index >= accessor->count || !cgltf_accessor_read_float(accessor, index, &time, 1)
-		    || !std::isfinite(time))
+		if (accessor == nullptr || index >= accessor->count || !cgltf_accessor_read_float(accessor, index, &time, 1) || !std::isfinite(time))
 		{
 			throw Diagnostics::Error(std::format("Cannot decode glTF animation input time {}.", index));
 		}
 		return time;
 	}
 
-	static bool IsFinite(const DirectX::XMFLOAT4& value) noexcept
-	{
-		return std::isfinite(value.x) && std::isfinite(value.y) && std::isfinite(value.z) && std::isfinite(value.w);
-	}
+	static bool IsFinite(const DirectX::XMFLOAT4& value) noexcept { return std::isfinite(value.x) && std::isfinite(value.y) && std::isfinite(value.z) && std::isfinite(value.w); }
 
 	static DirectX::XMFLOAT4 ConvertTranslationValue(const DirectX::XMFLOAT4& source, bool tangent) noexcept
 	{
 		const DirectX::XMFLOAT3 converted = tangent ? GltfCoordinateConverter::ConvertTranslationTangent({source.x, source.y, source.z})
 		                                            : GltfCoordinateConverter::ConvertTranslation({source.x, source.y, source.z});
+
 		return {converted.x, converted.y, converted.z, 0.0f};
 	}
 
-	static DirectX::XMFLOAT4 ConvertAnimationValue(
-	    ImportedAnimationTargetPath targetPath,
-	    const DirectX::XMFLOAT4& source,
-	    bool tangent) noexcept
+	static DirectX::XMFLOAT4 ConvertAnimationValue(ImportedAnimationTargetPath targetPath, const DirectX::XMFLOAT4& source, bool tangent) noexcept
 	{
 		switch (targetPath)
 		{
@@ -141,11 +135,7 @@ public:
 		}
 	}
 
-	static void NormalizeKeyframe(
-	    ImportedAnimationTargetPath targetPath,
-	    bool cubicSpline,
-	    const DirectX::XMFLOAT4* previousRotation,
-	    ImportedAnimationKeyframe& keyframe)
+	static void NormalizeKeyframe(ImportedAnimationTargetPath targetPath, bool cubicSpline, const DirectX::XMFLOAT4* previousRotation, ImportedAnimationKeyframe& keyframe)
 	{
 		keyframe.value = ConvertAnimationValue(targetPath, keyframe.value, false);
 		if (cubicSpline)
@@ -169,8 +159,7 @@ public:
 			throw Diagnostics::Error("glTF animation contains a zero-length rotation keyframe.");
 		}
 		rotation = DirectX::XMQuaternionNormalize(rotation);
-		if (previousRotation != nullptr
-		    && DirectX::XMVectorGetX(DirectX::XMVector4Dot(DirectX::XMLoadFloat4(previousRotation), rotation)) < 0.0f)
+		if (previousRotation != nullptr && DirectX::XMVectorGetX(DirectX::XMVector4Dot(DirectX::XMLoadFloat4(previousRotation), rotation)) < 0.0f)
 		{
 			rotation = DirectX::XMVectorNegate(rotation);
 			if (cubicSpline)
@@ -216,10 +205,7 @@ public:
 		return (std::numeric_limits<std::uint32_t>::max)();
 	}
 
-	static ImportedSkeletonIndex FindSkeletonForSkin(
-	    const SourceImportOutput& output,
-	    const cgltf_data& data,
-	    const cgltf_skin* skin) noexcept
+	static ImportedSkeletonIndex FindSkeletonForSkin(const SourceImportOutput& output, const cgltf_data& data, const cgltf_skin* skin) noexcept
 	{
 		if (skin == nullptr)
 		{
@@ -240,18 +226,14 @@ public:
 		return kInvalidImportedSkeletonIndex;
 	}
 
-	static ImportedAnimationSampler ImportSampler(
-	    const cgltf_animation_sampler& sampler,
-	    ImportedAnimationTargetPath targetPath,
-	    std::uint32_t morphWeightCount,
-	    float& inOutClipDurationSeconds)
+	static ImportedAnimationSampler ImportSampler(const cgltf_animation_sampler& sampler, ImportedAnimationTargetPath targetPath, std::uint32_t morphWeightCount, float& inOutClipDurationSeconds)
 	{
 		ImportedAnimationSampler importedSampler;
 		importedSampler.interpolation = ToImportedInterpolation(sampler.interpolation);
 		const cgltf_accessor* input = sampler.input;
 		const cgltf_accessor* output = sampler.output;
-		if (input == nullptr || output == nullptr || input->count == 0 || input->type != cgltf_type_scalar
-		    || input->component_type != cgltf_component_type_r_32f || output->component_type != cgltf_component_type_r_32f)
+		if (input == nullptr || output == nullptr || input->count == 0 || input->type != cgltf_type_scalar || input->component_type != cgltf_component_type_r_32f
+		    || output->component_type != cgltf_component_type_r_32f)
 		{
 			throw Diagnostics::Error("glTF animation sampler has incompatible input or output accessors.");
 		}
@@ -354,8 +336,7 @@ public:
 		}
 		samplerTargetPaths[samplerIndex] = targetPath;
 
-		const std::uint32_t morphWeightCount =
-		    targetPath == ImportedAnimationTargetPath::Weights ? ResolveMorphWeightCount(*channel.target_node) : 0u;
+		const std::uint32_t morphWeightCount = targetPath == ImportedAnimationTargetPath::Weights ? ResolveMorphWeightCount(*channel.target_node) : 0u;
 		if (targetPath == ImportedAnimationTargetPath::Weights && morphWeightCount != 4u)
 		{
 			throw Diagnostics::Error(std::format("glTF animation channel {} does not target exactly four morph weights.", channelIndex));
@@ -367,11 +348,8 @@ public:
 
 		const std::uint32_t targetNodeIndex = static_cast<std::uint32_t>(cgltf_node_index(&data, channel.target_node));
 		const auto [jointSkeletonIndex, targetJointIndex] = output.scene.FindSkeletonJointForNode(targetNodeIndex);
-		const ImportedSkeletonIndex targetSkeletonIndex = targetPath == ImportedAnimationTargetPath::Weights
-		    ? FindSkeletonForSkin(output, data, channel.target_node->skin)
-		    : jointSkeletonIndex;
-		if (targetSkeletonIndex == kInvalidImportedSkeletonIndex
-		    || (targetPath != ImportedAnimationTargetPath::Weights && targetJointIndex == (std::numeric_limits<std::uint32_t>::max)()))
+		const ImportedSkeletonIndex targetSkeletonIndex = targetPath == ImportedAnimationTargetPath::Weights ? FindSkeletonForSkin(output, data, channel.target_node->skin) : jointSkeletonIndex;
+		if (targetSkeletonIndex == kInvalidImportedSkeletonIndex || (targetPath != ImportedAnimationTargetPath::Weights && targetJointIndex == (std::numeric_limits<std::uint32_t>::max)()))
 		{
 			throw Diagnostics::Error(std::format("glTF animation channel {} is not owned by an imported skeleton.", channelIndex));
 		}
@@ -390,12 +368,7 @@ public:
 			throw Diagnostics::Error(std::format("glTF animation channel {} duplicates an existing target path.", channelIndex));
 		}
 
-		clip.channels.push_back(
-		    ImportedAnimationChannel{
-		        .targetPath = targetPath,
-		        .targetNodeIndex = targetNodeIndex,
-		        .targetJointIndex = targetJointIndex,
-		        .samplerIndex = samplerIndex});
+		clip.channels.push_back(ImportedAnimationChannel{.targetPath = targetPath, .targetNodeIndex = targetNodeIndex, .targetJointIndex = targetJointIndex, .samplerIndex = samplerIndex});
 	}
 };
 
@@ -430,14 +403,7 @@ void GltfAnimationImporter::ImportAnimations(const cgltf_data* data, SourceImpor
 
 		for (cgltf_size channelIndex = 0; channelIndex < animation.channels_count; ++channelIndex)
 		{
-			GltfAnimationTranslation::ImportChannel(
-			    *data,
-			    animation,
-			    animation.channels[channelIndex],
-			    channelIndex,
-			    output,
-			    samplerTargetPaths,
-			    clip);
+			GltfAnimationTranslation::ImportChannel(*data, animation, animation.channels[channelIndex], channelIndex, output, samplerTargetPaths, clip);
 		}
 
 		if (!clip.IsValid())

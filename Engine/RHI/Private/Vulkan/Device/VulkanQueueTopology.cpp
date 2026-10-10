@@ -49,10 +49,7 @@ public:
 		return score;
 	}
 
-	static VulkanQueueLocation SelectUnusedQueue(
-	    std::span<const VkQueueFamilyProperties> families,
-	    std::vector<std::uint32_t>& usedQueueCounts,
-	    ERhiQueueType queueType) noexcept
+	static VulkanQueueLocation SelectUnusedQueue(std::span<const VkQueueFamilyProperties> families, std::vector<std::uint32_t>& usedQueueCounts, ERhiQueueType queueType) noexcept
 	{
 		std::uint32_t selectedFamily = UINT32_MAX;
 		std::uint32_t selectedScore = std::numeric_limits<std::uint32_t>::max();
@@ -80,10 +77,7 @@ public:
 		return VulkanQueueLocation{.FamilyIndex = selectedFamily, .QueueIndex = usedQueueCounts[selectedFamily]++};
 	}
 
-	static VulkanQueueLocation SelectFallbackQueue(
-	    std::span<const VkQueueFamilyProperties> families,
-	    ERhiQueueType queueType,
-	    std::span<const VulkanQueueLocation> selectedLocations) noexcept
+	static VulkanQueueLocation SelectFallbackQueue(std::span<const VkQueueFamilyProperties> families, ERhiQueueType queueType, std::span<const VulkanQueueLocation> selectedLocations) noexcept
 	{
 		for (auto location = selectedLocations.rbegin(); location != selectedLocations.rend(); ++location)
 		{
@@ -110,8 +104,7 @@ VulkanQueueTopology VulkanQueueTopology::Select(VkPhysicalDevice physicalDevice)
 	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, families.data());
 	std::vector<std::uint32_t> usedQueueCounts(familyCount, 0);
 
-	topology.m_locations[RhiQueueTypeToIndex(ERhiQueueType::Graphics)] =
-	    VulkanQueueSelection::SelectUnusedQueue(families, usedQueueCounts, ERhiQueueType::Graphics);
+	topology.m_locations[RhiQueueTypeToIndex(ERhiQueueType::Graphics)] = VulkanQueueSelection::SelectUnusedQueue(families, usedQueueCounts, ERhiQueueType::Graphics);
 	for (const ERhiQueueType queueType : {ERhiQueueType::Compute, ERhiQueueType::Copy})
 	{
 		VulkanQueueLocation& location = topology.m_locations[RhiQueueTypeToIndex(queueType)];
@@ -126,8 +119,7 @@ VulkanQueueTopology VulkanQueueTopology::Select(VkPhysicalDevice physicalDevice)
 	{
 		if (usedQueueCounts[familyIndex] != 0)
 		{
-			topology.m_familyRequests.push_back(
-			    VulkanQueueFamilyRequest{.FamilyIndex = familyIndex, .QueueCount = usedQueueCounts[familyIndex]});
+			topology.m_familyRequests.push_back(VulkanQueueFamilyRequest{.FamilyIndex = familyIndex, .QueueCount = usedQueueCounts[familyIndex]});
 			topology.m_familyIndices.push_back(familyIndex);
 		}
 	}

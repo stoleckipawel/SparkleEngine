@@ -36,9 +36,13 @@ namespace ECS
 		static constexpr std::uint32_t InvalidLocalIndex = (std::numeric_limits<std::uint32_t>::max)();
 
 		constexpr TemporaryEntityId() noexcept = default;
+
 		constexpr bool IsValid() const noexcept { return m_localIndex != InvalidLocalIndex; }
+
 		constexpr EntityCommandBufferId GetBufferId() const noexcept { return m_bufferId; }
+
 		constexpr std::uint32_t GetLocalIndex() const noexcept { return m_localIndex; }
+
 		constexpr auto operator<=>(const TemporaryEntityId&) const noexcept = default;
 
 	private:
@@ -120,10 +124,8 @@ namespace ECS
 		std::vector<EntityCommandResult> Commands;
 		std::vector<TemporaryEntityMapping> TemporaryMappings;
 
-		bool Completed() const noexcept
-		{
-			return Status == EntityCommandCommitStatus::Completed || Status == EntityCommandCommitStatus::CompletedWithErrors;
-		}
+		bool Completed() const noexcept { return Status == EntityCommandCommitStatus::Completed || Status == EntityCommandCommitStatus::CompletedWithErrors; }
+
 		bool AllApplied() const noexcept { return Status == EntityCommandCommitStatus::Completed; }
 	};
 }

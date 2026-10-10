@@ -18,9 +18,7 @@ namespace ECS
 		if (!handle.IsValid() || handle.Slot >= m_entries.size())
 			return {};
 		const Entry& entry = m_entries[handle.Slot];
-		return entry.Generation == handle.Generation
-		    ? ResolvedAnimationClip{&entry.Resource, entry.Skeleton, entry.MorphChannelIndices, entry.TargetGeneration}
-		    : ResolvedAnimationClip{};
+		return entry.Generation == handle.Generation ? ResolvedAnimationClip{&entry.Resource, entry.Skeleton, entry.MorphChannelIndices, entry.TargetGeneration} : ResolvedAnimationClip{};
 	}
 
 	bool AnimationClipResourceStore::ResolveTargets(const SkeletonResourceStore& skeletons, std::uint32_t targetGeneration) noexcept

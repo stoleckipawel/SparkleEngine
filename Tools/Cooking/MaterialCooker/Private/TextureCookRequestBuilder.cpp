@@ -10,16 +10,11 @@
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Paths/PathUtils.h"
 
-std::string TextureCookRequestBuilder::BuildTextureSourceKeyForRoot(
-    std::string_view rootName,
-    const TextureCookRequest& request,
-    const std::filesystem::path& relativePath)
+std::string TextureCookRequestBuilder::BuildTextureSourceKeyForRoot(std::string_view rootName, const TextureCookRequest& request, const std::filesystem::path& relativePath)
 {
-	return std::string(rootName) + ":" + GetTextureColorSpaceName(request.policy.colorSpace) + ":"
-	    + GetTextureMipPolicyName(request.policy.mipPolicy) + ":" + GetTextureMipFilterName(request.policy.mipFilter) + ":"
-	    + GetTextureColorProcessingPolicyName(request.policy.colorProcessingPolicy) + ":" + GetTextureGroupName(request.policy.textureGroup)
-	    + ":" + GetTextureDimensionName(request.policy.dimension) + ":" + GetTextureChannelMaskName(request.policy.channelMask) + ":"
-	    + relativePath.generic_string();
+	return std::string(rootName) + ":" + GetTextureColorSpaceName(request.policy.colorSpace) + ":" + GetTextureMipPolicyName(request.policy.mipPolicy) + ":"
+	    + GetTextureMipFilterName(request.policy.mipFilter) + ":" + GetTextureColorProcessingPolicyName(request.policy.colorProcessingPolicy) + ":" + GetTextureGroupName(request.policy.textureGroup)
+	    + ":" + GetTextureDimensionName(request.policy.dimension) + ":" + GetTextureChannelMaskName(request.policy.channelMask) + ":" + relativePath.generic_string();
 }
 
 std::optional<std::filesystem::path> TextureCookRequestBuilder::BuildTextureOutputPathForRoot(
@@ -39,10 +34,7 @@ std::optional<std::filesystem::path> TextureCookRequestBuilder::BuildTextureOutp
 	return Filesystem::GetCookedTextureRootPath() / cookedRelativePath;
 }
 
-TextureCookRequest TextureCookRequestBuilder::Build(
-    const std::filesystem::path& sourceTexturePath,
-    TextureGroup textureGroup,
-    TextureChannelMask channelMask)
+TextureCookRequest TextureCookRequestBuilder::Build(const std::filesystem::path& sourceTexturePath, TextureGroup textureGroup, TextureChannelMask channelMask)
 {
 	TextureCookRequest request;
 	request.sourcePath = NormalizeSourceTexturePath(sourceTexturePath);
@@ -79,9 +71,7 @@ TextureColorSpace TextureCookRequestBuilder::ResolveColorSpace(TextureGroup text
 	}
 }
 
-TextureMipPolicy TextureCookRequestBuilder::ResolveMipPolicy(
-    const std::filesystem::path& sourceTexturePath,
-    TextureGroup textureGroup) noexcept
+TextureMipPolicy TextureCookRequestBuilder::ResolveMipPolicy(const std::filesystem::path& sourceTexturePath, TextureGroup textureGroup) noexcept
 {
 	(void) textureGroup;
 	if (Paths::GetLowercaseExtension(sourceTexturePath) == L".dds")
@@ -116,8 +106,7 @@ TextureMipFilter TextureCookRequestBuilder::ResolveMipFilter(TextureGroup textur
 
 TextureColorProcessingPolicy TextureCookRequestBuilder::ResolveColorProcessingPolicy(TextureGroup textureGroup) noexcept
 {
-	return ResolveColorSpace(textureGroup) == TextureColorSpace::Srgb ? TextureColorProcessingPolicy::SrgbLinearize
-	                                                                  : TextureColorProcessingPolicy::Linear;
+	return ResolveColorSpace(textureGroup) == TextureColorSpace::Srgb ? TextureColorProcessingPolicy::SrgbLinearize : TextureColorProcessingPolicy::Linear;
 }
 
 TextureDimension TextureCookRequestBuilder::ResolveTextureDimension(TextureGroup textureGroup) noexcept
@@ -177,8 +166,7 @@ std::filesystem::path TextureCookRequestBuilder::BuildTextureOutputPath(const Te
 		return *outputPath;
 	}
 
-	if (const auto outputPath =
-	        BuildTextureOutputPathForRoot(request.sourcePath, Paths::ImportedTextureCacheRoot(), "Imported", variantSuffix))
+	if (const auto outputPath = BuildTextureOutputPathForRoot(request.sourcePath, Paths::ImportedTextureCacheRoot(), "Imported", variantSuffix))
 	{
 		return *outputPath;
 	}

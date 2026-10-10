@@ -123,12 +123,9 @@ void GltfCoordinateConverter::ConvertTriangleWinding(std::vector<std::uint32_t>&
 	}
 }
 
-DirectX::XMFLOAT3 GltfCoordinateConverter::TransformDirection(
-    DirectX::FXMMATRIX transform,
-    const DirectX::XMFLOAT3& localDirection) noexcept
+DirectX::XMFLOAT3 GltfCoordinateConverter::TransformDirection(DirectX::FXMMATRIX transform, const DirectX::XMFLOAT3& localDirection) noexcept
 {
-	const DirectX::XMVECTOR direction =
-	    DirectX::XMVector3Normalize(DirectX::XMVector3TransformNormal(DirectX::XMLoadFloat3(&localDirection), transform));
+	const DirectX::XMVECTOR direction = DirectX::XMVector3Normalize(DirectX::XMVector3TransformNormal(DirectX::XMLoadFloat3(&localDirection), transform));
 	DirectX::XMFLOAT3 result;
 	DirectX::XMStoreFloat3(&result, direction);
 	return result;

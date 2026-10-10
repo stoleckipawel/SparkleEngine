@@ -43,17 +43,12 @@ public:
 	RhiDescriptorAllocation AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType) override;
 	void ReleaseDescriptor(ERhiDescriptorAllocatorType descriptorType, const RhiDescriptorAllocation& allocation) noexcept override;
 	RhiDescriptorTableHandle AllocateDescriptorTable(ERhiDescriptorAllocatorType descriptorType, std::uint32_t descriptorCount) override;
-	RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(
-	    RhiDescriptorTableHandle tableHandle,
-	    std::uint32_t descriptorIndex = 0) const noexcept override;
+	RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0) const noexcept override;
 	void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept override;
 	RhiDescriptorTableBinding GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept override;
 
 	RhiResourceViewHandle CreateResourceView(const RhiResourceViewDesc& desc) override;
-	bool WriteResourceView(
-	    RhiDescriptorTableHandle tableHandle,
-	    std::uint32_t descriptorIndex,
-	    RhiResourceViewHandle view) noexcept override;
+	bool WriteResourceView(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex, RhiResourceViewHandle view) noexcept override;
 	void ReleaseResourceView(RhiResourceViewHandle view) noexcept override;
 	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept override;
 	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept override;
@@ -72,10 +67,7 @@ private:
 
 	void PublishRecordingReadView() noexcept;
 	void WriteSamplerDescriptor(RhiDescriptorTableHandle table, VkSampler sampler) noexcept;
-	NativeTextureViewInfo ResolveNativeTextureViewInfo(
-	    RhiResourceViewHandle view,
-	    RhiResourceHandle resource,
-	    ResourceState state) const noexcept;
+	NativeTextureViewInfo ResolveNativeTextureViewInfo(RhiResourceViewHandle view, RhiResourceHandle resource, ResourceState state) const noexcept;
 	RhiResourceViewHandle CreateTextureDescriptorView(const RhiResourceViewDesc& desc);
 	RhiResourceViewHandle CreateAttachmentView(const RhiResourceViewDesc& desc);
 	RhiResourceViewHandle CreateBufferDescriptorView(const RhiResourceViewDesc& desc);

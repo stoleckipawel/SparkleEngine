@@ -13,10 +13,7 @@ class TextureDiagnosticsSnapshotBuilder final
 public:
 	using PreviewTextureResolver = TexturePreviewHandleResolver;
 
-	TextureDiagnosticsSnapshotBuilder(
-	    const RhiDescriptorService& descriptorService,
-	    const PreviewTextureResolver& resolvePreviewTexture,
-	    std::size_t expectedRowCount);
+	TextureDiagnosticsSnapshotBuilder(const RhiDescriptorService& descriptorService, const PreviewTextureResolver& resolvePreviewTexture, std::size_t expectedRowCount);
 
 	void Add(const RendererTexture& texture, TextureDiagnosticsKind kind, std::string key, bool streamManaged);
 	TextureDiagnosticsSnapshot Build() &&;

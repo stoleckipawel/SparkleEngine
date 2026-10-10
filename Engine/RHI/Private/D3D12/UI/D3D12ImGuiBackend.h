@@ -26,14 +26,8 @@ public:
 	void Shutdown() noexcept override;
 
 private:
-	static void AllocateDescriptor(
-	    ImGui_ImplDX12_InitInfo* info,
-	    D3D12_CPU_DESCRIPTOR_HANDLE* outCpuHandle,
-	    D3D12_GPU_DESCRIPTOR_HANDLE* outGpuHandle);
-	static void ReleaseDescriptor(
-	    ImGui_ImplDX12_InitInfo* info,
-	    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
-	    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
+	static void AllocateDescriptor(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* outCpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE* outGpuHandle);
+	static void ReleaseDescriptor(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
 
 	static ID3D12Device* ToD3D12Device(NativeGraphicsDeviceHandle handle) noexcept;
 	static ID3D12CommandQueue* ToD3D12CommandQueue(NativeGraphicsQueueHandle handle) noexcept;

@@ -10,6 +10,7 @@
 #include <utility>
 
 template <typename Signature, std::size_t Capacity = 8> class Event;
+
 template <typename... Args, std::size_t Capacity> class Event<void(Args...), Capacity>
 {
 public:

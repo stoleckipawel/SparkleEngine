@@ -32,11 +32,7 @@ void VulkanRecordingDescriptorPool::Reset() noexcept
 		const VkResult result = vkResetDescriptorPool(m_rhi->GetDevice(), page.Pool, 0);
 		if (!VulkanResult::Succeeded(result))
 		{
-			Diagnostics::Fatal(
-			    g_vulkanRecordingDescriptorPoolLogger,
-			    __FILE__,
-			    __LINE__,
-			    VulkanResult::FormatFailure("vkResetDescriptorPool", result));
+			Diagnostics::Fatal(g_vulkanRecordingDescriptorPoolLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkResetDescriptorPool", result));
 		}
 		page.Remaining = page.Capacity;
 		page.AllocatedSets = 0;
@@ -57,9 +53,7 @@ bool VulkanRecordingDescriptorPool::CanAllocate(const PoolPage& page, std::span<
 	return true;
 }
 
-VkDescriptorSet VulkanRecordingDescriptorPool::AllocateSet(
-    VkDescriptorSetLayout layout,
-    std::span<const VkDescriptorPoolSize> requirements) noexcept
+VkDescriptorSet VulkanRecordingDescriptorPool::AllocateSet(VkDescriptorSetLayout layout, std::span<const VkDescriptorPoolSize> requirements) noexcept
 {
 	// The global set cap bounds every page; per-page counts identify unused pages for reclamation.
 	if (layout == VK_NULL_HANDLE || m_allocatedSetCount >= DescriptorSetCapacity)
@@ -87,10 +81,7 @@ VkDescriptorSet VulkanRecordingDescriptorPool::AllocateSet(
 	return AllocateSet(m_pages.back(), layout, requirements);
 }
 
-VkDescriptorSet VulkanRecordingDescriptorPool::AllocateSet(
-    PoolPage& page,
-    VkDescriptorSetLayout layout,
-    std::span<const VkDescriptorPoolSize> requirements) noexcept
+VkDescriptorSet VulkanRecordingDescriptorPool::AllocateSet(PoolPage& page, VkDescriptorSetLayout layout, std::span<const VkDescriptorPoolSize> requirements) noexcept
 {
 	const VkDescriptorSetAllocateInfo allocateInfo{
 	    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
@@ -103,11 +94,7 @@ VkDescriptorSet VulkanRecordingDescriptorPool::AllocateSet(
 	const VkResult result = vkAllocateDescriptorSets(m_rhi->GetDevice(), &allocateInfo, &descriptorSet);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRecordingDescriptorPoolLogger,
-		    __FILE__,
-		    __LINE__,
-		    VulkanResult::FormatFailure("vkAllocateDescriptorSets", result));
+		Diagnostics::Fatal(g_vulkanRecordingDescriptorPoolLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkAllocateDescriptorSets", result));
 	}
 	for (const VkDescriptorPoolSize& requirement : requirements)
 	{
@@ -122,6 +109,7 @@ VkDescriptorSet VulkanRecordingDescriptorPool::AllocateSet(
 void VulkanRecordingDescriptorPool::CreatePool(std::span<const VkDescriptorPoolSize> requirements) noexcept
 {
 	PoolPage page;
+
 	page.Capacity = {
 	    {.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .descriptorCount = 1024},
 	    {.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .descriptorCount = 1024},
@@ -162,11 +150,7 @@ void VulkanRecordingDescriptorPool::CreatePool(std::span<const VkDescriptorPoolS
 	const VkResult result = vkCreateDescriptorPool(m_rhi->GetDevice(), &createInfo, nullptr, &page.Pool);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRecordingDescriptorPoolLogger,
-		    __FILE__,
-		    __LINE__,
-		    VulkanResult::FormatFailure("vkCreateDescriptorPool", result));
+		Diagnostics::Fatal(g_vulkanRecordingDescriptorPoolLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkCreateDescriptorPool", result));
 	}
 	m_pages.push_back(std::move(page));
 }

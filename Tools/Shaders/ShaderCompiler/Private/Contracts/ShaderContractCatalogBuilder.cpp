@@ -24,8 +24,7 @@ ShaderContractCatalog ShaderContractCatalogBuilder::Build(ShaderContractSelectio
 		const auto [existing, inserted] = shaderTypeNames.emplace(registration.TypeId, registration.ShaderName);
 		if (!inserted && existing->second != registration.ShaderName)
 		{
-			throw Diagnostics::Error(
-			    std::format("Shader type id collision between '{}' and '{}'.", existing->second, registration.ShaderName));
+			throw Diagnostics::Error(std::format("Shader type id collision between '{}' and '{}'.", existing->second, registration.ShaderName));
 		}
 		if (selectionKind != ShaderContractSelectionKind::All && registration.ShaderName != requestedId)
 		{
@@ -49,9 +48,7 @@ ShaderContractCatalog ShaderContractCatalogBuilder::Build(ShaderContractSelectio
 		catalog.push_back(std::move(shader));
 	}
 
-	std::ranges::sort(
-	    catalog,
-	    [](const ShaderContract& left, const ShaderContract& right) { return left.shaderTypeId < right.shaderTypeId; });
+	std::ranges::sort(catalog, [](const ShaderContract& left, const ShaderContract& right) { return left.shaderTypeId < right.shaderTypeId; });
 	if (selectionKind != ShaderContractSelectionKind::All && catalog.empty())
 	{
 		throw Diagnostics::Error(std::format("Unknown registered shader '{}'.", requestedId));

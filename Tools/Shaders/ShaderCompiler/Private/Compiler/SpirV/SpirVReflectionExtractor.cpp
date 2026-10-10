@@ -9,10 +9,7 @@
 #include <vector>
 #include <utility>
 
-CookedShaderResourceKind SpirVReflectionExtractor::MapDescriptorType(
-    SpvReflectDescriptorType type,
-    SpvDim dim,
-    SpvReflectDecorationFlags decorationFlags)
+CookedShaderResourceKind SpirVReflectionExtractor::MapDescriptorType(SpvReflectDescriptorType type, SpvDim dim, SpvReflectDecorationFlags decorationFlags)
 {
 	switch (type)
 	{
@@ -32,8 +29,7 @@ CookedShaderResourceKind SpirVReflectionExtractor::MapDescriptorType(
 			return CookedShaderResourceKind::ConstantBuffer;
 		case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER:
 		case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-			return (decorationFlags & SPV_REFLECT_DECORATION_NON_WRITABLE) != 0u ? CookedShaderResourceKind::StructuredBuffer
-			                                                                     : CookedShaderResourceKind::RWStructuredBuffer;
+			return (decorationFlags & SPV_REFLECT_DECORATION_NON_WRITABLE) != 0u ? CookedShaderResourceKind::StructuredBuffer : CookedShaderResourceKind::RWStructuredBuffer;
 		case SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
 			return CookedShaderResourceKind::AccelerationStructure;
 		default:
@@ -70,87 +66,142 @@ CookedShaderScalarType SpirVReflectionExtractor::MapInputFormat(SpvReflectFormat
 	{
 		case SPV_REFLECT_FORMAT_R32_UINT:
 			outComponentCount = 1;
+
 			return CookedShaderScalarType::UInt32;
+
 		case SPV_REFLECT_FORMAT_R32_SINT:
 			outComponentCount = 1;
+
 			return CookedShaderScalarType::Int32;
+
 		case SPV_REFLECT_FORMAT_R32_SFLOAT:
 			outComponentCount = 1;
+
 			return CookedShaderScalarType::Float32;
+
 		case SPV_REFLECT_FORMAT_R32G32_UINT:
 			outComponentCount = 2;
+
 			return CookedShaderScalarType::UInt32;
+
 		case SPV_REFLECT_FORMAT_R32G32_SINT:
 			outComponentCount = 2;
+
 			return CookedShaderScalarType::Int32;
+
 		case SPV_REFLECT_FORMAT_R32G32_SFLOAT:
 			outComponentCount = 2;
+
 			return CookedShaderScalarType::Float32;
+
 		case SPV_REFLECT_FORMAT_R32G32B32_UINT:
 			outComponentCount = 3;
+
 			return CookedShaderScalarType::UInt32;
+
 		case SPV_REFLECT_FORMAT_R32G32B32_SINT:
 			outComponentCount = 3;
+
 			return CookedShaderScalarType::Int32;
+
 		case SPV_REFLECT_FORMAT_R32G32B32_SFLOAT:
 			outComponentCount = 3;
+
 			return CookedShaderScalarType::Float32;
+
 		case SPV_REFLECT_FORMAT_R32G32B32A32_UINT:
 			outComponentCount = 4;
+
 			return CookedShaderScalarType::UInt32;
+
 		case SPV_REFLECT_FORMAT_R32G32B32A32_SINT:
 			outComponentCount = 4;
+
 			return CookedShaderScalarType::Int32;
+
 		case SPV_REFLECT_FORMAT_R32G32B32A32_SFLOAT:
 			outComponentCount = 4;
+
 			return CookedShaderScalarType::Float32;
+
 		case SPV_REFLECT_FORMAT_R16_UINT:
 			outComponentCount = 1;
+
 			return CookedShaderScalarType::UInt16;
+
 		case SPV_REFLECT_FORMAT_R16_SINT:
 			outComponentCount = 1;
+
 			return CookedShaderScalarType::Int16;
+
 		case SPV_REFLECT_FORMAT_R16_SFLOAT:
 			outComponentCount = 1;
+
 			return CookedShaderScalarType::Float16;
+
 		case SPV_REFLECT_FORMAT_R16G16_UINT:
 			outComponentCount = 2;
+
 			return CookedShaderScalarType::UInt16;
+
 		case SPV_REFLECT_FORMAT_R16G16_SINT:
 			outComponentCount = 2;
+
 			return CookedShaderScalarType::Int16;
+
 		case SPV_REFLECT_FORMAT_R16G16_SFLOAT:
 			outComponentCount = 2;
+
 			return CookedShaderScalarType::Float16;
+
 		case SPV_REFLECT_FORMAT_R16G16B16_UINT:
 			outComponentCount = 3;
+
 			return CookedShaderScalarType::UInt16;
+
 		case SPV_REFLECT_FORMAT_R16G16B16_SINT:
 			outComponentCount = 3;
+
 			return CookedShaderScalarType::Int16;
+
 		case SPV_REFLECT_FORMAT_R16G16B16_SFLOAT:
 			outComponentCount = 3;
+
 			return CookedShaderScalarType::Float16;
+
 		case SPV_REFLECT_FORMAT_R16G16B16A16_UINT:
 			outComponentCount = 4;
+
 			return CookedShaderScalarType::UInt16;
+
 		case SPV_REFLECT_FORMAT_R16G16B16A16_SINT:
 			outComponentCount = 4;
+
 			return CookedShaderScalarType::Int16;
+
 		case SPV_REFLECT_FORMAT_R16G16B16A16_SFLOAT:
 			outComponentCount = 4;
+
 			return CookedShaderScalarType::Float16;
+
 		case SPV_REFLECT_FORMAT_R64_UINT:
 			outComponentCount = 1;
+
 			return CookedShaderScalarType::UInt64;
+
 		case SPV_REFLECT_FORMAT_R64_SINT:
 			outComponentCount = 1;
+
 			return CookedShaderScalarType::Int64;
+
 		case SPV_REFLECT_FORMAT_R64_SFLOAT:
 			outComponentCount = 1;
+
 			return CookedShaderScalarType::Float64;
+
 		default:
 			outComponentCount = 0;
+
 			return CookedShaderScalarType::Unknown;
 	}
 }
@@ -173,10 +224,7 @@ CookedShaderScalarType SpirVReflectionExtractor::MapNumericScalar(const SpvRefle
 	return CookedShaderScalarType::Unknown;
 }
 
-void SpirVReflectionExtractor::FlattenBlockMembers(
-    const SpvReflectBlockVariable& block,
-    std::uint32_t parentAbsoluteOffset,
-    std::vector<ShaderReflectionConstantBufferMember>& outMembers)
+void SpirVReflectionExtractor::FlattenBlockMembers(const SpvReflectBlockVariable& block, std::uint32_t parentAbsoluteOffset, std::vector<ShaderReflectionConstantBufferMember>& outMembers)
 {
 	for (std::uint32_t i = 0; i < block.member_count; ++i)
 	{
@@ -191,9 +239,7 @@ void SpirVReflectionExtractor::FlattenBlockMembers(
 		{
 			member.ArrayCount *= (m.array.dims[d] == 0u ? 1u : m.array.dims[d]);
 		}
-		member.ArrayStrideInBytes = (m.array.stride != 0u)
-		    ? m.array.stride
-		    : ((member.ArrayCount > 0u) ? member.SizeInBytes / member.ArrayCount : member.SizeInBytes);
+		member.ArrayStrideInBytes = (m.array.stride != 0u) ? m.array.stride : ((member.ArrayCount > 0u) ? member.SizeInBytes / member.ArrayCount : member.SizeInBytes);
 
 		// Map the type. Prefer numeric traits + type flags.
 		if (m.type_description != nullptr)
@@ -202,9 +248,7 @@ void SpirVReflectionExtractor::FlattenBlockMembers(
 			if (flags & SPV_REFLECT_TYPE_FLAG_FLOAT)
 			{
 				const std::uint32_t width = m.numeric.scalar.width;
-				member.ScalarType = (width == 16u) ? CookedShaderScalarType::Float16
-				    : (width == 64u)               ? CookedShaderScalarType::Float64
-				                                   : CookedShaderScalarType::Float32;
+				member.ScalarType = (width == 16u) ? CookedShaderScalarType::Float16 : (width == 64u) ? CookedShaderScalarType::Float64 : CookedShaderScalarType::Float32;
 			}
 			else if (flags & SPV_REFLECT_TYPE_FLAG_INT)
 			{
@@ -283,9 +327,7 @@ ShaderReflection SpirVReflectionExtractor::Extract(std::span<const std::uint8_t>
 		}
 
 		ShaderReflectionResourceBinding binding;
-		binding.Name = (b->name && b->name[0] != '\0')
-		    ? b->name
-		    : (b->type_description && b->type_description->type_name ? b->type_description->type_name : "");
+		binding.Name = (b->name && b->name[0] != '\0') ? b->name : (b->type_description && b->type_description->type_name ? b->type_description->type_name : "");
 		binding.Kind = MapDescriptorType(b->descriptor_type, b->image.dim, b->decoration_flags);
 		binding.Dimension = MapImageDim(b->image.dim, b->image.arrayed, b->image.ms);
 		switch (binding.Kind)
@@ -298,14 +340,15 @@ ShaderReflection SpirVReflectionExtractor::Extract(std::span<const std::uint8_t>
 			case CookedShaderResourceKind::RWByteAddressBuffer:
 			case CookedShaderResourceKind::RWTypedBuffer:
 				binding.Dimension = CookedShaderResourceDimension::Buffer;
+
 				break;
 			default:
 				break;
 		}
 		binding.IsReadOnly =
-		    (binding.Kind != CookedShaderResourceKind::RWTexture && binding.Kind != CookedShaderResourceKind::RWStructuredBuffer
-		        && binding.Kind != CookedShaderResourceKind::RWByteAddressBuffer
+		    (binding.Kind != CookedShaderResourceKind::RWTexture && binding.Kind != CookedShaderResourceKind::RWStructuredBuffer && binding.Kind != CookedShaderResourceKind::RWByteAddressBuffer
 		        && binding.Kind != CookedShaderResourceKind::RWTypedBuffer);
+
 		binding.Set = b->set;
 		binding.Slot = b->binding;
 		binding.ArrayCount = (b->count == 0u) ? 1u : b->count;

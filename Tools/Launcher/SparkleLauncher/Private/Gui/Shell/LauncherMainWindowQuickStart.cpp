@@ -43,8 +43,7 @@ namespace SparkleLauncher
 			return;
 		}
 
-		LauncherOperationRequest goalRequest =
-		    BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, QStringLiteral("levels.run"));
+		LauncherOperationRequest goalRequest = BuildLauncherOperationRequest(m_repositoryRoot, m_contentModel, m_settings, QStringLiteral("levels.run"));
 		goalRequest.ContentId = content.Id;
 		goalRequest.RequestedLevelIds = level.Id;
 		m_quickStartExecution.emplace(std::move(goalRequest));
@@ -81,14 +80,12 @@ namespace SparkleLauncher
 		const QString operationId = resolution.OperationRequest->OperationId;
 		if (FindOperationDescriptor(operationId) == nullptr)
 		{
-			ReportQuickStartBlocked(QStringLiteral("Capability %1 selected unknown launcher operation %2.")
-			        .arg(QString::fromStdString(resolution.CapabilityId), operationId));
+			ReportQuickStartBlocked(QStringLiteral("Capability %1 selected unknown launcher operation %2.").arg(QString::fromStdString(resolution.CapabilityId), operationId));
 			return;
 		}
 
 		const QString goalName = QuickStartGoalDisplayName(execution.GoalRequest());
-		const QString launchVerb =
-		    execution.GoalRequest().RunMode == QStringLiteral("game") ? QStringLiteral("Run") : QStringLiteral("Open");
+		const QString launchVerb = execution.GoalRequest().RunMode == QStringLiteral("game") ? QStringLiteral("Run") : QStringLiteral("Open");
 		const QString stepTitle = QStringLiteral("%1 %2 - %3").arg(launchVerb, goalName, DisplayNameForOperation(operationId));
 		QStringList dependencyPath;
 		for (const std::string& capabilityId : resolution.DependencyPath)
@@ -105,18 +102,15 @@ namespace SparkleLauncher
 		}
 
 		StartOperation(std::move(*resolution.OperationRequest), stepTitle);
+
 		m_activityPanel->AppendRunOutput(
 		    runId,
-		    QStringLiteral("Quick Start is preparing every registered prerequisite needed to run %1.\nCapability path: %2\nOperation: %3\n")
-		        .arg(goalName, dependencyPath.join(" -> "), operationId));
+		    QStringLiteral("Quick Start is preparing every registered prerequisite needed to run %1.\nCapability path: %2\nOperation: %3\n").arg(goalName, dependencyPath.join(" -> "), operationId));
+
 		m_activityPanel->ShowRunOutput(runId);
 	}
 
-	void LauncherMainWindow::HandleQuickStartOperationFinished(
-	    const QString& runId,
-	    const QString& operationId,
-	    bool succeeded,
-	    const QString& statusText)
+	void LauncherMainWindow::HandleQuickStartOperationFinished(const QString& runId, const QString& operationId, bool succeeded, const QString& statusText)
 	{
 		if (!m_quickStartExecution.has_value())
 		{
@@ -129,9 +123,7 @@ namespace SparkleLauncher
 			case LauncherQuickStartCompletion::Ignored:
 				return;
 			case LauncherQuickStartCompletion::Failed:
-				m_activityPanel->AppendRunOutput(
-				    runId,
-				    QStringLiteral("\nQuick Start stopped because this prerequisite failed: %1\n").arg(statusText));
+				m_activityPanel->AppendRunOutput(runId, QStringLiteral("\nQuick Start stopped because this prerequisite failed: %1\n").arg(statusText));
 				m_activityPanel->ShowRunOutput(runId);
 				m_quickStartExecution.reset();
 				SetQuickStartButtonsEnabled(true);
@@ -160,8 +152,7 @@ namespace SparkleLauncher
 		const LauncherOperationRequest goalRequest = m_quickStartExecution->GoalRequest();
 		const QString goalName = QuickStartGoalDisplayName(goalRequest);
 		const QString title = QStringLiteral("Run %1").arg(goalName);
-		const QString message = statusMessage.trimmed().isEmpty() ? QStringLiteral("Quick Start could not resolve the next prerequisite.")
-		                                                          : statusMessage.trimmed();
+		const QString message = statusMessage.trimmed().isEmpty() ? QStringLiteral("Quick Start could not resolve the next prerequisite.") : statusMessage.trimmed();
 		m_quickStartExecution.reset();
 		SetQuickStartButtonsEnabled(true);
 

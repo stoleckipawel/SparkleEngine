@@ -16,11 +16,7 @@ namespace ReferencePathTracer
 		bool Delta;
 	};
 
-	float3 EvaluateEnvironmentRadiance(LightCounts lightCounts,
-	                                   PreviousPathEvent previousEvent,
-	                                   float3 directionWorld,
-	                                   Texture2D skyTexture,
-	                                   SamplerState skySampler)
+	float3 EvaluateEnvironmentRadiance(LightCounts lightCounts, PreviousPathEvent previousEvent, float3 directionWorld, Texture2D skyTexture, SamplerState skySampler)
 	{
 		const float lightPdfW = EnvironmentPdfW(lightCounts);
 		const float misWeight = previousEvent.Delta ? 1.0f : PathTracer::PowerHeuristic(previousEvent.BsdfPdfW, lightPdfW);
@@ -53,11 +49,11 @@ namespace ReferencePathTracer
 
 		const uint lightChoiceDimension = SurfaceDimension(surfaceDepth, LightChoiceOffset);
 		const LightSelection selection = SelectLight(lightCounts, RandomWord(sampleIdentity, lightChoiceDimension));
-		const float2 lightShapeSample =
-		    float2(CommonRandom::OpenUnitInterval(RandomWord(sampleIdentity, SurfaceDimension(surfaceDepth, LightShapeXOffset))),
-		           CommonRandom::OpenUnitInterval(RandomWord(sampleIdentity, SurfaceDimension(surfaceDepth, LightShapeYOffset))));
-		const LightSampling::DirectLightSample light =
-		    SampleLight(selection, surface.PositionWorld, lightShapeSample, skyTexture, skySampler);
+
+		const float2 lightShapeSample = float2(CommonRandom::OpenUnitInterval(RandomWord(sampleIdentity, SurfaceDimension(surfaceDepth, LightShapeXOffset))),
+		                                       CommonRandom::OpenUnitInterval(RandomWord(sampleIdentity, SurfaceDimension(surfaceDepth, LightShapeYOffset))));
+
+		const LightSampling::DirectLightSample light = SampleLight(selection, surface.PositionWorld, lightShapeSample, skyTexture, skySampler);
 		const PathBsdf::Evaluation bsdf = PathBsdf::EvaluateContinuous(surface, light.DirectionWorld, lobeMasses, true, true);
 		if (!bsdf.HasSupport || !PathVisibility::IsUnoccluded(sceneTlas, surface, light))
 		{

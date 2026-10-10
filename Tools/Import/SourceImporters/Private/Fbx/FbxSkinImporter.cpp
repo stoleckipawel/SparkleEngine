@@ -21,6 +21,7 @@ class FbxSkinTranslation final
 {
 public:
 	using NodeSet = std::unordered_set<const aiNode*>;
+
 	using NodeIndexMap = std::unordered_map<const aiNode*, std::uint32_t>;
 
 	static const aiNode* FindCommonAncestor(const std::vector<const aiNode*>& nodes) noexcept
@@ -120,10 +121,7 @@ public:
 		return inverse;
 	}
 
-	static std::string MeshName(const aiMesh& mesh)
-	{
-		return mesh.mName.length > 0 ? std::string(mesh.mName.C_Str()) : std::string("<unnamed-mesh>");
-	}
+	static std::string MeshName(const aiMesh& mesh) { return mesh.mName.length > 0 ? std::string(mesh.mName.C_Str()) : std::string("<unnamed-mesh>"); }
 };
 
 struct FbxSkinImporter::SkeletonBuildState final
@@ -154,8 +152,7 @@ void FbxSkinImporter::CollectSkeletonTopology(const aiScene& scene, const aiNode
 		const aiNode* boneNode = bone != nullptr ? FbxNodeTransformConverter::FindNode(scene, bone->mName) : nullptr;
 		if (bone == nullptr || bone->mName.length == 0 || boneNode == nullptr || !boneNames.emplace(bone->mName.C_Str()).second)
 		{
-			throw Diagnostics::Error(
-			    std::format("FBX mesh '{}' has an invalid or ambiguous bone {}.", FbxSkinTranslation::MeshName(mesh), boneIndex));
+			throw Diagnostics::Error(std::format("FBX mesh '{}' has an invalid or ambiguous bone {}.", FbxSkinTranslation::MeshName(mesh), boneIndex));
 		}
 		state.BoneNodes.push_back(boneNode);
 	}
@@ -174,11 +171,7 @@ void FbxSkinImporter::CollectSkeletonTopology(const aiScene& scene, const aiNode
 	FbxSkinTranslation::AppendRequiredNodesDepthFirst(*state.SkeletonRoot, requiredNodes, state.JointNodes);
 	if (state.JointNodes.empty() || state.JointNodes.size() > static_cast<std::size_t>((std::numeric_limits<std::uint16_t>::max)()) + 1u)
 	{
-		throw Diagnostics::Error(
-		    std::format(
-		        "FBX mesh '{}' has a skeleton joint count outside the engine range: {}.",
-		        FbxSkinTranslation::MeshName(mesh),
-		        state.JointNodes.size()));
+		throw Diagnostics::Error(std::format("FBX mesh '{}' has a skeleton joint count outside the engine range: {}.", FbxSkinTranslation::MeshName(mesh), state.JointNodes.size()));
 	}
 
 	state.JointIndices.reserve(state.JointNodes.size());
@@ -195,24 +188,20 @@ void FbxSkinImporter::InitializeSkeleton(const aiScene& scene, const aiMesh& mes
 	state.Skeleton.sourceSkeletonRootNodeIndex = FbxNodeTransformConverter::FindNodeIndex(scene, *state.SkeletonRoot);
 	if (state.Skeleton.sourceSkeletonRootNodeIndex == (std::numeric_limits<std::uint32_t>::max)())
 	{
-		throw Diagnostics::Error(
-		    std::format("FBX mesh '{}' skeleton root is outside the imported hierarchy.", FbxSkinTranslation::MeshName(mesh)));
+		throw Diagnostics::Error(std::format("FBX mesh '{}' skeleton root is outside the imported hierarchy.", FbxSkinTranslation::MeshName(mesh)));
 	}
 	state.Skeleton.joints.reserve(state.JointNodes.size());
 
 	const aiBone& referenceBone = *mesh.mBones[0];
 	const aiMatrix4x4 referenceNodeWorld = FbxNodeTransformConverter::ComputeNodeWorldTransform(*state.BoneNodes[0]);
-	state.BindSpaceCorrection =
-	    FbxSkinTranslation::ConvertInverse(referenceNodeWorld) * FbxSkinTranslation::ConvertInverse(referenceBone.mOffsetMatrix);
+	state.BindSpaceCorrection = FbxSkinTranslation::ConvertInverse(referenceNodeWorld) * FbxSkinTranslation::ConvertInverse(referenceBone.mOffsetMatrix);
 }
 
 void FbxSkinImporter::AppendSkeletonJoints(const aiScene& scene, const aiMesh& mesh, SkeletonBuildState& state)
 {
 	for (const aiNode* jointNode : state.JointNodes)
 	{
-		DirectX::XMMATRIX bindModel =
-		    FbxNodeTransformConverter::ConvertAssimpMatrixToEngine(FbxNodeTransformConverter::ComputeNodeWorldTransform(*jointNode))
-		    * state.BindSpaceCorrection;
+		DirectX::XMMATRIX bindModel = FbxNodeTransformConverter::ConvertAssimpMatrixToEngine(FbxNodeTransformConverter::ComputeNodeWorldTransform(*jointNode)) * state.BindSpaceCorrection;
 		ImportedJoint joint;
 		joint.name = jointNode->mName.C_Str();
 		joint.sourceNodeIndex = FbxNodeTransformConverter::FindNodeIndex(scene, *jointNode);
@@ -241,9 +230,7 @@ void FbxSkinImporter::AppendSkeletonJoints(const aiScene& scene, const aiMesh& m
 		DirectX::XMMATRIX collapsedBindLocal = bindModel;
 		if (joint.parentJointIndex < state.Skeleton.joints.size())
 		{
-			collapsedBindLocal *= FbxSkinTranslation::Inverse(
-			    DirectX::XMLoadFloat4x4(&state.Skeleton.joints[joint.parentJointIndex].bindModelTransform),
-			    "parent bind-model");
+			collapsedBindLocal *= FbxSkinTranslation::Inverse(DirectX::XMLoadFloat4x4(&state.Skeleton.joints[joint.parentJointIndex].bindModelTransform), "parent bind-model");
 		}
 		const DirectX::XMMATRIX parentSpace = FbxSkinTranslation::Inverse(bindLocal, "joint-local bind") * collapsedBindLocal;
 		DirectX::XMStoreFloat4x4(&joint.bindLocalTransform, bindLocal);
@@ -254,12 +241,7 @@ void FbxSkinImporter::AppendSkeletonJoints(const aiScene& scene, const aiMesh& m
 	}
 }
 
-ImportedSkeletonIndex FbxSkinImporter::ImportSkeleton(
-    const aiScene& scene,
-    const aiNode& meshNode,
-    const aiMesh& mesh,
-    std::uint32_t sourceMeshIndex,
-    SourceImportOutput& output)
+ImportedSkeletonIndex FbxSkinImporter::ImportSkeleton(const aiScene& scene, const aiNode& meshNode, const aiMesh& mesh, std::uint32_t sourceMeshIndex, SourceImportOutput& output)
 {
 	if (!mesh.HasBones())
 	{
@@ -299,8 +281,7 @@ void FbxSkinImporter::CollectSkinWeights(const aiMesh& mesh, const ImportedSkele
 		const auto joint = bone != nullptr ? state.JointIndices.find(bone->mName.C_Str()) : state.JointIndices.end();
 		if (bone == nullptr || joint == state.JointIndices.end())
 		{
-			throw Diagnostics::Error(
-			    std::format("FBX mesh '{}' has a bone absent from its imported skeleton.", FbxSkinTranslation::MeshName(mesh)));
+			throw Diagnostics::Error(std::format("FBX mesh '{}' has a bone absent from its imported skeleton.", FbxSkinTranslation::MeshName(mesh)));
 		}
 
 		for (unsigned int weightIndex = 0; weightIndex < bone->mNumWeights; ++weightIndex)
@@ -308,11 +289,7 @@ void FbxSkinImporter::CollectSkinWeights(const aiMesh& mesh, const ImportedSkele
 			const aiVertexWeight& sourceWeight = bone->mWeights[weightIndex];
 			if (sourceWeight.mVertexId >= mesh.mNumVertices || sourceWeight.mWeight < 0.0f)
 			{
-				throw Diagnostics::Error(
-				    std::format(
-				        "FBX mesh '{}' has an invalid weight for bone '{}'.",
-				        FbxSkinTranslation::MeshName(mesh),
-				        bone->mName.C_Str()));
+				throw Diagnostics::Error(std::format("FBX mesh '{}' has an invalid weight for bone '{}'.", FbxSkinTranslation::MeshName(mesh), bone->mName.C_Str()));
 			}
 			if (sourceWeight.mWeight > 0.0f)
 			{
@@ -331,11 +308,7 @@ void FbxSkinImporter::WriteSkinInfluences(const aiMesh& mesh, ImportedMeshGeomet
 		if (weights.empty() || weights.size() > 8u)
 		{
 			throw Diagnostics::Error(
-			    std::format(
-			        "FBX mesh '{}' vertex {} has {} skin influences; the engine supports one to eight without truncation.",
-			        FbxSkinTranslation::MeshName(mesh),
-			        vertexIndex,
-			        weights.size()));
+			    std::format("FBX mesh '{}' vertex {} has {} skin influences; the engine supports one to eight without truncation.", FbxSkinTranslation::MeshName(mesh), vertexIndex, weights.size()));
 		}
 
 		float weightSum = 0.0f;
@@ -345,8 +318,7 @@ void FbxSkinImporter::WriteSkinInfluences(const aiMesh& mesh, ImportedMeshGeomet
 		}
 		if (weightSum <= 1.0e-8f)
 		{
-			throw Diagnostics::Error(
-			    std::format("FBX mesh '{}' vertex {} has zero total skin weight.", FbxSkinTranslation::MeshName(mesh), vertexIndex));
+			throw Diagnostics::Error(std::format("FBX mesh '{}' vertex {} has zero total skin weight.", FbxSkinTranslation::MeshName(mesh), vertexIndex));
 		}
 
 		ImportedSkinInfluence& influence = geometry.deformation.skinInfluences[vertexIndex];
@@ -366,8 +338,7 @@ void FbxSkinImporter::ImportSkinInfluences(const aiMesh& mesh, const ImportedSke
 	}
 	if (geometry.vertices.size() != mesh.mNumVertices)
 	{
-		throw Diagnostics::Error(
-		    std::format("FBX mesh '{}' vertex count differs between geometry and skin data.", FbxSkinTranslation::MeshName(mesh)));
+		throw Diagnostics::Error(std::format("FBX mesh '{}' vertex count differs between geometry and skin data.", FbxSkinTranslation::MeshName(mesh)));
 	}
 
 	InfluenceBuildState state;

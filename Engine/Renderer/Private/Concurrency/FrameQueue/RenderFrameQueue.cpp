@@ -101,10 +101,7 @@ bool RenderFrameQueue::WaitUntilReusable(RenderFrameQueueTicket ticket)
 		return false;
 	}
 
-	m_reusable.wait(
-	    lock,
-	    [this, ticket]
-	    { return m_closed || !IsTicketCurrentLocked(ticket) || m_slots[ticket.SlotIndex].State == RenderFrameSlotState::Free; });
+	m_reusable.wait(lock, [this, ticket] { return m_closed || !IsTicketCurrentLocked(ticket) || m_slots[ticket.SlotIndex].State == RenderFrameSlotState::Free; });
 	return !m_closed && IsTicketCurrentLocked(ticket) && m_slots[ticket.SlotIndex].State == RenderFrameSlotState::Free;
 }
 

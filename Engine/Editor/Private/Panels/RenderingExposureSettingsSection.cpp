@@ -7,15 +7,9 @@
 
 #include <imgui.h>
 
-void DrawExposureSettingsSection(
-    EngineRenderingSettingsController& settingsController,
-    const EngineRenderingSettingsState& settings,
-    const char* filterText)
+void DrawExposureSettingsSection(EngineRenderingSettingsController& settingsController, const EngineRenderingSettingsState& settings, const char* filterText)
 {
-	if (!RenderingSettingsUi::MatchesFilter(
-	        filterText,
-	        "Exposure",
-	        "exposure automatic manual metering reduction downsample pyramid compensation ev luminance min max adapt speed")
+	if (!RenderingSettingsUi::MatchesFilter(filterText, "Exposure", "exposure automatic manual metering reduction downsample pyramid compensation ev luminance min max adapt speed")
 	    || !RenderingSettingsUi::BeginSettingsCategory("Exposure"))
 	{
 		return;

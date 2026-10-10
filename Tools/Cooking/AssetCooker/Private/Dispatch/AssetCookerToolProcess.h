@@ -8,9 +8,5 @@
 class AssetCookerToolProcess final
 {
 public:
-	static int Run(
-	    const std::filesystem::path& executablePath,
-	    const std::vector<std::string>& arguments,
-	    const std::filesystem::path& workingDirectory,
-	    std::stop_token cancellation = {});
+	static int Run(const std::filesystem::path& executablePath, const std::vector<std::string>& arguments, const std::filesystem::path& workingDirectory, std::stop_token cancellation = {});
 };

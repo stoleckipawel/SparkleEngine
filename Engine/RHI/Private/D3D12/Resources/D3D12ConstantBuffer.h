@@ -73,19 +73,11 @@ private:
 		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-		m_resourceAllocation = m_rhi->GetMemoryAllocator().CreateBuffer(
-		    resourceDesc,
-		    D3D12_RESOURCE_STATE_GENERIC_READ,
-		    RhiMemoryCategory::ConstantBuffer,
-		    RhiMemoryResidencyClass::HostUpload,
-		    L"RHI_ConstantBuffer");
+		m_resourceAllocation = m_rhi->GetMemoryAllocator()
+		                           .CreateBuffer(resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, RhiMemoryCategory::ConstantBuffer, RhiMemoryResidencyClass::HostUpload, L"RHI_ConstantBuffer");
 		if (m_resourceAllocation == nullptr || m_resourceAllocation->Resource == nullptr)
 		{
-			Diagnostics::Fatal(
-			    LogD3D12ConstantBuffer,
-			    __FILE__,
-			    __LINE__,
-			    "D3D12ConstantBuffer: failed to allocate constant buffer.");
+			Diagnostics::Fatal(LogD3D12ConstantBuffer, __FILE__, __LINE__, "D3D12ConstantBuffer: failed to allocate constant buffer.");
 		}
 		CHECK(m_resourceAllocation->Resource.As(&m_resource));
 

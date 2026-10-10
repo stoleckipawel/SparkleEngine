@@ -15,11 +15,7 @@ void VulkanRenderCommandList::CopyResource(RhiResourceHandle destinationResource
 {
 	if (m_commandBuffer == VK_NULL_HANDLE || m_memoryAllocator == nullptr || !destinationResource || !sourceResource)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan CopyResource requires an active command buffer and two valid resources.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan CopyResource requires an active command buffer and two valid resources.");
 	}
 	TrackResource(destinationResource);
 	TrackResource(sourceResource);
@@ -27,66 +23,34 @@ void VulkanRenderCommandList::CopyResource(RhiResourceHandle destinationResource
 
 	VulkanRecordingResource destination;
 	VulkanRecordingResource source;
-	if (!ResolveResource(destinationResource, destination) || !ResolveResource(sourceResource, source)
-	    || destination.ResourceKind != source.ResourceKind)
+	if (!ResolveResource(destinationResource, destination) || !ResolveResource(sourceResource, source) || destination.ResourceKind != source.ResourceKind)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan CopyResource requires two resolved resources of the same kind.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan CopyResource requires two resolved resources of the same kind.");
 	}
 
-	if (destination.ResourceKind == VulkanGpuAllocationResourceKind::Buffer && destination.Buffer != VK_NULL_HANDLE
-	    && source.Buffer != VK_NULL_HANDLE)
+	if (destination.ResourceKind == VulkanGpuAllocationResourceKind::Buffer && destination.Buffer != VK_NULL_HANDLE && source.Buffer != VK_NULL_HANDLE)
 	{
 		if (destination.ResourceSizeInBytes == 0 || destination.ResourceSizeInBytes != source.ResourceSizeInBytes)
 		{
-			Diagnostics::Fatal(
-			    g_vulkanRenderCommandListLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Vulkan CopyResource requires equal non-empty buffer sizes.");
+			Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan CopyResource requires equal non-empty buffer sizes.");
 		}
 		const VkBufferCopy copyRegion{.srcOffset = 0, .dstOffset = 0, .size = destination.ResourceSizeInBytes};
 		vkCmdCopyBuffer(m_commandBuffer, source.Buffer, destination.Buffer, 1, &copyRegion);
 		return;
 	}
 
-	if (destination.ResourceKind == VulkanGpuAllocationResourceKind::Image && destination.Image != VK_NULL_HANDLE
-	    && source.Image != VK_NULL_HANDLE)
+	if (destination.ResourceKind == VulkanGpuAllocationResourceKind::Image && destination.Image != VK_NULL_HANDLE && source.Image != VK_NULL_HANDLE)
 	{
-		if (destination.Extent.width == 0 || destination.Extent.height == 0 || destination.Extent.depth == 0
-		    || destination.Extent.width != source.Extent.width || destination.Extent.height != source.Extent.height
-		    || destination.Extent.depth != source.Extent.depth || destination.AspectMask != source.AspectMask)
+		if (destination.Extent.width == 0 || destination.Extent.height == 0 || destination.Extent.depth == 0 || destination.Extent.width != source.Extent.width
+		    || destination.Extent.height != source.Extent.height || destination.Extent.depth != source.Extent.depth || destination.AspectMask != source.AspectMask)
 		{
-			Diagnostics::Fatal(
-			    g_vulkanRenderCommandListLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Vulkan CopyResource requires equal non-empty image extents and aspect masks.");
+			Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan CopyResource requires equal non-empty image extents and aspect masks.");
 		}
 
 		const VkImageSubresourceLayers sourceLayers{.aspectMask = source.AspectMask, .mipLevel = 0, .baseArrayLayer = 0, .layerCount = 1};
-		const VkImageSubresourceLayers destinationLayers{
-		    .aspectMask = destination.AspectMask,
-		    .mipLevel = 0,
-		    .baseArrayLayer = 0,
-		    .layerCount = 1};
-		const VkImageCopy copyRegion{
-		    .srcSubresource = sourceLayers,
-		    .srcOffset = VkOffset3D{},
-		    .dstSubresource = destinationLayers,
-		    .dstOffset = VkOffset3D{},
-		    .extent = destination.Extent};
-		vkCmdCopyImage(
-		    m_commandBuffer,
-		    source.Image,
-		    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		    destination.Image,
-		    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		    1,
-		    &copyRegion);
+		const VkImageSubresourceLayers destinationLayers{.aspectMask = destination.AspectMask, .mipLevel = 0, .baseArrayLayer = 0, .layerCount = 1};
+		const VkImageCopy copyRegion{.srcSubresource = sourceLayers, .srcOffset = VkOffset3D{}, .dstSubresource = destinationLayers, .dstOffset = VkOffset3D{}, .extent = destination.Extent};
+		vkCmdCopyImage(m_commandBuffer, source.Image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destination.Image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 		return;
 	}
 
@@ -97,11 +61,7 @@ void VulkanRenderCommandList::AliasResource(RhiResourceHandle beforeResource, Rh
 {
 	if (m_commandBuffer == VK_NULL_HANDLE || !beforeResource || !afterResource)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan aliasing barriers require an active command buffer and two valid resources.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan aliasing barriers require an active command buffer and two valid resources.");
 	}
 	TrackResource(beforeResource);
 	TrackResource(afterResource);
@@ -114,6 +74,7 @@ void VulkanRenderCommandList::AliasResource(RhiResourceHandle beforeResource, Rh
 	    .srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT,
 	    .dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
 	    .dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT};
+
 	const VkDependencyInfo dependencyInfo{
 	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 	    .pNext = nullptr,
@@ -124,6 +85,7 @@ void VulkanRenderCommandList::AliasResource(RhiResourceHandle beforeResource, Rh
 	    .pBufferMemoryBarriers = nullptr,
 	    .imageMemoryBarrierCount = 0,
 	    .pImageMemoryBarriers = nullptr};
+
 	vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
 }
 
@@ -131,11 +93,7 @@ void VulkanRenderCommandList::TransitionResource(RhiResourceHandle resource, Res
 {
 	if (m_commandBuffer == VK_NULL_HANDLE || !resource)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan resource transitions require an active command buffer and a valid resource.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan resource transitions require an active command buffer and a valid resource.");
 	}
 	if (before == after)
 	{
@@ -150,11 +108,7 @@ void VulkanRenderCommandList::TransitionResource(RhiResourceHandle resource, Res
 	VulkanRecordingResource recordingResource;
 	if (!ResolveResource(resource, recordingResource))
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan resource transition references a resource that is not registered for command recording.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan resource transition references a resource that is not registered for command recording.");
 	}
 
 	switch (recordingResource.ResourceKind)
@@ -167,11 +121,7 @@ void VulkanRenderCommandList::TransitionResource(RhiResourceHandle resource, Res
 			return;
 	}
 
-	Diagnostics::Fatal(
-	    g_vulkanRenderCommandListLogger,
-	    __FILE__,
-	    __LINE__,
-	    "Vulkan resource transition references recording metadata with an unknown resource kind.");
+	Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan resource transition references recording metadata with an unknown resource kind.");
 }
 
 void VulkanRenderCommandList::RecordBufferTransition(
@@ -183,19 +133,11 @@ void VulkanRenderCommandList::RecordBufferTransition(
 {
 	if (resource.Buffer == VK_NULL_HANDLE || resource.ResourceSizeInBytes == 0)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan buffer transition references incomplete recording metadata.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan buffer transition references incomplete recording metadata.");
 	}
 	if (!VulkanTypeConversions::IsBufferResourceStateSupported(before) || !VulkanTypeConversions::IsBufferResourceStateSupported(after))
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan buffer transition uses an image-only resource state.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan buffer transition uses an image-only resource state.");
 	}
 
 	const VkBufferMemoryBarrier2 bufferBarrier{
@@ -210,6 +152,7 @@ void VulkanRenderCommandList::RecordBufferTransition(
 	    .buffer = resource.Buffer,
 	    .offset = 0,
 	    .size = resource.ResourceSizeInBytes};
+
 	const VkDependencyInfo dependencyInfo{
 	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 
@@ -221,6 +164,7 @@ void VulkanRenderCommandList::RecordBufferTransition(
 	    .pBufferMemoryBarriers = &bufferBarrier,
 	    .imageMemoryBarrierCount = 0,
 	    .pImageMemoryBarriers = nullptr};
+
 	vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
 }
 
@@ -233,19 +177,11 @@ void VulkanRenderCommandList::RecordImageTransition(
 {
 	if (resource.Image == VK_NULL_HANDLE || resource.AspectMask == 0)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan image transition references incomplete recording metadata.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan image transition references incomplete recording metadata.");
 	}
 	if (!VulkanTypeConversions::IsImageResourceStateSupported(before) || !VulkanTypeConversions::IsImageResourceStateSupported(after))
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan image transition uses a buffer-only resource state.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan image transition uses a buffer-only resource state.");
 	}
 
 	const VkImageMemoryBarrier2 imageBarrier{
@@ -266,6 +202,7 @@ void VulkanRenderCommandList::RecordImageTransition(
 	        .levelCount = VK_REMAINING_MIP_LEVELS,
 	        .baseArrayLayer = 0,
 	        .layerCount = VK_REMAINING_ARRAY_LAYERS}};
+
 	const VkDependencyInfo dependencyInfo{
 	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 	    .pNext = nullptr,
@@ -276,6 +213,7 @@ void VulkanRenderCommandList::RecordImageTransition(
 	    .pBufferMemoryBarriers = nullptr,
 	    .imageMemoryBarrierCount = 1,
 	    .pImageMemoryBarriers = &imageBarrier};
+
 	vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
 }
 
@@ -283,11 +221,7 @@ void VulkanRenderCommandList::UnorderedAccessBarrier(RhiResourceHandle resource)
 {
 	if (m_commandBuffer == VK_NULL_HANDLE || !resource)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan unordered-access barriers require an active command buffer and a valid resource.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan unordered-access barriers require an active command buffer and a valid resource.");
 	}
 	TrackResource(resource);
 	EndDynamicRenderingIfNeeded();
@@ -303,11 +237,7 @@ void VulkanRenderCommandList::UnorderedAccessBarrier(RhiResourceHandle resource)
 	VulkanRecordingResource recordingResource;
 	if (!ResolveResource(resource, recordingResource))
 	{
-		Diagnostics::Fatal(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan unordered-access barrier references a resource that is not registered for command recording.");
+		Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan unordered-access barrier references a resource that is not registered for command recording.");
 	}
 	if (recordingResource.AccelerationStructure != VK_NULL_HANDLE)
 	{
@@ -328,6 +258,7 @@ void VulkanRenderCommandList::UnorderedAccessBarrier(RhiResourceHandle resource)
 	    .srcAccessMask = srcAccessMask,
 	    .dstStageMask = dstStageMask,
 	    .dstAccessMask = dstAccessMask};
+
 	const VkDependencyInfo dependencyInfo{
 	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 	    .pNext = nullptr,
@@ -338,6 +269,7 @@ void VulkanRenderCommandList::UnorderedAccessBarrier(RhiResourceHandle resource)
 	    .pBufferMemoryBarriers = nullptr,
 	    .imageMemoryBarrierCount = 0,
 	    .pImageMemoryBarriers = nullptr};
+
 	vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
 }
 
@@ -368,8 +300,7 @@ VkBuffer VulkanRenderCommandList::ResolveBuffer(RhiGpuVirtualAddress gpuAddress)
 bool VulkanRenderCommandList::ResolveResource(RhiResourceHandle resource, VulkanRecordingResource& outResource) const noexcept
 {
 	if (m_memoryAllocator != nullptr
-	    && (m_memoryAllocator->ResolveRecordingResource(resource, outResource)
-	        || (IsCoordinatorRecording() && m_memoryAllocator->ResolveCoordinatorRecordingResource(resource, outResource))))
+	    && (m_memoryAllocator->ResolveRecordingResource(resource, outResource) || (IsCoordinatorRecording() && m_memoryAllocator->ResolveCoordinatorRecordingResource(resource, outResource))))
 	{
 		return true;
 	}
@@ -383,8 +314,7 @@ bool VulkanRenderCommandList::ResolveAddress(RhiGpuVirtualAddress address, Vulka
 		return false;
 	}
 
-	return m_memoryAllocator->ResolveRecordingAddress(address, outResource)
-	    || (IsCoordinatorRecording() && m_memoryAllocator->ResolveCoordinatorRecordingAddress(address, outResource));
+	return m_memoryAllocator->ResolveRecordingAddress(address, outResource) || (IsCoordinatorRecording() && m_memoryAllocator->ResolveCoordinatorRecordingAddress(address, outResource));
 }
 
 VulkanRenderCommandList::BufferBinding VulkanRenderCommandList::ResolveBufferBinding(RhiGpuVirtualAddress gpuAddress) const noexcept
@@ -405,20 +335,12 @@ VulkanRenderCommandList::BufferBinding VulkanRenderCommandList::ResolveBufferBin
 	{
 		if (resource.BufferDeviceAddress == 0 || gpuAddress < resource.BufferDeviceAddress)
 		{
-			Diagnostics::Fatal(
-			    g_vulkanRenderCommandListLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Vulkan buffer binding resolved incomplete address metadata.");
+			Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan buffer binding resolved incomplete address metadata.");
 		}
 		const VkDeviceSize offset = gpuAddress - resource.BufferDeviceAddress;
 		if (offset >= resource.ResourceSizeInBytes)
 		{
-			Diagnostics::Fatal(
-			    g_vulkanRenderCommandListLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Vulkan buffer binding address lies outside the resolved resource.");
+			Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan buffer binding address lies outside the resolved resource.");
 		}
 		binding.Buffer = resource.Buffer;
 		binding.Offset = offset;
@@ -426,9 +348,5 @@ VulkanRenderCommandList::BufferBinding VulkanRenderCommandList::ResolveBufferBin
 		return binding;
 	}
 
-	Diagnostics::Fatal(
-	    g_vulkanRenderCommandListLogger,
-	    __FILE__,
-	    __LINE__,
-	    "Vulkan buffer binding references a GPU address that is not registered for command recording.");
+	Diagnostics::Fatal(g_vulkanRenderCommandListLogger, __FILE__, __LINE__, "Vulkan buffer binding references a GPU address that is not registered for command recording.");
 }

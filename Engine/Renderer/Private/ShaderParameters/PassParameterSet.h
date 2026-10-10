@@ -34,6 +34,7 @@ struct PassParameterTextureBindingData
 	FrameGraphAttachmentBinding Attachment = {};
 
 	bool IsAttachment() const noexcept { return Attachment.Handle.IsValid(); }
+
 	bool IsBound() const noexcept { return IsAttachment() || !Handles.empty(); }
 };
 
@@ -85,15 +86,9 @@ struct SPARKLE_RENDERER_API PassParameterBinding
 
 	const PassParameterBufferBindingData* AsBufferData() const noexcept { return std::get_if<PassParameterBufferBindingData>(&m_value); }
 
-	const PassParameterDescriptorTableBindingData* AsDescriptorTableData() const noexcept
-	{
-		return std::get_if<PassParameterDescriptorTableBindingData>(&m_value);
-	}
+	const PassParameterDescriptorTableBindingData* AsDescriptorTableData() const noexcept { return std::get_if<PassParameterDescriptorTableBindingData>(&m_value); }
 
-	const FrameGraphAccelerationStructureHandle* AsAccelerationStructureHandle() const noexcept
-	{
-		return std::get_if<FrameGraphAccelerationStructureHandle>(&m_value);
-	}
+	const FrameGraphAccelerationStructureHandle* AsAccelerationStructureHandle() const noexcept { return std::get_if<FrameGraphAccelerationStructureHandle>(&m_value); }
 
 	const PassParameterUniformBindingData* AsUniformData() const noexcept { return std::get_if<PassParameterUniformBindingData>(&m_value); }
 
@@ -116,7 +111,9 @@ public:
 	void ClearBindings() noexcept;
 
 	const PassParameterLayout* GetLayout() const noexcept { return m_layout; }
+
 	bool HasLayout() const noexcept { return m_layout != nullptr; }
+
 	std::size_t GetBindingCount() const noexcept { return m_bindings.size(); }
 
 	const PassParameterBinding* FindBinding(const char* name) const noexcept;
@@ -151,11 +148,7 @@ public:
 private:
 	const PassParameterDesc* FindParameter(const char* name, std::uint32_t& outIndex) const noexcept;
 	const PassParameterBinding* FindBinding(const char* name, std::uint32_t& outIndex) const noexcept;
-	bool SetDescriptorTable(
-	    const char* name,
-	    PassParameterDescriptorTableBindingData binding,
-	    ShaderParameterSemanticKind textureKind,
-	    ShaderParameterSemanticKind bufferKind);
+	bool SetDescriptorTable(const char* name, PassParameterDescriptorTableBindingData binding, ShaderParameterSemanticKind textureKind, ShaderParameterSemanticKind bufferKind);
 	const PassParameterLayout* m_layout = nullptr;
 	std::vector<PassParameterBinding> m_bindings;
 	std::vector<bool> m_graphResourceParameters;

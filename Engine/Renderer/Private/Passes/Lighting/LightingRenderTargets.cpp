@@ -9,11 +9,7 @@
 #include "FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Formats/PixelFormat.h"
 
-static FrameGraphTextureHandle CreateLightingTexture(
-    FrameGraphBuilder& builder,
-    const char* name,
-    RenderViewportExtent sceneExtent,
-    PixelFormat format)
+static FrameGraphTextureHandle CreateLightingTexture(FrameGraphBuilder& builder, const char* name, RenderViewportExtent sceneExtent, PixelFormat format)
 {
 	FrameGraphTextureDesc desc = FrameGraphTextureDesc::CreateColor(name, sceneExtent.Width, sceneExtent.Height, format);
 	desc.clearColor = {0.0f, 0.0f, 0.0f, 0.0f};

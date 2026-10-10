@@ -39,6 +39,7 @@ public:
 	}
 
 	RenderObjectDiagnostics& GetObjectDiagnostics() noexcept override { return *m_objectDiagnostics; }
+
 	const RenderObjectDiagnostics& GetObjectDiagnostics() const noexcept override { return *m_objectDiagnostics; }
 
 	RenderTimingDiagnostics* GetTimingDiagnostics() noexcept override
@@ -61,25 +62,16 @@ public:
 		return m_messageDiagnostics != nullptr && m_messageDiagnostics->SupportsDebugMessages() ? m_messageDiagnostics.get() : nullptr;
 	}
 
-	RenderFailureDiagnostics* GetFailureDiagnostics() noexcept override
-	{
-		return HasFailureDiagnostics() ? m_failureDiagnostics.get() : nullptr;
-	}
+	RenderFailureDiagnostics* GetFailureDiagnostics() noexcept override { return HasFailureDiagnostics() ? m_failureDiagnostics.get() : nullptr; }
 
-	const RenderFailureDiagnostics* GetFailureDiagnostics() const noexcept override
-	{
-		return HasFailureDiagnostics() ? m_failureDiagnostics.get() : nullptr;
-	}
+	const RenderFailureDiagnostics* GetFailureDiagnostics() const noexcept override { return HasFailureDiagnostics() ? m_failureDiagnostics.get() : nullptr; }
 
 	RenderMemoryDiagnostics* GetMemoryDiagnostics() noexcept override { return m_memoryDiagnostics.get(); }
+
 	const RenderMemoryDiagnostics* GetMemoryDiagnostics() const noexcept override { return m_memoryDiagnostics.get(); }
 
 private:
-	bool HasFailureDiagnostics() const noexcept
-	{
-		return m_failureDiagnostics != nullptr
-		    && (m_failureDiagnostics->SupportsLiveObjectReports() || m_failureDiagnostics->SupportsCrashDiagnostics());
-	}
+	bool HasFailureDiagnostics() const noexcept { return m_failureDiagnostics != nullptr && (m_failureDiagnostics->SupportsLiveObjectReports() || m_failureDiagnostics->SupportsCrashDiagnostics()); }
 
 	std::unique_ptr<RenderObjectDiagnostics> m_objectDiagnostics;
 	std::unique_ptr<RenderTimingDiagnostics> m_timingDiagnostics;

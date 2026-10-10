@@ -24,11 +24,7 @@ namespace D3D12RayTracingText
 	}
 }
 
-D3D12RayTracingServices::D3D12RayTracingServices(
-    D3D12Rhi& rhi,
-    D3D12GpuMemoryAllocator& memoryAllocator,
-    D3D12ResourceService& resourceService,
-    D3D12NvapiRayTracingProvider& nvapiProvider) noexcept :
+D3D12RayTracingServices::D3D12RayTracingServices(D3D12Rhi& rhi, D3D12GpuMemoryAllocator& memoryAllocator, D3D12ResourceService& resourceService, D3D12NvapiRayTracingProvider& nvapiProvider) noexcept :
     m_rhi(&rhi),
     m_memoryAllocator(&memoryAllocator),
     m_resourceService(&resourceService),
@@ -63,11 +59,9 @@ RhiRayTracingCapabilities D3D12RayTracingServices::GetCapabilities() const noexc
 	return m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
 }
 
-RhiRayTracingAccelerationStructurePrebuildInfo D3D12RayTracingServices::GetBottomLevelAccelerationStructurePrebuildInfo(
-    const RhiRayTracingGeometryDesc& geometry) const noexcept
+RhiRayTracingAccelerationStructurePrebuildInfo D3D12RayTracingServices::GetBottomLevelAccelerationStructurePrebuildInfo(const RhiRayTracingGeometryDesc& geometry) const noexcept
 {
-	if (m_rhi == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsAccelerationStructure
-	    || !RhiContract::IsRayTracingGeometryDescUsable(geometry))
+	if (m_rhi == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsAccelerationStructure || !RhiContract::IsRayTracingGeometryDescUsable(geometry))
 	{
 		return {};
 	}
@@ -93,36 +87,31 @@ RhiRayTracingAccelerationStructurePrebuildInfo D3D12RayTracingServices::GetBotto
 
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO nativeInfo{};
 	m_rhi->GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &nativeInfo);
+
 	RhiRayTracingAccelerationStructurePrebuildInfo prebuildInfo{
 	    .ResultDataMaxSizeInBytes = nativeInfo.ResultDataMaxSizeInBytes,
 	    .ScratchDataSizeInBytes = nativeInfo.ScratchDataSizeInBytes,
 	    .UpdateScratchDataSizeInBytes = nativeInfo.UpdateScratchDataSizeInBytes};
+
 	return prebuildInfo;
 }
 
-RhiRayTracingAccelerationStructurePrebuildInfo D3D12RayTracingServices::GetTopLevelAccelerationStructurePrebuildInfo(
-    std::uint32_t instanceCount,
-    ERhiClassicTlasBuildFlags buildFlags) const noexcept
+RhiRayTracingAccelerationStructurePrebuildInfo D3D12RayTracingServices::GetTopLevelAccelerationStructurePrebuildInfo(std::uint32_t instanceCount, ERhiClassicTlasBuildFlags buildFlags) const noexcept
 {
 	return m_classicTlasServices.GetClassicTopLevelAccelerationStructurePrebuildInfo(instanceCount, buildFlags);
 }
 
-RhiPartitionedTlasBuildSizes D3D12RayTracingServices::GetPartitionedTopLevelAccelerationStructureBuildSizes(
-    const RhiPartitionedTlasDesc& desc) const noexcept
+RhiPartitionedTlasBuildSizes D3D12RayTracingServices::GetPartitionedTopLevelAccelerationStructureBuildSizes(const RhiPartitionedTlasDesc& desc) const noexcept
 {
 	return m_partitionedTlasServices.GetPartitionedTopLevelAccelerationStructureBuildSizes(desc);
 }
 
-RhiOwnedResourceHandle D3D12RayTracingServices::CreatePartitionedTopLevelAccelerationStructureBuffer(
-    const RhiPartitionedTlasBuildSizes& sizes,
-    std::wstring_view debugName)
+RhiOwnedResourceHandle D3D12RayTracingServices::CreatePartitionedTopLevelAccelerationStructureBuffer(const RhiPartitionedTlasBuildSizes& sizes, std::wstring_view debugName)
 {
 	return m_partitionedTlasServices.CreatePartitionedTopLevelAccelerationStructureBuffer(sizes, debugName);
 }
 
-RhiOwnedResourceHandle D3D12RayTracingServices::CreatePartitionedTopLevelAccelerationStructureOperationBuffer(
-    const RhiPartitionedTlasOperationPackDesc& operationPack,
-    std::wstring_view debugName)
+RhiOwnedResourceHandle D3D12RayTracingServices::CreatePartitionedTopLevelAccelerationStructureOperationBuffer(const RhiPartitionedTlasOperationPackDesc& operationPack, std::wstring_view debugName)
 {
 	return m_partitionedTlasServices.CreatePartitionedTopLevelAccelerationStructureOperationBuffer(operationPack, debugName);
 }
@@ -135,14 +124,15 @@ RhiOwnedResourceHandle D3D12RayTracingServices::CreateScratchBuffer(std::uint64_
 		return {};
 	}
 
-	const D3D12_RESOURCE_DESC resourceDesc =
-	    D3D12TypeConversions::BuildBufferResourceDesc(RhiBufferResourceDesc{.SizeInBytes = sizeInBytes, .AllowUnorderedAccess = true});
+	const D3D12_RESOURCE_DESC resourceDesc = D3D12TypeConversions::BuildBufferResourceDesc(RhiBufferResourceDesc{.SizeInBytes = sizeInBytes, .AllowUnorderedAccess = true});
+
 	std::unique_ptr<D3D12GpuAllocationRecord> ownedRecord = m_memoryAllocator->CreateBuffer(
 	    resourceDesc,
 	    D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 	    RhiMemoryCategory::RayTracing,
 	    RhiMemoryResidencyClass::DeviceLocal,
 	    D3D12RayTracingText::MakeDebugName(debugName, L"RayTracingScratch"));
+
 	return ownedRecord != nullptr ? MakeD3D12OwnedResourceHandle(std::move(ownedRecord)) : RhiOwnedResourceHandle{};
 }
 
@@ -151,10 +141,7 @@ RhiOwnedResourceHandle D3D12RayTracingServices::CreateRayTracingScratchBuffer(st
 	return CreateScratchBuffer(sizeInBytes, debugName);
 }
 
-RhiOwnedResourceHandle D3D12RayTracingServices::CreateAccelerationStructureBuffer(
-    std::uint64_t sizeInBytes,
-    ERhiRayTracingAccelerationStructureType,
-    std::wstring_view debugName)
+RhiOwnedResourceHandle D3D12RayTracingServices::CreateAccelerationStructureBuffer(std::uint64_t sizeInBytes, ERhiRayTracingAccelerationStructureType, std::wstring_view debugName)
 {
 	const std::uint64_t asAlignment = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities().AccelerationStructureByteAlignment : 0;
 	if (m_rhi == nullptr || m_memoryAllocator == nullptr || !RhiContract::IsRayTracingBufferSizeUsable(sizeInBytes, asAlignment))
@@ -162,44 +149,34 @@ RhiOwnedResourceHandle D3D12RayTracingServices::CreateAccelerationStructureBuffe
 		return {};
 	}
 
-	const D3D12_RESOURCE_DESC resourceDesc =
-	    D3D12TypeConversions::BuildBufferResourceDesc(RhiBufferResourceDesc{.SizeInBytes = sizeInBytes, .AllowUnorderedAccess = true});
+	const D3D12_RESOURCE_DESC resourceDesc = D3D12TypeConversions::BuildBufferResourceDesc(RhiBufferResourceDesc{.SizeInBytes = sizeInBytes, .AllowUnorderedAccess = true});
+
 	std::unique_ptr<D3D12GpuAllocationRecord> ownedRecord = m_memoryAllocator->CreateBuffer(
 	    resourceDesc,
 	    D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
 	    RhiMemoryCategory::RayTracing,
 	    RhiMemoryResidencyClass::DeviceLocal,
 	    D3D12RayTracingText::MakeDebugName(debugName, L"RayTracingAccelerationStructure"));
+
 	return ownedRecord != nullptr ? MakeD3D12OwnedResourceHandle(std::move(ownedRecord)) : RhiOwnedResourceHandle{};
 }
 
-RhiOwnedResourceHandle D3D12RayTracingServices::CreateRayTracingAccelerationStructureBuffer(
-    std::uint64_t sizeInBytes,
-    ERhiRayTracingAccelerationStructureType type,
-    std::wstring_view debugName)
+RhiOwnedResourceHandle D3D12RayTracingServices::CreateRayTracingAccelerationStructureBuffer(std::uint64_t sizeInBytes, ERhiRayTracingAccelerationStructureType type, std::wstring_view debugName)
 {
 	return CreateAccelerationStructureBuffer(sizeInBytes, type, debugName);
 }
 
-RhiOwnedResourceHandle D3D12RayTracingServices::CreateInstanceBuffer(
-    const RhiRayTracingInstanceDesc* instances,
-    std::uint32_t instanceCount,
-    std::wstring_view debugName)
+RhiOwnedResourceHandle D3D12RayTracingServices::CreateInstanceBuffer(const RhiRayTracingInstanceDesc* instances, std::uint32_t instanceCount, std::wstring_view debugName)
 {
 	return m_classicTlasServices.CreateClassicTopLevelAccelerationStructureInstanceBuffer(instances, instanceCount, debugName);
 }
 
-RhiOwnedResourceHandle D3D12RayTracingServices::CreateRayTracingInstanceBuffer(
-    const RhiRayTracingInstanceDesc* instances,
-    std::uint32_t instanceCount,
-    std::wstring_view debugName)
+RhiOwnedResourceHandle D3D12RayTracingServices::CreateRayTracingInstanceBuffer(const RhiRayTracingInstanceDesc* instances, std::uint32_t instanceCount, std::wstring_view debugName)
 {
 	return CreateInstanceBuffer(instances, instanceCount, debugName);
 }
 
-bool D3D12RayTracingServices::BuildPartitionedTopLevelAccelerationStructure(
-    ID3D12GraphicsCommandList7* commandList,
-    const RhiPartitionedTlasBuildCommandDesc& desc) const noexcept
+bool D3D12RayTracingServices::BuildPartitionedTopLevelAccelerationStructure(ID3D12GraphicsCommandList7* commandList, const RhiPartitionedTlasBuildCommandDesc& desc) const noexcept
 {
 	const RhiRayTracingCapabilities capabilities = GetCapabilities();
 	if (!capabilities.Groups.PartitionedTlas.Supported)

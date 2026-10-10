@@ -46,11 +46,7 @@ public:
 	    RhiMemoryCategory category,
 	    RhiMemoryResidencyClass residencyClass,
 	    std::wstring_view debugName) noexcept;
-	std::unique_ptr<VulkanGpuMemoryBlockRecord> CreateTransientMemoryBlock(
-	    RhiTransientAllocationPool pool,
-	    std::uint64_t sizeInBytes,
-	    std::uint64_t alignment,
-	    std::wstring_view debugName) noexcept;
+	std::unique_ptr<VulkanGpuMemoryBlockRecord> CreateTransientMemoryBlock(RhiTransientAllocationPool pool, std::uint64_t sizeInBytes, std::uint64_t alignment, std::wstring_view debugName) noexcept;
 	std::unique_ptr<VulkanGpuAllocationRecord> CreateAliasingImage(
 	    VulkanGpuMemoryBlockRecord& memoryBlock,
 	    std::uint64_t memoryBlockOffset,
@@ -61,11 +57,7 @@ public:
 	    std::uint64_t memoryBlockOffset,
 	    const VkBufferCreateInfo& bufferCreateInfo,
 	    std::wstring_view debugName) noexcept;
-	bool WriteAllocation(
-	    VulkanGpuAllocationRecord& record,
-	    const void* data,
-	    std::size_t sizeInBytes,
-	    std::size_t destinationOffsetInBytes = 0) noexcept;
+	bool WriteAllocation(VulkanGpuAllocationRecord& record, const void* data, std::size_t sizeInBytes, std::size_t destinationOffsetInBytes = 0) noexcept;
 	VulkanGpuAllocationRecord* FindAllocationRecord(RhiResourceHandle resource) const noexcept;
 	VulkanGpuAllocationRecord* FindAllocationRecordByDeviceAddress(VkDeviceAddress deviceAddress) const noexcept;
 
@@ -122,9 +114,7 @@ private:
 	    VkImage image,
 	    VulkanGpuMemoryBlockRecord& memoryBlock,
 	    std::wstring_view debugName) noexcept;
-	static std::uint32_t ResolveMemoryHeapIndex(
-	    const VkPhysicalDeviceMemoryProperties& memoryProperties,
-	    std::uint32_t memoryTypeIndex) noexcept;
+	static std::uint32_t ResolveMemoryHeapIndex(const VkPhysicalDeviceMemoryProperties& memoryProperties, std::uint32_t memoryTypeIndex) noexcept;
 	static VkImageAspectFlags ResolveImageAspectMask(VkFormat format) noexcept;
 
 	friend struct VulkanGpuAllocationRecord;

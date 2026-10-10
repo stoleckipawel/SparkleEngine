@@ -16,6 +16,7 @@ namespace ECS
 	class GameWorldState;
 	class RenderObjectDeltaExtractor;
 	class RenderObjectIdentityMap;
+
 	class RenderSceneDynamicDataExtractor final
 	{
 	public:
@@ -37,10 +38,7 @@ namespace ECS
 			std::uint32_t TargetNodeIndex = (std::numeric_limits<std::uint32_t>::max)();
 		};
 
-		void ExtractObjects(
-		    std::span<const WorldExtractionStorage::MeshSlot> meshes,
-		    const RenderObjectDeltaExtractor& objects,
-		    RenderSceneDynamicData& dynamic);
+		void ExtractObjects(std::span<const WorldExtractionStorage::MeshSlot> meshes, const RenderObjectDeltaExtractor& objects, RenderSceneDynamicData& dynamic);
 		static bool HasSameObjectData(const RenderObjectDynamicData& left, const RenderObjectDynamicData& right) noexcept;
 		static void ExtractSkinning(
 		    GameWorldState& state,

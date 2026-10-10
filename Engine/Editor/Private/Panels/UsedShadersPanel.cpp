@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "Panels/UsedShadersPanel.h"
 
@@ -92,12 +92,14 @@ std::string UsedShadersPanel::ReadTextFileOrMessage(const std::filesystem::path&
 void UsedShadersPanel::DrawTextArtifact(const char* childId, const std::string& text) noexcept
 {
 	ImGui::BeginChild(childId, ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);
+
 	ImGui::InputTextMultiline(
 	    "##ArtifactText",
 	    const_cast<char*>(text.c_str()),
 	    text.size() + 1,
 	    ImGui::GetContentRegionAvail(),
 	    ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_NoUndoRedo | ImGuiInputTextFlags_AllowTabInput);
+
 	ImGui::EndChild();
 }
 
@@ -154,8 +156,7 @@ void UsedShadersPanel::DrawToolbar(bool disableInteraction)
 
 void UsedShadersPanel::DrawTable(bool disableInteraction)
 {
-	const ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable
-	    | ImGuiTableFlags_Reorderable | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY;
+	const ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY;
 	if (!ImGui::BeginTable("##UsedShadersTableV2", 9, tableFlags, ImVec2(0.0f, 0.0f)))
 	{
 		return;
@@ -215,24 +216,20 @@ void UsedShadersPanel::DrawSelectedShaderArtifacts()
 	const RegisteredShaderRow* selectedRow = GetSelectedRow();
 	if (selectedRow == nullptr)
 	{
-		ImGui::TextDisabled(
-		    "Select a shader row to inspect source, reflection, disassembly, parameter match, and compile request artifacts.");
+		ImGui::TextDisabled("Select a shader row to inspect source, reflection, disassembly, parameter match, and compile request artifacts.");
 		return;
 	}
 
 	RefreshSelectedShaderArtifacts();
 	ImGui::TextUnformatted(selectedRow->ShaderId.c_str());
 	ImGui::SameLine();
-	ImGui::TextDisabled(
-	    "%016llx | %s | %s",
-	    static_cast<unsigned long long>(selectedRow->ShaderTypeId),
-	    selectedRow->Stage.c_str(),
-	    selectedRow->EntryPoint.c_str());
+	ImGui::TextDisabled("%016llx | %s | %s", static_cast<unsigned long long>(selectedRow->ShaderTypeId), selectedRow->Stage.c_str(), selectedRow->EntryPoint.c_str());
 	if (m_selectedArtifactDirectory.empty())
 	{
 		ImGui::TextWrapped(
 		    "No debug artifact bundle is available for this shader. Recook shaders with debug artifacts enabled to populate inspection "
 		    "data.");
+
 		return;
 	}
 
@@ -319,6 +316,5 @@ const RegisteredShaderRow* UsedShadersPanel::GetSelectedRow() const noexcept
 bool UsedShadersPanel::MatchesFilter(const RegisteredShaderRow& row) const noexcept
 {
 	const std::string_view filter(m_filterBuffer.data());
-	return filter.empty() || Strings::ContainsIgnoreCase(row.ShaderId, filter) || Strings::ContainsIgnoreCase(row.SourcePath, filter)
-	    || Strings::ContainsIgnoreCase(row.Stage, filter);
+	return filter.empty() || Strings::ContainsIgnoreCase(row.ShaderId, filter) || Strings::ContainsIgnoreCase(row.SourcePath, filter) || Strings::ContainsIgnoreCase(row.Stage, filter);
 }

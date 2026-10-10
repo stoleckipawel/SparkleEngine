@@ -11,10 +11,7 @@
 #include "Scene/RayTracing/RenderRayTracingScene.h"
 #include "ShaderData/SceneShaderParameters.h"
 
-template <typename TShader> static auto& BuildRayTracingGBufferParameters(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    const RenderFrameGraphResources& resources)
+template <typename TShader> static auto& BuildRayTracingGBufferParameters(FrameGraphBuilder& builder, const RenderFrame& frame, const RenderFrameGraphResources& resources)
 {
 	const GBufferRenderTargets& targets = resources.Transient.GBuffer;
 

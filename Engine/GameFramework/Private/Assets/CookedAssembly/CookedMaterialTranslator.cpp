@@ -29,10 +29,7 @@ namespace Assets
 			if (!textureReference.IsValid())
 			{
 				throw Diagnostics::Error(
-				    std::format(
-				        "Cooked material '{}' contains an invalid texture path for texture group {}",
-				        materialAsset.name,
-				        static_cast<std::uint32_t>(textureReference.textureGroup)));
+				    std::format("Cooked material '{}' contains an invalid texture path for texture group {}", materialAsset.name, static_cast<std::uint32_t>(textureReference.textureGroup)));
 			}
 
 			materialDesc.AddTextureReference(textureReference);

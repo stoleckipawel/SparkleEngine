@@ -52,15 +52,14 @@ void RenderViewPreparation::Prepare(const PreparedRenderScene& preparedScene, Re
 
 	m_batchResult.RasterInstanceIndices = std::move(view.rasterPrimitiveIndices);
 	m_batchResult.Batches = std::move(view.meshInstanceBatches);
+
 	m_batchBuilder.Build(
 	    m_visibleItems,
 	    preparedScene.primitives,
 	    preparedScene.instanceGroups,
-	    MeshInstanceBatchBuildOptions{
-	        .EnableAutoBatching = CVarRendererMeshAutoBatching.Get(),
-	        .RequireMaterialBindingSet = true,
-	        .CollectDiagnostics = false},
+	    MeshInstanceBatchBuildOptions{.EnableAutoBatching = CVarRendererMeshAutoBatching.Get(), .RequireMaterialBindingSet = true, .CollectDiagnostics = false},
 	    m_batchResult);
+
 	view.rasterPrimitiveIndices = std::move(m_batchResult.RasterInstanceIndices);
 	view.meshInstanceBatches = std::move(m_batchResult.Batches);
 	BuildWorkload(preparedScene, view);
@@ -79,8 +78,8 @@ TaskResult RenderViewPreparation::EvaluateVisibility(std::uint32_t begin, std::u
 	{
 		const PreparedRenderPrimitive& primitive = run.Scene->primitives[primitiveIndex];
 		const RenderMaterialClassification classification = ClassifyMaterial(primitive.MaterialAlphaMode);
-		const bool visible =
-		    classification != RenderMaterialClassification::Rejected && Intersects(run.View->frustum, primitive.WorldBounds);
+		const bool visible = classification != RenderMaterialClassification::Rejected && Intersects(run.View->frustum, primitive.WorldBounds);
+
 		run.Items[primitiveIndex] = visible
 		    ? MeshRenderItem{
 		          .Object = primitive.Object,
@@ -106,10 +105,7 @@ bool RenderViewPreparation::Intersects(const Frustum& frustum, const RenderMeshW
 
 	for (const DirectX::XMFLOAT4& plane : frustum.planes)
 	{
-		const DirectX::XMFLOAT3 positive{
-		    plane.x >= 0.0f ? bounds.Max.x : bounds.Min.x,
-		    plane.y >= 0.0f ? bounds.Max.y : bounds.Min.y,
-		    plane.z >= 0.0f ? bounds.Max.z : bounds.Min.z};
+		const DirectX::XMFLOAT3 positive{plane.x >= 0.0f ? bounds.Max.x : bounds.Min.x, plane.y >= 0.0f ? bounds.Max.y : bounds.Min.y, plane.z >= 0.0f ? bounds.Max.z : bounds.Min.z};
 		if (plane.x * positive.x + plane.y * positive.y + plane.z * positive.z + plane.w < 0.0f)
 		{
 			return false;
@@ -133,15 +129,11 @@ RenderMaterialClassification RenderViewPreparation::ClassifyMaterial(std::uint32
 	}
 }
 
-float RenderViewPreparation::ComputeCameraDistanceSquared(
-    const DirectX::XMFLOAT3& cameraPosition,
-    const RenderMeshWorldBounds& bounds,
-    const DirectX::XMFLOAT4X4& worldMatrix) noexcept
+float RenderViewPreparation::ComputeCameraDistanceSquared(const DirectX::XMFLOAT3& cameraPosition, const RenderMeshWorldBounds& bounds, const DirectX::XMFLOAT4X4& worldMatrix) noexcept
 {
-	const DirectX::XMFLOAT3 center = bounds.Valid
-	    ? DirectX::
-	          XMFLOAT3{0.5f * (bounds.Min.x + bounds.Max.x), 0.5f * (bounds.Min.y + bounds.Max.y), 0.5f * (bounds.Min.z + bounds.Max.z)}
-	    : DirectX::XMFLOAT3{worldMatrix._41, worldMatrix._42, worldMatrix._43};
+	const DirectX::XMFLOAT3 center = bounds.Valid ? DirectX::XMFLOAT3{0.5f * (bounds.Min.x + bounds.Max.x), 0.5f * (bounds.Min.y + bounds.Max.y), 0.5f * (bounds.Min.z + bounds.Max.z)}
+	                                              : DirectX::XMFLOAT3{worldMatrix._41, worldMatrix._42, worldMatrix._43};
+
 	const float x = center.x - cameraPosition.x;
 	const float y = center.y - cameraPosition.y;
 	const float z = center.z - cameraPosition.z;
@@ -158,8 +150,7 @@ void RenderViewPreparation::BuildWorkload(const PreparedRenderScene& scene, Rend
 		{
 			continue;
 		}
-		scene.primitives[primitiveIndex].Draw.Geometry.MeshKind == RenderMeshKind::Skeletal ? ++view.workload.skinnedInstanceCount
-		                                                                                    : ++view.workload.staticInstanceCount;
+		scene.primitives[primitiveIndex].Draw.Geometry.MeshKind == RenderMeshKind::Skeletal ? ++view.workload.skinnedInstanceCount : ++view.workload.staticInstanceCount;
 	}
 	for (const MeshInstanceBatch& batch : view.meshInstanceBatches)
 	{

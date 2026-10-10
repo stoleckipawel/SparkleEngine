@@ -36,10 +36,7 @@ public:
 	D3D12Rhi(D3D12Rhi&&) = delete;
 	D3D12Rhi& operator=(D3D12Rhi&&) = delete;
 
-	RhiSubmissionToken SubmitCommandLists(
-	    ERhiQueueType queueType,
-	    std::span<ID3D12CommandList* const> commandLists,
-	    std::span<const RhiSubmissionToken> waitTokens = {}) noexcept;
+	RhiSubmissionToken SubmitCommandLists(ERhiQueueType queueType, std::span<ID3D12CommandList* const> commandLists, std::span<const RhiSubmissionToken> waitTokens = {}) noexcept;
 	RhiSubmissionToken SignalQueue(ERhiQueueType queueType) noexcept;
 
 	void SetCurrentFrameIndex(uint32_t frameInFlightIndex) noexcept;
@@ -58,7 +55,9 @@ public:
 	void ClearDebugMessages() noexcept;
 	bool SupportsLiveObjectReports() const noexcept;
 	bool SupportsCrashDiagnostics() const noexcept;
+
 	bool IsInterposerActive() const noexcept { return m_interposerActive; }
+
 	void ReportLiveObjects() noexcept;
 	void CollectCrashDiagnostics() noexcept;
 
@@ -78,16 +77,8 @@ public:
 	const D3D12NvapiRayTracingProvider& GetNvapiRayTracingProvider() const noexcept;
 	D3D12GpuMemoryAllocator& GetMemoryAllocator() noexcept;
 	const D3D12GpuMemoryAllocator& GetMemoryAllocator() const noexcept;
-	bool TryUpgradeInterposerInterface(
-	    ERhiInterposerInterfaceKind kind,
-	    IUnknown* nativeInterface,
-	    REFIID requestedInterface,
-	    void** upgradedInterface) noexcept;
-	bool TryResolveNativeInterface(
-	    ERhiInterposerInterfaceKind kind,
-	    IUnknown* externalInterface,
-	    REFIID requestedInterface,
-	    void** nativeInterface) noexcept;
+	bool TryUpgradeInterposerInterface(ERhiInterposerInterfaceKind kind, IUnknown* nativeInterface, REFIID requestedInterface, void** upgradedInterface) noexcept;
+	bool TryResolveNativeInterface(ERhiInterposerInterfaceKind kind, IUnknown* externalInterface, REFIID requestedInterface, void** nativeInterface) noexcept;
 	void NotifyInterposerPresentationReady(bool ready) noexcept;
 	void NotifyFrameLatencyMarker(ERhiFrameLatencyMarker marker, std::uint64_t frameId) noexcept;
 

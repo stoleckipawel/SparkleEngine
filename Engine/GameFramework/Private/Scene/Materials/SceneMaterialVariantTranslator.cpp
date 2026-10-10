@@ -20,9 +20,7 @@ namespace SceneMaterialVariantTranslator
 		if (!mapping.material.IsValid() || !materialBaseHandle.IsValid())
 			return;
 
-		const MaterialHandle sceneMaterialHandle(
-		    materialBaseHandle.GetIndex() + mapping.material.GetIndex(),
-		    materialBaseHandle.GetGeneration());
+		const MaterialHandle sceneMaterialHandle(materialBaseHandle.GetIndex() + mapping.material.GetIndex(), materialBaseHandle.GetGeneration());
 		SceneMeshInstanceIndex localMeshInstanceIndex = 0;
 		if (mapping.meshAssetKind == Assets::CookedMeshAssetKind::Static)
 		{
@@ -31,10 +29,7 @@ namespace SceneMaterialVariantTranslator
 				if (meshInstance.meshAssetIndex == mapping.meshAssetIndex)
 				{
 					outBindings.push_back(
-					    MaterialVariantBinding{
-					        .Variant = mapping.variantIndex,
-					        .Entity = world.GetMeshEntity(sceneMeshBaseIndex + localMeshInstanceIndex),
-					        .Material = sceneMaterialHandle});
+					    MaterialVariantBinding{.Variant = mapping.variantIndex, .Entity = world.GetMeshEntity(sceneMeshBaseIndex + localMeshInstanceIndex), .Material = sceneMaterialHandle});
 				}
 				++localMeshInstanceIndex;
 			}
@@ -47,10 +42,7 @@ namespace SceneMaterialVariantTranslator
 			if (meshInstance.meshAssetIndex == mapping.meshAssetIndex)
 			{
 				outBindings.push_back(
-				    MaterialVariantBinding{
-				        .Variant = mapping.variantIndex,
-				        .Entity = world.GetMeshEntity(sceneMeshBaseIndex + localMeshInstanceIndex),
-				        .Material = sceneMaterialHandle});
+				    MaterialVariantBinding{.Variant = mapping.variantIndex, .Entity = world.GetMeshEntity(sceneMeshBaseIndex + localMeshInstanceIndex), .Material = sceneMaterialHandle});
 			}
 			++localMeshInstanceIndex;
 		}

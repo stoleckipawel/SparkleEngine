@@ -29,16 +29,13 @@ namespace SparkleLauncher
 		{
 			return "Quick Start cannot begin an operation without a run id.";
 		}
-		if (resolution.Result != LauncherCapabilityResolution::Kind::RunOperation || !resolution.OperationRequest.has_value()
-		    || resolution.OperationRequest->OperationId.isEmpty())
+		if (resolution.Result != LauncherCapabilityResolution::Kind::RunOperation || !resolution.OperationRequest.has_value() || resolution.OperationRequest->OperationId.isEmpty())
 		{
 			return "Quick Start received an invalid operation step from the capability graph.";
 		}
-		if (m_lastCompletedCapabilityId == resolution.CapabilityId
-		    && m_lastCompletedOperationId == resolution.OperationRequest->OperationId)
+		if (m_lastCompletedCapabilityId == resolution.CapabilityId && m_lastCompletedOperationId == resolution.OperationRequest->OperationId)
 		{
-			return "Operation " + resolution.OperationRequest->OperationId.toStdString() + " completed successfully, but capability "
-			    + resolution.CapabilityId + " did not become ready.";
+			return "Operation " + resolution.OperationRequest->OperationId.toStdString() + " completed successfully, but capability " + resolution.CapabilityId + " did not become ready.";
 		}
 
 		m_activeRunId = runId;
@@ -48,10 +45,7 @@ namespace SparkleLauncher
 		return {};
 	}
 
-	LauncherQuickStartCompletion LauncherQuickStartExecution::CompleteOperation(
-	    const QString& runId,
-	    const QString& operationId,
-	    bool succeeded)
+	LauncherQuickStartCompletion LauncherQuickStartExecution::CompleteOperation(const QString& runId, const QString& operationId, bool succeeded)
 	{
 		if (m_activeRunId != runId || m_activeOperationId != operationId)
 		{

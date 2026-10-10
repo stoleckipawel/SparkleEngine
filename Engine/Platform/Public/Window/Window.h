@@ -48,14 +48,20 @@ public:
 	HWND GetHWND() const noexcept { return m_hWnd; }
 
 	uint32_t GetWidth() const noexcept { return m_clientWidth.load(std::memory_order_acquire); }
+
 	uint32_t GetHeight() const noexcept { return m_clientHeight.load(std::memory_order_acquire); }
+
 	float GetDpiScale() const noexcept;
 	bool HasValidSize() const noexcept;
 
 	State GetState() const noexcept { return m_state; }
+
 	bool ShouldClose() const noexcept { return m_bShouldClose; }
+
 	bool IsFullScreen() const noexcept { return m_state == State::FullScreen; }
+
 	bool IsMinimized() const noexcept { return m_state == State::Minimized; }
+
 	bool IsMaximized() const noexcept { return m_state == State::Maximized; }
 
 	void SetFullScreen(bool bFullScreen);

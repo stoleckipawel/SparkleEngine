@@ -69,6 +69,7 @@ class SPARKLE_RHI_API RenderObjectDiagnostics
 {
 public:
 	virtual ~RenderObjectDiagnostics() noexcept = default;
+
 	RenderObjectDiagnostics(const RenderObjectDiagnostics&) = delete;
 	RenderObjectDiagnostics& operator=(const RenderObjectDiagnostics&) = delete;
 	RenderObjectDiagnostics(RenderObjectDiagnostics&&) = delete;
@@ -88,6 +89,7 @@ class SPARKLE_RHI_API RenderTimingDiagnostics
 {
 public:
 	virtual ~RenderTimingDiagnostics() noexcept = default;
+
 	RenderTimingDiagnostics(const RenderTimingDiagnostics&) = delete;
 	RenderTimingDiagnostics& operator=(const RenderTimingDiagnostics&) = delete;
 	RenderTimingDiagnostics(RenderTimingDiagnostics&&) = delete;
@@ -109,6 +111,7 @@ class SPARKLE_RHI_API RenderMessageDiagnostics
 {
 public:
 	virtual ~RenderMessageDiagnostics() noexcept = default;
+
 	RenderMessageDiagnostics(const RenderMessageDiagnostics&) = delete;
 	RenderMessageDiagnostics& operator=(const RenderMessageDiagnostics&) = delete;
 	RenderMessageDiagnostics(RenderMessageDiagnostics&&) = delete;
@@ -126,6 +129,7 @@ class SPARKLE_RHI_API RenderFailureDiagnostics
 {
 public:
 	virtual ~RenderFailureDiagnostics() noexcept = default;
+
 	RenderFailureDiagnostics(const RenderFailureDiagnostics&) = delete;
 	RenderFailureDiagnostics& operator=(const RenderFailureDiagnostics&) = delete;
 	RenderFailureDiagnostics(RenderFailureDiagnostics&&) = delete;
@@ -144,6 +148,7 @@ class SPARKLE_RHI_API RenderDiagnostics
 {
 public:
 	virtual ~RenderDiagnostics() noexcept = default;
+
 	RenderDiagnostics(const RenderDiagnostics&) = delete;
 	RenderDiagnostics& operator=(const RenderDiagnostics&) = delete;
 	RenderDiagnostics(RenderDiagnostics&&) = delete;

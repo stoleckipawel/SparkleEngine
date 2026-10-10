@@ -13,6 +13,7 @@ class RenderViewStatePolicy final
 {
 public:
 	static constexpr std::uint32_t MaximumCachedJitteredFrames = 16u;
+
 	static constexpr float CutPositionDeltaMeters = 5.0f;
 	static constexpr float CutViewDirectionDotThreshold = 0.8660254f;
 	static constexpr float CutFovDeltaDegrees = 6.0f;
@@ -25,9 +26,7 @@ RenderViewState::RenderViewState() :
 
 RenderViewState::~RenderViewState() noexcept = default;
 
-RenderViewInvalidationReason RenderViewState::CombineInvalidationReasons(
-    RenderViewInvalidationReason left,
-    RenderViewInvalidationReason right) noexcept
+RenderViewInvalidationReason RenderViewState::CombineInvalidationReasons(RenderViewInvalidationReason left, RenderViewInvalidationReason right) noexcept
 {
 	return static_cast<RenderViewInvalidationReason>(static_cast<std::uint32_t>(left) | static_cast<std::uint32_t>(right));
 }
@@ -39,9 +38,7 @@ void RenderViewState::Invalidate(RenderViewInvalidationReason reason) noexcept
 	m_rayTracingPlanner->Reset();
 }
 
-RayTracingPtlasPartitionPlan RenderViewState::BuildRayTracingPlan(
-    const PreparedRenderScene& preparedScene,
-    const DirectX::XMFLOAT3& cameraPosition) noexcept
+RayTracingPtlasPartitionPlan RenderViewState::BuildRayTracingPlan(const PreparedRenderScene& preparedScene, const DirectX::XMFLOAT3& cameraPosition) noexcept
 {
 	return m_rayTracingPlanner->Build(preparedScene, cameraPosition);
 }
@@ -104,9 +101,7 @@ RenderViewState::CameraPose RenderViewState::CapturePose(const RenderViewStateBu
 	    .ViewToClipMatrix = input.Camera.ProjectionMTX,
 	    .WorldToClipMatrix = input.Camera.ViewProjMTX,
 	    .Position = input.Camera.Position,
-	    .Direction = MathUtils::Normalize3(
-	        input.Camera.Direction,
-	        {WorldCoordinates::kForwardX, WorldCoordinates::kForwardY, WorldCoordinates::kForwardZ}),
+	    .Direction = MathUtils::Normalize3(input.Camera.Direction, {WorldCoordinates::kForwardX, WorldCoordinates::kForwardY, WorldCoordinates::kForwardZ}),
 	    .ProjectionKind = input.ViewInput.Camera.ProjectionKind,
 	    .FovYDegrees = input.ViewInput.Camera.FovYDegrees,
 	    .NearZ = input.ViewInput.Camera.NearZ,
@@ -117,23 +112,21 @@ RenderViewState::CameraPose RenderViewState::CapturePose(const RenderViewStateBu
 bool RenderViewState::HasProjectionChange(const CameraPose& previousPose, const CameraPose& currentPose) noexcept
 {
 	constexpr float tolerance = 1.0e-6f;
-	return previousPose.ProjectionKind != currentPose.ProjectionKind
-	    || std::abs(previousPose.FovYDegrees - currentPose.FovYDegrees) > tolerance
+
+	return previousPose.ProjectionKind != currentPose.ProjectionKind || std::abs(previousPose.FovYDegrees - currentPose.FovYDegrees) > tolerance
 	    || std::abs(previousPose.NearZ - currentPose.NearZ) > tolerance || std::abs(previousPose.FarZ - currentPose.FarZ) > tolerance
 	    || std::abs(previousPose.OrthographicHeightMeters - currentPose.OrthographicHeightMeters) > tolerance;
 }
 
 bool RenderViewState::IsLikelyCameraCut(const CameraPose& previousPose, const CameraPose& currentPose) noexcept
 {
-	const DirectX::XMVECTOR eyeDelta =
-	    DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&currentPose.Position), DirectX::XMLoadFloat3(&previousPose.Position));
+	const DirectX::XMVECTOR eyeDelta = DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&currentPose.Position), DirectX::XMLoadFloat3(&previousPose.Position));
 	if (DirectX::XMVectorGetX(DirectX::XMVector3Length(eyeDelta)) > RenderViewStatePolicy::CutPositionDeltaMeters)
 	{
 		return true;
 	}
 
-	const float directionDot = DirectX::XMVectorGetX(
-	    DirectX::XMVector3Dot(DirectX::XMLoadFloat3(&previousPose.Direction), DirectX::XMLoadFloat3(&currentPose.Direction)));
+	const float directionDot = DirectX::XMVectorGetX(DirectX::XMVector3Dot(DirectX::XMLoadFloat3(&previousPose.Direction), DirectX::XMLoadFloat3(&currentPose.Direction)));
 	if (directionDot < RenderViewStatePolicy::CutViewDirectionDotThreshold)
 	{
 		return true;
@@ -157,11 +150,13 @@ ViewTemporalUniformData RenderViewState::BuildTemporal(const RenderViewStateBuil
 
 	m_temporalSampleIndex = static_cast<std::uint32_t>(input.FrameId % RenderViewStatePolicy::MaximumCachedJitteredFrames);
 	ViewTemporalUniformData temporal = {};
+
 	temporal.CurrentJitterNdc = TemporalJitterPatterns::GenerateJitterOffset(
 	    static_cast<float>(input.RenderExtent.Width),
 	    static_cast<float>(input.RenderExtent.Height),
 	    m_temporalSampleIndex,
 	    TemporalJitterPatterns::Pattern::Halton);
+
 	temporal.PreviousJitterNdc = m_previousJitterNdc;
 
 	const bool historyValid = m_hasPreviousPose && m_pendingInvalidationReasons == RenderViewInvalidationReason::None;

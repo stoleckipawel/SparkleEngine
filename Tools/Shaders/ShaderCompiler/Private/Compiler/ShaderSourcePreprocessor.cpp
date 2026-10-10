@@ -18,11 +18,7 @@ struct ShaderSourcePreprocessor::PreprocessContext final
 	std::unordered_set<std::string> ActivePathKeys;
 };
 
-void ShaderSourcePreprocessor::VisitFile(
-    std::string_view filePath,
-    const ShaderCompileRequest& request,
-    PreprocessContext& context,
-    std::string& outSource)
+void ShaderSourcePreprocessor::VisitFile(std::string_view filePath, const ShaderCompileRequest& request, PreprocessContext& context, std::string& outSource)
 {
 	const std::string pathKey = request.SourceMounts.get().CanonicalizeVirtualPath(filePath);
 
@@ -135,11 +131,7 @@ void ShaderSourcePreprocessor::AppendExpandedInclude(
 	const auto includePath = ShaderIncludeResolver::ResolveIncludePath(includerPath, includeSpec, request);
 	if (!includePath)
 	{
-		throw Diagnostics::Error(
-		    std::format(
-		        "Failed to resolve include '{}' referenced from '{}' while preprocessing shader source",
-		        includeSpec,
-		        includerPath));
+		throw Diagnostics::Error(std::format("Failed to resolve include '{}' referenced from '{}' while preprocessing shader source", includeSpec, includerPath));
 	}
 
 	VisitFile(*includePath, request, context, outSource);
@@ -154,8 +146,7 @@ std::string ShaderSourcePreprocessor::Load(std::string_view sourcePath, const Sh
 		sourceText = "cbuffer " + descriptor.AutoParametersName + "\n{\n";
 		for (const auto& value : descriptor.Values)
 		{
-			sourceText += value.HlslType + " " + value.Name + " : packoffset(c" + std::to_string(value.OffsetInBytes / 16u) + "."
-			    + "xyzw"[value.OffsetInBytes % 16u / 4u] + ");\n";
+			sourceText += value.HlslType + " " + value.Name + " : packoffset(c" + std::to_string(value.OffsetInBytes / 16u) + "." + "xyzw"[value.OffsetInBytes % 16u / 4u] + ");\n";
 		}
 		sourceText += "};\n";
 	}

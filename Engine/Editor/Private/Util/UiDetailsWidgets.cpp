@@ -71,18 +71,16 @@ namespace UiUtil
 		const ImVec2 thumbnailSize(32.0f, 32.0f);
 		const ImVec2 start = ImGui::GetCursorScreenPos();
 		ImDrawList* drawList = ImGui::GetWindowDrawList();
-		drawList->AddRectFilled(
-		    start,
-		    ImVec2(start.x + thumbnailSize.x, start.y + thumbnailSize.y),
-		    SparkleUiPalette::SceneOutlinerBadgeBackground(),
-		    4.0f);
+		drawList->AddRectFilled(start, ImVec2(start.x + thumbnailSize.x, start.y + thumbnailSize.y), SparkleUiPalette::SceneOutlinerBadgeBackground(), 4.0f);
 		drawList->AddRect(start, ImVec2(start.x + thumbnailSize.x, start.y + thumbnailSize.y), SparkleUiPalette::PanelHeaderBorder(), 4.0f);
 		const char* thumbnailLabel = GetEditorIconGlyph(thumbnailIcon);
 		const ImVec2 thumbnailTextSize = ImGui::CalcTextSize(thumbnailLabel);
+
 		drawList->AddText(
 		    ImVec2(start.x + ((thumbnailSize.x - thumbnailTextSize.x) * 0.5f), start.y + ((thumbnailSize.y - thumbnailTextSize.y) * 0.5f)),
 		    SparkleUiPalette::SceneOutlinerBadgeText(),
 		    thumbnailLabel);
+
 		ImGui::Dummy(thumbnailSize);
 
 		ImGui::SameLine(0.0f, 6.0f);
@@ -119,14 +117,7 @@ namespace UiUtil
 		EndDetailsRow();
 	}
 
-	bool EditDetailsFloat(
-	    const char* label,
-	    float& value,
-	    float speed,
-	    float minValue,
-	    float maxValue,
-	    const char* format,
-	    const float* resetValue)
+	bool EditDetailsFloat(const char* label, float& value, float speed, float minValue, float maxValue, const char* format, const float* resetValue)
 	{
 		if (!BeginDetailsRow(label, 1))
 		{
@@ -153,14 +144,7 @@ namespace UiUtil
 		return changed;
 	}
 
-	bool EditDetailsFloat3(
-	    const char* label,
-	    float values[3],
-	    float speed,
-	    float minValue,
-	    float maxValue,
-	    const char* format,
-	    const float* resetValues)
+	bool EditDetailsFloat3(const char* label, float values[3], float speed, float minValue, float maxValue, const char* format, const float* resetValues)
 	{
 		if (!BeginDetailsRow(label, 3))
 		{
@@ -173,10 +157,7 @@ namespace UiUtil
 		{
 			ImGui::PushID(axisIndex);
 			ImGui::TableSetColumnIndex(axisIndex + 1);
-			if (ImGui::BeginTable(
-			        "##axis_field",
-			        2,
-			        ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX))
+			if (ImGui::BeginTable("##axis_field", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX))
 			{
 				ImGui::TableSetupColumn("axis", ImGuiTableColumnFlags_WidthFixed, DetailsAxisLabelWidth);
 				ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
@@ -224,10 +205,7 @@ namespace UiUtil
 
 		ImGui::TableSetColumnIndex(1);
 		ImGui::SetNextItemWidth(-FLT_MIN);
-		bool changed = ImGui::ColorEdit3(
-		    "##value",
-		    values,
-		    ImGuiColorEditFlags_Float | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_PickerHueBar);
+		bool changed = ImGui::ColorEdit3("##value", values, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_PickerHueBar);
 		if (resetValues != nullptr)
 		{
 			if (DrawDetailsResetButton(2, IsDifferentFromDefault(values, resetValues)))

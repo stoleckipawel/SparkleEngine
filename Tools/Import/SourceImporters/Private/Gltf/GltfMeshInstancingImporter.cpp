@@ -15,12 +15,7 @@
 class GltfMeshInstancingContract final
 {
 public:
-	static void ValidateAccessor(
-	    const cgltf_accessor* accessor,
-	    cgltf_size expectedCount,
-	    cgltf_type expectedType,
-	    std::string_view nodeLabel,
-	    std::string_view attributeName)
+	static void ValidateAccessor(const cgltf_accessor* accessor, cgltf_size expectedCount, cgltf_type expectedType, std::string_view nodeLabel, std::string_view attributeName)
 	{
 		if (accessor == nullptr)
 		{
@@ -28,19 +23,11 @@ public:
 		}
 		if (accessor->component_type != cgltf_component_type_r_32f || accessor->type != expectedType)
 		{
-			throw Diagnostics::Error(
-			    std::format(
-			        "glTF node '{}' has an EXT_mesh_gpu_instancing {} accessor with an unsupported component or type.",
-			        nodeLabel,
-			        attributeName));
+			throw Diagnostics::Error(std::format("glTF node '{}' has an EXT_mesh_gpu_instancing {} accessor with an unsupported component or type.", nodeLabel, attributeName));
 		}
 		if (accessor->count != expectedCount)
 		{
-			throw Diagnostics::Error(
-			    std::format(
-			        "glTF node '{}' has an EXT_mesh_gpu_instancing {} accessor count that differs from its group.",
-			        nodeLabel,
-			        attributeName));
+			throw Diagnostics::Error(std::format("glTF node '{}' has an EXT_mesh_gpu_instancing {} accessor count that differs from its group.", nodeLabel, attributeName));
 		}
 	}
 };
@@ -64,9 +51,7 @@ const cgltf_accessor* GltfMeshInstancingImporter::FindMeshGpuInstancingAttribute
 	return nullptr;
 }
 
-GltfMeshGpuInstancingTransforms GltfMeshInstancingImporter::ReadMeshGpuInstancingTransforms(
-    const cgltf_node& node,
-    std::string_view nodeLabel)
+GltfMeshGpuInstancingTransforms GltfMeshInstancingImporter::ReadMeshGpuInstancingTransforms(const cgltf_node& node, std::string_view nodeLabel)
 {
 	GltfMeshGpuInstancingTransforms transforms;
 	transforms.translations = FindMeshGpuInstancingAttribute(node, "TRANSLATION");
@@ -80,8 +65,7 @@ GltfMeshGpuInstancingTransforms GltfMeshInstancingImporter::ReadMeshGpuInstancin
 	countSource = countSource != nullptr ? countSource : transforms.scales;
 	if (countSource == nullptr)
 	{
-		throw Diagnostics::Error(
-		    std::format("glTF node '{}' has EXT_mesh_gpu_instancing data without a supported transform attribute.", nodeLabel));
+		throw Diagnostics::Error(std::format("glTF node '{}' has EXT_mesh_gpu_instancing data without a supported transform attribute.", nodeLabel));
 	}
 
 	GltfMeshInstancingContract::ValidateAccessor(transforms.translations, countSource->count, cgltf_type_vec3, nodeLabel, "TRANSLATION");
@@ -98,9 +82,7 @@ GltfMeshGpuInstancingTransforms GltfMeshInstancingImporter::ReadMeshGpuInstancin
 	return transforms;
 }
 
-DirectX::XMMATRIX GltfMeshInstancingImporter::BuildMeshGpuInstancingTransform(
-    const GltfMeshGpuInstancingTransforms& transforms,
-    std::size_t instanceIndex)
+DirectX::XMMATRIX GltfMeshInstancingImporter::BuildMeshGpuInstancingTransform(const GltfMeshGpuInstancingTransforms& transforms, std::size_t instanceIndex)
 {
 	if (transforms.matrices != nullptr)
 	{
@@ -123,8 +105,8 @@ DirectX::XMMATRIX GltfMeshInstancingImporter::BuildMeshGpuInstancingTransform(
 		scale = GltfAccessorReader::ReadFloat3(transforms.scales, instanceIndex);
 	}
 
-	const DirectX::XMMATRIX authoredTransform = DirectX::XMMatrixScaling(scale.x, scale.y, scale.z)
-	    * DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&rotation))
+	const DirectX::XMMATRIX authoredTransform = DirectX::XMMatrixScaling(scale.x, scale.y, scale.z) * DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&rotation))
 	    * DirectX::XMMatrixTranslation(translation.x, translation.y, translation.z);
+
 	return GltfCoordinateConverter::ConvertMatrix(authoredTransform);
 }

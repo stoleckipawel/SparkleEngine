@@ -24,16 +24,27 @@ class EditorSceneModel final
 {
 public:
 	std::uint64_t GetModelGeneration() const noexcept { return m_modelGeneration; }
+
 	std::uint64_t GetWorldGeneration() const noexcept { return m_worldGeneration; }
+
 	WorldSequence GetWorldSequence() const noexcept { return m_worldSequence; }
+
 	const std::vector<WorldCameraReadData>& GetCameras() const noexcept { return m_cameras; }
+
 	const std::vector<WorldLightReadData>& GetLights() const noexcept { return m_lights; }
+
 	const std::vector<WorldMeshReadData>& GetMeshes() const noexcept { return m_meshes; }
+
 	const std::optional<SkyEnvironment>& GetSkyEnvironment() const noexcept { return m_sky; }
+
 	const WorldMaterialVariantView& GetMaterialVariants() const noexcept { return m_materialVariants; }
+
 	const std::vector<EditorSceneEntry>& GetCameraEntries() const noexcept { return m_cameraEntries; }
+
 	const std::vector<EditorSceneEntry>& GetLightEntries() const noexcept { return m_lightEntries; }
+
 	const std::vector<EditorSceneEntry>& GetMeshEntries() const noexcept { return m_meshEntries; }
+
 	const EditorSceneEntry& GetSkyEntry() const noexcept { return m_skyEntry; }
 
 	const WorldCameraReadData* FindCamera(EntityId entity) const noexcept;

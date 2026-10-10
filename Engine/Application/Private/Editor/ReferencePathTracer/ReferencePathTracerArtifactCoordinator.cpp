@@ -49,11 +49,7 @@ void ReferencePathTracerArtifactCoordinator::Request(
 	m_pendingPrefix = mean->SamplePrefix;
 }
 
-void ReferencePathTracerArtifactCoordinator::Begin(
-    ReferencePathTracerArtifactKind kind,
-    Renderer& renderer,
-    const ViewportRenderProducts& products,
-    const std::filesystem::path& outputRoot)
+void ReferencePathTracerArtifactCoordinator::Begin(ReferencePathTracerArtifactKind kind, Renderer& renderer, const ViewportRenderProducts& products, const std::filesystem::path& outputRoot)
 {
 	const RenderProduct* mean = products.FindProduct(RenderOutputFlags::Radiance);
 	const ViewportRenderProgress& progress = products.GetProgress();
@@ -71,42 +67,34 @@ void ReferencePathTracerArtifactCoordinator::Begin(
 	m_kind = kind;
 	m_outputRoot = outputRoot;
 	const std::string digest = Hash::Sha256ToHex(mean->SamplePrefix.RenderIdentitySha256);
-	const char* label = kind == ReferencePathTracerArtifactKind::Complete
-	    ? "Complete"
-	    : (kind == ReferencePathTracerArtifactKind::Checkpoint ? "Checkpoint" : "PartialPrefix");
-	m_publicationDirectory =
-	    m_outputRoot / digest / (Identifiers::CreateUuidV4String() + "-" + label + "-" + std::to_string(mean->SamplePrefix.SampleCount));
+	const char* label = kind == ReferencePathTracerArtifactKind::Complete ? "Complete" : (kind == ReferencePathTracerArtifactKind::Checkpoint ? "Checkpoint" : "PartialPrefix");
+	m_publicationDirectory = m_outputRoot / digest / (Identifiers::CreateUuidV4String() + "-" + label + "-" + std::to_string(mean->SamplePrefix.SampleCount));
 	m_lastResult = {};
 	m_mean.reset();
 	m_moment2.reset();
 	m_capturePrefix = mean->SamplePrefix;
-	const ViewportCaptureAdmissionStatus meanAdmission =
-	    m_meanCapture.Request(renderer, ViewportCaptureRequest{.Output = RenderOutputFlags::Radiance});
+	const ViewportCaptureAdmissionStatus meanAdmission = m_meanCapture.Request(renderer, ViewportCaptureRequest{.Output = RenderOutputFlags::Radiance});
 	if (meanAdmission != ViewportCaptureAdmissionStatus::Accepted)
 	{
 		Fail(
 		    meanAdmission == ViewportCaptureAdmissionStatus::Full ? "Reference radiance readback rejected: render request capacity is full."
 		                                                          : "Reference radiance readback rejected: render owner is closed.");
+
 		return;
 	}
 	if (kind == ReferencePathTracerArtifactKind::Checkpoint)
 	{
-		const ViewportCaptureAdmissionStatus moment2Admission =
-		    m_moment2Capture.Request(renderer, ViewportCaptureRequest{.Output = RenderOutputFlags::RadianceSecondMoment});
+		const ViewportCaptureAdmissionStatus moment2Admission = m_moment2Capture.Request(renderer, ViewportCaptureRequest{.Output = RenderOutputFlags::RadianceSecondMoment});
 		if (moment2Admission != ViewportCaptureAdmissionStatus::Accepted)
 		{
 			Fail(
-			    moment2Admission == ViewportCaptureAdmissionStatus::Full
-			        ? "Checkpoint M2 readback rejected: render request capacity is full."
-			        : "Checkpoint M2 readback rejected: render owner is closed.");
+			    moment2Admission == ViewportCaptureAdmissionStatus::Full ? "Checkpoint M2 readback rejected: render request capacity is full."
+			                                                             : "Checkpoint M2 readback rejected: render owner is closed.");
 		}
 	}
 }
 
-void ReferencePathTracerArtifactCoordinator::CollectReadback(
-    Renderer& renderer,
-    ViewportCaptureSlot& capture,
-    std::optional<ViewportCaptureReadback>& destination)
+void ReferencePathTracerArtifactCoordinator::CollectReadback(Renderer& renderer, ViewportCaptureSlot& capture, std::optional<ViewportCaptureReadback>& destination)
 {
 	capture.Update(renderer);
 	if (!capture.HasReadback())
@@ -135,14 +123,14 @@ void ReferencePathTracerArtifactCoordinator::PublishIfReady()
 	}
 	if (m_moment2
 	    && (m_mean->Result.SamplePrefix.RenderIdentitySha256 != m_moment2->Result.SamplePrefix.RenderIdentitySha256
-	        || m_mean->Result.SamplePrefix.SampleCount != m_moment2->Result.SamplePrefix.SampleCount || m_mean->Width != m_moment2->Width
-	        || m_mean->Height != m_moment2->Height))
+	        || m_mean->Result.SamplePrefix.SampleCount != m_moment2->Result.SamplePrefix.SampleCount || m_mean->Width != m_moment2->Width || m_mean->Height != m_moment2->Height))
 	{
 		Fail("Checkpoint planes do not describe the same immutable session prefix.");
 		return;
 	}
 
 	std::string errorMessage;
+
 	ReferencePathTracerArtifactWriteRequest request{
 	    .Kind = m_kind,
 	    .AllowedRoot = m_outputRoot,
@@ -150,6 +138,7 @@ void ReferencePathTracerArtifactCoordinator::PublishIfReady()
 	    .MaximumOutputBytes = m_maximumOutputBytes,
 	    .Mean = std::move(*m_mean),
 	    .Moment2 = std::move(m_moment2)};
+
 	m_mean.reset();
 	m_moment2.reset();
 	if (!m_writeOperation.Start(
@@ -184,8 +173,7 @@ void ReferencePathTracerArtifactCoordinator::Update(Renderer& renderer, const Vi
 	if (m_pendingKind)
 	{
 		const RenderProduct* mean = products.FindProduct(RenderOutputFlags::Radiance);
-		if (mean == nullptr || mean->SamplePrefix.RenderIdentitySha256 != m_pendingPrefix.RenderIdentitySha256
-		    || mean->SamplePrefix.TargetSampleCount != m_pendingPrefix.TargetSampleCount)
+		if (mean == nullptr || mean->SamplePrefix.RenderIdentitySha256 != m_pendingPrefix.RenderIdentitySha256 || mean->SamplePrefix.TargetSampleCount != m_pendingPrefix.TargetSampleCount)
 		{
 			Fail("The output intent was cancelled because the session identity changed before its prefix settled.");
 			return;
@@ -223,10 +211,7 @@ void ReferencePathTracerArtifactCoordinator::Fail(std::string message)
 	m_moment2.reset();
 	m_pendingKind.reset();
 	m_capturePrefix = {};
-	m_lastResult = ReferencePathTracerArtifactWriteResult{
-	    .Succeeded = false,
-	    .PublicationDirectory = m_publicationDirectory,
-	    .ErrorMessage = std::move(message)};
+	m_lastResult = ReferencePathTracerArtifactWriteResult{.Succeeded = false, .PublicationDirectory = m_publicationDirectory, .ErrorMessage = std::move(message)};
 }
 
 std::filesystem::path ReferencePathTracerArtifactCoordinator::DefaultOutputRoot()

@@ -14,6 +14,7 @@ public:
 	D3D12RayTracingPipeline(D3D12Rhi& rhi, const RayTracingPipelineDesc& desc);
 
 	ID3D12StateObject* GetStateObject() const noexcept { return m_stateObject.Get(); }
+
 	const void* FindShaderIdentifier(std::string_view exportName) const noexcept;
 
 private:

@@ -10,11 +10,7 @@ bool CanPublishPresentationOutput(const RenderFrameGraphResources& resources) no
 	return resources.ViewportProducts.Progress.State != ViewportRenderProgressState::Unavailable;
 }
 
-void AddPresentationOutputPass(
-    FrameGraphBuilder& builder,
-    const RenderFrameGraphSettings& settings,
-    FrameGraphTextureHandle encodedColor,
-    RenderFrameGraphResources& resources)
+void AddPresentationOutputPass(FrameGraphBuilder& builder, const RenderFrameGraphSettings& settings, FrameGraphTextureHandle encodedColor, RenderFrameGraphResources& resources)
 {
 	if (settings.PresentationTarget == FramePresentationTarget::BackBuffer)
 	{

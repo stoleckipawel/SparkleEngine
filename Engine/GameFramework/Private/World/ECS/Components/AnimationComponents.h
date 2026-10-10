@@ -14,6 +14,7 @@ namespace ECS
 		std::uint32_t Generation = 0;
 
 		constexpr bool IsValid() const noexcept { return Slot != (std::numeric_limits<std::uint32_t>::max)() && Generation != 0; }
+
 		constexpr auto operator<=>(const AnimationResourceHandle&) const noexcept = default;
 	};
 
@@ -23,6 +24,7 @@ namespace ECS
 		std::uint32_t Generation = 0;
 
 		constexpr bool IsValid() const noexcept { return Slot != (std::numeric_limits<std::uint32_t>::max)() && Generation != 0; }
+
 		constexpr auto operator<=>(const AnimationOutputSlotHandle&) const noexcept = default;
 	};
 

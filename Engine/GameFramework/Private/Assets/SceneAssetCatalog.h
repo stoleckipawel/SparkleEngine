@@ -21,10 +21,12 @@ namespace Assets
 		}
 
 		std::uint64_t GetGeneration() const noexcept { return m_generation; }
+
 		std::optional<std::filesystem::path> Resolve(std::string_view sceneAssetId) const;
 
 	private:
 		std::uint64_t m_generation = 0;
+
 		std::map<std::string, std::filesystem::path, std::less<>> m_entries;
 	};
 

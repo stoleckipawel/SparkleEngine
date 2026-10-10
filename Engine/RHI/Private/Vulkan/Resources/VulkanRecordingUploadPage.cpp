@@ -10,10 +10,7 @@
 #include <cstring>
 #include <utility>
 
-VulkanRecordingUploadPage::VulkanRecordingUploadPage(
-    VulkanRhi& rhi,
-    VulkanGpuMemoryAllocator& memoryAllocator,
-    std::uint64_t capacityInBytes) noexcept :
+VulkanRecordingUploadPage::VulkanRecordingUploadPage(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator, std::uint64_t capacityInBytes) noexcept :
     m_memoryAllocator(&memoryAllocator),
     m_capacityInBytes(capacityInBytes)
 {
@@ -30,11 +27,8 @@ VulkanRecordingUploadPage::VulkanRecordingUploadPage(
 	    .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
 	    .queueFamilyIndexCount = 0,
 	    .pQueueFamilyIndices = nullptr};
-	m_buffer = memoryAllocator.CreateBuffer(
-	    createInfo,
-	    RhiMemoryCategory::ConstantBuffer,
-	    RhiMemoryResidencyClass::HostUpload,
-	    L"Vulkan Recording Upload Page");
+
+	m_buffer = memoryAllocator.CreateBuffer(createInfo, RhiMemoryCategory::ConstantBuffer, RhiMemoryResidencyClass::HostUpload, L"Vulkan Recording Upload Page");
 	if (m_buffer != nullptr)
 	{
 		m_mappedData = static_cast<std::byte*>(memoryAllocator.MapUploadPage(*m_buffer));
@@ -57,8 +51,7 @@ void VulkanRecordingUploadPage::Reset() noexcept
 
 RhiGpuVirtualAddress VulkanRecordingUploadPage::AllocateAndCopy(const void* data, std::uint32_t sizeInBytes) noexcept
 {
-	if (m_buffer == nullptr || m_buffer->Buffer == VK_NULL_HANDLE || data == nullptr || sizeInBytes == 0 || m_mappedData == nullptr
-	    || m_allocationCount >= MaximumAllocations)
+	if (m_buffer == nullptr || m_buffer->Buffer == VK_NULL_HANDLE || data == nullptr || sizeInBytes == 0 || m_mappedData == nullptr || m_allocationCount >= MaximumAllocations)
 	{
 		return {};
 	}
@@ -80,8 +73,7 @@ RhiGpuVirtualAddress VulkanRecordingUploadPage::AllocateAndCopy(const void* data
 	return reinterpret_cast<RhiGpuVirtualAddress>(&m_allocations[allocationIndex]);
 }
 
-bool VulkanRecordingUploadPage::Resolve(RhiGpuVirtualAddress address, VkBuffer& buffer, VkDeviceSize& offset, VkDeviceSize& range)
-    const noexcept
+bool VulkanRecordingUploadPage::Resolve(RhiGpuVirtualAddress address, VkBuffer& buffer, VkDeviceSize& offset, VkDeviceSize& range) const noexcept
 {
 	if (address == 0 || m_buffer == nullptr)
 	{
@@ -91,8 +83,7 @@ bool VulkanRecordingUploadPage::Resolve(RhiGpuVirtualAddress address, VkBuffer& 
 	const std::uintptr_t allocationAddress = static_cast<std::uintptr_t>(address);
 	const std::uintptr_t allocationBegin = reinterpret_cast<std::uintptr_t>(m_allocations.data());
 	const std::uintptr_t allocationEnd = allocationBegin + m_allocationCount * sizeof(Allocation);
-	if (allocationAddress < allocationBegin || allocationAddress >= allocationEnd
-	    || (allocationAddress - allocationBegin) % sizeof(Allocation) != 0)
+	if (allocationAddress < allocationBegin || allocationAddress >= allocationEnd || (allocationAddress - allocationBegin) % sizeof(Allocation) != 0)
 	{
 		return false;
 	}

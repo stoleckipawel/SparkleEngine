@@ -11,10 +11,7 @@ void ImGuiRenderPacketBuilder::ConfigureProducerContext() noexcept
 	io.BackendRendererName = "Sparkle.UiRenderPacket";
 }
 
-UiRenderPacket ImGuiRenderPacketBuilder::Build(
-    const ImDrawData& drawData,
-    UiPresentationMode presentationMode,
-    std::uint64_t viewportGeneration)
+UiRenderPacket ImGuiRenderPacketBuilder::Build(const ImDrawData& drawData, UiPresentationMode presentationMode, std::uint64_t viewportGeneration)
 {
 	m_packet = {};
 	m_packet.UiFrameId = ImGui::GetFrameCount();
@@ -110,6 +107,7 @@ bool ImGuiRenderPacketBuilder::AppendTextureUpload(ImTextureData& texture, UiTex
 	        .Height = static_cast<std::uint32_t>(texture.Height),
 	        .PixelOffset = static_cast<std::uint32_t>(pixelOffset),
 	        .PixelCount = static_cast<std::uint32_t>(uploadPixelCount)});
+
 	return true;
 }
 
@@ -141,8 +139,7 @@ void ImGuiRenderPacketBuilder::AppendDrawList(const ImDrawList& drawList)
 
 	for (const ImDrawVert& vertex : drawList.VtxBuffer)
 	{
-		m_packet.Vertices.push_back(
-		    UiDrawVertex{.Position = {vertex.pos.x, vertex.pos.y}, .Uv = {vertex.uv.x, vertex.uv.y}, .Color = vertex.col});
+		m_packet.Vertices.push_back(UiDrawVertex{.Position = {vertex.pos.x, vertex.pos.y}, .Uv = {vertex.uv.x, vertex.uv.y}, .Color = vertex.col});
 	}
 	for (ImDrawIdx index : drawList.IdxBuffer)
 	{
@@ -151,6 +148,7 @@ void ImGuiRenderPacketBuilder::AppendDrawList(const ImDrawList& drawList)
 	for (const ImDrawCmd& command : drawList.CmdBuffer)
 	{
 		const std::uint64_t packedTextureHandle = static_cast<std::uint64_t>(command.GetTexID());
+
 		m_packet.Commands.push_back(
 		    UiDrawCommand{
 		        .ClipRect = {command.ClipRect.x, command.ClipRect.y, command.ClipRect.z, command.ClipRect.w},
@@ -158,8 +156,7 @@ void ImGuiRenderPacketBuilder::AppendDrawList(const ImDrawList& drawList)
 		        .ElementCount = command.ElemCount,
 		        .IndexOffset = command.IdxOffset,
 		        .VertexOffset = static_cast<std::int32_t>(command.VtxOffset),
-		        .Kind = command.UserCallback == ImDrawCallback_ResetRenderState ? UiDrawCommandKind::ResetRenderState
-		                                                                        : UiDrawCommandKind::Draw});
+		        .Kind = command.UserCallback == ImDrawCallback_ResetRenderState ? UiDrawCommandKind::ResetRenderState : UiDrawCommandKind::Draw});
 	}
 	m_packet.DrawLists.push_back(packetList);
 }

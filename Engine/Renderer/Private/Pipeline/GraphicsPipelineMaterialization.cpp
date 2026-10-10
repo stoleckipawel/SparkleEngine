@@ -91,8 +91,7 @@ std::size_t GraphicsPipelineKeyHash::operator()(const GraphicsPipelineKey& key) 
 	GraphicsPipelineMaterialization::Append(hash, key.Request.PrimitiveTopology);
 	GraphicsPipelineMaterialization::AppendVertexInput(hash, key.Request.VertexInput);
 	GraphicsPipelineMaterialization::Append(hash, key.Request.Attachments.ColorCount);
-	const std::uint32_t colorCount =
-	    std::min<std::uint32_t>(key.Request.Attachments.ColorCount, key.Request.Attachments.ColorFormats.size());
+	const std::uint32_t colorCount = std::min<std::uint32_t>(key.Request.Attachments.ColorCount, key.Request.Attachments.ColorFormats.size());
 	for (std::uint32_t index = 0; index < colorCount; ++index)
 	{
 		GraphicsPipelineMaterialization::Append(hash, key.Request.Attachments.ColorFormats[index]);

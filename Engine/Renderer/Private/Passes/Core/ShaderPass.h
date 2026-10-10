@@ -27,10 +27,7 @@ struct RayTracingDispatchDimensions final
 	std::uint32_t Depth = 1;
 };
 
-bool DeclareShaderPassParameterUsages(
-    PassResourceBuilder& builder,
-    const PassParameterSet& parameterSet,
-    const char* passName = nullptr) noexcept;
+bool DeclareShaderPassParameterUsages(PassResourceBuilder& builder, const PassParameterSet& parameterSet, const char* passName = nullptr) noexcept;
 bool ValidateShaderParameterSetup(const PassParameterSet& parameterSet, const char* passName) noexcept;
 bool ValidateShaderParameters(
     const PassParameterSet& parameterSet,
@@ -79,16 +76,13 @@ namespace ShaderPassDetail
 		}
 		else
 		{
-			static_assert(
-			    requires(const TParameterBindings& value) { value.GetPassParameterSet(); },
-			    "Shader parameters must expose GetPassParameterSet() or be PassParameterSet.");
+			static_assert(requires(const TParameterBindings& value) { value.GetPassParameterSet(); }, "Shader parameters must expose GetPassParameterSet() or be PassParameterSet.");
 			return parameters.GetPassParameterSet();
 		}
 	}
 }
 
-template <typename TParameterBindings>
-bool SetupShaderParameters(PassResourceBuilder& builder, const TParameterBindings& parameters, const char* passName = nullptr) noexcept
+template <typename TParameterBindings> bool SetupShaderParameters(PassResourceBuilder& builder, const TParameterBindings& parameters, const char* passName = nullptr) noexcept
 {
 	const PassParameterSet& parameterSet = ShaderPassDetail::GetPassParameterSet(parameters);
 	if (!ValidateShaderParameterSetup(parameterSet, passName))
@@ -117,16 +111,7 @@ template <typename TParameterBindings> bool DispatchComputeShader(
 		return false;
 	}
 
-	BindComputeShaderPass(
-	    commandContext,
-	    resources,
-	    bindingLayout,
-	    pipeline,
-	    parameterSet,
-	    bindingNames,
-	    bindingNameCount,
-	    overrides,
-	    bindLayout);
+	BindComputeShaderPass(commandContext, resources, bindingLayout, pipeline, parameterSet, bindingNames, bindingNameCount, overrides, bindLayout);
 	DispatchComputeShaderPass(commandContext, dispatch);
 	return true;
 }
@@ -149,15 +134,6 @@ template <typename TParameterBindings> bool BindRasterShader(
 		return false;
 	}
 
-	BindRasterShaderPass(
-	    commandContext,
-	    resources,
-	    bindingLayout,
-	    pipeline,
-	    parameterSet,
-	    bindingNames,
-	    bindingNameCount,
-	    overrides,
-	    bindLayout);
+	BindRasterShaderPass(commandContext, resources, bindingLayout, pipeline, parameterSet, bindingNames, bindingNameCount, overrides, bindLayout);
 	return true;
 }

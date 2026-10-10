@@ -31,8 +31,7 @@ namespace Filesystem::Private
 		{
 			executableStem.resize(executableStem.size() - std::string_view("Editor").size());
 		}
-		else if (executableStem.size() > std::string_view("Runtime").size()
-		    && PathFormatting::EndsWithIgnoreCase(executableStem, "Runtime"))
+		else if (executableStem.size() > std::string_view("Runtime").size() && PathFormatting::EndsWithIgnoreCase(executableStem, "Runtime"))
 		{
 			executableStem.resize(executableStem.size() - std::string_view("Runtime").size());
 		}
@@ -191,10 +190,7 @@ namespace Filesystem
 		return executablePath.empty() ? std::filesystem::current_path() : executablePath.parent_path();
 	}
 
-	std::optional<std::filesystem::path> FindAncestorWithMarker(
-	    const std::filesystem::path& startDirectory,
-	    std::string_view markerFileName,
-	    std::uint32_t maxDepth)
+	std::optional<std::filesystem::path> FindAncestorWithMarker(const std::filesystem::path& startDirectory, std::string_view markerFileName, std::uint32_t maxDepth)
 	{
 		if (startDirectory.empty() || markerFileName.empty())
 		{
@@ -233,8 +229,7 @@ namespace Filesystem
 		}
 
 		std::error_code errorCode;
-		if (const auto workingRoot = FindAncestorWithMarker(std::filesystem::current_path(errorCode), kWorkspaceMarker);
-		    workingRoot && !errorCode)
+		if (const auto workingRoot = FindAncestorWithMarker(std::filesystem::current_path(errorCode), kWorkspaceMarker); workingRoot && !errorCode)
 		{
 			return Paths::Normalize(*workingRoot);
 		}
@@ -249,8 +244,7 @@ namespace Filesystem
 		}
 
 		std::error_code errorCode;
-		if (const auto workingRoot = FindAncestorWithMarker(std::filesystem::current_path(errorCode), kEngineMarker);
-		    workingRoot && !errorCode)
+		if (const auto workingRoot = FindAncestorWithMarker(std::filesystem::current_path(errorCode), kEngineMarker); workingRoot && !errorCode)
 		{
 			return Paths::Normalize(*workingRoot);
 		}
@@ -274,8 +268,7 @@ namespace Filesystem
 		}
 
 		std::error_code errorCode;
-		if (const auto workingRoot = FindAncestorWithMarker(std::filesystem::current_path(errorCode), kProjectMarker);
-		    workingRoot && !errorCode)
+		if (const auto workingRoot = FindAncestorWithMarker(std::filesystem::current_path(errorCode), kProjectMarker); workingRoot && !errorCode)
 		{
 			return Paths::Normalize(*workingRoot);
 		}

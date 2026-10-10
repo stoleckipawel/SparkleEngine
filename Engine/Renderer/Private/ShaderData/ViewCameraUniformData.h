@@ -17,6 +17,7 @@ struct alignas(256) ViewCameraUniformData
 	float FarZ = 0.0f;
 	DirectX::XMFLOAT3 Direction = {0.0f, 0.0f, 1.0f};
 };
+
 static_assert(std::is_standard_layout_v<ViewCameraUniformData>);
 static_assert(std::is_trivially_copyable_v<ViewCameraUniformData>);
 static_assert(alignof(ViewCameraUniformData) >= 256);

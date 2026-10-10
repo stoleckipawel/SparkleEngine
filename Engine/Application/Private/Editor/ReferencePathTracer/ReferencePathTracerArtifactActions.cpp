@@ -5,11 +5,7 @@
 #include "Editor/ReferencePathTracer/ReferencePathTracerArtifactCoordinator.h"
 #include "Editor/Public/Panels/ViewportOutputAction.h"
 
-void ApplyReferencePathTracerArtifactAction(
-    ViewportOutputAction action,
-    ReferencePathTracerArtifactCoordinator& artifacts,
-    Renderer& renderer,
-    const ViewportRenderProducts& products)
+void ApplyReferencePathTracerArtifactAction(ViewportOutputAction action, ReferencePathTracerArtifactCoordinator& artifacts, Renderer& renderer, const ViewportRenderProducts& products)
 {
 	switch (action)
 	{

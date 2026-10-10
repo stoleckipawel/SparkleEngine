@@ -15,9 +15,7 @@ FrameGraphResourceCommands::FrameGraphResourceCommands(const FrameGraph& frameGr
 {
 }
 
-void FrameGraphResourceCommands::BeginRasterPass(
-    RenderCommandContext& commandContext,
-    const FrameGraphRasterPass& rasterPass) const noexcept
+void FrameGraphResourceCommands::BeginRasterPass(RenderCommandContext& commandContext, const FrameGraphRasterPass& rasterPass) const noexcept
 {
 	std::array<FrameGraphTextureHandle, 8> colorHandles = {};
 	for (std::uint32_t index = 0; index < rasterPass.ColorCount; ++index)
@@ -28,6 +26,7 @@ void FrameGraphResourceCommands::BeginRasterPass(
 	    commandContext,
 	    std::span<const FrameGraphTextureHandle>(colorHandles.data(), rasterPass.ColorCount),
 	    rasterPass.HasDepthStencil ? rasterPass.DepthStencil.Handle : FrameGraphTextureHandle::Invalid());
+
 	for (std::uint32_t index = 0; index < rasterPass.ColorCount; ++index)
 	{
 		if (rasterPass.Colors[index].Load == FrameGraphAttachmentLoadAction::Clear)
@@ -46,14 +45,10 @@ void FrameGraphResourceCommands::EndRasterPass(RenderCommandContext& commandCont
 	commandContext.EndRasterPass();
 }
 
-void FrameGraphResourceCommands::BindRenderTarget(
-    RenderCommandContext& commandContext,
-    FrameGraphTextureHandle renderTargetHandle,
-    FrameGraphTextureHandle depthStencilHandle) const noexcept
+void FrameGraphResourceCommands::BindRenderTarget(RenderCommandContext& commandContext, FrameGraphTextureHandle renderTargetHandle, FrameGraphTextureHandle depthStencilHandle) const noexcept
 {
 	const RhiCpuDescriptorHandle renderTargetView = ResolveRenderTargetView(renderTargetHandle.GetResourceHandle());
-	const RhiCpuDescriptorHandle depthStencilView =
-	    depthStencilHandle.IsValid() ? ResolveDepthStencilView(depthStencilHandle.GetResourceHandle()) : RhiCpuDescriptorHandle{};
+	const RhiCpuDescriptorHandle depthStencilView = depthStencilHandle.IsValid() ? ResolveDepthStencilView(depthStencilHandle.GetResourceHandle()) : RhiCpuDescriptorHandle{};
 	commandContext.SetRenderTarget(renderTargetView, depthStencilView ? &depthStencilView : nullptr);
 }
 
@@ -70,28 +65,18 @@ void FrameGraphResourceCommands::BindRenderTargets(
 	{
 		renderTargetViews[index] = ResolveRenderTargetView(renderTargetHandles[index].GetResourceHandle());
 	}
-	const RhiCpuDescriptorHandle depthStencilView =
-	    depthStencilHandle.IsValid() ? ResolveDepthStencilView(depthStencilHandle.GetResourceHandle()) : RhiCpuDescriptorHandle{};
-	commandContext.SetRenderTargets(
-	    static_cast<std::uint32_t>(renderTargetHandles.size()),
-	    renderTargetViews.data(),
-	    depthStencilView ? &depthStencilView : nullptr);
+	const RhiCpuDescriptorHandle depthStencilView = depthStencilHandle.IsValid() ? ResolveDepthStencilView(depthStencilHandle.GetResourceHandle()) : RhiCpuDescriptorHandle{};
+	commandContext.SetRenderTargets(static_cast<std::uint32_t>(renderTargetHandles.size()), renderTargetViews.data(), depthStencilView ? &depthStencilView : nullptr);
 }
 
-void FrameGraphResourceCommands::CopyTexture(
-    RenderCommandContext& commandContext,
-    FrameGraphTextureHandle destinationHandle,
-    FrameGraphTextureHandle sourceHandle) const noexcept
+void FrameGraphResourceCommands::CopyTexture(RenderCommandContext& commandContext, FrameGraphTextureHandle destinationHandle, FrameGraphTextureHandle sourceHandle) const noexcept
 {
 	assert(destinationHandle.IsValid());
 	assert(sourceHandle.IsValid());
 	CopyResource(commandContext, destinationHandle.GetResourceHandle(), sourceHandle.GetResourceHandle());
 }
 
-void FrameGraphResourceCommands::CopyBuffer(
-    RenderCommandContext& commandContext,
-    FrameGraphBufferHandle destinationHandle,
-    FrameGraphBufferHandle sourceHandle) const noexcept
+void FrameGraphResourceCommands::CopyBuffer(RenderCommandContext& commandContext, FrameGraphBufferHandle destinationHandle, FrameGraphBufferHandle sourceHandle) const noexcept
 {
 	assert(destinationHandle.IsValid());
 	assert(sourceHandle.IsValid());
@@ -120,10 +105,7 @@ RhiResourceHandle FrameGraphResourceCommands::ResolveResource(FrameGraphTextureH
 	return m_frameGraph.ResolveResource(handle);
 }
 
-NativeTextureViewInfo FrameGraphResourceCommands::ResolveNativeTextureView(
-    FrameGraphTextureHandle handle,
-    ResourceState state,
-    const RhiNativeInteropRequest& request) const noexcept
+NativeTextureViewInfo FrameGraphResourceCommands::ResolveNativeTextureView(FrameGraphTextureHandle handle, ResourceState state, const RhiNativeInteropRequest& request) const noexcept
 {
 	assert(handle.IsValid());
 	const FrameGraphResourceHandle resourceHandle = handle.GetResourceHandle();
@@ -140,18 +122,25 @@ NativeTextureViewInfo FrameGraphResourceCommands::ResolveNativeTextureView(
 		case ResourceState::DepthRead:
 		case ResourceState::DepthWrite:
 			view = access.depthStencilView;
+
 			break;
+
 		case ResourceState::UnorderedAccess:
 			view = access.unorderedAccessView;
+
 			break;
+
 		case ResourceState::RenderTarget:
 			view = access.renderTargetView;
+
 			break;
+
 		case ResourceState::ShaderResource:
 		case ResourceState::CopySource:
 		case ResourceState::Common:
 		default:
 			view = access.shaderResourceView;
+
 			break;
 	}
 
@@ -168,8 +157,7 @@ NativeTextureViewInfo FrameGraphResourceCommands::ResolveNativeTextureView(
 		return {};
 	}
 
-	NativeTextureViewInfo nativeView = m_frameGraph.m_renderHardwareInterface->GetInteropService()
-	                                       .GetNativeTextureViewInfo(view, m_frameGraph.ResolveResource(resourceHandle), state, request);
+	NativeTextureViewInfo nativeView = m_frameGraph.m_renderHardwareInterface->GetInteropService().GetNativeTextureViewInfo(view, m_frameGraph.ResolveResource(resourceHandle), state, request);
 	if (nativeView.Width == 0u || nativeView.Height == 0u)
 	{
 		nativeView.Width = metadata.textureDesc.width;
@@ -225,9 +213,7 @@ RhiCpuDescriptorHandle FrameGraphResourceCommands::ResolveRenderTargetView(Frame
 
 	if (metadata.kind == FrameGraphResourceKind::BackBuffer)
 	{
-		return m_frameGraph.m_renderHardwareInterface != nullptr
-		    ? m_frameGraph.m_renderHardwareInterface->GetPresentationService().GetBackBufferRenderTargetView()
-		    : RhiCpuDescriptorHandle{};
+		return m_frameGraph.m_renderHardwareInterface != nullptr ? m_frameGraph.m_renderHardwareInterface->GetPresentationService().GetBackBufferRenderTargetView() : RhiCpuDescriptorHandle{};
 	}
 
 	assert(access.renderTargetView);
@@ -270,10 +256,7 @@ RhiGpuDescriptorHandle FrameGraphResourceCommands::ResolveUnorderedAccessView(Fr
 	return m_frameGraph.m_renderHardwareInterface->GetDescriptorService().GetResourceViewGpuHandle(access.unorderedAccessView);
 }
 
-void FrameGraphResourceCommands::CopyResource(
-    RenderCommandContext& commandContext,
-    FrameGraphResourceHandle destinationHandle,
-    FrameGraphResourceHandle sourceHandle) const noexcept
+void FrameGraphResourceCommands::CopyResource(RenderCommandContext& commandContext, FrameGraphResourceHandle destinationHandle, FrameGraphResourceHandle sourceHandle) const noexcept
 {
 	assert(destinationHandle.IsValid());
 	assert(sourceHandle.IsValid());
@@ -281,10 +264,9 @@ void FrameGraphResourceCommands::CopyResource(
 	const FrameGraphResourceMetadata& destinationMetadata = m_frameGraph.m_resourceRegistry.GetMetadata(destinationHandle);
 	const FrameGraphResourceMetadata& sourceMetadata = m_frameGraph.m_resourceRegistry.GetMetadata(sourceHandle);
 	assert(destinationMetadata.resourceClass == sourceMetadata.resourceClass);
+
 	assert(
-	    destinationMetadata.kind == sourceMetadata.kind
-	    || (destinationMetadata.resourceClass == FrameGraphResourceClass::Texture
-	        && sourceMetadata.resourceClass == FrameGraphResourceClass::Texture));
+	    destinationMetadata.kind == sourceMetadata.kind || (destinationMetadata.resourceClass == FrameGraphResourceClass::Texture && sourceMetadata.resourceClass == FrameGraphResourceClass::Texture));
 
 	const RhiResourceHandle destinationResource = m_frameGraph.ResolveResource(destinationHandle);
 	const RhiResourceHandle sourceResource = m_frameGraph.ResolveResource(sourceHandle);

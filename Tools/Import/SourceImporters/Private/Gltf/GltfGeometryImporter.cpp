@@ -88,8 +88,7 @@ void GltfGeometryImporter::ImportNode(const cgltf_data& data, const cgltf_node& 
 		meshGpuInstancingTransforms = GltfMeshInstancingImporter::ReadMeshGpuInstancingTransforms(node, nodeLabel);
 	}
 
-	const ImportedSkeletonIndex skeletonIndex =
-	    node.skin != nullptr ? GltfSkinImporter::ImportSkeleton(&data, node.skin, output) : kInvalidImportedSkeletonIndex;
+	const ImportedSkeletonIndex skeletonIndex = node.skin != nullptr ? GltfSkinImporter::ImportSkeleton(&data, node.skin, output) : kInvalidImportedSkeletonIndex;
 	if (node.skin != nullptr && skeletonIndex == kInvalidImportedSkeletonIndex)
 	{
 		throw Diagnostics::Error(std::format("glTF node '{}' has an invalid skin.", nodeLabel));
@@ -99,25 +98,20 @@ void GltfGeometryImporter::ImportNode(const cgltf_data& data, const cgltf_node& 
 	    .Data = data,
 	    .Node = node,
 	    .MeshGpuInstancingTransforms = hasMeshGpuInstancing ? &meshGpuInstancingTransforms : nullptr,
-	    .WorldTransform = node.skin == nullptr ? GltfCoordinateConverter::ComputeNodeWorldTransform(&node)
-	                                           : GltfSkinImporter::ComputeSkinReferenceToWorldTransform(node.skin),
+	    .WorldTransform = node.skin == nullptr ? GltfCoordinateConverter::ComputeNodeWorldTransform(&node) : GltfSkinImporter::ComputeSkinReferenceToWorldTransform(node.skin),
 	    .SkeletonIndex = skeletonIndex,
 	    .NodeIndex = nodeIndex};
+
 	for (cgltf_size primitiveIndex = 0; primitiveIndex < node.mesh->primitives_count; ++primitiveIndex)
 	{
 		ImportPrimitive(context, node.mesh->primitives[primitiveIndex], static_cast<std::uint32_t>(primitiveIndex), output);
 	}
 }
 
-void GltfGeometryImporter::ImportPrimitive(
-    const NodeImportContext& context,
-    const cgltf_primitive& primitive,
-    std::uint32_t primitiveIndex,
-    SourceImportOutput& output)
+void GltfGeometryImporter::ImportPrimitive(const NodeImportContext& context, const cgltf_primitive& primitive, std::uint32_t primitiveIndex, SourceImportOutput& output)
 {
 	const std::string primitiveLabel = BuildPrimitiveLabel(context.Node, primitiveIndex);
-	const ImportedMeshPrimitiveIndex importedPrimitiveIndex =
-	    ResolveImportedPrimitive(context, primitive, primitiveIndex, primitiveLabel, output);
+	const ImportedMeshPrimitiveIndex importedPrimitiveIndex = ResolveImportedPrimitive(context, primitive, primitiveIndex, primitiveLabel, output);
 
 	const ImportedMeshGeometry& geometry = output.scene.meshPrimitives[importedPrimitiveIndex].geometry;
 	ValidateDeformation(geometry, primitive, context.SkeletonIndex, primitiveLabel, output.scene);
@@ -136,16 +130,11 @@ ImportedMeshPrimitiveIndex GltfGeometryImporter::ResolveImportedPrimitive(
 {
 	if (primitive.type != cgltf_primitive_type_triangles || primitive.has_draco_mesh_compression)
 	{
-		throw Diagnostics::Error(
-		    std::format(
-		        "glTF {} {}.",
-		        primitiveLabel,
-		        primitive.has_draco_mesh_compression ? "uses unsupported Draco compression" : "is not a triangle primitive"));
+		throw Diagnostics::Error(std::format("glTF {} {}.", primitiveLabel, primitive.has_draco_mesh_compression ? "uses unsupported Draco compression" : "is not a triangle primitive"));
 	}
 
 	const std::uint32_t sourceMeshIndex = static_cast<std::uint32_t>(cgltf_mesh_index(&context.Data, context.Node.mesh));
-	if (const ImportedMeshPrimitiveIndex existing = FindImportedPrimitiveIndex(output.scene, sourceMeshIndex, primitiveIndex);
-	    existing != kInvalidImportedMeshPrimitiveIndex)
+	if (const ImportedMeshPrimitiveIndex existing = FindImportedPrimitiveIndex(output.scene, sourceMeshIndex, primitiveIndex); existing != kInvalidImportedMeshPrimitiveIndex)
 	{
 		return existing;
 	}
@@ -183,8 +172,7 @@ void GltfGeometryImporter::ValidateDeformation(
 	}
 	if (geometry.HasMorphTargets() && !geometry.HasSkinInfluences())
 	{
-		throw Diagnostics::Error(
-		    std::format("glTF {} has morph targets but no skin; morph-only deformation is unsupported.", primitiveLabel));
+		throw Diagnostics::Error(std::format("glTF {} has morph targets but no skin; morph-only deformation is unsupported.", primitiveLabel));
 	}
 	if (geometry.HasSkinInfluences())
 	{
@@ -194,21 +182,14 @@ void GltfGeometryImporter::ValidateDeformation(
 	}
 }
 
-std::vector<float> GltfGeometryImporter::BuildMorphWeights(
-    const NodeImportContext& context,
-    const ImportedMeshGeometry& geometry,
-    std::string_view primitiveLabel)
+std::vector<float> GltfGeometryImporter::BuildMorphWeights(const NodeImportContext& context, const ImportedMeshGeometry& geometry, std::string_view primitiveLabel)
 {
 	if (!geometry.HasSkinInfluences() || !geometry.HasMorphTargets())
 	{
 		return {};
 	}
 
-	std::vector<float> morphWeights = GltfMorphTargetImporter::BuildNodeMorphWeights(
-	    *context.Node.mesh,
-	    context.Node.weights,
-	    context.Node.weights_count,
-	    geometry.deformation.morphTargets.size());
+	std::vector<float> morphWeights = GltfMorphTargetImporter::BuildNodeMorphWeights(*context.Node.mesh, context.Node.weights, context.Node.weights_count, geometry.deformation.morphTargets.size());
 	if (morphWeights.size() != geometry.deformation.morphTargets.size())
 	{
 		throw Diagnostics::Error(std::format("glTF {} has an invalid morph-weight assignment.", primitiveLabel));
@@ -236,6 +217,7 @@ void GltfGeometryImporter::AppendInstances(
 		    context.NodeIndex,
 		    nodeName,
 		    morphWeights);
+
 		return;
 	}
 
@@ -251,10 +233,7 @@ void GltfGeometryImporter::AppendInstances(
 	    morphWeights);
 }
 
-void GltfGeometryImporter::ValidateSkinInfluences(
-    const ImportedMeshGeometry& geometry,
-    const ImportedSkeleton& skeleton,
-    std::string_view primitiveLabel)
+void GltfGeometryImporter::ValidateSkinInfluences(const ImportedMeshGeometry& geometry, const ImportedSkeleton& skeleton, std::string_view primitiveLabel)
 {
 	for (const ImportedSkinInfluence& influence : geometry.deformation.skinInfluences)
 	{
@@ -266,10 +245,7 @@ void GltfGeometryImporter::ValidateSkinInfluences(
 	}
 }
 
-ImportedMeshPrimitiveIndex GltfGeometryImporter::FindImportedPrimitiveIndex(
-    const ImportedScene& scene,
-    std::uint32_t sourceMeshIndex,
-    std::uint32_t sourcePrimitiveIndex) noexcept
+ImportedMeshPrimitiveIndex GltfGeometryImporter::FindImportedPrimitiveIndex(const ImportedScene& scene, std::uint32_t sourceMeshIndex, std::uint32_t sourcePrimitiveIndex) noexcept
 {
 	for (std::size_t primitiveIndex = 0; primitiveIndex < scene.meshPrimitives.size(); ++primitiveIndex)
 	{

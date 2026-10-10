@@ -14,10 +14,7 @@
 
 namespace Assets
 {
-	void SceneAssetPayloadSkeletonAppender::AppendSkeletons(
-	    const LoadedSceneManifest& sceneManifest,
-	    CookedAssetFileSet& files,
-	    SceneAssetPayload& sceneAssetPayload)
+	void SceneAssetPayloadSkeletonAppender::AppendSkeletons(const LoadedSceneManifest& sceneManifest, CookedAssetFileSet& files, SceneAssetPayload& sceneAssetPayload)
 	{
 		SkeletonAssetLoader skeletonAssetLoader;
 		sceneAssetPayload.skeletons.reserve(sceneAssetPayload.skeletons.size() + sceneManifest.skeletonRefs.size());
@@ -26,8 +23,7 @@ namespace Assets
 		{
 			const std::filesystem::path skeletonAssetPath = Paths::CookedSkeletonAsset(skeletonRef.skeletonAssetId);
 			const LoadedSkeletonAsset skeletonAsset = skeletonAssetLoader.Decode(skeletonAssetPath, files.Get(skeletonAssetPath));
-			sceneAssetPayload.skeletons.push_back(
-			    BuildSceneAssetSkeleton(skeletonAsset, skeletonRef.skeletonAssetId, skeletonRef.sourceSkinIndex));
+			sceneAssetPayload.skeletons.push_back(BuildSceneAssetSkeleton(skeletonAsset, skeletonRef.skeletonAssetId, skeletonRef.sourceSkinIndex));
 			files.Release(skeletonAssetPath);
 		}
 	}

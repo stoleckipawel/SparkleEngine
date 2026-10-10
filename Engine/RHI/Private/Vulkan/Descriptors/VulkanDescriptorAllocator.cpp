@@ -53,8 +53,7 @@ void VulkanDescriptorAllocator::PublishRecordingReadView() noexcept
 		readView->Tables.reserve(m_tables.size());
 		for (const DescriptorTableRecord& table : m_tables)
 		{
-			readView->Tables.push_back(
-			    DescriptorTableReadRecord{.Entries = table.Entries, .Allocated = table.Allocated, .Generation = table.Generation});
+			readView->Tables.push_back(DescriptorTableReadRecord{.Entries = table.Entries, .Allocated = table.Allocated, .Generation = table.Generation});
 		}
 		readView->RegisteredDescriptors = m_registeredDescriptors;
 	}
@@ -73,9 +72,7 @@ void VulkanDescriptorAllocator::ReleaseDescriptor(ERhiDescriptorAllocatorType, c
 	ReleaseDescriptorTable(tableHandle);
 }
 
-RhiDescriptorTableHandle VulkanDescriptorAllocator::AllocateDescriptorTable(
-    ERhiDescriptorAllocatorType descriptorType,
-    std::uint32_t descriptorCount)
+RhiDescriptorTableHandle VulkanDescriptorAllocator::AllocateDescriptorTable(ERhiDescriptorAllocatorType descriptorType, std::uint32_t descriptorCount)
 {
 	if (descriptorCount == 0 || descriptorCount > VulkanDescriptorHandles::MaximumCpuDescriptorCount)
 	{
@@ -106,9 +103,7 @@ RhiDescriptorTableHandle VulkanDescriptorAllocator::AllocateDescriptorTable(
 	return VulkanDescriptorHandles::MakeTableHandle(static_cast<std::uint32_t>(m_tables.size() - 1), 0u);
 }
 
-RhiCpuDescriptorHandle VulkanDescriptorAllocator::GetDescriptorTableCpuHandle(
-    RhiDescriptorTableHandle tableHandle,
-    std::uint32_t descriptorIndex) const noexcept
+RhiCpuDescriptorHandle VulkanDescriptorAllocator::GetDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex) const noexcept
 {
 	std::scoped_lock lock(m_registryMutex);
 	const DescriptorTableRecord* const record = FindTableRecord(tableHandle);
@@ -165,11 +160,7 @@ RhiGpuDescriptorHandle VulkanDescriptorAllocator::RegisterImageDescriptor(ERhiRe
 	return VulkanDescriptorHandles::MakeGpuDescriptorHandle(static_cast<std::uint32_t>(descriptors.size() - 1));
 }
 
-RhiGpuDescriptorHandle VulkanDescriptorAllocator::RegisterBufferDescriptor(
-    ERhiResourceViewKind viewKind,
-    VkBuffer buffer,
-    std::uint64_t offsetInBytes,
-    std::uint64_t sizeInBytes)
+RhiGpuDescriptorHandle VulkanDescriptorAllocator::RegisterBufferDescriptor(ERhiResourceViewKind viewKind, VkBuffer buffer, std::uint64_t offsetInBytes, std::uint64_t sizeInBytes)
 {
 	if (buffer == VK_NULL_HANDLE || sizeInBytes == 0)
 	{
@@ -222,22 +213,14 @@ void VulkanDescriptorAllocator::WriteSamplerDescriptor(RhiCpuDescriptorHandle de
 	std::uint32_t descriptorIndex = 0;
 	if (!VulkanDescriptorHandles::DecodeCpuDescriptorHandle(destination, tableHandle, descriptorIndex) || sampler == VK_NULL_HANDLE)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanDescriptorAllocatorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan sampler write requires a valid destination descriptor and sampler.");
+		Diagnostics::Fatal(g_vulkanDescriptorAllocatorLogger, __FILE__, __LINE__, "Vulkan sampler write requires a valid destination descriptor and sampler.");
 	}
 
 	std::scoped_lock lock(m_registryMutex);
 	DescriptorTableRecord* const record = FindTableRecord(tableHandle);
 	if (record == nullptr || record->Entries == nullptr || descriptorIndex >= record->Entries->size())
 	{
-		Diagnostics::Fatal(
-		    g_vulkanDescriptorAllocatorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan sampler write references an unavailable descriptor table entry.");
+		Diagnostics::Fatal(g_vulkanDescriptorAllocatorLogger, __FILE__, __LINE__, "Vulkan sampler write references an unavailable descriptor table entry.");
 	}
 	std::vector<DescriptorEntry>& entries = EditTableEntries(*record);
 	DescriptorEntry& entry = entries[descriptorIndex];
@@ -257,8 +240,7 @@ bool VulkanDescriptorAllocator::WriteRegisteredDescriptor(RhiCpuDescriptorHandle
 	std::scoped_lock lock(m_registryMutex);
 	DescriptorTableRecord* const table = FindTableRecord(tableHandle);
 	const DescriptorEntry* const sourceEntry = FindRegisteredEntry(source);
-	if (table == nullptr || table->Entries == nullptr || sourceEntry == nullptr || sourceEntry->Kind == EntryKind::Empty
-	    || descriptorIndex >= table->Entries->size())
+	if (table == nullptr || table->Entries == nullptr || sourceEntry == nullptr || sourceEntry->Kind == EntryKind::Empty || descriptorIndex >= table->Entries->size())
 	{
 		return false;
 	}
@@ -267,18 +249,11 @@ bool VulkanDescriptorAllocator::WriteRegisteredDescriptor(RhiCpuDescriptorHandle
 	return true;
 }
 
-void VulkanDescriptorAllocator::WriteDescriptorTable(
-    VkDescriptorSet descriptorSet,
-    const CompiledBinding& binding,
-    RhiDescriptorTableBinding tableBinding) noexcept
+void VulkanDescriptorAllocator::WriteDescriptorTable(VkDescriptorSet descriptorSet, const CompiledBinding& binding, RhiDescriptorTableBinding tableBinding) noexcept
 {
 	if (descriptorSet == VK_NULL_HANDLE || !tableBinding)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanDescriptorAllocatorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan descriptor-table binding requires a descriptor set and table binding.");
+		Diagnostics::Fatal(g_vulkanDescriptorAllocatorLogger, __FILE__, __LINE__, "Vulkan descriptor-table binding requires a descriptor set and table binding.");
 	}
 
 	const std::shared_ptr<const RecordingReadView> readView = GetRecordingReadView();
@@ -286,16 +261,11 @@ void VulkanDescriptorAllocator::WriteDescriptorTable(
 	std::uint16_t generation = 0;
 	if (readView == nullptr || !tableBinding.Table.Decode(tableIndex, generation) || tableIndex >= readView->Tables.size())
 	{
-		Diagnostics::Fatal(
-		    g_vulkanDescriptorAllocatorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan descriptor-table binding cannot resolve its recording snapshot.");
+		Diagnostics::Fatal(g_vulkanDescriptorAllocatorLogger, __FILE__, __LINE__, "Vulkan descriptor-table binding cannot resolve its recording snapshot.");
 	}
 
 	const DescriptorTableReadRecord& table = readView->Tables[tableIndex];
-	if (!table.Allocated || table.Generation != generation || table.Entries == nullptr
-	    || tableBinding.DescriptorIndex >= table.Entries->size())
+	if (!table.Allocated || table.Generation != generation || table.Entries == nullptr || tableBinding.DescriptorIndex >= table.Entries->size())
 	{
 		Diagnostics::Fatal(
 		    g_vulkanDescriptorAllocatorLogger,
@@ -314,47 +284,27 @@ void VulkanDescriptorAllocator::WriteDescriptorTable(
 	}
 
 	const std::size_t availableDescriptorCount = table.Entries->size() - tableBinding.DescriptorIndex;
-	if (binding.DescriptorCount == 0 || availableDescriptorCount == 0
-	    || (!binding.Bindless.BindlessEligible && availableDescriptorCount < binding.DescriptorCount))
+	if (binding.DescriptorCount == 0 || availableDescriptorCount == 0 || (!binding.Bindless.BindlessEligible && availableDescriptorCount < binding.DescriptorCount))
 	{
-		Diagnostics::Fatal(
-		    g_vulkanDescriptorAllocatorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan descriptor table does not contain the binding's complete descriptor range.");
+		Diagnostics::Fatal(g_vulkanDescriptorAllocatorLogger, __FILE__, __LINE__, "Vulkan descriptor table does not contain the binding's complete descriptor range.");
 	}
 	const std::size_t descriptorCount = std::min<std::size_t>(availableDescriptorCount, binding.DescriptorCount);
-	WriteEntries(
-	    descriptorSet,
-	    binding,
-	    std::span<const DescriptorEntry>(table.Entries->data() + tableBinding.DescriptorIndex, descriptorCount));
+	WriteEntries(descriptorSet, binding, std::span<const DescriptorEntry>(table.Entries->data() + tableBinding.DescriptorIndex, descriptorCount));
 }
 
-void VulkanDescriptorAllocator::WriteDescriptorHandle(
-    VkDescriptorSet descriptorSet,
-    const CompiledBinding& binding,
-    RhiGpuDescriptorHandle handle) noexcept
+void VulkanDescriptorAllocator::WriteDescriptorHandle(VkDescriptorSet descriptorSet, const CompiledBinding& binding, RhiGpuDescriptorHandle handle) noexcept
 {
 	if (descriptorSet == VK_NULL_HANDLE || !handle)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanDescriptorAllocatorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan descriptor-handle binding requires a descriptor set and registered handle.");
+		Diagnostics::Fatal(g_vulkanDescriptorAllocatorLogger, __FILE__, __LINE__, "Vulkan descriptor-handle binding requires a descriptor set and registered handle.");
 	}
 
 	const std::shared_ptr<const RecordingReadView> readView = GetRecordingReadView();
 	std::uint32_t descriptorIndex = 0;
-	if (readView == nullptr || readView->RegisteredDescriptors == nullptr
-	    || !VulkanDescriptorHandles::DecodeGpuDescriptorHandle(handle, descriptorIndex)
+	if (readView == nullptr || readView->RegisteredDescriptors == nullptr || !VulkanDescriptorHandles::DecodeGpuDescriptorHandle(handle, descriptorIndex)
 	    || descriptorIndex >= readView->RegisteredDescriptors->size())
 	{
-		Diagnostics::Fatal(
-		    g_vulkanDescriptorAllocatorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan descriptor-handle binding cannot resolve its recording snapshot.");
+		Diagnostics::Fatal(g_vulkanDescriptorAllocatorLogger, __FILE__, __LINE__, "Vulkan descriptor-handle binding cannot resolve its recording snapshot.");
 	}
 
 	const DescriptorEntry& entry = (*readView->RegisteredDescriptors)[descriptorIndex];
@@ -366,20 +316,11 @@ void VulkanDescriptorAllocator::WriteDescriptorHandle(
 	WriteEntries(descriptorSet, binding, std::span<const DescriptorEntry>(&entry, 1));
 }
 
-void VulkanDescriptorAllocator::WriteBufferDescriptor(
-    VkDescriptorSet descriptorSet,
-    const CompiledBinding& binding,
-    VkBuffer buffer,
-    VkDeviceSize offset,
-    VkDeviceSize range) noexcept
+void VulkanDescriptorAllocator::WriteBufferDescriptor(VkDescriptorSet descriptorSet, const CompiledBinding& binding, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range) noexcept
 {
 	if (descriptorSet == VK_NULL_HANDLE || buffer == VK_NULL_HANDLE || range == 0)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanDescriptorAllocatorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan buffer binding requires a descriptor set, resolved buffer, and non-zero range.");
+		Diagnostics::Fatal(g_vulkanDescriptorAllocatorLogger, __FILE__, __LINE__, "Vulkan buffer binding requires a descriptor set, resolved buffer, and non-zero range.");
 	}
 
 	DescriptorEntry entry{};
@@ -388,18 +329,11 @@ void VulkanDescriptorAllocator::WriteBufferDescriptor(
 	WriteEntries(descriptorSet, binding, std::span<const DescriptorEntry>(&entry, 1));
 }
 
-void VulkanDescriptorAllocator::WriteAccelerationStructureDescriptor(
-    VkDescriptorSet descriptorSet,
-    const CompiledBinding& binding,
-    VkAccelerationStructureKHR accelerationStructure) noexcept
+void VulkanDescriptorAllocator::WriteAccelerationStructureDescriptor(VkDescriptorSet descriptorSet, const CompiledBinding& binding, VkAccelerationStructureKHR accelerationStructure) noexcept
 {
 	if (descriptorSet == VK_NULL_HANDLE || accelerationStructure == VK_NULL_HANDLE)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanDescriptorAllocatorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan acceleration-structure binding requires a descriptor set and resolved acceleration structure.");
+		Diagnostics::Fatal(g_vulkanDescriptorAllocatorLogger, __FILE__, __LINE__, "Vulkan acceleration-structure binding requires a descriptor set and resolved acceleration structure.");
 	}
 
 	DescriptorEntry entry{};
@@ -408,18 +342,11 @@ void VulkanDescriptorAllocator::WriteAccelerationStructureDescriptor(
 	WriteEntries(descriptorSet, binding, std::span<const DescriptorEntry>(&entry, 1));
 }
 
-void VulkanDescriptorAllocator::WritePartitionedAccelerationStructureDescriptor(
-    VkDescriptorSet descriptorSet,
-    const CompiledBinding& binding,
-    VkDeviceAddress accelerationStructureAddress) noexcept
+void VulkanDescriptorAllocator::WritePartitionedAccelerationStructureDescriptor(VkDescriptorSet descriptorSet, const CompiledBinding& binding, VkDeviceAddress accelerationStructureAddress) noexcept
 {
 	if (descriptorSet == VK_NULL_HANDLE || accelerationStructureAddress == 0)
 	{
-		Diagnostics::Fatal(
-		    g_vulkanDescriptorAllocatorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan partitioned acceleration-structure binding requires a descriptor set and GPU address.");
+		Diagnostics::Fatal(g_vulkanDescriptorAllocatorLogger, __FILE__, __LINE__, "Vulkan partitioned acceleration-structure binding requires a descriptor set and GPU address.");
 	}
 
 	DescriptorEntry entry{};
@@ -496,8 +423,7 @@ VulkanDescriptorAllocator::DescriptorTableRecord* VulkanDescriptorAllocator::Fin
 	return record.Allocated && record.Generation == generation ? &record : nullptr;
 }
 
-const VulkanDescriptorAllocator::DescriptorTableRecord* VulkanDescriptorAllocator::FindTableRecord(
-    RhiDescriptorTableHandle tableHandle) const noexcept
+const VulkanDescriptorAllocator::DescriptorTableRecord* VulkanDescriptorAllocator::FindTableRecord(RhiDescriptorTableHandle tableHandle) const noexcept
 {
 	std::uint32_t tableIndex = 0;
 	std::uint16_t generation = 0;
@@ -570,8 +496,7 @@ VulkanDescriptorAllocator::DescriptorEntry* VulkanDescriptorAllocator::FindRegis
 	return &(*m_registeredDescriptors)[index];
 }
 
-const VulkanDescriptorAllocator::DescriptorEntry* VulkanDescriptorAllocator::FindRegisteredEntry(
-    RhiGpuDescriptorHandle handle) const noexcept
+const VulkanDescriptorAllocator::DescriptorEntry* VulkanDescriptorAllocator::FindRegisteredEntry(RhiGpuDescriptorHandle handle) const noexcept
 {
 	if (m_registeredDescriptors == nullptr)
 	{
@@ -613,10 +538,7 @@ bool VulkanDescriptorAllocator::EntryKindMatchesBinding(const CompiledBinding& b
 	}
 }
 
-bool VulkanDescriptorAllocator::BuildWriteChunk(
-    std::span<const DescriptorEntry> entries,
-    EntryKind entryKind,
-    DescriptorWriteChunk& outChunk) noexcept
+bool VulkanDescriptorAllocator::BuildWriteChunk(std::span<const DescriptorEntry> entries, EntryKind entryKind, DescriptorWriteChunk& outChunk) noexcept
 {
 	if (entries.empty() || entries.size() > DescriptorWriteChunkCapacity)
 	{
@@ -638,16 +560,23 @@ bool VulkanDescriptorAllocator::BuildWriteChunk(
 			case EntryKind::StorageImage:
 			case EntryKind::Sampler:
 				outChunk.ImageInfos[index] = entry.Image;
+
 				break;
+
 			case EntryKind::AccelerationStructure:
 				outChunk.AccelerationStructures[index] = entry.AccelerationStructure;
+
 				break;
+
 			case EntryKind::PartitionedAccelerationStructure:
 				outChunk.PartitionedAccelerationStructureAddresses[index] = entry.PartitionedAccelerationStructureAddress;
+
 				break;
+
 			case EntryKind::UniformBuffer:
 			case EntryKind::StorageBuffer:
 				outChunk.BufferInfos[index] = entry.Buffer;
+
 				break;
 			case EntryKind::Empty:
 			default:
@@ -671,22 +600,21 @@ void VulkanDescriptorAllocator::CommitWriteChunk(
 	    .pNext = nullptr,
 	    .accelerationStructureCount = chunk.Count,
 	    .pAccelerationStructures = chunk.AccelerationStructures.data()};
+
 	const VkWriteDescriptorSetPartitionedAccelerationStructureNV partitionedAccelerationStructureWrite{
 	    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_PARTITIONED_ACCELERATION_STRUCTURE_NV,
 	    .pNext = nullptr,
 	    .accelerationStructureCount = chunk.Count,
 	    .pAccelerationStructures = chunk.PartitionedAccelerationStructureAddresses.data()};
 
-	const bool writesImages =
-	    entryKind == EntryKind::SampledImage || entryKind == EntryKind::StorageImage || entryKind == EntryKind::Sampler;
+	const bool writesImages = entryKind == EntryKind::SampledImage || entryKind == EntryKind::StorageImage || entryKind == EntryKind::Sampler;
 	const bool writesBuffers = entryKind == EntryKind::UniformBuffer || entryKind == EntryKind::StorageBuffer;
 
 	const VkWriteDescriptorSet write{
 	    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 	    .pNext = entryKind == EntryKind::AccelerationStructure
 	        ? static_cast<const void*>(&accelerationStructureWrite)
-	        : (entryKind == EntryKind::PartitionedAccelerationStructure ? static_cast<const void*>(&partitionedAccelerationStructureWrite)
-	                                                                    : nullptr),
+	        : (entryKind == EntryKind::PartitionedAccelerationStructure ? static_cast<const void*>(&partitionedAccelerationStructureWrite) : nullptr),
 	    .dstSet = descriptorSet,
 	    .dstBinding = binding.BindingPoint.Binding,
 	    .dstArrayElement = firstDescriptor,
@@ -699,26 +627,15 @@ void VulkanDescriptorAllocator::CommitWriteChunk(
 	vkUpdateDescriptorSets(m_rhi.GetDevice(), 1, &write, 0, nullptr);
 }
 
-void VulkanDescriptorAllocator::WriteEntries(
-    VkDescriptorSet descriptorSet,
-    const CompiledBinding& binding,
-    std::span<const DescriptorEntry> entries) noexcept
+void VulkanDescriptorAllocator::WriteEntries(VkDescriptorSet descriptorSet, const CompiledBinding& binding, std::span<const DescriptorEntry> entries) noexcept
 {
 	if (descriptorSet == VK_NULL_HANDLE || entries.empty())
 	{
-		Diagnostics::Fatal(
-		    g_vulkanDescriptorAllocatorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan descriptor write requires a descriptor set and at least one descriptor.");
+		Diagnostics::Fatal(g_vulkanDescriptorAllocatorLogger, __FILE__, __LINE__, "Vulkan descriptor write requires a descriptor set and at least one descriptor.");
 	}
 	if (entries.size() > binding.DescriptorCount || (!binding.Bindless.BindlessEligible && entries.size() != binding.DescriptorCount))
 	{
-		Diagnostics::Fatal(
-		    g_vulkanDescriptorAllocatorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan descriptor write cardinality does not match the compiled shader binding.");
+		Diagnostics::Fatal(g_vulkanDescriptorAllocatorLogger, __FILE__, __LINE__, "Vulkan descriptor write cardinality does not match the compiled shader binding.");
 	}
 
 	const EntryKind entryKind = entries.front().Kind;
@@ -730,11 +647,7 @@ void VulkanDescriptorAllocator::WriteEntries(
 
 	if (!EntryKindMatchesBinding(binding, entryKind))
 	{
-		Diagnostics::Fatal(
-		    g_vulkanDescriptorAllocatorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Vulkan descriptor entry kind does not match the compiled shader binding.");
+		Diagnostics::Fatal(g_vulkanDescriptorAllocatorLogger, __FILE__, __LINE__, "Vulkan descriptor entry kind does not match the compiled shader binding.");
 	}
 
 	std::size_t firstDescriptor = 0;
@@ -746,11 +659,7 @@ void VulkanDescriptorAllocator::WriteEntries(
 		DescriptorWriteChunk chunk{};
 		if (!BuildWriteChunk(entryChunk, entryKind, chunk))
 		{
-			Diagnostics::Fatal(
-			    g_vulkanDescriptorAllocatorLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Vulkan descriptor array contains inconsistent or unsupported entries.");
+			Diagnostics::Fatal(g_vulkanDescriptorAllocatorLogger, __FILE__, __LINE__, "Vulkan descriptor array contains inconsistent or unsupported entries.");
 		}
 
 		CommitWriteChunk(descriptorSet, binding, entryKind, descriptorType, static_cast<std::uint32_t>(firstDescriptor), chunk);

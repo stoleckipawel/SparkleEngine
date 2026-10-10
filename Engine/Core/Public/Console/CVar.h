@@ -14,8 +14,7 @@
 #include <typeinfo>
 #include <utility>
 
-template <typename T> concept CVarValueType =
-    std::is_default_constructible_v<T> && std::is_copy_constructible_v<T> && std::is_copy_assignable_v<T>;
+template <typename T> concept CVarValueType = std::is_default_constructible_v<T> && std::is_copy_constructible_v<T> && std::is_copy_assignable_v<T>;
 
 class SPARKLE_CORE_API ConsoleVariableBase
 {
@@ -29,7 +28,9 @@ public:
 	ConsoleVariableBase& operator=(ConsoleVariableBase&&) = delete;
 
 	std::string_view GetName() const noexcept { return m_name; }
+
 	std::string_view GetDescription() const noexcept { return m_description; }
+
 	std::type_index GetValueType() const noexcept { return m_valueType; }
 
 	virtual std::string GetValueAsString() const = 0;

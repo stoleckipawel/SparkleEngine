@@ -57,17 +57,16 @@ bool GltfMikkTangentContext::IsUsableTangent(const DirectX::XMFLOAT4& tangent, c
 	const float tangentLengthSquared = tangent.x * tangent.x + tangent.y * tangent.y + tangent.z * tangent.z;
 	const float normalLengthSquared = normal.x * normal.x + normal.y * normal.y + normal.z * normal.z;
 	const float tangentNormalDot = tangent.x * normal.x + tangent.y * normal.y + tangent.z * normal.z;
-	return std::isfinite(tangent.x) && std::isfinite(tangent.y) && std::isfinite(tangent.z) && std::isfinite(tangent.w)
-	    && tangentLengthSquared > kMinimumVectorLengthSquared && std::abs(tangentLengthSquared - 1.0f) <= kFrameTolerance
-	    && std::abs(normalLengthSquared - 1.0f) <= kFrameTolerance && std::abs(tangentNormalDot) <= kFrameTolerance
+
+	return std::isfinite(tangent.x) && std::isfinite(tangent.y) && std::isfinite(tangent.z) && std::isfinite(tangent.w) && tangentLengthSquared > kMinimumVectorLengthSquared
+	    && std::abs(tangentLengthSquared - 1.0f) <= kFrameTolerance && std::abs(normalLengthSquared - 1.0f) <= kFrameTolerance && std::abs(tangentNormalDot) <= kFrameTolerance
 	    && (tangent.w == -1.0f || tangent.w == 1.0f);
 }
 
 DirectX::XMFLOAT4 GltfMikkTangentContext::BuildFallbackTangent(const DirectX::XMFLOAT3& normal) noexcept
 {
 	const DirectX::XMVECTOR normalVector = DirectX::XMLoadFloat3(&normal);
-	const DirectX::XMVECTOR reference =
-	    std::abs(normal.z) < 0.999f ? DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f) : DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	const DirectX::XMVECTOR reference = std::abs(normal.z) < 0.999f ? DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f) : DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	DirectX::XMFLOAT3 tangent;
 	DirectX::XMStoreFloat3(&tangent, DirectX::XMVector3Normalize(DirectX::XMVector3Cross(reference, normalVector)));
 	return {tangent.x, tangent.y, tangent.z, 1.0f};
@@ -106,11 +105,10 @@ void GltfMikkTangentContext::ValidateTriangle(std::size_t faceIndex) const
 	const ImportedVertex& first = m_vertices[firstIndex];
 	const ImportedVertex& second = m_vertices[secondIndex];
 	const ImportedVertex& third = m_vertices[thirdIndex];
-	if (!IsFinite(first.position) || !IsFinite(second.position) || !IsFinite(third.position) || !IsFinite(first.normal)
-	    || !IsFinite(second.normal) || !IsFinite(third.normal) || !IsFinite(first.uv) || !IsFinite(second.uv) || !IsFinite(third.uv))
+	if (!IsFinite(first.position) || !IsFinite(second.position) || !IsFinite(third.position) || !IsFinite(first.normal) || !IsFinite(second.normal) || !IsFinite(third.normal) || !IsFinite(first.uv)
+	    || !IsFinite(second.uv) || !IsFinite(third.uv))
 	{
-		throw Diagnostics::Error(
-		    std::format("Normal-mapped glTF triangle {} contains non-finite position, normal, or texture-coordinate data.", faceIndex));
+		throw Diagnostics::Error(std::format("Normal-mapped glTF triangle {} contains non-finite position, normal, or texture-coordinate data.", faceIndex));
 	}
 }
 
@@ -158,12 +156,7 @@ void GltfMikkTangentContext::GetTextureCoordinate(const SMikkTSpaceContext* cont
 	output[1] = value.y;
 }
 
-void GltfMikkTangentContext::SetTangent(
-    const SMikkTSpaceContext* context,
-    const float tangent[],
-    float sign,
-    int faceIndex,
-    int faceVertexIndex)
+void GltfMikkTangentContext::SetTangent(const SMikkTSpaceContext* context, const float tangent[], float sign, int faceIndex, int faceVertexIndex)
 {
 	GltfMikkTangentContext& owner = GetOwner(context);
 	const std::size_t cornerIndex = static_cast<std::size_t>(faceIndex) * kVerticesPerTriangle + static_cast<std::size_t>(faceVertexIndex);

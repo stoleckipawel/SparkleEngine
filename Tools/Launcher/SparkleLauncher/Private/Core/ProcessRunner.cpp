@@ -41,6 +41,7 @@ namespace SparkleLauncher
 	{
 		ProcessResult result;
 		result.StartTime = std::chrono::system_clock::now();
+
 		Process::ChildProcessResult childResult = Process::ChildProcess::Run(
 		    Process::ChildProcessRequest{
 		        .ExecutablePath = request.ExecutablePath,
@@ -51,6 +52,7 @@ namespace SparkleLauncher
 		        .OutputCallback = request.OutputCallback,
 		        .Cancellation = request.Cancellation,
 		        .ReadinessValue = request.ReadinessValue});
+
 		result.Launched = childResult.Launched;
 		result.Ready = childResult.Ready;
 		result.Canceled = childResult.Cancelled;
@@ -75,6 +77,7 @@ namespace SparkleLauncher
 		}
 
 		ProcessOutputCallback existingCallback = std::move(request.OutputCallback);
+
 		request.OutputCallback = [existingCallback = std::move(existingCallback), callback = std::move(callback)](std::string_view output)
 		{
 			existingCallback(output);

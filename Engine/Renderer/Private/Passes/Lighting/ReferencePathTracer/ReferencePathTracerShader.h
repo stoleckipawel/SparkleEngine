@@ -61,6 +61,7 @@ class ReferencePathTracerRGS final : public GlobalShader<ReferencePathTracerRGS>
 {
 public:
 	using Parameters = ReferencePathTracerInlineCS::Parameters;
+
 	static constexpr ShaderFeatureFlags kShaderFeatures = RayTracingShaderFeatureFlags::SceneBindings;
 	static constexpr RayTracingShaderMetadata kRayTracingMetadata = kRayTracingMaterialShaderMetadata;
 };

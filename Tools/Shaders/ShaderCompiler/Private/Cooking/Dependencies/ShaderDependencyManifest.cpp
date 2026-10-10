@@ -27,8 +27,7 @@ ShaderDependencyManifest ShaderDependencyManifest::Read(const std::filesystem::p
 	std::string fileError;
 	if (!Files::TryReadAllBytes(path, bytes, fileError))
 	{
-		throw Diagnostics::Error(
-		    "Changed shader cooking requires valid dependency metadata. Run RecompileShaders Global to rebuild all shaders. " + fileError);
+		throw Diagnostics::Error("Changed shader cooking requires valid dependency metadata. Run RecompileShaders Global to rebuild all shaders. " + fileError);
 	}
 
 	std::istringstream input{std::string(reinterpret_cast<const char*>(bytes.data()), bytes.size())};
@@ -62,11 +61,9 @@ ShaderDependencyManifest ShaderDependencyManifest::Read(const std::filesystem::p
 			ShaderDependencyRecord record;
 			lineInput >> std::hex >> record.ShaderType >> std::quoted(record.ShaderTypeName) >> std::quoted(record.VirtualSourcePath);
 			lineInput >> std::ws;
-			if (!lineInput || !lineInput.eof() || record.ShaderType == 0
-			    || !recordIndices.emplace(record.ShaderType, manifest.m_records.size()).second)
+			if (!lineInput || !lineInput.eof() || record.ShaderType == 0 || !recordIndices.emplace(record.ShaderType, manifest.m_records.size()).second)
 			{
-				throw Diagnostics::Error(
-				    "Shader dependency metadata contains an invalid or duplicate shader record. Run RecompileShaders Global.");
+				throw Diagnostics::Error("Shader dependency metadata contains an invalid or duplicate shader record. Run RecompileShaders Global.");
 			}
 			manifest.m_records.push_back(std::move(record));
 			continue;
@@ -155,8 +152,7 @@ void ShaderDependencyManifest::Write(const ShaderDependencyManifest& manifest, c
 	output << kShaderDependencyManifestHeader << '\n';
 	for (const ShaderDependencyRecord& record : manifest.m_records)
 	{
-		output << "shader " << std::hex << record.ShaderType << ' ' << std::quoted(record.ShaderTypeName) << ' '
-		       << std::quoted(record.VirtualSourcePath) << '\n';
+		output << "shader " << std::hex << record.ShaderType << ' ' << std::quoted(record.ShaderTypeName) << ' ' << std::quoted(record.VirtualSourcePath) << '\n';
 		for (const std::string& dependency : record.VirtualDependencies)
 		{
 			output << "dependency " << std::hex << record.ShaderType << ' ' << std::quoted(dependency) << '\n';
@@ -204,9 +200,7 @@ std::unordered_set<ShaderTypeId> ShaderDependencyManifest::SelectAffectedShaderT
 
 void ShaderDependencyManifest::Replace(ShaderDependencyRecord record)
 {
-	const auto existing = std::ranges::find_if(
-	    m_records,
-	    [shaderType = record.ShaderType](const ShaderDependencyRecord& candidate) { return candidate.ShaderType == shaderType; });
+	const auto existing = std::ranges::find_if(m_records, [shaderType = record.ShaderType](const ShaderDependencyRecord& candidate) { return candidate.ShaderType == shaderType; });
 	if (existing == m_records.end())
 	{
 		m_records.push_back(std::move(record));
@@ -219,27 +213,19 @@ void ShaderDependencyManifest::Replace(ShaderDependencyRecord record)
 
 std::size_t ShaderDependencyManifest::RemoveUnregisteredShaderTypes(std::span<const ShaderTypeId> registeredShaderTypes)
 {
-	if (!std::ranges::is_sorted(registeredShaderTypes)
-	    || std::adjacent_find(registeredShaderTypes.begin(), registeredShaderTypes.end()) != registeredShaderTypes.end())
+	if (!std::ranges::is_sorted(registeredShaderTypes) || std::adjacent_find(registeredShaderTypes.begin(), registeredShaderTypes.end()) != registeredShaderTypes.end())
 	{
 		throw Diagnostics::Error("Current shader catalog identities must be sorted and unique before dependency reconciliation.");
 	}
 	const std::size_t previousCount = m_records.size();
-	std::erase_if(
-	    m_records,
-	    [registeredShaderTypes](const ShaderDependencyRecord& record)
-	    { return !std::ranges::binary_search(registeredShaderTypes, record.ShaderType); });
+	std::erase_if(m_records, [registeredShaderTypes](const ShaderDependencyRecord& record) { return !std::ranges::binary_search(registeredShaderTypes, record.ShaderType); });
 	return previousCount - m_records.size();
 }
 
 bool ShaderDependencyManifest::MatchesShaderTypes(std::span<const ShaderTypeId> shaderTypes) const noexcept
 {
 	return shaderTypes.size() == m_records.size()
-	    && std::equal(
-	        shaderTypes.begin(),
-	        shaderTypes.end(),
-	        m_records.begin(),
-	        [](ShaderTypeId shaderType, const ShaderDependencyRecord& record) { return shaderType == record.ShaderType; });
+	    && std::equal(shaderTypes.begin(), shaderTypes.end(), m_records.begin(), [](ShaderTypeId shaderType, const ShaderDependencyRecord& record) { return shaderType == record.ShaderType; });
 }
 
 void ShaderDependencyManifest::SortAndValidate()
@@ -251,25 +237,19 @@ void ShaderDependencyManifest::SortAndValidate()
 			throw Diagnostics::Error("Shader dependency metadata contains an incomplete shader record.");
 		}
 		std::ranges::sort(record.VirtualDependencies);
-		record.VirtualDependencies.erase(
-		    std::unique(record.VirtualDependencies.begin(), record.VirtualDependencies.end()),
-		    record.VirtualDependencies.end());
+		record.VirtualDependencies.erase(std::unique(record.VirtualDependencies.begin(), record.VirtualDependencies.end()), record.VirtualDependencies.end());
 		if (record.VirtualDependencies.empty() || !std::ranges::binary_search(record.VirtualDependencies, record.VirtualSourcePath))
 		{
-			throw Diagnostics::Error(
-			    std::format(
-			        "Shader dependency metadata for '{}' omits its root virtual source '{}'.",
-			        record.ShaderTypeName,
-			        record.VirtualSourcePath));
+			throw Diagnostics::Error(std::format("Shader dependency metadata for '{}' omits its root virtual source '{}'.", record.ShaderTypeName, record.VirtualSourcePath));
 		}
 	}
-	std::ranges::sort(
-	    m_records,
-	    [](const ShaderDependencyRecord& lhs, const ShaderDependencyRecord& rhs) { return lhs.ShaderType < rhs.ShaderType; });
+	std::ranges::sort(m_records, [](const ShaderDependencyRecord& lhs, const ShaderDependencyRecord& rhs) { return lhs.ShaderType < rhs.ShaderType; });
+
 	const auto duplicate = std::adjacent_find(
 	    m_records.begin(),
 	    m_records.end(),
 	    [](const ShaderDependencyRecord& lhs, const ShaderDependencyRecord& rhs) { return lhs.ShaderType == rhs.ShaderType; });
+
 	if (duplicate != m_records.end())
 	{
 		throw Diagnostics::Error("Shader dependency metadata contains duplicate shader type ids.");

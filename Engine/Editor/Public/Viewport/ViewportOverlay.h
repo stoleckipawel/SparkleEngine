@@ -9,6 +9,7 @@ class ViewportOverlay
 {
 public:
 	virtual ~ViewportOverlay() noexcept = default;
+
 	ViewportOverlay(const ViewportOverlay&) = delete;
 	ViewportOverlay& operator=(const ViewportOverlay&) = delete;
 	ViewportOverlay(ViewportOverlay&&) = delete;

@@ -41,8 +41,7 @@ public:
 		{
 			const float timeSeconds = static_cast<float>(keys[keyIndex].mTime / ticksPerSecond);
 			const aiVector3D& value = keys[keyIndex].mValue;
-			if (!std::isfinite(timeSeconds) || timeSeconds < 0.0f || timeSeconds <= previousTime || !std::isfinite(value.x)
-			    || !std::isfinite(value.y) || !std::isfinite(value.z))
+			if (!std::isfinite(timeSeconds) || timeSeconds < 0.0f || timeSeconds <= previousTime || !std::isfinite(value.x) || !std::isfinite(value.y) || !std::isfinite(value.z))
 			{
 				throw Diagnostics::Error(std::format("FBX animation vector key {} is invalid or not strictly time ordered.", keyIndex));
 			}
@@ -54,21 +53,10 @@ public:
 
 		const std::uint32_t samplerIndex = static_cast<std::uint32_t>(clip.samplers.size());
 		clip.samplers.push_back(std::move(sampler));
-		clip.channels.push_back(
-		    ImportedAnimationChannel{
-		        .targetPath = targetPath,
-		        .targetNodeIndex = targetNodeIndex,
-		        .targetJointIndex = targetJointIndex,
-		        .samplerIndex = samplerIndex});
+		clip.channels.push_back(ImportedAnimationChannel{.targetPath = targetPath, .targetNodeIndex = targetNodeIndex, .targetJointIndex = targetJointIndex, .samplerIndex = samplerIndex});
 	}
 
-	static void AppendRotationSampler(
-	    const aiQuatKey* keys,
-	    unsigned int keyCount,
-	    double ticksPerSecond,
-	    std::uint32_t targetNodeIndex,
-	    std::uint32_t targetJointIndex,
-	    ImportedAnimationClip& clip)
+	static void AppendRotationSampler(const aiQuatKey* keys, unsigned int keyCount, double ticksPerSecond, std::uint32_t targetNodeIndex, std::uint32_t targetJointIndex, ImportedAnimationClip& clip)
 	{
 		if (keyCount == 0)
 		{
@@ -90,9 +78,8 @@ public:
 			const aiQuaternion& value = keys[keyIndex].mValue;
 			DirectX::XMVECTOR quaternion = DirectX::XMVectorSet(value.x, value.y, value.z, value.w);
 			const float lengthSquared = DirectX::XMVectorGetX(DirectX::XMVector4LengthSq(quaternion));
-			if (!std::isfinite(timeSeconds) || timeSeconds < 0.0f || timeSeconds <= previousTime || !std::isfinite(value.x)
-			    || !std::isfinite(value.y) || !std::isfinite(value.z) || !std::isfinite(value.w) || !std::isfinite(lengthSquared)
-			    || lengthSquared <= 1.0e-8f)
+			if (!std::isfinite(timeSeconds) || timeSeconds < 0.0f || timeSeconds <= previousTime || !std::isfinite(value.x) || !std::isfinite(value.y) || !std::isfinite(value.z)
+			    || !std::isfinite(value.w) || !std::isfinite(lengthSquared) || lengthSquared <= 1.0e-8f)
 			{
 				throw Diagnostics::Error(std::format("FBX animation rotation key {} is invalid or not strictly time ordered.", keyIndex));
 			}
@@ -114,20 +101,12 @@ public:
 
 		const std::uint32_t samplerIndex = static_cast<std::uint32_t>(clip.samplers.size());
 		clip.samplers.push_back(std::move(sampler));
+
 		clip.channels.push_back(
-		    ImportedAnimationChannel{
-		        .targetPath = ImportedAnimationTargetPath::Rotation,
-		        .targetNodeIndex = targetNodeIndex,
-		        .targetJointIndex = targetJointIndex,
-		        .samplerIndex = samplerIndex});
+		    ImportedAnimationChannel{.targetPath = ImportedAnimationTargetPath::Rotation, .targetNodeIndex = targetNodeIndex, .targetJointIndex = targetJointIndex, .samplerIndex = samplerIndex});
 	}
 
-	static void AppendNodeChannel(
-	    const aiScene& scene,
-	    const aiNodeAnim& sourceChannel,
-	    double ticksPerSecond,
-	    ImportedAnimationClip& clip,
-	    const SourceImportOutput& output)
+	static void AppendNodeChannel(const aiScene& scene, const aiNodeAnim& sourceChannel, double ticksPerSecond, ImportedAnimationClip& clip, const SourceImportOutput& output)
 	{
 		if ((sourceChannel.mNumPositionKeys == 0 && sourceChannel.mNumRotationKeys == 0 && sourceChannel.mNumScalingKeys == 0)
 		    || (sourceChannel.mPreState != aiAnimBehaviour_DEFAULT && sourceChannel.mPreState != aiAnimBehaviour_CONSTANT)
@@ -149,8 +128,7 @@ public:
 		}
 
 		const auto [targetSkeletonIndex, targetJointIndex] = output.scene.FindSkeletonJointForNode(targetNodeIndex);
-		if (targetSkeletonIndex == (std::numeric_limits<std::uint32_t>::max)()
-		    || targetJointIndex == (std::numeric_limits<std::uint32_t>::max)())
+		if (targetSkeletonIndex == (std::numeric_limits<std::uint32_t>::max)() || targetJointIndex == (std::numeric_limits<std::uint32_t>::max)())
 		{
 			throw Diagnostics::Error("FBX animation channel target is not owned by an imported skeleton.");
 		}
@@ -161,29 +139,9 @@ public:
 		}
 		clip.targetSkeletonIndex = targetSkeletonIndex;
 
-		AppendVectorSampler(
-		    sourceChannel.mPositionKeys,
-		    sourceChannel.mNumPositionKeys,
-		    ticksPerSecond,
-		    ImportedAnimationTargetPath::Translation,
-		    targetNodeIndex,
-		    targetJointIndex,
-		    clip);
-		AppendRotationSampler(
-		    sourceChannel.mRotationKeys,
-		    sourceChannel.mNumRotationKeys,
-		    ticksPerSecond,
-		    targetNodeIndex,
-		    targetJointIndex,
-		    clip);
-		AppendVectorSampler(
-		    sourceChannel.mScalingKeys,
-		    sourceChannel.mNumScalingKeys,
-		    ticksPerSecond,
-		    ImportedAnimationTargetPath::Scale,
-		    targetNodeIndex,
-		    targetJointIndex,
-		    clip);
+		AppendVectorSampler(sourceChannel.mPositionKeys, sourceChannel.mNumPositionKeys, ticksPerSecond, ImportedAnimationTargetPath::Translation, targetNodeIndex, targetJointIndex, clip);
+		AppendRotationSampler(sourceChannel.mRotationKeys, sourceChannel.mNumRotationKeys, ticksPerSecond, targetNodeIndex, targetJointIndex, clip);
+		AppendVectorSampler(sourceChannel.mScalingKeys, sourceChannel.mNumScalingKeys, ticksPerSecond, ImportedAnimationTargetPath::Scale, targetNodeIndex, targetJointIndex, clip);
 	}
 };
 
@@ -201,9 +159,8 @@ void FbxAnimationImporter::ImportAnimations(const aiScene& scene, SourceImportOu
 	for (unsigned int animationIndex = 0; animationIndex < scene.mNumAnimations; ++animationIndex)
 	{
 		const aiAnimation* sourceAnimation = scene.mAnimations[animationIndex];
-		if (sourceAnimation == nullptr || !std::isfinite(sourceAnimation->mDuration) || sourceAnimation->mDuration < 0.0
-		    || !std::isfinite(sourceAnimation->mTicksPerSecond) || sourceAnimation->mTicksPerSecond <= 0.0
-		    || sourceAnimation->mNumChannels == 0 || sourceAnimation->mChannels == nullptr || sourceAnimation->mNumMeshChannels != 0
+		if (sourceAnimation == nullptr || !std::isfinite(sourceAnimation->mDuration) || sourceAnimation->mDuration < 0.0 || !std::isfinite(sourceAnimation->mTicksPerSecond)
+		    || sourceAnimation->mTicksPerSecond <= 0.0 || sourceAnimation->mNumChannels == 0 || sourceAnimation->mChannels == nullptr || sourceAnimation->mNumMeshChannels != 0
 		    || sourceAnimation->mNumMorphMeshChannels != 0)
 		{
 			throw Diagnostics::Error(std::format("FBX animation {} has incomplete or unsupported channel data.", animationIndex));
@@ -222,12 +179,7 @@ void FbxAnimationImporter::ImportAnimations(const aiScene& scene, SourceImportOu
 			{
 				throw Diagnostics::Error(std::format("FBX animation {} has a null channel {}.", animationIndex, channelIndex));
 			}
-			FbxAnimationTranslation::AppendNodeChannel(
-			    scene,
-			    *sourceAnimation->mChannels[channelIndex],
-			    sourceAnimation->mTicksPerSecond,
-			    clip,
-			    output);
+			FbxAnimationTranslation::AppendNodeChannel(scene, *sourceAnimation->mChannels[channelIndex], sourceAnimation->mTicksPerSecond, clip, output);
 		}
 
 		if (!clip.IsValid())

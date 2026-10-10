@@ -20,26 +20,20 @@ struct StructuredBufferElementRange final
 class PersistentStructuredBuffer final
 {
 public:
-	void Update(
-	    RhiResourceService& resourceService,
-	    std::span<const std::byte> payload,
-	    std::uint32_t strideInBytes,
-	    std::wstring_view debugName);
-	template <typename TValue, std::size_t Extent>
-	void Update(RhiResourceService& resourceService, std::span<TValue, Extent> values, std::wstring_view debugName)
+	void Update(RhiResourceService& resourceService, std::span<const std::byte> payload, std::uint32_t strideInBytes, std::wstring_view debugName);
+
+	template <typename TValue, std::size_t Extent> void Update(RhiResourceService& resourceService, std::span<TValue, Extent> values, std::wstring_view debugName)
 	{
 		Update(resourceService, std::as_bytes(values), static_cast<std::uint32_t>(sizeof(TValue)), debugName);
 	}
-	void Replace(
-	    RhiResourceService& resourceService,
-	    std::span<const std::byte> payload,
-	    std::uint32_t strideInBytes,
-	    std::wstring_view debugName);
-	template <typename TValue, std::size_t Extent>
-	void Replace(RhiResourceService& resourceService, std::span<TValue, Extent> values, std::wstring_view debugName)
+
+	void Replace(RhiResourceService& resourceService, std::span<const std::byte> payload, std::uint32_t strideInBytes, std::wstring_view debugName);
+
+	template <typename TValue, std::size_t Extent> void Replace(RhiResourceService& resourceService, std::span<TValue, Extent> values, std::wstring_view debugName)
 	{
 		Replace(resourceService, std::as_bytes(values), static_cast<std::uint32_t>(sizeof(TValue)), debugName);
 	}
+
 	void UpdateRanges(
 	    RhiResourceService& resourceService,
 	    std::span<const std::byte> payload,
@@ -50,11 +44,7 @@ public:
 	void Reset() noexcept;
 
 private:
-	void Grow(
-	    RhiResourceService& resourceService,
-	    std::span<const std::byte> payload,
-	    std::uint32_t strideInBytes,
-	    std::wstring_view debugName);
+	void Grow(RhiResourceService& resourceService, std::span<const std::byte> payload, std::uint32_t strideInBytes, std::wstring_view debugName);
 	void WriteDirtyRanges(std::span<const std::byte> payload);
 	void UpdateEmpty(RhiResourceService& resourceService, std::uint32_t strideInBytes, std::wstring_view debugName);
 	void WriteRanges(std::span<const std::byte> payload, std::span<const StructuredBufferElementRange> ranges);

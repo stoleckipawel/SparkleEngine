@@ -8,13 +8,7 @@ namespace RayTracedShadows
 {
 	ShadowVisibilitySample TraceShadowRay(RayTracedShadowRequest request)
 	{
-		const RayTracingTraceResult trace = TraceSceneRay(SceneTlas,
-		                                                  request.OriginWorld,
-		                                                  request.DirectionWorld,
-		                                                  MinimumShadowTMin,
-		                                                  request.MaxDistance,
-		                                                  ShadowRayFlags,
-		                                                  ShadowInstanceMask);
+		const RayTracingTraceResult trace = TraceSceneRay(SceneTlas, request.OriginWorld, request.DirectionWorld, MinimumShadowTMin, request.MaxDistance, ShadowRayFlags, ShadowInstanceMask);
 		return ResolveTrace(trace.Hit, trace.RayT, request.MaxDistance);
 	}
 }

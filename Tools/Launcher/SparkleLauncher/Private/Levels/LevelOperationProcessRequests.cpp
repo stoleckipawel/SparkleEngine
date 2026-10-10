@@ -20,6 +20,7 @@ namespace SparkleLauncher
 		process.WorkingDirectory = plan.RepositoryRoot;
 		process.LogPath = ResolveLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "AssetPack-" + pack.id + ".txt");
 		process.ExecutablePath = plan.CMakePath;
+
 		process.Arguments = {
 		    "-DSPARKLE_PACK_ID=" + pack.id,
 		    "-DSPARKLE_PACK_URL=" + pack.sourceUrl,
@@ -37,11 +38,10 @@ namespace SparkleLauncher
 		    "-P",
 		    (plan.RepositoryRoot / "Tools" / "Launcher" / "SparkleLauncher" / "Scripts" / "SyncAssetPack.cmake").generic_string(),
 		};
+
 		if (!pack.sourceFilesManifestPath.empty())
 		{
-			process.Arguments.insert(
-			    process.Arguments.end() - 2,
-			    "-DSPARKLE_PACK_FILES_MANIFEST=" + pack.sourceFilesManifestPath.generic_string());
+			process.Arguments.insert(process.Arguments.end() - 2, "-DSPARKLE_PACK_FILES_MANIFEST=" + pack.sourceFilesManifestPath.generic_string());
 		}
 		return process;
 	}

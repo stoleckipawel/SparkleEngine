@@ -14,7 +14,4 @@ std::unique_ptr<RenderDeviceBackendServices> CreateD3D12RenderDeviceServices(
     PixelFormat backBufferFormat,
     const RhiPresentationConfiguration& presentationConfiguration,
     RhiInterposerHooks interposerHooks) noexcept;
-std::unique_ptr<RenderDeviceBackendServices> CreateVulkanRenderDeviceServices(
-    Window& window,
-    PixelFormat backBufferFormat,
-    const RhiPresentationConfiguration& presentationConfiguration) noexcept;
+std::unique_ptr<RenderDeviceBackendServices> CreateVulkanRenderDeviceServices(Window& window, PixelFormat backBufferFormat, const RhiPresentationConfiguration& presentationConfiguration) noexcept;

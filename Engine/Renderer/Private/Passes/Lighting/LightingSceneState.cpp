@@ -9,6 +9,7 @@
 #include "Scene/Materials/MaterialEmissionControls.h"
 
 #include <cstdint>
+
 class LightingSceneStateHasher final
 {
 public:
@@ -63,8 +64,7 @@ public:
 		return LightingStateHash::AppendBool(hash, light.castShadow);
 	}
 
-	template <typename TLight>
-	static std::uint64_t AppendLightsState(std::uint64_t hash, const RenderLightCollection<TLight>& lights) noexcept
+	template <typename TLight> static std::uint64_t AppendLightsState(std::uint64_t hash, const RenderLightCollection<TLight>& lights) noexcept
 	{
 		hash = Hash::ContinueFnv1a64Value(hash, static_cast<std::uint64_t>(lights.size()));
 		for (std::size_t index = 0; index < lights.size(); ++index)

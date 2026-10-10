@@ -21,11 +21,7 @@ RhiNativeDeviceQueueInterop D3D12InteropService::GetDeviceQueueInterop(RhiNative
 	    .Request = request};
 }
 
-NativeTextureViewInfo D3D12InteropService::GetNativeTextureViewInfo(
-    RhiResourceViewHandle view,
-    RhiResourceHandle resource,
-    ResourceState state,
-    const RhiNativeInteropRequest& request) const noexcept
+NativeTextureViewInfo D3D12InteropService::GetNativeTextureViewInfo(RhiResourceViewHandle view, RhiResourceHandle resource, ResourceState state, const RhiNativeInteropRequest& request) const noexcept
 {
 	if (!IsRhiNativeInteropRequestValid(request) || m_owner == nullptr || m_owner->m_descriptorService == nullptr)
 	{

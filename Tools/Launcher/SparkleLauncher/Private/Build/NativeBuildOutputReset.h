@@ -8,8 +8,5 @@
 namespace SparkleLauncher
 {
 	bool RequiresNativeBuildOutputReset(BuildFilesFreshnessState state);
-	bool ResetNativeBuildOutputs(
-	    const std::filesystem::path& repositoryRoot,
-	    const std::filesystem::path& buildDirectory,
-	    std::string& errorMessage);
+	bool ResetNativeBuildOutputs(const std::filesystem::path& repositoryRoot, const std::filesystem::path& buildDirectory, std::string& errorMessage);
 }

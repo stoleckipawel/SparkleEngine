@@ -13,12 +13,7 @@ SPARKLE_DEFINE_LOG_CATEGORY_STATIC(g_renderLightPreparationLogger, "Renderer.Ren
 
 static DirectionalLight PrepareDirectional(const SceneLightDesc& light, const SceneDirectionalLightDesc& directional) noexcept
 {
-	return DirectionalLight{
-	    directional.direction,
-	    directional.illuminance,
-	    light.common.color,
-	    directional.angularSizeRadians,
-	    directional.castShadow};
+	return DirectionalLight{directional.direction, directional.illuminance, light.common.color, directional.angularSizeRadians, directional.castShadow};
 }
 
 static PointLight PreparePoint(const SceneLightDesc& light, const PointLightDesc& point, const DirectX::XMFLOAT3& position) noexcept

@@ -57,11 +57,7 @@ void ToolConsole::Message(std::ostream& output, ToolConsoleSeverity severity, st
 	output << GetSeverityPrefix(severity) << ' ' << message << '\n';
 }
 
-void ToolConsole::Message(
-    std::ostream& output,
-    ToolConsoleSeverity severity,
-    std::string_view message,
-    std::initializer_list<ToolConsoleField> fields)
+void ToolConsole::Message(std::ostream& output, ToolConsoleSeverity severity, std::string_view message, std::initializer_list<ToolConsoleField> fields)
 {
 	output << GetSeverityPrefix(severity) << ' ' << message;
 	WriteFields(output, fields);
@@ -77,8 +73,7 @@ void ToolConsole::Progress(
     std::string_view name,
     std::initializer_list<ToolConsoleField> fields)
 {
-	output << GetSeverityPrefix(ToolConsoleSeverity::Info) << ' ' << action << ' ' << assetType << " [" << index << '/' << total
-	       << "] name='" << name << "'";
+	output << GetSeverityPrefix(ToolConsoleSeverity::Info) << ' ' << action << ' ' << assetType << " [" << index << '/' << total << "] name='" << name << "'";
 	WriteFields(output, fields);
 	output << '\n';
 }

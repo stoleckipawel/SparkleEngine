@@ -7,10 +7,7 @@
 class CookedSceneFeatureMetadata final
 {
 public:
-	static void AddFeatureFlag(std::uint32_t& flags, Assets::CookedSceneFeatureFlags flag) noexcept
-	{
-		flags |= Assets::ToCookedSceneFeatureFlagMask(flag);
-	}
+	static void AddFeatureFlag(std::uint32_t& flags, Assets::CookedSceneFeatureFlags flag) noexcept { flags |= Assets::ToCookedSceneFeatureFlagMask(flag); }
 
 	static std::uint32_t BuildFeatureFlags(const SourceImportOutput& importOutput) noexcept
 	{

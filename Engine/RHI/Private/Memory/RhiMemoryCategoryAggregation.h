@@ -26,19 +26,17 @@ public:
 		    aggregations.end(),
 		    [category, residencyClass](const RhiMemoryCategoryAggregation<BlockIdentity>& aggregation)
 		    { return aggregation.Stats.Category == category && aggregation.Stats.ResidencyClass == residencyClass; });
+
 		if (existing != aggregations.end())
 		{
 			return *existing;
 		}
 
-		aggregations.push_back(
-		    RhiMemoryCategoryAggregation<BlockIdentity>{
-		        .Stats = RhiMemoryCategoryStats{.Category = category, .ResidencyClass = residencyClass, .BudgetBytes = budgetBytes}});
+		aggregations.push_back(RhiMemoryCategoryAggregation<BlockIdentity>{.Stats = RhiMemoryCategoryStats{.Category = category, .ResidencyClass = residencyClass, .BudgetBytes = budgetBytes}});
 		return aggregations.back();
 	}
 
-	template <typename BlockIdentity>
-	static void AddUniqueBlock(RhiMemoryCategoryAggregation<BlockIdentity>& aggregation, BlockIdentity block, std::uint64_t budgetBytes = 0)
+	template <typename BlockIdentity> static void AddUniqueBlock(RhiMemoryCategoryAggregation<BlockIdentity>& aggregation, BlockIdentity block, std::uint64_t budgetBytes = 0)
 	{
 		if (std::find(aggregation.UniqueBlocks.begin(), aggregation.UniqueBlocks.end(), block) != aggregation.UniqueBlocks.end())
 		{

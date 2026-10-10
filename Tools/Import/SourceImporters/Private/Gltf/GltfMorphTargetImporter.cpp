@@ -44,10 +44,7 @@ public:
 	}
 };
 
-std::vector<ImportedMorphTarget> GltfMorphTargetImporter::ImportMorphTargets(
-    const cgltf_mesh& mesh,
-    const cgltf_primitive& primitive,
-    std::uint32_t vertexCount)
+std::vector<ImportedMorphTarget> GltfMorphTargetImporter::ImportMorphTargets(const cgltf_mesh& mesh, const cgltf_primitive& primitive, std::uint32_t vertexCount)
 {
 	std::vector<ImportedMorphTarget> morphTargets;
 	morphTargets.reserve(primitive.targets_count);
@@ -99,14 +96,9 @@ std::vector<ImportedMorphTarget> GltfMorphTargetImporter::ImportMorphTargets(
 	return morphTargets;
 }
 
-std::vector<float> GltfMorphTargetImporter::BuildNodeMorphWeights(
-    const cgltf_mesh& mesh,
-    const float* nodeWeights,
-    std::size_t nodeWeightCount,
-    std::size_t targetCount)
+std::vector<float> GltfMorphTargetImporter::BuildNodeMorphWeights(const cgltf_mesh& mesh, const float* nodeWeights, std::size_t nodeWeightCount, std::size_t targetCount)
 {
-	if ((nodeWeightCount > 0 && nodeWeights == nullptr) || (nodeWeightCount == 0 && mesh.weights_count > 0 && mesh.weights == nullptr)
-	    || (nodeWeightCount > 0 && nodeWeightCount != targetCount)
+	if ((nodeWeightCount > 0 && nodeWeights == nullptr) || (nodeWeightCount == 0 && mesh.weights_count > 0 && mesh.weights == nullptr) || (nodeWeightCount > 0 && nodeWeightCount != targetCount)
 	    || (nodeWeightCount == 0 && mesh.weights_count > 0 && mesh.weights_count != targetCount))
 	{
 		return {};

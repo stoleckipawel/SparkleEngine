@@ -14,7 +14,9 @@ public:
 	void Discard() noexcept;
 
 	bool IsSettled() const noexcept { return !m_capture && !m_readback; }
+
 	bool HasReadback() const noexcept { return m_readback.has_value(); }
+
 	ViewportCaptureReadback TakeReadback();
 
 private:

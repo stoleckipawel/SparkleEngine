@@ -22,8 +22,7 @@ void RegisteredShaderListModel::Refresh()
 	const std::uint64_t generation = m_generationProvider ? m_generationProvider() : 0;
 	for (const ShaderRegistrationDesc& shader : GlobalShaderRegistry::GetRegistrations())
 	{
-		const ShaderParameterStructDescriptor parameters =
-		    shader.BuildParameterStructDescriptor != nullptr ? shader.BuildParameterStructDescriptor() : ShaderParameterStructDescriptor{};
+		const ShaderParameterStructDescriptor parameters = shader.BuildParameterStructDescriptor != nullptr ? shader.BuildParameterStructDescriptor() : ShaderParameterStructDescriptor{};
 
 		RegisteredShaderRow row;
 		row.ShaderId = std::string(shader.ShaderName);
@@ -57,8 +56,7 @@ std::filesystem::path RegisteredShaderListModel::FindDebugArtifactDirectoryFor(s
 		}
 
 		const std::string directoryName = it->path().filename().generic_string();
-		if (Strings::ContainsIgnoreCase(directoryName, shaderId) && std::filesystem::exists(it->path() / "compile-request.json", errorCode)
-		    && !errorCode)
+		if (Strings::ContainsIgnoreCase(directoryName, shaderId) && std::filesystem::exists(it->path() / "compile-request.json", errorCode) && !errorCode)
 		{
 			return it->path();
 		}

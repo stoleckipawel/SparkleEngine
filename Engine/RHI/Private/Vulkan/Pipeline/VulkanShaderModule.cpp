@@ -26,10 +26,7 @@ VulkanShaderModule::VulkanShaderModule(VulkanRhi& rhi, const RhiShaderStageDesc&
 		    g_vulkanShaderModuleLogger,
 		    __FILE__,
 		    __LINE__,
-		    std::format(
-		        "Pipeline '{}' received non-SPIR-V code for shader stage '{}'",
-		        pipelineName,
-		        GetShaderStagePrefix(shader.Entry->Stage)));
+		    std::format("Pipeline '{}' received non-SPIR-V code for shader stage '{}'", pipelineName, GetShaderStagePrefix(shader.Entry->Stage)));
 	}
 
 	const ShaderBytecode bytecode = shader.GetBytecode();
@@ -39,10 +36,7 @@ VulkanShaderModule::VulkanShaderModule(VulkanRhi& rhi, const RhiShaderStageDesc&
 		    g_vulkanShaderModuleLogger,
 		    __FILE__,
 		    __LINE__,
-		    std::format(
-		        "Pipeline '{}' has invalid cooked SPIR-V bytecode for stage '{}'",
-		        pipelineName,
-		        GetShaderStagePrefix(shader.Entry->Stage)));
+		    std::format("Pipeline '{}' has invalid cooked SPIR-V bytecode for stage '{}'", pipelineName, GetShaderStagePrefix(shader.Entry->Stage)));
 	}
 
 	const std::string_view entryPoint = shader.Map->ResolveString(shader.Entry->EntryPoint);
@@ -57,6 +51,7 @@ VulkanShaderModule::VulkanShaderModule(VulkanRhi& rhi, const RhiShaderStageDesc&
 	    .flags = 0,
 	    .codeSize = bytecode.Size,
 	    .pCode = static_cast<const std::uint32_t*>(bytecode.Data)};
+
 	const VkResult result = vkCreateShaderModule(m_device, &createInfo, nullptr, &m_module);
 	if (!VulkanResult::Succeeded(result))
 	{
@@ -64,6 +59,7 @@ VulkanShaderModule::VulkanShaderModule(VulkanRhi& rhi, const RhiShaderStageDesc&
 	}
 
 	m_stage = shader.Entry->Stage;
+
 	VulkanDebugNames::SetObjectName(
 	    rhi.GetSetDebugUtilsObjectName(),
 	    m_device,

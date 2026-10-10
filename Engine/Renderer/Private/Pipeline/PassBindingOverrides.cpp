@@ -3,29 +3,17 @@
 
 void PassBindingOverrides::SetConstantBufferView(const char* name, RhiGpuVirtualAddress gpuAddress)
 {
-	m_overrides.push_back(
-	    PassBindingOverride{
-	        .Name = name != nullptr ? name : "",
-	        .Type = PassBindingOverrideType::ConstantBufferView,
-	        .GpuAddress = gpuAddress});
+	m_overrides.push_back(PassBindingOverride{.Name = name != nullptr ? name : "", .Type = PassBindingOverrideType::ConstantBufferView, .GpuAddress = gpuAddress});
 }
 
 void PassBindingOverrides::SetShaderResourceView(const char* name, RhiGpuVirtualAddress gpuAddress)
 {
-	m_overrides.push_back(
-	    PassBindingOverride{
-	        .Name = name != nullptr ? name : "",
-	        .Type = PassBindingOverrideType::ShaderResourceView,
-	        .GpuAddress = gpuAddress});
+	m_overrides.push_back(PassBindingOverride{.Name = name != nullptr ? name : "", .Type = PassBindingOverrideType::ShaderResourceView, .GpuAddress = gpuAddress});
 }
 
 void PassBindingOverrides::SetUnorderedAccessView(const char* name, RhiGpuVirtualAddress gpuAddress)
 {
-	m_overrides.push_back(
-	    PassBindingOverride{
-	        .Name = name != nullptr ? name : "",
-	        .Type = PassBindingOverrideType::UnorderedAccessView,
-	        .GpuAddress = gpuAddress});
+	m_overrides.push_back(PassBindingOverride{.Name = name != nullptr ? name : "", .Type = PassBindingOverrideType::UnorderedAccessView, .GpuAddress = gpuAddress});
 }
 
 void PassBindingOverrides::SetDescriptorTable(const char* name, RhiGpuDescriptorHandle descriptorTable)
@@ -50,12 +38,7 @@ void PassBindingOverrides::SetDescriptorTable(const char* name, RhiDescriptorTab
 
 void PassBindingOverrides::SetPushConstants(const char* name, const void* data, std::uint32_t constantCount)
 {
-	m_overrides.push_back(
-	    PassBindingOverride{
-	        .Name = name != nullptr ? name : "",
-	        .Type = PassBindingOverrideType::PushConstants,
-	        .ConstantsData = data,
-	        .ConstantCount = constantCount});
+	m_overrides.push_back(PassBindingOverride{.Name = name != nullptr ? name : "", .Type = PassBindingOverrideType::PushConstants, .ConstantsData = data, .ConstantCount = constantCount});
 }
 
 const PassBindingOverride* PassBindingOverrides::Find(const char* name, PassBindingOverrideType type) const noexcept

@@ -79,8 +79,7 @@ namespace SkeletonTransformContract
 		DirectX::XMVECTOR scale;
 		DirectX::XMVECTOR rotation;
 		DirectX::XMVECTOR translation;
-		return DirectX::XMMatrixDecompose(&scale, &rotation, &translation, DirectX::XMLoadFloat4x4(&matrix))
-		    && DirectX::XMVectorGetX(DirectX::XMVector4LengthSq(rotation)) > 1.0e-8f;
+		return DirectX::XMMatrixDecompose(&scale, &rotation, &translation, DirectX::XMLoadFloat4x4(&matrix)) && DirectX::XMVectorGetX(DirectX::XMVector4LengthSq(rotation)) > 1.0e-8f;
 	}
 
 	inline bool MatricesNear(DirectX::FXMMATRIX lhs, DirectX::CXMMATRIX rhs, float epsilon = 2.0e-3f) noexcept

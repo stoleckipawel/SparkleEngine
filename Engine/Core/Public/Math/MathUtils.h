@@ -10,10 +10,7 @@ namespace MathUtils
 {
 	SPARKLE_CORE_API std::uint32_t DivideRoundUp(std::uint32_t value, std::uint32_t divisor) noexcept;
 	SPARKLE_CORE_API std::uint64_t AlignUp(std::uint64_t value, std::uint64_t alignment) noexcept;
-	SPARKLE_CORE_API DirectX::XMFLOAT3 Normalize3(
-	    const DirectX::XMFLOAT3& value,
-	    const DirectX::XMFLOAT3& fallback = {0.0f, 1.0f, 0.0f},
-	    float epsilon = 1e-8f);
+	SPARKLE_CORE_API DirectX::XMFLOAT3 Normalize3(const DirectX::XMFLOAT3& value, const DirectX::XMFLOAT3& fallback = {0.0f, 1.0f, 0.0f}, float epsilon = 1e-8f);
 	SPARKLE_CORE_API float RadiansToDegrees(float radians);
 	SPARKLE_CORE_API DirectX::XMFLOAT3 RadiansToDegrees(const DirectX::XMFLOAT3& radians);
 	SPARKLE_CORE_API float DegreesToRadians(float degrees);

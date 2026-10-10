@@ -116,7 +116,9 @@ namespace ECS
 		CompiledGameSystemGraph& operator=(const CompiledGameSystemGraph&) = delete;
 
 		bool IsValid() const noexcept;
+
 		explicit operator bool() const noexcept { return IsValid(); }
+
 		const GameSystemGraphError& GetError() const noexcept;
 		std::span<const GameSystemDesc> GetSystems() const noexcept;
 		bool Execute(TaskExecutor& executor, GameWorldSystemExecution& systems, GameSystemGraphError& error);

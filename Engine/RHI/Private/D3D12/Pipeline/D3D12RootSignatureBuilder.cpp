@@ -2,30 +2,21 @@
 #include "D3D12/Pipeline/D3D12RootSignatureBuilder.h"
 #include "D3D12/Pipeline/D3D12RootSignature.h"
 
-std::uint32_t D3D12RootSignatureBuilder::AddConstantBufferView(
-    std::uint32_t shaderRegister,
-    std::uint32_t registerSpace,
-    D3D12_SHADER_VISIBILITY visibility)
+std::uint32_t D3D12RootSignatureBuilder::AddConstantBufferView(std::uint32_t shaderRegister, std::uint32_t registerSpace, D3D12_SHADER_VISIBILITY visibility)
 {
 	const auto index = static_cast<std::uint32_t>(m_entries.size());
 	m_entries.push_back({ParamKind::CBV, shaderRegister, registerSpace, visibility, {}, 0});
 	return index;
 }
 
-std::uint32_t D3D12RootSignatureBuilder::AddShaderResourceView(
-    std::uint32_t shaderRegister,
-    std::uint32_t registerSpace,
-    D3D12_SHADER_VISIBILITY visibility)
+std::uint32_t D3D12RootSignatureBuilder::AddShaderResourceView(std::uint32_t shaderRegister, std::uint32_t registerSpace, D3D12_SHADER_VISIBILITY visibility)
 {
 	const auto index = static_cast<std::uint32_t>(m_entries.size());
 	m_entries.push_back({ParamKind::SRV, shaderRegister, registerSpace, visibility, {}, 0});
 	return index;
 }
 
-std::uint32_t D3D12RootSignatureBuilder::AddUnorderedAccessView(
-    std::uint32_t shaderRegister,
-    std::uint32_t registerSpace,
-    D3D12_SHADER_VISIBILITY visibility)
+std::uint32_t D3D12RootSignatureBuilder::AddUnorderedAccessView(std::uint32_t shaderRegister, std::uint32_t registerSpace, D3D12_SHADER_VISIBILITY visibility)
 {
 	const auto index = static_cast<std::uint32_t>(m_entries.size());
 	m_entries.push_back({ParamKind::UAV, shaderRegister, registerSpace, visibility, {}, 0});
@@ -44,11 +35,7 @@ std::uint32_t D3D12RootSignatureBuilder::AddDescriptorTable(
 	return index;
 }
 
-std::uint32_t D3D12RootSignatureBuilder::AddRootConstants(
-    std::uint32_t num32BitValues,
-    std::uint32_t shaderRegister,
-    std::uint32_t registerSpace,
-    D3D12_SHADER_VISIBILITY visibility)
+std::uint32_t D3D12RootSignatureBuilder::AddRootConstants(std::uint32_t num32BitValues, std::uint32_t shaderRegister, std::uint32_t registerSpace, D3D12_SHADER_VISIBILITY visibility)
 {
 	const auto index = static_cast<std::uint32_t>(m_entries.size());
 	m_entries.push_back({ParamKind::Constants, shaderRegister, registerSpace, visibility, {}, num32BitValues});

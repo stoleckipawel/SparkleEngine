@@ -10,11 +10,7 @@
 #include "RayReconstruction/RayReconstructionSettings.h"
 #include "ShaderData/SceneShaderParameters.h"
 
-void AddRayReconstructionSurfaceGuidesPass(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderViewportExtent sceneExtent,
-    RenderFrameGraphResources& resources)
+void AddRayReconstructionSurfaceGuidesPass(FrameGraphBuilder& builder, const RenderFrame& frame, RenderViewportExtent sceneExtent, RenderFrameGraphResources& resources)
 {
 	if (!ShouldUseRayReconstruction(frame.View.viewMode) || IsIndirectLightingAdmitted())
 	{
@@ -33,7 +29,5 @@ void AddRayReconstructionSurfaceGuidesPass(
 	parameters->RayReconstructionRoughness = builder.CreateUAV(guides.Roughness);
 	parameters->RayReconstructionSpecularHitDistance = builder.CreateUAV(guides.SpecularHitDistance);
 	BindSceneShaderParameters(builder, frame, parameters, resources);
-	builder.Dispatch<RayReconstructionSurfaceGuidesCS>(
-	    parameters,
-	    ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
+	builder.Dispatch<RayReconstructionSurfaceGuidesCS>(parameters, ComputeDispatchDesc{MathUtils::DivideRoundUp(sceneExtent.Width, 8u), MathUtils::DivideRoundUp(sceneExtent.Height, 8u), 1u});
 }

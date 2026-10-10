@@ -6,11 +6,7 @@
 #include "Passes/Visualization/GpuSceneVisualization.h"
 #include "Passes/Visualization/LightingVisualization.h"
 
-void AddSceneVisualizationPasses(
-    FrameGraphBuilder& builder,
-    const RenderFrame& frame,
-    RenderViewportExtent sceneExtent,
-    RenderFrameGraphResources& resources)
+void AddSceneVisualizationPasses(FrameGraphBuilder& builder, const RenderFrame& frame, RenderViewportExtent sceneExtent, RenderFrameGraphResources& resources)
 {
 	switch (frame.View.viewMode)
 	{

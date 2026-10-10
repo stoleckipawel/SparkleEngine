@@ -43,28 +43,15 @@ private:
 	void ResolveInputs(RenderScene& scene);
 	bool ExecuteCompiledGraph();
 	void FinishRun(PreparedRenderScene& output) noexcept;
-	void EnsureGraph(
-	    std::size_t primitiveCount,
-	    std::size_t lightCount,
-	    std::size_t jointMatrixCopyRangeCount,
-	    std::size_t morphWeightCopyRangeCount);
+	void EnsureGraph(std::size_t primitiveCount, std::size_t lightCount, std::size_t jointMatrixCopyRangeCount, std::size_t morphWeightCopyRangeCount);
 	bool CanReuseGraph(const Capacity& capacity) const noexcept;
-	static Capacity ResolveCapacities(
-	    std::size_t primitiveCount,
-	    std::size_t lightCount,
-	    std::size_t jointMatrixCopyRangeCount,
-	    std::size_t morphWeightCopyRangeCount) noexcept;
+	static Capacity ResolveCapacities(std::size_t primitiveCount, std::size_t lightCount, std::size_t jointMatrixCopyRangeCount, std::size_t morphWeightCopyRangeCount) noexcept;
 	static CompiledTaskGraph CompileGraph(const Capacity& capacity);
 	static TaskNodeHandle AddTransformBoundsTasks(TaskGraphBuilder& builder, std::uint32_t capacity);
 	static TaskNodeHandle AddJointMatrixTasks(TaskGraphBuilder& builder, std::uint32_t capacity);
 	static TaskNodeHandle AddMorphWeightTasks(TaskGraphBuilder& builder, std::uint32_t capacity);
 	static TaskNodeHandle AddLightingTasks(TaskGraphBuilder& builder, std::uint32_t capacity);
-	static void AddMergeTasks(
-	    TaskGraphBuilder& builder,
-	    TaskNodeHandle primitives,
-	    TaskNodeHandle jointMatrices,
-	    TaskNodeHandle morphWeights,
-	    TaskNodeHandle lighting);
+	static void AddMergeTasks(TaskGraphBuilder& builder, TaskNodeHandle primitives, TaskNodeHandle jointMatrices, TaskNodeHandle morphWeights, TaskNodeHandle lighting);
 	static TaskDesc MakeTaskDesc(std::string_view name);
 	void CommitHistory(RenderScene& scene);
 	static void ReleaseInputViews(RenderScenePreparationRun& run) noexcept;
@@ -88,11 +75,7 @@ void RenderScenePreparation::Impl::Execute(RenderScene& scene, PreparedRenderSce
 {
 	BeginRun(output);
 	ResolveInputs(scene);
-	EnsureGraph(
-	    m_run.ResolvedPrimitives.size(),
-	    m_run.PreparedLights.size(),
-	    m_run.Deformation.JointMatrixCopyRanges.size(),
-	    m_run.Deformation.MorphWeightCopyRanges.size());
+	EnsureGraph(m_run.ResolvedPrimitives.size(), m_run.PreparedLights.size(), m_run.Deformation.JointMatrixCopyRanges.size(), m_run.Deformation.MorphWeightCopyRanges.size());
 
 	if (!ExecuteCompiledGraph())
 	{
@@ -140,11 +123,7 @@ void RenderScenePreparation::Impl::FinishRun(PreparedRenderScene& output) noexce
 	output = std::move(m_run.PreparedScene);
 }
 
-void RenderScenePreparation::Impl::EnsureGraph(
-    std::size_t primitiveCount,
-    std::size_t lightCount,
-    std::size_t jointMatrixCopyRangeCount,
-    std::size_t morphWeightCopyRangeCount)
+void RenderScenePreparation::Impl::EnsureGraph(std::size_t primitiveCount, std::size_t lightCount, std::size_t jointMatrixCopyRangeCount, std::size_t morphWeightCopyRangeCount)
 {
 	const Capacity capacity = ResolveCapacities(primitiveCount, lightCount, jointMatrixCopyRangeCount, morphWeightCopyRangeCount);
 	if (CanReuseGraph(capacity))
@@ -158,8 +137,7 @@ void RenderScenePreparation::Impl::EnsureGraph(
 
 bool RenderScenePreparation::Impl::CanReuseGraph(const Capacity& capacity) const noexcept
 {
-	return m_graph && capacity.Primitives == m_capacity.Primitives && capacity.Lights == m_capacity.Lights
-	    && capacity.JointMatrixCopyRanges == m_capacity.JointMatrixCopyRanges
+	return m_graph && capacity.Primitives == m_capacity.Primitives && capacity.Lights == m_capacity.Lights && capacity.JointMatrixCopyRanges == m_capacity.JointMatrixCopyRanges
 	    && capacity.MorphWeightCopyRanges == m_capacity.MorphWeightCopyRanges;
 }
 
@@ -229,22 +207,13 @@ TaskNodeHandle RenderScenePreparation::Impl::AddLightingTasks(TaskGraphBuilder& 
 	    &RenderScenePreparationTasks::PrepareLights);
 }
 
-void RenderScenePreparation::Impl::AddMergeTasks(
-    TaskGraphBuilder& builder,
-    TaskNodeHandle primitives,
-    TaskNodeHandle jointMatrices,
-    TaskNodeHandle morphWeights,
-    TaskNodeHandle lighting)
+void RenderScenePreparation::Impl::AddMergeTasks(TaskGraphBuilder& builder, TaskNodeHandle primitives, TaskNodeHandle jointMatrices, TaskNodeHandle morphWeights, TaskNodeHandle lighting)
 {
 	const std::array<TaskNodeHandle, 4> mergeInputs{primitives, jointMatrices, morphWeights, lighting};
 	const TaskNodeHandle mergeJoin = builder.WhenAll(MakeTaskDesc("Renderer.Scene.Preparation.MergeJoin"), mergeInputs);
-	const TaskNodeHandle merge =
-	    builder.ContinueWith(mergeJoin, MakeTaskDesc("Renderer.Scene.Preparation.Merge"), &RenderScenePreparationMerger::Merge);
+	const TaskNodeHandle merge = builder.ContinueWith(mergeJoin, MakeTaskDesc("Renderer.Scene.Preparation.Merge"), &RenderScenePreparationMerger::Merge);
 
-	(void) builder.ContinueWith(
-	    merge,
-	    MakeTaskDesc("Renderer.Scene.Preparation.RayTracingPlan"),
-	    &RenderScenePreparationMerger::BuildRayTracingPlan);
+	(void) builder.ContinueWith(merge, MakeTaskDesc("Renderer.Scene.Preparation.RayTracingPlan"), &RenderScenePreparationMerger::BuildRayTracingPlan);
 }
 
 TaskDesc RenderScenePreparation::Impl::MakeTaskDesc(std::string_view name)

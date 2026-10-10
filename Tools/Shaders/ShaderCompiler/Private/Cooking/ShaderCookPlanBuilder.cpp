@@ -15,10 +15,7 @@
 #include <format>
 #include <unordered_map>
 
-ShaderCookPipelinePlan ShaderCookPlanBuilder::Build(
-    const ShaderCookSettings& settings,
-    ShaderBackendPool& backendPool,
-    const ToolWorkProgressCallback& progress)
+ShaderCookPipelinePlan ShaderCookPlanBuilder::Build(const ShaderCookSettings& settings, ShaderBackendPool& backendPool, const ToolWorkProgressCallback& progress)
 {
 	ShaderCookPipelinePlan plan;
 	if (settings.targets.empty())
@@ -28,8 +25,7 @@ ShaderCookPipelinePlan ShaderCookPlanBuilder::Build(
 	for (std::size_t targetIndex = 0; targetIndex < settings.targets.size(); ++targetIndex)
 	{
 		if (!IsShaderTarget(settings.targets[targetIndex])
-		    || std::find(settings.targets.begin(), settings.targets.begin() + targetIndex, settings.targets[targetIndex])
-		        != settings.targets.begin() + targetIndex)
+		    || std::find(settings.targets.begin(), settings.targets.begin() + targetIndex, settings.targets[targetIndex]) != settings.targets.begin() + targetIndex)
 		{
 			throw Diagnostics::Error("Shader cooking received an invalid or duplicate target.");
 		}
@@ -79,11 +75,7 @@ ShaderCookPipelinePlan ShaderCookPlanBuilder::Build(
 			ShaderCompileJobBuilder::BuildAndAdd(settings, shaderIndex, target, backendPool, plan);
 			if (progress)
 			{
-				progress(
-				    {.Action = "Planned shader",
-				        .Item = plan.shaders[shaderIndex].shaderTypeName,
-				        .Completed = ++completedPlanningWork,
-				        .Total = planningWork});
+				progress({.Action = "Planned shader", .Item = plan.shaders[shaderIndex].shaderTypeName, .Completed = ++completedPlanningWork, .Total = planningWork});
 			}
 		}
 	}
@@ -97,23 +89,16 @@ void ShaderCookPlanBuilder::BuildDependencyManifest(ShaderCookPipelinePlan& plan
 	for (const ShaderCompileConsumer& consumer : plan.consumers)
 	{
 		const ShaderCompileJob& job = plan.jobs[consumer.JobIndex];
+
 		auto [record, inserted] = records.try_emplace(
 		    job.Request.ShaderType,
-		    ShaderDependencyRecord{
-		        .ShaderType = job.Request.ShaderType,
-		        .ShaderTypeName = job.Request.ShaderTypeName,
-		        .VirtualSourcePath = job.Request.VirtualSourcePath});
-		if (!inserted
-		    && (record->second.ShaderTypeName != job.Request.ShaderTypeName
-		        || record->second.VirtualSourcePath != job.Request.VirtualSourcePath))
+		    ShaderDependencyRecord{.ShaderType = job.Request.ShaderType, .ShaderTypeName = job.Request.ShaderTypeName, .VirtualSourcePath = job.Request.VirtualSourcePath});
+
+		if (!inserted && (record->second.ShaderTypeName != job.Request.ShaderTypeName || record->second.VirtualSourcePath != job.Request.VirtualSourcePath))
 		{
-			throw Diagnostics::Error(
-			    std::format("Shader type '{}' produced conflicting dependency identities.", job.Request.ShaderTypeName));
+			throw Diagnostics::Error(std::format("Shader type '{}' produced conflicting dependency identities.", job.Request.ShaderTypeName));
 		}
-		record->second.VirtualDependencies.insert(
-		    record->second.VirtualDependencies.end(),
-		    job.VirtualDependencies.begin(),
-		    job.VirtualDependencies.end());
+		record->second.VirtualDependencies.insert(record->second.VirtualDependencies.end(), job.VirtualDependencies.begin(), job.VirtualDependencies.end());
 	}
 	for (auto& [shaderType, record] : records)
 	{

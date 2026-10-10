@@ -13,6 +13,7 @@ namespace ECS
 	CompiledGameSystemGraph::~CompiledGameSystemGraph() = default;
 	CompiledGameSystemGraph::CompiledGameSystemGraph(CompiledGameSystemGraph&&) noexcept = default;
 	CompiledGameSystemGraph& CompiledGameSystemGraph::operator=(CompiledGameSystemGraph&&) noexcept = default;
+
 	CompiledGameSystemGraph::CompiledGameSystemGraph(std::unique_ptr<CompiledGameSystemGraphData> data) noexcept :
 	    m_data(std::move(data))
 	{

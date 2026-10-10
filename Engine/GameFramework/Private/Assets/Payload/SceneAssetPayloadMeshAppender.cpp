@@ -46,15 +46,11 @@ namespace Assets
 		return std::vector<float>(first, last);
 	}
 
-	void SceneAssetPayloadMeshAppender::AppendMeshAssets(
-	    const LoadedSceneManifest& sceneManifest,
-	    CookedAssetFileSet& files,
-	    SceneAssetPayload& sceneAssetPayload)
+	void SceneAssetPayloadMeshAppender::AppendMeshAssets(const LoadedSceneManifest& sceneManifest, CookedAssetFileSet& files, SceneAssetPayload& sceneAssetPayload)
 	{
 		MeshAssetLoader meshAssetLoader;
 		sceneAssetPayload.staticMeshAssets.reserve(sceneAssetPayload.staticMeshAssets.size() + sceneManifest.meshAssetReferences.size());
-		sceneAssetPayload.skeletalMeshAssets.reserve(
-		    sceneAssetPayload.skeletalMeshAssets.size() + sceneManifest.meshAssetReferences.size());
+		sceneAssetPayload.skeletalMeshAssets.reserve(sceneAssetPayload.skeletalMeshAssets.size() + sceneManifest.meshAssetReferences.size());
 
 		for (const CookedSceneMeshAssetRef& meshReference : sceneManifest.meshAssetReferences)
 		{
@@ -63,10 +59,7 @@ namespace Assets
 
 			if (loadedMesh.GetAssetKind() != meshReference.meshAssetKind)
 			{
-				throw Diagnostics::Error(
-				    std::format(
-				        "Cooked scene mesh asset kind does not match manifest for asset {}",
-				        Formatting::FormatHexUInt64(meshReference.meshAssetId)));
+				throw Diagnostics::Error(std::format("Cooked scene mesh asset kind does not match manifest for asset {}", Formatting::FormatHexUInt64(meshReference.meshAssetId)));
 			}
 
 			if (loadedMesh.IsSkeletal())
@@ -99,9 +92,7 @@ namespace Assets
 		{
 			const SceneAssetPayloadMeshBinding& binding = meshAssetBindings[instanceRecord.meshAssetIndex];
 			const Transform transform(DirectX::XMLoadFloat4x4(&instanceRecord.worldTransform));
-			const MaterialHandle material = instanceRecord.materialAssetIndex == kInvalidCookedMaterialAssetIndex
-			    ? MaterialHandle::Invalid()
-			    : MaterialHandle(instanceRecord.materialAssetIndex);
+			const MaterialHandle material = instanceRecord.materialAssetIndex == kInvalidCookedMaterialAssetIndex ? MaterialHandle::Invalid() : MaterialHandle(instanceRecord.materialAssetIndex);
 			if (binding.kind == CookedMeshAssetKind::Skeletal)
 			{
 				SceneAssetPayload::SkeletalMeshInstance skeletalMeshInstance;
@@ -120,9 +111,7 @@ namespace Assets
 				staticMeshInstance.transform = transform;
 				staticMeshInstance.material = material;
 				staticMeshInstance.sourceNodeIndex = instanceRecord.sourceNodeIndex;
-				staticMeshInstance.groupIndex = instanceRecord.groupIndex == kInvalidCookedSceneInstanceGroupIndex
-				    ? kInvalidSceneMeshInstanceGroupIndex
-				    : instanceRecord.groupIndex;
+				staticMeshInstance.groupIndex = instanceRecord.groupIndex == kInvalidCookedSceneInstanceGroupIndex ? kInvalidSceneMeshInstanceGroupIndex : instanceRecord.groupIndex;
 				sceneAssetPayload.staticMeshInstances.push_back(staticMeshInstance);
 			}
 		}
@@ -141,9 +130,7 @@ namespace Assets
 			const SceneAssetPayloadMeshBinding& binding = meshAssetBindings[groupRecord.meshAssetIndex];
 			meshInstanceGroup.meshAssetKind = binding.kind;
 			meshInstanceGroup.meshAssetIndex = binding.payloadMeshAssetIndex;
-			meshInstanceGroup.material = groupRecord.materialAssetIndex == kInvalidCookedMaterialAssetIndex
-			    ? MaterialHandle::Invalid()
-			    : MaterialHandle(groupRecord.materialAssetIndex);
+			meshInstanceGroup.material = groupRecord.materialAssetIndex == kInvalidCookedMaterialAssetIndex ? MaterialHandle::Invalid() : MaterialHandle(groupRecord.materialAssetIndex);
 			meshInstanceGroup.firstInstance = groupRecord.firstInstance;
 			meshInstanceGroup.instanceCount = groupRecord.instanceCount;
 			meshInstanceGroup.groupKind = ToSceneMeshInstanceGroupKind(groupRecord.groupKind);

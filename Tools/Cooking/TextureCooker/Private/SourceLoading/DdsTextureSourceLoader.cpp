@@ -64,8 +64,7 @@ static constexpr std::uint32_t kResourceDimensionTexture2D = 3u;
 static constexpr std::uint32_t MakeFourCc(char a, char b, char c, char d) noexcept
 {
 	return static_cast<std::uint32_t>(static_cast<unsigned char>(a)) | (static_cast<std::uint32_t>(static_cast<unsigned char>(b)) << 8u)
-	    | (static_cast<std::uint32_t>(static_cast<unsigned char>(c)) << 16u)
-	    | (static_cast<std::uint32_t>(static_cast<unsigned char>(d)) << 24u);
+	    | (static_cast<std::uint32_t>(static_cast<unsigned char>(c)) << 16u) | (static_cast<std::uint32_t>(static_cast<unsigned char>(d)) << 24u);
 }
 
 static DdsHeader ReadHeader(const std::vector<std::uint8_t>& fileBytes)
@@ -193,14 +192,14 @@ static DXGI_FORMAT ResolveDxgiFormat(const DdsHeader& header, const DdsHeaderDx1
 
 	if ((header.pixelFormat.flags & kPixelFormatFlagRgb) != 0)
 	{
-		if (header.pixelFormat.rgbBitCount == 32 && header.pixelFormat.rBitMask == 0x000000ffu && header.pixelFormat.gBitMask == 0x0000ff00u
-		    && header.pixelFormat.bBitMask == 0x00ff0000u && header.pixelFormat.aBitMask == 0xff000000u)
+		if (header.pixelFormat.rgbBitCount == 32 && header.pixelFormat.rBitMask == 0x000000ffu && header.pixelFormat.gBitMask == 0x0000ff00u && header.pixelFormat.bBitMask == 0x00ff0000u
+		    && header.pixelFormat.aBitMask == 0xff000000u)
 		{
 			return DXGI_FORMAT_R8G8B8A8_UNORM;
 		}
 
-		if (header.pixelFormat.rgbBitCount == 32 && header.pixelFormat.rBitMask == 0x00ff0000u && header.pixelFormat.gBitMask == 0x0000ff00u
-		    && header.pixelFormat.bBitMask == 0x000000ffu && header.pixelFormat.aBitMask == 0xff000000u)
+		if (header.pixelFormat.rgbBitCount == 32 && header.pixelFormat.rBitMask == 0x00ff0000u && header.pixelFormat.gBitMask == 0x0000ff00u && header.pixelFormat.bBitMask == 0x000000ffu
+		    && header.pixelFormat.aBitMask == 0xff000000u)
 		{
 			return DXGI_FORMAT_B8G8R8A8_UNORM;
 		}
@@ -217,11 +216,7 @@ static std::uint32_t ResolveBitsPerPixel(DXGI_FORMAT format, const std::filesyst
 		case DXGI_FORMAT_B8G8R8A8_UNORM:
 			return 32;
 		default:
-			throw Diagnostics::Error(
-			    std::format(
-			        "Uncompressed DDS bit-depth query is unsupported for format {} in '{}'",
-			        static_cast<int>(format),
-			        resolvedPath.string()));
+			throw Diagnostics::Error(std::format("Uncompressed DDS bit-depth query is unsupported for format {} in '{}'", static_cast<int>(format), resolvedPath.string()));
 	}
 }
 
@@ -239,8 +234,7 @@ static std::uint32_t ResolveBlockSize(DXGI_FORMAT format, const std::filesystem:
 		case DXGI_FORMAT_BC5_SNORM:
 			return 16;
 		default:
-			throw Diagnostics::Error(
-			    std::format("DDS block-size query is unsupported for format {} in '{}'", static_cast<int>(format), resolvedPath.string()));
+			throw Diagnostics::Error(std::format("DDS block-size query is unsupported for format {} in '{}'", static_cast<int>(format), resolvedPath.string()));
 	}
 }
 
@@ -292,11 +286,7 @@ static std::uint32_t ComputeRowPitch(DXGI_FORMAT format, std::uint32_t width, co
 	return (width * ResolveBitsPerPixel(format, resolvedPath) + 7u) / 8u;
 }
 
-static std::uint32_t ComputeSlicePitch(
-    DXGI_FORMAT format,
-    std::uint32_t width,
-    std::uint32_t height,
-    const std::filesystem::path& resolvedPath)
+static std::uint32_t ComputeSlicePitch(DXGI_FORMAT format, std::uint32_t width, std::uint32_t height, const std::filesystem::path& resolvedPath)
 {
 	if (IsBlockCompressed(format))
 	{
@@ -348,17 +338,10 @@ static TextureLoadResult BuildLoadResult(
 
 			if (byteOffset + mipLevel.slicePitch > fileBytes.size())
 			{
-				throw Diagnostics::Error(
-				    std::format(
-				        "DDS texture '{}' ended before slice {} mip {} could be read",
-				        resolvedPath.string(),
-				        arraySliceIndex,
-				        mipIndex));
+				throw Diagnostics::Error(std::format("DDS texture '{}' ended before slice {} mip {} could be read", resolvedPath.string(), arraySliceIndex, mipIndex));
 			}
 
-			mipLevel.data.assign(
-			    fileBytes.begin() + static_cast<std::ptrdiff_t>(byteOffset),
-			    fileBytes.begin() + static_cast<std::ptrdiff_t>(byteOffset + mipLevel.slicePitch));
+			mipLevel.data.assign(fileBytes.begin() + static_cast<std::ptrdiff_t>(byteOffset), fileBytes.begin() + static_cast<std::ptrdiff_t>(byteOffset + mipLevel.slicePitch));
 			loadResult.arraySlices[arraySliceIndex].push_back(std::move(mipLevel));
 
 			byteOffset += loadResult.arraySlices[arraySliceIndex].back().slicePitch;

@@ -65,10 +65,7 @@ void VulkanCommandRecordingContext::BeginFrame(std::uint32_t frameIndex) noexcep
 	}
 }
 
-RhiCommandRecordingLease VulkanCommandRecordingContext::Acquire(
-    ERhiQueueType queueType,
-    std::uint32_t frameIndex,
-    RhiCommandRecordingOwner owner) noexcept
+RhiCommandRecordingLease VulkanCommandRecordingContext::Acquire(ERhiQueueType queueType, std::uint32_t frameIndex, RhiCommandRecordingOwner owner) noexcept
 {
 	m_owner.AssertAccess();
 	CommandSlot& slot = AcquireSlot(queueType, frameIndex);
@@ -91,6 +88,7 @@ RhiCommandRecordingLease VulkanCommandRecordingContext::Acquire(
 	    .Begin = &BeginLease,
 	    .Close = &CloseLease,
 	    .Release = &ReleaseLease};
+
 	return RhiCommandRecordingLeaseAccess::Create(initialization);
 }
 
@@ -218,16 +216,12 @@ RenderCommandList* VulkanCommandRecordingContext::TryGetCurrentCommandList(ERhiQ
 	return frameState.CurrentLease.has_value() ? &frameState.CurrentLease->GetCommandList() : nullptr;
 }
 
-VulkanCommandRecordingContext::QueueFrameState& VulkanCommandRecordingContext::GetQueueFrameState(
-    ERhiQueueType queueType,
-    std::uint32_t frameIndex) noexcept
+VulkanCommandRecordingContext::QueueFrameState& VulkanCommandRecordingContext::GetQueueFrameState(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept
 {
 	return m_frames[frameIndex % m_frames.size()][RhiQueueTypeToIndex(queueType)];
 }
 
-VulkanCommandRecordingContext::CommandSlot& VulkanCommandRecordingContext::AcquireSlot(
-    ERhiQueueType queueType,
-    std::uint32_t frameIndex) noexcept
+VulkanCommandRecordingContext::CommandSlot& VulkanCommandRecordingContext::AcquireSlot(ERhiQueueType queueType, std::uint32_t frameIndex) noexcept
 {
 	QueueFrameState& frameState = GetQueueFrameState(queueType, frameIndex);
 	for (const std::unique_ptr<CommandSlot>& slot : frameState.Slots)
@@ -284,6 +278,7 @@ void VulkanCommandRecordingContext::CreateCommandPool(CommandSlot& slot)
 	    .pNext = nullptr,
 	    .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
 	    .queueFamilyIndex = m_rhi->GetQueueFamilyIndex(slot.QueueType)};
+
 	const VkResult result = vkCreateCommandPool(m_rhi->GetDevice(), &createInfo, nullptr, &slot.CommandPool);
 	if (!VulkanResult::Succeeded(result))
 	{
@@ -299,14 +294,11 @@ void VulkanCommandRecordingContext::AllocateCommandBuffer(CommandSlot& slot)
 	    .commandPool = slot.CommandPool,
 	    .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
 	    .commandBufferCount = 1};
+
 	const VkResult result = vkAllocateCommandBuffers(m_rhi->GetDevice(), &allocateInfo, &slot.CommandBuffer);
 	if (!VulkanResult::Succeeded(result))
 	{
-		Diagnostics::Fatal(
-		    g_vulkanCommandRecordingLogger,
-		    __FILE__,
-		    __LINE__,
-		    VulkanResult::FormatFailure("vkAllocateCommandBuffers", result));
+		Diagnostics::Fatal(g_vulkanCommandRecordingLogger, __FILE__, __LINE__, VulkanResult::FormatFailure("vkAllocateCommandBuffers", result));
 	}
 }
 
@@ -323,11 +315,7 @@ void VulkanCommandRecordingContext::InitializeRecordingResources(CommandSlot& sl
 	slot.CommandList->SetRecordingDescriptorPool(slot.DescriptorPool.get());
 	slot.CommandList->SetRecordingUploadPage(slot.UploadPage.get());
 	slot.CommandList->SetQueueType(slot.QueueType);
-	slot.CommandList->SetNativeCommandBuffer(
-	    slot.CommandBuffer,
-	    m_rhi->GetCmdBeginDebugUtilsLabel(),
-	    m_rhi->GetCmdEndDebugUtilsLabel(),
-	    m_rhi->GetCmdInsertDebugUtilsLabel());
+	slot.CommandList->SetNativeCommandBuffer(slot.CommandBuffer, m_rhi->GetCmdBeginDebugUtilsLabel(), m_rhi->GetCmdEndDebugUtilsLabel(), m_rhi->GetCmdInsertDebugUtilsLabel());
 }
 
 void VulkanCommandRecordingContext::NameSlotObjects(const CommandSlot& slot) const noexcept
@@ -338,41 +326,15 @@ void VulkanCommandRecordingContext::NameSlotObjects(const CommandSlot& slot) con
 		return;
 	}
 
-	const std::string poolName = std::format(
-	    "Sparkle Vulkan {} Command Pool Frame {} Context {}",
-	    RhiQueueTypeToString(slot.QueueType),
-	    slot.FrameSlot,
-	    slot.ContextIndex);
-	(void) VulkanDebugNames::SetObjectName(
-	    setObjectName,
-	    m_rhi->GetDevice(),
-	    VK_OBJECT_TYPE_COMMAND_POOL,
-	    reinterpret_cast<std::uint64_t>(slot.CommandPool),
-	    poolName);
+	const std::string poolName = std::format("Sparkle Vulkan {} Command Pool Frame {} Context {}", RhiQueueTypeToString(slot.QueueType), slot.FrameSlot, slot.ContextIndex);
+	(void) VulkanDebugNames::SetObjectName(setObjectName, m_rhi->GetDevice(), VK_OBJECT_TYPE_COMMAND_POOL, reinterpret_cast<std::uint64_t>(slot.CommandPool), poolName);
 
-	const std::string commandBufferName = std::format(
-	    "Sparkle Vulkan {} Command Buffer Frame {} Context {}",
-	    RhiQueueTypeToString(slot.QueueType),
-	    slot.FrameSlot,
-	    slot.ContextIndex);
-	(void) VulkanDebugNames::SetObjectName(
-	    setObjectName,
-	    m_rhi->GetDevice(),
-	    VK_OBJECT_TYPE_COMMAND_BUFFER,
-	    reinterpret_cast<std::uint64_t>(slot.CommandBuffer),
-	    commandBufferName);
+	const std::string commandBufferName = std::format("Sparkle Vulkan {} Command Buffer Frame {} Context {}", RhiQueueTypeToString(slot.QueueType), slot.FrameSlot, slot.ContextIndex);
+	(void) VulkanDebugNames::SetObjectName(setObjectName, m_rhi->GetDevice(), VK_OBJECT_TYPE_COMMAND_BUFFER, reinterpret_cast<std::uint64_t>(slot.CommandBuffer), commandBufferName);
 
-	const std::string descriptorPoolName = std::format(
-	    "Sparkle Vulkan {} Recording Descriptor Pool Frame {} Context {}",
-	    RhiQueueTypeToString(slot.QueueType),
-	    slot.FrameSlot,
-	    slot.ContextIndex);
-	(void) VulkanDebugNames::SetObjectName(
-	    setObjectName,
-	    m_rhi->GetDevice(),
-	    VK_OBJECT_TYPE_DESCRIPTOR_POOL,
-	    reinterpret_cast<std::uint64_t>(slot.DescriptorPool->GetNativePool()),
-	    descriptorPoolName);
+	const std::string descriptorPoolName = std::format("Sparkle Vulkan {} Recording Descriptor Pool Frame {} Context {}", RhiQueueTypeToString(slot.QueueType), slot.FrameSlot, slot.ContextIndex);
+	(void)
+	    VulkanDebugNames::SetObjectName(setObjectName, m_rhi->GetDevice(), VK_OBJECT_TYPE_DESCRIPTOR_POOL, reinterpret_cast<std::uint64_t>(slot.DescriptorPool->GetNativePool()), descriptorPoolName);
 }
 
 void VulkanCommandRecordingContext::WaitForFrameStateRetirement(const QueueFrameState& frameState) noexcept
@@ -395,9 +357,7 @@ void VulkanCommandRecordingContext::WaitForFrameStateRetirement(const QueueFrame
 void VulkanCommandRecordingContext::ResetSlot(CommandSlot& slot) noexcept
 {
 	assert(slot.State == SlotState::Submitted || slot.State == SlotState::Discarded);
-	assert(
-	    !slot.RetirementToken.IsValid()
-	    || m_rhi->GetCommandQueue(slot.RetirementToken.Queue).IsSubmissionComplete(slot.RetirementToken.Value));
+	assert(!slot.RetirementToken.IsValid() || m_rhi->GetCommandQueue(slot.RetirementToken.Queue).IsSubmissionComplete(slot.RetirementToken.Value));
 
 	slot.DescriptorPool->Reset();
 	slot.UploadPage->Reset();
@@ -446,11 +406,7 @@ void VulkanCommandRecordingContext::BeginSlot(CommandSlot& slot) noexcept
 
 	ResetCommandPool(slot);
 
-	const VkCommandBufferBeginInfo beginInfo{
-	    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-	    .pNext = nullptr,
-	    .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-	    .pInheritanceInfo = nullptr};
+	const VkCommandBufferBeginInfo beginInfo{.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, .pNext = nullptr, .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, .pInheritanceInfo = nullptr};
 	const VkResult result = vkBeginCommandBuffer(slot.CommandBuffer, &beginInfo);
 	if (!VulkanResult::Succeeded(result))
 	{
@@ -575,6 +531,7 @@ void VulkanCommandRecordingContext::ReleaseLease(void* state, bool) noexcept
 	    "Vulkan {} recording contexts exhausted for frame slot {}.",
 	    RhiQueueTypeToString(queueType),
 	    frameIndex % static_cast<std::uint32_t>(m_frames.size()));
+
 	std::terminate();
 }
 
@@ -587,5 +544,6 @@ void VulkanCommandRecordingContext::ReleaseLease(void* state, bool) noexcept
 	    slot.ContextIndex,
 	    slot.FrameSlot,
 	    operation != nullptr ? operation : "perform the requested operation");
+
 	std::terminate();
 }

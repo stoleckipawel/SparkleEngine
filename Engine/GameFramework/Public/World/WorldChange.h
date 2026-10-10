@@ -74,9 +74,13 @@ class SPARKLE_ENGINE_API WorldChangeBatch final
 {
 public:
 	WorldChangeBatch() noexcept = default;
+
 	WorldChangeReadStatus GetStatus() const noexcept { return m_status; }
+
 	WorldSequence GetOldestAvailableSequence() const noexcept { return m_oldestAvailableSequence; }
+
 	WorldSequence GetLatestSequence() const noexcept { return m_latestSequence; }
+
 	std::span<const WorldChange> GetChanges() const noexcept;
 
 private:

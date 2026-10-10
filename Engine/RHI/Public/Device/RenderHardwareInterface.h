@@ -18,6 +18,7 @@ class SPARKLE_RHI_API RenderHardwareInterface
 {
 public:
 	virtual ~RenderHardwareInterface() noexcept = default;
+
 	RenderHardwareInterface(const RenderHardwareInterface&) = delete;
 	RenderHardwareInterface& operator=(const RenderHardwareInterface&) = delete;
 	RenderHardwareInterface(RenderHardwareInterface&&) = delete;

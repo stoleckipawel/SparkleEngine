@@ -15,21 +15,12 @@ namespace SparkleLauncher
 		m_activityPanel->AppendOperationOutput(runId, outputText);
 	}
 
-	void LauncherMainWindow::UpdateOperationProgress(
-	    const QString& runId,
-	    const QString&,
-	    const QString& phase,
-	    quint64 completed,
-	    quint64 total)
+	void LauncherMainWindow::UpdateOperationProgress(const QString& runId, const QString&, const QString& phase, quint64 completed, quint64 total)
 	{
 		m_activityPanel->UpdateOperationProgress(runId, phase, completed, total);
 	}
 
-	void LauncherMainWindow::DisplayOperationFinished(
-	    const QString& runId,
-	    const QString& operationId,
-	    const QString& title,
-	    const LauncherOperationResult& result)
+	void LauncherMainWindow::DisplayOperationFinished(const QString& runId, const QString& operationId, const QString& title, const LauncherOperationResult& result)
 	{
 		const bool succeeded = result.Succeeded;
 		const QString effectiveTitle = m_activityPanel->DisplayOperationFinished(runId, title, result);

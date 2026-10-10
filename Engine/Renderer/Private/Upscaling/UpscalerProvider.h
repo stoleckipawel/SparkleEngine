@@ -26,6 +26,7 @@ class IUpscalerProvider
 {
 public:
 	virtual ~IUpscalerProvider() = default;
+
 	IUpscalerProvider(const IUpscalerProvider&) = delete;
 	IUpscalerProvider& operator=(const IUpscalerProvider&) = delete;
 	IUpscalerProvider(IUpscalerProvider&&) = delete;

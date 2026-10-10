@@ -11,8 +11,5 @@ class ShaderDependencyManifest;
 class ShaderCookPlanner final
 {
 public:
-	static std::vector<ShaderCookDesc> BuildShaders(
-	    const ShaderCookSettings& settings,
-	    const ShaderDependencyManifest& dependencyManifest,
-	    const ShaderContractCatalog& catalog);
+	static std::vector<ShaderCookDesc> BuildShaders(const ShaderCookSettings& settings, const ShaderDependencyManifest& dependencyManifest, const ShaderContractCatalog& catalog);
 };

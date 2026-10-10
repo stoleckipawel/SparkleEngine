@@ -22,6 +22,7 @@ constexpr std::string_view GetAssetSubdirectory(AssetType type) noexcept
 			return "Textures";
 		case AssetType::Mesh:
 			return "Meshes";
+
 		case AssetType::Count:
 		default:
 			return {};

@@ -20,6 +20,8 @@ The binding owners are:
 
 Review is read-only unless the user explicitly asks for fixes. Never modify the changelist merely because this file was referenced.
 
+For source layout, apply the [Visual Spacing Contract](../Foundations/CodeStyle.md#visual-spacing-contract): inspect phase boundaries, guard-to-workflow separation, API/data groups, comment attachment, and cohesive short-statement groups. A clean formatter result proves the mechanical spacing rules only; it does not prove the authored logical grouping.
+
 ## Reusable AI Review Prompt
 
 Use this prompt as written or append the intended outcome and comparison base:

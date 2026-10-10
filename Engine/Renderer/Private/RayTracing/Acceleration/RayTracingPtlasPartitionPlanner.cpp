@@ -65,9 +65,7 @@ void RayTracingPtlasPartitionPlanner::ExpandSceneBounds(SceneBounds& bounds, con
 	bounds.Max.z = (std::max) (bounds.Max.z, point.z);
 }
 
-DirectX::XMFLOAT3 RayTracingPtlasPartitionPlanner::TransformPoint(
-    const DirectX::XMFLOAT3& point,
-    const DirectX::XMFLOAT4X4& worldMatrix) noexcept
+DirectX::XMFLOAT3 RayTracingPtlasPartitionPlanner::TransformPoint(const DirectX::XMFLOAT3& point, const DirectX::XMFLOAT4X4& worldMatrix) noexcept
 {
 	const DirectX::XMVECTOR localPoint = DirectX::XMLoadFloat3(&point);
 	const DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&worldMatrix);
@@ -76,9 +74,7 @@ DirectX::XMFLOAT3 RayTracingPtlasPartitionPlanner::TransformPoint(
 	return transformed;
 }
 
-RayTracingPtlasPartitionPlanner::InstanceBounds RayTracingPtlasPartitionPlanner::ComputeInstanceWorldBounds(
-    const PreparedRenderScene& preparedScene,
-    std::uint32_t primitiveIndex) noexcept
+RayTracingPtlasPartitionPlanner::InstanceBounds RayTracingPtlasPartitionPlanner::ComputeInstanceWorldBounds(const PreparedRenderScene& preparedScene, std::uint32_t primitiveIndex) noexcept
 {
 	if (primitiveIndex < preparedScene.primitives.size())
 	{
@@ -131,30 +127,20 @@ RayTracingPtlasPartitionPlanner::InstanceBounds RayTracingPtlasPartitionPlanner:
 	return worldBounds;
 }
 
-DirectX::XMFLOAT3 RayTracingPtlasPartitionPlanner::ComputeInstancePartitionPosition(
-    const PreparedRenderScene& preparedScene,
-    std::uint32_t primitiveIndex) noexcept
+DirectX::XMFLOAT3 RayTracingPtlasPartitionPlanner::ComputeInstancePartitionPosition(const PreparedRenderScene& preparedScene, std::uint32_t primitiveIndex) noexcept
 {
 	const InstanceBounds bounds = ComputeInstanceWorldBounds(preparedScene, primitiveIndex);
-	return DirectX::XMFLOAT3{
-	    0.5f * (bounds.Min.x + bounds.Max.x),
-	    0.5f * (bounds.Min.y + bounds.Max.y),
-	    0.5f * (bounds.Min.z + bounds.Max.z)};
+	return DirectX::XMFLOAT3{0.5f * (bounds.Min.x + bounds.Max.x), 0.5f * (bounds.Min.y + bounds.Max.y), 0.5f * (bounds.Min.z + bounds.Max.z)};
 }
 
-RayTracingPtlasPartitionPlanner::SceneBounds RayTracingPtlasPartitionPlanner::ComputeSceneBounds(
-    const PreparedRenderScene& preparedScene) noexcept
+RayTracingPtlasPartitionPlanner::SceneBounds RayTracingPtlasPartitionPlanner::ComputeSceneBounds(const PreparedRenderScene& preparedScene) noexcept
 {
 	SceneBounds bounds{};
 	for (const std::uint32_t blasInputIndex : preparedScene.rayTracingWork.PartitionedTlasBlasInputIndices)
 	{
 		if (blasInputIndex >= preparedScene.rayTracingWork.BlasInputs.size())
 		{
-			Diagnostics::Fatal(
-			    g_rayTracingPtlasPartitionPlannerLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Partition planning references a BLAS input outside the prepared work plan.");
+			Diagnostics::Fatal(g_rayTracingPtlasPartitionPlannerLogger, __FILE__, __LINE__, "Partition planning references a BLAS input outside the prepared work plan.");
 		}
 		const std::uint32_t primitiveIndex = preparedScene.rayTracingWork.BlasInputs[blasInputIndex].PrimitiveIndex;
 		const InstanceBounds instanceBounds = ComputeInstanceWorldBounds(preparedScene, primitiveIndex);
@@ -167,11 +153,7 @@ RayTracingPtlasPartitionPlanner::SceneBounds RayTracingPtlasPartitionPlanner::Co
 	return bounds;
 }
 
-std::uint32_t RayTracingPtlasPartitionPlanner::QuantizeAxis(
-    float value,
-    float minValue,
-    float maxValue,
-    std::uint32_t partitionsPerAxis) noexcept
+std::uint32_t RayTracingPtlasPartitionPlanner::QuantizeAxis(float value, float minValue, float maxValue, std::uint32_t partitionsPerAxis) noexcept
 {
 	const float extent = maxValue - minValue;
 	if (extent <= 0.0001f || partitionsPerAxis <= 1)
@@ -184,20 +166,14 @@ std::uint32_t RayTracingPtlasPartitionPlanner::QuantizeAxis(
 	return static_cast<std::uint32_t>(scaled);
 }
 
-std::uint32_t RayTracingPtlasPartitionPlanner::ComputeGridPartitionId(
-    const DirectX::XMFLOAT3& position,
-    const SceneBounds& bounds,
-    std::uint32_t partitionsPerAxis) noexcept
+std::uint32_t RayTracingPtlasPartitionPlanner::ComputeGridPartitionId(const DirectX::XMFLOAT3& position, const SceneBounds& bounds, std::uint32_t partitionsPerAxis) noexcept
 {
 	const std::uint32_t x = QuantizeAxis(position.x, bounds.Min.x, bounds.Max.x, partitionsPerAxis);
 	const std::uint32_t z = QuantizeAxis(position.z, bounds.Min.z, bounds.Max.z, partitionsPerAxis);
 	return x + z * partitionsPerAxis;
 }
 
-DirectX::XMFLOAT3 RayTracingPtlasPartitionPlanner::ComputeGridPartitionCenter(
-    std::uint32_t partitionId,
-    const SceneBounds& bounds,
-    std::uint32_t partitionsPerAxis) noexcept
+DirectX::XMFLOAT3 RayTracingPtlasPartitionPlanner::ComputeGridPartitionCenter(std::uint32_t partitionId, const SceneBounds& bounds, std::uint32_t partitionsPerAxis) noexcept
 {
 	if (partitionsPerAxis == 0)
 	{
@@ -209,6 +185,7 @@ DirectX::XMFLOAT3 RayTracingPtlasPartitionPlanner::ComputeGridPartitionCenter(
 
 	const DirectX::XMFLOAT3 extent{bounds.Max.x - bounds.Min.x, bounds.Max.y - bounds.Min.y, bounds.Max.z - bounds.Min.z};
 	const float invPartitions = 1.0f / static_cast<float>(partitionsPerAxis);
+
 	return DirectX::XMFLOAT3{
 	    bounds.Min.x + (static_cast<float>(x) + 0.5f) * extent.x * invPartitions,
 	    0.5f * (bounds.Min.y + bounds.Max.y),
@@ -223,13 +200,10 @@ std::uint64_t RayTracingPtlasPartitionPlanner::ComputeGridPartitionCount(std::ui
 
 bool RayTracingPtlasPartitionPlanner::RequiresGlobalPartition(RayTracingPtlasPartitionUpdateMode updateMode) noexcept
 {
-	return updateMode == RayTracingPtlasPartitionUpdateMode::AlwaysMoveDynamicToGlobal
-	    || updateMode == RayTracingPtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise;
+	return updateMode == RayTracingPtlasPartitionUpdateMode::AlwaysMoveDynamicToGlobal || updateMode == RayTracingPtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise;
 }
 
-RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::InitializePlan(
-    const PreparedRenderScene& preparedScene,
-    const RayTracingPtlasPartitionPlannerConfig& config) noexcept
+RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::InitializePlan(const PreparedRenderScene& preparedScene, const RayTracingPtlasPartitionPlannerConfig& config) noexcept
 {
 	RayTracingPtlasPartitionPlan plan{};
 	plan.Counts.PartitionsPerAxis = config.PartitionsPerAxis;
@@ -238,8 +212,7 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::InitializePlan(
 	const std::uint64_t gridPartitionCount = ComputeGridPartitionCount(config.PartitionsPerAxis);
 	const bool requiresGlobalPartition = RequiresGlobalPartition(config.PartitionUpdateMode);
 	const std::uint64_t maximumPartitionCount = (std::numeric_limits<std::uint32_t>::max)();
-	plan.Validation.HasPartitionOverflow =
-	    gridPartitionCount > maximumPartitionCount || (requiresGlobalPartition && gridPartitionCount == maximumPartitionCount);
+	plan.Validation.HasPartitionOverflow = gridPartitionCount > maximumPartitionCount || (requiresGlobalPartition && gridPartitionCount == maximumPartitionCount);
 	if (plan.Validation.HasPartitionOverflow)
 	{
 		return plan;
@@ -251,10 +224,7 @@ RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::InitializePlan(
 	return plan;
 }
 
-void RayTracingPtlasPartitionPlanner::PreparePartitionStates(
-    const SceneBounds& bounds,
-    const RayTracingPtlasPartitionPlannerConfig& config,
-    const RayTracingPtlasPartitionPlan& plan)
+void RayTracingPtlasPartitionPlanner::PreparePartitionStates(const SceneBounds& bounds, const RayTracingPtlasPartitionPlannerConfig& config, const RayTracingPtlasPartitionPlan& plan)
 {
 	if (!plan.Validation.HasPartitionOverflow && m_partitionStates.size() != plan.Counts.GridPartitionCount)
 	{
@@ -292,40 +262,23 @@ void RayTracingPtlasPartitionPlanner::CollectObservedInstances(
 	{
 		if (blasInputIndex >= work.BlasInputs.size())
 		{
-			Diagnostics::Fatal(
-			    g_rayTracingPtlasPartitionPlannerLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Partition planning references a BLAS input outside the prepared work plan.");
+			Diagnostics::Fatal(g_rayTracingPtlasPartitionPlannerLogger, __FILE__, __LINE__, "Partition planning references a BLAS input outside the prepared work plan.");
 		}
 		const RenderRayTracingBlasInput& input = work.BlasInputs[blasInputIndex];
 		if (input.PrimitiveIndex >= preparedScene.primitives.size())
 		{
-			Diagnostics::Fatal(
-			    g_rayTracingPtlasPartitionPlannerLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Partition planning references a mesh instance outside the render scene.");
+			Diagnostics::Fatal(g_rayTracingPtlasPartitionPlannerLogger, __FILE__, __LINE__, "Partition planning references a mesh instance outside the render scene.");
 		}
 		if (input.GpuSceneSlot == (std::numeric_limits<std::uint32_t>::max)())
 		{
-			Diagnostics::Fatal(
-			    g_rayTracingPtlasPartitionPlannerLogger,
-			    __FILE__,
-			    __LINE__,
-			    "Partition planning cannot index the maximum GPU-scene slot.");
+			Diagnostics::Fatal(g_rayTracingPtlasPartitionPlannerLogger, __FILE__, __LINE__, "Partition planning cannot index the maximum GPU-scene slot.");
 		}
 
 		const MeshDraw& draw = preparedScene.primitives[input.PrimitiveIndex].Draw;
 		const DirectX::XMFLOAT3 position = ComputeInstancePartitionPosition(preparedScene, input.PrimitiveIndex);
-		const std::uint32_t localPartitionId =
-		    plan.Validation.HasPartitionOverflow ? 0u : ComputeGridPartitionId(position, bounds, config.PartitionsPerAxis);
-		const PreviousInstanceState* previous =
-		    input.GpuSceneSlot < m_previousInstances.size() && m_previousInstances[input.GpuSceneSlot].Valid
-		    ? &m_previousInstances[input.GpuSceneSlot]
-		    : nullptr;
-		const bool dirtyTransform =
-		    previous == nullptr || IsTransformDirty(draw.Transform.WorldMatrix, previous->WorldMatrix, config.TransformDirtyEpsilon);
+		const std::uint32_t localPartitionId = plan.Validation.HasPartitionOverflow ? 0u : ComputeGridPartitionId(position, bounds, config.PartitionsPerAxis);
+		const PreviousInstanceState* previous = input.GpuSceneSlot < m_previousInstances.size() && m_previousInstances[input.GpuSceneSlot].Valid ? &m_previousInstances[input.GpuSceneSlot] : nullptr;
+		const bool dirtyTransform = previous == nullptr || IsTransformDirty(draw.Transform.WorldMatrix, previous->WorldMatrix, config.TransformDirtyEpsilon);
 		const bool globalEligible = hasGlobalPartition && IsGlobalPartitionEligible(draw);
 		if (!seenStableIndices.insert(input.GpuSceneSlot).second)
 		{
@@ -335,8 +288,7 @@ void RayTracingPtlasPartitionPlanner::CollectObservedInstances(
 		{
 			m_partitionStates[localPartitionId].TouchedThisFrame = true;
 		}
-		if (globalEligible && dirtyTransform && previous != nullptr && previous->PartitionId == plan.Counts.GlobalPartitionIndex
-		    && previous->LocalPartitionId < m_partitionStates.size())
+		if (globalEligible && dirtyTransform && previous != nullptr && previous->PartitionId == plan.Counts.GlobalPartitionIndex && previous->LocalPartitionId < m_partitionStates.size())
 		{
 			m_partitionStates[previous->LocalPartitionId].TouchedThisFrame = true;
 		}
@@ -350,39 +302,34 @@ void RayTracingPtlasPartitionPlanner::CollectObservedInstances(
 		        .PreviousPartitionId = previous != nullptr ? previous->PartitionId : localPartitionId,
 		        .DirtyTransform = dirtyTransform,
 		        .GlobalEligible = globalEligible});
+
 		maximumStableIndex = (std::max) (maximumStableIndex, input.GpuSceneSlot);
 	}
 
 	state.NextPrevious.resize(static_cast<std::size_t>(maximumStableIndex) + 1u);
 }
 
-void RayTracingPtlasPartitionPlanner::AppendPlanEntries(
-    const RayTracingPtlasPartitionPlannerConfig& config,
-    RayTracingPtlasPartitionPlan& plan,
-    BuildState& state)
+void RayTracingPtlasPartitionPlanner::AppendPlanEntries(const RayTracingPtlasPartitionPlannerConfig& config, RayTracingPtlasPartitionPlan& plan, BuildState& state)
 {
 	plan.Indices.Entries.reserve(state.ObservedInstances.size());
 	std::vector<std::uint32_t> partitionInstanceCounts(plan.Counts.PartitionCount, 0u);
 
 	for (const ObservedInstance& observed : state.ObservedInstances)
 	{
-		const PartitionRuntimeState* partitionState =
-		    observed.LocalPartitionId < m_partitionStates.size() ? &m_partitionStates[observed.LocalPartitionId] : nullptr;
+		const PartitionRuntimeState* partitionState = observed.LocalPartitionId < m_partitionStates.size() ? &m_partitionStates[observed.LocalPartitionId] : nullptr;
 		const bool partitionTouched = partitionState != nullptr && partitionState->TouchedThisFrame;
 		const bool instanceOrPartitionUpdated = observed.DirtyTransform || (config.MarkAllDynamicInPartition && partitionTouched);
 		const bool moveDynamicToGlobal = config.PartitionUpdateMode == RayTracingPtlasPartitionUpdateMode::AlwaysMoveDynamicToGlobal;
-		const bool moveFarDynamicToGlobal =
-		    config.PartitionUpdateMode == RayTracingPtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise
-		    && partitionState != nullptr && partitionState->FarFromCamera;
-		const bool useGlobalPartition = observed.GlobalEligible && !plan.Validation.HasPartitionOverflow && instanceOrPartitionUpdated
-		    && (moveDynamicToGlobal || moveFarDynamicToGlobal);
+
+		const bool moveFarDynamicToGlobal = config.PartitionUpdateMode == RayTracingPtlasPartitionUpdateMode::UpdatePartitionNearbyMoveToGlobalOtherwise && partitionState != nullptr
+		    && partitionState->FarFromCamera;
+
+		const bool useGlobalPartition = observed.GlobalEligible && !plan.Validation.HasPartitionOverflow && instanceOrPartitionUpdated && (moveDynamicToGlobal || moveFarDynamicToGlobal);
 		const std::uint32_t partitionId = useGlobalPartition ? plan.Counts.GlobalPartitionIndex : observed.LocalPartitionId;
 
 		const RayTracingPtlasPartitionEntry entry{
-		    .Identity =
-		        RayTracingPtlasPartitionEntryIdentity{.PrimitiveIndex = observed.PrimitiveIndex, .GpuSceneSlot = observed.GpuSceneSlot},
-		    .Assignment =
-		        RayTracingPtlasPartitionAssignment{.PartitionId = partitionId, .PreviousPartitionId = observed.PreviousPartitionId},
+		    .Identity = RayTracingPtlasPartitionEntryIdentity{.PrimitiveIndex = observed.PrimitiveIndex, .GpuSceneSlot = observed.GpuSceneSlot},
+		    .Assignment = RayTracingPtlasPartitionAssignment{.PartitionId = partitionId, .PreviousPartitionId = observed.PreviousPartitionId},
 		    .Update =
 		        RayTracingPtlasPartitionUpdateState{
 		            .DirtyTransform = observed.DirtyTransform,
@@ -396,9 +343,7 @@ void RayTracingPtlasPartitionPlanner::AppendPlanEntries(
 		if (partitionId < partitionInstanceCounts.size())
 		{
 			const std::uint32_t instanceCount = ++partitionInstanceCounts[partitionId];
-			std::uint32_t& maximumInstanceCount = partitionId == plan.Counts.GlobalPartitionIndex
-			    ? plan.Counts.MaxInstancesInGlobalPartition
-			    : plan.Counts.MaxInstancesPerPartition;
+			std::uint32_t& maximumInstanceCount = partitionId == plan.Counts.GlobalPartitionIndex ? plan.Counts.MaxInstancesInGlobalPartition : plan.Counts.MaxInstancesPerPartition;
 			maximumInstanceCount = (std::max) (maximumInstanceCount, instanceCount);
 		}
 		state.NextPrevious[observed.GpuSceneSlot] = PreviousInstanceState{
@@ -417,9 +362,7 @@ float RayTracingPtlasPartitionPlanner::DistanceSquared(const DirectX::XMFLOAT3& 
 	return dx * dx + dy * dy + dz * dz;
 }
 
-RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(
-    const PreparedRenderScene& preparedScene,
-    const RayTracingPtlasPartitionPlannerConfig& inputConfig) noexcept
+RayTracingPtlasPartitionPlan RayTracingPtlasPartitionPlanner::Build(const PreparedRenderScene& preparedScene, const RayTracingPtlasPartitionPlannerConfig& inputConfig) noexcept
 {
 	ValidateConfig(inputConfig);
 	const RayTracingPtlasPartitionPlannerConfig& config = inputConfig;

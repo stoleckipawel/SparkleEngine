@@ -63,8 +63,7 @@ namespace SparkleLauncher
 			current = current.parent_path();
 		}
 
-		const std::optional<std::filesystem::path> workspaceRoot =
-		    Filesystem::FindAncestorWithMarker(current, Filesystem::kWorkspaceMarker);
+		const std::optional<std::filesystem::path> workspaceRoot = Filesystem::FindAncestorWithMarker(current, Filesystem::kWorkspaceMarker);
 		if (workspaceRoot)
 		{
 			return TryOpenRepositoryRoot(*workspaceRoot, outErrorMessage);

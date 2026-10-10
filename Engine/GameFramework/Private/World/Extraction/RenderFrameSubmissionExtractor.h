@@ -18,12 +18,7 @@ namespace ECS
 	class RenderFrameSubmissionExtractor final
 	{
 	public:
-		RenderFrameSubmission Extract(
-		    GameWorldState& state,
-		    GameWorldResourceStores& resources,
-		    const WorldReadView& readView,
-		    std::uint64_t sceneGeneration,
-		    std::uint64_t frameId);
+		RenderFrameSubmission Extract(GameWorldState& state, GameWorldResourceStores& resources, const WorldReadView& readView, std::uint64_t sceneGeneration, std::uint64_t frameId);
 
 	private:
 		void BeginFrame(RenderFrameSubmission& submission, std::uint64_t sceneGeneration, std::uint64_t frameId);

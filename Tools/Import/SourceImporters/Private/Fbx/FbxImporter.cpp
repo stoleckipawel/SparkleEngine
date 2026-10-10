@@ -39,8 +39,7 @@ SourceImportOutput ImportFbxScene(const std::filesystem::path& filePath)
 	FbxAnimationImporter::ImportAnimations(scene, output);
 
 	if (output.scene.meshPrimitives.empty() != output.scene.meshInstances.empty()
-	    || (output.scene.meshPrimitives.empty() && output.scene.cameras.empty() && output.scene.lights.empty()
-	        && output.scene.animations.empty()))
+	    || (output.scene.meshPrimitives.empty() && output.scene.cameras.empty() && output.scene.lights.empty() && output.scene.animations.empty()))
 	{
 		throw Diagnostics::Error("FBX import produced incomplete mesh content or no supported scene content.");
 	}

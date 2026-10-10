@@ -17,13 +17,9 @@ class TaskExecutionContext;
 
 namespace SparkleLauncher
 {
-	using LauncherOperationPlan =
-	    std::variant<BuildWorkspaceOperationPlan, LevelOperationPlan, LevelRunOperationPlan, CookOperationPlan, MaintenanceOperationPlan>;
+	using LauncherOperationPlan = std::variant<BuildWorkspaceOperationPlan, LevelOperationPlan, LevelRunOperationPlan, CookOperationPlan, MaintenanceOperationPlan>;
 
-	LauncherOperationPlan PlanLauncherOperation(
-	    LauncherOperationCategory category,
-	    std::string_view operationId,
-	    const LauncherOperationRequest& request);
+	LauncherOperationPlan PlanLauncherOperation(LauncherOperationCategory category, std::string_view operationId, const LauncherOperationRequest& request);
 
 	OperationRecord ExecuteLauncherOperation(
 	    LauncherOperationCategory category,
