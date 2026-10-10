@@ -14,6 +14,8 @@
 
 Use this document to understand the evidence and gaps observed at the stated revision. Revalidate every repository, build, workload, and public-profile claim before using it for current planning. [Requirements](../Requirements.md) owns the target, [Roadmap](../Roadmap.md) owns sequence, and architecture/standards own implementation decisions.
 
+**Current planning boundary:** this assessment retains historical observations. The [Roadmap](../Roadmap.md#conditional-and-excluded-work) now excludes Linux delivery and uses dependency gates rather than this snapshot's calendar estimates.
+
 ## Executive Verdict
 
 The candidate is already a strong production rendering engineer with unusual art-to-engine breadth, shipped cross-platform optimization, lighting and shader depth, public speaking, partner collaboration, and a substantial independent D3D12/Vulkan renderer.

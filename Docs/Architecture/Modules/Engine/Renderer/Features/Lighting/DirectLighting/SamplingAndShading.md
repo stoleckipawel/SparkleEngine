@@ -315,6 +315,9 @@ Thresholds are chosen before candidate observation. A clamp, denoiser, exposure 
 
 ## Equation-To-Code Ledger
 
+<details>
+<summary>Expand equation-to-code ledger</summary>
+
 | Contract | Intended owner | Required test |
 | --- | --- | --- |
 | units/light geometry | one shared lighting semantic include plus CPU oracle | `CHK-DIR-01` |
@@ -325,6 +328,8 @@ Thresholds are chosen before candidate observation. A clamp, denoiser, exposure 
 | light translation/history compatibility | prepared lighting state plus feature history | `CHK-DIR-03` |
 | visibility segment/alpha semantics | shared ray semantic kernel, provider adapters | `CHK-DIR-04` |
 | reconstruction inputs/history | selected reconstruction owner | `CHK-DIR-06` |
+
+</details>
 
 ## Ratification Checklist
 

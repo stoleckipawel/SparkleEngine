@@ -2,9 +2,11 @@
 
 **Status:** strategy index and responsibility map
 
-**Current implementation snapshot:** **40/100** across 49 tracked feature families; all remain Blocked because candidate verification and delivery/adoption are zero. Strategy targets do not earn readiness. See [Current Feature Readiness](../Acceptance/CurrentReadiness.md).
+Use this section to decide what kind of graphics engineer you want to become and what Sparkle should deliver to demonstrate it.
 
-Strategy owns desired capabilities, priority, release-wide sequencing, dated executive assessments, and the target professional operating model. It does not own implementation rules, subsystem design, or completion proof.
+**Choose work at [Roadmap](Roadmap.md#where-we-are-and-what-is-next).** It owns the current task and global order. [Current Feature Readiness](../Acceptance/CurrentReadiness.md) records the implementation and evidence position.
+
+Strategy owns desired outcomes and priorities. The catalog gives output examples; Architecture owns the system design and local plans; Acceptance records proof.
 
 ## At A Glance
 
@@ -21,15 +23,20 @@ The active direction is release-first: close, classify, prove, package, and publ
 
 ## Current Direction
 
-- [G. Advanced Graphics Engine Executive Summary](ExecutiveSummary.md) — compact orientation and product identity.
-- [A. Principal Graphics Engineering Requirements](Requirements.md) — canonical `PGE-*` capability and evidence target.
-- [F. Release-First Principal Graphics Roadmap](Roadmap.md) — current release sequence, work-in-progress limits, and stop rules.
-- [H. Advanced Graphics Engineer Persona](EngineerPersona.md) — target operating model and judgment standard.
-- [Feature Delivery Catalog](FeatureDeliveryCatalog.md) — nine concrete outputs, three headline cases, measurable evidence cards and owning feature plans; targets only.
-- [Principal Graphics Role Research](Research/README.md) — refreshed employer/technical primary sources and explicit transfer/retrieval limits, separate from the original archive.
-- [Rendering Reference Examples](Research/RenderingReferenceExamples.md) — twenty reusable source cards, twelve affiliation-qualified engineer profiles and role-depth research, mapped to the existing delivery outputs.
-- [Capability Coverage Crosswalk](../Architecture/CrossModule/StrategyCoverage.md) — dated source-backed mapping from current module capabilities to the persona, `PGE-*` requirements, roadmap release surfaces, and refreshed gap observations.
-- [Feature Documentation Coverage](../Architecture/CrossModule/FeatureDocumentation/README.md) — exact document and identifier routing from strategy/acceptance/plans/research to each owning Architecture dossier, including explicit absent targets.
+| Your question | Open |
+| --- | --- |
+| What should I work on next? | [Roadmap](Roadmap.md) ? current task, dependencies and global order |
+| What is the product vision? | [Executive Summary](ExecutiveSummary.md) ? focused engine and evidence platform |
+| What should I be able to demonstrate? | [Requirements](Requirements.md) ? the canonical capability/evidence targets |
+| How should I think and work? | [Engineer Persona](EngineerPersona.md) ? judgment, implementation, review and communication |
+| What does a concrete delivery look like? | [Feature Delivery Catalog](FeatureDeliveryCatalog.md) ? nine outputs and three headline cases |
+
+### Research And Coverage
+
+- [Role research](Research/README.md) explains the professional expectations and source limits.
+- [Rendering examples](Research/RenderingReferenceExamples.md) provides reusable source cards and affiliation-qualified engineer profiles.
+- [Strategy coverage](../Architecture/CrossModule/StrategyCoverage.md) maps current source capabilities to the targets; it is a dated assessment.
+- [Feature documentation coverage](../Architecture/CrossModule/FeatureDocumentation/README.md) locates the exact Architecture owners and identifiers.
 
 ## Dated Assessments
 
@@ -46,4 +53,4 @@ Assessments must be revalidated before acting; they do not silently become curre
 - [Architecture](../Architecture/README.md) owns current maps, decisions, and system shape.
 - [Architecture](../Architecture/README.md) owns feature-local proof contracts; [Acceptance](../Acceptance/README.md) owns candidate reports, workload/release gates, and high-level progress.
 - [Engineering guidance](../Engineering/README.md#choose-by-task) owns implementation rules and routes them by task.
-- Plans colocated with their owning [Architecture](../Architecture/README.md) subject own subsystem delivery sequences; the release-wide roadmap remains here because it sets product priority and ordering.
+- Plans colocated with their owning [Architecture](../Architecture/README.md) subject own local stages and prompts. Roadmap owns global order across those plans; a local plan cannot select a competing program priority.

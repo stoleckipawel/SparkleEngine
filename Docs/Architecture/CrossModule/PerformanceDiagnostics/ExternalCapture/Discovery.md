@@ -10,6 +10,12 @@
 
 **Current source:** existing Editor capture routes and the independent engine repairs are delivered; provider-wide candidate acceptance remains open. The [remaining plan](Plan.md) selects only unresolved discovery, production deltas and evidence. Historical native SDK observations do not close aggregate acceptance.
 
+## Read This Page
+
+- **Understand the current startup choice:** [Final startup and Launcher contract](#final-startup-selection-and-launcher-contract---2026-10-10); the [dossier](README.md) owns current behavior and limitations.
+- **Inspect native evidence:** [Installed-tool results](#installed-tool-workflow-results) and the dated stage records below. Read their candidate and unrun limits.
+- **Find a required decision:** [Gate rows](#gate-rows-and-required-artifacts) and [established decisions](#decisions-established-by-this-package).
+
 ## Earlier Editor Presentation Evidence
 
 Completed UI-01 through UI-04 implementation instructions and superseded plumbing are retired. Their visibility, command/control, replacement/clear lifetime, icon artwork, profile and failure-control artifacts remain in the following recorded evidence roots; the shared icon-service and direct-launch handoffs below describe the retained owners and later native results. These dated UI-only observations do not close provider capture acceptance.

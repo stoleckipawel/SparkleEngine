@@ -53,4 +53,4 @@ No external source grants local rights to redistribute data, models, binaries or
 | Developer technology | A bounded analyzer and an independent user's reproducible workflow. | A general diagnostics or ML framework without a named consumer. |
 | Principal influence | Review/adoption feedback, changed decisions, deletion rationale and an independently reviewed explanation. | Self-certifying mentoring, employment tenure or cross-company influence. |
 
-The [delivery catalog](../FeatureDeliveryCatalog.md) owns the selected outputs. Mesh shaders, SER, splats, another backend, AMD profiling investment, broad Python bindings and a generic tensor runtime are not admitted merely because related sources mention them. Native Linux and other architectures remain honest, separately gated breadth gaps.
+The [delivery catalog](../FeatureDeliveryCatalog.md) owns the selected outputs. Mesh shaders, SER, splats, another backend, AMD profiling investment, broad Python bindings and a generic tensor runtime are not admitted merely because related sources mention them. Linux delivery is excluded; other architecture claims need their own evidence.

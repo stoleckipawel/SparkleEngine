@@ -131,6 +131,9 @@ Adding or removing a public method requires this table, `REN-OWN-01`, its owning
 
 This matrix closes horizontal discoverability over the current `Engine/Renderer` source tree. It is a navigation audit, not a second capability inventory: capability states and limits remain in [Capability Inventory](../CapabilityInventory.md), and each linked dossier owns the mechanism and proof contract.
 
+<details>
+<summary>Expand source-owner coverage audit</summary>
+
 | Current source owner | Feature documentation owner | Coverage decision |
 | --- | --- | --- |
 | `Public/Renderer.h`, `Public/RendererAPI.h`, `Private/Host`, `Private/Commands`, `Private/Concurrency`, `Private/Frame` | [Rendering a Sparkle Frame](../RenderingASparkleFrame.md), [Scene and View Preparation](SceneAndViewPreparation/README.md), [Frame Graph](FrameExecution/FrameGraphAndScheduling.md), [Latency Coordination](FrameExecution/LatencyCoordination.md), and [Settings State and Persistence](RuntimeConfiguration/SettingsStateAndPersistence.md) | public facade/export boundary, admission, serial/threaded coordination, settings and simulation-marker controls, frame identity, execution, submit, and retirement |
@@ -151,6 +154,8 @@ This matrix closes horizontal discoverability over the current `Engine/Renderer`
 | Renderer public/private settings state, Application persistence, Editor interaction model, Renderer/RHI CVars consumed by settings | [Settings State and Persistence](RuntimeConfiguration/SettingsStateAndPersistence.md), [Feature Selector Catalog](RuntimeConfiguration/FeatureSelectorCatalog.md), and each selected feature dossier | aggregate transport, startup/editor commit, defaults, parsing, per-view resolution, persistence, restart/topology behavior, requested/active result, and known ineffective/absent controls |
 | `Engine/Renderer/CMakeLists.txt` and `ShaderRegistrations` | [Capability Inventory](../CapabilityInventory.md), [Shader Program Catalog](ShaderRuntime/ShaderProgramCatalog.md), and applicable provider/post-processing dossiers | main module, shader-registration/cook objects, optional NVIDIA provider target, public/private dependencies, generated support artifacts, and program membership |
 | Owner-local disposable validation | [Validation and Evidence](../../../../../Engineering/Verification/ValidationAndEvidence.md) plus the dossier whose contract is exercised | Use the existing owning validation surface or scoped local probes; no permanent `Engine/Renderer/Tests` subtree is currently present. Retain valuable commands/results and remove temporary harnesses before handoff. |
+
+</details>
 
 The empty `Private/Lighting` directory and source-folder names do not create capabilities. Conversely, a reachable selector/provider/public method still requires a row and dossier even when its implementation is distributed across infrastructure folders.
 

@@ -190,6 +190,9 @@ Defect controls swap R/B, omit resolution scaling, use window instead of output 
 
 Stage 0 replaces each role description with the exact accepted current owner/symbol before production.
 
+<details>
+<summary>Expand rule-to-code and evidence ledger</summary>
+
 | Rule | Intended owner | Independent check | Seeded defect |
 | --- | --- | --- | --- |
 | `CHR-MATH-01` | Stage-0-selected View/graph active-rectangle publication owner | subrect/aspect coordinate table | window/backing extent substitution |
@@ -201,6 +204,8 @@ Stage 0 replaces each role description with the exact accepted current owner/sym
 | `CHR-MATH-07` | Stage-0-selected settings/View validation owner | invalid-value state matrix | NaN/clamped secret default activates |
 | `CHR-MATH-08` | Stage-0-selected stateless pass owner | repeated-frame/camera deterministic check | frame index/history leaks into output |
 | `CHR-MATH-09` | Stage-0-selected Debug Views/UI/capture join owners | product topology and markers | exact debug/UI distorted or mislabeled |
+
+</details>
 
 ## Common Mathematical Failure Points
 

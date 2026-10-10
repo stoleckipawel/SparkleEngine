@@ -14,6 +14,11 @@
 
 This document owns scene selection and exact workload-specific proof gates. The [First Release Acceptance Contract](FirstRelease.md) owns first-release feature, sample-map, package, clean-machine, and publication acceptance; it reuses these map/workload gates without making Bistro or San Miguel redistributable release content by implication. [Principal Graphics Requirements](../Strategy/Requirements.md) owns capability/evidence meaning, the [Engineering task map](../Engineering/README.md#choose-by-task) routes reusable implementation and measurement rules, and [Performance Diagnostics Architecture](../Architecture/CrossModule/PerformanceDiagnostics/README.md) owns metric/population/provenance semantics used by these gates. Revalidate external capture capability through the [External Performance Profiler Runbook](../Engineering/Verification/ExternalProfiling.md).
 
+## Read This Page
+
+- **Choose a workload:** [Workloads at a glance](#workloads-at-a-glance); follow the linked gates and scene records.
+- **Find the exact contract:** Read the quality, performance and failure sections for the selected workload before collecting results.
+
 ## Workloads At A Glance
 
 | Workload | Role | Current source/document state | What remains before acceptance |
@@ -605,7 +610,7 @@ Cataloging an optional source package or disabled future add-on is not a claim t
 
 ## Workload Gate Sequence
 
-The roadmap owns dates. This contract owns the ordered acceptance states:
+The [Roadmap](../Strategy/Roadmap.md) owns global delivery priority without calendar targets. This contract owns the ordered acceptance states:
 
 | Gate | Required state |
 | --- | --- |

@@ -2,26 +2,28 @@
 
 **Status:** documentation entry point and authority map
 
-Use this documentation to understand what SparkleEngine currently contains, how its systems fit together, what is missing, and what still needs evidence.
+Use these pages to understand the engine, choose your next task and find the design or proof behind a feature.
 
 > [!IMPORTANT]
 > Start with [SparkleEngine At A Glance](Architecture/EngineAtAGlance.md). It summarizes the engine, Renderer, RHI, major strengths, missing capabilities, tradeoffs, and first-release blockers without requiring you to read the detailed ledgers. Open [Current Feature Readiness](Acceptance/CurrentReadiness.md) for the evidence-weighted 0–100 view.
 
 ## Start Here
 
-| Your goal | First page | Then |
-| --- | --- | --- |
-| Understand the whole engine | [Engine At A Glance](Architecture/EngineAtAGlance.md) | [Whole Repository Map](Architecture/WholeRepositoryMap.md) |
-| Understand how a frame is rendered | [Renderer](Architecture/Modules/Engine/Renderer/README.md) | [Rendering A Sparkle Frame](Architecture/Modules/Engine/Renderer/RenderingASparkleFrame.md) |
-| Compare Lit with the progressive Reference Path Tracer | [First-use and evidence walk](Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/UserExperience.md#readers-first-use-and-evidence-walk) | The [feature dossier](Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md#what-to-do-next) separates the observed failed image from source and acceptance claims |
-| Understand D3D12/Vulkan and GPU services | [RHI](Architecture/Modules/Engine/RHI/README.md) | [RHI Feature Guide](Architecture/Modules/Engine/RHI/Features/README.md) |
-| See exactly what exists or is missing | [Module Capability Inventory](Architecture/Modules/README.md) | [Capability Evidence Plan](Architecture/Modules/CapabilityEvidencePlan.md) |
-| Compare current feature readiness | [Current Feature Readiness](Acceptance/CurrentReadiness.md) | Open the linked Architecture dossier for the implementation and missing-work detail |
-| Implement the first release | [First Release Implementation Plan](Architecture/CrossModule/FirstRelease/README.md) | Choose the earliest dependency-ready phase, then use its ready-to-run prompt |
-| Build, cook, or launch Showcase | [Launcher Architecture](Architecture/Modules/Tools/Launcher/README.md) | [Build And Packaging](Architecture/Modules/BuildAndPackaging/README.md) |
-| Make an implementation change | [Change Integration](Engineering/Workflow/ChangeIntegration.md) | [Engineering Task Map](Engineering/README.md#choose-by-task) |
-| Open or close a release iteration | [Change Lifecycle control record](Engineering/Workflow/ChangeLifecycle.md#create-the-iteration-control-record) | [Roadmap traceability](Strategy/Roadmap.md#stage-target-and-evidence-traceability) |
-| See release progress and blockers | [Acceptance](Acceptance/README.md) | [First Release](Acceptance/FirstRelease.md) |
+| Your task | Where to start |
+| --- | --- |
+| Understand the whole engine | [Engine At A Glance](Architecture/EngineAtAGlance.md) — [Whole Repository Map](Architecture/WholeRepositoryMap.md) |
+| Understand how a frame is rendered | [Renderer](Architecture/Modules/Engine/Renderer/README.md) — [Rendering A Sparkle Frame](Architecture/Modules/Engine/Renderer/RenderingASparkleFrame.md) |
+| Compare Lit with the progressive Reference Path Tracer | [First-use and evidence walk](Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/UserExperience.md#readers-first-use-and-evidence-walk) — The [feature dossier](Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md#what-to-do-next) separates the observed failed image from source and acceptance claims |
+| Understand D3D12/Vulkan and GPU services | [RHI](Architecture/Modules/Engine/RHI/README.md) — [RHI Feature Guide](Architecture/Modules/Engine/RHI/Features/README.md) |
+| See exactly what exists or is missing | [Module Capability Inventory](Architecture/Modules/README.md) — [Capability Evidence Plan](Architecture/Modules/CapabilityEvidencePlan.md) |
+| Compare current feature readiness | [Current Feature Readiness](Acceptance/CurrentReadiness.md) — open the linked Architecture dossier for the implementation and missing-work detail |
+| Decide what to do next | [Master Delivery Roadmap](Strategy/Roadmap.md#where-we-are-and-what-is-next) — See current focus and global priority, then open its owning stage plan |
+| Implement a selected release piece | [First Release Stage Briefs](Architecture/CrossModule/FirstRelease/README.md) — Use the Roadmap-selected phase and its bounded prompt |
+| Build, cook, or launch Showcase | [Launcher Architecture](Architecture/Modules/Tools/Launcher/README.md) — [Build And Packaging](Architecture/Modules/BuildAndPackaging/README.md) |
+| Make an implementation change | [Change Integration](Engineering/Workflow/ChangeIntegration.md) — [Engineering Task Map](Engineering/README.md#choose-by-task) |
+| Open or close a release iteration | [Change Lifecycle control record](Engineering/Workflow/ChangeLifecycle.md#create-the-iteration-control-record) — [Roadmap traceability](Strategy/Roadmap.md#stage-target-and-evidence-traceability) |
+| See release progress and blockers | [Acceptance](Acceptance/README.md) — [First Release](Acceptance/FirstRelease.md) |
+
 
 ## How The Documentation Fits Together
 
@@ -47,11 +49,14 @@ Code and executable build configuration are the authority for implemented behavi
 | What is Sparkle trying to become, and what is most important? | [Strategy](Strategy/README.md) |
 | What do I have now, what is missing, and how is it designed? | [Architecture](Architecture/README.md) |
 | What rules apply while I change or review it? | [Engineering](Engineering/README.md) |
-| What work is sequenced but not yet completed? | The owning [Architecture module or feature](Architecture/README.md); start with the [First Release Implementation Plan](Architecture/CrossModule/FirstRelease/README.md) for release-wide order |
+| What work is next and where is its detailed plan? | [Master Delivery Roadmap](Strategy/Roadmap.md); follow the selected row into its owning [Architecture plan](Architecture/README.md) |
 | What workloads, feature reports, and release gates track progress? | [Acceptance](Acceptance/README.md) |
 | What external precedent or option study informed a design? | The research document beside the owning [Architecture dossier](Architecture/README.md) |
 
 ## Authority Boundaries
+
+<details>
+<summary>Compare documentation responsibilities</summary>
 
 | Authority | Owns | Does not own |
 | --- | --- | --- |
@@ -61,6 +66,8 @@ Code and executable build configuration are the authority for implemented behavi
 | Colocated research document | external precedent, option studies, visual exploration, and dated baselines for its owning subject | local decisions, implementation state, or evidence grades |
 | [Engineering](Engineering/README.md) | workflow, implementation standards, module rules, verification, engineering decisions | release scope, system design, or product research |
 | [Acceptance](Acceptance/README.md) | shared completion language, candidate reports, workload/release gates, high-level progress | duplicate feature architecture or local feature criteria |
+
+</details>
 
 Colocation changes how readers find related knowledge; it does not merge authority. Each document's filename, status header, and responsibility still distinguish current state, target architecture, plan, research, and acceptance.
 

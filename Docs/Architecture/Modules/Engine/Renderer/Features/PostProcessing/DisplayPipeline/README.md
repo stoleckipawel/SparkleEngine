@@ -45,7 +45,7 @@ flowchart LR
 | [Exposure Semantics](ExposureSemantics.md) | metering statistics, bounded multiplier equations, temporal response, and provider/display color domains |
 | [Tone Mapping](ToneMapping.md) | selectable scene-referred HDR to display-linear operators and their limits |
 | [Color Grading](ColorGrading/README.md) | feature definition, discovery, research, semantics, architecture, experience, and conditional delivery plan |
-| [Basic Vignette](Vignette.md) | small scene-only mask, neutral-work erasure, settings/viewport ownership and paired-backend proof |
+| [Basic Vignette](Vignette/README.md) | small scene-only mask, neutral-work erasure, settings/viewport ownership and paired-backend proof |
 | [Chromatic Aberration](ChromaticAberration/README.md) | feature definition, discovery, research, semantics, architecture, experience, and conditional delivery plan |
 | [Presentation And Output](PresentationAndOutput.md) | current SDR encoding, back-buffer or viewport publication, and debug handoff |
 | [HDR Display Output](HDRDisplayOutput/README.md) | feature definition, discovery, research, semantics, architecture, experience, and conditional delivery plan |

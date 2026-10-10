@@ -80,6 +80,9 @@ Inspected [NuGet 1.0.240308001](https://www.nuget.org/packages/WinPixEventRuntim
 
 Live manuals are dated observations, not immutable releases. Stage 0 retains the installed header/tool hashes and relevant manual sections before implementation. A release tag anchors source precedent; never substitute `master` for that tag in the decision record.
 
+<details>
+<summary>Expand primary source ledger</summary>
+
 | ID / observed reference | Narrow finding | Permitted transfer / non-inference | Rights and refresh trigger |
 | --- | --- | --- | --- |
 | `SRC-PIX-API`: [Microsoft programmatic capture](https://devblogs.microsoft.com/pix/programmatic-capture/), GPU prerequisites and target-window sections | GPU capturer setup precedes D3D12 calls; event runtime and capturer are separate. Next-frame capture uses Present delimiters; targeting a window does not exclude all other windows' work. | Use early setup and explicit target mapping. Do not infer viewport-only content or finalization from a successful request call. | Vendor documentation, paraphrase only; refresh on PIX/runtime/Agility/OS changes. |
@@ -97,6 +100,8 @@ Live manuals are dated observations, not immutable releases. Stage 0 retains the
 | `SRC-GODOT-DOC`: [Godot 4.5 GPU optimization](https://raw.githubusercontent.com/godotengine/godot-docs/4.5/tutorials/performance/gpu_optimization.rst) | Profiling/bottleneck guidance separates measurement from changes. | Use controlled experiments; do not assume frame-debugger time is representative throughput. | Documentation repository terms; pinned branch observation, retain commit at discovery. |
 | `SRC-AMD`: [AMD tools suite](https://gpuopen.com/tools/), [RGP](https://gpuopen.com/rgp/) | Separate profiling, memory, ray-tracing, crash, and static-analysis tools; RGP collection uses Radeon Developer Panel/driver. | Keep different activities/artifacts separate. Rest-of-tools delivery can be marker/runbook handoff rather than a fictional common capture API. | Per-tool notices/requirements; current RGP page shows v2.7.1, superseding older runbook v2.7 snapshot. Refresh before use. |
 | `SRC-SYSTEMS`: [Nsight Systems guide](https://docs.nvidia.com/nsight-systems/UserGuide/index.html), [Microsoft ETW](https://learn.microsoft.com/en-us/windows/win32/etw/event-tracing-portal), [PresentMon repository](https://github.com/GameTechDev/PresentMon) | System traces, OS events, and presentation measurement answer different questions from native frame replay. | Reuse existing thread/ETW identities and explicit run provenance; do not embed these viewers or treat presentation measurements as full input-to-photon proof. | Each tool's terms apply; refresh platform/privilege/trace settings and installed version. |
+
+</details>
 
 The RenderDoc documentation site and guessed Godot RenderDoc tutorial URLs did not return readable content in this research pass. RenderDoc's release-tagged official header supplied its API contract. Godot conclusions use the readable tagged driver/build sources and official performance document; no native Godot capture UI is asserted.
 

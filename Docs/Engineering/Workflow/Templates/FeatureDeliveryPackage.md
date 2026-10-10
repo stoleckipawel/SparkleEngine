@@ -8,8 +8,16 @@
 
 Use this package when a feature crosses several durable knowledge roles, introduces a new public or selectable result, changes ownership/lifetime, needs external precedent, contains algorithmic or protocol correctness, creates a user/tool workflow, or will support a feature-completion claim. The worked example is the Renderer [Reference Path Tracer dossier](../../../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md).
 
+Write each populated page using [Reading Order And Detail](../DocumentationOrganization.md#reading-order-and-detail). Lead with its purpose and useful action. Give stages their own short sections; keep optional provenance and crosswalks behind the explanation, with required gates and limitations visible.
+
 > [!IMPORTANT]
 > Copying this template does not advance readiness or authorize implementation. Replace every `{{PLACEHOLDER}}`, verify current-state statements against code and executable build configuration, keep unresolved decisions visibly blocked, and retain actual results only in their candidate-bound evidence or completion report.
+
+## Read This Page
+
+- **Choose the package:** [Smallest honest package](#select-the-smallest-honest-package) and [document roles](#package-roles-and-single-truth).
+- **Prepare the work:** [Delivery card](#measurable-delivery-card), [population order](#instantiate-in-this-order) and [authoring prompt](#ready-to-use-package-authoring-prompt).
+- **Review the result:** [Traceability](#cross-document-traceability-gate), [common failures](#common-package-failure-modes) and [quality gate](#package-quality-gate).
 
 ## What The Package Produces
 

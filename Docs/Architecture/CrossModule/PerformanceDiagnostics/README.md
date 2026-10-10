@@ -10,6 +10,13 @@
 
 **Current readiness:** **20/100** - instrumentation foundations and an implemented Editor external-capture route exist; the joined internal diagnostics product, benchmark export and aggregate acceptance remain open. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
 
+## Read This Page
+
+- **Choose the activity:** [At a glance](#at-a-glance) distinguishes the existing external-capture route from the internal target product.
+- **Understand measurement:** [Vocabulary](#measurement-vocabulary), [ownership and flow](#system-ownership-and-data-flow), then [cost budget](#collection-modes-and-cost-budget).
+- **Design a user operation:** [Workspace](#diagnostics-product-information-architecture), [stat views](#sparkle-stat-views-and-commands) or [GPU visualizer](#on-demand-gpu-visualizer).
+- **Review correctness:** [Shipping erasure](#intent-first-instrumentation-and-shipping-erasure), [handoff](#external-profiler-handoff-contract) and [failures](#failure-and-edge-cases).
+
 ## At A Glance
 
 | Current source surface | Target product | Deliberate boundary |

@@ -22,8 +22,8 @@
 | `PGD-05` | [Python Automation And Analysis](../../Modules/Tools/PythonAutomationAndAnalysis.md), [Workload Studies](../PerformanceDiagnostics/WorkloadStudies/README.md) |
 | `PGD-06` | [Neural Training/Evaluation](../NeuralGraphics/TrainingAndEvaluation.md), [Discovery](../NeuralGraphics/Discovery.md) |
 | `PGD-07` | [Model To Kernel/Runtime](../NeuralGraphics/ModelToKernelAndRuntimeInference.md), [Shader System](../ShaderSystem/README.md), [Neural plan](../NeuralGraphics/Plan.md) |
-| `PGD-08` | [Neural acceptance](../NeuralGraphics/Acceptance.md), [Workload Studies](../PerformanceDiagnostics/WorkloadStudies/README.md), workload case owners |
-| `PGD-09` | [Linux Platform Support](../../Modules/Engine/Platform/LinuxPlatformSupport.md), [Product Workflows](../ProductWorkflowCoverage.md); personal/mentoring evidence remains external |
+| `PGD-08` | [Neural acceptance](../NeuralGraphics/Acceptance.md), [Workload Studies](../PerformanceDiagnostics/WorkloadStudies/README.md), [portfolio assembly plan](../GraphicsPortfolio/Plan.md); workload owners retain original case results |
+| `PGD-09` | [contribution](../GraphicsPortfolio/UpstreamContribution.md) and [transfer](../GraphicsPortfolio/KnowledgeTransfer.md) cards; actual personal/mentoring evidence remains external |
 
 ## Research Reference Routing
 
@@ -57,7 +57,7 @@ Research-only `NVR-01..20` references are owned by [Rendering Reference Examples
 | `PGE-11` | [Neural Training And Evaluation](../NeuralGraphics/TrainingAndEvaluation.md), currently absent |
 | `PGE-12` | [Neural Training](../NeuralGraphics/TrainingAndEvaluation.md) and [Runtime Inference](../NeuralGraphics/ModelToKernelAndRuntimeInference.md), currently absent as an owned route |
 | `PGE-13` | Feature dossiers plus [ShaderCompiler](../../Modules/Tools/ShaderCompiler/README.md), [Cooking](../../Modules/Tools/Cooking/README.md), [Performance Diagnostics](../PerformanceDiagnostics/README.md), and [Adoption](../../Modules/BuildAndPackaging/AdoptionSupportAndIncidentResponse.md) |
-| `PGE-14` | [Platform](../../Modules/Engine/Platform/README.md), [Linux Platform Support](../../Modules/Engine/Platform/LinuxPlatformSupport.md), [RHI](../../Modules/Engine/RHI/README.md), [Build/Packaging](../../Modules/BuildAndPackaging/README.md) |
+| `PGE-14` | [Platform](../../Modules/Engine/Platform/README.md), [RHI](../../Modules/Engine/RHI/README.md), [Build/Packaging](../../Modules/BuildAndPackaging/README.md) |
 | `PGE-15` | [Whole Repository Map](../../WholeRepositoryMap.md), module/feature ownership routes, [Adoption And Support](../../Modules/BuildAndPackaging/AdoptionSupportAndIncidentResponse.md) |
 
 ## Feature Completion Report Families
@@ -78,7 +78,7 @@ Research-only `NVR-01..20` references are owned by [Rendering Reference Examples
 | ID | Architecture owner |
 | --- | --- |
 | `FCR-CORE-01` | [Core](../../Modules/Engine/Core/README.md) |
-| `FCR-PLAT-01` | [Platform](../../Modules/Engine/Platform/README.md), with explicit [Linux boundary](../../Modules/Engine/Platform/LinuxPlatformSupport.md) |
+| `FCR-PLAT-01` | [Platform](../../Modules/Engine/Platform/README.md); non-Windows hosts excluded |
 | `FCR-TASK-01` | [Tasks](../../Modules/Engine/Tasks/README.md) and [Multithreaded Engine](../MultithreadedEngine.md) |
 | `FCR-WORLD-01` | [GameFramework](../../Modules/Engine/GameFramework/README.md) |
 | `FCR-WORLD-02` | [GameFramework](../../Modules/Engine/GameFramework/README.md) and [Scene/View Preparation](../../Modules/Engine/Renderer/Features/SceneAndViewPreparation/README.md) |
@@ -165,7 +165,7 @@ Research-only `NVR-01..20` references are owned by [Rendering Reference Examples
 
 | ID | Architecture owner |
 | --- | --- |
-| `FM-REL-01` | [Platform](../../Modules/Engine/Platform/README.md), [Linux boundary](../../Modules/Engine/Platform/LinuxPlatformSupport.md), [RHI device capability](../../Modules/Engine/RHI/Features/DeviceAndResources/BackendSelectionAndDeviceCapabilities.md) |
+| `FM-REL-01` | [Platform](../../Modules/Engine/Platform/README.md), [RHI device capability](../../Modules/Engine/RHI/Features/DeviceAndResources/BackendSelectionAndDeviceCapabilities.md) |
 | `FM-REL-02` | [Packaging And Installation](../../Modules/BuildAndPackaging/PackagingAndInstallation.md) |
 | `FM-REL-03` | [Packaging And Installation](../../Modules/BuildAndPackaging/PackagingAndInstallation.md) |
 | `FM-REL-04` | [Core](../../Modules/Engine/Core/README.md), [Packaging](../../Modules/BuildAndPackaging/PackagingAndInstallation.md) |

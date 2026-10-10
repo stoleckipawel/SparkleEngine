@@ -234,6 +234,9 @@ Reference numbers, thresholds, output formats, capture points, and display-measu
 
 Stage 0 replaces each role description with the exact accepted current owner/symbol and concrete check.
 
+<details>
+<summary>Expand rule-to-code and evidence ledger</summary>
+
 | Rule | Intended owner | Independent check | Seeded defect |
 | --- | --- | --- | --- |
 | `HDR-MATH-01` | Stage-0-selected View/display prepared-scene-contract owner | domain/scale manifest and scene hand cases | unnamed/wrong scene primaries/units |
@@ -246,6 +249,8 @@ Stage 0 replaces each role description with the exact accepted current owner/sym
 | `HDR-MATH-08` | Stage-0-selected Renderer/RHI profile-generation join owner | mixed-generation/fallback raw captures | PQ pixels in SDR tuple or stale HDR output |
 | `HDR-MATH-09` | Stage-0-selected capture/support owners | artifact-classification challenge | screenshot/metadata labeled raw/display proof |
 | `HDR-MATH-10` | Stage-0-selected backend/profile adapters | paired raw semantic manifests | backend-specific semantic drift |
+
+</details>
 
 ## Common Mathematical Failure Points
 

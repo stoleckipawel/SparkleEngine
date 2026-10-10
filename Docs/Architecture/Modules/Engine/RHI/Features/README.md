@@ -82,6 +82,9 @@ Adding or removing a public RHI method requires this table, the exact inventory 
 
 This table proves documentation reachability over the complete current `Engine/RHI` source shape; it does not replace the exact capability ledger.
 
+<details>
+<summary>Expand source-owner coverage audit</summary>
+
 | Current source owner | Documentation owner | Coverage decision |
 | --- | --- | --- |
 | `Public/RHIAPI.h`, `Public/Core`, `Public/Device`, `Public/Config`, `Public/CVars`; common `Private/Core`, `Private/Device`, `Private/Config`, `Private/CVars` | [Backend Selection and Device Capabilities](DeviceAndResources/BackendSelectionAndDeviceCapabilities.md) and [Device Lifecycle and Failure Recovery](DeviceAndResources/DeviceLifecycleAndFailureRecovery.md) | export/backend/capability selection plus aggregate creation, owner thread, publication, steady state, settlement, destruction, and device-loss boundary |
@@ -96,6 +99,8 @@ This table proves documentation reachability over the complete current `Engine/R
 | `Public/Interop`; common `Private/Interop`, backend interop, external-feature capability, and D3D12 interposer seams | [External Interop](PresentationAndInterop/ExternalInterop.md) | native handles/state/hooks, named provider constraints, generation, fallback, and package boundary |
 | `Public/UI`; backend `UI` | [ImGui Rendering](PresentationAndInterop/ImGuiRendering.md) | backend device objects, font/texture descriptors, draw lowering, clipping, resize, and completion lifetime |
 | `Private/D3D12`, `Private/Vulkan`, and `Engine/RHI/CMakeLists.txt` | every dossier plus [Capability Inventory](../CapabilityInventory.md) | each neutral family is checked across both lowerings; build membership and optional gates remain executable CMake authority |
+
+</details>
 
 No public or private RHI directory is an undocumented catch-all. PCH, include, native conversion, and third-party helper files belong to the contract they enable and do not form independent capabilities.
 

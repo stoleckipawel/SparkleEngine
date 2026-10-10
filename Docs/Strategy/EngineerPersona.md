@@ -2,26 +2,17 @@
 
 **Status:** operating model; personal target, not an implementation standard or evidence matrix
 
-**Current implementation snapshot:** **40/100** across the repository's 49 tracked feature families. This persona describes the target quality of engineering judgment, not personal or feature completion, and adds no score. See [Current Feature Readiness](../Acceptance/CurrentReadiness.md).
+**Current evidence:** [Current Feature Readiness](../Acceptance/CurrentReadiness.md) owns feature scores. This page describes the engineering judgment to develop.
 
 **Date:** 2026-08-02
 
 **Scope:** principal-level advanced graphics, developer technology, rendering, GPU systems, and neural graphics engineering
 
-## Purpose and Authority Boundary
+## Read This Page
 
-The [current primary-source study](Research/PrincipalGraphicsRoles.md) checks this target against developer-technology, tools, neural-rendering and GPU-performance expectations. The [delivery catalog](FeatureDeliveryCatalog.md) gives observable outputs, and the [roadmap](Roadmap.md) orders them by proof gates without delivery dates or time estimates.
-
-This document describes how the target engineer thinks, builds, reviews, and communicates. It does not redefine:
-
-- the canonical [`PGE-01` through `PGE-15` capabilities and evidence](Requirements.md);
-- the [Sponza/Bistro/San Miguel acceptance workloads](../Acceptance/GraphicsWorkloads.md);
-- the [delivery sequence](Roadmap.md);
-- the [repository implementation standards](../Engineering/README.md);
-- the [first-release feature completion report contract](../Acceptance/FeatureCompletionReports.md), which applies this operating model to per-feature polish and explanation;
-- subsystem architecture under `Docs/Architecture`.
-
-Those documents own what must be achieved and how repository changes are accepted. This persona owns the professional operating model used to reach that bar.
+- **See the target:** [Persona statement](#persona-statement) and [technical pillars](#technical-pillars).
+- **Apply it to work:** [Think, build, review and communicate](#operating-model); [principal judgment](#principal-level-judgment).
+- **Check alignment:** [North Star](#north-star) and [authority](#purpose-and-authority-boundary).
 
 ## Persona Statement
 
@@ -183,3 +174,18 @@ Use these stable outcomes in iteration records; the quote above remains the comp
 | `NS-SIMPLIFY` | The delivered path removes superseded code/data/configuration and leaves a smaller authority and maintenance surface. | File-count reduction, renamed duplication, speculative abstraction, or deferred cleanup. |
 
 Every material iteration selects the applicable `NS-*` outcomes before implementation and records `advance`, `preserve`, `not applicable`, or `blocked` at handoff through the [Change Lifecycle iteration control record](../Engineering/Workflow/ChangeLifecycle.md#create-the-iteration-control-record). A feature cannot pass by excelling at one facet while failing another applicable facet.
+
+## Purpose and Authority Boundary
+
+The [current primary-source study](Research/PrincipalGraphicsRoles.md) checks this target against developer-technology, tools, neural-rendering and GPU-performance expectations. The [delivery catalog](FeatureDeliveryCatalog.md) gives observable outputs, and the [roadmap](Roadmap.md) orders them by proof gates without delivery dates or time estimates.
+
+This document describes how the target engineer thinks, builds, reviews, and communicates. It does not redefine:
+
+- the canonical [`PGE-01` through `PGE-15` capabilities and evidence](Requirements.md);
+- the [Sponza/Bistro/San Miguel acceptance workloads](../Acceptance/GraphicsWorkloads.md);
+- the [delivery sequence](Roadmap.md);
+- the [repository implementation standards](../Engineering/README.md);
+- the [first-release feature completion report contract](../Acceptance/FeatureCompletionReports.md), which applies this operating model to per-feature polish and explanation;
+- subsystem architecture under `Docs/Architecture`.
+
+Those documents own what must be achieved and how repository changes are accepted. This persona owns the professional operating model used to reach that bar.

@@ -6,6 +6,12 @@
 
 **Scope:** owned C++20 in `Engine`, `Tools`, and `Projects`, plus owned HLSL/HLSLI in `Engine/Assets/Shaders`
 
+## Read This Page
+
+- **Understand the choice:** Use the accepted profile and rationale below. [Code Style](../Foundations/CodeStyle.md) owns current rules.
+- **Run the formatter:** Use the [repository batch entry point](../../../CMake/CodeStyle.bat); its interactive menu selects the file set and check/apply operation.
+- **Audit alternatives:** Expand the vendor comparison below; it is decision context, not another current formatting profile.
+
 ## Width And Call-Initializer Amendment — 2026-10-10
 
 The current profile uses **200 columns** for owned C++ and shaders, replacing the original 140-column selection below. Variable declarations, expressions, and function signatures stay on one line when they fit. `BinPackParameters: OnePerLine` and `BinPackArguments: false` use one item per continuation line when a parameter or argument list must wrap. The assignment rule below keeps the called function's name on the assignment line; it does not force function signatures or fitting argument lists to wrap.
@@ -113,6 +119,9 @@ A read-only clang-format 22.1.3 scan using the pre-decision file found proposed 
 
 These are repository-specific precedents, not company-wide NVIDIA or AMD standards.
 
+<details>
+<summary>Expand vendor comparison</summary>
+
 | Behavior | Sparkle before decision | NVIDIA NRD/NRI | NVIDIA CCCL | AMD RPS | Interpretation for Sparkle |
 | --- | --- | --- | --- | --- | --- |
 | Base | LLVM | Google | LLVM | Google | Base matters less than explicit decisions and a pinned version. |
@@ -128,6 +137,8 @@ These are repository-specific precedents, not company-wide NVIDIA or AMD standar
 | Pointer/reference | left/left | left/pointer | left/inherited | inherited | Retain explicit left/left. |
 | Source mutation | no inserted braces | no inserted braces | insert braces | inherited off | Keep mutation off; clang-tidy already enforces braces. |
 | Standard | inherited `Latest` | `Auto` | `c++20` | inherited | Set `c++20` explicitly. |
+
+</details>
 
 Reviewed sources, pinned to the inspected configuration revisions:
 

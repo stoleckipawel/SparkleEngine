@@ -446,6 +446,7 @@ Copy this compact record into the active change description and update this tabl
 | `FIN-03` | Observer cost, capacity calibration, and soak evidence | Gate | Required | All accepted packages |
 | `FIN-04` | Replacement deletion, documentation, and final shipment ledger | Gate | Required | `FIN-01`–`FIN-03` |
 
+
 After the mandatory external-first `P1-GATE`, dependencies express capability rather than preference among optional packages. For example, selecting `EVD-03` intentionally pulls in the complete evidence path needed by `MAP-00`; selecting only `ORI-02` does not. No post-P1 package bypasses the external gate.
 
 Example selections make the intended granularity concrete:

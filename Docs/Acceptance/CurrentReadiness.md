@@ -140,7 +140,6 @@ These rows prevent adjacent infrastructure or a detailed target design from look
 | Capability | Readiness | Current state | Current owner or boundary |
 | --- | ---: | --- | --- |
 | release installation/package | **0/100** | Not found | [Build and Packaging](../Architecture/Modules/BuildAndPackaging/README.md) and `FCR-PROD-05` |
-| native Linux product path | **0/100** | Not found | [Linux Platform Support](../Architecture/Modules/Engine/Platform/LinuxPlatformSupport.md) |
 | continuous integration and regression service | **0/100** | Not found | [CI and Regression](../Architecture/Modules/BuildAndPackaging/ContinuousIntegrationAndRegression.md) |
 | geometry-cache animation | **0/100** | Target only; not implemented or roadmap-admitted | [Geometry Cache Animation](../Architecture/CrossModule/GeometryCacheAnimation/README.md) |
 | neural training/dataset pipeline | **0/100** | Target only; no production data/model workflow | [Neural Graphics](../Architecture/CrossModule/NeuralGraphics/README.md) |

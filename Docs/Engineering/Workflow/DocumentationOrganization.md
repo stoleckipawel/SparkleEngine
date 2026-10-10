@@ -4,6 +4,12 @@
 
 **Applies to:** authored Markdown and documentation-owned images under `Docs`
 
+## Read This Page
+
+- **Write a readable page:** [Reader-first structure](#reader-first-page-contract) and [language and presentation](#language-and-presentation).
+- **Place or retire a page:** [Ownership](#one-knowledge-owner), [placement](#placement-by-owning-subject-and-knowledge-role) and [lifecycle](#lifecycle).
+- **Submit the change:** Complete the [review checklist](#review-checklist).
+
 ## Reader-First Page Contract
 
 Documentation MUST first help a reader form a useful mental model. Authority, evidence, and exact ledgers remain essential, but they MUST NOT bury the answer to “what is this, what do we have, what is missing, and why was it designed this way?”
@@ -50,6 +56,15 @@ Use the [Documentation Page Template](Templates/Page.md) when creating or materi
 - Use the [Current Feature Readiness scoring model](../../Acceptance/CurrentReadiness.md#scoring-model) for numeric progress. A percentage MUST expose its `I/R/V/D` components and snapshot, MUST link to the central owning row, and MUST NOT be described as an acceptance percentage.
 - Put long source lists, capability IDs, failure/check matrices, and audit tables under clearly labeled reference sections near the end.
 - Render header metadata as short bold labels separated by blank lines. Put the current state, main limitation, and evidence boundary in one callout when those facts are easy to confuse.
+
+### Reading Order And Detail
+
+- A landing page starts with the reader's question and a short route to its answer. Put ownership and audit detail after the purpose, current situation and useful action. Do not turn every short page into a full template.
+- On a long page, offer three to five reading routes by question. Link to the exact section; do not repeat the full heading list or maintain another priority queue. Plans show the next local action and its prerequisite; [Roadmap](../../Strategy/Roadmap.md) remains the global ordering owner.
+- Prefer two or three columns for navigation and delivery summaries. Use a wider table when readers must compare independent dimensions, such as backend support or evidence scores. For long output descriptions or stages, use one named subsection per item, with its result, prerequisite and exit easy to find.
+- Keep critical support limits, unresolved prerequisites, failure behavior and execution/acceptance conditions visible. Optional source audits, provenance and ID crosswalks may use a labeled `<details>` block. Put headings outside the block, retain the full content and leave a blank line around Markdown inside it so links and rendering remain useful. A pure ledger stays a ledger; its index should supply orientation.
+- Separate paragraphs, lists, tables, code blocks and expanded reference blocks with blank lines. Group one logical action or decision per paragraph or list item. Avoid both dense stacks and repeated empty headings.
+- State the answer once in its owner. Use links for exact contracts and results; simplifying the reading path MUST NOT change thresholds, evidence grades, supported scope or retained artifacts.
 
 ## Visual Elements
 
@@ -164,6 +179,8 @@ An index routes. It SHOULD NOT reproduce large status tables, requirements, phas
 
 ## Lifecycle
 
+- Keep one global order and current/next planning pointer in [Roadmap](../../Strategy/Roadmap.md). The strategic catalog owns outputs/examples; colocated plans refine the selected work into local stages/prompts; feature and Acceptance owners retain contracts/results. Indexes route to these owners instead of maintaining independent priority queues, checklists or progress percentages. An explicitly fillable scaffold must name its known inputs, unresolved decision owners, admission and first permitted action; it is not implementation-ready until those decisions are closed. Use the [Remaining Work Plan template](Templates/RemainingWorkPlan.md) for a genuinely missing route, and reuse existing plans before adding files.
+
 - Implementation plans contain only unfinished work, including required validation, recovery, packaging, and adoption. Once a slice is delivered, remove its completed task lists, implementation prompts, execution diary, and obsolete estimates. For partially delivered slices, retain only the remaining delta; source delivery does not close unrun evidence gates.
 - Before retiring delivery material, preserve unique enduring decisions in the current design owner and valuable delivery outputs in the evidence/report owner: candidate identity, exact commands/configuration, results and limitations, native artifacts, reference images, measurements, provenance, failure controls, and reproduction instructions. Keep the artifacts and their navigable references; do not discard them merely because implementation is complete or rely on Git history as their only useful reader route. Update inbound links in the same change. Delete a fully completed plan when it has no unfinished work; Git history retains the former sequence. Do not create `Done` folders or archives solely to keep completed instructions.
 - Reconcile current maps and capability snapshots whenever their named owners, consumers, build membership, or public selection surface changes.
@@ -186,3 +203,4 @@ Before handoff, verify:
 7. current-state claims name their snapshot and evidence boundary;
 8. every materially changed feature passes the feature depth test rather than merely matching the template;
 9. UTF-8, whitespace, and `git diff --check` pass.
+10. the opening answers the reader's question, detailed reference is easy to find, and essential limits or stop conditions remain visible without expanding optional audit material.

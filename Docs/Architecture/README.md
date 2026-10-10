@@ -9,29 +9,31 @@ This tree explains what each system does, how data and responsibility move throu
 
 ## Choose Your Depth
 
-| Reading depth | Use it for | Start here |
-| --- | --- | --- |
-| 2-minute orientation | What exists, what is missing, and the largest tradeoffs | [Engine At A Glance](EngineAtAGlance.md) |
-| Current readiness | How far each tracked feature has progressed from implementation through delivery | [Current Feature Readiness](../Acceptance/CurrentReadiness.md) |
-| System understanding | Major owners and dependency direction | [Whole Repository Map](WholeRepositoryMap.md) |
-| Module understanding | One Engine, Tools, Projects, or build boundary | [Module Architecture](Modules/README.md) |
-| Feature understanding | One result, its selection, design, limits, and proof contract | [Renderer Features](Modules/Engine/Renderer/Features/README.md), [RHI Features](Modules/Engine/RHI/Features/README.md), or the owning module |
-| Cross-system trace | A workflow or GPU feature spanning several owners | [Cross-Module Architecture](CrossModule/README.md) |
-| Documentation coverage | Whether every strategy, plan, acceptance, and research feature has an Architecture owner | [Feature Documentation Coverage](CrossModule/FeatureDocumentation/README.md) |
-| First-release implementation | Release order plus module-owned work packages | [First Release Implementation Plan](CrossModule/FirstRelease/README.md) |
-| Product journey | Build, content, editor, runtime, and delivery handoffs | [Product Workflow Coverage](CrossModule/ProductWorkflowCoverage.md) and [Product Execution Traces](CrossModule/ProductExecutionTraces.md) |
-| Accepted invariant | Why a boundary must remain true | [Architecture Decisions](Decisions/README.md) |
+| Your question | Start here |
+| --- | --- |
+| 2-minute orientation | What exists, what is missing, and the largest tradeoffs — [Engine At A Glance](EngineAtAGlance.md) |
+| Current readiness | How far each tracked feature has progressed from implementation through delivery — [Current Feature Readiness](../Acceptance/CurrentReadiness.md) |
+| System understanding | Major owners and dependency direction — [Whole Repository Map](WholeRepositoryMap.md) |
+| Module understanding | One Engine, Tools, Projects, or build boundary — [Module Architecture](Modules/README.md) |
+| Feature understanding | One result, its selection, design, limits, and proof contract — [Renderer Features](Modules/Engine/Renderer/Features/README.md), [RHI Features](Modules/Engine/RHI/Features/README.md), or the owning module |
+| Cross-system trace | A workflow or GPU feature spanning several owners — [Cross-Module Architecture](CrossModule/README.md) |
+| Documentation coverage | Whether every strategy, plan, acceptance, and research feature has an Architecture owner — [Feature Documentation Coverage](CrossModule/FeatureDocumentation/README.md) |
+| First-release implementation | Release order plus module-owned work packages — [First Release Implementation Plan](CrossModule/FirstRelease/README.md) |
+| Product journey | Build, content, editor, runtime, and delivery handoffs — [Product Workflow Coverage](CrossModule/ProductWorkflowCoverage.md) and [Product Execution Traces](CrossModule/ProductExecutionTraces.md) |
+| Accepted invariant | Why a boundary must remain true — [Architecture Decisions](Decisions/README.md) |
+
 
 ## What Lives Here
 
-| Area | What it answers | Example |
-| --- | --- | --- |
-| [Modules](Modules/README.md) | Who owns the capability and what does the current source path contain? | Renderer, RHI, Tasks, Launcher, Showcase |
-| [CrossModule](CrossModule/README.md) | How does one result cross owners or backends? | graphics execution, product workflows, shader system |
-| [Decisions](Decisions/README.md) | Which dependency or ownership invariant was deliberately accepted? | Renderer/RHI boundary |
-| [Engine At A Glance](EngineAtAGlance.md) | What is the current overall shape, support state, and main gap? | source-present versus missing/unproved capability summary |
+| Area | What you find |
+| --- | --- |
+| [Modules](Modules/README.md) | Who owns the capability and what does the current source path contain? — Renderer, RHI, Tasks, Launcher, Showcase |
+| [CrossModule](CrossModule/README.md) | How does one result cross owners or backends? — graphics execution, product workflows, shader system |
+| [Decisions](Decisions/README.md) | Which dependency or ownership invariant was deliberately accepted? — Renderer/RHI boundary |
+| [Engine At A Glance](EngineAtAGlance.md) | What is the current overall shape, support state, and main gap? — source-present versus missing/unproved capability summary |
 
 The module hierarchy mirrors [Engine](Modules/Engine/README.md), [Tools](Modules/Tools/README.md), [Projects](Modules/Projects/README.md), and repository-wide [Build And Packaging](Modules/BuildAndPackaging/README.md) ownership. Links may cross those boundaries; document placement does not.
+
 
 ## What A Subject Folder Contains
 

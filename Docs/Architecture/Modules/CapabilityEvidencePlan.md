@@ -49,6 +49,9 @@ If the smallest check falsifies the claim, stop and record the defect. Do not co
 
 ## Inventory Expansion
 
+<details>
+<summary>Expand inventory expansion</summary>
+
 | ID | Claim to establish | Smallest next check | Escalation trigger | State |
 | --- | --- | --- | --- | --- |
 | `INV-001` | Every user-reachable feature/backend/mode/tool is represented. | Enumerate public settings, editor controls, console commands/CVars, launcher actions, executable arguments, map catalog, and package manifest; diff against inventory IDs. | Any unmatched selector creates a new row before `REL-00` can close. | Open |
@@ -65,13 +68,14 @@ If the smallest check falsifies the claim, stop and record the defect. Do not co
 | `INV-012` | Capability, evidence, acceptance, and release records have no orphans. | Map every capability/`WF-*` row to its smallest evidence item, `FCR-*`, applicable `AC-*`/`FM-*`/`CHK-*`, release gate, owner, and invalidation trigger; run the reverse check from every report/plan row. | Any row with no proof destination, or any evidence/report with no current promise, blocks disposition. | Open |
 | `INV-013` | Every feature or target introduced by strategy, acceptance, plans, or research has one Architecture owner. | Reconcile the 18-source [Feature Documentation Coverage](../CrossModule/FeatureDocumentation/README.md) audit and exact stable-identifier ledger against the live documentation graph. | An unmatched feature/topic/identifier requires an owning current or explicit negative/target dossier before the source document is complete. | Source-document routing complete 2026-09-07; maintenance check remains required. |
 
+</details>
+
 ## Target And Negative Capability Evidence Map
 
 These routes keep explicitly absent capabilities traceable without treating them as current features, scheduled work, or executable evidence.
 
 | Evidence item | Exact Architecture capability scope |
 | --- | --- |
-| `PLAT-E03` | `PLAT-LINUX-01`, `PLAT-LINUX-02`, `PLAT-LINUX-03`, `PLAT-LINUX-04` |
 | `PY-E01` | `PY-01`, `PY-02`, `PY-03`, `PY-04` |
 | `BUILD-E03` | `PKG-01`, `PKG-02`, `PKG-03`, `PKG-04` |
 | `BUILD-E04` | `CI-01`, `CI-02`, `CI-03`, `CI-04` |
@@ -95,7 +99,6 @@ These routes keep explicitly absent capabilities traceable without treating them
 | `TASK-E04` | Lane scheduling and ETW data support performance diagnosis. | Run imbalanced frame/background/IO work, inspect worker/steal/trace events, and compare throughput without claiming deterministic completion order. | Starvation, missing trace identity, or unbounded queueing blocks performance claims. | Open |
 | `PLAT-E01` | Window lifecycle is stable across all public state transitions. | Repeat create, resize, DPI move, minimize/wait/restore, maximize, borderless fullscreen, alt-tab, close on minimum/reference displays. | Hang, invalid extent, lost state, or DPI drift expands to native message trace. | Open |
 | `PLAT-E02` | Layered input sends each event to exactly the intended consumer. | Controlled keyboard/mouse/wheel fixture across Gameplay/UI/System, deferred/immediate, text input, disabled interaction, overlapping regions, capture/focus loss. | Double delivery, stuck key/button, or capture leak blocks editor/runtime input. | Open |
-| `PLAT-E03` | `PLAT-LINUX-01..04`: Linux remains an explicit unsupported boundary until every admitted native product layer exists. | Audit build profiles/targets, Platform/Application native types, Vulkan surface/presentation, host tools, package routes, selectors, and public claims against [Linux Platform Support](Engine/Platform/LinuxPlatformSupport.md). | Any Linux-specific build/source/product path or public claim triggers a dedicated implementation iteration and the complete `AC-LINUX-*`/`FM-LINUX-*` matrix; Vulkan-on-Windows is not closure. | Open; negative capability audit. |
 | `APP-E01` | Runtime serial/threaded modes and pipeline depths preserve lifecycle and output. | Run Empty plus one scene with serial and threaded depth 0/1/2, minimize/restore, level switch, and repeated exit. | World/render divergence, deadlock, or invalid slot ownership blocks affected mode. | Open |
 | `APP-E02` | Invalid process configuration fails visibly. | Supply valid, unknown, malformed, out-of-range, quoted, and duplicate CVar assignments; compare reported/effective state. | Silently ignored release-relevant typo requires diagnostic/UX correction. | Open |
 | `APP-E03` | Runtime product is editor/tool-free. | Inspect link/import/file manifest for ShippingGame and run with Editor, source assets, cooker, and shader compiler trees unavailable. | Hidden dependency or missing cooked-only failure blocks runtime release. | Open |

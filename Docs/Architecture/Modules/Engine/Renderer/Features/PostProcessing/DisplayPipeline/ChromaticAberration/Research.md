@@ -28,6 +28,9 @@ Current Sparkle source establishes absence and live seams. Revision-pinned AMD a
 
 ## Source Ledger
 
+<details>
+<summary>Expand source ledger</summary>
+
 | ID | Primary source | Question answered | Transfer limit |
 | --- | --- | --- | --- |
 | `CHR-REF-AMD-01` | AMD FidelityFX SDK Lens shader header at tag `v1.1.4`, commit `c6efa6bf7f2027b3ec94f28578bb5965eabb9e55` | how does a fixed RGB wavelength-inspired model compute channel-dependent magnification? | algorithm comparison only; no code/formula transfer without license review |
@@ -37,6 +40,8 @@ Current Sparkle source establishes absence and live seams. Revision-pinned AMD a
 | `CHR-REF-UNITY-02` | Unity HDRP `UberPost.compute`, same commit | how does a multi-sample radial/spectral implementation bound work and sample edges? | implementation precedent, not local equation or oracle |
 | `CHR-REF-UNITY-03` | Unity PostProcessing v2 component/docs, commit `32c3155207d3fac4138b24af5c7e0e43805c6f2b` | what older fast/quality product tradeoff is exposed? | product comparison only |
 | `CHR-REF-UE-01` | Epic post-process documentation | which compact intensity/start-offset vocabulary is user-visible? | mutable product documentation; no shader/unit/backend inference |
+
+</details>
 
 ## Completion Vocabulary
 

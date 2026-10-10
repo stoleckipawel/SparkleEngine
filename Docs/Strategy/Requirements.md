@@ -2,7 +2,7 @@
 
 **Status:** strategy contract; canonical vendor-neutral capability baseline
 
-**Current implementation snapshot:** **40/100** across 49 tracked feature families. This requirements contract defines targets and earns no readiness; use the [Current Feature Readiness dashboard](../Acceptance/CurrentReadiness.md) for present implementation, integration, proof, and delivery state.
+**Current evidence:** the [readiness dashboard](../Acceptance/CurrentReadiness.md) owns feature scores. The requirements below are targets, not awarded capabilities.
 
 **Date:** 2026-07-26
 
@@ -10,34 +10,11 @@
 
 **Research refinement:** 2026-10-10; [role depth](Research/GraphicsRoleDepth.md), [affiliation-checked public work](Research/GraphicsEngineerProfiles.md) and [pinned rendering examples](Research/RenderingReferenceExamples.md) strengthen the evidence targets below without upgrading any personal or feature result.
 
-## Authority And Reading Order
+## Read This Page
 
-This is the canonical requirements contract for SparkleEngine and the target engineering persona. The stable identifiers are `PGE-01` through `PGE-15`.
-
-- [B. Role Source Archive](RoleSources.md) preserves the supplied screenshots and CV in normalized text and maps every source bullet to these identifiers.
-- [C. Candidate and Repository Gap Assessment](Assessments/GapAssessment.md) grades current evidence.
-- [F. Release-First Principal Graphics Roadmap](Roadmap.md) converts the gaps into sequenced work.
-- [G. Advanced Graphics Engine Executive Summary](ExecutiveSummary.md) is the short engine decision document.
-- [H. Advanced Graphics Engineer Persona](EngineerPersona.md) describes who the engineer must become.
-- [I. Bistro and San Miguel Acceptance Workloads](../Acceptance/GraphicsWorkloads.md) defines the canonical Sponza/Bistro/San Miguel workload ladder and the exact proof produced by the two Tier 1 scenes.
-- [First Release Feature Completion Reports](../Acceptance/FeatureCompletionReports.md) applies these targets to per-feature polish and explanation; it cannot assign a higher `PGE-*` evidence level without the proof required here.
-
-When another document conflicts with this matrix, this matrix controls the capability target and the evidence meaning. Architecture documents may impose stricter implementation rules.
-
-## North-Star Requirement Crosswalk
-
-The persona's [`NS-*` North Star outcomes](EngineerPersona.md#north-star) and these capability requirements are complementary. `NS-*` asks whether an iteration behaves like trustworthy principal engineering; `PGE-*` asks which capability and evidence level it advances. Every material iteration marks both, but only when applicable.
-
-| North Star outcome | Primary capability targets | Iteration question |
-| --- | --- | --- |
-| `NS-REAL` | `PGE-01`, `PGE-02`, `PGE-03`, `PGE-07`, `PGE-09`, `PGE-13`, `PGE-15` | Is there a complete consumer-visible or adopter-visible production result rather than vocabulary or scaffolding? |
-| `NS-MATH-DATA` | `PGE-02`, `PGE-03`, `PGE-04`, `PGE-08`, `PGE-09`, `PGE-10`, `PGE-11`, `PGE-12` | Are semantics, math, numerical behavior, data transformations, layouts, and cost understood and tested? |
-| `NS-EVIDENCE` | `PGE-02` through `PGE-12`, `PGE-14` | Do the declared correctness, quality, performance, API/compiler/driver, neural, and failure claims have reproducible evidence? |
-| `NS-OWNERSHIP` | `PGE-01`, `PGE-05`, `PGE-07`, `PGE-09`, `PGE-10`, `PGE-12`, `PGE-15` | Are authority, lifetime, synchronization, capability selection, fallback, failure, and retirement explicit? |
-| `NS-ADOPTION` | `PGE-01`, `PGE-06`, `PGE-07`, `PGE-13`, `PGE-14`, `PGE-15` | Can a non-author discover, integrate, reproduce, diagnose, support, and communicate the result? |
-| `NS-SIMPLIFY` | `PGE-07`, `PGE-10`, `PGE-13`, `PGE-15` | Did the work delete superseded authority and reduce maintenance or public surface without losing capability? |
-
-The crosswalk is a routing aid, not evidence. An iteration records each selected `PGE-*` as `advance`, `preserve`, `not applicable`, or `blocked`; a grouped range never hides an individual target's result. [Change Lifecycle](../Engineering/Workflow/ChangeLifecycle.md#create-the-iteration-control-record) owns the iteration record format.
+- **Understand the target:** [Target proposition](#target-proposition) and [capability requirements](#canonical-requirement-matrix).
+- **Plan your evidence:** [Portfolio cases](#portfolio-review-contract) and [observable evidence targets](#observable-evidence-targets).
+- **Audit the basis:** [Source coverage](#requirement-coverage-from-the-supplied-sources) and [authority](#authority-and-reading-order).
 
 ## Target Proposition
 
@@ -65,6 +42,21 @@ The product workload decision is fixed for this planning horizon:
 3. San Miguel 2.0 is the Tier 1 secondary supported scene and cross-scene quality/generalization test.
 
 The engine is not permitted to substitute Sponza-only proof for a Tier 1 requirement. The detailed acquisition, material, quality, performance, neural, and presentation gates are binding in [I](../Acceptance/GraphicsWorkloads.md).
+
+## North-Star Requirement Crosswalk
+
+The persona's [`NS-*` North Star outcomes](EngineerPersona.md#north-star) and these capability requirements are complementary. `NS-*` asks whether an iteration behaves like trustworthy principal engineering; `PGE-*` asks which capability and evidence level it advances. Every material iteration marks both, but only when applicable.
+
+| North Star outcome | Primary capability targets | Iteration question |
+| --- | --- | --- |
+| `NS-REAL` | `PGE-01`, `PGE-02`, `PGE-03`, `PGE-07`, `PGE-09`, `PGE-13`, `PGE-15` | Is there a complete consumer-visible or adopter-visible production result rather than vocabulary or scaffolding? |
+| `NS-MATH-DATA` | `PGE-02`, `PGE-03`, `PGE-04`, `PGE-08`, `PGE-09`, `PGE-10`, `PGE-11`, `PGE-12` | Are semantics, math, numerical behavior, data transformations, layouts, and cost understood and tested? |
+| `NS-EVIDENCE` | `PGE-02` through `PGE-12`, `PGE-14` | Do the declared correctness, quality, performance, API/compiler/driver, neural, and failure claims have reproducible evidence? |
+| `NS-OWNERSHIP` | `PGE-01`, `PGE-05`, `PGE-07`, `PGE-09`, `PGE-10`, `PGE-12`, `PGE-15` | Are authority, lifetime, synchronization, capability selection, fallback, failure, and retirement explicit? |
+| `NS-ADOPTION` | `PGE-01`, `PGE-06`, `PGE-07`, `PGE-13`, `PGE-14`, `PGE-15` | Can a non-author discover, integrate, reproduce, diagnose, support, and communicate the result? |
+| `NS-SIMPLIFY` | `PGE-07`, `PGE-10`, `PGE-13`, `PGE-15` | Did the work delete superseded authority and reduce maintenance or public surface without losing capability? |
+
+The crosswalk is a routing aid, not evidence. An iteration records each selected `PGE-*` as `advance`, `preserve`, `not applicable`, or `blocked`; a grouped range never hides an individual target's result. [Change Lifecycle](../Engineering/Workflow/ChangeLifecycle.md#create-the-iteration-control-record) owns the iteration record format.
 
 ## Evidence Scale
 
@@ -97,7 +89,7 @@ A principal-ready portfolio needs `E3` on every technical core requirement and `
 | `PGE-11` | Machine-learning fundamentals | Understand automatic differentiation, computational graphs, broadcasting, data splits, objectives, loss and evaluation metrics, optimization, overfitting/generalization, quantization, and deployment constraints. Use AI coding tools as fallible accelerators. | Reproducible training experiment, model card, train/validation/test separation, baseline, ablation, failure cases, independent verification of AI-assisted work, and no unsupported model claim. |
 | `PGE-12` | Training and inference workload engineering | Treat offline preparation/training and low-latency inference as different systems; profile batching, precision, layout, memory, concurrency, export, startup, and runtime scheduling. | Separate training and inference profiles, deterministic export, versioned artifact contract, precision/batch/layout sweep, runtime loading path, latency/memory budget, and deployment decision. |
 | `PGE-13` | Research productization, tools, and technical communication | Turn a proof of concept into mature code, a useful graphics tool or plugin, or a deleted negative result; write design notes and best practices; build demos; present conference- or whitepaper-quality work; prioritize under limited time. | Hypothesis, source review, prototype, productization/deletion decision, tool or integration surface, code review, polished Bistro flagship demo, San Miguel breadth proof, concise technical paper, talk outline or recording, and priority/deletion ledger. |
-| `PGE-14` | Platform and ecosystem breadth | Develop and debug on Windows; demonstrate native Linux/Vulkan work before claiming Linux; understand source control, build systems, debuggers, profilers, and driver-facing workflows; work effectively in written and spoken English and travel when the role requires it. | Windows/D3D12 and Windows/Vulkan evidence; a native Linux/Vulkan build-run-capture slice if claimed; reproducible build instructions; Git history; tool workflow; clear English writing and talk evidence. |
+| `PGE-14` | Platform and ecosystem breadth | Develop and debug on Windows with D3D12 and Vulkan; Linux delivery is excluded; understand source control, build systems, debuggers, profilers, and driver-facing workflows; work effectively in written and spoken English and travel when the role requires it. | Windows/D3D12 and Windows/Vulkan evidence; reproducible build instructions; Git history; tool workflow; clear English writing and talk evidence. |
 | `PGE-15` | Principal-level judgment and sustained influence | Supply depth equivalent to advanced education or substantial relevant experience; set technical direction from first principles; repeatedly own high-risk work end to end; mentor, review, organize, and simplify rather than accumulate architecture. | Several completed vertical slices over time, shipped impact, decisions under constraints, peer/partner recommendations, mentoring or teaching evidence, incident leadership, and a repository that became easier to understand and change. |
 
 ## Requirement Coverage From The Supplied Sources
@@ -199,7 +191,7 @@ The [delivery catalog](FeatureDeliveryCatalog.md) supplies concrete examples and
 | `PGE-11` | Owned model card includes scene-separated data, overfit diagnostic, baseline, ablations, leakage check and generalization/failure limitations. | `PGD-06/08` |
 | `PGE-12` | Training and runtime have separate profiles; model export, cold startup, precision/layout, inference tails and peak workspace are attributed. | `PGD-06..08` |
 | `PGE-13` | Three headline cases and a report/demo link actual code/native artifacts and reproduction; one useful tool or deleted negative result has a productization decision. | `PGD-02..08` |
-| `PGE-14` | Windows paired-API/toolchain evidence is reproducible; native Linux is claimed only after a named build-run-capture. Written explanations are independently reviewed. | `PGD-01/03/08/09` |
+| `PGE-14` | Windows paired-API/toolchain evidence is reproducible. Linux is excluded from the selected delivery program. Written explanations are independently reviewed. | `PGD-01/03/08/09` |
 | `PGE-15` | Decisions show constraints, tradeoffs and removed complexity; independent review/adoption plus genuine teaching/mentoring records support influence. No count of features certifies principal level. | `PGD-01/08/09` |
 
 Gate progress is evidence-based, without calendar targets. Counts set portfolio coverage; they do not replace statistical sample counts, exact numeric tolerances or sustained professional-history proof.
@@ -213,3 +205,17 @@ If two possible tasks advance the same requirement, prefer the one that:
 3. yields causal measurement or external reproduction;
 4. reduces or consolidates more code than it adds;
 5. improves the 10-minute review path.
+
+## Authority And Reading Order
+
+This is the canonical requirements contract for SparkleEngine and the target engineering persona. The stable identifiers are `PGE-01` through `PGE-15`.
+
+- [B. Role Source Archive](RoleSources.md) preserves the supplied screenshots and CV in normalized text and maps every source bullet to these identifiers.
+- [C. Candidate and Repository Gap Assessment](Assessments/GapAssessment.md) grades current evidence.
+- [F. Release-First Principal Graphics Roadmap](Roadmap.md) converts the gaps into sequenced work.
+- [G. Advanced Graphics Engine Executive Summary](ExecutiveSummary.md) is the short engine decision document.
+- [H. Advanced Graphics Engineer Persona](EngineerPersona.md) describes who the engineer must become.
+- [I. Bistro and San Miguel Acceptance Workloads](../Acceptance/GraphicsWorkloads.md) defines the canonical Sponza/Bistro/San Miguel workload ladder and the exact proof produced by the two Tier 1 scenes.
+- [First Release Feature Completion Reports](../Acceptance/FeatureCompletionReports.md) applies these targets to per-feature polish and explanation; it cannot assign a higher `PGE-*` evidence level without the proof required here.
+
+When another document conflicts with this matrix, this matrix controls the capability target and the evidence meaning. Architecture documents may impose stricter implementation rules.

@@ -280,6 +280,9 @@ The core oracle is always `Lout = T * Lsurface + Lscatter`. Transparent objects 
 
 ## External Source And Provenance Ledger
 
+<details>
+<summary>Expand external source and provenance ledger</summary>
+
 | Source | Observed fact used | Permitted transfer | Forbidden inference | Provenance action before implementation |
 | --- | --- | --- | --- | --- |
 | Volumetric ReSTIR paper/project[^1] | approximate candidate plus accepted selected evaluation and path-resampling architecture | equations, test scenes/failure hypotheses | source timings, quality, or unbiased claim transfer to Sparkle | cite exact paper; audit any project code/license separately |
@@ -292,6 +295,8 @@ The core oracle is always `Lout = T * Lsurface + Lscatter`. Transparent objects 
 | residual/zero-variance tracking[^12][^13] | unbiased/control-variate transmittance families | reference algorithms and adversarial tests | loose majorants or approximate controls are safe without proof | cite equations; independently implement; document majorant/control source |
 | Pixar production volume course[^14] | production path/medium decomposition and tracking taxonomy | completeness checklist and reference cases | film architecture/cost fits real time | citation only unless code is separately sourced |
 | sparse-volume reconstruction[^19] | surface/volume signal separation and learned reconstruction precedent | interface/failure design and A/B hypothesis | neural denoising is required or source quality transfers | citation first; code/model/assets need separate license and provenance review |
+
+</details>
 
 Git checks on 2026-09-12 confirmed `183ead5` as the Hillaire atmosphere repository HEAD and `6f0a32f` as OpenVDB HEAD. The current study references OpenVDB documentation rather than adopting HEAD; any code stage must choose and pin a reviewed release/commit.
 

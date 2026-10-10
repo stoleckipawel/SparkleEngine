@@ -6,9 +6,9 @@
 
 **Verified:** source/name search at `93e86b8113c3fcd0c4921729c3513538b95bc794` on 2026-10-10 found no vignette feature
 
-**Current readiness:** **0/100 — target only**; included in the lens post-processing scope of [FCR-REN-25](../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry), without changing the existing portfolio score
+**Current readiness:** **0/100 — target only**; included in the lens post-processing scope of [FCR-REN-25](../../../../../../../../Acceptance/FeatureCompletionReports.md#initial-completion-report-registry), without changing the existing portfolio score
 
-**Parent:** [Display Pipeline](README.md). [Release requirements](../../../../../../../Acceptance/FirstRelease.md#required-rendering-closure) require this small effect on both backends. This page owns its proposed semantics and local delivery checks; release results belong in the existing FCR report.
+**Parent:** [Display Pipeline](../README.md). [Release requirements](../../../../../../../../Acceptance/FirstRelease.md#required-rendering-closure) require this small effect on both backends. This page owns its proposed semantics and local delivery checks; release results belong in the existing FCR report.
 
 ## Result And Bounds
 
@@ -47,6 +47,4 @@ The formula and placement are proposed design choices, not SDK facts. Before cod
 
 ## Remaining Delivery
 
-1. Reconcile existing settings, target-linear stage and graph product ownership; freeze the numeric/check card and justified integration-hook ledger. Preserve the separate chromatic-aberration discovery.
-2. Add only this feature's parameters/pass and existing settings/persistence/presenter membership; neutral defaults must erase work immediately. No production implementation is authorized by this scope-edit iteration.
-3. Execute the local formula/failure/order/observer controls, narrow builds, native validation and both-backend package proof. Close the vignette sub-result separately from chromatic aberration inside `FCR-REN-25`; accepting one cannot accept the other.
+The [fillable plan](Plan.md) owns remaining discovery, the one effect slice and delivery proof. This dossier owns behavior and acceptance; the [master Roadmap](../../../../../../../../Strategy/Roadmap.md#required-feature-closure-priority) selects when to execute it. Preserve independent chromatic discovery and separate vignette evidence inside FCR-REN-25.

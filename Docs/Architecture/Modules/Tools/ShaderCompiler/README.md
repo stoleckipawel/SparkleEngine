@@ -25,6 +25,12 @@
 
 Source ownership reconciled on 2026-10-06: the five fixed CLI verbs are functions referenced by one immutable descriptor table, which also owns usage text. Dispatch no longer allocates command objects or a polymorphic registry; argument parsing, cook execution, diagnostics, and exit-code policy remain in their existing owners.
 
+## Read This Page
+
+- **Use the tool:** [Command-line surface](#command-line-surface) and [supported compiler targets](#authored-languages-compiler-backends-and-targets).
+- **Understand the pipeline:** Read compile planning, ABI checks and cooked publication below; [Shader System](../../../CrossModule/ShaderSystem/README.md) owns the architecture.
+- **Audit a shader:** The [registered program inventory](#registered-runtime-program-inventory) joins names to the exact runtime catalog.
+
 ## Build And Delivery Shape
 
 | Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |

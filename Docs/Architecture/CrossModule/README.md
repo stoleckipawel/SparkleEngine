@@ -27,7 +27,7 @@ Cross-module pages own the *join*. They must name what each participant contribu
 | [Shader System](ShaderSystem/README.md) | Renderer, RHI, ShaderCompiler, Cooking, Editor | entering the feature dossier for architecture, plan, research, migration provenance, and local completion contract |
 | [Neural Graphics](NeuralGraphics/README.md) | future training/export tools, Assets, Renderer, RHI, Showcase, Build/Packaging | distinguishing current vendor inference from the absent owned training, model-to-kernel, and runtime feature |
 | [Multithreaded Engine](MultithreadedEngine.md) | Tasks plus runtime, Renderer, RHI, and tools | understanding shared threading, publication, shutdown, and failure boundaries |
-| [First Release Implementation Plan](FirstRelease/README.md) | every product, module, feature, build, evidence, and release owner | selecting the next release stage and following it into the module-owned work package |
+| [First Release Stage Briefs](FirstRelease/README.md) | every product, module, feature, build, evidence, and release owner | refining the release piece selected by the [master Roadmap](../../Strategy/Roadmap.md) into a bounded prompt |
 | [Product Workflow Coverage](ProductWorkflowCoverage.md) | Application, Editor, Launcher, tools, content, build, Showcase, and delivery | comparing developer/user journeys horizontally, including incomplete packaging and support paths |
 | [Product Execution Traces](ProductExecutionTraces.md) | the same product and tool owners | tracing vital non-graphics workflows vertically from request through result, failure, recovery, and settlement |
 
@@ -38,6 +38,7 @@ Cross-module pages own the *join*. They must name what each participant contribu
 | [Graphics Feature Coverage Matrix](GraphicsCoverageMatrix.md) | Renderer, RHI, shaders, tools, and product selectors | comparing feature coverage horizontally across backends and paths |
 | [Graphics Feature Execution Traces](FeatureExecutionTraces.md) | Application, GameFramework, Renderer, RHI, ShaderCompiler | tracing selected features vertically from producer to consumer |
 | [Performance Diagnostics](PerformanceDiagnostics/README.md) | Core, Platform, Application, Editor, Renderer, RHI, and external tools | entering the feature dossier for its architecture, capability, plan, research, and local completion contract |
+| [Graphics Portfolio Evidence](GraphicsPortfolio/README.md) | product, content, Renderer/RHI, study, neural and evidence owners | joining existing immutable evidence into case packages, reproduction and conditional transfer/contribution cards |
 | [Strategy Coverage](StrategyCoverage.md) | all inventoried modules | reconciling module inventories with persona, roadmap, and gap requirements |
 | [Feature Documentation Coverage](FeatureDocumentation/README.md) | all strategy, acceptance, plan, research, and Architecture owners | auditing every named source document and stable target/report identifier back to one feature dossier |
 

@@ -6,6 +6,8 @@
 
 Use only the sections that answer a real reader question. A compact feature may combine sections; an exact generated/reference ledger may skip the overview pattern when its index already provides it.
 
+Apply [Reading Order And Detail](../DocumentationOrganization.md#reading-order-and-detail): short purpose and useful action first, a few question-based routes on a long page, and optional audit detail after the explanation. Keep required limits and failure conditions visible.
+
 ````markdown
 # Descriptive Feature Or System Name
 
@@ -83,10 +85,15 @@ Separate implemented source shape from build, runtime, visual, native-validation
 
 ## Reference
 
-- Capability IDs and exact inventory.
-- Primary source/build routes.
-- Feature-local acceptance and evidence-plan links.
-- Related concepts and next/previous reading.
+Keep direct links to the source/build owner, feature-local acceptance and related reading here. For a substantial optional audit, use:
+
+<details>
+<summary>Expand source and identifier audit</summary>
+
+Exact capability IDs, source paths and correspondence tables. Preserve the full
+content; this block does not replace visible support limits or proof conditions.
+
+</details>
 ````
 
 Before using the structure, apply the [feature depth test](../DocumentationOrganization.md#feature-depth-test). Do not retain a heading with generic filler, and do not duplicate family-wide flow in every leaf; show the leaf's distinct decision, state, failure, and evidence boundary.

@@ -154,7 +154,7 @@ Execute Color Grading Stage 0 only. Resolve CGRD-01 through CGRD-12, complete CG
 
 **Goal:** close `FCR-REN-25` with independently accepted chromatic-aberration and basic-vignette results. `CHRD-00` owns the chromatic stage/domain/units; the Vignette dossier owns its separate freeze.
 
-Also deliver [Basic Vignette](../Features/PostProcessing/DisplayPipeline/Vignette.md) through its small local freeze/formula/settings/order checks. CHRD-00 authorizes chromatic work only; it cannot accept or implicitly choose vignette semantics. The family exits only when both independent feature results pass on D3D12/Vulkan with neutral-work erasure and raw/debug/UI isolation. Keep each feature's state/parameters local and compose through the existing display/typed-graph seam.
+Also deliver [Basic Vignette](../Features/PostProcessing/DisplayPipeline/Vignette/README.md) through its small local freeze/formula/settings/order checks. CHRD-00 authorizes chromatic work only; it cannot accept or implicitly choose vignette semantics. The family exits only when both independent feature results pass on D3D12/Vulkan with neutral-work erasure and raw/debug/UI isolation. Keep each feature's state/parameters local and compose through the existing display/typed-graph seam.
 
 **Non-goals:** production work before `CHRD-00` passes, or silently expanding beyond the exclusions ratified there.
 
@@ -170,11 +170,7 @@ Also deliver [Basic Vignette](../Features/PostProcessing/DisplayPipeline/Vignett
 Execute Chromatic Aberration Stage 0 only. Resolve CHRD-01 through CHRD-10, complete CHR-EXP-01 through CHR-EXP-06, and record the reviewed CHRD-00 disposition in the feature-local Discovery document. Reconcile the dossier, semantics, architecture, conditional plan, DSP-6, and FCR-REN-25 with the accepted decisions. Do not change production code, shaders, settings, build membership, generated surfaces, or candidate evidence while CHRD-00 remains Blocked.
 ```
 
-The separate vignette discovery prompt is:
-
-```text
-Execute only the freeze step in Features/PostProcessing/DisplayPipeline/Vignette.md. Inspect the existing display-domain/product, settings/persistence/presenter and typed-graph owners. Freeze formats, extents, coordinates, mask formula, linear/HDR placement, alpha/raw/debug/UI bypass, validated control names/defaults, numerical tolerances and pass-cost limits before candidate results. Record one authority and the justified integration-hook/deletion ledger. Map AC-VIG-01 through AC-VIG-06 and FM-VIG-01 through FM-VIG-03 to concrete both-backend check cards. Preserve separate CHRD-00 decisions and the 49-family registry. Do not change production code or claim acceptance. Handoff only the remaining feature-local implementation slice after all decisions are concrete.
-```
+The separate vignette freeze/stage cards and prompt live in the [feature-local plan](../Features/PostProcessing/DisplayPipeline/Vignette/Plan.md). DSP-6 composes the two independently proved results; it does not maintain a second vignette delivery sequence.
 
 ## `DSP-7` — HDR10 Display Output
 

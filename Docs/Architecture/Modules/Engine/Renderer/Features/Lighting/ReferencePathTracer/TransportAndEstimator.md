@@ -441,6 +441,9 @@ The numeric review additionally uses binary32-representable large-offset/small-v
 
 `PTD-00-R0` freezes the candidate correspondence; Stages 2–6 bind the symbols to exact types/functions and retained checks after authorization. No row may remain “implicit in shader code.”
 
+<details>
+<summary>Expand equation-to-code ledger</summary>
+
 | ID | Required implementation correspondence | Minimum falsifier |
 | --- | --- | --- |
 | `MATH-01` | Camera snapshot, film sample, raster/film mapping, ray generation, crop/filter weight. | Center/edge/corner/subpixel rays and constant-radiance pixel integral. |
@@ -455,9 +458,14 @@ The numeric review additionally uses binary32-representable large-offset/small-v
 | `MATH-10` | Complete-prefix mean/M2/count, batch merge, standard error, overflow, checkpoint. | Adversarial large-mean/small-variance sequence against higher precision. |
 | `MATH-11` | Reconstruction/transform error bounds, geometric-normal offset, endpoint interval. | Scale/translation/shear/mirror/grazing/coplanar/thin-gap matrix. |
 
+</details>
+
 ### Stage-3 Source Correspondence
 
 This working-tree binding records where the deliberately narrow `FinitePathDiagnostic(2)` candidate implements the accepted terms. It is not runtime, GPU, statistical, backend-parity, or reference-authority evidence. Stage 3 is **IMPLEMENTED / VALIDATION DEFERRED**: the real raw output cases remain required for final evidence acceptance, but their deferral does not stop subsequent implementation.
+
+<details>
+<summary>Expand stage-3 source correspondence</summary>
 
 | Contract | Shared mechanism | Reference-specific binding | Current limit |
 | --- | --- | --- | --- |
@@ -468,9 +476,14 @@ This working-tree binding records where the deliberately narrow `FinitePathDiagn
 | finite `MATH-07` | `PathTracer::TryAddRadiance` owns `L <- L + beta*Li`; `Lighting/Sky.hlsli::SampleSkyRadiance` owns directional environment evaluation. Both are consumed by Reference and the current optimized path route. | The Reference pass calls both shared operations directly. The last admitted surface evaluates shared-surface `EmissiveColor` before Reference finite-depth termination. | Environment maps are evaluated only on BSDF-path misses; no environment NEE, general light NEE, or MIS exists yet, so this cannot be presented as `SurfaceTransportReference` or the completed finite product. |
 | invalid and traversal adapter | Shader metadata requests inline ray query and acceleration-structure support only. Generic RHI shader-float64 publication remains available to unrelated shaders and is not consumed by this feature. | Invalid camera/sample/material/PDF/normal/radiance produces a non-finite in-memory result rather than black. Continuation currently uses an explicit provisional `0.001 m` geometric-normal offset only to exercise the second segment. | Robust endpoints remain `MATH-11`/Stage 5 work; the provisional adapter is not accepted robustness evidence. |
 
+</details>
+
 ### Stage-4 Source Correspondence
 
 This binding supersedes the Stage-3 working-tree correspondence for the current source candidate. Stage 4 is **IMPLEMENTED / VALIDATION DEFERRED** against source input `ae5bf882fe83b110ed07541a10e3435ded2c650c` plus the uncommitted Stage-4 tree. It records equation ownership and code review only: no current-candidate shader compile/cook, GPU hand case, independent replicate, white-furnace sweep, controlled fault, backend comparison, or runtime result has passed.
+
+<details>
+<summary>Expand stage-4 source correspondence</summary>
 
 | Contract | One production owner and exact factor binding | Reference-only composition | Deferred acceptance boundary |
 | --- | --- | --- | --- |
@@ -483,9 +496,14 @@ This binding supersedes the Stage-3 working-tree correspondence for the current 
 | `MATH-08` | `PathTracer::ApplySurvivalCompensation` owns division by the supplied probability and is shared with optimized `PathSampling`. | After the third completed scatter, the Reference integrator applies the frozen RGB maximum, `0.05/0.95` bounds, explicit ties-to-even 24-bit threshold, `J>=T` decision, and exact induced `q=T*2^-24`. The default product has no deterministic depth cutoff; attempting surface vertex 4097 after the admitted 4096-vertex prefix writes an invalid result. A nonzero `FinitePathDiagnosticSurfaceVertices` remains a separately named deterministic diagnostic product and evaluates emission plus NEE at its last vertex. | Tail-mean, exact-threshold, missing-compensation, hard-cap, and safety-failure GPU cases remain unrun. |
 | `CORE-RPT-4` | Shared changes are confined to `Common/Random`, `Lighting/LightSampling` and `Sky`, and `RayTracing/PathSurface`, `RayTracingPathSample`, `RayTracingHitData`, `PathBsdf`, `PathLightSampling`, `PathVisibility`, `PathTracer`, `PathSampling`, and the canonical hit-to-path adapter. Scene construction publishes the reusable emission-membership bit once. `PathSampling`/`PathLighting` remain real optimized consumers; their former duplicate diffuse/specular/roulette operations are deleted. | Only the feature-local sample/dimension identity, admitted light-set ordering/PMF, direct-light/emission/environment MIS composition, Reference transport loop/termination, shader binding, committed display, and finite/full-product selection remain inside the feature capsule. The compute entry contains only dispatch, canonical camera sampling, integrator invocation, and shared accumulation. No shared owner contains Reference target, dimension ledger, list-order/PMF policy, termination, evidence, cache, denoiser, or ReSTIR policy. | Current optimized and Reference consumers have not been compiled or GPU-exercised after the shared move; `CHK-RPT-19` therefore remains validation-deferred rather than passed. |
 
+</details>
+
 ### Stage-5 Source Correspondence
 
 This binding supersedes the Stage-3/4 material and endpoint limits for the current source candidate. Stage 5 is **IMPLEMENTED / VALIDATION DEFERRED** against committed source `3b41476f04968e5affc1f5300efaa39252d6ee4a` plus the current scoped alignment follow-up. It records source ownership and equation correspondence only; no shader compile, cook, GPU matrix, backend comparison, or numerical conservatism result has passed.
+
+<details>
+<summary>Expand stage-5 source correspondence</summary>
 
 | Contract | Canonical shared owner | Reference binding | Deferred acceptance boundary |
 | --- | --- | --- | --- |
@@ -493,6 +511,8 @@ This binding supersedes the Stage-3/4 material and endpoint limits for the curre
 | Alpha, sides, normals, emission, and analytic-light units | `RayTracingMaterialAlpha.hlsli` evaluates deterministic coverage from canonical UV0, vertex color, material, and texture records without pulling deformation or previous-frame buffers into visibility-only consumers. The same operation rejects uncovered emissive-triangle NEE samples, preserving agreement with alpha-aware BSDF-hit emission. Candidate traversal stores no sampled-alpha/cutoff/history telemetry. `RayTracingEvaluatedTriangle.hlsli` is the one current morph/skin evaluator for hit and emissive-triangle geometry, with previous-snapshot evaluation invoked only by the GBuffer motion-vector consumer. `RayTracingMaterialHit.hlsli` uses traversal front-face plus two-sided material state, preserves separate geometric and shading normals, and rejects an opposite-hemisphere mapped normal rather than altering it. `LightSampling.hlsli` converts positive-chromaticity photometric RGB directly and treats exact zero luminance as the legitimate zero-radiance case; it does not introduce a small denominator clamp into reference light energy. | Reference traces through the shared alpha-aware query, converts the canonical hit surface to `RayTracingPathSurface`, uses geometric normals for visibility/endpoints and shading normals only through the shared BSDF, and weights textured emission through the existing MIS route. | Alpha/sidedness/mirror/normal-map/deformation, analytic-light units, and emission sampling-versus-hit GPU cases remain unrun. Excluded blend, transmission, subsurface transport, media, and animation-time integration still require Stage-6 preflight rejection before sample zero. |
 | `MATH-11` | `RayEndpoints.hlsli` owns NVIDIA's candidate `c0=2^-24`, `c1=3*2^-24`, and `c2=2*2^-24`; `precise` base-vertex-last reconstruction and translation-last world transformation; scalar maximum triangle extent; row-vector object/world and world/object traversal bounds; inverse-transpose object-space geometric-normal projection; canonical camera interval; infinite continuation; and source-dependent target error for shortened finite connection rays with unnormalized traversal direction and `TMax=nextafter32(1,-Inf)`. This preserves traversal-facing orientation under mirrored instance transforms, unlike a cross product of transformed world edges. Emissive triangle samples carry a source-independent projected offset plus traversal sensitivity because the exact target bound cannot be computed before the connection source is known. `MeshInstanceData` publishes one inverse-world matrix and derives its inverse transpose from that same value. | Reference passes the shared surface position/geometric normal/error bound to shared continuation and visibility operations. It owns no epsilon, bias, grazing multiplier, `MinT`, or distance cutoff. The optimized path consumer calls the same continuation operation but its GBuffer-reconstructed primary-position uncertainty is not NVIDIA triangle-bound evidence and has no Reference authority. | The constants are NVIDIA-RTX-specific candidates. Re-derivation against actual BLAS vertex formats and D3D12/Vulkan compiler/hardware behavior plus the full scale/translation/rotation/nonuniform-scale/shear/mirror/grazing/coplanar/thin-gap matrix remains mandatory. |
 | `CORE-RPT-5` | Evaluated geometry, material decode, alpha, path surface, emissive sampling, and endpoints each have one RayTracing/Material owner. Ray-traced GBuffer, direct shadows, optimized ReSTIR indirect, and Reference consume the changed ABI/bindings. The former static-opaque hit-to-path adapter and tunable shared path-ray settings are deleted. | The feature capsule retains only estimator ordering, stable light list/PMF, sampler dimensions, product selection, and invalid-result consequence. | All affected GPU consumers remain uncompiled/unexercised in this handoff; `CHK-RPT-19` is deferred, not passed. |
+
+</details>
 
 ### NVIDIA And Epic Correspondence Audit — Estimator And Surface Slices
 

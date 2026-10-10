@@ -151,6 +151,9 @@ These are candidate directions, not accepted policy. Discovery may replace them,
 
 This table is the single feature-surface mapping. Companion documents own the details named in their columns; none may introduce an unmapped surface.
 
+<details>
+<summary>Expand cross-document traceability</summary>
+
 | Surface | Discovery | Research | Semantics | Architecture/UX | Plan | Acceptance / failure / check | Result |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | neutral and parameter grade | `CGRD-01` through `05` | `CGR-REF-OCIO-01`, `CGR-REF-FIL-01` | `CGR-MATH-01` through `04` | View request/digest; neutral omission and reset UX | Stages 1-2 | `AC-CGR-01/02`; `FM-CGR-01/03`; `CHK-CGR-01/02/04` | `FCR-REN-24` |
@@ -160,6 +163,8 @@ This table is the single feature-surface mapping. Companion documents own the de
 | authoring, persistence, two-view state | `CGRD-09/11` | View/activation precedent | `CGR-MATH-03/09` | generation/state owner and full experience contract | Stage 5 | `AC-CGR-04/06/08`; `FM-CGR-02/04`; `CHK-CGR-04/06` | `FCR-REN-24` |
 | backend, capture, package, cost | `CGRD-10/12` | evidence precedent only | `CGR-MATH-08/10` | product/artifact/package identity | Stage 6 | `AC-CGR-05/07/08`; `FM-CGR-05`; `CHK-CGR-02/04/05/06` | `FCR-REN-24` |
 | exclusions | `CGRD-01` | rejected-transfer ledger | no semantic rules | absent selectors/types/workflows | all stages preserve | `AC-CGR-08`; `FM-CGR-04`; `CHK-CGR-06` | `FCR-REN-24` |
+
+</details>
 
 ## Evidence And Source Audit
 

@@ -54,7 +54,7 @@ If an implementation needs a vendor name, native handle, swapchain image, or API
 - Renderer-wide policy branches on neutral capability, not vendor or driver identity.
 - A vendor fast path retains a correct neutral fallback and does not redefine the public feature contract.
 - Future hardware remains a measured hypothesis behind existing capability seams until evidence exists.
-- Linux support requires native configure/build/run, Vulkan validation, capture/debug, package, and shutdown evidence.
+- The selected host is Windows for both D3D12 and Vulkan. Linux support is excluded; Vulkan availability does not establish another host platform.
 
 ## RHI Review Questions
 

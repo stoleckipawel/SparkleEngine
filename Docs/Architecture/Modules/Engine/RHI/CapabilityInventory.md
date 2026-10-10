@@ -23,6 +23,12 @@
 
 **Current readiness:** **45/100** across the tracked RHI portfolio; this ledger proves source coverage only and adds no verification or delivery credit. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#rhi-and-gpu-execution).
 
+## Read This Page
+
+- **Learn the backend contract:** Start with the [RHI overview](README.md) and [feature guide](Features/README.md).
+- **Compare exact coverage:** Use a heading or `RHI-*` ID below. Neutral, D3D12 and Vulkan cells are separate claims.
+- **Find the next proof:** The [capability evidence map](../../CapabilityEvidencePlan.md#rhi-capability-to-evidence-map) owns pending checks.
+
 ## Module Documentation
 
 | Reader need | Owner |

@@ -6,6 +6,11 @@
 
 **Scope:** implemented repository structure, target boundaries, runtime and tool flows, project catalog, and current source-evidence limits
 
+## Read This Page
+
+- **Find an owner:** [Repository layout](#repository-at-a-glance) and [module boundaries](#build-and-module-boundaries).
+- **Follow a workflow:** Use the runtime and tool flows below, then open the owning module for its details.
+
 ## Intent And Authority
 
 This is the shortest current route through the repository. It names implemented owners and executable build boundaries without duplicating their detailed contracts. Code and build configuration remain the authority for implementation. Recheck the named paths when a change moves an owner or target.

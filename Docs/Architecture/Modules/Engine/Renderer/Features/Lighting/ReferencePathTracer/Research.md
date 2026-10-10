@@ -71,6 +71,9 @@ Empirical tests can falsify a derivation or implementation, but cannot prove mat
 
 The sources below are precedent, not Sparkle authority. Every link is pinned to the inspected revision. The `NV-*` IDs are stable citations for the [eventual feature acceptance contract](README.md); they say how a reference may be used and what it cannot prove.
 
+<details>
+<summary>Expand primary nvidia reference ledger</summary>
+
 | ID | Pinned implementation reference and verified behavior | Approved use in Sparkle discovery/evidence | Must not be inferred |
 | --- | --- | --- | --- |
 | `NV-FAL-PT` | Falcor [`PathTracer` guide](https://github.com/NVIDIAGameWorks/Falcor/blob/eb540f6748774680ce0039aaf3ac9279266ec521/docs/usage/path-tracer.md#overview), [`PathTracer.cpp`](https://github.com/NVIDIAGameWorks/Falcor/blob/eb540f6748774680ce0039aaf3ac9279266ec521/Source/RenderPasses/PathTracer/PathTracer.cpp), and [`PathTracer.slang`](https://github.com/NVIDIAGameWorks/Falcor/blob/eb540f6748774680ce0039aaf3ac9279266ec521/Source/RenderPasses/PathTracer/PathTracer.slang) expose one render-pass owner for the estimator, per-lobe bounce limits, BSDF sampling, NEE, emissive/environment MIS, Russian roulette, alpha/shading-normal controls, linear radiance, ray/path counters, and optional denoiser guides. Progressive accumulation composes through a separate `AccumulatePass`, and the render graph connects the passes. The primary hit still comes from a V-buffer. | Use as the full estimator/feature checklist, cohesive-pass and explicit-composition precedent, and—only after scene equivalence is proved—an external image oracle. Trace its exact configuration and V-buffer dependency. | Falcor's plugin/graph architecture is not a reason to add a Sparkle plugin framework, and its “unbiased” label does not prove Sparkle's estimator, primary visibility, material equivalence, convergence, or full infinite-path integral. |
@@ -86,9 +89,14 @@ The sources below are precedent, not Sparkle authority. Every link is pinned to 
 | `NV-RTG2-REF` | The pinned [Ray Tracing Gems II chapter-14 reference path tracer](https://github.com/boksajak/referencePT/blob/c949ad2b854ea2e982dd50aab889131fd1ffd0d7/shaders/PathTracer.hlsl) uses an intentionally compact camera-ray HLSL core with next-event estimation, MIS, Russian roulette, robust ray offset, progressive accumulation, and glTF scene input. | Use as an independently reviewable event-flow and hand-trace precedent between Falcor Minimal and full Falcor/RTXPT. Its compactness is useful for finding where contribution and PDF terms enter. | Its combined accumulation/tone-map output, scene conventions, fixed implementation choices, and chapter-sample status do not define Sparkle artifacts, feature breadth, or correctness thresholds. |
 | `NV-LICENSE` | The inspected [Falcor](https://github.com/NVIDIAGameWorks/Falcor/blob/eb540f6748774680ce0039aaf3ac9279266ec521/LICENSE.md), [OptiX Applications](https://github.com/NVIDIA/OptiX_Apps/blob/f17c24d16936112cf4cb87dbd0109ba360cdfb51/LICENSE.md), [self-intersection sample](https://github.com/NVIDIA/self-intersection-avoidance/blob/5a5c45bc61aca5d095032860058481e0497350e0/LICENSE), and [RTXPT](https://github.com/NVIDIA-RTX/RTXPT/blob/f08d1c739071e0faad0c7c274d861124c511abab/LICENSE.txt) license files are not identical. | Keep this study reference-only. Any code, asset, binary, or redistribution use requires the release rights/provenance owner to review the exact dependency and obligations under `REL-01`. | Technical usefulness is not permission to copy, link, ship, or imply NVIDIA endorsement. This research is not legal approval. |
 
+</details>
+
 ## Primary AMD Reference Ledger
 
 AMD sources broaden the architectural comparison: Capsaicin supplies a modern D3D12 reference-tracer implementation with shared Inline/DXR semantics, Baikal supplies a historical wavefront and product-workflow counterexample, RadeonRays isolates traversal from rendering policy, and Radeon ProRender distinguishes final from preview products. They are precedent, not Sparkle authority.
+
+<details>
+<summary>Expand primary amd reference ledger</summary>
 
 | ID | Pinned implementation reference and verified behavior | Approved use in Sparkle discovery/evidence | Must not be inferred |
 | --- | --- | --- | --- |
@@ -100,7 +108,12 @@ AMD sources broaden the architectural comparison: Capsaicin supplies a modern D3
 | `AMD-HIPRT-WF` | AMD's [HIPRT wavefront path-tracing paper](https://gpuopen.com/download/HIPRT-paper.pdf) separates ray intersection from shading into work queues/kernels to improve GPU utilization. | Retain as a measured-performance alternative if a correct megakernel fails accepted VRAM, TDR, or throughput budgets. | Wavefront scheduling adds queues, state, compaction, synchronization, and failure surfaces. It is not the correctness baseline and must not enter speculatively. |
 | `AMD-LICENSE` | The inspected [Capsaicin](https://github.com/GPUOpen-LibrariesAndSDKs/Capsaicin/blob/914b91596cd119eda85fbc1d3c7ee6ac391b1452/LICENSE), [Baikal](https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRender-Baikal/blob/2d5a5d0eb2092d75adf637bf6f381d7e9307e986/LICENSE.txt), and [RadeonRays](https://github.com/GPUOpen-LibrariesAndSDKs/RadeonRays_SDK/blob/c8890b96b1f976bedd2cd280cc170dff5d655e0a/LICENSE) license files are pinned separately; Radeon ProRender SDK terms require their own exact product-package review. | Keep this study reference-only and feed exact source/asset/binary use into `REL-01` rights/SBOM review. | Similar repository presentation or vendor ownership does not mean identical obligations, and this study is not legal approval. |
 
+</details>
+
 ## Primary Editor-Workflow Reference Ledger
+
+<details>
+<summary>Expand primary editor-workflow reference ledger</summary>
 
 | ID | Official product reference and observed behavior | Approved use in Sparkle discovery/evidence | Must not be inferred |
 | --- | --- | --- | --- |
@@ -110,6 +123,8 @@ AMD sources broaden the architectural comparison: Capsaicin supplies a modern D3
 | `REF-UE-PT-OPS` | Epic documents bounded dispatch sizing/flush controls for Windows watchdog resilience, bounce-compaction and SER as scene-dependent performance choices, high-resolution output, and a runtime Game Viewport toggle. | Adopt bounded GPU work quanta, capability-driven runtime reachability, and measurement-before-optimization. Keep manual save secondary to the live view mode. | Epic CVars, command-list policy, compaction threshold, SER, multi-GPU, Movie Render Queue, and screenshot workflow are not Sparkle architecture or required first-delivery mechanisms. |
 | `REF-UE-PT-MIRROR` | Unreal Engine 5.8 [release notes](https://dev.epicgames.com/documentation/en-us/unreal-engine/unreal-engine-5-8-release-notes) record a Path Tracer fix for geometric-normal orientation on negatively scaled instances. | Retain negative-determinant instances as a mandatory sidedness, geometric-normal, shading-normal, emission, and robust-endpoint case. | A matching symptom or fix note does not prove Sparkle has the same implementation or that the current correction is numerically accepted. |
 | `REF-UE-FRAME` | Epic's official Unreal Engine 5.8 [Graphics Programming Overview](https://dev.epicgames.com/documentation/en-us/unreal-engine/graphics-programming-overview-for-unreal-engine) identifies `FDeferredShadingSceneRenderer::Render` as the frame entry, static C++ pass ordering, Engine-to-Renderer calls through `IRendererModule`/`FSceneInterface`, per-frame `FSceneView`, Renderer-private `FViewInfo`, and cross-frame Renderer-private `FSceneViewState`. Runtime Engine [`EViewModeIndex`](https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/Engine/Engine/EViewModeIndex?application_version=5.5) includes Lit, Wireframe, Path Tracing, and visualization modes; [`FEngineShowFlags`](https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/FEngineShowFlags) is a lower-level ViewFamily customization layer. | Adopt the ownership lesson at Sparkle's current scale: one host-independent `RenderViewMode` crosses the viewport boundary; Editor owns presentation and interaction; immutable Renderer View owns the selected rendering fact; Renderer-private feature state stays private; the frame has one explicit composition point; RHI remains low-level mechanism. Defer lower-level show controls until they have independent production consumers. | Unreal retains broader Engine/ViewFamily, registry, string, and CVar infrastructure, so it is not evidence that Sparkle needs the same class breadth or flag catalog. Public documentation is not an inspection of licensed source bodies and does not prove that every Unreal path-tracer detail is ideally enclosed. Sparkle must not copy Unreal naming or private implementation by inference. |
+
+</details>
 
 ## Neutral Foundations And Independent Oracles
 
@@ -229,6 +244,9 @@ Those capabilities enter only if the frozen first-release transport domain or a 
 
 These rows describe the pre-clean-break source inspected for the original study, not the current implementation. Some named files were subsequently deleted; their old paths are retained only to explain why the former GBuffer-seeded authority was replaced. For the current route, use the [live source map](ExecutionArchitecture.md#live-source-route-and-product-boundaries). The historical rows are source-inspected (`S`) and unexecuted for this report.
 
+<details>
+<summary>Expand historical sparkle source baseline</summary>
+
 | Original route | Inspected pre-clean-break implementation | Consequence for discovery |
 | --- | --- | --- |
 | Selection | At the pinned research input, `Lighting.cpp` selected `LightingMode::ReferencePathTracer`, `RenderViewMode.h` and `ViewportTopPanel.cpp` exposed Lit/debug modes without the tracer, and `RenderingSettingsPanel.cpp` exposed the reference branch under global Lighting settings. Stage 1 has since retired that route; this row remains historical precedent evidence. | The old branch existed, but the public interaction was a separate lighting toggle rather than the required per-view mode immediately after Lit. Keeping both selectors would have created duplicate authority. |
@@ -243,6 +261,8 @@ These rows describe the pre-clean-break source inspected for the original study,
 | Limits | At the pinned research revision, the now-retired `ReferencePathTracerSettings.cpp` clamped 1-4096 samples per frame and 1-16 bounces; defaults were 64 SPP, 8 bounces, `NormalBias=0.01`, and `MaxDistance=100000`. | A deterministic path cap and distance cutoff define a truncated target unless the accepted claim says otherwise. They cannot be hidden behind the word “unbiased.” |
 | Backend/front end | The reference shaders are compute passes containing inline ray queries. The current [graphics matrix](../../../../../../CrossModule/GraphicsCoverageMatrix.md#end-to-end-feature-coverage) records no native RT-pipeline adapter and no non-ray fallback. | Discovery must decide whether one inline semantic route on both APIs is the intended Reference Path Tracer product or whether another traversal route is required. Traversal choice is separate from estimator correctness. |
 | Output | Common composite, sky, exposure, upscale, debug, tone-map, encode, and present continue after reference accumulation; the workload calls for high-sample comparisons. | The raw linear estimator needs its own export/provenance boundary so post-processing cannot contaminate oracle comparisons. |
+
+</details>
 
 ## Initial Missing-And-Unknown Ledger
 

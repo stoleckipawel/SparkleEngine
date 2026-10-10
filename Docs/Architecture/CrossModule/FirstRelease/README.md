@@ -2,34 +2,30 @@
 
 **Status:** release implementation orchestrator; ordered work, not implementation evidence or release approval
 
-**Snapshot:** 2026-09-08 at committed `master` revision `ffe60e3a`; implementation source is unchanged from audited baseline `8414b5dc`; all 49 tracked feature families and all release gates remain `Blocked`
+**Historical basis:** 2026-09-08 release phase structure at `ffe60e3a`; current readiness/results come from the owners linked below. Planning responsibilities reconciled at `acf530742fc0f2a9e6cdcd9d27e1f88d9abccfff`; no new executable evidence.
 
-**Responsibility:** turn the [release roadmap](../../../Strategy/Roadmap.md) into bounded implementation iterations and route every first-release feature family to one detailed owner plan
+**Responsibility:** detail the release work selected by the [master Roadmap](../../../Strategy/Roadmap.md), provide bounded implementation prompts and route every first-release feature family to one owner plan
 
 **Acceptance authority:** [First Release Acceptance](../../../Acceptance/FirstRelease.md), [Feature Completion Reports](../../../Acceptance/FeatureCompletionReports.md), and feature-local Architecture `AC-*`/`FM-*`/`CHK-*`
 
 **Current state:** [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md)
 
 > [!IMPORTANT]
-> This plan tells an implementer **what to do next and when to stop**. It never changes a readiness score or acceptance verdict. A phase exits only through its named evidence; a release gate passes only in its acceptance owner.
+> Start with [Roadmap current/next](../../../Strategy/Roadmap.md#where-we-are-and-what-is-next) to select work. This plan details **how to execute the selected release phase and when to stop**. It never changes a readiness score or acceptance verdict. A phase exits only through its named evidence; a release gate passes only in its acceptance owner.
+
+## Read This Page
+
+- **Select the stage:** Use [Roadmap](../../../Strategy/Roadmap.md#where-we-are-and-what-is-next), then the [stage prompts](#stage-prompts).
+- **Find a feature owner:** Expand the [work-package registry](#feature-work-package-registry).
+- **Check the execution boundary:** Read [phase requirements](#phase-card-contract) and [stop conditions](#global-stop-conditions).
 
 ## Release Control At A Glance
 
-```mermaid
-flowchart LR
-    F0[FR-00<br/>scope and discovery] --> F1[FR-01<br/>identity and baseline]
-    F1 --> F2[FR-02<br/>package spine]
-    F2 --> F3[FR-03<br/>feature closure]
-    F3 --> F4[FR-04<br/>release maps]
-    F4 --> F5[FR-05<br/>performance and native proof]
-    F5 --> F6[FR-06<br/>candidate and adoption]
-    F6 --> F7[FR-07<br/>publish]
-    F7 --> F8[FR-08<br/>stabilize]
-```
+The [master Roadmap](../../../Strategy/Roadmap.md#ordered-delivery) supplies the global dependency graph. This page supplies the release-stage prompts and exact family routing below.
 
 | Start here when... | Open |
 | --- | --- |
-| deciding the one next release iteration | this orchestrator and its [stage table](#ordered-release-stages) |
+| deciding the one next iteration | [Roadmap current/next](../../../Strategy/Roadmap.md#where-we-are-and-what-is-next), then the selected [stage brief](#ordered-release-stages) |
 | closing Showcase, build, launcher, editor, package, or support | [Product And Delivery](ProductAndDelivery.md) |
 | closing Core, Platform, Tasks, World, content, shader, or tool behavior | [Foundation, World, And Content](FoundationWorldAndContent.md) |
 | closing neutral RHI, queues, backends, ray tracing, diagnostics, or device failure | [RHI And GPU Execution](../../Modules/Engine/RHI/FirstReleasePlan.md) |
@@ -38,7 +34,7 @@ flowchart LR
 
 ## Authority And Working Rule
 
-The [Roadmap](../../../Strategy/Roadmap.md) owns priority, admission, and `REL-*` gates. This plan owns execution order, prerequisites, stop conditions, and ready-to-use prompts. Architecture owns behavior and feature acceptance. The FCR registry owns report identity. Candidate artifacts own observed results. Do not copy an `AC-*`, `FM-*`, or `CHK-*` into a plan and edit it independently.
+The [Roadmap](../../../Strategy/Roadmap.md) owns global priority, admission and order across release and advanced work. This plan owns the selected release phase's local prerequisites, stop conditions and ready-to-use prompts; its stage table projects the Roadmap rather than choosing a second global order. Architecture owns behavior and feature acceptance. The FCR registry owns report identity; the release acceptance contract owns `REL-*` criteria/verdicts. Candidate artifacts own observed results. Do not copy an `AC-*`, `FM-*`, or `CHK-*` into a plan and edit it independently.
 
 Only one release-critical implementation iteration is active at a time. A second investigation may run only when it cannot modify, invalidate, or consume the same owner, candidate, content, or evidence surface. Every iteration follows [Change Lifecycle](../../../Engineering/Workflow/ChangeLifecycle.md), begins from the current revision and dirty state, and ends `PASS`, `BLOCKED`, `EXCLUDED`, or `SUPERSEDED`.
 
@@ -91,6 +87,9 @@ Cross-plan references are dependencies, not duplicate ownership. If the FCR regi
 
 This is the exact one-to-one execution assignment. The phase owns implementation order; the linked Architecture owner still owns behavior and acceptance.
 
+<details>
+<summary>Expand feature work-package registry</summary>
+
 | FCR | Primary phase | FCR | Primary phase |
 | --- | --- | --- | --- |
 | `FCR-PROD-01` | [`PD-1`](ProductAndDelivery.md#pd-1--runtime-and-editor-product-shells) | `FCR-PROD-02` | [`PD-2`](ProductAndDelivery.md#pd-2--source-build-cook-and-launcher) |
@@ -119,11 +118,15 @@ This is the exact one-to-one execution assignment. The phase owns implementation
 | `FCR-REN-24` | [`DSP-5`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-5--color-grading) | `FCR-REN-25` | [`DSP-6`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-6--chromatic-aberration-and-vignette) |
 | `FCR-REN-26` | [`DSP-7`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-7--hdr10-display-output) | — | — |
 
+</details>
+
 ## Ordered Release Stages
+
+This is the release-only route from the [master delivery table](../../../Strategy/Roadmap.md#ordered-delivery) to the prompts below. Select the next global piece there; revise both routes together if a release phase changes.
 
 | Stage | Roadmap gate | Goal | Phase exit |
 | --- | --- | --- | --- |
-| `FR-00` | `REL-00`, `PTD-00` | freeze first-release scope and settle the Reference Path Tracer discovery decision | scope/selector/package classifications are reviewable; `PTD-00` is `PASS` or the release is explicitly blocked/re-scoped |
+| `FR-00` | `REL-00`; preserve accepted `PTD-00` | freeze remaining release scope/preset/domain/rights decisions without restarting tracer discovery | approved scope and exact decisions/receipts; changed tracer contract cells are explicitly re-reviewed |
 | `FR-01` | `REL-01`, `REL-02` | establish identity, rights, prerequisites, and a trustworthy baseline | candidate identity, allowlists, clean baseline route, and failure records exist |
 | `FR-02` | `REL-03` | implement one manifest-owned build-cook-stage-verify-package spine | immutable staged tree and clean-machine package smoke satisfy the acceptance gate |
 | `FR-03` | `REL-04` | close all 49 included feature families through their owner plans | every included FCR has a candidate-bound verdict; no unclassified reachable feature remains |
@@ -295,4 +298,4 @@ Stop the current iteration when any of these is true:
 
 ## Explicitly Unscheduled Capabilities
 
-The first release does not automatically schedule geometry-cache animation, neural graphics, volumetric lighting, frame generation, native Linux, a binary SDK, an installer, a full CI/regression product beyond the approved deterministic release gates, or an internal performance-dashboard product. Their Architecture dossiers remain valuable negative/target contracts. Deferred decals, color grading, chromatic aberration, and HDR10 output are explicitly scheduled release blockers through `FCR-REN-23` through `FCR-REN-26`; their current score remains zero until implementation and evidence exist. Admit any other capability only by changing scope, adding/updating its FCR and feature-local acceptance, re-evaluating dependencies and risks, and invalidating affected release evidence.
+The first release does not automatically schedule geometry-cache animation, neural graphics, volumetric lighting, frame generation, native Linux, a binary SDK, an installer, a full CI/regression product beyond the approved deterministic release gates, or an internal performance-dashboard product. Linux is excluded from the roadmap. The other Architecture dossiers retain their negative/target contracts. Deferred decals, color grading, chromatic aberration, and HDR10 output are explicitly scheduled release blockers through `FCR-REN-23` through `FCR-REN-26`; their current score remains zero until implementation and evidence exist. Admit any other capability only by changing scope, adding/updating its FCR and feature-local acceptance, re-evaluating dependencies and risks, and invalidating affected release evidence.

@@ -141,6 +141,9 @@ These are discovery candidates. A changed choice must update semantics, architec
 
 ## Cross-Document Traceability
 
+<details>
+<summary>Expand cross-document traceability</summary>
+
 | Surface | Discovery | Research | Semantics | Architecture / UX | Plan | Acceptance / checks | Result |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | model and controls | `CHRD-01/03/04/05` | `CHR-REF-AMD-01/02`, `CHR-REF-UNITY-01/02/03` | `CHR-MATH-01/02/03/07` | View request/result and control contract | Stages 0-2/3 | `AC-CHR-01/02/03/05`; `CHK-CHR-01/03/04` | `FCR-REN-25` |
@@ -149,6 +152,8 @@ These are discovery candidates. A changed choice must update semantics, architec
 | selection/lifecycle | `CHRD-07` | activation precedent | `CHR-MATH-06/07/08` | settings/View/graph state and reset UX | Stages 1/3 | `AC-CHR-01/05/06`; `CHK-CHR-04` | `FCR-REN-25` |
 | backend/package/cost | `CHRD-09/10` | evidence and cost precedent | fixed semantic contract | support/evidence and reachability matrices | Stage 4 | `AC-CHR-07/08`; `CHK-CHR-03/05` | `FCR-REN-25` |
 | exclusions/artifact classification | `CHRD-01/08/10` | rejected-transfer ledger | no admitted rules | absent controls/assets/history; truthful labels | all stages | `AC-CHR-08`; `CHK-CHR-05/NEG-01` | `FCR-REN-25` |
+
+</details>
 
 ## Evidence And Source Audit
 

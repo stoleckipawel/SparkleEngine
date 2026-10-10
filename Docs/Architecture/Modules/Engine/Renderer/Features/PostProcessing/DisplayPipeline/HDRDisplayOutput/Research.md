@@ -28,6 +28,9 @@ The study separates standards, current platform guidance, revision-pinned implem
 
 ## Source Ledger
 
+<details>
+<summary>Expand source ledger</summary>
+
 | ID | Primary source | Question answered | Transfer limit |
 | --- | --- | --- | --- |
 | `HDR-REF-ITU-PQ` | ITU-R BT.2100-3 | what PQ/HLG HDR-TV signal parameters and transfer definitions are normative? | signal semantics only; no Sparkle scene/tone/target policy |
@@ -39,6 +42,8 @@ The study separates standards, current platform guidance, revision-pinned implem
 | `HDR-REF-VK-01` | `VK_EXT_swapchain_colorspace`, Vulkan Docs commit `f84d432d5b8912362f96f581f29bbc4f3c8c7843` | how is HDR10 color space enumerated and paired with a surface format? | API contract; extension presence is not local usable support |
 | `HDR-REF-VK-02` | Vulkan WSI surface/swapchain contracts at the same docs revision | when must surface capabilities/formats and swapchain state be re-evaluated? | mechanism/lifecycle; Windows display facts still require a platform owner |
 | `HDR-REF-VK-03` | `VK_EXT_hdr_metadata`, same docs revision and current manual | what does metadata set and what does it explicitly not control? | metadata semantics only; no guarantee of presentation-engine/display effect |
+
+</details>
 
 ## Completion Vocabulary
 

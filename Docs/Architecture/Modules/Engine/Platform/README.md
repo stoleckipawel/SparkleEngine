@@ -10,9 +10,9 @@
 
 **Evidence and disposition:** [Capability Evidence Plan](../../CapabilityEvidencePlan.md) and [First Release Acceptance Contract](../../../../Acceptance/FirstRelease.md)
 
-**Platform expansion route:** [Linux Platform Support](LinuxPlatformSupport.md) explicitly records that Vulkan-on-Windows is not a Linux product path and owns the target/exclusion contract.
+**Supported host:** Windows only. Linux support is excluded from the selected roadmap and has no delivery plan.
 
-**Current readiness:** **50/100** for the tracked Windows platform scope — Win32 window/input paths exist; lifecycle/runtime/package proof remains open and native Linux is separately **0/100**. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
+**Current readiness:** **50/100** for the tracked Windows platform scope — Win32 window/input paths exist; lifecycle/runtime/package proof remains open and other host platforms are excluded. See [Current Feature Readiness](../../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
 
 ## At A Glance
 

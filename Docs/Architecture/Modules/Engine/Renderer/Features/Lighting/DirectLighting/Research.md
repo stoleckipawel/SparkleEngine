@@ -98,6 +98,9 @@ DLSS Ray Reconstruction is already an optional adjacent route, but it cannot be 
 
 ## Current Sparkle Source Audit
 
+<details>
+<summary>Expand current sparkle source audit</summary>
+
 | Observation | Evidence | Implication |
 | --- | --- | --- |
 | four uniform initial candidates | `RestirReservoirCommon.hlsli`, `DirectLightReservoir.hlsli` | insufficient for uneven/dense light sets; exact current estimator still needs tests |
@@ -108,6 +111,8 @@ DLSS Ray Reconstruction is already an optional adjacent route, but it cannot be 
 | Inline/Pipeline visibility exists | `DirectShadowSignal.cpp` and shader routes | useful semantic boundary; parity unproved |
 | three full-resolution direct lobes | `LightingRenderTargets.cpp` | strong diagnostics but real bandwidth/memory cost must be measured |
 | no dedicated direct denoiser/confidence | inspected lighting passes | product stability path is incomplete |
+
+</details>
 
 The user's report that the current image is broken raises priority but does not identify which row is defective. The first implementation stage must capture raw lobe, reservoir, light identity, and visibility evidence on analytic fixtures before changing estimator constants.
 
@@ -182,6 +187,9 @@ SVGF demonstrates the classical structure of temporal accumulation, variance est
 
 ## External Source And Provenance Ledger
 
+<details>
+<summary>Expand external source and provenance ledger</summary>
+
 | Source | Observed fact used here | Permitted transfer | Forbidden inference | Provenance action before implementation |
 | --- | --- | --- | --- | --- |
 | ReSTIR DI paper[^1] | RIS reservoir and spatiotemporal direct-light reuse family | equations, experiments, failure hypotheses | current Sparkle reservoir conforms or inherits paper quality | cite paper/equation; independently derive and test code |
@@ -193,6 +201,8 @@ SVGF demonstrates the classical structure of temporal accumulation, variance est
 | DXR/Vulkan specs[^9][^10] | backend traversal semantics/capabilities | native validation matrix | frontend parity without execution | retain spec/version, backend/device/driver identity |
 | NRD `bf87718` and FidelityFX[^12][^13] | denoiser signals, guide and history precedents | interface comparison and optional provider study | correctness, license approval, or local quality | pin source, review license/notices, capture exact integration configuration |
 | advanced ReSTIR/VNDF/SVGF/shadow-map work[^15][^16][^17][^18][^19][^20] | targeted solutions and known failure pressures | A/B hypotheses after base conformance | mandatory inclusion or source-reported gains | citation first; code-bearing sources require separate rights review |
+
+</details>
 
 Git checks on 2026-09-12 confirmed `a6efab9` as RTXDI HEAD and `bf87718` as NRD HEAD. That verifies the mutable source identity used by this study, not suitability or license clearance for code transfer.
 

@@ -30,6 +30,9 @@ Every transferable finding below names a source ID. A source ID is precedent onl
 
 ## Source Ledger
 
+<details>
+<summary>Expand source ledger</summary>
+
 | ID | Primary source and frozen identity | Question answered | Transfer limit |
 | --- | --- | --- | --- |
 | `CGR-REF-OCIO-01` | OpenColorIO `CDLTransform` / `CDLStyle`, commit `5a808fb57a94c7229640a97835c420c9a1fbd1fe` | which SOP styles and negative-value choices exist? | precedent for explicit behavior, not an OCIO dependency or local working-space answer |
@@ -40,6 +43,8 @@ Every transferable finding below names a source ID. A source ID is precedent onl
 | `CGR-REF-FIL-02` | Filament `ColorGrading.cpp`, same commit | how are ordering, LUT creation, resource lifetime, and precision made concrete? | ownership/cost precedent; Filament output-domain placement is not adopted |
 | `CGR-REF-UNITY-01` | Unity Graphics `ColorLookup.cs`, commit `a7e4c051d256a781ab362c64316b125a1e104694` | which shape and activation checks precede LUT use? | validation precedent; not a volume-system requirement |
 | `CGR-REF-UNITY-02` | Unity Graphics `ColorGradingLutPass.cs`, same commit | how are authored settings, generated resources, and application separated? | pipeline-shape precedent; not proof of Sparkle ordering or correctness |
+
+</details>
 
 ## Completion Vocabulary
 

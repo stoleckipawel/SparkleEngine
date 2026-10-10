@@ -14,6 +14,12 @@
 
 **Current readiness:** **50/100** — the source-integrated shader route is substantial; candidate compiler/backend/ABI, failure, performance, package, and adoption evidence remains absent. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#foundation-world-content-shaders-and-tools).
 
+## Read This Page
+
+- **Understand the design:** [Decision summary](#decision-summary), [target shape](#target-shape) and [full lifecycle](#full-lifecycle).
+- **Author or trace a shader:** [Authoring experience](#proposed-authoring-experience), [cooked artifacts](#cooked-artifact-model) and [pipeline atlas](#end-to-end-shader-pipeline-atlas).
+- **Review a boundary:** [Ownership](#ownership-and-dependency-boundaries), [errors](#error-policy) and [completion contract](#feature-completion-contract).
+
 ## At A Glance
 
 | Current/reconciled foundation | Chosen architecture | Explicitly deferred or rejected |

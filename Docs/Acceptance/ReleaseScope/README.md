@@ -8,6 +8,12 @@
 
 **Authority:** [First Release Acceptance Contract](../FirstRelease.md#release-scope-freeze) owns the requirements and gate verdict. [Capability Dispositions](CapabilityDispositions.md) owns the row-level choices beneath this record. Architecture inventories describe implementation; neither a scope choice nor source presence accepts a feature.
 
+## Read This Page
+
+- **See the selected product:** [Decision summary](#decision-summary), [machine/API matrix](#product-and-supported-matrix) and [map proposal](#releasemapset).
+- **Make the next decision:** [Approval and next work](#approval-and-next-work) separates approved choices from unresolved ones.
+- **Inspect policy or provenance:** The compatibility, budgets and support sections define the promises; iteration records retain the decision history.
+
 ## Decision Summary
 
 The current proposal makes `v0.1.0` a portable Windows x64 `ShippingGame` Showcase demonstration with source-build instructions. The owner selected the existing laptop and then explicitly required reliable progressive reference tracing, realtime path tracing at >=30 FPS, complete DLSS/Ray Reconstruction, finished exposure/tone mapping, basic chromatic aberration/vignette, backend parity, a complete frame graph and principal-level whole-frame review. These are now Included obligations in the [acceptance owner](../FirstRelease.md#required-rendering-closure). Other product/map/support choices remain proposals; feature correctness and release acceptance are still unproved.

@@ -17,7 +17,7 @@
 | [Senior Graphics Shader Compiler Engineer, JR2024686](https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/Senior-Graphics-Shader-Compiler-Engineer_JR2024686) | Implement compiler components/optimizations, resolve cross-team problems, contribute to LLVM/DXC and SPIR-V standards/code generation. | `PGE-09/10`, `PGD-04/07`: source/bytecode/ISA lineage and a reduced compiler-facing case. A shader cooker is not a compiler backend. An actual compiler contribution remains a conditional specialization. |
 | [Neural Graphics Engineer, JR2013428](https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/Neural-Graphics-Engineer_JR2013428) | Connect trained models, rendering, shaders/runtime and practical C++/Python/ML tooling. | `PGD-06/07`: owned data/model, fixed operator lowering, conformance and measured inference. Vendor reconstruction integration does not prove training or kernel ownership. |
 | [Senior Developer Technology Engineer, Simulation Performance, JR2025157](https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/Senior-Developer-Technology-Engineer---Simulation-Performance_JR2025157) | Deliver durable performance improvements, numerical/parallel engineering and stewardship of consequential public software. | Secondary cross-check for maintenance and feedback in `PGD-08/09`. It does not add simulation/physics features to this rendering program. |
-| [Senior Software Engineer, Graphics Performance, JR2012523](https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/Senior-Software-Engineer--Graphics-Performance_JR2012523) | Maintain and optimize graphics-driver behavior on Linux, including Vulkan/OpenGL and compiler interactions. | Conditional `PGD-09` native Linux evidence. A Windows Vulkan capture cannot establish Linux driver or platform expertise. |
+| [Senior Software Engineer, Graphics Performance, JR2012523](https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/Senior-Software-Engineer--Graphics-Performance_JR2012523) | Maintain and optimize graphics-driver behavior on Linux, including Vulkan/OpenGL and compiler interactions. | External Linux driver expectation; excluded locally. Windows Vulkan cannot establish Linux driver or platform expertise. |
 
 These are neighboring but distinct careers. The primary persona is **rendering/developer technology with GPU-system depth**, strengthened by neural productization and developer tools. It is not a promise to become simultaneously a research scientist, compiler architect, driver author and tools principal. Adjacent roles define useful depth checks and honest gaps.
 
@@ -71,7 +71,7 @@ The requisition IDs join these records to the source table above. All eight desc
 
 **Observed expectations:** maintain and optimize Linux graphics-driver behavior, including Vulkan/OpenGL features and shader/compiler interactions. Performance engineering includes the platform and long-term correctness of the product, not just application-level graphics familiarity.
 
-**Local interpretation:** a native Linux build/run/capture is a conditional `PGD-09` breadth output. Windows Vulkan work can support API reasoning, but cannot establish Linux execution or driver implementation experience.
+**Local interpretation:** Linux delivery is excluded from the selected program. Windows Vulkan work can support API reasoning, but cannot establish Linux execution or driver implementation experience.
 
 ## Senior, Expert And Principal
 
@@ -106,4 +106,4 @@ Questions 1–7 refine the selected `PGD-*` outputs. Question 8 is the condition
 
 The required work remains three deep cases, three causal studies, one incident, one analysis consumer and one owned neural product. The stronger requirement is **traceability and transfer**: every selected example now has an exact source, purpose, existing feature owner, measurable local question and non-adoption boundary in [Rendering Reference Examples](RenderingReferenceExamples.md).
 
-For a compiler-specialist claim, native Linux claim, new GPU-driven pipeline or research publication claim, create a bounded separately reviewed extension only after the current gates permit it. Merely adding LLVM, OptiX, CUDA, mesh shaders or vendor extensions would not establish those capabilities.
+For a compiler-specialist claim, new GPU-driven pipeline or research publication claim, create a bounded separately reviewed extension only after the current gates permit it. Merely adding LLVM, OptiX, CUDA, mesh shaders or vendor extensions would not establish those capabilities.

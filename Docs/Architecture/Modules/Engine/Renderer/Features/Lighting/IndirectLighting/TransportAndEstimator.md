@@ -318,6 +318,9 @@ Wave compaction, half resolution, fused passes, compact replay, reciprocal neigh
 
 ## Equation-To-Code Ledger
 
+<details>
+<summary>Expand equation-to-code ledger</summary>
+
 | Contract | Intended owner | Check |
 | --- | --- | --- |
 | initial path/NEE/BSDF/MIS/emission | shared focused transport semantics plus Indirect initial generator | `CHK-IND-01` |
@@ -328,6 +331,8 @@ Wave compaction, half resolution, fused passes, compact replay, reciprocal neigh
 | environment generation/techniques | existing Sky/environment owner plus Indirect consumer | `CHK-IND-01`, `CHK-IND-03` |
 | rays/material/animation | shared ray/material owners through narrow semantic functions | `CHK-IND-01`, `CHK-IND-07` |
 | reconstruction | selected reconstruction owner | `CHK-IND-05` |
+
+</details>
 
 ## Ratification Checklist
 

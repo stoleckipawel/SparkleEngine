@@ -149,6 +149,9 @@ These are not accepted by appearing here. Discovery must update every affected s
 
 ## Cross-Document Traceability
 
+<details>
+<summary>Expand cross-document traceability</summary>
+
 | Surface | Discovery | Research | Semantics | Architecture / UX | Plan | Acceptance / checks | Result |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | scene-to-target/gamut/PQ | `HDRD-02/04/06` | `HDR-REF-ITU-PQ/2020`, `HDR-REF-DX-01` | `HDR-MATH-01` through `07` | Renderer transform generation and raw product UX | Stage 4 | `AC-HDR-02/03`; `FM-HDR-03`; `CHK-HDR-01/03/05` | `FCR-REN-26` |
@@ -158,6 +161,8 @@ These are not accepted by appearing here. Discovery must update every affected s
 | transitions/fallback | `HDRD-07/08/10/12` | Windows/output and native state precedent | generation consistency rule | transaction/state machine and recovery experience | Stages 1-3/5-6 | `AC-HDR-01/05/06/07`; `FM-HDR-02/04/05`; `CHK-HDR-02/04/05` | `FCR-REN-26` |
 | capture/measurement/support | `HDRD-11/12` | source limits and oracle ladder | artifact-domain rules | capture/support/workflow contract | Stages 5/7 | `AC-HDR-08`; `FM-HDR-06`; `CHK-HDR-03/05` | `FCR-REN-26` |
 | exclusions | `HDRD-01` | rejected-transfer ledger | no semantic rules | absent selectors/profiles/routes | all stages | negative/source/package audit | `FCR-REN-26` |
+
+</details>
 
 ## Current Negative Boundary
 

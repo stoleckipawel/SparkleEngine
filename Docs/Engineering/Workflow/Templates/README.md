@@ -8,10 +8,11 @@ Templates instantiate, but do not replace, [Documentation Organization](../Docum
 
 ## Choose A Template
 
-| Need | Template | Use it for |
-| --- | --- | --- |
-| One reader-facing page | [Documentation Page Template](Page.md) | A module overview, compact feature dossier, system concept, or task-oriented guide that has one coherent authority and lifecycle. |
-| A substantial feature from research through delivery | [Feature Delivery Documentation Package](FeatureDeliveryPackage.md) | A multi-document feature effort requiring explicit discovery, precedent, semantics, architecture, UX, staged prompts, failure handling, and completion evidence. |
+| What you are writing | Template and use |
+| --- | --- |
+| One reader-facing page | [Documentation Page Template](Page.md) — A module overview, compact feature dossier, system concept, or task-oriented guide that has one coherent authority and lifecycle. |
+| An admitted delivery route still needs concrete stages | [Remaining Work Plan](RemainingWorkPlan.md) — A small fillable plan with known inputs, unresolved owner decisions, stage/check cards and a first permitted discovery prompt. |
+| A substantial feature from research through delivery | [Feature Delivery Documentation Package](FeatureDeliveryPackage.md) — A multi-document feature effort requiring explicit discovery, precedent, semantics, architecture, UX, staged prompts, failure handling, and completion evidence. |
 
 Do not instantiate the larger package merely because it looks comprehensive. Use it when the feature crosses several durable knowledge roles or when a wrong result could be plausible enough to escape ordinary review. A smaller feature may combine roles under one dossier as long as authority, evidence, lifecycle, failure, and navigation remain explicit.
 

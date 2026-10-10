@@ -218,6 +218,9 @@ Filtered radiance does not feed back into GRIS weights, path throughput, targets
 
 ## External Source And Provenance Ledger
 
+<details>
+<summary>Expand external source and provenance ledger</summary>
+
 | Source | Observed fact used | Permitted transfer | Forbidden inference | Provenance action before code |
 | --- | --- | --- | --- | --- |
 | ReSTIR GI/GRIS papers[^1][^2] | path reuse, shift, generalized weighting, correlation framework | equations, terminology, hand/statistical tests | seed replay conforms or published quality transfers | cite exact equation/edition; independently implement and review derivation |
@@ -228,6 +231,8 @@ Filtered radiance does not feed back into GRIS weights, path throughput, targets
 | DDGI/Lumen/SHaRC/NRC[^10][^11][^12][^13][^20] | alternative product architectures | comparison dimensions and workload hypotheses | permission to ship parallel GI systems | code-bearing source requires commit/license/notices; otherwise citation only |
 | NRD `bf87718` and SVGF[^14][^18] | reconstruction input/history/failure precedent | provider/interface and motion-test design | raw estimator correctness or local quality | pin source; review license/notices; bind exact configuration and guides |
 | conditional RIS/MCMC[^15][^17] | conditional sampling and decorrelation pressure | future mathematical experiments | repair for an underived base estimator | exact paper citation and separate discovery decision |
+
+</details>
 
 Git checks on 2026-09-12 confirmed RTXDI `a6efab9`, ReSTIR PT `8d12332`, SHaRC `4e21b58`, and NRD `bf87718` as repository HEADs. This establishes source identity only.
 

@@ -6,7 +6,7 @@
 
 **Scope:** principal graphics direction for SparkleEngine
 
-**Current implementation snapshot:** **40/100** across 49 tracked feature families; all remain Blocked, with verification and delivery/adoption still zero. See [Current Feature Readiness](../Acceptance/CurrentReadiness.md).
+**Current progress:** use [Roadmap current/next](Roadmap.md#where-we-are-and-what-is-next) for the active piece and [Current Feature Readiness](../Acceptance/CurrentReadiness.md) for evidence-weighted scores. This summary owns the enduring vision.
 
 ## Decision
 
@@ -22,21 +22,6 @@ The engine should make it easy for a reviewer to answer:
 - Which path-tracing and neural features are real, supported, and measured?
 - What do CPU/GPU time, pacing, memory, quality, and failure behavior look like on declared workloads?
 - Can another engineer build, reproduce, understand, and adopt the result?
-
-## Authority
-
-This summary does not restate detailed contracts:
-
-- [A. Requirements](Requirements.md) owns `PGE-01` through `PGE-15` and evidence meaning.
-- [C. Gap Assessment](Assessments/GapAssessment.md) is the dated state assessment.
-- [F. Roadmap](Roadmap.md) owns sequencing and allocation.
-- [H. Engineer Persona](EngineerPersona.md) owns the operating model.
-- [Feature Delivery Catalog](FeatureDeliveryCatalog.md) makes the selected outputs and examples explicit; [Role Research](Research/README.md) records primary precedent. The roadmap orders work by evidence gates, without delivery dates or hour estimates.
-- [I. Acceptance Workloads](../Acceptance/GraphicsWorkloads.md) owns scene, quality, performance, and evidence gates.
-- The [Whole Repository Architecture Map](../Architecture/WholeRepositoryMap.md) routes system decisions and repository maps.
-- [Engineering guidance](../Engineering/README.md#choose-by-task) owns implementation and review rules.
-
-If this summary conflicts with an owning document, the owning document controls.
 
 ## Product Identity
 
@@ -79,7 +64,7 @@ Tier 1 claims require Tier 1 evidence. The renderer and content pipeline must re
 | P1 | Real neural graphics feature | bounded trained model/operator, deterministic artifact, optimized runtime inference, classical fallback, quality/performance frontier |
 | P1 | Technology transfer | narrow adoption surface, failure/fallback guide, reproducible demo, technical note, external or peer review |
 
-The [roadmap](Roadmap.md) owns the order and time budget. This table only states the durable outcome hierarchy.
+The [roadmap](Roadmap.md) owns global order and current/next work, without delivery dates or hour budgets. This table states the durable outcome hierarchy.
 
 ## Non-Goals
 
@@ -109,3 +94,18 @@ An external reviewer should not read the whole repository documentation:
 Sparkle succeeds when a skeptical engineer can reproduce a small number of meaningful results, trace their ownership from product input to GPU execution, understand the mathematics and tradeoffs, see exact backend and hardware evidence, and take over the code without receiving unwritten context.
 
 The strongest final signal is not repository size. It is that completed advanced work made the codebase easier to understand, validate, and extend.
+
+## Authority
+
+This summary does not restate detailed contracts:
+
+- [A. Requirements](Requirements.md) owns `PGE-01` through `PGE-15` and evidence meaning.
+- [C. Gap Assessment](Assessments/GapAssessment.md) is the dated state assessment.
+- [F. Roadmap](Roadmap.md) owns sequencing and allocation.
+- [H. Engineer Persona](EngineerPersona.md) owns the operating model.
+- [Feature Delivery Catalog](FeatureDeliveryCatalog.md) makes the selected outputs and examples explicit; [Role Research](Research/README.md) records primary precedent. The roadmap orders work by evidence gates, without delivery dates or hour estimates.
+- [I. Acceptance Workloads](../Acceptance/GraphicsWorkloads.md) owns scene, quality, performance, and evidence gates.
+- The [Whole Repository Architecture Map](../Architecture/WholeRepositoryMap.md) routes system decisions and repository maps.
+- [Engineering guidance](../Engineering/README.md#choose-by-task) owns implementation and review rules.
+
+If this summary conflicts with an owning document, the owning document controls.

@@ -215,6 +215,9 @@ These cases remain in semantic review even if automation later covers a larger c
 
 Stage 0 replaces each role description with the exact accepted current owner/symbol before production work.
 
+<details>
+<summary>Expand rule-to-code and evidence ledger</summary>
+
 | Rule | Intended implementation owner | Independent oracle/check | Seeded defect that must fail |
 | --- | --- | --- | --- |
 | `CGR-MATH-01` | Stage-0-selected View-prepared semantic constants and grade binding owner | manifest/capture semantic identity audit | mismatched working-space revision |
@@ -227,6 +230,8 @@ Stage 0 replaces each role description with the exact accepted current owner/sym
 | `CGR-MATH-08` | Stage-0-selected graph product/copy-contract owner | alpha sentinel, subrect, two-view capture | alpha transform or wrong product identity |
 | `CGR-MATH-09` | Stage-0-selected request/residency publication owner | delayed/reordered completion schedule | failed request labeled active identity |
 | `CGR-MATH-10` | Stage-0-selected presentation join owner | identical pre-tone grade capture under SDR/HDR | output profile changes grade semantics |
+
+</details>
 
 ## Common Mathematical Failure Points
 
