@@ -3,7 +3,6 @@
 BasedOnStyle: InheritParentConfig
 Language: Cpp
 
-ColumnLimit: 140
 ReflowComments: Never
 SpaceAfterCStyleCast: false
 

@@ -7,7 +7,7 @@ Language: Cpp
 Standard: c++20
 
 # Width and indentation.
-ColumnLimit: 140
+ColumnLimit: 200
 IndentWidth: 4
 TabWidth: 4
 UseTab: ForIndentation
@@ -50,6 +50,10 @@ BreakInheritanceList: BeforeColon
 BreakAfterReturnType: None
 PenaltyReturnTypeOnItsOwnLine: 1000
 BreakBeforeBinaryOperators: NonAssignment
+# Keep assignment and call heads together; wrap arguments after Function(.
+PenaltyBreakAssignment: 1000000
+PenaltyBreakBeforeFirstCallParameter: 0
+PenaltyBreakOpenParenthesis: 0
 BreakBeforeTernaryOperators: true
 AlignOperands: DontAlign
 Cpp11BracedListStyle: AlignFirstComment

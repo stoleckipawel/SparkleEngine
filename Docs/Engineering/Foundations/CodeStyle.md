@@ -26,7 +26,7 @@ Executable configuration wins for exact behavior. The accepted baseline is:
 - C++20 for owned engine targets;
 - Allman braces;
 - tabs for indentation at width four;
-- a 140-column formatting limit for C++ and shaders;
+- a 200-column formatting limit for C++ and shaders;
 - braces and multiline bodies for control flow;
 - left-bound pointers and references;
 - one item per line after a call, declaration, initializer, or long braced list wraps;
@@ -52,9 +52,11 @@ Two accepted source-format rules are outside clang-format alone and are canonica
 
 The repository entry point builds its manifest from tracked owned C++, headers, HLSL, and HLSLI under `Engine`, `Tools`, and `Projects`. It excludes only `Engine/RHI/Private/D3D12/ThirdParty`; build, artifact, generated, cache, and fetched-dependency trees are not tracked inputs.
 
+The Windows [batch entry point](../../../CMake/CodeStyle.bat) forwards arguments and the exit code to the existing [PowerShell implementation](../../../CMake/CodeStyle.ps1). Run from the repository root:
+
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File CMake/CodeStyle.ps1 -Mode Check
-powershell -NoProfile -ExecutionPolicy Bypass -File CMake/CodeStyle.ps1 -Mode Format
+.\CMake\CodeStyle.bat -Mode Check
+.\CMake\CodeStyle.bat -Mode Format
 ```
 
 The equivalent configured targets are `code_style_check` and `code_style_format`. Pass `-ClangFormatPath <path>` to the script, set `SPARKLE_CLANG_FORMAT`, or configure `SPARKLE_CLANG_FORMAT_EXECUTABLE`; every route rejects versions other than 22.1.3. For the default or `Cpp` check, pass `-ClangTidyPath <path>`, set `SPARKLE_CLANG_TIDY`, or configure `SPARKLE_CLANG_TIDY_EXECUTABLE`; the check requires clang-tidy 22.1.3 and verifies that [`.clang-tidy`](../../../.clang-tidy) is valid for that toolchain. The check also rejects namespace-end comments, anonymous namespaces, multiple inheritance, and shader attributes that share a line with their declaration or statement. Configuration verification does not analyze translation units: clang-tidy invocations and compiler targets remain the semantic diagnostic owners, and the format target does not substitute for compiling affected code.
@@ -86,6 +88,7 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 - Keep consecutive initialization or mutation of one record together.
 - Do not fragment one cohesive condition, expression, or initialization sequence with arbitrary whitespace.
 - Keep a declaration, call, assignment, return type, or signature on one line when it fits the configured limit and remains readable.
+- When a call initializer must wrap, keep the declaration, `=`, and call head through its opening `(` together, then put each argument on its own continuation line. Apply the same layout to assignment calls. The formatter strongly prefers this boundary; if the head itself exceeds 200 columns, shorten the expression or introduce a meaningful local rather than relying on assignment splitting.
 - When a call or aggregate wraps, group elements by meaning; avoid stair-step fragmentation of simple access, casts, names, and ternaries.
 - Apply readability whitespace while changing the surrounding logic; do not create repository-wide whitespace churn. `.clang-format` remains authoritative and preserves at most one consecutive empty line.
 
@@ -100,6 +103,18 @@ BindRenderSceneGpuBuffer(
 
 PublishRenderSceneResources(resources);
 ```
+
+For a call initializer that exceeds the limit as a complete statement, use this shape:
+
+```cpp
+const auto captureRequest = BuildCaptureRequest(
+    provider,
+    viewportIdentity,
+    presentationGeneration,
+    outputDirectory);
+```
+
+The 200-column limit leaves more complete expressions visible on wide displays. It does not replace meaningful names, semantic paragraphs, or the decomposition rules in [Module Ownership](ModuleOwnership.md).
 
 This rule follows the maintenance and big-picture readability rationale in the [Epic C++ Coding Standard](https://dev.epicgames.com/documentation/unreal-engine/epic-cplusplus-coding-standard-for-unreal-engine) and LLVM's [local-uniformity guidance](https://llvm.org/docs/CodingStandards.html). Sparkle's semantic paragraph rule is repository policy; the external documents are precedent, not additional formatting authorities.
 

@@ -6,6 +6,16 @@
 
 **Scope:** owned C++20 in `Engine`, `Tools`, and `Projects`, plus owned HLSL/HLSLI in `Engine/Assets/Shaders`
 
+## Width And Call-Initializer Amendment — 2026-10-10
+
+The current profile uses **200 columns** for owned C++ and shaders, replacing the original 140-column selection below. Wider displays should retain complete declarations and expressions when they fit; wrapping still uses one argument per continuation line.
+
+For a wrapped call initializer or assignment, keep `variable = Function(` on the opening line and break at the argument list. `PenaltyBreakAssignment: 1000000`, `PenaltyBreakBeforeFirstCallParameter: 0`, and `PenaltyBreakOpenParenthesis: 0` strongly prefer this layout alongside the existing bracket controls. These are formatter preferences, not an unconditional ban: a call head that itself exceeds the limit requires an authored readability decision. The option semantics are documented in the [LLVM 22 style reference](https://releases.llvm.org/22.1.0/tools/clang/docs/ClangFormatStyleOptions.html#penaltybreakassignment).
+
+The shader override inherits the root width instead of duplicating it. The tool remains pinned to 22.1.3; Allman braces, tabs, preserved include order, non-semantic formatting, and semantic paragraph rules remain in force. The [binding standard](../Foundations/CodeStyle.md#readability-rules) owns the current rule. The original ballot, comparisons, inventory, and migration evidence below remain dated evidence of the 140-column decision.
+
+This amendment changes configuration and guidance only. No source formatting was run for it. The existing [repository script](../../../CMake/CodeStyle.ps1) applies the owned tracked manifest when the user runs `-Mode Format`; it accepts `-SourceFamily Cpp` or `Shaders` for a narrower migration. Review shader changes through the shader acceptance gate below.
+
 ## Executive Summary
 
 Sparkle should adopt a deliberate Sparkle profile rather than copy one NVIDIA or AMD repository. The public vendor repositories do not share one style:
@@ -22,7 +32,7 @@ The accepted target is:
 - retain LLVM as the inheritance baseline, then explicitly set every behavior that affects Sparkle's visible style;
 - retain Allman braces, four-column tabs for indentation, indented namespaces and case labels, and left-bound pointers/references;
 - change access modifiers from the inherited `-2` offset to `-4`, eliminating the current two-space half-indent;
-- use 140 columns for both C++ and shaders;
+- use 200 columns for both C++ and shaders under the 2026-10-10 amendment;
 - retain one item per line once a call, declaration, initializer, or braced list wraps;
 - forbid multiple inheritance; retain conventional trailing commas only as defensive formatting for legacy input;
 - allow short in-class functions and short callback lambdas, while keeping all control-flow bodies and enums multiline;
@@ -35,7 +45,7 @@ The accepted target is:
 - use an inherited shader-subtree override because HLSL is parsed as C++ by clang-format, not as a native HLSL language;
 - format shaders only after a representative pilot passes DXIL/SPIR-V compile, reflection, and package-identity checks.
 
-The selected 140-column limit preserves SparkleEngine's established baseline and minimizes one-time wrapping churn. The 120-column comparison remains useful evidence but was not selected.
+The original 140-column selection preserved SparkleEngine's established baseline and minimized one-time wrapping churn. It is superseded by the 2026-10-10 amendment; the 120-column comparison remains historical evidence.
 
 ## Decision Boundary
 
@@ -45,9 +55,9 @@ Accepting the profile does not authorize an unreviewed whole-repository rewrite.
 
 ## Repository Evidence
 
-### Current enforced baseline
+### Baseline At The Original Decision
 
-The coding-style standard currently binds:
+At the original decision, the coding-style standard bound:
 
 - C++20;
 - Allman braces;
@@ -221,7 +231,7 @@ This table summarizes the accepted executable profile. The complete option spell
 | --- | --- | --- |
 | Tool | clang-format 22.1.3 | same tool |
 | Standard/parser | C++20 | C++ parser applied cautiously to HLSL/HLSLI |
-| Width | 140 | 140 |
+| Width | 200 under the 2026-10-10 amendment | inherit |
 | Indent | tabs, width 4 | inherit |
 | Braces | Allman | inherit |
 | Namespace/case/preprocessor | indent all/indent labels/indent before hash | inherit |
@@ -277,12 +287,11 @@ Most existing shader syntax is C++-like enough to format successfully, including
 
 Use `Engine/Assets/Shaders/.clang-format` with `BasedOnStyle: InheritParentConfig`. Override only:
 
-- `ColumnLimit: 140`;
 - `ReflowComments: Never`;
 - `SpaceAfterCStyleCast: false`;
 - `BreakAfterAttributes: Always` to record the intended own-line attribute convention, with a separate check because clang-format 22.1.3 does not enforce it for HLSL syntax.
 
-Preprocessor indentation, include preservation, Allman braces, tabs, namespace indentation, and one-per-line wrapping should remain shared unless the shader pilot demonstrates a concrete parser or readability problem.
+Width, preprocessor indentation, include preservation, Allman braces, tabs, namespace indentation, and one-per-line wrapping remain shared unless the shader pilot demonstrates a concrete parser or readability problem.
 
 ### Shader acceptance gate
 
