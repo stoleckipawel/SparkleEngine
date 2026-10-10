@@ -8,6 +8,8 @@
 
 ## Remaining Work At A Glance
 
+**Research use for the remaining recovery/proof:** the [reference cards](../../../../../../../Strategy/Research/RenderingReferenceExamples.md) pin Falcor `NVR-04`, Quake II RTX `NVR-05`, RTXPT `NVR-15` and production sampling `NVR-17`. Consult their raw-versus-reconstructed products, material/transport domains and integration failures to form a discriminating hypothesis for the earliest wrong Sparkle output. These related renderers are not automatically independent oracles; shared estimator ancestry can conceal a shared defect. Record exact assumption, local differences, rights and falsifier in the current recovery card. Preserve accepted `PTD-00-R1` semantics and unfinished analytic/native/adoption checks; do not replay delivered stages or admit vendor caches/SDKs.
+
 Start with the recovery route below. The ordinary per-view mode, alternate frame middle, session/accumulation, shared transport, automatic traversal, UI and manual publication route are source-delivered; do not restart their implementation. Close identified invalid-result/preflight defects and execute the deferred analytic, lifecycle, backend, UX and publication checks against one real candidate. Source delivery remains distinct from executable acceptance.
 
 Reuse valid prior proof and re-run invalidated cells. `REL-03`, release maps, support identities, all included GPU validation and independent adoption remain mandatory before release/package/oracle claims. The [readiness dashboard](../../../../../../../Acceptance/CurrentReadiness.md#renderer) remains the score owner.

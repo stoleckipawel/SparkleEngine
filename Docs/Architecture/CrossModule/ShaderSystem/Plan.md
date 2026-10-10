@@ -16,6 +16,12 @@
 
 **2026-10-10 remaining-work reconciliation:** source inspection at `ec3d59be9b3089652467d857524a2f2e439275b0` confirms semantic shader directories, virtual source identities, the canonical acceleration-structure binding, and removal of the named shadow/package duplicates. Those completed changes are not instructions to repeat. Retained phase numbers identify their contracts and evidence dependencies; source-present work is revalidated only for drift or a demonstrable discrepancy. Existing Phase 2/7/8 checkpoint evidence remains bounded; Phase 12 executable closure is still open.
 
+## Reference Use For Remaining Evidence
+
+[Pinned source and authored-work cards](../../../Strategy/Research/RenderingReferenceExamples.md) provide study locations for the remaining ABI, native-execution, provenance and adoption obligations. `NVR-01/06/13` motivate tracing one host parameter/binding through the actual pipeline, acceleration structure, recording, execution and retirement; `NVR-18/19` motivate matching optimized executed bytecode to source before attributing a shader limiter. Keep GPU Trace and frame capture as distinct activities.
+
+Record the exact selected source/file/assumption, current consumer, rights and falsifier in the existing phase control record. Retain compiler/version/options, source closure, cooked blob/hash, reflection/layout and native pipeline identity; a missing source correlation remains explicit. This does not authorize another compiler/RHI wrapper, replay completed migration work, change Shipping symbol policy or turn shader cooking into compiler-backend expertise. Any actual product repair still follows the existing phase/admission and boundary contracts.
+
 ## Delivery At A Glance
 
 ```mermaid

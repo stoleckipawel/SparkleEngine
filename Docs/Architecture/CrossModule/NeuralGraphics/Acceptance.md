@@ -24,6 +24,8 @@ Every gate is conjunctive. High image quality cannot compensate for unlicensed d
 
 ## Binary Criteria
 
+[NG-D0 discovery](Discovery.md) must freeze numeric conformance/quality tolerances, reference domain/uncertainty, split identity, repeat/sample/observer rules, latency/memory bounds and exact supported tuples before candidate results. This contract does not let implementation choose those values retrospectively. [Plan](Plan.md) maps the remaining stages to the existing criteria and checks below; it creates no candidate verdict.
+
 | ID | Criterion |
 | --- | --- |
 | `AC-NG-01` | One bounded user-visible graphics problem, tensor/data contract, output domain, supported matrix, classical fallback, and non-goals are frozen. |

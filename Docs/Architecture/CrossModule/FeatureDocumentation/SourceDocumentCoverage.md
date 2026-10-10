@@ -4,6 +4,17 @@
 
 **Scope:** every document and folder explicitly named by the refinement request, including feature targets that are absent from implementation
 
+## Strategy Delivery Planning Addendum
+
+This addendum routes the gate-based strategy refresh without redating the historical source audit. Plans and discovery pages below contain target work, not implementation or candidate results.
+
+| Source | Selected topics | Owning routes and boundary |
+| --- | --- | --- |
+| [Feature Delivery Catalog](../../../Strategy/FeatureDeliveryCatalog.md) | product trust, bounded reference, classical causal studies, incident/capture, Python analysis, owned neural data/model/shaders, evaluation/adoption and conditional platform breadth | [First Release](../FirstRelease/README.md), [Reference Path Tracer](../../Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md), [Workload Studies](../PerformanceDiagnostics/WorkloadStudies/README.md), [Python](../../Modules/Tools/PythonAutomationAndAnalysis.md), [Neural Graphics](../NeuralGraphics/README.md), [Linux](../../Modules/Engine/Platform/LinuxPlatformSupport.md); exact `PGD-*` routing is in [Stable Identifier Coverage](StableIdentifierCoverage.md#strategic-deliverable-outputs). |
+| [Principal Graphics Role Research](../../../Strategy/Research/PrincipalGraphicsRoles.md) | primary employer/technical precedent, retrieval limits and accepted/rejected transfer | Existing `PGE-*` owners; no new runtime feature or dependency is admitted by research. |
+| [Neural discovery](../NeuralGraphics/Discovery.md) and [plan](../NeuralGraphics/Plan.md) | one diffuse-indirect dataset/model/export/FP32/runtime/fallback/evaluation route | Existing NeuralGraphics training/runtime/acceptance owners; production waits for `NG-D0`, `REL-11`, `M3` and actual accepted reference. |
+| [Workload Studies plan](../PerformanceDiagnostics/WorkloadStudies/Plan.md) | one offline analysis consumer, three causal studies and one difficult incident | Workloads own schema/policy, Application owns existing live serialization, Tools owns analyzer; no second sampler/exporter or internal diagnostics gate bypass. |
+
 ## Acceptance Sources
 
 | Source | Feature topics audited | Architecture owner routes | Coverage disposition |
@@ -27,6 +38,8 @@
 | [Reference Path Tracer](../../Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md) | conditional staged delivery after `PTD-00`, including execution, artifact, workflow, parity, failure, and adoption slices | [Feature dossier](../../Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md), [Discovery](../../Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Discovery.md), and [Execution Architecture](../../Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/ExecutionArchitecture.md) | Covered; plan presence does not authorize production implementation before its gates pass. |
 
 ## Colocated Research
+
+The expanded [role-depth study](../../../Strategy/Research/GraphicsRoleDepth.md), [public engineer profiles](../../../Strategy/Research/GraphicsEngineerProfiles.md) and [pinned rendering cards](../../../Strategy/Research/RenderingReferenceExamples.md) extend strategic source coverage. Their what/where/why obligations route through [catalog exercises](../../../Strategy/FeatureDeliveryCatalog.md#research-informed-delivery-exercises) into existing Direct/Indirect discovery, Reference recovery, ShaderSystem, Neural discovery and Workload Studies. Conditional meshlet/DGC/platform work stays study-only. Affiliation confidence, exact source revisions and transfer limits remain in Strategy research; feature decisions and results stay in their owners.
 
 | Source | Feature topics audited | Architecture owner routes | Coverage disposition |
 | --- | --- | --- | --- |

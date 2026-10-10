@@ -25,6 +25,9 @@ The active direction is release-first: close, classify, prove, package, and publ
 - [A. Principal Graphics Engineering Requirements](Requirements.md) — canonical `PGE-*` capability and evidence target.
 - [F. Release-First Principal Graphics Roadmap](Roadmap.md) — current release sequence, work-in-progress limits, and stop rules.
 - [H. Advanced Graphics Engineer Persona](EngineerPersona.md) — target operating model and judgment standard.
+- [Feature Delivery Catalog](FeatureDeliveryCatalog.md) — nine concrete outputs, three headline cases, measurable evidence cards and owning feature plans; targets only.
+- [Principal Graphics Role Research](Research/README.md) — refreshed employer/technical primary sources and explicit transfer/retrieval limits, separate from the original archive.
+- [Rendering Reference Examples](Research/RenderingReferenceExamples.md) — twenty reusable source cards, twelve affiliation-qualified engineer profiles and role-depth research, mapped to the existing delivery outputs.
 - [Capability Coverage Crosswalk](../Architecture/CrossModule/StrategyCoverage.md) — dated source-backed mapping from current module capabilities to the persona, `PGE-*` requirements, roadmap release surfaces, and refreshed gap observations.
 - [Feature Documentation Coverage](../Architecture/CrossModule/FeatureDocumentation/README.md) — exact document and identifier routing from strategy/acceptance/plans/research to each owning Architecture dossier, including explicit absent targets.
 

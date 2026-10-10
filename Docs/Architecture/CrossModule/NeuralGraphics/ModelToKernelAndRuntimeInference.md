@@ -2,6 +2,8 @@
 
 **Status:** target capability dossier; no owned model lowering, generated kernel, or neural runtime was found
 
+[NG-D0 discovery](Discovery.md) must freeze the selected tensor/operator/ABI/lifetime and capability cells. [Plan](Plan.md) Stages 3–6 deliver fixed FP32 conformance, runtime, optional measured optimization and adoption; the plan does not create an implemented path.
+
 **Scope:** define the absent model-export, legalization, kernel-generation, runtime-execution, packaging, and completion-safe lifetime boundary
 
 **Owner:** future model compiler/export tool plus Assets, Renderer, RHI, and Build/Packaging delivery owners

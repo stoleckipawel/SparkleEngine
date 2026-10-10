@@ -9,6 +9,26 @@
 > [!TIP]
 > This file is a reverse-lookup ledger. Search for an `NS-*`, `PGE-*`, `REL-*`, `RISK-*`, `FCR-*`, `MAP-*`, or `CASE-*` identifier to find its Architecture owner. The link proves routing coverage, not implementation or acceptance.
 
+## Strategic Deliverable Outputs
+
+`PGD-*` are local outputs owned by the [Strategy catalog](../../../Strategy/FeatureDeliveryCatalog.md), not new product capability IDs. This table owns routing only; prerequisites, numeric thresholds and results remain in their respective authorities.
+
+| ID | Architecture owner routes |
+| --- | --- |
+| `PGD-01` | [First Release](../FirstRelease/README.md), [Build/Packaging](../../Modules/BuildAndPackaging/README.md) |
+| `PGD-02` | [Reference Path Tracer](../../Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md), Renderer/content owners reached by [Graphics Workloads](../../../Acceptance/GraphicsWorkloads.md) |
+| `PGD-03` | [Workload Studies](../PerformanceDiagnostics/WorkloadStudies/README.md), [Renderer](../../Modules/Engine/Renderer/README.md), [RHI](../../Modules/Engine/RHI/README.md) |
+| `PGD-04` | [External Capture](../PerformanceDiagnostics/ExternalCapture/README.md), [Workload Studies](../PerformanceDiagnostics/WorkloadStudies/README.md) |
+| `PGD-05` | [Python Automation And Analysis](../../Modules/Tools/PythonAutomationAndAnalysis.md), [Workload Studies](../PerformanceDiagnostics/WorkloadStudies/README.md) |
+| `PGD-06` | [Neural Training/Evaluation](../NeuralGraphics/TrainingAndEvaluation.md), [Discovery](../NeuralGraphics/Discovery.md) |
+| `PGD-07` | [Model To Kernel/Runtime](../NeuralGraphics/ModelToKernelAndRuntimeInference.md), [Shader System](../ShaderSystem/README.md), [Neural plan](../NeuralGraphics/Plan.md) |
+| `PGD-08` | [Neural acceptance](../NeuralGraphics/Acceptance.md), [Workload Studies](../PerformanceDiagnostics/WorkloadStudies/README.md), workload case owners |
+| `PGD-09` | [Linux Platform Support](../../Modules/Engine/Platform/LinuxPlatformSupport.md), [Product Workflows](../ProductWorkflowCoverage.md); personal/mentoring evidence remains external |
+
+## Research Reference Routing
+
+Research-only `NVR-01..20` references are owned by [Rendering Reference Examples](../../../Strategy/Research/RenderingReferenceExamples.md); they are not product/gate identities. `01/06/13/18/19` route to ShaderSystem/RHI and workload/native evidence; `02/03/04/05/15/17` to Direct/Indirect/Reference lighting; `03/10/11/13` to owned NeuralGraphics; `07/09/12/14/16/20` to Workload Studies/tooling/adoption; `08` to conditional GeometryAndResources discovery. The [catalog exercises](../../../Strategy/FeatureDeliveryCatalog.md#research-informed-delivery-exercises) provide explicit links. Routing does not authorize optional feature adoption or add acceptance credit.
+
 ## Persona Outcomes
 
 | ID | Architecture coverage |

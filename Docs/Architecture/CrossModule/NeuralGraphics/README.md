@@ -48,6 +48,8 @@ Existing NVIDIA reconstruction providers enter at an external runtime-inference 
 
 | Dossier | Owns | Current state |
 | --- | --- | --- |
+| [Discovery](Discovery.md) | selected denoising problem, blocking decisions, numeric/ownership/build freeze | Open decision gate |
+| [Plan](Plan.md) | remaining gate-based stages and ready-to-use prompts | Conditional target work |
 | [Training And Evaluation](TrainingAndEvaluation.md) | problem definition, dataset/provenance, reference target, model/operator, training, evaluation, reproducible artifact | Not found |
 | [Model To Kernel And Runtime Inference](ModelToKernelAndRuntimeInference.md) | export/lowering, kernel selection/optimization, runtime ABI, scheduling, fallback, profiling, delivery | Not found |
 | [Acceptance](Acceptance.md) | binary feature criteria, failures, checks, and evidence boundary | Contract only |
@@ -55,6 +57,8 @@ Existing NVIDIA reconstruction providers enter at an external runtime-inference 
 The current NVIDIA DLSS Super Resolution and Ray Reconstruction providers are documented under [Image Reconstruction And Upscaling](../../Modules/Engine/Renderer/Features/PostProcessing/ReconstructionAndGeneration/ImageReconstructionAndUpscaling.md). They are external vendor inference integrations. They do not satisfy owned dataset, training, model, compiler/lowering, kernel, or evaluation claims.
 
 ## Intended Vertical Slice
+
+The selected strategic slice is one diffuse-indirect denoiser: [Discovery](Discovery.md) holds nine unresolved decision cells and [Plan](Plan.md) supplies bounded remaining stages and executable prompts. Its production admission waits for `REL-11` and `M3`; publishing the plan does not change the absence or readiness above. [Feature Delivery Catalog](../../../Strategy/FeatureDeliveryCatalog.md) routes `PGD-06..08` and the exact reviewer outputs.
 
 Frozen representative scene data and references -> deterministic dataset builder -> owned model/operator and training recipe -> evaluated versioned artifact -> explicit export/lowering and GPU-kernel plan -> Renderer feature contract and classical fallback -> RHI resources/dispatch/synchronization -> packaged artifact -> Bistro/San Miguel quality, latency, memory, and failure evidence.
 

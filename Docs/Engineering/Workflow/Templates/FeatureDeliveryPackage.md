@@ -55,9 +55,33 @@ The full package has seven direct Markdown files, matching the active-folder sib
 | `Semantics.md` | Exact algorithm, equations, protocol, format, units, invariants, edge cases, reference procedure, and rule-to-code ledger when these deserve an independent lifecycle. | System ownership, delivery order, or proof that code conforms. |
 | `ExecutionArchitecture.md` | Current and target owners, producer/consumer boundaries, identity, lifetime, state, execution, capacity, failure, backend/mode, package, and clean-break shape. | Equation details already owned by `Semantics.md`, UI behavior, or completion results. |
 | `UserExperience.md` | Intended people, discoverability, setup, preflight, state/action truth, progress, interruption, errors, results, accessibility, support, and UI/CLI/API equivalence. | Renderer/runtime mutable truth or duplicated architecture. |
-| `Plan.md` | Dependency order, stage scope, prerequisites, estimates, deletions, non-goals, prompts, exit gates, and handoff shape. | Enduring design decisions, research claims, or feature acceptance. |
+| `Plan.md` | Dependency order, stage scope/budgets, prerequisites, deletions, non-goals, prompts, exit gates and handoff shape; estimates only when requested. | Enduring design decisions, research claims, or feature acceptance. |
 
 When a role is omitted, put its necessary facts in the nearest coherent owner and state that no independent document is needed. Do not leave a broken link to a document that does not exist.
+
+## Measurable Delivery Card
+
+Use this card before writing stages, including for a target feature whose implementation is absent. It makes planning specific, measurable, feasible, relevant and bound to a prerequisite/exit gate. A gate-based plan does not need delivery dates, weekly capacity or hour estimates. Add calendar planning only when requested; inspection dates still identify source provenance.
+
+| Field | Populate with |
+| --- | --- |
+| Strategic reason | The user problem and applicable `PGE-*`/roadmap/deliverable IDs; no feature merely because a role mentions its noun. |
+| Actor, trigger and output | One person or system, concrete input/action, observable product and the exact existing owner/consumer. |
+| Current evidence | Source/build-present, executed, measured, packaged and adopted separately; exact revision and dirty scope. |
+| Admission and feasibility | Required discovery/release gates, actual tool/hardware/content/rights, known facts and unresolved decisions with owners. |
+| Measurement | Quantity/formula, units, baseline, matrix, sample/repeat/observer rules, practical-effect/numerical tolerance and uncertainty; freeze before results. |
+| Reviewable artifact | Example manifest/table/capture/fixture/output and its identity join; final evidence owner. An example is not an observed result. |
+| Failure and stop | Fault, detection boundary, safe state/cleanup, counterexample and smallest defect-detecting check. Missing inputs are not unsupported-design evidence. |
+| Architecture budget | Existing producer/consumer/state/lifetime, integration hooks, public/copy delta and replaced paths to delete; reject a framework without a consumer. |
+| Stage exit | Binary prerequisite and result, preserved/excluded scope, style/build/validation controls and exact handoff. |
+
+For an absent feature, populate discovery questions and bounded next actions rather than an empty directory or speculative API. Start with the smallest meaningful package. After delivery, remove completed implementation prompts/tasks, retain durable design and valuable source/native/negative evidence, and leave the plan with only unfinished obligations.
+
+Before each implementation-stage submission, enforce the existing [Stage Source-Style Gate](../ChangeLifecycle.md#stage-source-style-gate), including formatter coverage and an authored logical-spacing/readability review. Format/check only the relevant source scope unless a repository-wide claim requires the full manifest. A formatting pass cannot certify SRP, ownership or meaningful grouping.
+
+```text
+Create or refresh the measurable delivery card for the selected feature under its existing Architecture owner. Planning only. Inspect current source/build, producer/consumer/lifetime, requirements and release prerequisites; record actual available inputs and unresolved owners. Define actor/trigger/output, candidate/baseline/matrix, numeric decision rules and artifacts before results; map failures to defect-detecting checks. Freeze hook/copy/deletion budgets and one coherent stage. Use gate-based sequencing without dates or estimates unless requested. Do not invent APIs, thresholds, adoption or implementation evidence. Validate authority/navigation/UTF-8/whitespace and git diff --check. Retain valuable delivered evidence and remove only completed implementation instructions.
+```
 
 ## Placeholder Contract
 
@@ -114,7 +138,7 @@ Research current local implementation before external precedent. Use original pa
 
 Choose the smallest honest set of feature-local documents from README.md, Discovery.md, Research.md, Semantics.md, ExecutionArchitecture.md, UserExperience.md, and Plan.md. Keep one owner per current fact, decision, semantic rule, architecture contract, UX behavior, plan item, and result; link instead of copying. Do not exceed seven direct Markdown siblings.
 
-Populate the package end to end: plain-language product and non-promises; revision-pinned current route; complete feature/support matrix; blocking discovery questions and risks; exact semantics, units, edge/invalid behavior, and reference procedure where applicable; ownership, identity, lifetime, state, execution, capacity, backend/mode, failure/recovery, security/package, and clean-break architecture; intended first-use and automation experience; binary AC/FM/CHK coverage; dependency-ordered stages, estimates, deletions, non-goals, stop conditions, and copy-ready implementation prompts.
+Populate the package end to end: plain-language product and non-promises; revision-pinned current route; complete feature/support matrix; blocking discovery questions and risks; exact semantics, units, edge/invalid behavior, and reference procedure where applicable; ownership, identity, lifetime, state, execution, capacity, backend/mode, failure/recovery, security/package, and clean-break architecture; intended first-use and automation experience; binary AC/FM/CHK coverage; dependency-ordered stages, scope budgets, deletions, non-goals, stop conditions, and copy-ready implementation prompts. Use prerequisite/exit gates; include calendar planning or estimates only when requested.
 
 NON-NEGOTIABLE: no unresolved choice that can change product scope, correctness, units, identity, ownership, lifetime, failure behavior, public UX, thresholds, budgets, evidence validity, package reachability, or architecture may be deferred into an implementation prompt. Every included surface maps to an owner, semantic disposition, stage, acceptance criterion, failure coverage, defect-detecting check, and completion-result owner. Every prompt must contain an explicit non-negotiable exit paragraph and must block rather than improvise when prerequisites are absent or contradicted.
 
@@ -743,7 +767,7 @@ The plan begins with decisions and ends with adoption. It is not a chronological
 
 **Scope:** deliver {{PRODUCT}} end to end through its accepted semantic, architecture, experience, evidence, packaging, adoption, and clean-break contracts
 
-**Prepared:** {{DATE}} against {{REVISION}}; estimates are ranges with assumptions, not commitments
+**Prepared:** {{DATE}} against {{REVISION}}; provenance only, not a delivery deadline
 
 **Authority boundary:** Semantics owns rules; Execution Architecture owns system shape; User Experience owns interaction; the dossier owns feature acceptance; Discovery owns authorization; Research owns precedent; this page owns order, dependencies, stage scope, deletion, estimates, prompts, and exit gates
 
@@ -771,6 +795,8 @@ Use only stage families required by this feature and split them when reviewabili
 Do not force these exact numbers. Preserve dependency direction and make each stage a coherent owner/invariant-sized vertical slice.
 
 ## Estimate And Capacity Envelope
+
+This section is optional when estimates are requested. For a gate-based plan without calendar planning, replace it with a scope/WIP budget: one primary stage, bounded outputs, prerequisites, available inputs, largest uncertainty and stop conditions. Do not instantiate the hour placeholders by default or infer a deadline from source dates.
 
 | Stage | Engineering range | Review/evidence range | Dependencies | Largest uncertainty |
 | --- | --- | --- | --- | --- |

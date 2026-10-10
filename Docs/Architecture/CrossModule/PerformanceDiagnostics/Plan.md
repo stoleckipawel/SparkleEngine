@@ -10,6 +10,8 @@
 
 ## Delivery At A Glance
 
+The portfolio's selected analysis consumer is staged separately in [Workload Studies](WorkloadStudies/Plan.md). That route waits for its actual producer inputs and release admission; it cannot bypass this plan's parent gates or force unselected internal diagnostics packages into implementation. Comparison meanings and serialization ownership remain here and in [Acceptance](Acceptance.md).
+
 ```mermaid
 flowchart LR
     P0[0 Reconcile and choose] --> P1[1 Prove external capture]

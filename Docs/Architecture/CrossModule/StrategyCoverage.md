@@ -10,6 +10,8 @@
 
 ## Product Identity Constraint
 
+The [Feature Delivery Catalog](../../Strategy/FeatureDeliveryCatalog.md) now routes concrete professional outputs and measurable exits to these owners. [Current role research](../../Strategy/Research/README.md) informs that selection; [Neural discovery/plan](NeuralGraphics/Discovery.md) and [Workload Studies](PerformanceDiagnostics/WorkloadStudies/README.md) expose remaining target work. This is a planning update, not a reinspection of every dated source observation or an evidence-level upgrade.
+
 Sparkle's target is a compact renderer-first engine and evidence platform. Coverage therefore does not mean adding every conventional engine feature. A capability belongs in this inventory when it is one of:
 
 1. a user-reachable product promise;

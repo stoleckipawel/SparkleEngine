@@ -2,6 +2,8 @@
 
 **Status:** target capability dossier; no owned training or evaluation implementation was found
 
+The selected diffuse-indirect slice is being defined by [NG-D0 discovery](Discovery.md); [Plan](Plan.md) Stages 1–2 deliver this contract only after its admission/decision gates. No training result or numeric tolerance is inferred from this page.
+
 **Scope:** define the absent data, training, evaluation, reproducibility, quality, failure, and model-publication capability boundary
 
 **Owner:** future training/evaluation tool and asset-publication path; Renderer is a consumer, not the training owner

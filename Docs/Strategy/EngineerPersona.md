@@ -10,6 +10,8 @@
 
 ## Purpose and Authority Boundary
 
+The [current primary-source study](Research/PrincipalGraphicsRoles.md) checks this target against developer-technology, tools, neural-rendering and GPU-performance expectations. The [delivery catalog](FeatureDeliveryCatalog.md) gives observable outputs, and the [roadmap](Roadmap.md) orders them by proof gates without delivery dates or time estimates.
+
 This document describes how the target engineer thinks, builds, reviews, and communicates. It does not redefine:
 
 - the canonical [`PGE-01` through `PGE-15` capabilities and evidence](Requirements.md);
@@ -107,6 +109,26 @@ Design integration surfaces, fallback behavior, diagnostic entry points, and doc
 - Never use documentation volume, vendor vocabulary, or unsupported credentials as a substitute for implementation evidence.
 
 ## Principal-Level Judgment
+
+### Research-Informed Professional Focus
+
+The selected focus is rendering/developer technology with GPU-system depth, supported by neural productization and useful tools. [Actual role families](Research/GraphicsRoleDepth.md) distinguish this from compiler, driver and research-scientist specialties. [Public engineers](Research/GraphicsEngineerProfiles.md) show several valid shapes: research-to-game integration, explicit API optimization, mathematical reconstruction, high-performance kernels and small durable tools. Their titles and GitHub portfolios are examples, not an internal NVIDIA ladder or proof that copying their projects leads to hiring.
+
+Develop depth through the existing three headline cases. For each, explain the problem selection, exact personal contribution, mathematical/API assumptions, executed source identity, quality/cost tradeoff and external feedback. A principal-shaped result includes the decision that limited scope, removed authority or rejected an attractive optimization. Do not turn every neighboring specialty into a new mandatory engine subsystem.
+
+The minimum program needs one independent reproduction and review. Later influence work should add a second distinct consumer context and a post-adoption revision driven by actual feedback through `PGD-09`. Two self-authored demos do not satisfy this progression, and one successful adoption does not establish years of organizational leadership.
+
+### Observable Behaviors
+
+| Situation | Expected action | Inspectable evidence |
+| --- | --- | --- |
+| An impressive but wrong output | Find the earliest incorrect product, check units/domain/identity and refute competing explanations before tuning. | Raw-product lineage, one counterexample and the incident/regression record. |
+| A proposed optimization | Name the mechanism and falsifier, freeze quality/observer/decision rules, then compare matched candidates. | Per-run native/timing evidence, uncertainty and a retained rejected/inconclusive alternative. |
+| A research model or paper | Establish rights and reproducible inputs, derive the operators, prove numerical conformance, then integrate one real consumer. | Dataset/model/operator cards, fixed FP32 shader fixtures, runtime/fallback and package proof. |
+| A cross-module feature | Identify one state/lifetime owner, reuse existing mechanisms and justify each hook/copy; remove replaced paths. | Consumer/deletion ledger and a defect-detecting architecture check. |
+| Another engineer cannot reproduce it | Observe their first-use failure, improve the owner/runbook and retest without private instructions. | Independent transcript, review feedback and the resulting simplification. |
+
+These are judgment targets tied to the [catalog](FeatureDeliveryCatalog.md), not an employment-level certification. Gate exits measure completed outputs; sustained influence and mentoring still require genuine external records.
 
 Principal behavior is visible when the engineer:
 

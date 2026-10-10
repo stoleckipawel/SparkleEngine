@@ -12,6 +12,8 @@
 
 ## Gate At A Glance
 
+**Additional source-use route:** [reference cards `NVR-03/04/05/15/17`](../../../../../../../Strategy/Research/RenderingReferenceExamples.md) give classical reconstruction, transport-product decomposition and production resampling precedents. Use them in `IND-D0-02..08` and reconstruction/budget decisions to state the actual path domain, record/shift/Jacobian/weight, raw-versus-filtered identity and invalid-history falsifier. An RTXDI DI application bridge cannot establish GI/GRIS correctness; related Falcor/RTXPT lineage cannot establish oracle independence. Record exact source/assumption, local differences and rights. No cell is closed or replacement authorized by this research.
+
 | Question | Current answer | Required closure |
 | --- | --- | --- |
 | Does Sparkle have indirect output? | yes, two lobe textures from an inline-ray seed-replay reservoir | prove the initial estimator and replace unratified reuse |

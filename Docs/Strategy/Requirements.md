@@ -8,6 +8,8 @@
 
 **Scope:** principal-level real-time graphics, developer technology, GPU systems, rendering research productization, workload tooling, and neural graphics
 
+**Research refinement:** 2026-10-10; [role depth](Research/GraphicsRoleDepth.md), [affiliation-checked public work](Research/GraphicsEngineerProfiles.md) and [pinned rendering examples](Research/RenderingReferenceExamples.md) strengthen the evidence targets below without upgrading any personal or feature result.
+
 ## Authority And Reading Order
 
 This is the canonical requirements contract for SparkleEngine and the target engineering persona. The stable identifiers are `PGE-01` through `PGE-15`.
@@ -162,6 +164,45 @@ Every public case uses the same order:
 The first screen contains the result, not the architecture history.
 
 ## Completion Rule
+
+### Research-Informed Evidence Depth
+
+The target is rendering/developer technology with GPU-system depth. Senior roles emphasize substantial production ownership; expert depth requires a defensible mathematical/native explanation; the inspected principal roles add ambiguous problem selection, technical direction, adoption and influence. This is a [source-backed strategic synthesis](Research/GraphicsRoleDepth.md), not NVIDIA's internal title framework.
+
+| Existing requirements | Added review obligation | Reference and selected delivery |
+| --- | --- | --- |
+| `PGE-01/13/15` | Credit personal/team/external contributions; show one consequential decision changed by independent review/adopter feedback, plus ownership and maintenance/deletion rationale. | Public integration/teaching `NVR-17/20`; `PGD-01/08`. Later `PGD-09` adds a second distinct consumer context and one feedback-driven post-adoption revision. |
+| `PGE-02/08` | Derive the actual estimator, proposal/target PDF, reuse/shift and normalization assumptions; show a numerical/independent control and an invalid-history or invalid-sample counterexample. | `NVR-02/04/05/15/17`; `PGD-02/03`, existing Direct/Indirect/Reference owners. |
+| `PGE-05/06/10` | Identify a measured limiting mechanism; isolate one recording/binding, shader or memory hypothesis; retain whole-frame quality/cost and a rejected/inconclusive alternative. | `NVR-01/07/09/16/18/19`; `PGD-03/04`. Do not mandate an optimization before measuring its premise. |
+| `PGE-07/09` | Join source, compiler inputs/options, cooked bytecode, ABI and actual native execution; prove one bounded negative/failure case without another tracker or tool authority. | `NVR-01/06/13/18`; `PGD-04/05/07`. A cooker does not prove compiler-backend authorship. |
+| `PGE-03/04/11/12` | Separate owned data/model/FP32 operator conformance from vendor integration; derive layout/traffic and evaluate one precision/fusion choice with numerical and product controls. | `NVR-03/10/11`; `PGD-06/07`. CUDA, NeRF or a second ML runtime is not required. |
+| `PGE-14` | State platform/hardware evidence gaps independently of API familiarity. | `PGD-09`; Windows Vulkan cannot satisfy native Linux or another vendor architecture. |
+
+Every cited example has what/where/why, license route, existing local consumer and limits in [Rendering Examples](Research/RenderingReferenceExamples.md). Feature discovery records exactly which assumption transfers and a check that can refute it. None of these references adds production permission, changes frozen workload thresholds or certifies hiring readiness.
+
+### Observable Evidence Targets
+
+The [delivery catalog](FeatureDeliveryCatalog.md) supplies concrete examples and owning plans. These targets specify what the reviewer inspects; they do not award `E3/E4`, supersede workload thresholds or assert employment qualifications. Every metric has units, baseline, matrix and a decision rule frozen by its owner before results.
+
+| Requirement | Observable evidence target | Selected output |
+| --- | --- | --- |
+| `PGE-01` | At least one non-author reproduces a headline result; feedback, ownership and resulting change are recorded. Collaboration breadth is stated honestly. | `PGD-01/08/09` |
+| `PGE-02` | One complete rendering case with bounded transport/material domain, analytic/independent checks and representative scene evidence. | `PGD-02/03` |
+| `PGE-03` | One owned neural feature joins dataset, model, runtime and held-out quality/cost/failure evidence; vendor integration alone does not qualify. | `PGD-06..08` |
+| `PGE-04` | Every fixed operator and the full exported model match the reference within frozen tolerance on actual GPUs; optimization ablations preserve conformance. | `PGD-07` |
+| `PGE-05` | Three causal studies join CPU/GPU/presentation/memory and native artifacts; whole-frame effect and one rejected/inconclusive result are explained. | `PGD-03/05/08` |
+| `PGE-06` | One difficult incident has a reproduction, earliest bad product, refuted hypothesis, bounded fix and defect-detecting regression/failure route. | `PGD-04` |
+| `PGE-07` | Reviewed production C++ ownership and one useful Python consumer show bounded input/failure/cleanup, reproducible output and appropriate narrow checks. | `PGD-01/05/06` |
+| `PGE-08` | A report derives the estimator/model/units and uncertainty/decision rule, explains reference equivalence and includes falsifying controls. | `PGD-02/03/06/08` |
+| `PGE-09` | The same bounded product runs on Windows D3D12/Vulkan; resource/queue/shader-binding and source-to-bytecode identity are inspectable. | `PGD-02/03/07` |
+| `PGE-10` | A causal study explains actual scheduling/parallelism, bandwidth/layout/occupancy or synchronization with measured whole-product consequences. | `PGD-03/04/07` |
+| `PGE-11` | Owned model card includes scene-separated data, overfit diagnostic, baseline, ablations, leakage check and generalization/failure limitations. | `PGD-06/08` |
+| `PGE-12` | Training and runtime have separate profiles; model export, cold startup, precision/layout, inference tails and peak workspace are attributed. | `PGD-06..08` |
+| `PGE-13` | Three headline cases and a report/demo link actual code/native artifacts and reproduction; one useful tool or deleted negative result has a productization decision. | `PGD-02..08` |
+| `PGE-14` | Windows paired-API/toolchain evidence is reproducible; native Linux is claimed only after a named build-run-capture. Written explanations are independently reviewed. | `PGD-01/03/08/09` |
+| `PGE-15` | Decisions show constraints, tradeoffs and removed complexity; independent review/adoption plus genuine teaching/mentoring records support influence. No count of features certifies principal level. | `PGD-01/08/09` |
+
+Gate progress is evidence-based, without calendar targets. Counts set portfolio coverage; they do not replace statistical sample counts, exact numeric tolerances or sustained professional-history proof.
 
 Do not add a feature because its noun appears in a job description. Add or retain work only when it advances a named `PGE-*` requirement to a higher evidence level and produces an artifact a reviewer can inspect.
 

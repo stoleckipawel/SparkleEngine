@@ -12,6 +12,8 @@
 
 Develop SparkleEngine as a compact renderer-first engine and evidence platform for principal-level graphics engineering. Prioritize a few complete, reproducible vertical slices over feature count, framework breadth, or documentation volume.
 
+The [public engineering study](Research/README.md#public-engineering-study) grounds that direction in actual role descriptions, affiliation-qualified engineers and exact public source examples. The selected professional focus is rendering/developer technology with GPU-system depth: trustworthy transport, causal native analysis, owned neural shader work and independent adoption. Compiler/driver research, GPU-driven geometry and further platforms remain separate conditional specialties.
+
 The engine should make it easy for a reviewer to answer:
 
 - Where do game, renderer, frame graph, RHI, and backend authority begin and end?
@@ -29,6 +31,7 @@ This summary does not restate detailed contracts:
 - [C. Gap Assessment](Assessments/GapAssessment.md) is the dated state assessment.
 - [F. Roadmap](Roadmap.md) owns sequencing and allocation.
 - [H. Engineer Persona](EngineerPersona.md) owns the operating model.
+- [Feature Delivery Catalog](FeatureDeliveryCatalog.md) makes the selected outputs and examples explicit; [Role Research](Research/README.md) records primary precedent. The roadmap orders work by evidence gates, without delivery dates or hour estimates.
 - [I. Acceptance Workloads](../Acceptance/GraphicsWorkloads.md) owns scene, quality, performance, and evidence gates.
 - The [Whole Repository Architecture Map](../Architecture/WholeRepositoryMap.md) routes system decisions and repository maps.
 - [Engineering guidance](../Engineering/README.md#choose-by-task) owns implementation and review rules.

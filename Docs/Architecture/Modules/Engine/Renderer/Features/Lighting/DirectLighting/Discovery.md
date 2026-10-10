@@ -12,6 +12,8 @@
 
 ## Gate At A Glance
 
+**Additional source-use route:** [reference cards `NVR-02/03/17`](../../../../../../../Strategy/Research/RenderingReferenceExamples.md) pin the RTXDI surface/light bridge, temporal resampling, NRD guides and production/course precedents. Use them in `DIR-D0-05..08/10/11` to derive the actual local proposal/target/PDF/weight, current/previous identity, guide encoding and quality/cost falsifiers. Record exact file/assumption, differences and rights in the decision artifact. They do not close this gate, select RTXDI as the product, prove unbiasedness or authorize a new framework/dependency.
+
 | Question | Current answer | Required closure |
 | --- | --- | --- |
 | Is there a direct-lighting implementation? | yes, a ray-dependent analytic-light reservoir route | preserve only behavior that passes the frozen conformance matrix |

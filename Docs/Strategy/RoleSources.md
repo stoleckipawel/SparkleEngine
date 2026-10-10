@@ -2,6 +2,8 @@
 
 **Status:** archive; source record retained for durable traceability
 
+The [current primary-source role study](Research/PrincipalGraphicsRoles.md) extends this provenance with refreshed employer and technical sources. It does not rewrite the original supplied material below. [Requirements](Requirements.md) remains the canonical capability target; the [delivery catalog](FeatureDeliveryCatalog.md) selects concrete portfolio outputs.
+
 **Current readiness:** **Not applicable.** This archive records role-source provenance and must not be read as current feature state; use [Current Feature Readiness](../Acceptance/CurrentReadiness.md).
 
 **Responsibility:** preserve the normalized source material from which the canonical principal graphics requirements were derived

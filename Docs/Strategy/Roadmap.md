@@ -4,6 +4,10 @@
 
 **Responsibility:** release-wide priority, dependency order, and gate sequencing for the first public release
 
+**Planning method:** gate-based delivery with no calendar targets or time estimates. Each next action names an output, measurable exit, prerequisite, owner and evidence. [Feature Delivery Catalog](FeatureDeliveryCatalog.md) owns the selected professional outputs; [current role research](Research/PrincipalGraphicsRoles.md) supplies precedent.
+
+**Planning reconciliation:** 2026-10-10 at source revision `83c6228e6138bd0de88303c99f7a309a1ab97ca8`. Tracer status is reconciled to its current recovery plan; the remaining historical baseline below has not been rebuilt or runtime-revalidated. No release, feature or personal evidence level is upgraded.
+
 **Planning baseline:** repository and release surfaces statically reconciled on 2026-09-06 at committed `master` revision `8414b5dc`; a concurrent documentation relocation is present in the worktree and is not implementation evidence; no build, cook, package, launch, capture, clean-machine, or performance result was added by this reconciliation
 
 **Reference Path Tracer target reconciliation:** viewport-first Reference Path Tracer wording reconciled on 2026-09-09 against committed `master` revision `20c7bb11`; this changed no gate verdict and added no implementation or runtime evidence
@@ -31,7 +35,7 @@
 > [!IMPORTANT]
 > **Current direction:** release-first until `REL-11` closes the `v0.1.0` stabilization window.
 >
-> **First technical decision:** `PTD-00` must define a credible Reference Path Tracer before the current `ReferencePathTracer` route is used as a correctness oracle.
+> **First technical closure:** the accepted `PTD-00-R1` contract is established. Close the current Reference Path Tracer recovery and unproved oracle checks before using its output as correctness truth; do not restart delivered source stages.
 >
 > **Current evidence state:** the planning baseline is source/document inspection. All release risks remain open and no release gate passed through documentation alone.
 
@@ -59,13 +63,13 @@ This is a sequencing change, not a change to the long-term graphics plan. It clo
 
 ## Reference Path Tracer Truth First
 
-The current Reference Path Tracer planning objective is repository-owner ratification of `PTD-00-R1`: freeze what a complete Reference Path Tracer with an explicitly bounded unbiasedness claim means before executing its implementation plan. This is not permission to overstate the current `ReferencePathTracer` mode. Source inspection shows that mode starts from the existing GBuffer, shares material/light/shadow code with production paths, uses frame-indexed sampling and fixed bounce/distance limits, and accumulates as temporal history. It is a useful candidate comparison but not yet an independent correctness oracle.
+The current Reference Path Tracer objective is recovery and completion of the [remaining plan](../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md). The former GBuffer-seeded branch was removed; the replacement's per-view mode, transport, traversal, accumulation, UI and manual publication route are source-delivered. The owning plan retains the black-lighting observation, invalid-sample/preflight gaps and deferred analytic, native-backend, lifecycle, artifact and adoption checks. This is source delivery, not an accepted independent oracle. Reuse valid evidence and repair the earliest falsified boundary before tuning output or generating training targets.
 
 | Work identity | When it may run | Required output | Stop rule |
 | --- | --- | --- | --- |
 | `PTD-00` completion discovery | `PTD-00-R1 PASS` at immutable dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300`. | Accepted development contract: exact transport/unbiasedness claim, `RPTConformanceSet`, feature and dependency matrix, precedent/current-source study, derivation, risks, failure modes, oracle/fixture/statistical design, target-shape decision, and plan-ready backlog. | Any later change to the accepted development scope, architecture, estimator math, evidence design, or ownership invalidates the gate and requires explicit re-review. |
-| `PTD-01` implementation-plan freeze | The [conditional plan](../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md) becomes accepted only with an immutable `PTD-00-R1 PASS` at the same revision. | One Renderer-owned plan with bounded clean-break slices, owners, estimates, deletion ledger, per-slice key checks, unchanged/excluded scope, and a separate Stage-10 release-adoption gate. | A plan that must rediscover the transport domain or invent a new subsystem returns to `PTD-00`. Document presence alone is not implementation authorization. |
-| `PTD-02` development implementation and `FCR-REN-08` candidate closure | Development-only Stages 1 through 9 may begin after immutable `PTD-00-R1 PASS`; Stage 10 and release closure wait for accepted `ReleaseMapSet`, named support machines, and `REL-03`. | Pass the [Reference Path Tracer feature acceptance contract](../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md): first deliver the PBR-correct live viewport session, responsive Editor/Game navigation, exact progress/reset, automatic post-motion refinement, and Lit comparison; then prove traversal/backend parity and add only the manual raw export infrastructure required for deterministic analytic/minimal/independent/failure evidence. Stage 10 adds package, Shipping, release-map readiness, and candidate-bound completion evidence. | The mode remains experimental or is excluded if the accepted plan cannot meet its oracle claim without open-ended redesign. Artifact plumbing cannot substitute for the live comparison milestone, and no weaker output inherits the word “unbiased.” |
+| `PTD-01` implementation-plan freeze | Development contract accepted through immutable `PTD-00-R1 PASS`; the [current plan](../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md) now orders remaining recovery and proof. | One Renderer-owned sequence, prerequisite/evidence/deletion ledgers and separate release-adoption gate. Completed implementation prompts remain retired; preserve valuable source and decision evidence. | A changed transport domain or new subsystem returns affected cells to `PTD-00`; plan presence alone does not authorize an unreviewed contract change. |
+| `PTD-02` development implementation and `FCR-REN-08` candidate closure | Continue authorized recovery against the accepted development domain; delivered Stages 1–9 are not restarted. Stage 10/release closure waits for accepted `ReleaseMapSet`, support machines and `REL-03`. | Pass the [feature acceptance contract](../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md) through remaining viewport, estimator, traversal/backend, lifecycle and raw-publication checks. Repair invalid-result/preflight gaps and prove uncertainty before oracle use; Stage 10 adds package/Shipping/adoption evidence. | The mode remains experimental or is excluded if its frozen claim needs open-ended redesign. Progress/artifact plumbing cannot prove usable output, and no weaker result inherits “unbiased.” |
 | `PTD-03` release-map adoption | After `PTD-02`; consumed by `REL-05`. | Frozen high-sample references and uncertainty/provenance for each applicable release-map camera, plus evidence that reference and subject do not share the defect under test. | A reference-dependent map/PBR verdict is blocked when its oracle is absent, shared, non-equivalent, unconverged, or post-processed. |
 
 `PTD-00` is first because a false oracle contaminates every later PBR, direct-lighting, ReSTIR, map, denoising, and neural comparison. Release identity, rights, reproducible build, package work, named support hardware, and release-map reconciliation remain prerequisites for Stage 10 and every shipped or release-dependent claim; they are not inputs to development-only Stages 1 through 9. Reference accumulation is not held to the 30 FPS convergence target, but the selected view mode must remain responsive, present the newest accepted camera identity within its frozen budget, and refine automatically when motion stops. Durable manual export follows that usable loop and remains bounded, exact, and required wherever final evidence depends on it.
@@ -97,7 +101,7 @@ The repository has substantial engine breadth. The release problem is closure an
 | Area | Current source-inspected state | Release-first consequence |
 | --- | --- | --- |
 | Engine foundation | Core, platform, tasks, application, world, editor, renderer, RHI, import, cooking, shader compiler, launcher, Showcase, build, and package surfaces now have a dated source inventory. | Reconcile that snapshot against the live public selectors at scope freeze, assign every disposition, then close or exclude each path. Do not start replacement frameworks. |
-| Graphics | D3D12/Vulkan; raster/deferred PBR; debug views; exposure, tone mapping, output encoding, Linear/DLSS upscaling, DLSS Ray Reconstruction, ReSTIR, and scene/view/frame/GPU-scene infrastructure are present. The former GBuffer-seeded reference branch is removed; the replacement Reference Path Tracer currently has only its Stage 1 ordinary view-mode seam, generic progress, Private feature owner, and honest unavailable state. Deferred decals, color grading, chromatic aberration, HDR display output, volumetric lighting, and frame generation are absent. | Source-present is the initial state, not acceptance. `FCR-REN-23` through `26` deliberately admit the first four absent capabilities as mandatory targets; each must implement its complete feature-local contract. Volumetric lighting and frame generation remain excluded. `PTD-00-R1` authorizes development, but the tracer remains unusable until its estimator, accumulation, viewport UX, parity, and evidence stages pass; every included mode still needs feature, map, backend, failure, quality, and performance evidence. |
+| Graphics | D3D12/Vulkan and the previously inventoried rendering paths form the baseline; the replacement Reference Path Tracer now has delivered source stages and a remaining recovery/validation plan. The September inventory of other present/absent modes is historical, not a fresh complete scan. | Source presence is not acceptance. `FCR-REN-23` through `26` retain their mandatory target decisions; refresh each owning dossier before action. Volumetric lighting and frame generation remain excluded. Tracer recovery and estimator/oracle evidence must close before dependent claims; every included mode still needs feature, map, backend, failure, quality and performance evidence. |
 | Build | Six Debug/Development/Shipping editor/game profiles exist; Showcase editor/runtime and launcher targets exist. | Freeze `ShippingGame` as the runtime release product and prove a clean reproducible build. |
 | Package | Runtime source recognizes a package manifest, and development dependency/artifact staging exists. | Add one owned Build-Cook-Stage-Package route. No repository `install()`/CPack contract or release archive is currently proven. |
 | Content | The Showcase catalog has 16 level records; the workload audit describes 13 as runtime-supported and three as source-readiness-only. | Curate a smaller legally redistributable `ReleaseMapSet`; do not ship the whole catalog by implication. |
@@ -137,7 +141,7 @@ Current state at the roadmap's source snapshot: all `RISK-REL-*` rows below are 
 | `RISK-REL-10` | Published bytes, policy, support, security intake, patch/withdrawal, or stabilization response fails after delivery. | High: public operations and response evidence do not exist. | Critical | Release and support/security owners; `REL-10`, `REL-11` | Verify immutable remote bytes and live routes, operate severity clocks and patch/withdraw/advisory paths through the stabilization window; retire at approved closeout. |
 | `RISK-REL-11` | Evidence is stale, non-detecting, cherry-picked, generated without review, or bound to different bytes/configuration. | High: current evidence is source-only and candidate artifacts do not exist. | Critical | Evidence reviewer; all gates | Map every AC/FM to a defect-detecting `CHK-*`, hash artifacts, record invalidation triggers and unavailable checks; retire per claim only after independent review. |
 | `RISK-REL-12` | Scope creep or parallel feature work consumes capacity before the current gate closes. | High: the repository has many source-present unfinished surfaces. | High | Release owner; all gates | Enforce one primary gate, key-check-first iteration, explicit exclusion/deletion, and WIP review; retire only when `REL-11` unlocks new features. |
-| `RISK-REL-13` | A shared, truncated, biased, unconverged, or post-processed reference is treated as ground truth and approves wrong PBR/lighting/map results. | High: the former shared GBuffer-seeded route was retired; the replacement currently has only an unavailable per-view seam and no executable oracle evidence. | Critical | Renderer and evidence owners; `PTD-00`, `REL-04`, `REL-05` | Pass `PTD-00`; close `FCR-REN-08` with raw deterministic analytic/minimal/independent/backend evidence; retire only when every reference-dependent claim names a defect-detecting oracle and uncertainty. |
+| `RISK-REL-13` | A shared, truncated, biased, unconverged, or post-processed reference is treated as ground truth and approves wrong PBR/lighting/map results. | High: source stages are delivered, but recovery, invalid-sample/preflight and oracle evidence remain open. | Critical | Renderer and evidence owners; `PTD-00`, `REL-04`, `REL-05` | Preserve accepted `PTD-00`; close the remaining `FCR-REN-08` recovery and raw analytic/minimal/independent/backend evidence; retire only when every dependent claim names a defect-detecting oracle and uncertainty. |
 
 Default contingency for every open release risk is to hold the affected gate and either repair the same candidate or reduce advertised scope through its owning acceptance decision. Integrity/security failure requires candidate quarantine or withdrawal. No contingency may relabel missing evidence, silent fallback, or a different configuration as a pass.
 
@@ -166,9 +170,9 @@ REL-00 scope and freeze
     -> retained advanced graphics roadmap
 ```
 
-Only one gate is the primary implementation objective. Repository-owner ratification of `PTD-00-R1` is the current Reference Path Tracer objective; it adds no production implementation. Once ratified at one immutable revision, development-only `PTD-02` Stages 1 through 9 may proceed without asserting release readiness. Stage 10, `FCR-REN-08` release closure, `PTD-03`, and every package/Shipping/release-map claim remain ordered behind the applicable release gates.
+Only one gate is the primary implementation objective. The accepted development contract permits the existing tracer recovery route; delivered source stages are not replayed. A contract change reopens affected discovery cells. Stage 10, `FCR-REN-08` release closure, `PTD-03`, and every package/Shipping/release-map claim remain ordered behind the applicable release gates.
 
-Scope may shrink when a feature or map cannot meet the bar in reasonable time. The evidence threshold does not shrink. A release date is forecast only after `REL-03` produces a repeatable package and `REL-04` exposes the actual closure queue.
+Scope may shrink when a feature or map cannot meet the frozen bar within its bounded design. The evidence threshold does not shrink. The next deliverable is chosen from failed or unproved gates, without a release-date forecast.
 
 ## Release Phase Structure
 
@@ -198,7 +202,7 @@ Every stage iteration uses the [iteration control record](../Engineering/Workflo
 | 7; `REL-10` | `NS-REAL`, `NS-EVIDENCE`, `NS-ADOPTION`; `PGE-01`, `PGE-07`, `PGE-13`, `PGE-14`, `PGE-15` | Publication, compatibility, support, security, and final product reports. | `RISK-REL-02`, `RISK-REL-09`, `RISK-REL-10`, `RISK-REL-11` | `REL-10`; `FM-REL-02`, `FM-REL-12`, `FM-REL-15`; key check is fresh remote retrieval plus hash/signature/tag/claim and shortest-journey verification. |
 | 8; `REL-11` | `NS-EVIDENCE`, `NS-ADOPTION`, `NS-SIMPLIFY`; `PGE-01`, `PGE-06`, `PGE-13`, `PGE-15` | Support/incident histories and every affected feature report. | `RISK-REL-10`, `RISK-REL-11`, `RISK-REL-12` | `REL-11`; `FM-REL-13`, `FM-REL-15`, `FM-REL-16`; key check is real report triage and any patch/withdraw/advisory retrieval verification. |
 
-At iteration start, mark these rows `advance`, `preserve`, `not applicable`, or `blocked` and select one key `CHK-*`. At handoff, update the same record with results and invalidations. Missing traceability is a stop condition, not documentation debt to defer until release week.
+At iteration start, mark these rows `advance`, `preserve`, `not applicable`, or `blocked` and select one key `CHK-*`. At handoff, update the same record with results and invalidations. Missing traceability is a stop condition and must be resolved before handoff.
 
 ## Release Plan At A Glance
 
@@ -427,19 +431,40 @@ The first real consumer interval proves that support, security, patch, withdrawa
 
 ## First-Release Tracker
 
+### Deliverable Cards
+
+These examples make the next output explicit; the [First Release contract](../Acceptance/FirstRelease.md) owns exact thresholds and passing results. An artifact must identify candidate bytes, supported matrix, command, oracle, observation and limitations. “A document exists” never closes a gate that needs executable proof.
+
+| Gate | Specific deliverable | Measurable closure and example |
+| --- | --- | --- |
+| `REL-00` | Approved finite scope and support inventory. | Every reachable advertised option/map/profile has one owner and disposition; zero unclassified release surfaces. Example: requested/active/included/experimental/excluded matrix. |
+| `REL-01` | Product identity and cleared immutable inputs. | Every shipped asset/dependency has origin, license, hash and redistribution disposition; unresolved rights prevent inclusion. Example: map manifest joined to notices/SBOM. |
+| `REL-02` | Reproducible public source route. | Cold and warm supported build/cook/check journeys meet the acceptance contract from pinned inputs; no private prerequisite. Example: exact commands, toolchain and output identities. |
+| `REL-03` | Manifest-owned package route. | Inventory matches produced bytes; mutable user state is separate; corruption/missing dependency is detected. Example: stage/sign/verify transcript and extracted-package negative. |
+| `REL-04` | Current feature closure matrix. | Every included/experimental `FCR-*` has criterion/failure/check coverage and the declared verdict; zero silent fallback used as success. Example: feature report links to native artifacts and negative controls. |
+| `REL-05` | Per-map content/PBR correctness. | Every selected release map/camera has valid reference-domain, material/loss, uncertainty and visual-severity evidence. Example: raw HDR lineage plus failure gallery. |
+| `REL-06` | Optimized performance and stability report. | All named support configurations meet the frozen frame/resource/lifecycle thresholds and repeat policy. Example: per-run tail distributions and leak/high-water observations, including observer settings. |
+| `REL-07` | Native backend diagnostics. | Both advertised APIs have candidate-bound validation and controlled failures with no unexplained errors. Example: native logs/captures joined to shader/source identity. |
+| `REL-08` | Clean-machine consumer candidate. | Exact signed archive runs with immutable install bytes, correct per-user state and declared offline/missing-input failures. Example: file-diff and first-run transcript. |
+| `REL-09` | Independent consumer/source-adopter approval. | Both journeys pass without private instructions; required negatives and unresolved critical defects are accounted for. Example: reviewer identity, transcript and resulting repairs. |
+| `REL-10` | Immutable published release. | Freshly retrieved bytes match approved hashes/signatures and working support/security/symbol routes. Example: upload-versus-download verification record. |
+| `REL-11` | Release closeout and next-work decision. | The existing stabilization/support policy is satisfied with no unowned blocking issue; explicit approval admits the next program. Example: escaped-defect dispositions and patch/withdrawal verification. |
+
+For each item, ask: what can another engineer inspect, what would fail it, and which owner records the verdict? Use the [measurable delivery card](../Engineering/Workflow/Templates/FeatureDeliveryPackage.md#measurable-delivery-card) rather than adding another tracking system.
+
 Update a row only when the required evidence is linked. `Implemented` without acceptance evidence remains `In progress` or `Blocked`.
 
-| Gate | Status on 2026-09-10 | Evidence/blocker |
+| Gate | Recorded disposition | Evidence/blocker; no new executable result |
 | --- | --- | --- |
 | `PTD-00` Reference Path Tracer completion discovery | **PASS** | [`PTD-00-R1`](../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Discovery.md#ptd-00-r1-gate-separation-reconciliation) freezes the development contract at immutable dossier revision `d3152ec28f74cc1987f1d58fb52fa7ede10fd300` against source input `30597d7d0bb70af9f2836ab01d81d47c3e20bcde`; no implementation or release evidence is implied. |
-| `PTD-01` Reference Path Tracer implementation plan | **PASS / Stage 1 authorized** | The [staged plan](../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md) is frozen for development Stages 1 through 9 by `PTD-00-R1 PASS`. Stage 10 remains separately release-gated. |
-| `PTD-02` / `FCR-REN-08` implementation and candidate closure | Development blocked pending R1 acceptance; release closure blocked | Development Stages 1 through 9 require immutable `PTD-00-R1 PASS`. Stage 10 and release closure additionally require accepted `ReleaseMapSet`, named support machines, `REL-03`, and every applicable [feature acceptance](../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/README.md) row. Current source presence is not oracle evidence. |
+| `PTD-01` Reference Path Tracer implementation plan | **PASS development contract; source stages delivered** | `PTD-00-R1 PASS` established development authorization. The [current plan](../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md) contains remaining recovery/validation work; Stage 10 remains separately release-gated. |
+| `PTD-02` / `FCR-REN-08` implementation and candidate closure | Source stages delivered; recovery/validation open; release closure blocked | Accepted `PTD-00-R1` remains the development contract. Follow the [remaining recovery plan](../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md); do not replay Stages 1–9. Stage 10/release closure also needs accepted `ReleaseMapSet`, support machines, `REL-03` and all applicable feature evidence. Source presence is not oracle proof. |
 | `PTD-03` Release-map reference adoption | Blocked | Requires accepted `FCR-REN-08` plus per-camera raw HDR, convergence/uncertainty, provenance, and dependency-independence evidence. |
 | `REL-00` Scope and freeze | In progress | This roadmap and acceptance contract define the process; approved audience/scope/feature/compatibility/budget inventory is still pending. |
 | `REL-01` Identity, rights, and map set | Blocked | Placeholder license identity, no frozen version/publisher, no cleared redistributable map set, moving dependency inputs, and no approved signing/SBOM/security route. |
-| `REL-02` Clean reproducible baseline | Blocked | The current worktree includes release-documentation edits and a separate documentation relocation; no current cold/warm source-adopter Shipping build/cook/check record exists. |
+| `REL-02` Clean reproducible baseline | Blocked | No current candidate-bound cold/warm source-adopter Shipping build/cook/check record is linked. The older dirty-worktree relocation snapshot is not a current blocker assertion. |
 | `REL-03` Package spine | Blocked | No owned install/CPack/stage/sign/verify contract or produced release archive; current package-mode mutable paths target the package/workspace tree. |
-| `REL-04` Current feature closure | Blocked | `FCR-REN-08` discovery/plan/implementation evidence is absent, no complete feature classification/evidence matrix exists, consumer first run is not frozen, silent `Empty` fallback exists, and `MAP-00` remains open. |
+| `REL-04` Current feature closure | Blocked | Tracer discovery and delivered source are recorded; its recovery/oracle/final candidate checks remain open. The complete current feature classification, first-run/fallback dispositions and `MAP-00` must be revalidated and closed through their owners; no aggregate closure is claimed. |
 | `REL-05` Map correctness and PBR | Blocked | No accepted Reference Path Tracer and no staged-package per-map artifact/PBR acceptance evidence. |
 | `REL-06` Performance and stability | Blocked | No current named-hardware three-run 30 FPS package evidence. |
 | `REL-07` Native backend diagnostics | Blocked | No current candidate-bound D3D12/Vulkan validation record. |
@@ -450,58 +475,59 @@ Update a row only when the required evidence is linked. `Implemented` without ac
 
 ## Immediate Execution Queue
 
-Do these in order. Begin with reference discovery, not shader implementation or visual tuning:
+Do these in order. Begin with the earliest unproved boundary, rather than repeating completed discovery or tuning screenshots:
 
-1. repository-owner review and accept or reject the exact [`PTD-00-R1`](../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Discovery.md#ptd-00-r1-gate-separation-reconciliation) revision; only an immutable accepted revision records `PASS` and authorizes Stage 1;
-2. after that pass, execute development-only `PTD-02` Stages 1 through 9 against `RPTConformanceSet`, retaining exact evidence and making no release/package/Shipping claims;
+1. preserve the accepted [`PTD-00-R1`](../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Discovery.md#ptd-00-r1-gate-separation-reconciliation) revision and inspect current source/candidate drift; reopen only changed contract cells;
+2. execute the tracer's remaining recovery and validation sequence against `RPTConformanceSet`, retaining exact evidence and making no unproved release/package/Shipping or oracle claims;
 3. in parallel with that bounded development route, approve `v0.1.0` runtime-consumer/source-adopter promises, product/platform/toolchain/support/non-goals, compatibility boundary, first-run experience, budgets, complete feature inventory, and exact `ReleaseMapSet`; reconcile every release map/material/light/reference need with the frozen path-tracer domain, pin every release input, and freeze the optional-provider/Shipping DLL allowlist;
 4. settle publisher/license/version/root quick start/notices/support/security identity and start the trusted signing-provider process;
-5. reconcile the dirty worktree and reproduce cold and warm clean `ShippingGame` build/cook routes from public source instructions;
+5. inspect the actual candidate/worktree, preserve unrelated work, and reproduce cold and warm clean `ShippingGame` build/cook routes from public source instructions;
 6. establish the Build-Cook-Stage-Sign-Verify-Package manifest, per-user mutable root, SBOM/provenance, and generate the first archive;
 7. after `REL-03` and the named release inputs pass, execute Reference Path Tracer Stage 10 and close `FCR-REN-08` as the first release-bound technical feature closure; then close intentional first run/example selection/help/settings/quit, silent-fallback failures, `MAP-00`, and the remaining packaged-product feature matrix;
 8. adopt accepted Reference Path Tracer results through `PTD-03`; close maps, then performance/stability/native validation and every controlled failure mode;
 9. freeze; independently pass both clean consumer and source-adopter journeys; publish and retrieve exact approved bytes;
-10. operate the stabilization window, patch/withdraw/advise where required, close `REL-11`, and only then schedule new features.
+10. operate the declared stabilization policy, patch/withdraw/advise where required, close `REL-11`, and only then admit new feature work.
 
 ## Release Operating Rhythm
 
-Keep one backlog of at most 20 items in `Now`, `Next`, and `After Release`. Every `Now` or `Next` item names the current `REL-*` gate, the claim and evidence it will produce, owner, estimate, prerequisites, and what remains unchanged or is excluded. Reject work with no release-gate effect.
+Keep one backlog of at most 20 items in `Now`, `Next`, and `After Release`. Every actionable item names the current gate, claim, measurable result, owner, prerequisites, evidence and scope exclusions. Reject work with no release-gate effect.
 
-For a 12-hour focused week:
-
-| Work | Hours |
-| --- | ---: |
-| Current release-gate implementation or defect closure | 6 |
-| Correctness, package, map, performance, or native-validation evidence | 3 |
-| Focused study for the next gate decision | 1.5 |
-| User/reviewer documentation and evidence routing | 1 |
-| Backlog review, deletion, and retrospective | 0.5 |
-
-Every week ends with one demonstrable result or falsified assumption, exact evidence and limitations, a green or explicitly blocked release path, one short decision record, and at most one primary item carried forward. Review the gate before planning more work; elapsed time does not change status.
+Each iteration ends with a demonstrable result or falsified assumption, exact evidence and limitations, an explicit gate disposition, one short decision record and at most one primary item carried forward. Review proof before admitting more work; elapsed time does not change status. The selected output is traceable through the [delivery catalog](FeatureDeliveryCatalog.md), without a weekly schedule.
 
 ## Retained Advanced Graphics Roadmap
 
-The following plan is unchanged in intent. It starts only after `REL-11`; calendar dates are rebaselined from actual capacity at that point rather than pretending the missed August 2026 gate passed. It reuses the release's accepted Reference Path Tracer and does not rebuild it as a new feature. If `FCR-REN-08` is excluded from `v0.1.0`, the advanced program must explicitly reopen and close that prerequisite before reference-dependent classical or neural work.
+The following program starts only after `REL-11`, ordered by evidence dependencies rather than calendar targets. It reuses the release's accepted Reference Path Tracer and does not rebuild it as a new feature. If `FCR-REN-08` is excluded from `v0.1.0`, explicitly reopen and close that prerequisite before reference-dependent classical or neural work.
 
 ### Retained Outcome
+
+The [role-depth study](Research/GraphicsRoleDepth.md) and [public work](Research/GraphicsEngineerProfiles.md) refine the outcome toward research productization, native workload diagnosis and transferable engineering. [Catalog exercises](FeatureDeliveryCatalog.md#research-informed-delivery-exercises) turn that direction into inspectable examples; [pinned references](Research/RenderingReferenceExamples.md) are consulted at the owning gate. No additional feature is admitted simply to match an engineer's GitHub.
 
 A reviewer can acquire the declared workloads, build and run the engine, reproduce a measured D3D12/Vulkan path-tracing result, inspect one trained neural denoising feature running through Sparkle's shader path, compare it with a classical fallback, and understand quality, latency, memory, failure, and ownership tradeoffs without private guidance.
 
 Bistro exterior and wine interior remain the narrative spine. San Miguel remains the supported cross-scene and held-out generalization workload. Sponza remains the short regression loop. The result is not a general ML framework or a collection of unrelated effects.
 
-### Retained Capacity Envelope
+### Scope And Work-In-Progress Budget
 
-After release, plan against about 300 focused hours and keep 10% unallocated:
+The former hour envelope is replaced by bounded outputs:
 
-| Workstream | Planned hours | Share | Boundary |
-| --- | ---: | ---: | --- |
-| Evidence spine and Tier 1 correctness | 75 | 25% | `MAP-00`, deterministic workloads, references, material/failure records. Reuse release evidence where still valid. |
-| Classical path tracing and workload analysis | 70 | 23% | Reuse the accepted Reference Path Tracer; spend this capacity on paired-API real-time analysis, captures, incidents, and causal bottleneck studies rather than a second reference implementation. |
-| Neural model and GPU inference | 95 | 32% | Data, training, artifact, conformance, shader inference, ablations, and fallback. |
-| Reproduction, writing, and publication | 30 | 10% | Reviewer routing, case studies, external review, evidence release, profile updates. |
-| Contingency | 30 | 10% | Unplanned correctness or environment blockers only. |
+| Workstream | Scope budget | Result boundary |
+| --- | --- | --- |
+| Evidence and correctness | Existing `MAP-00`, two Tier 1 scene families and the short Sponza regression route. | Reuse valid release references/material/failure proof; do not build another evidence substrate. |
+| Classical analysis | Three distinct causal studies, including one rejected/inconclusive result, and one difficult incident. | One paired-API result and one narrow analysis consumer; no general benchmark platform. |
+| Neural feature | One diffuse-indirect problem, one selected small topology and one fixed operator/runtime route. | Data/model/conformance/fallback/evaluation, with optimization only after FP32 correctness. |
+| Reproduction and explanation | Three headline cases, one independent reproduction and independent review. | Reviewable artifacts, technical report/demo, integration instructions and recorded feedback. |
+| Work in progress | One primary production gate and one bounded discovery question. | Unplanned defects displace the next item; they do not silently expand the selected program. |
 
 ### Retained Dependency Sequence
+
+| Existing gate | Reference-guided deliverable refinement | Boundary |
+| --- | --- | --- |
+| Current tracer recovery; then `M1/M2` | Raw-product/estimator/material truth with independent controls, `NVR-04/05/15/17`. | Existing accepted tracer contract stays frozen; unresolved proof remains unresolved. |
+| `M3`, `WL-04` | Three causal studies: choose measured questions from recording/binding, shader liveness/code size, sampling/denoising or memory, `NVR-01..03/09/16/18/19`. | Freeze hypotheses/thresholds first; retain one rejected/inconclusive outcome. No compulsory mesh shader, SER or DGC feature. |
+| `M4`, `WL-05` | One owned fixed diffuse-indirect model with guide/split/recipe identity, `NVR-03/10/11`. | Correct references and admitted discovery precede training; NeRF is outside the selected output. |
+| `M5`, `WL-06` | Fixed operator-to-FP32-shader proof, then measured layout/fusion/precision, `NVR-01/10/13/18`. | One runtime owner; CUDA/OptiX/vendor kernels remain optional separately proved routes. |
+| `M6`, `WL-07/08` | Three cases, one useful analyzer, independent reproduction/review and a focused teaching exercise, `NVR-12/14/17/20`. | Report personal attribution, actual limitations and feedback; no employer-level self-certification. |
+| Conditional `PGD-09` | Second distinct consumer and one post-adoption revision prompted by feedback; optional platform/upstream specialization. | This follows the minimum program and needs genuine external participation. AMD profiler investment stays excluded. |
 
 ```text
 published v0.1.0 baseline
@@ -530,7 +556,7 @@ Primary requirements: `PGE-02`, `PGE-07`, `PGE-08`, `PGE-09`, and `PGE-13`.
 
 - Close `WL-04` with versioned benchmark records, warm-up/sample policy, p50/p95/p99 and uncertainty, paired D3D12/Vulkan captures, memory/high-water, frame/queue/barrier/descriptor/BLAS/TLAS records, and ranked bottlenecks.
 - Build only the narrow analysis CLI required for comparability and useful plots.
-- Complete at least one difficult incident and one causal optimization or measured negative result.
+- Complete one difficult incident and three distinct causal studies, retaining measured decisions and a rejected/inconclusive alternative; unexplained results remain open and a positive optimization result is never manufactured.
 - Draft the three specialist cases from captured evidence rather than reconstructing them later.
 
 Exit: reproducible paired-API classical configuration, quality result, latency distribution, memory result, bottleneck record, and limitations.
@@ -573,17 +599,28 @@ Primary requirements: `PGE-01`, `PGE-05`, `PGE-13`, and `PGE-15`.
 
 ### Retained Milestone Identities
 
-The earlier milestone IDs remain valid so existing evidence and references do not lose meaning. Their old calendar targets were missed and are not silently rewritten; targets are re-estimated after `REL-11`.
+The earlier milestone IDs remain valid. Their exits are measurable evidence gates with no calendar targets. Use the [delivery catalog](FeatureDeliveryCatalog.md) for artifact examples and the owning plans for stage prompts; a new document does not change any milestone verdict.
 
-| Milestone | Retained outcome | Current status | Prerequisite |
+| Milestone | Specific, measurable exit | Prerequisite and output route | Current disposition |
 | --- | --- | --- | --- |
-| `M0` | Clean baseline and reviewer trust | Not started | Reuse valid `REL-01`/`REL-02` evidence, then close graphics-reviewer-specific gaps. |
-| `M1` | Accepted evidence harness and `WL-01` | Not started | `REL-11`; revalidate `MAP-00`. |
-| `M2` | Tier 1 deterministic correctness | Not started | `M1`. |
-| `M3` | Paired-API classical evidence | Not started | `M2`. |
-| `M4` | Neural training baseline | Not started | `M3`. |
-| `M5` | Runtime shader inference | Not started | `M4`. |
-| `M6` | Reproduction and evidence release | Not started | `M5`. |
+| `M0` | Reviewer can reach the exact product/source, supported claim and reproduction route; no unresolved trust/rights blocker. | `REL-11`; reuse valid `REL-01/02` proof, close only reviewer gaps; `PGD-01`. | Not started as an advanced-program gate; release proof may be reused. |
+| `M1` | `MAP-00` revalidated and `WL-01` closed: immutable scene/camera/settings/artifact joins, complete source-loss/provenance records. | `M0`; `PGD-02`, existing workload owners. | Not started. |
+| `M2` | `WL-02/03` pass for Bistro/San Miguel with bounded reference domain/uncertainty and deterministic material/content evidence. | `M1`; accepted tracer, `PGD-02`. | Not started; oracle remains an explicit prerequisite. |
+| `M3` | `WL-04` passes: matched D3D12/Vulkan classical output/cost, three causal studies including one rejected/inconclusive result and one incident; narrow analyzer has valid repeat/failure evidence. | `M2`; `PGD-03..05`, [study plan](../Architecture/CrossModule/PerformanceDiagnostics/WorkloadStudies/Plan.md). | Not started; `WS-D0` must freeze inputs/decision cards. |
+| `M4` | `WL-05` passes: one owned model and fixed recipe, split/leakage controls, repeat tolerance, overfit diagnostic, baselines and selected ablations; final test remains untouched. | `M3`; `PGD-06`, [neural discovery](../Architecture/CrossModule/NeuralGraphics/Discovery.md) and plan Stages 1–2. | Not started; owned data/model remains a target. |
+| `M5` | `WL-06` passes: fixed operator/export/FP32 GPU equivalence, typed runtime/fallback/lifetime on both APIs and measured optional optimizations. | `M4`; `PGD-07`, [neural plan](../Architecture/CrossModule/NeuralGraphics/Plan.md) Stages 3–5. | Not started; no owned inference is claimed. |
+| `M6` | `WL-07/08` pass: held-out quality/cost/failure matrix, package/source/model joins, three headline cases, independent reproduction and review with recorded feedback. | `M5`; `PGD-08`, neural Stage 6 and study adoption. | Not started; personal influence/credentials need separate evidence. |
+
+```mermaid
+flowchart LR
+    Release[REL-11 release closeout] --> Trust[M0 trust]
+    Trust --> Evidence[M1 evidence identity]
+    Evidence --> Correct[M2 correct content and oracle]
+    Correct --> Classical[M3 causal paired-API studies]
+    Classical --> Train[M4 owned data and model]
+    Train --> Shader[M5 correct shader inference]
+    Shader --> Transfer[M6 held-out proof and adoption]
+```
 
 Allowed status values remain `Not started`, `In progress`, `Passed`, `Blocked`, `Deferred`, and `Rejected`. Any blocked row names blocker, owner, next decision, and evidence gathered so far.
 

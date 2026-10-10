@@ -44,6 +44,8 @@ The internal layer is a compass: it identifies the likely limiting domain and th
 
 ## Purpose And Authority Boundary
 
+[Graphics Workload Studies](WorkloadStudies/README.md) defines the selected offline comparison/incident consumer and its bounded plan. It reuses the workload schema, live serialization and external tooling owners below; it adds no parallel collector/export/history design and does not imply internal diagnostics are implemented.
+
 This document owns the target system design for answering four questions:
 
 1. Is the observed frame limited by host/game/editor CPU work, render CPU work, GPU work, presentation, or an unresolved interaction?
