@@ -88,7 +88,7 @@ The detailed conformance audit lives in [Execution Architecture](ExecutionArchit
 
 The first usable milestone is the live viewport comparison loop: select Reference Path Tracer after Lit, navigate with responsive Editor or Game camera controls, see the newest camera identity restart and refine automatically, read exact sample progress, and switch to Lit and back under exact identity revalidation. The estimator beneath that loop must already satisfy the accepted PBR and transport contract; “interactive” does not excuse biased or stale output.
 
-Generic `Radiance` readback with the Reference producer's exact sample-prefix metadata follows as acceptance infrastructure. Polished manual save, checkpoint, and artifact-management UX are secondary and may not delay or substitute for the viewport milestone. They remain required where `AC-RPT-14`, `AC-RPT-16`, `AC-RPT-18`, `AC-RPT-19`, or final `FCR-REN-08` evidence needs them. [User Experience](UserExperience.md#product-priority-order) owns the product order; the [staged plan](Plan.md#delivery-priority) enforces it.
+Generic `Radiance` readback with the Reference producer's exact sample-prefix metadata follows as acceptance infrastructure. Polished manual save, checkpoint, and artifact-management UX are secondary and may not delay or substitute for the viewport milestone. They remain required where `AC-RPT-14`, `AC-RPT-16`, `AC-RPT-18`, `AC-RPT-19`, or final `FCR-REN-08` evidence needs them. [User Experience](UserExperience.md#product-priority-order) owns the product order; the [staged plan](Plan.md#remaining-work-at-a-glance) enforces it.
 
 ## Start Here
 

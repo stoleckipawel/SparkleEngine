@@ -793,7 +793,8 @@ Every stage executor must:
 9. inspect the scoped diff and run the cheapest applicable checks before escalating;
 10. run the feature's architecture-fitness check and retain its integration-hook ledger; a new unjustified hook, feature-specific generic state, scattered policy switch, or public implementation vocabulary blocks the stage;
 11. after responsibility refinement and the final edit, pass the [Stage Source-Style Gate]({{CHANGE_LIFECYCLE_PATH}}#stage-source-style-gate) before each implementation-stage submission, handoff, or completed exit; retain formatter coverage/results and authored logical-spacing review separately;
-12. report exact commands, configurations, outputs, retained artifacts, unavailable checks, limitations, blockers, deletions, and next permitted stage.
+12. report exact commands, configurations, outputs, retained artifacts, unavailable checks, limitations, blockers, deletions, and next permitted stage;
+13. reconcile the plan at handoff under the repository documentation lifecycle: remove completed implementation instructions, retain unfinished repairs/evidence, and keep enduring design and necessary candidate results in their owning documents.
 
 Every prompt's `NON-NEGOTIABLE` paragraph is an exit gate. The handoff quotes each requirement with proof or reports `BLOCKED`.
 

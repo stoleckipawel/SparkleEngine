@@ -6,13 +6,13 @@
 
 **Authority boundary:** this page owns protocol rules; [Execution Architecture](ExecutionArchitecture.md) owns placement; [User Experience](UserExperience.md) owns interaction; [dossier acceptance](README.md#acceptance-and-check-contract) owns proof.
 
-**Current readiness:** **0/100 — target only**; no external capture provider is implemented in the audited baseline.
+**Current implementation:** the Editor route implements single-provider startup, native request/lease and neutral observation. The detailed protocol below remains the acceptance contract; richer identity/cancellation observations and full provider-wide validation are not implied by the current snapshot. See [current composition](ExecutionArchitecture.md#production-route) and [remaining delivery](Plan.md).
 
 ## Launch And Capability Rules
 
 | Rule | Accepted meaning | Smallest falsifier |
 | --- | --- | --- |
-| `EC-S01` Intent | One immutable bounded provider set from Launcher or `-AttachPix`, `-AttachNSight`, `-AttachRenderDoc`; identities remain `pix`, `nsight-graphics`, `renderdoc`. Native combinations require tuple proof; repeated identical or unknown attachment flags reject. The unavailable-control projection does not inject any combination. No live CVar adds injection. | Duplicate/unknown ID and equivalent GUI/CLI request comparison. |
+| `EC-S01` Intent | One immutable startup selection: `none`, `nsight-graphics`, `pix`, or `renderdoc`, ordered None/Nsight/PIX/RenderDoc. Launcher and direct `--capture-provider` intent share this value; attachment aliases select the corresponding tool. Explicit CLI intent overrides the saved enum, including None. Any second explicit selection, missing/unknown value or unknown attachment flag rejects before graphics. No live CVar adds injection. | Duplicate/unknown/missing input, explicit None override and equivalent GUI/CLI request comparison. |
 | `EC-S02` Readiness | `Requested`, `Compiled`, `Installed`, `Attached`, `TargetSupported`, and `Ready` are distinct facts. Ready requires successful activity/API and production-target eligibility. Marker DLL, filename, launch flag, and connected UI are insufficient. | Install only event runtime; detach UI; request unavailable SDK/backend. |
 | `EC-S03` Combinations | Compatibility includes process hooks, Streamline/interposer, driver/API features, validation, and activity. Untested combinations are rejected before injection; no hidden priority selects a winner. Passive unsafe attachments disable Sparkle capture and require clean relaunch. | Request every pair and triple against empty matrix. |
 | `EC-S04` Activity | `pix` means GPU frame capture; `nsight-graphics` means Graphics Capture; `renderdoc` means frame debugging. Timing, GPU Trace, Systems, crash, memory, and shader analysis are distinct activities. | Request GPU Trace through the frame-capture ID; must reject rather than reinterpret. |

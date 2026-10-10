@@ -169,6 +169,7 @@ Report only applicable sections:
 1. iteration ID, applicable `NS-*`, `PGE-*`, roadmap/plan/workload, capability, and `FCR-*` links;
 2. outcome and user-visible behavior;
 3. current-state reconciliation;
+   reconcile the owning plan under [Documentation Organization](DocumentationOrganization.md#lifecycle): remove completed delivery instructions, retain unfinished evidence and repairs, and route enduring decisions and necessary results to their owners;
 4. repository search and use/extend/refactor/replace/add decisions;
 5. ownership, lifetime, publication, and failure contract;
 6. files grouped by responsibility;

@@ -8,7 +8,7 @@
 
 **Architecture authority:** [Performance Diagnostics Architecture](README.md)
 
-**Delivery authority:** [Performance Diagnostics Delivery Plan](Plan.md); external capture delegates to [External Capture Plan](ExternalCapture/Plan.md). The [2026-10-06 source audit](ExternalCapture/Research.md#current-sparkle-baseline) refreshes capture-specific findings; other snapshot rows retain their original date.
+**Delivery authority:** [Performance Diagnostics Delivery Plan](Plan.md); external capture delegates to [External Capture Plan](ExternalCapture/Plan.md). Capture rows below were reconciled on 2026-10-10 against working-tree source at `34b6d8a7a34283fb4bf568be13307c741ca1bedd`; unrelated rows retain the original snapshot date. This is source inspection, not new runtime acceptance.
 
 **Feature acceptance:** [Performance Diagnostics — Acceptance](Acceptance.md)
 
@@ -16,7 +16,7 @@ This inventory records current source/build surfaces and the reconciliation gaps
 
 **Current readiness:** **20/100** — useful timing, marker, and memory seams exist; they are not yet one bounded, consumer-visible diagnostics/evidence product. See [Current Feature Readiness](../../../Acceptance/CurrentReadiness.md#explicit-missing-or-not-yet-admitted-capabilities).
 
-**2026-10-10 source-pointer refresh:** the historical ViewportTopPanel widget is now private `Viewport/ViewportToolbar`, and its FPS text is `DrawFrameStats`; optional surface overlays enter through `UI::SetViewportOverlay`. Earlier snapshot rows retain their dated vocabulary/evidence. [Boundary refinement](ExternalCapture/Discovery.md#viewport-toolbar-boundary-handoff) records the actual bounded current UI checks, without increasing diagnostics readiness.
+**2026-10-10 source-pointer refresh:** the historical ViewportTopPanel widget is now private `Viewport/ViewportToolbar`, and its FPS text is `DrawFrameStats`; optional surface overlays enter through `UI::SetViewportOverlay`. Earlier snapshot rows retain their dated vocabulary/evidence. [Current composition](ExternalCapture/ExecutionArchitecture.md#implemented-editor-viewport-composition) records the actual bounded current UI checks, without increasing diagnostics readiness.
 
 ## Capability At A Glance
 
@@ -26,7 +26,7 @@ This inventory records current source/build surfaces and the reconciliation gaps
 | GPU | stable markers and delayed per-scope timestamps | representative normal-topology capture records with explicit identity, validity, bounded loss, and no mutex/string-heavy hot path |
 | memory | D3D12MA/VMA categories, budgets, transient and retirement data | process RAM sampling, honest heap separation, joined high-water identity, and editor consumption |
 | UI | viewport FPS and existing console/panel composition | one progressive Stats/Performance/Hitches workflow over a published diagnostics model |
-| external analysis | thread descriptions, ETW task provider, conditional PIX events | explicit PIX/RenderDoc/Nsight/RGP/WPA launch and capture intent with availability, provenance, and artifact handoff |
+| external analysis | thread/ETW/marker correlation; Editor single-provider launch, native adapters and capture overlay | Game, Nsight Vulkan, lifecycle/matrix/provenance/observer/Shipping/adoption evidence; specialist tool prerequisites |
 | evidence | stable pass labels and several useful counters | repeatable workload manifests, raw samples, uncertainty, thresholds, and capture links |
 
 The key architectural gap is not the absence of all instrumentation. It is the absence of one bounded, frame-correlated publication and evidence route that preserves normal execution semantics. Existing timings and memory snapshots are foundations; they are not yet a coherent diagnostics product or benchmark verdict.
@@ -53,10 +53,10 @@ The following is a static observation reconciled with the current checkout on 20
 | Memory polling identity | `FramePipeline` passes its monotonic submission `FrameId` to `RendererMemoryMonitor`; the monitor uses checked frame-distance polling and retains the last sampled frame. | The earlier frame-slot wrap defect is closed in source. Poll cadence, unavailable-budget behavior, and long-run presentation still require executable validation. |
 | RAM | No production process-memory sampler exists in the engine. | Working set and private committed bytes are required; engine CPU allocation categories are a later measured need, not an initial fiction. |
 | Editor memory route | A renderer memory provider reaches `UI`, but no current editor panel consumes it. | The target should replace this broad/synchronous presentation route with one immutable diagnostics model published by Application. |
-| Launcher capture selection | `LevelRunOperationRequest` currently carries run mode, profile, level, and graphics API; `BuildLevelRunProcessStepsForPlan` serializes only `--graphics-api` for runtime selection. | Add one typed provider set to the run request and serialize it through the same process-request owner. Do not add vendor-specific launch branches to level cards or GUI widgets. |
-| Application startup parsing | The existing generic command-line adapter applies only `--cvar`/`--set-cvar` assignments. | Parse the repeatable external-capture option in a dedicated typed startup-options owner; do not disguise immutable pre-device intent as a CVar. |
-| Attached external capture | D3D12 emits PIX events when `WinPixEventRuntime.dll` is available, but Sparkle has no capture-provider launch intent, capture-layer bootstrap, attached-provider state, or viewport capture action. | Add a bounded capability-gated provider-set path; the current marker runtime alone does not prove that PIX frame capture is available. |
-| Pre-device integration | `RendererExternalRuntime` resolves the backend and initializes shared Streamline interposer hooks before `RenderCoordinator` creates the backend; `RendererBackendConfiguration` contains only backend API and interposer hooks. | Extend this owner with immutable capture launch intent and neutral bootstrap output. Do not create a second startup integration manager or expose vendor types in the configuration. |
+| Launcher capture selection | A single `CaptureProvider` enum is carried by the level-run request and serialized as `--capture-provider`; footer discovery/model shows supported and installed options. | Existing process planning owns intent/preflight; runtime owns actual native readiness. |
+| Application startup parsing | Dedicated private `ExternalCaptureStartupPolicy` resolves one CLI selection/alias, then saved startup enum; explicit None overrides the preference. Duplicate or invalid intent rejects. | No provider policy in the generic CVar parser; no live injection or multi-provider selection. |
+| Attached external capture | Editor source implements early capture bootstrap, one RHI request/lease authority and viewport overlay. PIX/Nsight lower D3D12; RenderDoc lowers D3D12/Vulkan. | Marker support is independent of capture readiness. Wider lifecycle, Game, Nsight Vulkan and acceptance evidence remain pending. |
+| Pre-device integration | `RendererExternalRuntime` retains immutable `RhiDeviceLaunch` and bootstraps capture before Streamline/device creation. | Native loading stays in private RHI composition; no second startup integration manager. |
 
 Primary code landmarks for revalidation:
 
@@ -94,10 +94,10 @@ Revalidate this table with `rg` before implementation work and reconcile it into
 | GPU memory | RHI `RenderMemoryDiagnostics` and Renderer `RendererMemoryMonitor` | Reuse allocator facts and the corrected monotonic `FrameId` polling path. Preserve local/non-local and used/allocated/budget distinctions while adding only the selected neutral publication/history product. |
 | Process RAM | No current production sampler | Add the smallest Platform-owned process snapshot required by Application, initially Windows-backed. Do not build an allocation tracker or put Win32 types in Application. |
 | Task detail | `TaskProfiler` ETW provider and fixed task lanes | Reuse ETW for deep task traces. Live UI may publish bounded lane aggregates only when the executor already owns the counts/durations. |
-| Viewport summary | `ViewportTopPanel::BuildRightControls` currently reads ImGui FPS/delta | Replace this source with the immutable diagnostics presentation. Do not retain two competing FPS truths. |
+| Viewport summary | `ViewportToolbar::DrawFrameStats` reads ImGui FPS/delta | Replace this source with the immutable diagnostics presentation. Do not retain two competing FPS truths. |
 | Editor diagnostics providers | `UI` currently receives broad renderer snapshot callbacks | Migrate only overlapping performance responsibilities to the Application product and remove replaced callbacks. Asset inspector routes remain separate. |
 | Viewport screenshot | `EditorViewportCaptureCoordinator` plus Renderer/RHI readback | Keep it as image capture and reuse its nonblocking lifecycle lessons only. External profiler capture is a different operation and must not overload `RhiCaptureService`. |
-| Pre-device integrations | `RendererExternalRuntime` builds immutable `RendererBackendConfiguration` before `RenderCoordinator` creates the backend | Extend this existing process-facing owner with launch intent and capture bootstrap. Do not add a competing startup integration service. |
+| Pre-device integrations | `RendererExternalRuntime` composes immutable `RhiDeviceLaunch`, including the selected capture authority, before device creation | Reuse the implemented startup owner; detailed lifecycle and package proof remain in the external-capture dossier. |
 | Backend diagnostics | `RenderHardwareInterface::GetDiagnostics()` returns neutral RHI diagnostic services | Add only the narrow neutral capture capability/request/result needed above RHI. Native APIs, handles, DLLs, SDK state, and provider objects remain in D3D12/Vulkan private adapters. |
 | Build membership | Canonical profiles already define `SPARKLE_BUILD_SHIPPING`; module `CMakeLists.txt` files glob owned Public/Private sources; RHI composes common/backend targets | Use the existing profile as one eligibility boundary: include diagnostic implementations/dependencies in Debug/Development and exclude them from Shipping target/link/package membership. Keep sparse owner seams compile-time empty and proven absent. Add optional SDK rules only inside eligible provider builds. Do not introduce a Diagnostics module or per-feature switches. |
 | Tests | No active CTest registration exists; `ShaderCompilerCliValidation` is a focused custom target rather than a repository test suite. | Use the narrowest existing owner validation surface. If a selected diagnostics contract requires a new executable test, keep it focused in its owning module and do not build a generic diagnostics test framework. |

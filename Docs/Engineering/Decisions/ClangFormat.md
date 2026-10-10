@@ -313,19 +313,10 @@ Before formatting the tracked owned shader manifest:
 
 ## Remaining Rollout
 
-The 2026-08-30 migration pass completed the following repository-owned pieces:
+The tracked/nonignored-untracked C++ and shader formatting workflow and interactive BAT entry point are delivered. The 2026-10-10 full mechanical Format/Check covered 2,190 owned source files. Those checks do not establish shader bytecode, reflection, native or semantic equivalence; use the [binding procedure](../Foundations/CodeStyle.md#repository-commands) for current coverage and commands.
 
-1. `CMake/CodeStyle.ps1` now provides pinned check and format entry points over a tracked owned-source manifest, with matching `code_style_check` and `code_style_format` CMake targets.
-2. The check covers namespace-end comments, anonymous namespaces, multiple inheritance, and inline HLSL attributes in addition to clang-format drift.
-3. A no-write inventory was reviewed by module and source family. At committed revision `61fe39d9`, the manifest contains 1,919 tracked C/C++ files and 120 tracked shader files after excluding D3D12 third-party source.
-4. The C/C++ subset was migrated with clang-format 22.1.3, existing namespace-end comments were removed, and the check-only C/C++ pass is clean. Existing Launcher implementation edits were preserved rather than replaced or reverted.
-5. Post-format `DevelopmentEditor` builds passed for Core, Tasks, Platform, GameFramework, SourceImporters, Launcher, AssetCooker, MaterialCooker, MeshCooker, SceneCooker, and ToolConsoleSupport. The architecture-boundary check also passed.
+Remaining work is evidence and automation:
 
-The shader and final enforcement steps remain open:
-
-1. Establish a passing pre-format ShaderCompiler baseline. The current source build stops in existing RHI compilation errors, while the deployed ShaderCompiler artifact is stale and cannot resolve the current shader catalog. No shader source was formatted without this gate. The current no-write shader check reports formatter drift in 44 of 120 files and 79 authored-policy violations.
-2. Run the DXIL/SPIR-V shader acceptance gate, normalize HLSL attributes, and migrate the shader subset only after its compile, reflection, binding-layout, and package-identity evidence passes.
-3. Rebuild the remaining RHI-dependent owned targets, repeat the shader validation, and run applicable tests after the current RHI compilation defects are resolved. Generated test projects do not substitute for tests present and registered in source.
-4. Enable CI check-only enforcement only after both source families have a clean accepted baseline. Until then, `-SourceFamily Cpp` is the passing migration check; the normal `All` check must continue to expose shader drift.
-
-The repository-wide format remains a mechanical migration, not authorization for semantic cleanup. It was applied in an already dirty worktree only after explicit continuation approval. Committed revision `61fe39d9` contains both the pre-existing Launcher ownership change and the migration; the style tooling did not create that commit or a staging boundary.
+1. Run the DXIL/SPIR-V shader acceptance gate above for any still-unvalidated formatted shader candidate; retain actual cooked bytecode/reflection/binding lineage rather than the obsolete 120-file migration inventory or historical compiler failures.
+2. Close required affected-target/semantic validation where evidence remains unavailable or stale. Formatting success does not substitute for compiler diagnostics or runtime proof.
+3. Add check-only CI enforcement when the selected product/toolchain baseline is accepted. Preserve the complete manifest, failure exit codes and the authored review boundary; do not weaken checks to hide drift.

@@ -144,18 +144,18 @@ RenderDoc is a frame debugger, not the CPU profiler for this design. Nsight Grap
 
 ## Attached Frame-Capture Provider Operations
 
-The architecture selects one combinable provider-set launch intent. The target Launcher exposes it as a typed level-run option and direct launches request `-AttachPix`, `-AttachRenderDoc` or `-AttachNSight`, corresponding to stable IDs `pix`, `renderdoc`, and `nsight-graphics`. This runbook owns the changing provider mechanics, pairwise/multi-provider compatibility evidence, and readiness checks. The DebugEditor/DevelopmentEditor flags and unavailable viewport group are implemented; the flags do not yet inject a tool. Native attachment/capture and Launcher selection remain target behavior. Use the external workflows below for actual captures.
+The implemented DebugEditor/DevelopmentEditor route selects one provider: None, Nsight Graphics, PIX or RenderDoc. Launcher GPU Capture and direct `--capture-provider <id>` share the selection; attachment aliases remain supported. Explicit CLI intent overrides the saved enum. One viewport overlay submits captures through the same authority. This runbook separates current mechanics from remaining native/lifecycle/matrix acceptance; [the feature dossier](../../Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/README.md) owns those dispositions.
 
 ### Common Bootstrap And Capture Sequence
 
-1. Parse a bounded provider set before graphics-device creation. Record the selected backend, reject provider/backend mismatches, and evaluate every requested combination against the measured compatibility matrix without hidden precedence or fallback.
-2. Detect already injected providers and load each accepted capture layer through its documented pre-device path. Verify installation path, library identity/signature where supported, version/API negotiation, combination behavior, and clean unload/rollback behavior.
-3. Initialize or query every provider's exact activity independently. Marker emission is not capture readiness: WinPixEventRuntime, Vulkan debug labels, or a loaded vendor library alone cannot enable that provider's icon.
-4. Publish per-provider `Unavailable` with one actionable reason, or `Ready` with provider, activity, API/SDK version, backend, compatibility state, observer warning, and supported target semantics.
-5. On a viewport icon click, bind the named provider and that viewport's native present target, enqueue one next-valid-frame request, and show `Armed`. Do not begin capture inside the UI event handler.
-6. Observe `Capturing`/`Finalizing` only when that provider can report them; otherwise keep a truthful bounded pending state. Initially reject a second request through any provider and serialize against `ProfileGpu`, validation capture, or another provider even when several ready icons coexist.
-7. On completion, preserve the provider-native artifact and its path when available. Open the tool or folder only through a visible user action unless usability evidence accepts automatic opening. Tag the captured Sparkle frame/discontinuity and observer mode where correlation is available.
-8. On failure, timeout, resize, minimize, device loss, or shutdown, settle the request once, preserve the provider error, and prove that the next ordinary launch has no capture layer or stale callback.
+1. Resolve one selection before graphics creation; reject duplicate/invalid intent and incompatible backend/profile choices. None performs no injection.
+2. Inspect existing injected activities and bootstrap only the selected compatible activity before intercepted graphics work. Unaccepted additional hooks reject rather than coexist. Retain process-lifetime hooks; do not recover by unsafe live unload.
+3. Verify the exact native activity/API. Marker emission, installation discovery and a connected tool UI alone do not prove readiness.
+4. Project the authority's single-provider observation into the overlay. SDK work remains outside UI and the observation lock.
+5. On click, reserve one request identity and admit it through the existing nonblocking ordered queue. Renderer validates the requested scene generation; private RHI binds the API root and host window. Capture covers the containing host interval, including Editor UI.
+6. Pending work disables another request. Native finalization determines Completed; timeout without native quiescence quarantines the lease and requires clean relaunch.
+7. Retain the native artifact/handoff and actual request/host/context identity. Current adapters open the native tool after finalization; richer result/open-folder presentation remains target work. Shell-launch success alone is not a completion oracle.
+8. Execute the retained failure and shutdown controls for the exact candidate before claiming lifecycle acceptance. Source-present guards do not substitute for native stress evidence.
 
 ### Provider Matrix
 
@@ -163,21 +163,21 @@ The architecture selects one combinable provider-set launch intent. The target L
 | --- | --- | --- | --- | --- |
 | `pix` | Windows D3D12; load/inject `WinPixGpuCapturer.dll` before any D3D12 device/API creation; confirm GPU-capture attachment rather than marker runtime presence. | Set the clicked viewport's target window, then enqueue one frame with `PIXGpuCaptureNextFrames`. | `.wpix`; use the documented open-in-PIX API only after successful finalization. | D3D12/Windows only; capture/replay timing differs from native execution and the capture layer can perturb the workload. |
 | `renderdoc` | D3D12 or Vulkan; discover the injected module and dynamically negotiate `RENDERDOC_GetAPI` with the matching header version. Do not statically link or invent a DLL search path outside configured/official locations. | Use the validated next-frame trigger or balanced start/end API with the selected device/window; smoke-test multi-window targeting on both backends. | RenderDoc owns the capture file/list and replay UI; retrieve/open only through supported API behavior. | Injection, API version, device/window selection, unsupported API features, and replay success vary by version/driver. |
-| `nsight-graphics` | Supported NVIDIA D3D12/Vulkan; initialize the NGFX **Graphics Capture** activity and version every parameter struct. | Request one capture at the next Present or validated frame delimiter with the current SDK's supported request API. | Query finalized capture paths through supported NGFX artifact APIs; host/remote filesystem namespaces may differ. | The SDK remains beta. Keep Sparkle support `Experimental`; do not reinterpret this intent as Nsight Systems or GPU Trace. |
+| `nsight-graphics` | NVIDIA D3D12 in the current engine route; Vulkan remains delivery work. Initialize the NGFX **Graphics Capture** activity and version every parameter struct. | Request one capture at the next Present or validated frame delimiter with the current SDK's supported request API. | Query finalized capture paths through supported NGFX artifact APIs; host/remote filesystem namespaces may differ. | The SDK remains beta. Keep Sparkle support `Experimental`; do not reinterpret this intent as Nsight Systems or GPU Trace. |
 
-Launching from provider-native UIs may inject one or more capture layers before Sparkle starts. Sparkle publishes an icon for every detected API that passes its provider, backend, and combination checks without requiring a matching Sparkle selection. Passive detection never loads another provider. Simultaneously detected layers may coexist only when their exact versions/backends pass the compatibility matrix; affected icons otherwise remain `Conflict` until the user relaunches cleanly.
+Provider-native launches may inject hooks before Sparkle starts, but the current engine control still requires a single matching startup selection. Bootstrap detects conflicting injected providers/activities and refuses unaccepted combinations. It does not synthesize several icons or choose an automatic fallback. Use the separate tool-managed workflows below when no engine provider is selected.
 
 ### Required Smoke Matrix
 
-- no flag and no injection: no provider library load and no viewport icon;
+- explicit None (or no flag with saved None) and no injection: no provider library load and no viewport icon;
 - each requested provider missing, wrong version, wrong backend, and successfully ready;
-- native-UI launch/attach detection without a Sparkle flag;
-- every supported pair and three-provider combination: stable icon order, independent status, startup/rollback behavior, and explicit `Conflict` for unaccepted combinations;
+- native-UI launch with a matching single Sparkle selection, plus no-selection and mismatched-hook rejection controls;
+- every pair/triple explicit selection rejects before graphics; externally injected unaccepted combinations reject before additional loading;
 - D3D12 multi-window target capture for PIX and RenderDoc, plus Vulkan target capture for RenderDoc;
 - supported NVIDIA D3D12/Vulkan Nsight Graphics Capture with the exact SDK/driver/tool versions, while visibly `Experimental`;
 - capture of the clicked viewport rather than the first unrelated Editor present;
 - stable marker hierarchy and requested/captured `FrameId` correlation where the provider permits it;
-- repeated single captures, clicking another ready provider while one is active, busy/conflict, resize/minimize, timeout, device loss, finalization, artifact opening, and shutdown/relaunch cleanup;
+- repeated single captures, second-request Busy, injected conflict, resize/minimize, timeout, device loss, finalization, native opening, and shutdown/relaunch cleanup;
 - internal detailed timing off versus provider capture on, then the explicitly declared combined mode only if later measured safe;
 - Empty and Sponza observer-cost comparison against the same build/configuration without the provider.
 

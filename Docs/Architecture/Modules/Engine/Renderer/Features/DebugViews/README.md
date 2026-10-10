@@ -2,7 +2,7 @@
 
 **Status:** feature dossier; Show-flags implementation complete, family acceptance remains bounded
 
-**Current readiness:** **40/100** for the family; no family/release closure is claimed. Bounded delivery, admission and direct/indirect-family execution results are recorded by [Discovery](Done/Discovery.md#current-candidate-evidence-and-permission), not inferred for the remaining mode/control matrix.
+**Current readiness:** **40/100** for the family; no family/release closure is claimed. Bounded delivery, admission and direct/indirect-family execution results are recorded by [Bounded Show evidence](../../../../../../Acceptance/Renderer/DebugViews.md#earlier-execution-evidence), not inferred for the remaining mode/control matrix.
 
 **Responsibility:** feature-local navigation and current evidence posture for Renderer debug-view controls, presentation, delivery, and acceptance
 
@@ -10,9 +10,9 @@
 
 **Architecture:** [Viewport Rendering Controls](Controls/README.md) and [Debug View Presentation Architecture](PresentationArchitecture.md)
 
-**Current proof contract:** [Acceptance](Acceptance.md). [Completed delivery records](Done/README.md) retain the plan and discovery history.
+**Current proof contract:** [Acceptance](Acceptance.md). [Bounded Show evidence](../../../../../../Acceptance/Renderer/DebugViews.md) retains the candidate and artifact limits; completed delivery instructions have been retired.
 
-**Show delivery:** complete for the implemented feature set. The compact grouped menu, globally editable controls, initialized disabled contributions, scene/light classifications, and shader-parameter emissive control are implemented. Future controls extend their feature owner and the current [Show contract](Controls/ShowFlags.md). Historical delivery prompts are archived, not queued. This does not advance whole-family or release readiness.
+**Show delivery:** complete for the implemented feature set. The compact grouped menu, globally editable controls, initialized disabled contributions, scene/light classifications, and shader-parameter emissive control are implemented. Future controls extend their feature owner and the current [Show contract](Controls/ShowFlags.md). Remaining family proof is selected from the acceptance contract. This does not advance whole-family or release readiness.
 
 ## Current Source Shape
 

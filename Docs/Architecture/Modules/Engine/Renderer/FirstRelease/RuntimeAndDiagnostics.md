@@ -96,7 +96,7 @@ Implement RD-2 in the existing renderer settings aggregate, persistence owner, C
 
 **Non-goals:** building the separate Performance Diagnostics product, exposing private development data in Shipping, or making debug output an unqualified colorimetric oracle.
 
-**Required work:** inventory Lit/wireframe/GBuffer/lighting/GPU-scene modes and required resources; close the one per-view mode route, labels, unavailable reasons, exposure/tone/encoding mapping, stable visualization ranges/legends, capture readback/format/sidecar/provenance, bounded observer cost, privacy and Shipping erasure; reconcile remaining work against [current Debug Views acceptance](../Features/DebugViews/Acceptance.md). Completed Show implementation records are [archived provenance](../Features/DebugViews/Done/README.md).
+**Required work:** inventory Lit/wireframe/GBuffer/lighting/GPU-scene modes and required resources; close the one per-view mode route, labels, unavailable reasons, exposure/tone/encoding mapping, stable visualization ranges/legends, capture readback/format/sidecar/provenance, bounded observer cost, privacy and Shipping erasure; reconcile remaining work against [current Debug Views acceptance](../Features/DebugViews/Acceptance.md). Completed Show implementation records are [Bounded Show evidence](../../../../../Acceptance/Renderer/DebugViews.md).
 
 **Failure modes:** process-global mode leaks across viewports; unavailable resource displays stale data; mode goes through wrong tone/encoding; legend/range changes without metadata; capture generation mismatches frame; private path/content leaks; observer changes timing materially.
 
@@ -105,7 +105,7 @@ Implement RD-2 in the existing renderer settings aggregate, persistence owner, C
 **Ready-to-use prompt:**
 
 ```text
-Implement RD-3 for FCR-REN-11. Reconcile current debug mode selector, per-view state, graph resources/replacement point, visualization shaders/ranges/legends, exposure/tone/encoding, RHI readback, capture writer/sidecar, Editor controls, privacy, and package selection. Use Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Acceptance.md and current control contracts; Done/ contains completed Show implementation provenance. Keep feature-owned global Show CVars and the per-view debug mode at their distinct current owners. Exercise remaining admitted mode, viewport, missing/cullable resource, resize/reload, invalid selector, capture failure, stable label/range, display mapping, and Shipping cells. Measure observer cost and bind captures to frame/candidate identity.
+Implement RD-3 for FCR-REN-11. Reconcile current debug mode selector, per-view state, graph resources/replacement point, visualization shaders/ranges/legends, exposure/tone/encoding, RHI readback, capture writer/sidecar, Editor controls, privacy, and package selection. Use Docs/Architecture/Modules/Engine/Renderer/Features/DebugViews/Acceptance.md and current control contracts; Docs/Acceptance/Renderer/DebugViews.md retains bounded Show candidate evidence. Keep feature-owned global Show CVars and the per-view debug mode at their distinct current owners. Exercise remaining admitted mode, viewport, missing/cullable resource, resize/reload, invalid selector, capture failure, stable label/range, display mapping, and Shipping cells. Measure observer cost and bind captures to frame/candidate identity.
 ```
 
 ## `RD-4` — UI And Viewport Composition

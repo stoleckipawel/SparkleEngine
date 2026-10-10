@@ -4,6 +4,8 @@
 
 **Last source reconciliation:** 2026-08-28 at committed `master` revision `20814381`; source and executable build configuration are unchanged from implementation revision `99af6d5b`
 
+**2026-10-10 name refresh:** the current header orchestrator is private `Viewport/ViewportToolbar`; this pointer correction does not rerun the camera acceptance evidence.
+
 **Scope:** the editor viewport camera, navigation preferences, projection, exposure overrides, and the effective render-view boundary
 
 **Implementation status:** the ownership contract is canonical. The [renderer navigation overlay](../WholeRepositoryMap.md#current-renderer-navigation-overlay) records the implemented publication of the effective camera as `RenderViewCameraData` inside the singular `RenderViewInput`.
@@ -43,7 +45,7 @@ The editor starts its free view from the active scene camera when a world genera
 
 `CameraInputIntentCollector` owns only device-state collection and emits raw semantic intent. It does not own move speed, sensitivity, inversion, acceleration, or any mutation policy.
 
-The viewport header is a projection of `EditorViewportSession`; it owns no camera truth. `ViewportTopPanel` only composes toolbar capabilities, `ViewportCameraProperties` owns the camera-property widgets, and `ExposureSettingsEditor` owns the shared exposure editing widgets. These presentation types mutate their existing settings owners rather than becoming new state owners. The Renderer consumes only the resolved camera and exposure values and has no Editor dependency. GameFramework does not depend on Renderer or Editor.
+The viewport header is a projection of `EditorViewportSession`; it owns no camera truth. `ViewportToolbar` only composes toolbar capabilities, `ViewportCameraProperties` owns the camera-property widgets, and `ExposureSettingsEditor` owns the shared exposure editing widgets. These presentation types mutate their existing settings owners rather than becoming new state owners. The Renderer consumes only the resolved camera and exposure values and has no Editor dependency. GameFramework does not depend on Renderer or Editor.
 
 ## Navigation And Projection
 
@@ -80,7 +82,7 @@ The editor now executes the existing tone-mapping and output-encoding passes tha
 - Scene camera serialization and editor inspection must not regain navigation speed or sensitivity fields.
 - Input collection must remain policy-free; runtime policy belongs to `GameWorld` and editor policy belongs to `EditorViewportSession` and its settings owner.
 - Free editor navigation must not submit world-edit commands or publish camera input to the active scene camera.
-- `ViewportTopPanel` must remain a capability orchestrator and must not implement camera-property or exposure widgets.
+- `ViewportToolbar` must remain a capability orchestrator and must not implement camera-property or exposure widgets.
 - The effective editor camera must use the requested viewport extent rather than the host-window aspect ratio.
 - Exposure overrides must remain typed viewport request data; panels must not write renderer CVars to simulate a local override.
 - Renderer presentation must publish tone-mapped, output-encoded scene color for both embedded and backbuffer viewports.

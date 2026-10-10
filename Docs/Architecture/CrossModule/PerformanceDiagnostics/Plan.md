@@ -364,7 +364,7 @@ Feature selection primarily controls what code is implemented and retained. Do n
 
 - Fixed stat groups retained in profiling-capable Debug/Development builds are entries in one bounded catalog and use typed runtime demand.
 - The existing Debug/Development-versus-Shipping profile is the single product eligibility boundary. Additional build switches exist only for a real optional dependency inside eligible builds, such as a selected vendor adapter; do not add one switch per metric/group/package.
-- One typed provider set expresses immutable process-start intent in an eligible build. The Launcher owns the selection UI and level-run request; the repeatable direct-CLI adapter is `--capture-provider <id>`. Neither path makes an unbuilt provider appear available, and stripped Shipping has no capture-option parser or handler.
+- One typed provider enum expresses immutable process-start intent in eligible Editor builds. Launcher and direct `--capture-provider <id>` share the single selection; explicit None overrides a saved tool. Multiple selections reject. Current source implements the route; remaining lifecycle, Game, adapter and acceptance deltas are delegated below.
 - Deferred packages leave no compatibility layer, placeholder menu item, empty source file, or reserved public API.
 - A prototype that fails its acceptance test is removed in the same package unless an explicitly selected follow-up consumes it.
 
@@ -462,7 +462,7 @@ In every example, the phase gates are still reviewed and closed in order. A pack
 The [architecture](README.md) defines the product decomposition; this plan owns its required dependency order. After the baseline, external capture is the first implementation slice and later internal features remain selectable.
 
 1. Freeze metric names, units, validity, `FrameId` join behavior, and a source-backed baseline trace using existing thread/ETW/GPU markers.
-2. Prove the attached external frame-capture product end to end: bounded process-wide provider-set selection before device creation; PIX D3D12, Nsight Graphics D3D12/Vulkan, then RenderDoc D3D12/Vulkan private adapters; marker-only correlation; one conditional icon per capable provider in each viewport's right-control cluster; stable target binding; global exclusive request arbitration; pairwise/multi-provider compatibility evidence; native artifact handoff; absent-tool, failure, observer-cost, and Shipping-erasure evidence. Nsight remains explicitly experimental until its current SDK/tool matrix passes, but its accept-or-evidence-backed-reject decision is completed here rather than deferred behind internal work.
+2. Complete the remaining external-capture delivery/acceptance over the existing single-provider startup and viewport overlay: PIX D3D12, Nsight Graphics D3D12/Vulkan, then RenderDoc D3D12/Vulkan. Preserve marker-only correlation, stable target binding and the one native lease. Validate injected-combination rejection, artifact handoff, absent tools, failure/recovery, observer cost and Shipping erasure. Nsight remains experimental. Source-present adapters are verified rather than reimplemented; missing hardware/tools remain explicit unavailable prerequisites.
 3. Add the bounded Application session, host phases, process RAM, Renderer CPU stages, frame-queue waits, and one top-level GPU queue span needed by `MAP-00`, composing the accepted external-capture projection without changing its owners.
 4. Register the fixed expert `Stat` command through the existing Editor/DevelopmentGame console composition; publish `Fps`, `Unit`, and `UnitGraph` from the same model; expose the task-first `Quick Check` viewport path; and prove basic-mode observer cost and keyboard completion.
 5. Complete the workload-owned `MAP-00` vertical slice: fixed resolution/readiness, explicit benchmark export and manifest integration, capture naming, and Sponza calibration.
@@ -519,7 +519,7 @@ Close uncertainty before code without creating speculative frozen contracts. The
 6. Keep `EXT-00`–`EXT-05` selected, revalidate each current provider/backend/tool prerequisite, and define the exact success or evidence-backed rejection condition. Leave internal `FND-*` packages `Available` until the external gate closes; recording later priorities is allowed, implementation is not.
 7. Capture a source-backed control run with diagnostics timing disabled and the existing thread names/ETW/GPU markers. Record product, backend, build profile, pipeline mode/depth, resolution, VSync/presentation policy, adapter/driver, commit, and known invalid data.
 8. For each external provider, record launch/bootstrap order, backend/device/present-target owner, capability and marker-only correlation contract, viewport/`FrameId` identity, request/state/artifact lifetime, conflict policy, failure/timeout/shutdown behavior, and consumer.
-9. Size the fixed provider set, request/result/state records, reason/artifact metadata, and timeouts from current provider needs; no internal timing query/history/session capacity is introduced in this phase.
+9. Freeze the single startup selection and bounded request/result/state records, reason/artifact metadata, and timeouts from current provider needs; no internal timing query/history/session capacity is introduced in this phase.
 
 ### Positive guardrails
 
@@ -537,7 +537,7 @@ Close uncertainty before code without creating speculative frozen contracts. The
 
 ### Exit gate
 
-- The complete external provider set and default-deny compatibility policy are explicit; PIX-relevant discovery closes first, later adapter cells close before their own stages. Internal packages remain unimplemented; unavailable later SDKs do not block a valid PIX result.
+- The closed provider catalog, single active selection and default-deny compatibility policy are explicit; PIX-relevant discovery closes first, later adapter cells close before their own stages. Internal packages remain unimplemented; unavailable later SDKs do not block a valid PIX result.
 - Every known and newly discovered overlap has one allowed disposition; no ambiguous owner or parallel route is approved for implementation.
 - Every selected package has a complete touched-path record and satisfies the applicable Engineering standards.
 - Authoring remains intent-first, facts have automatic low-level owner seams, and the Development/Shipping source/link/package boundary plus erasure proof is defined before implementation.
@@ -585,7 +585,7 @@ Individual PIX acceptance does not wait for missing later tooling. Internal Phas
 ### Ready-To-Use Entry Prompt
 
 ```text
-Execute only the earliest dependency-ready stage of Docs/Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/Plan.md. Begin at Stage 0 if EC-D0-ENGINE is absent or stale; otherwise paste the earliest ready engine stage's complete prompt and verify its exact prerequisite artifacts. PIX-only discovery may continue alongside the independent engine repairs. Preserve EXT identities and priority PIX, Nsight, RenderDoc, then specialist tools. Apply the delegated plan's Universal Execution Contract, including existing-consumer engine repairs and actual later-provider locality proof. Stage 1 additionally requires EC-D0-PIX and EC-G0A/0B/0C; do not bolt capture onto the old blocking/separate-publication routes. Do not implement internal Performance phases 2-6 or complete all adapters in one change. Report individual provider evidence separately from aggregate P1-GATE; a missing tool/hardware/check stays BLOCKED, never an invented unsupported rejection.
+Execute only the earliest remaining dependency-ready stage of Docs/Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/Plan.md. Revalidate current source and retained gate artifacts; do not repeat completed engine repairs or source-present adapters. Refresh discovery only where stale/missing facts affect the selected delta. Preserve EXT identities and delivery priority PIX, Nsight, RenderDoc, then selected specialist tools. Apply the delegated Universal Execution Contract, retained EC-G0A/0B/0C controls and actual later-provider locality proof. Do not implement internal Performance phases 2-6 or all adapters in one change. Report per-provider evidence separately from aggregate P1-GATE; missing/unrun evidence remains BLOCKED and user-excluded lanes remain EXCLUDED.
 ```
 
 ## Phase 2 — Build The Bounded Data Spine

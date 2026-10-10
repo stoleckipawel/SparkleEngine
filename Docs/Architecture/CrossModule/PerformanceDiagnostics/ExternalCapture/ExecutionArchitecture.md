@@ -8,7 +8,7 @@
 
 **Current readiness:** implemented Editor launch/button route with scoped native D3D12 results; provider-wide lifecycle, matrix, Shipping product and adoption acceptance remain open. The parent readiness projection is unchanged.
 
-The [requested-control visibility slice](Discovery.md#requested-viewport-controls-handoff) implements the Application/Editor construction and right-side presenter seam for unavailable requests. That historical slice is superseded by the implemented native route below; its shared UI/icon ownership is preserved.
+The earlier disabled-control slice is historical. The implemented native route below retains the shared UI/icon ownership and replaces the visibility-only request path; [Discovery](Discovery.md#direct-launch-implementation-handoff---2026-10-10) retains the bounded evidence.
 
 ## Implemented Editor Viewport Composition
 
@@ -50,10 +50,10 @@ The feature has one documented ownership envelope with three necessary private h
 | --- | --- | --- |
 | Renderer `Private/Diagnostics/ExternalCapture/` (implemented) | Coherent scene-generation validation and typed queue control; no duplicated lease/result state. | One private subsystem; no provider APIs or runtime loading here. |
 | RHI `Private/Diagnostics/ExternalCapture/` and backend `Private/{D3D12,Vulkan}/Diagnostics/ExternalCapture/` (implemented) | Shared native lifecycle policy and concrete SDK lowering; bootstrap is available before device creation. | One common owner plus backend adapters; no Renderer/Editor includes. |
-| Editor `Private/Viewport/` capture presenter beside `EditorViewportSession` | Presentation of capability/results and submission of typed intent. | One presenter, no native headers or mutable capture authority. |
+| Editor `Private/Viewport/ExternalCapture/` overlay client | Presentation of capability/results and submission of typed intent. | One presenter, no native headers or mutable capture authority. |
 | RHI `Public/Diagnostics/` | Narrow neutral launch/capability/request/observation contract through existing diagnostics composition, plus pre-device bootstrap entry. | One operation contract plus a standalone identity/token value header reused by Launcher without binary linkage; no public plugin registry, SDK version structs, raw native handles, or universal native accessor. |
 | Renderer public control/read-state and private coordinator composition | One request edge and one immutable provider projection. | Extend existing owners; no second mailbox, polling bus, or service locator. |
-| `RendererExternalRuntime` / backend configuration | Startup ordering and lifetime composition. | Invoke bootstrap, compose Streamline, retain owner; no provider switches or loading mechanics. |
+| `RendererExternalRuntime` / immutable `RhiDeviceLaunch` | Startup ordering and lifetime composition. | Invoke bootstrap, compose Streamline, retain owner; no provider switches or loading mechanics. |
 | RHI device/presentation factories and diagnostics composition | Attach a bootstrap-selected adapter and notify recording/submission/present boundaries. | One composition hook per backend and existing diagnostics owner; no feature loops in device services. |
 | Renderer frame/UI presentation | Confirm scene view participation and host surface generation at existing boundary. | One semantic target-resolution hook; no provider branch in `FramePipeline`, pass bodies, or scene preparation. |
 | Application startup and `SparkleApplicationEditor` composition | CLI normalization and model/request adaptation. | One startup edge and one UI composition edge; no external session owner. |
@@ -67,7 +67,7 @@ The stage ledger distinguishes a shared engine repair from a capture hook; neith
 
 ## Engine Evolution Contract
 
-**Implementation update - 2026-10-08:** the existing-consumer Q01/Q02 startup/events and Q03 queue admission repairs are implemented. [Stage 0B handoff](Discovery.md#stage-0b-implementation-handoff---2026-10-08) records the producer/consumer/lock/identity/deletion budget and scoped controls. [Stage 0C handoff](Discovery.md#stage-0c-implementation-handoff---2026-10-08) records implemented Q04: one 600-byte fixed viewport observation, monotonic independent publication sequence, migrated consumers and removal of the independent public getters/caches. Native capture/provider contracts remain target work.
+**Implementation update - 2026-10-08:** the existing-consumer Q01/Q02 startup/events and Q03 queue admission repairs are implemented. [Stage 0B handoff](Discovery.md#stage-0b-implementation-handoff---2026-10-08) records the producer/consumer/lock/identity/deletion budget and scoped controls. [Stage 0C handoff](Discovery.md#stage-0c-implementation-handoff---2026-10-08) records implemented Q04: one 600-byte fixed viewport observation, monotonic independent publication sequence, migrated consumers and removal of the independent public getters/caches. The Editor native route is now implemented; wider lifecycle, Game, Nsight Vulkan and aggregate acceptance remain in the [remaining plan](Plan.md).
 
 The [dated absorption scan](Research.md#engine-absorption-scan--2026-10-07) identifies the existing responsibilities that must improve as this feature lands. Shared engine mechanism stays with its existing owner; capture policy stays within the feature envelope. Preparatory stages must have an existing consumer and an independently observable benefit before a capturer is added. They cannot create dormant extensibility scaffolding.
 
@@ -95,13 +95,13 @@ The bounded-removal review separates shared repairs from capture: removing the c
 
 | Value / mutable owner | Producer -> consumer / lifetime | Copy reason / rejected duplicate |
 | --- | --- | --- |
-| Immutable provider set / startup | Launcher or Application -> bootstrap; process lifetime | One tiny value at process boundary; no provider booleans in each module. |
+| Immutable selected provider / startup | Launcher or Application -> bootstrap; process lifetime | One enum value at the process boundary; no provider booleans in each module. |
 | Bootstrap resource / RHI private | Early loader -> device adapters; outlives devices and callbacks | Owned handle, not a copied native module in Renderer. |
-| Capability / native adapter | SDK/backend discovery -> controller -> read state | Fixed three-entry immutable projection; no SDK polling in UI. |
-| Request / Renderer controller | Existing control message -> controller -> selected adapter | Copy at thread mailbox boundary only; no second UI request cache. |
+| Capability / native authority | SDK/backend discovery -> selected-provider observation -> Editor client | One selected-provider snapshot; no SDK polling or mutable provider state in UI. |
+| Request / RHI authority and Renderer control | Authority reservation -> ordered request-ID command -> scene validation -> selected adapter | One identity/lease owner; typed mailbox transfer and no second UI request cache. |
 | Target binding / Renderer and RHI existing surface owners | Scene-view token -> confirmed host surface -> private native target | Generations prevent stale reuse; no new native window ownership. |
 | Native observation / adapter | Native APIs/callback -> controller safe boundary | Bounded event/result copy across callback lifetime; no callback owning Editor pointers. |
-| Latest terminal results / controller | Settlement -> Renderer read state -> presenter | Fixed per-provider record, referenced or moved within owner; no ring/history. |
+| Latest terminal result / RHI authority | Settlement -> neutral observation -> presenter | One latest selected-provider record; no ring/history or duplicate Renderer state machine. |
 | Correlation sidecar / capture operation | Immutable candidate/configuration identities -> user-state artifact | One explicit publication snapshot; no scene/material/shader-library copy. |
 
 The [single-truth/copy budget](../../../../Engineering/Foundations/DataAndMemory.md#single-truth-and-copy-budget) applies. Request IDs and generations are lifetime/correlation counters, not internal format versions.
@@ -144,7 +144,7 @@ Reuse [Shader System](../../ShaderSystem/README.md) provenance: exact CPU binary
 
 ## Clean Break And Refinement
 
-Replace the marker loader and handwritten ABI path in prerequisite Stage 0A; update all direct callsites, build membership, and documentation. The selected optional matched event package is default-off, privately enabled only for eligible non-Shipping D3D12 profiles, with existing dependency/artifact staging and MIT notices. Those are target build decisions, not generated-membership or Shipping proof. Preserve screenshot/readback services, existing GPU resource lifetimes, parallel recording, Streamline intent, and normal presentation. No aliases, legacy provider paths, internal schema dispatch, second stat/session truth, or deferred deletion gate.
+Stage 0A replaced the marker loader and handwritten ABI with official matched event support and owned initialization. The optional package is privately selected through the existing eligible non-Shipping D3D12 profile and dependency/staging/notice routes. Source membership is implemented; full generated-product, import and package erasure proof remains acceptance work. Preserve screenshot/readback lifetimes, parallel recording, Streamline intent and normal presentation; no compatibility path or deferred deletion gate remains authorized.
 
 Each stage ends with one responsibility sentence per substantive file/class/function, duplicate/switch/include audit, exact hook ledger, and `architecture_boundary_check`. Discovery may refine file placement from current source, but may not move these authorities into generic orchestrators to avoid the budget.
 

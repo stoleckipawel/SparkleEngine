@@ -48,7 +48,7 @@ The file boundaries group cohesive features; they do not force whole-file execut
 
 ## Relationship To Existing Renderer Plans
 
-[Debug Views](../Features/DebugViews/README.md) owns current presentation and control contracts; its completed Show implementation records are [archived](../Features/DebugViews/Done/README.md). `RD-3` selects remaining work from current feature acceptance. [Deferred GBuffer Decals](../Features/DeferredDecals/Plan.md) is the detailed subplan selected by `GR-5` for first-release `FCR-REN-23`. Plan presence alone is not scope admission; the mother plan and FCR registry provide that admission.
+[Debug Views](../Features/DebugViews/README.md) owns current presentation and control contracts; its completed Show slice is recorded in [Bounded Show evidence](../../../../../Acceptance/Renderer/DebugViews.md). `RD-3` selects remaining work from current feature acceptance. [Deferred GBuffer Decals](../Features/DeferredDecals/Plan.md) is the detailed subplan selected by `GR-5` for first-release `FCR-REN-23`. Plan presence alone is not scope admission; the mother plan and FCR registry provide that admission.
 
 ## Renderer-Wide Stop Conditions
 

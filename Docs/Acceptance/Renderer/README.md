@@ -40,4 +40,6 @@ No Renderer row is promoted by this summary. Follow the feature contract for wha
 | HDR display output; mandatory target, implementation not found and discovery open | **0/100** | [HDR Display Output package](../../Architecture/Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/HDRDisplayOutput/README.md) | [`FCR-REN-26`](../FeatureCompletionReports.md#initial-completion-report-registry) |
 | Frame generation; not implemented and not admitted | **0/100** | [Frame Generation dossier](../../Architecture/Modules/Engine/Renderer/Features/PostProcessing/ReconstructionAndGeneration/FrameGeneration.md) | no candidate report until roadmap admission; negative audit `REN-E28` |
 
+[Debug Views candidate evidence](DebugViews.md) retains the bounded accepted Show slice and its historical artifact limits; unfinished family proof remains with the linked acceptance contract and current delivery owner.
+
 Other Renderer feature families use the same rule: define their proof beside the feature, then add only a high-level route here when acceptance progress needs coordination across the Renderer portfolio.

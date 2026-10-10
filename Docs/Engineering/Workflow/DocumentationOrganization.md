@@ -164,6 +164,8 @@ An index routes. It SHOULD NOT reproduce large status tables, requirements, phas
 
 ## Lifecycle
 
+- Implementation plans contain only unfinished work, including required validation, recovery, packaging, and adoption. Once a slice is delivered, remove its completed task lists, implementation prompts, execution diary, and obsolete estimates. For partially delivered slices, retain only the remaining delta; source delivery does not close unrun evidence gates.
+- Before retiring delivery material, preserve unique enduring decisions in the current design owner and valuable delivery outputs in the evidence/report owner: candidate identity, exact commands/configuration, results and limitations, native artifacts, reference images, measurements, provenance, failure controls, and reproduction instructions. Keep the artifacts and their navigable references; do not discard them merely because implementation is complete or rely on Git history as their only useful reader route. Update inbound links in the same change. Delete a fully completed plan when it has no unfinished work; Git history retains the former sequence. Do not create `Done` folders or archives solely to keep completed instructions.
 - Reconcile current maps and capability snapshots whenever their named owners, consumers, build membership, or public selection surface changes.
 - Reconcile the central readiness row and every local projection whenever implementation, reachability, candidate evidence, or delivery/adoption state changes.
 - Update a feature's architecture, local acceptance contract, directly affected plans, release/workload tracking, and indexes in one change when its contract moves.

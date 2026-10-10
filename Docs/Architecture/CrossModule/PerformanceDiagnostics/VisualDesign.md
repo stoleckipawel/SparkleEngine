@@ -100,7 +100,7 @@ Color may reinforce categories in the real UI, but text, icons, patterns, and to
 ### Viewport Performance Menu
 
 ```text
-+ Viewport ---------------------------------------- [Performance v] [PX] [RD] +
++ Viewport ---------------------------------------- [Performance v] +
 |                                                                             |
 |                                      + Performance -----------------------+ |
 |                                      | Quick Check                        | |
@@ -116,40 +116,24 @@ Color may reinforce categories in the real UI, but text, icons, patterns, and to
 +-----------------------------------------------------------------------------+
 ```
 
-`[PX] [RD]` represents coexisting PIX and RenderDoc capture actions because this example requested or detected both providers. A provider that was neither requested nor detected contributes no icon. The menu submits typed task-preset requests and shows the automatically derived collection cost. It does not build command strings, own collection state, list twelve internal groups as equal choices, or silently enable `LiveDetailed`. `Customize Stats...` is the searchable expert route to the bounded group catalog. Tier B/C groups remain workload-gated candidates, not a promised backlog.
+External capture is a separate scene-surface overlay with one selected-provider icon, not a row of simultaneous toolbar providers. The menu submits typed task-preset requests and shows derived collection cost. `Customize Stats...` remains the expert route to the bounded group catalog; the internal Performance menu is still a target design.
 
 ### Attached Profiler Capture Icons
 
-The [external-capture UX](ExternalCapture/UserExperience.md) and [semantics](ExternalCapture/Semantics.md) own these actions. Wireframes are illustrative, not proof of supported injected combinations. Use stable order PIX, Nsight, RenderDoc; disclose containing host-present scope and actual frame/interval certainty.
+The [external-capture UX](ExternalCapture/UserExperience.md) and [semantics](ExternalCapture/Semantics.md) own this operation. Launcher/startup selection is ordered None, Nsight Graphics, PIX, RenderDoc; exactly one tool may be selected. Explicit CLI selection overrides saved preferences. Multiple provider requests or unaccepted injected combinations reject before graphics work.
 
-The real control is a compact group containing each requested or detected provider's recognizable 16-20 px icon in the viewport's right-control cluster, immediately before the existing camera/status controls. ASCII abbreviations are used here only so state remains legible in text:
+The implemented icon overlays the scene surface at its upper right, separate from camera/Show/FPS toolbar controls. It uses the shared icon service with a two-font-height button. No selected provider means no overlay. An unavailable selected provider remains disabled with its reason; queued/capturing work shows pending text, and quarantined work cannot overlap another native request.
 
 ```text
-No provider requested or detected
-+ Viewport ------------------------------- [Performance v] [Camera] [FPS] +
-
-PIX ready after selecting provider `pix`
-+ Viewport -------------------------- [Performance v] [PX] [Camera] [FPS] +
-  Tooltip: Capture next frame with PIX | D3D12 | host interval for this view | Ready
-
-RenderDoc requested but unavailable
-+ Viewport ---------------------- [Performance v] [RD!] [Camera] [FPS] +
-  Disabled: RenderDoc API unavailable | Open setup guidance
-
-Nsight Graphics capture armed after selecting provider `nsight-graphics`
-+ Viewport ----------------------- [Performance v] [NG...] [Camera] [FPS] +
-  Status: Armed for next valid present | Graphics Capture | Experimental
-
-PIX and RenderDoc ready; Nsight requested but conflicting
-+ Viewport ----------- [Performance v] [PX] [NG!] [RD] [Camera] [FPS] +
-  PX Tooltip: Capture next frame with PIX | D3D12 | host interval for this view | Ready
-  RD Tooltip: Capture next frame with RenderDoc | D3D12 | host interval for this view | Ready
-  NG Disabled: incompatible provider combination | Relaunch/setup guidance
++ Viewport ------------------------------------ [Camera] [FPS] +
+| Scene surface                                         [PX]  |
+|                                                            |
++------------------------------------------------------------+
+  PIX tooltip: Capture a GPU frame with PIX
+  Capture scope: containing host interval, including Editor UI
 ```
 
-The Launcher provider selection and repeatable direct-CLI `--capture-provider <id>` adapter both produce the same immutable provider set. `nsight-graphics` means Nsight Graphics Capture, not Nsight Systems or GPU Trace. Compatible providers expose independent icons and states. Untested or unsafe capture-layer combinations remain visibly unavailable instead of silently choosing a winner. Clicking a ready icon submits one typed request naming that provider and scene context; runtime confirms the containing present interval and scene contribution with explicit identity certainty. The panel only lays out a capture presenter; it never builds a command string, stores provider state, calls a vendor API, changes the selected Performance frame, or chooses whichever Editor window presents first.
-
-Capability entries and request states are separate in the authoritative model; icon labels project `Unavailable`, `Ready`, `Armed`, `Capturing`, `Finalizing`, `Completed`, and `Failed`. One capture lease remains exclusive through native quiescence, even after a timed-out request settles; other ready actions expose `Busy with <provider>` or draining/relaunch guidance. Accessible name, tooltip, status notification, and focus styling carry the full meaning; provider color or animation is reinforcement only. Completion offers `Open in <provider>` or `Show in folder` only when that provider returns a usable artifact path.
+The generic viewport lays out a `ViewportOverlay`; the capture client submits typed intent and observes the single authority. It owns no native session or provider policy. The current native adapter opens the tool after finalization. Rich result metadata, explicit open/folder actions, identity certainty and accessible recovery are remaining UX/acceptance requirements, not implemented controls shown by this sketch.
 
 ### Console Interaction
 
@@ -640,8 +624,8 @@ These states must not collapse into `0`, blank cells, generic red coloring, or a
 ## Review Checklist
 
 - The first viewport menu names Quick Check and CPU/GPU/Memory investigation intents; raw stat groups appear only under searchable customization or the console.
-- With no external provider, no icon appears; one requested/detected provider produces one far-right viewport icon; an unavailable requested provider produces one disabled warning icon with setup guidance.
-- Multiple requested/detected provider icons may coexist; the clicked icon names the provider and targets that viewport's next valid frame. Every icon exposes armed/finalizing/failure/busy state accessibly and remains visibly distinct from Sparkle `ProfileGpu`.
+- With startup selection None, no capture overlay appears; the selected tool contributes one upper-right scene-surface icon, disabled with a reason when unavailable.
+- Multiple provider intent and unaccepted injected combinations reject. The selected action retains scene/host-interval truth and remains distinct from Sparkle `ProfileGpu`; detailed/accessibility requirements need their own UX evidence.
 - The Performance toolbar has one contextual primary next action. Capture, export, reset, configuration, and expert controls do not all remain permanently visible.
 - Every compact group answers the diagnostic question in the fixed catalog and stays within 16 rows.
 - Every view keeps `FrameId` or range, configuration, collection mode, validity, loss, and age visible.

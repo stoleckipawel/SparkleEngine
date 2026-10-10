@@ -12,7 +12,7 @@
 
 **Current readiness:** **45/100** per [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer)
 
-**Bounded control evidence, 2026-10-05:** default-enabled primary indirect diffuse/specular CVars, early physical-response gates, all-off chain omission, history/re-enable, and selected D3D12 genuine-guide reconstruction now have [candidate-bound Debug Views evidence](../../DebugViews/Done/Discovery.md#current-candidate-evidence-and-permission). Full material proposal PDFs and continuation lobes are preserved. The native Vulkan hit-record ABI prerequisite was repaired at ShaderCompiler/device owners and the selected paired-backend matrix repeated. This supersedes only the corresponding dated control/source facts, not IND-D0/GRIS, convergence, motion, full backend/provider or release gates; readiness stays 45/100.
+**Bounded control evidence, 2026-10-05:** default-enabled primary indirect diffuse/specular CVars, early physical-response gates, all-off chain omission, history/re-enable, and selected D3D12 genuine-guide reconstruction now have [Bounded Show evidence](../../../../../../../Acceptance/Renderer/DebugViews.md#earlier-execution-evidence). Full material proposal PDFs and continuation lobes are preserved. The native Vulkan hit-record ABI prerequisite was repaired at ShaderCompiler/device owners and the selected paired-backend matrix repeated. This supersedes only the corresponding dated control/source facts, not IND-D0/GRIS, convergence, motion, full backend/provider or release gates; readiness stays 45/100.
 
 ## Outcome
 
