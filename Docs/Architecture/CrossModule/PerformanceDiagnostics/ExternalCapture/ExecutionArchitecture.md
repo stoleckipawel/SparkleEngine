@@ -102,7 +102,7 @@ The bounded-removal review separates shared repairs from capture: removing the c
 | Target binding / Renderer and RHI existing surface owners | Scene-view token -> confirmed host surface -> private native target | Generations prevent stale reuse; no new native window ownership. |
 | Native observation / adapter | Native APIs/callback -> controller safe boundary | Bounded event/result copy across callback lifetime; no callback owning Editor pointers. |
 | Latest terminal result / RHI authority | Settlement -> neutral observation -> presenter | One latest selected-provider record; no ring/history or duplicate Renderer state machine. |
-| Correlation sidecar / capture operation | Immutable candidate/configuration identities -> user-state artifact | One explicit publication snapshot; no scene/material/shader-library copy. |
+| Correlation sidecar (remaining target requirement) / capture operation | Immutable candidate/configuration identities -> user-state artifact | One explicit publication snapshot; no scene/material/shader-library copy. |
 
 The [single-truth/copy budget](../../../../Engineering/Foundations/DataAndMemory.md#single-truth-and-copy-budget) applies. Request IDs and generations are lifetime/correlation counters, not internal format versions.
 

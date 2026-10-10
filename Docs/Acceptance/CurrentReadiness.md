@@ -13,6 +13,8 @@
 > [!IMPORTANT]
 > A readiness percentage is a navigation aid, not an acceptance verdict. It cannot average away a failed criterion. Every tracked feature remains **Blocked** until its applicable acceptance dimensions pass and its candidate report records the evidence.
 
+**Later evidence boundary - 2026-10-10:** these portfolio scores and counts remain the dated baseline, not a claim that no subsequent scoped artifacts exist. The [Debug Views bounded report](Renderer/DebugViews.md) and [external-capture handoffs](../Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/Discovery.md) retain later source/native results with explicit candidate limits. They do not close whole-family/release acceptance or automatically rescore this inventory.
+
 ## Portfolio At A Glance
 
 | Portfolio | Tracked families | Readiness | What the number means now |
@@ -33,7 +35,7 @@ flowchart LR
 
 The component values are averages across the 49 tracked families; the displayed portfolio score rounds their sum to the nearest whole point. The arrows show the evidence progression, not permission to skip a failed acceptance gate.
 
-No tracked feature currently scores above 50 because this snapshot found no candidate-bound executable evidence pack and no accepted delivery/adoption result. This does not say the source is nonfunctional; it says the repository has not retained the proof needed to claim more.
+No tracked feature scores above 50 in the baseline projection because that assessment found no complete candidate-bound feature evidence pack and accepted delivery/adoption result. Later bounded reports remain separate from whole-family closure. This does not say the source is nonfunctional; it says the repository has not retained the proof needed to claim more.
 
 ## Scoring Model
 
@@ -141,7 +143,7 @@ These rows prevent adjacent infrastructure or a detailed target design from look
 | geometry-cache animation | **0/100** | Target only; not implemented or roadmap-admitted | [Geometry Cache Animation](../Architecture/CrossModule/GeometryCacheAnimation/README.md) |
 | neural training/dataset pipeline | **0/100** | Target only; no production data/model workflow | [Neural Graphics](../Architecture/CrossModule/NeuralGraphics/README.md) |
 | neural runtime model/kernel path | **0/100** | Target only; no production inference feature | [Neural Graphics](../Architecture/CrossModule/NeuralGraphics/README.md) |
-| performance-diagnostics product | **20/100** | Instrumentation foundations; target UI/evidence product absent | [Performance Diagnostics](../Architecture/CrossModule/PerformanceDiagnostics/README.md) |
+| performance-diagnostics product | **20/100** | Instrumentation foundations plus source-present Editor external capture; joined internal UI/evidence product and aggregate acceptance remain open | [Performance Diagnostics](../Architecture/CrossModule/PerformanceDiagnostics/README.md) |
 | reusable Python automation and analysis | **10/100** | Two project-local conversion scripts; no repository automation, binding, or editor/runtime Python product | [Python Automation and Analysis](../Architecture/Modules/Tools/PythonAutomationAndAnalysis.md) |
 | volumetric lighting/media | **0/100** | Not found; deep target/research/plan package exists but production is blocked by `REL-11` admission and `VOL-D0` | [Volumetric Lighting](../Architecture/Modules/Engine/Renderer/Features/Lighting/VolumetricLighting/README.md) |
 | frame generation | **0/100** | Not found | [Frame Generation](../Architecture/Modules/Engine/Renderer/Features/PostProcessing/ReconstructionAndGeneration/FrameGeneration.md) |

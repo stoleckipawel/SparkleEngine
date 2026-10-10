@@ -8,6 +8,12 @@
 
 **Current implementation:** the Editor route implements single-provider startup, native request/lease and neutral observation. The detailed protocol below remains the acceptance contract; richer identity/cancellation observations and full provider-wide validation are not implied by the current snapshot. See [current composition](ExecutionArchitecture.md#production-route) and [remaining delivery](Plan.md).
 
+## Implemented Projection And Remaining Protocol
+
+The current neutral snapshot exposes one selected provider, state, request ID, host scheduling frame ID, scene context token, artifact path and message. Its states are Unavailable, Ready, Queued, Capturing, Completed, Failed and Quarantined; Busy/Full/Closed are admission outcomes. Armed/Finalizing/Cancelled in the target protocol below are not additional published enum states in the current implementation. The host frame ID is not a native tool frame ID.
+
+Detailed identity-certainty fields, complete provenance sidecar, cancellation/drain and exhaustive lifecycle/observer/package proof remain requirements to implement or verify through the [remaining plan](Plan.md). The current icon is not a provenance/results browser. Do not infer these richer products from the existence of a capture artifact or a successful scheduling call.
+
 ## Launch And Capability Rules
 
 | Rule | Accepted meaning | Smallest falsifier |
@@ -74,7 +80,7 @@ stateDiagram-v2
 
 Units are elapsed monotonic seconds for arm/finalization deadlines, bytes for storage, UTF-8 bytes or native path elements according to the consuming API, and request/frame/generation integers for identity. Zero request ID is invalid. Missing identity/path is explicit absence, never zero/empty success.
 
-The initial closed set contains exactly three providers, one active request, and one latest terminal result per provider; there is no request backlog or unbounded history. Startup/artifact paths may allocate off the hot path; no per-frame string construction, directory enumeration, or capture polling when inactive. Status publication is coalesced through the existing read-state cadence. Exact record/path caps, deadlines, and idle observer thresholds are frozen by `EC-D04` before the affected production stage; overflow rejects with `CapacityExceeded` and never truncates a path into another valid target.
+The initial closed set contains exactly three providers, one active request, and one latest terminal result for the immutable selected provider; there is no request backlog or unbounded history. Startup/artifact paths may allocate off the hot path; no per-frame string construction, directory enumeration, or capture polling when inactive. Status publication is coalesced through the existing read-state cadence. Exact record/path caps, deadlines, and idle observer thresholds are frozen by `EC-D04` before the affected production stage; overflow rejects with `CapacityExceeded` and never truncates a path into another valid target.
 
 No new global GPU flush or worker serialization is accepted merely to help a capturer. A required provider-specific observer change is an explicit nonrepresentative mode, separately proven. GPU replay timings, trace counters, and normal workload timings retain their separate measurement meanings.
 

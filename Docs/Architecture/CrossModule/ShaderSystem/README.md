@@ -6,6 +6,8 @@
 
 **Delivery sequence:** [Shader System Delivery Plan](Plan.md)
 
+**Delivered source checkpoints:** [Phase 2-8 evidence and remaining proof boundaries](DeliveryEvidence.md); completed implementation instructions are retired from the plan.
+
 **Migration provenance:** [Shader System Migration Baseline](MigrationBaseline.md)
 
 **Current source inventory:** [Shader Compilation Capability Inventory](../../Modules/Tools/ShaderCompiler/README.md)
@@ -825,16 +827,18 @@ PSO precaching/prewarming, preload/residency/streaming controls, Vulkan pipeline
 
 The generic shader authoring primitives may remain in RHI public code if they stay renderer-agnostic. Concrete shader classes and graph use stay Renderer-owned. The runtime shader map may be implemented in Renderer over generic cooked/RHI primitives; it must not cause RHI to depend on Renderer. The standalone compiler may link the registration object catalog, but no runtime module may depend on the tool.
 
+**2026-10-10 source distinction:** the disposition table below distinguishes named retired identities and source-present RT infrastructure from remaining semantic/evidence work. Historical migration counts remain in [Migration Baseline](MigrationBaseline.md); source presence does not imply compiler, cook or native acceptance.
+
 ## Preserve, Improve, Delete, and Defer
 
 | Disposition | Item |
 | --- | --- |
-| Preserve | explicit source/entry/stage registration; DXIL and SPIR-V targets; DXC/Slang backend boundary; recursive preprocessing; include-closure/options hashing; reflection extraction; parameter verification for every compilation; bounded task execution; out-of-process cook; transactional cooked-output publication; validated generation swap; GPU-token retirement; strict runtime rejection of RT libraries until execution is complete |
+| Preserve | explicit source/entry/stage registration; DXIL and SPIR-V targets; DXC/Slang backend boundary; recursive preprocessing; include-closure/options hashing; reflection extraction; parameter verification for every compilation; bounded task execution; out-of-process cook; transactional cooked-output publication; validated generation swap; GPU-token retirement; strict runtime validation of RT libraries and capability/stage requirements before pipeline materialization |
 | Improve | physical paths into virtual paths; mutable registry into validated frozen metadata; cook nodes into input-hash-deduplicated jobs; mixed Unreal prefixes into Sparkle vocabulary; package registry into the runtime `GlobalShaderMap`; change polling into reverse-dependency selection; layout count check into a strong structural signature; diagnostics into replayable per-job bundles; package-led load into typed map lookup; silent backend-policy differences into a generated conformance matrix |
 | Delete now and never replace | `ShaderCacheKey`; `IShaderArtifactStore`; `LocalDiskShaderArtifactStore`; cache key/status fields; compile-result serialization; `--no-cache`; `--cache-dir`; Launcher shader-cache settings; `Build/Cache/Shaders`; the standalone shader-cache cleanup scope |
-| Delete after migration | `RendererShaderPackages.h`; `IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE`; basename-derived package fallback; authored program/pass aliases; repeated pass/package/layout/pipeline strings; one-method shader pass wrappers; duplicated shader-visible fields across pass and shader declarations; silent duplicate suppression; count-only layout acceptance; direct runtime path construction from author package IDs |
+| Retired identities / remaining clean-break audit | `RendererShaderPackages.h` and `IMPLEMENT_GLOBAL_SHADER_IN_PACKAGE` are absent from current Engine/Tools source. Keep the retired authored package authority absent. Audit semantic equivalents and remaining basename fallback, authored program/pass aliases, repeated identities, forwarding wrappers, copied shader fields, count-only acceptance and direct author-package path construction against the current route rather than assuming each old spelling still exists. |
 | Defer until measured | typed permutations; shader pipeline authoring types; PSO precaching/prewarming; preload/residency/streaming controls; native driver caches; material shaders; vertex factories; persistent local worker-process pool; complex plugin loading phases; library chunk/patch system; Vulkan shader objects/pipeline binaries; D3D12 partial programs; work graphs; mesh/task shaders |
-| Require one complete future slice | RT state objects/pipelines, native identifiers/group handles, SBT build/indexing, trace-rays commands, graph integration, pipeline/generation lifetime, explicit alternate selection, mandatory-product failure, and paired execution evidence |
+| Source-present RT route / remaining acceptance | RT pipeline/state-object lowering, identifiers/group handles, SBT planning, trace commands and graph use have source routes. Full stage/local-record conformance, generation/lifetime, alternate selection, mandatory-product failure and paired backend execution remain Phase 12 evidence obligations; this source refresh does not accept the RT feature. |
 
 ## Error Policy
 

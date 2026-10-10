@@ -8,6 +8,8 @@
 
 **Current readiness:** **35/100** — messages, names, timestamps, memory, and backend diagnostic facts exist; joined bounded consumption, loss/observer cost, and device-failure evidence does not. See [Current Feature Readiness](../../../../../../Acceptance/CurrentReadiness.md#rhi-and-gpu-execution).
 
+**External-capture source reconciliation - 2026-10-10:** the separate neutral `RhiExternalCapture` authority owns early bootstrap, one request identity/native lease and observation. Private PIX/Nsight D3D12 and RenderDoc D3D12/Vulkan adapters are source-present in eligible Editor profiles. This does not add an implicit capture service to `RhiDiagnostics` or turn event availability into readiness. See the [external-capture owner](../../../../../CrossModule/PerformanceDiagnostics/ExternalCapture/ExecutionArchitecture.md#production-route) for semantics, target binding and remaining native/lifecycle/package proof. Existing diagnostic snapshots and readiness retain their evidence limits.
+
 ## At A Glance
 
 | Observation | What it can establish | What it cannot establish |
