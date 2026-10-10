@@ -15,7 +15,7 @@
 | How many final image paths exist? | One ordered path from scene-linear color to one resolved, tone-mapped, encoded current-frame output. |
 | Which image stages exist? | Optional capability-gated NVIDIA DLSS Ray Reconstruction lighting denoising, followed independently by Linear or capability-gated NVIDIA DLSS Super Resolution upscaling. |
 | Which presentation transforms exist? | Exposure, selectable tone mapping, and SDR-oriented output encoding/publication. |
-| Which first-release features are absent? | Color grading, chromatic aberration, and HDR10 display output are admitted mandatory targets at 0/100. |
+| Which first-release features are absent? | Color grading, chromatic aberration, vignette and HDR10 display output are admitted mandatory targets at 0/100; vignette is the 2026-10-10 scope addition, not implementation evidence. |
 | Which expected features remain excluded? | Frame generation, dynamic resolution, Renderer MSAA, and standalone TAA/FXAA/SMAA. |
 | What is the central risk? | Extent, history, provider, debug, color-domain, and output identity can disagree even when each stage exists in isolation. |
 
@@ -33,12 +33,13 @@ SceneColor at render extent
   -> selected Linear or DLSS Super Resolution upscaling to output extent
   -> Color Grading [first-release target; currently absent]
   -> target-specific Tone/Gamut Mapping [SDR current; HDR10 target absent]
+  -> Vignette [first-release target; currently absent]
   -> Chromatic Aberration [first-release target; currently absent]
   -> SDR Encoding or HDR10 PQ [HDR currently absent]
   -> back-buffer copy or viewport product
 ```
 
-Color grading, chromatic aberration, HDR10 output, and frame generation do not enter the current source path. The first three are mandatory first-release work packages with full target/acceptance contracts; frame generation remains excluded. Their current negative boundaries prevent SDK presence, tone curves, 10-bit formats, temporal upscaling, or Reflex markers from being mistaken for implementation.
+Color grading, chromatic aberration, vignette, HDR10 output, and frame generation do not enter the current source path. The four admitted display targets are mandatory first-release work packages with full target/acceptance contracts; frame generation remains excluded. Their current negative boundaries prevent SDK presence, tone curves, 10-bit formats, temporal upscaling, or Reflex markers from being mistaken for implementation.
 
 ## Folder Map
 

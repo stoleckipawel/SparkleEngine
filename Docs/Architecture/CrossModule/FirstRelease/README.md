@@ -108,7 +108,7 @@ This is the exact one-to-one execution assignment. The phase owns implementation
 | `FCR-REN-02` | [`FS-2`](../../Modules/Engine/Renderer/FirstRelease/FrameAndScene.md#fs-2--scene-view-and-gpu-scene-preparation) | `FCR-REN-03` | [`FS-3`](../../Modules/Engine/Renderer/FirstRelease/FrameAndScene.md#fs-3--frame-graph-compile-and-execution) |
 | `FCR-REN-04` | [`GR-2`](../../Modules/Engine/Renderer/FirstRelease/GeometryAndRayTracing.md#gr-2--visibility-draw-preparation-and-raster-gbuffer) | `FCR-REN-05` | [`GR-4`](../../Modules/Engine/Renderer/FirstRelease/GeometryAndRayTracing.md#gr-4--ray-traced-gbuffer) |
 | `FCR-REN-06` | [`LGT-1`](../../Modules/Engine/Renderer/FirstRelease/Lighting.md#lgt-1--direct-lighting) | `FCR-REN-07` | [`LGT-2`](../../Modules/Engine/Renderer/FirstRelease/Lighting.md#lgt-2--indirect-lighting) |
-| `FCR-REN-08` | [`LGT-3`](../../Modules/Engine/Renderer/FirstRelease/Lighting.md#lgt-3--execute-ptd-00-discovery), then the accepted [staged `PTD-01` plan](../../Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md) | `FCR-REN-09` | [`DSP-2`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-2--exposure) |
+| `FCR-REN-08` | [`LGT-3`](../../Modules/Engine/Renderer/FirstRelease/Lighting.md#lgt-3--preserve-discovery-and-close-the-required-reference), then the accepted [staged `PTD-01` plan](../../Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/Plan.md) | `FCR-REN-09` | [`DSP-2`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-2--exposure) |
 | `FCR-REN-10` | [`DSP-3`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-3--image-reconstruction-and-provider-integration) | `FCR-REN-11` | [`RD-3`](../../Modules/Engine/Renderer/FirstRelease/RuntimeAndDiagnostics.md#rd-3--debug-views-diagnostics-products-and-capture) |
 | `FCR-REN-12` | [`GR-3`](../../Modules/Engine/Renderer/FirstRelease/GeometryAndRayTracing.md#gr-3--renderer-tlas-policy-and-publication) | `FCR-REN-13` | [`RD-4`](../../Modules/Engine/Renderer/FirstRelease/RuntimeAndDiagnostics.md#rd-4--ui-and-viewport-composition) |
 | `FCR-REN-14` | [`DSP-4`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-4--tone-mapping-encoding-and-presentation) | `FCR-REN-15` | [`DSP-4`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-4--tone-mapping-encoding-and-presentation) |
@@ -116,7 +116,7 @@ This is the exact one-to-one execution assignment. The phase owns implementation
 | `FCR-REN-18` | [`DSP-1`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-1--temporal-sampling-history-resolution-and-aa-truth) | `FCR-REN-19` | [`RD-2`](../../Modules/Engine/Renderer/FirstRelease/RuntimeAndDiagnostics.md#rd-2--settings-state-and-persistence) |
 | `FCR-REN-20` | [`RD-5`](../../Modules/Engine/Renderer/FirstRelease/RuntimeAndDiagnostics.md#rd-5--latency-coordination) | `FCR-REN-21` | [`GR-2`](../../Modules/Engine/Renderer/FirstRelease/GeometryAndRayTracing.md#gr-2--visibility-draw-preparation-and-raster-gbuffer) |
 | `FCR-REN-22` | [`DSP-1`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-1--temporal-sampling-history-resolution-and-aa-truth) | `FCR-REN-23` | [`GR-5`](../../Modules/Engine/Renderer/FirstRelease/GeometryAndRayTracing.md#gr-5--deferred-gbuffer-decals) |
-| `FCR-REN-24` | [`DSP-5`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-5--color-grading) | `FCR-REN-25` | [`DSP-6`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-6--chromatic-aberration) |
+| `FCR-REN-24` | [`DSP-5`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-5--color-grading) | `FCR-REN-25` | [`DSP-6`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-6--chromatic-aberration-and-vignette) |
 | `FCR-REN-26` | [`DSP-7`](../../Modules/Engine/Renderer/FirstRelease/DisplayAndReconstruction.md#dsp-7--hdr10-display-output) | — | — |
 
 ## Ordered Release Stages
@@ -137,7 +137,9 @@ This is the exact one-to-one execution assignment. The phase owns implementation
 
 ### `FR-00` — Scope And Discovery
 
-**Goal:** produce one reviewable release manifest of included, experimental, excluded, and removed behavior, then execute `PTD-00` before any Reference Path Tracer implementation plan exists.
+**Goal:** approve one reviewable release scope of included, experimental, excluded, and removed behavior. Preserve the already accepted `PTD-00` development discovery; do not restart it or treat it as accepted release-map oracle evidence.
+
+**Current handoff:** [ITER-REL-00-01 / scope proposal](../../../Acceptance/ReleaseScope/README.md#iter-rel-00-01-control-record) and [capability ledger](../../../Acceptance/ReleaseScope/CapabilityDispositions.md) cover all 512 inventory IDs, the 20 current levels, 18 view modes and 26 persisted selector names. The named laptop decision is approved; the owner-directed rendering amendment has been incorporated, and remaining scope/preset/domain and rights receipts still require closure. Current candidate acceptance stays Blocked.
 
 **Non-goals:** implementation, optimistic scoring, adding target-only features, or treating the present reference path as an unbiased oracle.
 
@@ -148,7 +150,7 @@ This is the exact one-to-one execution assignment. The phase owns implementation
 **Ready-to-use prompt:**
 
 ```text
-Execute first-release stage FR-00 at the current repository revision. Read Docs/Strategy/Roadmap.md, Docs/Acceptance/FirstRelease.md, the FCR registry, CurrentReadiness, all selector catalogs, packaging/rights owners, and the PTD-00 discovery contract. Create ITER-REL-00-01 with exact dirty state and mappings. Reconcile every reachable product, backend, provider, mode, map, and tool into Included, Experimental, Excluded, or Removed; do not implement features. Run the PTD-00 discovery gate exactly as owned by Architecture and retain its required package. Stop on an unresolved product/right/transport decision. Exit only with a reviewable scope ledger and explicit PASS/BLOCKED/EXCLUDED decisions; do not freeze the conditional PTD-01 plan or start Stage 1 unless PTD-00 passes.
+Continue first-release stage FR-00 at the current repository revision. Read Docs/Acceptance/ReleaseScope/README.md and CapabilityDispositions.md, the acceptance contract, FCR registry, CurrentReadiness, selector catalogs and packaging/rights owners. Reconcile ITER-REL-00-01 and the scope proposal against the live tree, confirm owner approval and exact selected-content rights, and classify any new or changed surface. Preserve accepted PTD-00 development discovery and completed development work; inspect its remaining release dependencies without restarting discovery or promoting it to an oracle. Do not implement features. Exit with an approved version-controlled scope and honest REL-00 disposition, or exact remaining decisions and receipts. Stage 1 production work waits for its prerequisites; source/rights discovery can prepare them without claiming their gates passed.
 ```
 
 ### `FR-01` — Identity, Rights, And Baseline

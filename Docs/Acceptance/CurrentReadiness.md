@@ -13,6 +13,8 @@
 > [!IMPORTANT]
 > A readiness percentage is a navigation aid, not an acceptance verdict. It cannot average away a failed criterion. Every tracked feature remains **Blocked** until its applicable acceptance dimensions pass and its candidate report records the evidence.
 
+**Scope amendment - 2026-10-10:** the owner requires full admitted progressive reference, realtime tracing at >=30 FPS, complete DLSS SR/RR and D3D12/Vulkan parity. Basic vignette joins the existing FCR-REN-25 lens family at 0/100; no family count or evidence score is increased. [Required rendering closure](FirstRelease.md#required-rendering-closure) owns these obligations.
+
 **Later evidence boundary - 2026-10-10:** these portfolio scores and counts remain the dated baseline, not a claim that no subsequent scoped artifacts exist. The [Debug Views bounded report](Renderer/DebugViews.md) and [external-capture handoffs](../Architecture/CrossModule/PerformanceDiagnostics/ExternalCapture/Discovery.md) retain later source/native results with explicit candidate limits. They do not close whole-family/release acceptance or automatically rescore this inventory.
 
 ## Portfolio At A Glance
@@ -128,7 +130,7 @@ When implementation, scope, or evidence changes, update this snapshot, the ownin
 | `FCR-REN-22` | resolution, sampling, and anti-aliasing boundary | **40** | `25/15/0/0` | Output/render extent and jitter exist; AA scope partial | extent/ratio/reset/backend proof and explicit absent MSAA, standalone TAA/FXAA/SMAA, and dynamic resolution |
 | `FCR-REN-23` | deferred GBuffer decals | **0** | `0/0/0/0` | First-release target; implementation not found | authored/cooked/runtime data, raster and secondary-ray composition, failure, backend, and package evidence |
 | `FCR-REN-24` | color grading | **0** | `0/0/0/0` | First-release target; implementation not found | scene-referred controls/LUT route, failure, color-domain, backend, and package evidence |
-| `FCR-REN-25` | chromatic aberration | **0** | `0/0/0/0` | First-release target; implementation not found | bounded output-space pass, resolution/edge/debug behavior, backend, and package evidence |
+| `FCR-REN-25` | chromatic aberration and vignette | **0** | `0/0/0/0` | First-release target; implementation not found | bounded output-space pass, resolution/edge/debug behavior, backend, and package evidence |
 | `FCR-REN-26` | HDR display output | **0** | `0/0/0/0` | First-release HDR10 target; implementation not found | output transform, RHI activation/metadata, UI/fallback/transitions, paired-backend, and HDR-hardware evidence |
 
 ## Explicit Missing Or Not-Yet-Admitted Capabilities

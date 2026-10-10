@@ -92,7 +92,9 @@ Primary evidence: `REN-E19` for rebuild/recording/retirement, `RHI-E03` for queu
 
 ## Acceptance Criteria
 
-- `AC-FGS-01` — every live read has one dominating producer/import, every write creates the intended version, and dead unexported work is either removed or explicitly retained by a product root.
+**Mandatory release boundary:** the [owner-directed frame closure](../../../../../../Acceptance/FirstRelease.md#required-rendering-closure) requires every applicable criterion below on both APIs for native, realtime/DLSS/RR and progressive Reference graphs. “Feature complete” is this bounded production contract, not support for arbitrary new pass kinds or vendor extensions. The principal review consumes dependency/barrier/alias/submission/retirement evidence and controlled failures, together with measured CPU/copy/allocation/overlap costs. Export/import and external provider transitions must have one explicit owner; adding a pass cannot bypass graph accounting.
+
+- `AC-FGS-01` — every live read has one dominating producer/import, every write produces the intended data generation, and dead unexported work is either removed or explicitly retained by a product root. This is a dependency invariant, not a requirement to restore removed resource-version histories.
 - `AC-FGS-02` — compiled dependencies, state/UAV/alias barriers, and cross-queue waits make each consumer observe its intended producer on D3D12 and Vulkan without relying on declaration order.
 - `AC-FGS-03` — transient placements overlap only for non-overlapping lifetimes; first use after aliasing receives the required initialization/alias transition and produces the serial non-aliased oracle.
 - `AC-FGS-04` — serial and parallel recording emit semantically identical pass order, parameters, barriers, submissions, and output for the same graph and frame identity.

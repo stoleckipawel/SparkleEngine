@@ -106,6 +106,8 @@ Implement FS-3 in BuildRenderFrameGraph and current graph compile/execute/RHI lo
 
 ## `FS-4` — Frame And Scene Candidate Closure
 
+The [required whole-frame review](../../../../../Acceptance/FirstRelease.md#principal-frame-review) must retain source-to-present lineage, both native captures, graph hazards/aliasing/queue ownership, serial/parallel equivalence, provider transitions and bounded rebuild/retirement costs. Close FrameGraph AC-FGS-01–08 against all Included frame topologies before declaring the graph complete. Source compiler-plan comparisons or a passing empty graph cannot substitute for production frame/lifetime proof.
+
 **Goal:** bind admission, preparation, and graph execution to one candidate and prove their joint failure and lifetime behavior.
 
 **Non-goals:** replacing focused checks with a smoke or accepting one view/backend/mode for the full matrix.

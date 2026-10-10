@@ -34,6 +34,7 @@ The current first release remains `Blocked`. Source presence and registry covera
 | --- | --- |
 | [Current Feature Readiness](CurrentReadiness.md) | current 0–100 implementation, integration, verification, and delivery grade for every tracked family plus explicit missing capabilities |
 | [First Release Acceptance](FirstRelease.md) | whole-release scope, consumer/source-adopter, packaging, security, failure, clean-machine, publication, and stabilization gates |
+| [Release Scope Record](ReleaseScope/README.md) | concrete Stage 0 product/machine/map/policy proposal and exhaustive capability dispositions awaiting approval |
 | [Feature Completion Reports](FeatureCompletionReports.md) | per-feature polish, complete-path explanation, evidence record, and approval schema |
 | [Graphics Workloads](GraphicsWorkloads.md) | Bistro, San Miguel, scene-quality, performance, and evidence workloads |
 | [Renderer Acceptance Progress](Renderer/README.md) | high-level Renderer feature-to-dossier/report routing and current acceptance disposition |

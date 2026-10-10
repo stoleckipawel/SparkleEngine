@@ -6,6 +6,8 @@
 
 **Release target:** SparkleEngine `v0.1.0`, Windows x64
 
+**Stage 0 decision record:** [Release Scope](ReleaseScope/README.md) and [Capability Dispositions](ReleaseScope/CapabilityDispositions.md). The minimum/reference laptop and required rendering outcomes below are directed by the owner. Other scope choices remain proposed; no feature acceptance or passed `REL-00` gate is implied.
+
 **Roadmap and sequence:** [F. Release-First Principal Graphics Roadmap](../Strategy/Roadmap.md)
 
 **Implementation orchestrator:** [First Release Implementation Plan](../Architecture/CrossModule/FirstRelease/README.md)
@@ -18,7 +20,7 @@
 
 **Release risk and iteration order:** [Release Risk Register](../Strategy/Roadmap.md#release-risk-register)
 
-**Current readiness:** feature implementation/integration portfolio **40/100**; release acceptance **0/100**. All 49 tracked feature families remain Blocked, no candidate-bound report exists, and no release gate has passed. Deferred decals, color grading, chromatic aberration, and HDR10 output are mandatory **0/100** blockers. See [Current Feature Readiness](CurrentReadiness.md).
+**Current readiness:** feature implementation/integration portfolio **40/100**; release acceptance **0/100**. All 49 tracked feature families remain Blocked, no candidate-bound report exists, and no release gate has passed. Deferred decals, color grading, chromatic aberration, basic vignette, and HDR10 output are mandatory **0/100** blockers. The newly admitted vignette does not automatically rescore the historical portfolio. See [Current Feature Readiness](CurrentReadiness.md).
 
 ## Release At A Glance
 
@@ -99,7 +101,7 @@ These are contract targets, not evidence that the current source enforces or pas
 | Supported source toolchain | Visual Studio Community 2026 `18.7.0` / MSVC `14.51.36231`, Windows SDK `10.0.26100.0`, CMake `4.3.3`, Git for Windows `2.54.0`, Qt `6.11.1` `msvc2022_64`, and Vulkan SDK `1.4.350.0` containing Slang `2026.8` and DXC `1.9.0.5347` | This is the sole `v0.1.0` source-adopter matrix until another row passes `REL-02`. Source-declared CMake `3.20`, Git `2.25`, Qt `6.8`, VS 2022, clang-cl, and Ninja paths remain Developer-only compatibility hypotheses, not public support claims. |
 | Cold source acquisition | Git and HTTPS network access for the immutable source/dependency inputs; no credentials or private caches | The current dependency set is not uniformly immutable and therefore still blocks `REL-01`/`REL-02`. Warm/offline replay is required after the declared cache is populated. |
 
-The reference runtime machine for the first candidate is Windows x64 build `26200`, AMD Ryzen 9 8940HX (16 cores/32 logical processors), 63.17 GiB RAM, and NVIDIA GeForce RTX 5070 Ti Laptop GPU with 12,227 MiB reported dedicated memory on driver `610.47`. This row records the inspected host only; no build, launch, graphics-capability query, or performance result was run by `PD-0`.
+The release owner selected this existing laptop as both `MIN-01` and `REF-01` on 2026-10-10: Windows 11 Home 25H2 build `26200.9457`, AMD Ryzen 9 8940HX (16 cores/32 logical processors), 63.17 GiB OS-reported RAM, NVIDIA GeForce RTX 5070 Ti Laptop GPU with 12,227 MiB reported dedicated memory on driver `610.47`, and Patriot P400L 2000GB NVMe SSD/NTFS. The generic CPU/RAM/VRAM floors above are necessary prerequisite targets, **not a supported lower-end machine claim**: initial performance acceptance is on this named laptop. Expanding to another hardware class requires scope approval and its own proof. The [scope record](ReleaseScope/README.md#product-and-supported-matrix) owns the selected machine/exposure boundary. Hardware inspection and owner selection do not prove graphics support, 30 FPS, an HDR-capable display or independent adoption.
 
 ### Frozen Paths, Mutation Boundary, And Budgets
 
@@ -230,6 +232,8 @@ Every item begins as `Source present`. `REL-00` splits compound rows into indepe
 
 `REL-00` produces one version-controlled release-scope record. It MUST name:
 
+The current [scope proposal](ReleaseScope/README.md) supplies that record, with [512 existing inventory dispositions and explicit live surface splits](ReleaseScope/CapabilityDispositions.md). Approval, exact selected-content rights and candidate validation remain separate requirements; this documentation pass does not pass the gate.
+
 - public product name, version, platform, architecture, minimum Windows version, and supported GPU/API matrix;
 - minimum and reference CPU, memory, GPU, driver, and storage configurations;
 - the exact runtime executable and default graphics configuration;
@@ -245,6 +249,39 @@ Every item begins as `Source present`. `REL-00` splits compound rows into indepe
 - distribution channel and executable/archive/tag signing policy. Direct public Windows downloads require trusted Authenticode signatures for every shipped PE file; an unsigned build is a developer/pre-release artifact, not this consumer release.
 
 Any later scope addition returns `REL-00` to `Blocked`. Defect fixes within frozen scope do not.
+
+## Required Rendering Closure
+
+The release owner's 2026-10-10 amendment makes the following **Included delivery obligations**, not experimental substitutes. “Feature complete” means complete against each owning feature's frozen, finite contract and all applicable failure, performance, package and adoption checks. It does not admit every possible rendering technique, API extension or material domain. No source, SDK-presence or single screenshot claim closes a row.
+
+| Required outcome | Release proof and existing owner |
+| --- | --- |
+| Reliable progressive Reference Path Tracer | `FCR-REN-08` and the [accepted transport contract](../Architecture/Modules/Engine/Renderer/Features/Lighting/ReferencePathTracer/TransportAndEstimator.md#claim-boundary): camera-originating progressive `SurfaceTransportReference`, raw linear radiance, independent analytic/minimal/external comparisons, converged uncertainty, correct accumulation/reset, invalid-sample rejection and reproducible exports. Consumer mode is Included. A finite-depth diagnostic, denoised image or progress count cannot substitute for reference truth. Close every release-map material/light/camera/geometry domain mismatch before oracle use; explicitly distinguish excluded physical phenomena. Preserve accepted PTD-00 discovery and finish its existing recovery/Stage-10 work. |
+| Realtime path tracer at >=30 FPS | `FCR-REN-06/07`, shared ray/surface owners and the [performance contract](#thirty-fps-performance-floor), using `REL-RT-1080P` on MIN-01. Freeze actual traced primary/secondary transport, finite-depth/reuse/approximation policy, quality thresholds and reconstruction topology before results. Existing Lit/indirect seed-replay source is a starting path, not an accepted realtime path tracer. Ray-traced GBuffer alone is insufficient. Static, motion/disocclusion and lobe/guide cases must agree with the accepted reference within the owned tolerances. |
+| Complete DLSS Super Resolution and Ray Reconstruction | `FCR-REN-10`: Included on the named NVIDIA hardware for **both D3D12 and Vulkan**. Prove every exposed quality mode and SDK-supported SR/RR combination; exact pinned runtime/header/license, early initialization, viewport/frame identity, exposure/depth/motion/jitter/normal/roughness/albedo/specular inputs, extent/reset, state restoration, queue/resource lifetime, failures and Shipping dependency closure. Optional SDK features outside the declared renderer domain are not implicitly admitted. A visible Linear/Off fallback is safe recovery, never a pass for a required provider cell. |
+| Finished exposure and tone mapping | `FCR-REN-09/14/15`: all exposed manual/automatic/metering and Reinhard/ACES approximation/ACES fitted choices, finite/range/step response, view isolation, reset, provider input domains, exactly one tone/output transform, alpha and SDR/HDR handoff. No post-process adjustment may conceal transport/units defects. |
+| Basic chromatic aberration and vignette | `FCR-REN-25` now covers two independently verified lens effects: the [chromatic contract](../Architecture/Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/ChromaticAberration/README.md) and [basic vignette](../Architecture/Modules/Engine/Renderer/Features/PostProcessing/DisplayPipeline/Vignette.md). Both Included; neutral defaults erase effect work, raw reference/exact diagnostics/UI bypass effects, controls/reset/persistence and both-backend numerical/order/cost checks pass. Neither effect inherits the other's verdict. |
+| D3D12/Vulkan implementation parity | Same declared release modes, features, settings semantics, scene/camera/pose, providers and products on both APIs. Retain native validation and paired raw/temporal/display/performance/package evidence. Compare within predeclared numeric/statistical tolerances, not universal bitwise identity. A genuinely vendor-specific excluded feature such as PTLAS does not weaken parity for an Included feature; an unavailable required provider remains a blocker, not a quiet exclusion. |
+| Complete frame graph for the declared frame | `FCR-REN-02` and [AC-FGS-01–08](../Architecture/Modules/Engine/Renderer/Features/FrameExecution/FrameGraphAndScheduling.md#acceptance-criteria): dependencies/imports/export roots, culling, transient alias/initialization, state/UAV/queue waits, typed pass binding, serial/parallel recording equivalence, histories/rebuilds, external-provider work and token-safe retirement. Exercise negative compilation/recording/submission/lifetime cases. Native clean output alone cannot prove useful overlap or bounded resource/copy cost. |
+| Principal-level review of the entire frame | The [review package below](#principal-frame-review) is mandatory before `REL-04`/`REL-07` closure. Review the complete production frame and its failures, not just chosen shaders or a capability checklist. |
+
+Deferred decals, Color Grading and HDR10 remain their existing mandatory obligations; Frame Generation and Volumetric Lighting remain excluded. The amendment does not automatically expand PTD-00's physical transport domain or approve the proposed map set.
+
+### Principal Frame Review
+
+The requested quality standard is a frame that can withstand detailed review by a principal rendering engineer at NVIDIA. Freeze the packet and review criteria below, then retain the independent qualified reviewer identity, relevant experience, reviewed candidate/artifact hashes, findings and disposition through the existing release-review gate. Reviewer competence and completed scrutiny establish that evidence; employer affiliation is not an additional release prerequisite. A claim that an NVIDIA engineer reviewed the frame requires that person's confirmed identity and actual review. Author self-review or an AI-generated checklist cannot claim independent review occurred. No outreach is authorized by this documentation work.
+
+The packet contains:
+
+1. One frame lineage from authored scene/pose/camera through cook identities, uniforms/material bindings, graph declaration/compilation, recording, submission, temporal/provider evaluation and final present. Each pass identifies inputs/outputs, units/color space, resource lifetime, queue and owner.
+2. Native captures on both APIs, with exact scene/frame/target identity, complete pass/resource/pipeline inspection and shader/binary provenance; capture runs are separate from performance controls.
+3. Estimator derivations and limits, independently qualified raw reference/convergence artifacts, realtime error/temporal/disocclusion cases and genuine provider guides. Document approximations rather than rely on reservoir or SDK naming.
+4. Barrier/wait/alias plan and controlled failures, serial/parallel equivalence, resize/rebuild/provider/shader changes, history invalidation, retirement bounds and shutdown/device-loss disposition.
+5. CPU/GPU/present measurements for the named native and realtime presets, pass/copy/allocation costs, memory high-water, recording topology and useful-overlap evidence. Before/after optimization claims use the same candidate inputs and fixed observer protocol.
+6. Ownership/dependency/hook and copy ledger, discarded/replaced paths, API-private mechanics, typed feature boundaries, and clean format/readability review under Engineering standards. Frame orchestration must remain readable; no duplicate authority or generic-host provider policy.
+7. Source/build/profile/package/Shipping evidence and reproducible consumer/source instructions, with known limitations and exact unresolved cells.
+
+Acceptance requires no unresolved release-critical correctness, lifetime, synchronization, numerical, provenance, parity or performance finding, and a recorded disposition for every finding. Missing reviewer access leaves this gate unrun; it does not prevent dependency-ready development. Changing reviewed frame inputs or code invalidates affected review evidence.
 
 ## Release Roles
 
@@ -451,7 +488,7 @@ Gates are strictly ordered. A later gate may be prepared, but it cannot be accep
 
 | Gate | Exit criteria | Required artifact |
 | --- | --- | --- |
-| `REL-00 Scope and freeze` | Runtime-consumer and source-adopter promises, platform/support/budget matrix, feature classifications, public/compatibility/non-goals, and release roles are frozen. | `release-scope.md`, audience journeys, compatibility decision draft, and feature inventory. |
+| `REL-00 Scope and freeze` | Runtime-consumer and source-adopter promises, platform/support/budget matrix, feature classifications, public/compatibility/non-goals, and release roles are frozen. | Approved [Release Scope](ReleaseScope/README.md) and [Capability Dispositions](ReleaseScope/CapabilityDispositions.md), exported into candidate `release-scope.md` with audience journeys and compatibility decisions; exact rights receipts remain required. |
 | `REL-01 Identity, rights, supply chain, and map set` | Version/publisher/license are real; exact `ReleaseMapSet`, immutable dependency closure, signing/distribution route, threat model, SBOM plan, notices, and redistribution decisions are reviewed. | Identity/signing decision, threat model, dependency/license/SBOM inventory, notices audit, and map manifest. |
 | `REL-02 Clean reproducible baseline` | Clean tagged-source candidate performs empty-cache dependency sync, configure, named Shipping build, approved checks, and warm/offline-cache replay; validation and any explicit test authorization are recorded. | Environment/provenance manifest and raw sync/build/check logs. |
 | `REL-03 Package spine` | One command performs Build, Cook, Stage, Sign, Verify, and Package; the allowlisted staged tree has immutable content, per-user writable state, dependency closure, SBOM, hashes, and no repository path dependency. | First non-candidate archive, package inventory, signatures, SBOM, and created-path record. |

@@ -4,7 +4,7 @@
 
 **Responsibility:** order discovery, inactive state, semantic pass, editor/debug/capture integration, and candidate evidence for `FCR-REN-25`
 
-**Authority boundary:** [Discovery](Discovery.md) freezes decisions; [Semantics](Semantics.md), [Execution Architecture](ExecutionArchitecture.md), and [User Experience](UserExperience.md) own accepted target contracts; [README](README.md) owns acceptance; [Display And Reconstruction](../../../../FirstRelease/DisplayAndReconstruction.md#dsp-6--chromatic-aberration) owns release sequence
+**Authority boundary:** [Discovery](Discovery.md) freezes decisions; [Semantics](Semantics.md), [Execution Architecture](ExecutionArchitecture.md), and [User Experience](UserExperience.md) own accepted target contracts; [README](README.md) owns acceptance; [Display And Reconstruction](../../../../FirstRelease/DisplayAndReconstruction.md#dsp-6--chromatic-aberration-and-vignette) owns release sequence
 
 **Current readiness:** **0/100** — target only.
 

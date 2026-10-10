@@ -8,6 +8,8 @@
 
 **Responsibility:** sequence view-owned temporal/display state from sampling and exposure through reconstruction, tone mapping, and output
 
+**Owner-directed release amendment:** [Required rendering closure](../../../../../Acceptance/FirstRelease.md#required-rendering-closure) makes complete DLSS SR/RR on D3D12 and Vulkan mandatory; fallback/Experimental cannot close those cells. Basic vignette joins chromatic aberration under FCR-REN-25 with separate feature proofs. Existing domain/provider discovery still freezes actual SDK-supported topology before implementation or performance claims.
+
 **Parent:** [First Release Renderer Plans](README.md)
 
 **Architecture:** [Post Processing](../Features/PostProcessing/README.md), [Display Pipeline](../Features/PostProcessing/DisplayPipeline/README.md), [Reconstruction And Generation](../Features/PostProcessing/ReconstructionAndGeneration/README.md), and [Temporal Sampling And History](../Features/FrameExecution/TemporalSamplingAndHistory.md)
@@ -34,7 +36,7 @@ flowchart LR
 | `DSP-3` | `FCR-REN-10` | linear/DLSS SR/Ray Reconstruction requested-active-fallback closure |
 | `DSP-4` | `FCR-REN-14`, `FCR-REN-15` | one tone operator and one encoded output without double transforms |
 | `DSP-5` | `FCR-REN-24` | scene-referred grading controls and LUT look |
-| `DSP-6` | `FCR-REN-25` | bounded output-space lens aberration |
+| `DSP-6` | `FCR-REN-25` | basic chromatic aberration and vignette, with independent neutral/formula/order proofs |
 | `DSP-7` | `FCR-REN-26` | truthful paired-backend HDR10 presentation and SDR fallback |
 | `DSP-8` | all nine | candidate-bound temporal/display/provider closure |
 
@@ -96,6 +98,8 @@ Implement DSP-2 in the existing exposure pass and View history owner. Map FCR-RE
 
 **Goal:** close `FCR-REN-10` for the Linear baseline and every admitted NVIDIA DLSS Super Resolution or Ray Reconstruction route.
 
+The amended Included matrix requires both APIs on the named machine, every exposed SR quality mode, RR Off/On and supported SR/RR composition. Inspect exact Streamline `v2.11.1` headers/manuals and current D3D12-only initialization before adding private Vulkan mechanics; existing Vulkan texture-tag helpers are not initialization/evaluation evidence. Freeze one supported topology/output owner and the realtime preset's fixed SDK-derived extent. Perform guide/motion/exposure/reset, temporal quality, native lifetime/state-restoration and package checks per API; no fallback may pass the requested provider.
+
 **Non-goals:** frame generation, claiming unsupported backend/hardware, vendor-specific semantics leaking into unrelated passes, or requiring a provider for the package baseline unless scope says so.
 
 **Required work:** preserve one requested/resolved/active/fallback model; validate provider version/signature/redistribution and build/package membership; reconcile color/depth/motion/jitter/exposure/reactive/guide semantics, render/output extents, reset and feature lifetime; keep Linear as deterministic baseline; handle unsupported API/GPU, missing/corrupt DLL, initialization/evaluation/shutdown failure visibly; measure quality, latency, CPU/GPU time, and memory.
@@ -146,9 +150,11 @@ Implement DSP-4 in existing tone-map, debug replacement, presentation/output, vi
 Execute Color Grading Stage 0 only. Resolve CGRD-01 through CGRD-12, complete CGR-EXP-01 through CGR-EXP-06, and record the reviewed CGRD-00 disposition in the feature-local Discovery document. Reconcile the dossier, semantics, architecture, experience, conditional plan, DSP-5, and FCR-REN-24 with the accepted decisions. Do not change production code, assets, build membership, generated surfaces, or candidate evidence while CGRD-00 remains Blocked.
 ```
 
-## `DSP-6` — Chromatic Aberration
+## `DSP-6` — Chromatic Aberration And Vignette
 
-**Goal:** close `FCR-REN-25` with the bounded lens result, stage domain, and authored units accepted by `CHRD-00`.
+**Goal:** close `FCR-REN-25` with independently accepted chromatic-aberration and basic-vignette results. `CHRD-00` owns the chromatic stage/domain/units; the Vignette dossier owns its separate freeze.
+
+Also deliver [Basic Vignette](../Features/PostProcessing/DisplayPipeline/Vignette.md) through its small local freeze/formula/settings/order checks. CHRD-00 authorizes chromatic work only; it cannot accept or implicitly choose vignette semantics. The family exits only when both independent feature results pass on D3D12/Vulkan with neutral-work erasure and raw/debug/UI isolation. Keep each feature's state/parameters local and compose through the existing display/typed-graph seam.
 
 **Non-goals:** production work before `CHRD-00` passes, or silently expanding beyond the exclusions ratified there.
 
@@ -156,12 +162,18 @@ Execute Color Grading Stage 0 only. Resolve CGRD-01 through CGRD-12, complete CG
 
 **Failure modes:** implementation starts from an unresolved decision; zero state changes pixels; authored behavior varies outside the accepted resolution/aspect rule; sampling leaves the accepted boundary policy; alpha changes; stage/debug/UI policy is violated; invalid controls produce non-finite output; views share state.
 
-**Phase exit criteria:** `AC-CHR-01` through `AC-CHR-08`, zero/known-pattern/edge/alpha/resolution/view/debug/backend/package/cost and controlled-negative checks pass; `FCR-REN-25` records candidate evidence.
+**Phase exit criteria:** `AC-CHR-01` through `AC-CHR-08` and `AC-VIG-01` through `AC-VIG-06`, zero/known-pattern/edge/alpha/resolution/view/debug/backend/package/cost and controlled-negative checks pass; `FCR-REN-25` records the two candidate-bound sub-results.
 
 **Ready-to-use prompt:**
 
 ```text
 Execute Chromatic Aberration Stage 0 only. Resolve CHRD-01 through CHRD-10, complete CHR-EXP-01 through CHR-EXP-06, and record the reviewed CHRD-00 disposition in the feature-local Discovery document. Reconcile the dossier, semantics, architecture, conditional plan, DSP-6, and FCR-REN-25 with the accepted decisions. Do not change production code, shaders, settings, build membership, generated surfaces, or candidate evidence while CHRD-00 remains Blocked.
+```
+
+The separate vignette discovery prompt is:
+
+```text
+Execute only the freeze step in Features/PostProcessing/DisplayPipeline/Vignette.md. Inspect the existing display-domain/product, settings/persistence/presenter and typed-graph owners. Freeze formats, extents, coordinates, mask formula, linear/HDR placement, alpha/raw/debug/UI bypass, validated control names/defaults, numerical tolerances and pass-cost limits before candidate results. Record one authority and the justified integration-hook/deletion ledger. Map AC-VIG-01 through AC-VIG-06 and FM-VIG-01 through FM-VIG-03 to concrete both-backend check cards. Preserve separate CHRD-00 decisions and the 49-family registry. Do not change production code or claim acceptance. Handoff only the remaining feature-local implementation slice after all decisions are concrete.
 ```
 
 ## `DSP-7` — HDR10 Display Output

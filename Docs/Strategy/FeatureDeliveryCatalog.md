@@ -1,5 +1,7 @@
 # Principal Graphics Feature Delivery Catalog
 
+**Owner-directed release refinement:** [Required rendering closure](../Acceptance/FirstRelease.md#required-rendering-closure) makes reference reliability, realtime >=30 FPS, complete SR/RR, paired-backend/frame-graph closure and principal-level whole-frame review mandatory release outcomes. Existing PGD/FCR owners remain authoritative; no new implementation or acceptance is inferred.
+
 **Status:** strategic deliverable targets and owner routing; no implementation authorization or acceptance results
 
 **Scope:** turn the [persona](EngineerPersona.md), [requirements](Requirements.md) and [role study](Research/PrincipalGraphicsRoles.md) into measurable, inspectable outputs. [Roadmap](Roadmap.md) owns order; feature dossiers own design and thresholds; Acceptance owns results.

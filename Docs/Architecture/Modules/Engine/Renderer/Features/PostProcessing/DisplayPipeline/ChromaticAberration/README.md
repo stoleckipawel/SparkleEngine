@@ -12,7 +12,7 @@
 
 **Parent family:** [Display Pipeline](../README.md)
 
-**First-release admission:** `FCR-REN-25`; implementation phase [`DSP-6`](../../../../FirstRelease/DisplayAndReconstruction.md#dsp-6--chromatic-aberration)
+**First-release admission:** `FCR-REN-25`; implementation phase [`DSP-6`](../../../../FirstRelease/DisplayAndReconstruction.md#dsp-6--chromatic-aberration-and-vignette)
 
 **Current readiness:** **0/100** — admitted and `Blocked`; no lens/channel-distortion controls, pass, shader, selector, or editor route was found. See [Current Feature Readiness](../../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 

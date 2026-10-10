@@ -8,6 +8,8 @@
 
 **Release classification authority:** [First Release Acceptance Contract](../../Acceptance/FirstRelease.md)
 
+**Current Stage 0 proposal:** [Release Scope](../../Acceptance/ReleaseScope/README.md) and [512 Capability Dispositions](../../Acceptance/ReleaseScope/CapabilityDispositions.md) reconcile every existing detailed-inventory ID with one module owner/classification, plus the live map/view/settings surfaces at `93e86b8113c3fcd0c4921729c3513538b95bc794`. These are proposed decisions; the historical source/evidence states below are not refreshed or promoted to acceptance.
+
 **Per-feature candidate report authority:** [First Release Feature Completion Reports](../../Acceptance/FeatureCompletionReports.md)
 
 **Current readiness authority:** [Current Feature Readiness](../../Acceptance/CurrentReadiness.md)

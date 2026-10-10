@@ -8,6 +8,10 @@
 
 **Current readiness:** **40/100** — Linear plus capability-gated DLSS SR/RR routes exist; requested/active/provider truth, inputs, failure, package, temporal quality, latency, and memory evidence remains open. See [Current Feature Readiness](../../../../../../../Acceptance/CurrentReadiness.md#renderer).
 
+**Release amendment, 2026-10-10:** [Required rendering closure](../../../../../../../Acceptance/FirstRelease.md#required-rendering-closure) makes SR and RR Included on both APIs for the named machine. At source `93e86b81`, `StreamlineRuntimeSupport::Initialize`/interop eligibility still accept D3D12 only and set `eD3D12`; Vulkan texture-tagging helpers alone cannot satisfy this requirement. The historical source matrix below is not release disposition. Vulkan startup/evaluation and complete paired input/lifecycle/quality/package proof remain delivery work.
+
+Use the official pinned Streamline `v2.11.1` [SR guide](https://github.com/NVIDIA-RTX/Streamline/blob/v2.11.1/docs/ProgrammingGuideDLSS.md) and [RR guide](https://github.com/NVIDIA-RTX/Streamline/blob/v2.11.1/docs/ProgrammingGuideDLSS_RR.md), retrieved 2026-10-10, with installed headers: device registration, frame/viewport identity, optimal extent, input tags/constants, guide semantics, state restoration and resource release are implementation questions, not SDK-presence proof. RR documentation describes a denoised output at output resolution; freeze whether the local NativeAA-denoise-then-SR composition meets the pinned contract before treating it as complete. Do not copy guide snippets into native/public API policy or assume every optional SDK input applies to the admitted scene domain.
+
 ## At A Glance
 
 | Active producer | Eligibility | Output contract | Main limitation |

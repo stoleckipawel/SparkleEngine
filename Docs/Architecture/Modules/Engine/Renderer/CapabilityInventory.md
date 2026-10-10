@@ -275,6 +275,7 @@ Current absence, extension seams, and the separately labeled target architecture
 
 | Capability ID | Capability | State | Exact current coverage and limit | Evidence | Release disposition |
 | --- | --- | --- | --- | --- | --- |
+| `REN-POST-14` | Basic vignette | Target only; source implementation not found | Owner-directed first-release addition, 2026-10-10; [Vignette](Features/PostProcessing/DisplayPipeline/Vignette.md) owns the small mask/placement/neutral contract. | Source/name search only | Included obligation; FCR-REN-25 remains unaccepted |
 | `REN-POST-13` | Frame generation | Not found | No optical-flow/frame-synthesis provider, DLSS-G registration, generated-frame identity/resources, UI policy, pacing/present path, selector, or diagnostics were found. Streamline PCL/Reflex latency coordination is not frame generation. | `S` | Excluded unless later admitted |
 
 ## Presentation And Output
