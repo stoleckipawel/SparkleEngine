@@ -43,7 +43,9 @@ public:
 	void Remove(EventHandle Handle) noexcept
 	{
 		if (!Handle.IsValid())
+		{
 			return;
+		}
 
 		for (std::size_t i = 0; i < Capacity; ++i)
 		{
@@ -81,7 +83,9 @@ public:
 		for (std::size_t i = 0; i < Capacity; ++i)
 		{
 			if (m_Entries[i].Handle.IsValid())
+			{
 				return true;
+			}
 		}
 		return false;
 	}
@@ -92,7 +96,9 @@ public:
 		for (std::size_t i = 0; i < Capacity; ++i)
 		{
 			if (m_Entries[i].Handle.IsValid())
+			{
 				++Count;
+			}
 		}
 		return Count;
 	}

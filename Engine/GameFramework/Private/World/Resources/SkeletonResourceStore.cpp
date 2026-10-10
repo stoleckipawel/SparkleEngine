@@ -30,11 +30,15 @@ void SkeletonResourceStore::Append(std::vector<SkeletonResource> skeletons)
 	for (SkeletonResource& skeleton : skeletons)
 	{
 		if (skeleton.assetId == Assets::InvalidCookedAssetId || m_byAssetId.contains(skeleton.assetId))
+		{
 			continue;
+		}
 		Entry entry;
 		entry.BindLocalTransforms.reserve(skeleton.joints.size());
 		for (std::size_t jointIndex = 0; jointIndex < skeleton.joints.size(); ++jointIndex)
+		{
 			entry.BindLocalTransforms.push_back(SkeletonTransformTranslation::DecomposeLocalTransform(skeleton, jointIndex));
+		}
 		if (!SkeletonTransformContract::BuildEvaluationOrder(skeleton.joints, entry.EvaluationOrder))
 		{
 			continue;
@@ -55,7 +59,9 @@ SkeletonResourceHandle SkeletonResourceStore::Find(Assets::CookedAssetId skeleto
 ECS::SkeletonEvaluationData SkeletonResourceStore::Resolve(SkeletonResourceHandle handle) const noexcept
 {
 	if (!handle.IsValid() || handle.Slot >= m_entries.size())
+	{
 		return {};
+	}
 	const Entry& entry = m_entries[handle.Slot];
 	return entry.Generation == handle.Generation ? ECS::SkeletonEvaluationData{&entry.Resource, entry.BindLocalTransforms, entry.EvaluationOrder} : ECS::SkeletonEvaluationData{};
 }

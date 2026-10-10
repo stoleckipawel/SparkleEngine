@@ -72,6 +72,7 @@ void CookedSceneSkeletonBuilder::BuildSkeletons(const SourceImportOutput& import
 			{
 				throw Diagnostics::Error(std::format("Imported skeleton {} has invalid joint {}.", skeletonIndex, jointIndex));
 			}
+
 			const DirectX::XMFLOAT4X4* parentBindModel = importedJoint.parentJointIndex < importedSkeleton.joints.size() ? &importedSkeleton.joints[importedJoint.parentJointIndex].bindModelTransform
 			                                                                                                             : nullptr;
 

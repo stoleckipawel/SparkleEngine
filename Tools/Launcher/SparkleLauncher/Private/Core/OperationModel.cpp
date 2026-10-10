@@ -58,6 +58,7 @@ namespace SparkleLauncher
 				    std::move(summary),
 				    "Use a Sparkle tool bundle signed by a publisher trusted by this machine, or ask the policy administrator to "
 				    "authorize that publisher. Rebuilding or retrying does not change the trust decision.");
+
 				return;
 			case Process::ChildProcessStartFailure::AccessDenied:
 				SetOperationFailure(operation, OperationProblemKind::ProcessStart, std::move(summary), "Check the executable's file permissions and security-product quarantine, then retry.");
@@ -71,6 +72,7 @@ namespace SparkleLauncher
 				    OperationProblemKind::ProcessStart,
 				    std::move(summary),
 				    "Review the operating-system error and the executable path in the operation log, correct that condition, then retry.");
+
 				return;
 			case Process::ChildProcessStartFailure::None:
 				break;

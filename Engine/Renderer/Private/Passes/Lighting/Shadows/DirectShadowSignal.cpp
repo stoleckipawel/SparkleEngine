@@ -39,6 +39,7 @@ void AddDirectShadowSignalPass(FrameGraphBuilder& builder, const RenderFrame& fr
 		AddLightingTargetClearPass(builder, "DirectShadowSignalClear", sceneExtent, targets);
 		return;
 	}
+
 	AddRayTracingMaterialPass<DirectShadowSignalCS, DirectShadowSignalRGS>(
 	    builder,
 	    "DirectShadowSignal",

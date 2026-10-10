@@ -45,6 +45,7 @@ D3D12RayTracingShaderTable::D3D12RayTracingShaderTable(D3D12Rhi& rhi, D3D12Resou
 	{
 		throw Diagnostics::Error("D3D12 shader-table creation received a foreign pipeline.");
 	}
+
 	const RhiRayTracingShaderTablePackingRules packingRules{
 	    .IdentifierSizeInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES,
 	    .RecordAlignmentInBytes = D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT,

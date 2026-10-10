@@ -31,30 +31,54 @@ struct ImagePixelFormat final
 	ImagePixelEncoding Encoding = ImagePixelEncoding::Rgba8Unorm;
 };
 
+#pragma pack(push, 1)
+
+struct BmpFileHeader final
+{
+	std::uint16_t Type = 0x4D42;
+	std::uint32_t Size = 0;
+	std::uint16_t Reserved1 = 0;
+	std::uint16_t Reserved2 = 0;
+	std::uint32_t OffBits = 54;
+};
+
+struct BmpInfoHeader final
+{
+	std::uint32_t Size = sizeof(BmpInfoHeader);
+	std::int32_t Width = 0;
+	std::int32_t Height = 0;
+	std::uint16_t Planes = 1;
+	std::uint16_t BitCount = 32;
+	std::uint32_t Compression = 0;
+	std::uint32_t SizeImage = 0;
+	std::int32_t XPelsPerMeter = 2835;
+	std::int32_t YPelsPerMeter = 2835;
+	std::uint32_t ClrUsed = 0;
+	std::uint32_t ClrImportant = 0;
+};
+
+#pragma pack(pop)
+
 static bool ResolvePixelFormat(PixelFormat format, ImagePixelFormat& imageFormat) noexcept
 {
 	switch (format)
 	{
 		case PixelFormat::R32G32B32A32_Float:
 			imageFormat.Encoding = ImagePixelEncoding::Rgba32Float;
-
 			return true;
 
 		case PixelFormat::R16G16B16A16_Float:
 			imageFormat.Encoding = ImagePixelEncoding::Rgba16Float;
-
 			return true;
 
 		case PixelFormat::R8G8B8A8_UNorm:
 		case PixelFormat::R8G8B8A8_UNorm_Srgb:
 			imageFormat.Encoding = ImagePixelEncoding::Rgba8Unorm;
-
 			return true;
 
 		case PixelFormat::B8G8R8A8_UNorm:
 		case PixelFormat::B8G8R8A8_UNorm_Srgb:
 			imageFormat.Encoding = ImagePixelEncoding::Bgra8Unorm;
-
 			return true;
 		default:
 			return false;
@@ -90,6 +114,7 @@ static void ConvertPixel(const std::byte* source, ImagePixelEncoding encoding, s
 			destination[3] = ToByte(Pixel::HalfToFloat(rgba[3]));
 			break;
 		}
+
 		case ImagePixelEncoding::Rgba8Unorm:
 			destination[0] = source[2];
 
@@ -142,34 +167,6 @@ bool ImageEncoding::DecodeLinearRgb(const ImageBufferView& source, LinearRgbImag
 
 bool ImageEncoding::EncodeBmp(const ImageBufferView& image, std::vector<std::byte>& encodedBytes, std::string& errorMessage)
 {
-#pragma pack(push, 1)
-
-	struct BmpFileHeader final
-	{
-		std::uint16_t Type = 0x4D42;
-		std::uint32_t Size = 0;
-		std::uint16_t Reserved1 = 0;
-		std::uint16_t Reserved2 = 0;
-		std::uint32_t OffBits = 54;
-	};
-
-	struct BmpInfoHeader final
-	{
-		std::uint32_t Size = sizeof(BmpInfoHeader);
-		std::int32_t Width = 0;
-		std::int32_t Height = 0;
-		std::uint16_t Planes = 1;
-		std::uint16_t BitCount = 32;
-		std::uint32_t Compression = 0;
-		std::uint32_t SizeImage = 0;
-		std::int32_t XPelsPerMeter = 2835;
-		std::int32_t YPelsPerMeter = 2835;
-		std::uint32_t ClrUsed = 0;
-		std::uint32_t ClrImportant = 0;
-	};
-
-#pragma pack(pop)
-
 	ImagePixelFormat imageFormat;
 	const std::uint32_t bytesPerPixel = PixelFormatBytesPerTexel(image.Format);
 	const std::uint64_t requiredBytes = static_cast<std::uint64_t>(image.RowPitch) * image.Height;

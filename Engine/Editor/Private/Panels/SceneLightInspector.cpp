@@ -62,7 +62,9 @@ void SceneLightInspector::BuildGenericLight(
 	}
 
 	if (!changed)
+	{
 		return;
+	}
 	(void)
 	    transactionHistory.Execute({0, SetLightDescriptionCommand{lightEntity, std::move(lightDesc)}}, {0, SetLightDescriptionCommand{lightEntity, sceneLight}}, worldGeneration, "light-description");
 }

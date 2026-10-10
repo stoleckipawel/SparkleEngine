@@ -66,6 +66,7 @@ VulkanRayTracingShaderTable::VulkanRayTracingShaderTable(VulkanRhi& rhi, VulkanG
 	{
 		throw Diagnostics::Error(VulkanResult::FormatFailure("vkGetRayTracingShaderGroupHandlesKHR", handleResult));
 	}
+
 	const RhiRayTracingShaderTablePackingRules packingRules{
 	    .IdentifierSizeInBytes = capabilities.ShaderGroupHandleSizeInBytes,
 	    .RecordAlignmentInBytes = capabilities.ShaderTableRecordAlignmentInBytes,

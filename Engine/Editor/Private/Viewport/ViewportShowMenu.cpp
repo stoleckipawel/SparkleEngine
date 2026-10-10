@@ -206,6 +206,7 @@ void DrawViewportShowMenu(const CVarControlExecutor* executor, bool disableInter
 				DrawShowControl(showControls[group.FirstLeaf], intent[group.FirstLeaf], *executor, error);
 				continue;
 			}
+
 			DrawShowControlGroup(
 			    group.Label,
 			    group.Icon,

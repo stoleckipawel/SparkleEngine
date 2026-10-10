@@ -208,6 +208,7 @@ RhiPartitionedTlasDesc RayTracingPartitionedTlasStrategy::BuildPartitionedTlasLa
 		    .AllowInstanceUpdates = false,
 		    .AllowPartitionTranslation = false};
 	}
+
 	return RhiPartitionedTlasDesc{
 	    .InstanceCapacity = instanceCapacity,
 	    .PartitionCount = ResolvePartitionCount(partitionPlan),

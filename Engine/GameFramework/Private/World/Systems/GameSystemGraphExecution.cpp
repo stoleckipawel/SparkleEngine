@@ -34,7 +34,9 @@ namespace ECS
 					const GameSystemDesc& system = m_data->Systems[wave.Systems[offset]];
 					const auto count = wave.ItemCounts[offset];
 					if (count == 0)
+					{
 						continue;
+					}
 
 					ParallelFor(
 					    tasks,
@@ -44,7 +46,9 @@ namespace ECS
 					    [&system](std::uint32_t begin, std::uint32_t end, TaskExecutionContext& context)
 					    {
 						    if (context.IsCancellationRequested())
+						    {
 							    return TaskResult::Cancelled("Game-system execution cancelled at the owner boundary.");
+						    }
 						    auto* execution = context.TryGet<GameWorldSystemExecution>();
 						    return execution != nullptr && system.ExecuteRange(*execution, begin, end) ? TaskResult::Success()
 						                                                                               : TaskResult::Failure("Game-system range rejected its declared access or target range.");
@@ -58,7 +62,9 @@ namespace ECS
 				}
 			}
 			if (wave.Tasks.GetTaskCount() == 0)
+			{
 				continue;
+			}
 			TaskExecutionContext context(systems);
 			TaskExecution result = executor.Submit(wave.Tasks, context);
 			if (!result.IsValid() || result.GetStatus() != TaskExecutionStatus::Succeeded)

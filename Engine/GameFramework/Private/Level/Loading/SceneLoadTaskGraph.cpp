@@ -32,7 +32,9 @@ namespace Assets
 			    [state, index](TaskExecutionContext& context)
 			    {
 				    if (context.IsCancellationRequested())
+				    {
 					    return TaskResult::Cancelled("Scene load cancelled before asset read.");
+				    }
 				    SceneAssetLoadWork& work = state->Assets[index];
 				    SceneAssetFileReader::Read(work.Id, work.ManifestPath, work.Manifest, work.Files);
 				    state->Stage.store(LevelLoadOperationStage::Decoding, std::memory_order_release);
@@ -44,7 +46,9 @@ namespace Assets
 			    [state, index](TaskExecutionContext& context)
 			    {
 				    if (context.IsCancellationRequested())
+				    {
 					    return TaskResult::Cancelled("Scene load cancelled before asset decode.");
+				    }
 				    SceneAssetLoadWork& work = state->Assets[index];
 				    work.Payload = SceneAssetPayloadDecoder::Decode(work.Manifest, work.Files);
 				    SceneLoadPackageBuilder::BuildAssetBlueprints(work);
@@ -70,7 +74,9 @@ namespace Assets
 		    [state](TaskExecutionContext& context)
 		    {
 			    if (context.IsCancellationRequested())
+			    {
 				    return TaskResult::Cancelled("Scene load cancelled before package finalization.");
+			    }
 			    state->Stage.store(LevelLoadOperationStage::Validating, std::memory_order_release);
 			    SceneLoadPackageBuilder::Finalize(*state);
 			    state->Stage.store(LevelLoadOperationStage::Ready, std::memory_order_release);

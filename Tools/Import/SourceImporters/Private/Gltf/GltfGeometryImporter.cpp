@@ -29,7 +29,9 @@ struct GltfGeometryImporter::NodeImportContext final
 std::size_t GltfGeometryImporter::CountImportedMeshInstances(const cgltf_data* data)
 {
 	if (data == nullptr)
+	{
 		throw Diagnostics::Error("glTF mesh instance count has no parsed scene.");
+	}
 
 	std::size_t totalPrimitives = 0;
 	for (cgltf_size nodeIndex = 0; nodeIndex < data->nodes_count; ++nodeIndex)
@@ -42,7 +44,9 @@ std::size_t GltfGeometryImporter::CountImportedMeshInstances(const cgltf_data* d
 			{
 				const cgltf_accessor* firstAccessor = node.mesh_gpu_instancing.attributes[0].data;
 				if (firstAccessor == nullptr)
+				{
 					throw Diagnostics::Error("glTF mesh GPU instancing has no transform accessor.");
+				}
 				meshInstanceCount = firstAccessor->count;
 			}
 
@@ -177,7 +181,9 @@ void GltfGeometryImporter::ValidateDeformation(
 	if (geometry.HasSkinInfluences())
 	{
 		if (skeletonIndex == kInvalidImportedSkeletonIndex || skeletonIndex >= scene.skeletons.size())
+		{
 			throw Diagnostics::Error(std::format("glTF {} has skin influences without a bound skeleton.", primitiveLabel));
+		}
 		ValidateSkinInfluences(geometry, scene.skeletons[skeletonIndex], primitiveLabel);
 	}
 }
@@ -240,7 +246,9 @@ void GltfGeometryImporter::ValidateSkinInfluences(const ImportedMeshGeometry& ge
 		for (std::size_t influenceIndex = 0; influenceIndex < 8u; ++influenceIndex)
 		{
 			if (influence.jointWeights[influenceIndex] > 0.0f && influence.jointIndices[influenceIndex] >= skeleton.joints.size())
+			{
 				throw Diagnostics::Error(std::format("glTF {} has skin influences outside its bound skeleton.", primitiveLabel));
+			}
 		}
 	}
 }

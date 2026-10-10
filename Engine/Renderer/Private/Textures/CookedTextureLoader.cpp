@@ -17,7 +17,9 @@ public:
 	static void ValidateHeader(const CookedTextureAssetHeader& header, const std::filesystem::path& resolvedPath)
 	{
 		if (!header.HasExpectedMagic())
+		{
 			throw Diagnostics::Error("Invalid cooked texture asset header for '" + resolvedPath.string() + "'");
+		}
 
 		if (header.width == 0 || header.height == 0 || header.mipCount == 0 || PixelFormatFromSerializedTextureFormat(header.format) == PixelFormat::Unknown)
 		{
@@ -74,27 +76,35 @@ CookedTextureFilePayload CookedTextureLoader::Read(const std::filesystem::path& 
 	payload.ResolvedPath = Filesystem::ResolveAssetPathValidated(texturePath, AssetType::Texture);
 	std::string errorMessage;
 	if (!Files::TryReadAllBytes(payload.ResolvedPath, payload.Bytes, errorMessage))
+	{
 		throw Diagnostics::Error(std::format("Could not read cooked texture '{}': {}", payload.ResolvedPath.string(), errorMessage));
+	}
 	return payload;
 }
 
 LoadedTextureData CookedTextureLoader::Decode(const CookedTextureFilePayload& payload)
 {
 	if (payload.ResolvedPath.empty() || payload.Bytes.empty())
+	{
 		throw Diagnostics::Error("Cooked texture decode received an empty file payload.");
+	}
 
 	Files::BinarySpanReader reader(payload.Bytes);
 	CookedTextureAssetHeader header;
 	std::string errorMessage;
 	if (!reader.ReadValue(header, errorMessage))
+	{
 		throw Diagnostics::Error(errorMessage);
+	}
 	CookedTextureDecoder::ValidateHeader(header, payload.ResolvedPath);
 
 	const TextureFormatIntent formatIntent = CookedTextureDecoder::ResolveFormatIntent(header.formatIntent);
 
 	std::vector<CookedTextureMipHeader> mipHeaders;
 	if (!reader.ReadArray(header.mipCount * header.GetArraySize(), mipHeaders, errorMessage))
+	{
 		throw Diagnostics::Error(errorMessage);
+	}
 
 	for (std::uint32_t mipIndex = 0; mipIndex < static_cast<std::uint32_t>(mipHeaders.size()); ++mipIndex)
 	{
@@ -135,7 +145,9 @@ LoadedTextureData CookedTextureLoader::Decode(const CookedTextureFilePayload& pa
 		throw Diagnostics::Error(std::format("Cooked texture asset '{}' contains {} unexpected trailing byte(s)", payload.ResolvedPath.string(), reader.GetRemainingByteCount()));
 	}
 	if (!textureUpload.IsValid())
+	{
 		throw Diagnostics::Error(std::format("Cooked texture asset '{}' produced an invalid upload layout.", payload.ResolvedPath.string()));
+	}
 
 	return LoadedTextureData{.Upload = std::move(textureUpload), .FormatIntent = formatIntent};
 }

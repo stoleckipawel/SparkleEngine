@@ -23,9 +23,13 @@ int RunTextureCooker(int argc, char** argv)
 	{
 		const std::string_view command(argv[1] != nullptr ? argv[1] : "");
 		if (command == TextureCookerConstants::InspectRequestFileCommand)
+		{
 			return InspectTextureCookRequestFile(std::filesystem::path(argv[2]));
+		}
 		if (command == TextureCookerConstants::CookRequestFileCommand)
+		{
 			return CookTextureCookRequestFile(std::filesystem::path(argv[2]));
+		}
 	}
 	PrintUsage(std::cerr);
 	return TextureCookerConstants::ExitUsageError;

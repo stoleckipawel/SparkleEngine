@@ -114,6 +114,7 @@ bool ReferencePathTracerArtifactEncoding::Encode(const ReferencePathTracerArtifa
 		errorMessage = "Checkpoint M2 readback is unavailable.";
 		return false;
 	}
+
 	const ImageBufferView moment2Source{
 	    .Pixels = request.Moment2->Pixels,
 	    .Width = request.Moment2->Width,

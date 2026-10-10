@@ -19,11 +19,15 @@ void SceneSkyInspector::Build(const std::optional<SkyEnvironment>& current, Edit
 			(void) transactionHistory.Execute({0, SetSkyEnvironmentCommand{after}}, {0, SetSkyEnvironmentCommand{current}}, generation);
 		}
 		if (!hasSky)
+		{
 			UiUtil::DrawDetailsValueRow("Source", "Engine Default");
+		}
 		UiUtil::EndDetailsCategory();
 	}
 	if (!hasSky || !current)
+	{
 		return;
+	}
 
 	SceneSkyDesc after = current->Description;
 	bool changed = false;
@@ -53,5 +57,7 @@ void SceneSkyInspector::Build(const std::optional<SkyEnvironment>& current, Edit
 		UiUtil::EndDetailsCategory();
 	}
 	if (changed)
+	{
 		(void) transactionHistory.Execute({0, SetSkyEnvironmentCommand{SkyEnvironment{after}}}, {0, SetSkyEnvironmentCommand{current}}, generation, "sky-environment");
+	}
 }

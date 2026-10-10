@@ -36,6 +36,7 @@ ReferencePathTracerArtifactWriteResult ReferencePathTracerArtifactWriter::Write(
 	{
 		publication.Files.push_back(ArtifactBundleFile{.RelativePath = "checkpoint.bin", .Bytes = std::move(*artifact.Checkpoint)});
 	}
+
 	publication.Files.push_back(
 	    ArtifactBundleFile{
 	        .RelativePath = "manifest.json",

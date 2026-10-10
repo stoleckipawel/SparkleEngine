@@ -18,7 +18,9 @@ namespace LevelParsing
 		{
 			const DirectX::XMVECTOR cross = DirectX::XMVector3Cross(DirectX::XMLoadFloat3(&direction), DirectX::XMLoadFloat3(&tangent));
 			if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(cross)) <= 1.0e-8f)
+			{
 				throw Diagnostics::Error(std::format("Rect light {} has parallel direction and tangent vectors.", lightIndex));
+			}
 		}
 	};
 
@@ -34,9 +36,13 @@ namespace LevelParsing
 		{
 			const SceneLightDesc& light = levelDesc.lights[lightIndex];
 			if (const SpotLightDesc* spot = light.GetSpot(); spot != nullptr && spot->innerAngleRadians > spot->outerAngleRadians)
+			{
 				throw Diagnostics::Error(std::format("Spot light {} has an inner cone wider than its outer cone.", lightIndex));
+			}
 			if (const RectLightDesc* rect = light.GetRect(); rect != nullptr)
+			{
 				LightingSectionValidation::ValidateRectBasis(rect->direction, rect->tangent, lightIndex);
+			}
 		}
 	}
 

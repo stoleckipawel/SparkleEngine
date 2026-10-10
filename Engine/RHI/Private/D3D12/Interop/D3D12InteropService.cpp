@@ -14,6 +14,7 @@ RhiNativeDeviceQueueInterop D3D12InteropService::GetDeviceQueueInterop(RhiNative
 	{
 		return {};
 	}
+
 	return RhiNativeDeviceQueueInterop{
 	    .BackendApi = m_owner != nullptr ? m_owner->GetCapabilities().BackendApi : ERhiBackendApi::Unknown,
 	    .Device = m_owner != nullptr ? m_owner->GetDeviceHandle() : NativeGraphicsDeviceHandle{},

@@ -22,7 +22,9 @@ namespace ECS
 	bool CameraMovementSystem::Apply(EntityId entity, Camera& camera, LocalTransform& transform) const noexcept
 	{
 		if (entity != m_activeCamera || !camera.Active)
+		{
 			return false;
+		}
 		bool changed = false;
 		if (m_intent.HasAspectRatio && m_intent.AspectRatio > 0.0f && camera.AspectRatio != m_intent.AspectRatio)
 		{

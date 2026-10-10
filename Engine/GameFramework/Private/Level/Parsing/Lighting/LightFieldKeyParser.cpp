@@ -31,19 +31,25 @@ namespace LevelParsing
 		{
 			std::size_t cursor = prefix.Text.size();
 			if (cursor >= key.size() || !std::isdigit(static_cast<unsigned char>(key[cursor])))
+			{
 				throw Diagnostics::Error(std::format("Lighting field '{}' has no light index.", key));
+			}
 
 			std::size_t index = 0;
 			while (cursor < key.size() && std::isdigit(static_cast<unsigned char>(key[cursor])))
 			{
 				const std::size_t digit = static_cast<std::size_t>(key[cursor] - '0');
 				if (index > ((std::numeric_limits<std::size_t>::max)() - digit) / 10u)
+				{
 					throw Diagnostics::Error(std::format("Lighting field '{}' has an overflowing light index.", key));
+				}
 				index = index * 10u + digit;
 				++cursor;
 			}
 			if (cursor >= key.size())
+			{
 				throw Diagnostics::Error(std::format("Lighting field '{}' has no property name.", key));
+			}
 			return ParsedLightFieldKey{.Kind = prefix.Kind, .Index = index, .Field = key.substr(cursor)};
 		}
 
@@ -53,7 +59,9 @@ namespace LevelParsing
 			for (const LightFieldPrefix& prefix : kPrefixes)
 			{
 				if (key.starts_with(prefix.Text))
+				{
 					return ParseIndexedField(key, prefix);
+				}
 			}
 			throw Diagnostics::Error(std::format("Unsupported lighting field '{}'.", key));
 		}

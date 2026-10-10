@@ -112,6 +112,7 @@ public static class CodeStyleParagraphSpacing
         int parentheses = 0;
         int brackets = 0;
         int expressionBraces = 0;
+        int conditionals = 0;
         Stack<bool> blocks = new Stack<bool>();
 
         for (int position = 0; position < masked.Length; ++position)
@@ -141,6 +142,28 @@ public static class CodeStyleParagraphSpacing
                 case ']':
                     brackets = Math.Max(0, brackets - 1);
                     break;
+                case '?':
+                    if (parentheses == 0 && brackets == 0 && expressionBraces == 0)
+                    {
+                        ++conditionals;
+                    }
+                    break;
+                case ':':
+                    if (parentheses != 0 || brackets != 0 || expressionBraces != 0 ||
+                        (position > 0 && masked[position - 1] == ':') || (position + 1 < masked.Length && masked[position + 1] == ':'))
+                    {
+                        break;
+                    }
+
+                    if (conditionals > 0)
+                    {
+                        --conditionals;
+                    }
+                    else if (IsStatementLabel(masked.Substring(start, position - start)))
+                    {
+                        start = -1;
+                    }
+                    break;
                 case '{':
                     if (expressionBraces > 0 || parentheses > 0 || brackets > 0 || IsInitializer(masked.Substring(start, position - start)))
                     {
@@ -153,6 +176,7 @@ public static class CodeStyleParagraphSpacing
                         bool executable = !isTypeOrNamespace && (head.Contains(")") || (blocks.Count > 0 && blocks.Peek()));
                         blocks.Push(executable);
                         start = -1;
+                        conditionals = 0;
                     }
                     break;
                 case '}':
@@ -168,6 +192,7 @@ public static class CodeStyleParagraphSpacing
                         }
 
                         start = -1;
+                        conditionals = 0;
                     }
                     break;
                 case ';':
@@ -175,12 +200,18 @@ public static class CodeStyleParagraphSpacing
                     {
                         AddStatementBoundaries(masked, start, position, lines, lineStarts, boundaries, leadingComments, blocks.Count > 0 && blocks.Peek());
                         start = -1;
+                        conditionals = 0;
                     }
                     break;
             }
         }
 
         return boundaries;
+    }
+
+    private static bool IsStatementLabel(string head)
+    {
+        return Regex.IsMatch(head.Trim(), @"^(?:case\b[\s\S]*|default|public|protected|private|[A-Za-z_]\w*)$");
     }
 
     private static bool HasAssignment(string text)
@@ -250,7 +281,7 @@ public static class CodeStyleParagraphSpacing
     {
         line = line.Trim();
         return line.Length == 0 || line == "{" || line.EndsWith("{") || line.StartsWith("#") ||
-            Regex.IsMatch(line, @"^(?:public|protected|private):$");
+            (line.EndsWith(":") && IsStatementLabel(line.Substring(0, line.Length - 1)));
     }
 
     private static bool SuppliesAfterBoundary(string line)

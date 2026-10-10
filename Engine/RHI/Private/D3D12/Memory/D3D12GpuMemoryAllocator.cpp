@@ -174,6 +174,7 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 			{
 				snapshot.TransientUsageBytes += allocationBytes;
 			}
+
 			D3D12GpuMemoryAllocatorImplementation::CategoryAggregation& aggregation = D3D12GpuMemoryAllocatorImplementation::FindOrCreateAggregation(
 			    aggregations,
 			    record->Category,
@@ -204,6 +205,7 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 			{
 				snapshot.TransientUsageBytes += allocationBytes;
 			}
+
 			D3D12GpuMemoryAllocatorImplementation::CategoryAggregation& aggregation = D3D12GpuMemoryAllocatorImplementation::FindOrCreateAggregation(
 			    aggregations,
 			    record->Category,
@@ -345,6 +347,7 @@ std::unique_ptr<D3D12GpuAllocationRecord> D3D12GpuMemoryAllocator::CreateResourc
 			liveAllocationCount = m_impl->liveRecords.size();
 			liveHeapCount = m_impl->liveHeapRecords.size();
 		}
+
 		SPDLOG_LOGGER_WARN(
 		    g_d3d12MemoryLogger,
 		    "D3D12 allocation failed: hr={} bytes={} category={} residency={} liveAllocations={} liveHeaps={} name='{}'",

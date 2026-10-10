@@ -110,6 +110,7 @@ void RenderScene::CommitMorphWeightContinuity(const RenderDeformationWork& defor
 		{
 			++morphRangeIndex;
 		}
+
 		const bool retain = morphRangeIndex < deformation.MorphWeightCopyRanges.size() && deformation.MorphWeightCopyRanges[morphRangeIndex].Object == history->first
 		    && retainsMorphHistory(deformation.MorphWeightCopyRanges[morphRangeIndex]);
 

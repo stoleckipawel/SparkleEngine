@@ -273,6 +273,51 @@ function Test-ClangFormatChanges
     return $changed
 }
 
+function Test-ControlFlowBraces
+{
+    param([string[]] $Paths, [string] $ReplacementXml)
+
+    $documents = @([regex]::Split($ReplacementXml, '(?=<\?xml)') | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($documents.Count -ne $Paths.Count)
+    {
+        throw "clang-format returned an unexpected brace-check document count."
+    }
+
+    $missingBraces = $false
+    for ($fileIndex = 0; $fileIndex -lt $Paths.Count; ++$fileIndex)
+    {
+        $relativePath = $Paths[$fileIndex]
+        $document = [xml] $documents[$fileIndex]
+        if ($document.replacements.incomplete_format -eq "true")
+        {
+            throw "${relativePath}: clang-format could not complete the brace check."
+        }
+
+        foreach ($replacement in $document.SelectNodes('/replacements/replacement'))
+        {
+            if ($replacement.InnerText -notmatch '[{}]')
+            {
+                continue
+            }
+
+            $bytes = [IO.File]::ReadAllBytes((Join-Path $repositoryRoot $relativePath))
+            $offset = [int] $replacement.offset
+            $existing = [Text.Encoding]::UTF8.GetString($bytes, $offset, [int] $replacement.length)
+            if ([regex]::Replace($existing, '\s', '') -ceq [regex]::Replace($replacement.InnerText, '\s', ''))
+            {
+                continue
+            }
+
+            $lineNumber = [Text.Encoding]::UTF8.GetString($bytes, 0, $offset).Split("`n").Length
+            [Console]::Error.WriteLine("${relativePath}:${lineNumber}: control-flow bodies require explicit braces; repair the source before formatting")
+            $missingBraces = $true
+            break
+        }
+    }
+
+    return $missingBraces
+}
+
 $selectedSourcePaths = @(Get-SelectedSourcePaths)
 $ownedSourcePaths = @(
     $selectedSourcePaths | Where-Object {
@@ -347,9 +392,23 @@ $ownedShaderPaths = @($ownedSourcePaths | Where-Object { [IO.Path]::GetExtension
 Add-Type -Path (Join-Path $PSScriptRoot "CodeStyleParagraphSpacing.cs")
 
 $formatFailed = $false
+$braceCheckStylePath = $null
 Push-Location $repositoryRoot
 try
 {
+    if ($Mode -eq "Check" -and $ownedCppPaths.Count -ne 0)
+    {
+        $resolvedStyle = @(& $clangFormat --style=file --dump-config)
+        if ($LASTEXITCODE -ne 0)
+        {
+            throw "clang-format could not resolve the repository style for the brace check."
+        }
+
+        $braceCheckStyle = [regex]::Replace(($resolvedStyle -join "`n"), '(?m)^InsertBraces:[^\r\n]*', 'InsertBraces: true')
+        $braceCheckStylePath = [IO.Path]::GetTempFileName()
+        [IO.File]::WriteAllText($braceCheckStylePath, $braceCheckStyle, [Text.UTF8Encoding]::new($false))
+    }
+
     for ($offset = 0; $offset -lt $ownedCppPaths.Count; $offset += 64)
     {
         $lastIndex = [Math]::Min($offset + 63, $ownedCppPaths.Count - 1)
@@ -371,6 +430,16 @@ try
                 $formatFailed = $true
             }
             elseif (Test-ClangFormatChanges -Paths $batch -ReplacementXml ($replacementLines -join "`n"))
+            {
+                $formatFailed = $true
+            }
+
+            $braceLines = @(& $clangFormat --output-replacements-xml --Werror "--style=file:$braceCheckStylePath" $batch)
+            if ($LASTEXITCODE -ne 0)
+            {
+                $formatFailed = $true
+            }
+            elseif (Test-ControlFlowBraces -Paths $batch -ReplacementXml ($braceLines -join "`n"))
             {
                 $formatFailed = $true
             }
@@ -439,6 +508,11 @@ try
 }
 finally
 {
+    if ($null -ne $braceCheckStylePath)
+    {
+        Remove-Item -LiteralPath $braceCheckStylePath -Force
+    }
+
     Pop-Location
 }
 

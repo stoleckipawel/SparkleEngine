@@ -67,6 +67,7 @@ Use a consistent replacement vocabulary while drafting:
 | --- | --- |
 | `{{FEATURE_NAME}}` | Human-readable feature name. |
 | `{{FEATURE_PATH}}` | Repository-relative owning feature folder. |
+| `{{CHANGE_LIFECYCLE_PATH}}` | Relative link from the instantiated plan to `Docs/Engineering/Workflow/ChangeLifecycle.md`. |
 | `{{OWNER_MODULE}}` | Primary module or cross-module subject that owns the result. |
 | `{{PREFIX}}` | Short stable uppercase identifier prefix for local `FS`, `AC`, `FM`, `CHK`, `RISK`, and semantic rows. |
 | `{{DISCOVERY_GATE}}` | Stable gate that must pass before implementation-shaping decisions become authoritative. |
@@ -791,7 +792,8 @@ Every stage executor must:
 8. map every changed semantic to its accepted rule and every claim/failure to a defect-detecting check;
 9. inspect the scoped diff and run the cheapest applicable checks before escalating;
 10. run the feature's architecture-fitness check and retain its integration-hook ledger; a new unjustified hook, feature-specific generic state, scattered policy switch, or public implementation vocabulary blocks the stage;
-11. report exact commands, configurations, outputs, retained artifacts, unavailable checks, limitations, blockers, deletions, and next permitted stage.
+11. after responsibility refinement and the final edit, pass the [Stage Source-Style Gate]({{CHANGE_LIFECYCLE_PATH}}#stage-source-style-gate) before each implementation-stage submission, handoff, or completed exit; retain formatter coverage/results and authored logical-spacing review separately;
+12. report exact commands, configurations, outputs, retained artifacts, unavailable checks, limitations, blockers, deletions, and next permitted stage.
 
 Every prompt's `NON-NEGOTIABLE` paragraph is an exit gate. The handoff quotes each requirement with proof or reports `BLOCKED`.
 
@@ -836,6 +838,7 @@ State one observable vertical-slice outcome, not a list of files or mechanisms.
 - Exact matrix and thresholds.
 - Required deletion and no-stale-reference proof.
 - Required review and evidence artifacts.
+- The [Stage Source-Style Gate]({{CHANGE_LIFECYCLE_PATH}}#stage-source-style-gate) passes for the final stage-owned source, including added files; no-source stages record justified `N/A`.
 - Explicit `BLOCKED` triggers.
 - `CHK-{{PREFIX}}-ARCH` passes for this stage with an exact outside-feature hook ledger, public-surface delta, dependency audit, feature-symbol/repeated-switch searches, and bounded-removal result.
 
@@ -857,6 +860,8 @@ Do not implement: {{LATER_STAGES_GENERIC_FRAMEWORKS_COMPATIBILITY_PATHS_OPTIMIZA
 Validate: run {{PREDECLARED_SMALLEST_FALSIFIERS_FAULT_INJECTIONS_MATRIX_AND_REQUIRED_REPOSITORY_CHECKS}} and `CHK-{{PREFIX}}-ARCH`. Retain every outside-feature touched file and feature-symbol occurrence with its accepted hook role. A build, launch, screenshot, responsive process, plausible output, or formatter result alone is not an exit result. Do not change thresholds or controls after observing the candidate.
 
 Stop if: {{MISSING_DECISION_DUPLICATE_AUTHORITY_SEMANTIC_DIVERGENCE_UNOWNED_LIFETIME_SILENT_FALLBACK_UNBOUNDED_FAILURE_OR_EVIDENCE_INVALIDITY}}.
+
+Before submission or handoff: apply Docs/Engineering/Workflow/ChangeLifecycle.md#stage-source-style-gate after the final edit. Run the repository CodeStyle.bat Check on all stage-owned added/modified source files, review authored logical spacing and wrapping against CodeStyle.md, and run git diff --check. Record exact commands, tool version, file coverage, exclusions and both results; do not mark the stage complete with missing coverage or a failed required check. A no-source stage records justified N/A and applicable documentation/configuration checks.
 
 Handoff: report changed/deleted files by responsibility, exact commands/configurations/results, artifact links, failed/unavailable checks, remaining risks and limitations, prerequisite validity, and whether Stage {{N_PLUS_1}} is authorized.
 ```
@@ -921,7 +926,7 @@ Before handing the package to an implementation agent, verify:
 8. every included feature statement maps to accepted semantics, architecture, a stage, binary acceptance, failures, checks, and a result owner;
 9. every check names initial state, action/injection, independent oracle, matrix, threshold, artifacts, cleanup, and escalation;
 10. every stage is dependency-ordered, vertically observable, bounded by non-goals, reductive where replacing a path, and equipped with an exact stop condition;
-11. every ready-to-use prompt carries prerequisites, owner inspection, outcome, clean break, non-negotiables, exclusions, falsifiers, stop conditions, and handoff evidence;
+11. every ready-to-use prompt carries prerequisites, owner inspection, outcome, clean break, non-negotiables, exclusions, falsifiers, stop conditions, handoff evidence, and the per-stage [Stage Source-Style Gate](../ChangeLifecycle.md#stage-source-style-gate), including mechanical coverage and authored logical-spacing review after the final edit;
 12. the final route includes adoption, package/profile isolation, removal of temporary/replaced paths, documentation reconciliation, and feature-completion reporting;
 13. all placeholders are resolved or are explicit blocked rows with owners;
 14. the nearest indexes route the package and direct siblings remain within the navigation budget;

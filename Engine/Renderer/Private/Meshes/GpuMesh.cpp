@@ -70,7 +70,9 @@ void GpuMesh::CreateVertexBuffer(RenderCommandList& commandList, const MeshData&
 	    L"GpuMesh_VertexBuffer");
 
 	if (!m_vertexBuffer)
+	{
 		Diagnostics::Fatal(g_gpuMeshLogger, __FILE__, __LINE__, "GPU mesh vertex buffer creation failed.");
+	}
 
 	const std::span<const VertexData> vertices{meshData.vertices};
 	if (!m_renderHardwareInterface->GetUploadService().UploadBuffer(commandList, m_vertexBuffer, std::as_bytes(vertices), ResourceState::Common, L"GpuMesh_VertexUpload"))
@@ -86,7 +88,9 @@ void GpuMesh::CreateVertexBuffer(RenderCommandList& commandList, const MeshData&
 	    .StrideInBytes = sizeof(VertexData)};
 
 	if (m_vertexBufferView.BufferLocation == 0)
+	{
 		Diagnostics::Fatal(g_gpuMeshLogger, __FILE__, __LINE__, "GPU mesh vertex buffer has no device address.");
+	}
 }
 
 void GpuMesh::CreateIndexBuffer(RenderCommandList& commandList, const MeshData& meshData)
@@ -101,7 +105,9 @@ void GpuMesh::CreateIndexBuffer(RenderCommandList& commandList, const MeshData& 
 	    L"GpuMesh_IndexBuffer");
 
 	if (!m_indexBuffer)
+	{
 		Diagnostics::Fatal(g_gpuMeshLogger, __FILE__, __LINE__, "GPU mesh index buffer creation failed.");
+	}
 
 	const std::span<const std::uint32_t> indices{meshData.indices};
 	if (!m_renderHardwareInterface->GetUploadService().UploadBuffer(commandList, m_indexBuffer, std::as_bytes(indices), ResourceState::Common, L"GpuMesh_IndexUpload"))
@@ -117,7 +123,9 @@ void GpuMesh::CreateIndexBuffer(RenderCommandList& commandList, const MeshData& 
 	    .Format = RhiIndexFormat::UInt32};
 
 	if (m_indexBufferView.BufferLocation == 0)
+	{
 		Diagnostics::Fatal(g_gpuMeshLogger, __FILE__, __LINE__, "GPU mesh index buffer has no device address.");
+	}
 }
 
 void GpuMesh::CreateDeformationBuffers(RenderCommandList& commandList, GpuMeshPreparedData& preparedData)

@@ -149,6 +149,7 @@ void RenderCoordinator::SettleAbandonedWork() noexcept
 		{
 			continue;
 		}
+
 		std::visit(
 		    [this](auto& pending)
 		    {
@@ -176,6 +177,7 @@ void RenderCoordinator::SettleAbandonedWork() noexcept
 		{
 			continue;
 		}
+
 		m_publishedViewportCaptures.push_back(
 		    ViewportCaptureCompletion{.Id = id, .Readback = {.Result = {.Status = ViewportCaptureStatus::Failed, .FailureReason = "Render owner stopped before viewport readback completed"}}});
 	}

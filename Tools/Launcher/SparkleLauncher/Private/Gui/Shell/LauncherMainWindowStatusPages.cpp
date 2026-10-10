@@ -236,6 +236,7 @@ namespace SparkleLauncher
 					{
 						continue;
 					}
+
 					AddStatusRow(
 					    *ensureIssueLayout(),
 					    QString::fromStdString(item.DisplayName),
@@ -321,6 +322,7 @@ namespace SparkleLauncher
 				{
 					continue;
 				}
+
 				AddStatusRow(
 				    *ensureIssueLayout(),
 				    QString::fromStdString(item.DisplayName),

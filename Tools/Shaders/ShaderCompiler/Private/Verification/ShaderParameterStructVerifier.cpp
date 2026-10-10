@@ -181,6 +181,7 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(co
 
 				continue;
 			}
+
 			result.mismatches.push_back(
 			    std::format(
 			        "SC2001 missing reflected binding: name='{}' declaredKind='{}' declaredDimension='{}'",

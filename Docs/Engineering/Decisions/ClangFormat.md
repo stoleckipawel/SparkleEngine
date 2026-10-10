@@ -18,6 +18,8 @@ The initial amendment changed configuration and guidance only; the user subseque
 
 Paragraph-spacing enforcement now complements line wrapping: `SeparateDefinitionBlocks: Always` separates function/type definitions, superseding the original `F7` selection below. The repository entry point also applies the [paragraph-spacing helper](../../../CMake/CodeStyleParagraphSpacing.cs) to wrapped statements in both source families; `Format` writes the spacing and `Check` rejects missing boundaries. This implements the existing [semantic paragraph rule](../Foundations/CodeStyle.md#readability-rules) without changing argument layout or source tokens.
 
+The [Visual Spacing Contract](../Foundations/CodeStyle.md#visual-spacing-contract) now specifies the one-blank-line budget and the logical contexts that authors/reviewers group: workflow phases, guards, declarations, record fields, APIs, includes, and comments. Research from the C++ Core Guidelines, LLVM, and Epic supports consistency and purposeful grouping; the exact rules remain Sparkle-owned. Automatic enforcement covers syntactic boundaries only. The helper preserves leading-comment attachment and separates a new wrapped operation from a preceding completed block; it does not infer domain phases from names or insert gaps after every short statement.
+
 ## Executive Summary
 
 Sparkle should adopt a deliberate Sparkle profile rather than copy one NVIDIA or AMD repository. The public vendor repositories do not share one style:

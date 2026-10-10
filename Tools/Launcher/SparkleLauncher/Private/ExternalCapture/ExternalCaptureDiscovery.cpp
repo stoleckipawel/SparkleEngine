@@ -57,6 +57,7 @@ namespace SparkleLauncher
 
 				return IsInstalledToolFile(directory / "renderdoc.dll") && IsInstalledToolFile(directory / "qrenderdoc.exe") ? directory : std::filesystem::path{};
 			}
+
 			default:
 				return {};
 		}

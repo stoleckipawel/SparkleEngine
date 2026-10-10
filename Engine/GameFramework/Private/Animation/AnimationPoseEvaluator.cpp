@@ -22,12 +22,16 @@ namespace AnimationPoseEvaluator
 	    std::span<DirectX::XMFLOAT4X4> modelSpaceTransforms) noexcept
 	{
 		if (!skeleton.IsValid() || localTransforms.size() != skeleton.Resource->joints.size() || modelSpaceTransforms.size() != skeleton.Resource->joints.size())
+		{
 			return false;
+		}
 		std::copy(skeleton.BindLocalTransforms.begin(), skeleton.BindLocalTransforms.end(), localTransforms.begin());
 		for (const AnimationChannel& channel : clip.channels)
 		{
 			if (channel.targetJointIndex >= localTransforms.size())
+			{
 				continue;
+			}
 			ECS::AnimationJointTransform& transform = localTransforms[channel.targetJointIndex];
 			switch (channel.targetPath)
 			{
@@ -51,7 +55,9 @@ namespace AnimationPoseEvaluator
 			DirectX::XMMATRIX model = ComposeJointTransform(localTransforms[jointIndex]) * DirectX::XMLoadFloat4x4(&skeleton.Resource->joints[jointIndex].parentSpaceTransform);
 			const std::uint32_t parent = skeleton.Resource->joints[jointIndex].parentJointIndex;
 			if (parent < modelSpaceTransforms.size())
+			{
 				model *= DirectX::XMLoadFloat4x4(&modelSpaceTransforms[parent]);
+			}
 			DirectX::XMStoreFloat4x4(&modelSpaceTransforms[jointIndex], model);
 		}
 		return true;

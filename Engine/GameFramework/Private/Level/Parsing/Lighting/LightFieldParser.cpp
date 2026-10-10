@@ -111,14 +111,20 @@ namespace LevelParsing
 		for (SceneLightDesc& light : lights)
 		{
 			if (!IsLightKind(light, kind))
+			{
 				continue;
+			}
 			if (currentKindIndex == kindIndex)
+			{
 				return light;
+			}
 			++currentKindIndex;
 		}
 
 		if (currentKindIndex != kindIndex)
+		{
 			throw Diagnostics::Error("Light indices must be contiguous for each light kind.");
+		}
 		lights.push_back(CreateLight(kind));
 		return lights.back();
 	}
@@ -134,7 +140,9 @@ namespace LevelParsing
 		{
 			common.name = Strings::UnquoteCopy(line.value);
 			if (common.name.empty())
+			{
 				throw Diagnostics::Error("Light name cannot be empty.");
+			}
 			return;
 		}
 		if (field == "Color")
@@ -159,20 +167,34 @@ namespace LevelParsing
 	{
 		const SceneDirectionalLightDesc* current = light.GetDirectional();
 		if (current == nullptr)
+		{
 			Diagnostics::Fatal(g_lightFieldParserLogger, __FILE__, __LINE__, "Directional light field resolved to another light kind.");
+		}
 		SceneDirectionalLightDesc value = *current;
 		if (IsCommonField(field))
+		{
 			ParseCommonField(field, line, light.common);
+		}
 		else if (field == "Direction")
+		{
 			value.direction = ParseFloat3(line.value, "directional light direction");
+		}
 		else if (field == "CastShadow")
+		{
 			value.castShadow = ParseBool(line.value, "directional light shadow flag");
+		}
 		else if (field == "IlluminanceLux")
+		{
 			value.illuminance = ParseFloat(line.value, "directional light illuminance");
+		}
 		else if (field == "AngularSizeRadians")
+		{
 			value.angularSizeRadians = ParseFloat(line.value, "directional light angular size");
+		}
 		else
+		{
 			UnsupportedField(SceneLightKind::Directional, field);
+		}
 		light.payload = value;
 	}
 
@@ -180,22 +202,38 @@ namespace LevelParsing
 	{
 		const PointLightDesc* current = light.GetPoint();
 		if (current == nullptr)
+		{
 			Diagnostics::Fatal(g_lightFieldParserLogger, __FILE__, __LINE__, "Point light field resolved to another light kind.");
+		}
 		PointLightDesc value = *current;
 		if (IsCommonField(field))
+		{
 			ParseCommonField(field, line, light.common);
+		}
 		else if (field == "LuminousIntensityCandela")
+		{
 			value.luminousIntensity = ParseFloat(line.value, "point light luminous intensity");
+		}
 		else if (field == "Range")
+		{
 			value.range = ParseFloat(line.value, "point light range");
+		}
 		else if (field == "Radius")
+		{
 			value.radius = ParseFloat(line.value, "point light radius");
+		}
 		else if (field == "DistanceAttenuationCoefficients")
+		{
 			value.distanceAttenuationCoefficients = ParseFloat3(line.value, "point light distance attenuation coefficients");
+		}
 		else if (field == "CastShadow")
+		{
 			value.castShadow = ParseBool(line.value, "point light shadow flag");
+		}
 		else
+		{
 			UnsupportedField(SceneLightKind::Point, field);
+		}
 		light.payload = value;
 	}
 
@@ -203,28 +241,50 @@ namespace LevelParsing
 	{
 		const SpotLightDesc* current = light.GetSpot();
 		if (current == nullptr)
+		{
 			Diagnostics::Fatal(g_lightFieldParserLogger, __FILE__, __LINE__, "Spot light field resolved to another light kind.");
+		}
 		SpotLightDesc value = *current;
 		if (IsCommonField(field))
+		{
 			ParseCommonField(field, line, light.common);
+		}
 		else if (field == "Direction")
+		{
 			value.direction = ParseFloat3(line.value, "spot light direction");
+		}
 		else if (field == "LuminousIntensityCandela")
+		{
 			value.luminousIntensity = ParseFloat(line.value, "spot light luminous intensity");
+		}
 		else if (field == "Range")
+		{
 			value.range = ParseFloat(line.value, "spot light range");
+		}
 		else if (field == "Radius")
+		{
 			value.radius = ParseFloat(line.value, "spot light radius");
+		}
 		else if (field == "DistanceAttenuationCoefficients")
+		{
 			value.distanceAttenuationCoefficients = ParseFloat3(line.value, "spot light distance attenuation coefficients");
+		}
 		else if (field == "InnerAngleRadians")
+		{
 			value.innerAngleRadians = ParseFloat(line.value, "spot light inner angle");
+		}
 		else if (field == "OuterAngleRadians")
+		{
 			value.outerAngleRadians = ParseFloat(line.value, "spot light outer angle");
+		}
 		else if (field == "CastShadow")
+		{
 			value.castShadow = ParseBool(line.value, "spot light shadow flag");
+		}
 		else
+		{
 			UnsupportedField(SceneLightKind::Spot, field);
+		}
 		light.payload = value;
 	}
 
@@ -232,24 +292,42 @@ namespace LevelParsing
 	{
 		const RectLightDesc* current = light.GetRect();
 		if (current == nullptr)
+		{
 			Diagnostics::Fatal(g_lightFieldParserLogger, __FILE__, __LINE__, "Rect light field resolved to another light kind.");
+		}
 		RectLightDesc value = *current;
 		if (IsCommonField(field))
+		{
 			ParseCommonField(field, line, light.common);
+		}
 		else if (field == "LuminanceCdPerM2")
+		{
 			value.luminance = ParseFloat(line.value, "rect light luminance");
+		}
 		else if (field == "Direction")
+		{
 			value.direction = ParseFloat3(line.value, "rect light direction");
+		}
 		else if (field == "Tangent")
+		{
 			value.tangent = ParseFloat3(line.value, "rect light tangent");
+		}
 		else if (field == "Width")
+		{
 			value.width = ParseFloat(line.value, "rect light width");
+		}
 		else if (field == "Height")
+		{
 			value.height = ParseFloat(line.value, "rect light height");
+		}
 		else if (field == "CastShadow")
+		{
 			value.castShadow = ParseBool(line.value, "rect light shadow flag");
+		}
 		else
+		{
 			UnsupportedField(SceneLightKind::Rect, field);
+		}
 		light.payload = value;
 	}
 

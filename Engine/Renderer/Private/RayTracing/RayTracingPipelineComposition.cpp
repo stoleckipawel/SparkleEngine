@@ -88,6 +88,7 @@ RayTracingPipelineComposition::RayTracingPipelineComposition(
 		const RayTracingShaderMetadata& localOwner = GlobalShaderRegistry::FindById(group.ClosestHit)->RayTracing;
 		RayTracingCompositionValidation::Require(group.LocalData.size() == localOwner.LocalRecordSizeInBytes, "Ray-tracing hit-group local data does not match its declared record schema.");
 	}
+
 	RayTracingCompositionValidation::Require(
 	    rayGenerationMetadata.PayloadSizeInBytes != 0 && rayGenerationMetadata.AttributeSizeInBytes != 0 && rayGenerationMetadata.MinimumRecursionDepth != 0,
 	    "Ray-tracing composition has an incomplete payload, attribute, or recursion contract.");

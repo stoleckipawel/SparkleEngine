@@ -17,7 +17,9 @@ namespace ECS
 	    m_systemGraph(BuildGameWorldSystemGraph())
 	{
 		if (!m_systemGraph)
+		{
 			throw std::runtime_error(m_systemGraph.GetError().Message);
+		}
 		m_dirtyTransforms.reserve(WorldChangeJournal::MaxChangesPerBatch);
 		m_pendingChanges.reserve(WorldChangeJournal::MaxChangesPerBatch);
 		CommitDerivedStateAndPublish();

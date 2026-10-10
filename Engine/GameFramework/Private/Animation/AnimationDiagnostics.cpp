@@ -12,7 +12,9 @@ namespace AnimationDiagnostics
 		for (const AnimationChannel& channel : clip.channels)
 		{
 			if (channel.targetPath == Assets::CookedAnimationTargetPath::Unknown)
+			{
 				++count;
+			}
 		}
 		return count;
 	}

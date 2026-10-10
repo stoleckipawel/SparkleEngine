@@ -43,9 +43,11 @@ CookedStageBuild StageCompiler::Compile(IShaderBackend& backend, const ShaderCom
 	compiledStage.bytecode.assign(bytecodeBegin, bytecodeBegin + bytecode.Size);
 	compiledStage.bytecodeHash = Hash::Fnv1a64(compiledStage.bytecode.data(), compiledStage.bytecode.size());
 	compiledStage.reflection = compiledShader.TakeReflection();
+
 	if (outDebugArtifacts != nullptr)
 	{
 		*outDebugArtifacts = compiledShader.TakeDebugArtifacts();
 	}
+
 	return compiledStage;
 }

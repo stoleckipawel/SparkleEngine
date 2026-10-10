@@ -368,12 +368,10 @@ LRESULT Window::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 
 		case WM_CLOSE:
 			m_bShouldClose = true;
-
 			return 0;
 
 		case WM_DESTROY:
 			m_hWnd = nullptr;
-
 			return 0;
 
 		case WM_KEYDOWN:
@@ -446,17 +444,14 @@ void Window::OnSizeChanged(WPARAM sizeType, uint32_t width, uint32_t height)
 		{
 			case SIZE_MINIMIZED:
 				m_state = State::Minimized;
-
 				break;
 
 			case SIZE_RESTORED:
 				m_state = State::Normal;
-
 				break;
 
 			case SIZE_MAXIMIZED:
 				m_state = State::Maximized;
-
 				break;
 		}
 	}

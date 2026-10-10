@@ -9,6 +9,12 @@
 #include <system_error>
 #include <utility>
 
+struct ShaderSourceWatchRoot final
+{
+	std::filesystem::path PhysicalPath;
+	std::string_view VirtualPath;
+};
+
 std::vector<std::string> ShaderSourceChangeTracker::CollectChangedVirtualPaths() noexcept
 {
 	using namespace std::chrono_literals;
@@ -39,15 +45,11 @@ std::vector<std::string> ShaderSourceChangeTracker::RefreshSnapshot(bool detectC
 	std::vector<std::string> changedVirtualPaths;
 	std::unordered_map<std::string, std::filesystem::file_time_type> currentWriteTimes;
 
-	struct WatchedRoot final
-	{
-		std::filesystem::path PhysicalPath;
-		std::string_view VirtualPath;
-	};
+	const std::array<ShaderSourceWatchRoot, 2> shaderRoots{
+	    ShaderSourceWatchRoot{Filesystem::GetShaderPath(PathRoot::Project), "/Project"},
+	    ShaderSourceWatchRoot{Filesystem::GetShaderPath(PathRoot::Engine), "/Engine"}};
 
-	const std::array<WatchedRoot, 2> shaderRoots{WatchedRoot{Filesystem::GetShaderPath(PathRoot::Project), "/Project"}, WatchedRoot{Filesystem::GetShaderPath(PathRoot::Engine), "/Engine"}};
-
-	for (const WatchedRoot& shaderRoot : shaderRoots)
+	for (const ShaderSourceWatchRoot& shaderRoot : shaderRoots)
 	{
 		if (shaderRoot.PhysicalPath.empty())
 		{

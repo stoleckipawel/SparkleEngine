@@ -46,6 +46,7 @@ void RhiContract::ValidateGraphicsPipelineDesc(const GraphicsPipelineDesc& desc)
 	{
 		RhiPipelineDescValidation::RequireShaderStage(desc.PixelShader, ShaderStage::Pixel, "Graphics pipeline pixel shader descriptor is invalid or has the wrong stage.");
 	}
+
 	RhiPipelineDescValidation::Require(
 	    desc.ColorAttachmentCount != 0 || desc.DepthStencilAttachmentFormat != PixelFormat::Unknown,
 	    "Graphics pipeline requires at least one color or depth-stencil attachment format.");
@@ -81,6 +82,7 @@ void RhiContract::ValidateGraphicsPipelineDesc(const GraphicsPipelineDesc& desc)
 	{
 		RhiPipelineDescValidation::Require(IsColorAttachmentPixelFormat(desc.ColorAttachmentFormats[index]), "Graphics pipeline color attachment format is not color-attachment capable.");
 	}
+
 	RhiPipelineDescValidation::Require(
 	    !hasDepthStencilFormat || IsDepthStencilPixelFormat(desc.DepthStencilAttachmentFormat),
 	    "Graphics pipeline depth-stencil attachment format is not depth-stencil capable.");

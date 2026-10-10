@@ -277,7 +277,9 @@ namespace ECS
 		if (!state.m_systemGraph
 		    || !state.m_animationOutput.Prepare(state.m_registry, context.Resources.AnimationClips, context.Resources.Skeletons, state.m_morphWeights, context.Resources.Generation)
 		    || !state.m_extraction.Prepare(state.m_registry))
+		{
 			return false;
+		}
 
 		state.m_systemArena.CameraChanges.assign(StorageCount<Camera>(state.m_registry), EntityId::Invalid());
 		state.m_systemArena.AnimationChanges.assign(StorageCount<AnimationState>(state.m_registry), EntityId::Invalid());
@@ -287,7 +289,9 @@ namespace ECS
 		{
 			const ComponentStorage<LocalTransform>* transforms = state.m_registry.FindStorage<LocalTransform>();
 			if (transforms != nullptr)
+			{
 				state.m_systemArena.DirtyTransforms.assign(transforms->GetEntities().begin(), transforms->GetEntities().end());
+			}
 		}
 		else
 		{
@@ -300,7 +304,9 @@ namespace ECS
 
 		StructureFrozenEpoch epoch = state.m_registry.FreezeStructure();
 		if (!epoch.IsValid())
+		{
 			return false;
+		}
 		GameWorldSystemExecution systems(state, context, epoch);
 		GameSystemGraphError error;
 		const bool executed = state.m_systemGraph.Execute(context.Executor, systems, error);

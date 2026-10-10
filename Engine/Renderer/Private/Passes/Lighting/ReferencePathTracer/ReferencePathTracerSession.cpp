@@ -52,6 +52,7 @@ ViewportRenderProgressReason ReferencePathTracerSession::ResolveAvailability(con
 	{
 		return ViewportRenderProgressReason::UnsupportedCapability;
 	}
+
 	const bool unsupportedContent = std::any_of(
 	    scene.materials.begin(),
 	    scene.materials.end(),

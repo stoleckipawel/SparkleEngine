@@ -157,6 +157,7 @@ void RenderCoordinator::PublishReadState()
 		{
 			Diagnostics::Fatal(g_renderCoordinatorLogger, __FILE__, __LINE__, "Viewport publication identity exhausted.");
 		}
+
 		m_publishedViewportPresentation = ViewportPresentationSnapshot{
 		    .Products = m_context->GetViewportRenderProducts(),
 		    .Texture = m_context->GetViewportPresentationTexture(),

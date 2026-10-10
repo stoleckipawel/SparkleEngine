@@ -31,11 +31,17 @@ void GameWorldSceneAssetCommitter::Commit(SceneAssetPayload&& sceneAssetPayload)
 	const bool hasMaterials = !sceneAssetPayload.materials.empty();
 
 	if (!sceneAssetPayload.skeletons.empty())
+	{
 		m_resources.Skeletons.Append(std::move(sceneAssetPayload.skeletons));
+	}
 	if (!sceneAssetPayload.animations.empty())
+	{
 		m_state.AppendAnimationClips(std::move(sceneAssetPayload.animations), m_resources.AnimationClips, sceneAssetPayload.authoredInstanceId);
+	}
 	if (!sceneAssetPayload.materials.empty())
+	{
 		m_resources.Textures.AppendMaterialReferences(sceneAssetPayload.materials);
+	}
 
 	const MaterialHandle materialBaseHandle = sceneAssetPayload.materials.empty() ? MaterialHandle::Invalid() : m_resources.Materials.Append(std::move(sceneAssetPayload.materials));
 	const auto sceneMeshBaseIndex = static_cast<SceneMeshInstanceIndex>(m_state.GetMeshCount());
@@ -83,7 +89,9 @@ void GameWorldSceneAssetCommitter::Commit(SceneAssetPayload&& sceneAssetPayload)
 	}
 
 	if (hasSkeletons)
+	{
 		m_state.NotifyResourceChanged(WorldDataKind::Skeleton);
+	}
 	if (hasMaterials)
 	{
 		m_state.NotifyResourceChanged(WorldDataKind::Material);

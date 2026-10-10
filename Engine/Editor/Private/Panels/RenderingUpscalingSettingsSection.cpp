@@ -14,6 +14,7 @@ void DrawUpscalingSettingsSection(EngineRenderingSettingsController& settingsCon
 	    {"Linear", EUpscalerProviderKind::Linear},
 	    {"NVIDIA DLSS", EUpscalerProviderKind::NvidiaDlss},
 	};
+
 	static constexpr RenderingSettingsUi::ComboOption<EUpscalerQualityMode> upscalerQualityOptions[] = {
 	    {"Native AA", EUpscalerQualityMode::NativeAA},
 	    {"Quality", EUpscalerQualityMode::Quality},

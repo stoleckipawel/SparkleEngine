@@ -299,6 +299,7 @@ namespace SparkleLauncher
 		        "product, launcher, and legacy logs",
 		        "Local state and caches"},
 		}};
+
 		const std::array<QString, 3> cleanGroups{{
 		    "Content outputs",
 		    "Build outputs",

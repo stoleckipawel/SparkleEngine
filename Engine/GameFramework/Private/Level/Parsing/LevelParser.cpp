@@ -21,7 +21,9 @@ public:
 		{
 			levelDesc.name = Strings::UnquoteCopy(parsedLine.value);
 			if (levelDesc.name.empty())
+			{
 				throw Diagnostics::Error("Level name cannot be empty.");
+			}
 			return;
 		}
 
@@ -31,12 +33,16 @@ public:
 	static void ParseSceneAssetsSectionField(const LevelParsing::ParsedLevelLine& parsedLine, LevelDesc& levelDesc)
 	{
 		if (parsedLine.key != "Asset")
+		{
 			throw Diagnostics::Error("Unsupported scene-assets field: " + parsedLine.key);
+		}
 
 		const std::string value = Strings::UnquoteCopy(parsedLine.value);
 		const std::size_t separator = value.find('|');
 		if (separator != std::string::npos && value.find('|', separator + 1u) != std::string::npos)
+		{
 			throw Diagnostics::Error("Scene asset reference contains multiple catalog separators.");
+		}
 
 		SceneAssetId assetId;
 		assetId.value = Strings::TrimCopy(separator == std::string::npos ? std::string_view(value) : std::string_view(value).substr(0, separator));
@@ -45,7 +51,9 @@ public:
 			assetId.catalogValue = Strings::TrimCopy(std::string_view(value).substr(separator + 1u));
 		}
 		if (assetId.value.empty() || (separator != std::string::npos && assetId.catalogValue.empty()))
+		{
 			throw Diagnostics::Error("Scene asset reference is empty.");
+		}
 		levelDesc.sceneAssetIds.push_back(std::move(assetId));
 	}
 
@@ -92,7 +100,9 @@ public:
 		{
 			output << "Asset = " << sceneAssetId.value;
 			if (!sceneAssetId.catalogValue.empty() && sceneAssetId.catalogValue != sceneAssetId.value)
+			{
 				output << '|' << sceneAssetId.catalogValue;
+			}
 			output << "\n";
 		}
 	}
@@ -102,7 +112,9 @@ std::unique_ptr<LevelAsset> LevelParser::LoadFromFile(const std::filesystem::pat
 {
 	std::ifstream input(filePath);
 	if (!input.is_open())
+	{
 		throw Diagnostics::Error(std::format("Failed to open level file '{}'.", filePath.string()));
+	}
 
 	LevelParsing::LevelFileSection currentSection = LevelParsing::LevelFileSection::None;
 	LevelDesc levelDesc;
@@ -135,10 +147,14 @@ std::unique_ptr<LevelAsset> LevelParser::LoadFromFile(const std::filesystem::pat
 	}
 
 	if (input.bad())
+	{
 		throw Diagnostics::Error(std::format("Failed while reading level file '{}'.", filePath.string()));
+	}
 
 	if (levelDesc.name.empty())
+	{
 		throw Diagnostics::Error(std::format("Level file '{}' has no level name.", filePath.string()));
+	}
 	LevelParsing::ValidateCameraSection(levelDesc);
 	LevelParsing::ValidateLightingSection(levelDesc);
 
@@ -149,16 +165,22 @@ void LevelParser::SaveToFile(const LevelAsset& level)
 {
 	const std::filesystem::path& sourcePath = level.GetSourcePath();
 	if (sourcePath.empty())
+	{
 		throw Diagnostics::Error("Level has no source path.");
+	}
 
 	std::error_code errorCode;
 	std::filesystem::create_directories(sourcePath.parent_path(), errorCode);
 	if (errorCode)
+	{
 		throw Diagnostics::Error(std::format("Failed to create level directory '{}'.", sourcePath.parent_path().string()));
+	}
 
 	std::ofstream output(sourcePath, std::ios::trunc);
 	if (!output.is_open())
+	{
 		throw Diagnostics::Error(std::format("Failed to open level file '{}' for writing.", sourcePath.string()));
+	}
 
 	const LevelDesc levelDesc = level.BuildDescription();
 	LevelDocumentCodec::WriteLevelSection(output, level);
@@ -168,5 +190,7 @@ void LevelParser::SaveToFile(const LevelAsset& level)
 	LevelDocumentCodec::WriteSceneAssetsSection(output, levelDesc);
 
 	if (!output.good())
+	{
 		throw Diagnostics::Error(std::format("Failed while writing level file '{}'.", sourcePath.string()));
+	}
 }

@@ -137,40 +137,64 @@ Key Win32InputBackend::TranslateVirtualKey(WPARAM VirtualKey) noexcept
 	if (VirtualKey == VK_SHIFT)
 	{
 		if (GetKeyState(VK_LSHIFT) & 0x8000)
+		{
 			return Key::LeftShift;
+		}
 		if (GetKeyState(VK_RSHIFT) & 0x8000)
+		{
 			return Key::RightShift;
+		}
 		return Key::LeftShift;
 	}
 	if (VirtualKey == VK_CONTROL)
 	{
 		if (GetKeyState(VK_LCONTROL) & 0x8000)
+		{
 			return Key::LeftCtrl;
+		}
 		if (GetKeyState(VK_RCONTROL) & 0x8000)
+		{
 			return Key::RightCtrl;
+		}
 		return Key::LeftCtrl;
 	}
 	if (VirtualKey == VK_MENU)
 	{
 		if (GetKeyState(VK_LMENU) & 0x8000)
+		{
 			return Key::LeftAlt;
+		}
 		if (GetKeyState(VK_RMENU) & 0x8000)
+		{
 			return Key::RightAlt;
+		}
 		return Key::LeftAlt;
 	}
 
 	if (VirtualKey == VK_LSHIFT)
+	{
 		return Key::LeftShift;
+	}
 	if (VirtualKey == VK_RSHIFT)
+	{
 		return Key::RightShift;
+	}
 	if (VirtualKey == VK_LCONTROL)
+	{
 		return Key::LeftCtrl;
+	}
 	if (VirtualKey == VK_RCONTROL)
+	{
 		return Key::RightCtrl;
+	}
 	if (VirtualKey == VK_LMENU)
+	{
 		return Key::LeftAlt;
+	}
 	if (VirtualKey == VK_RMENU)
+	{
 		return Key::RightAlt;
+	}
 
 	if (VirtualKey == VK_RETURN)
 	{
@@ -220,21 +244,37 @@ ModifierFlags Win32InputBackend::GetCurrentModifiers() noexcept
 	ModifierFlags Flags = ModifierFlags::None;
 
 	if (GetKeyState(VK_LSHIFT) & 0x8000)
+	{
 		Flags = Flags | ModifierFlags::LeftShift;
+	}
 	if (GetKeyState(VK_RSHIFT) & 0x8000)
+	{
 		Flags = Flags | ModifierFlags::RightShift;
+	}
 	if (GetKeyState(VK_LCONTROL) & 0x8000)
+	{
 		Flags = Flags | ModifierFlags::LeftCtrl;
+	}
 	if (GetKeyState(VK_RCONTROL) & 0x8000)
+	{
 		Flags = Flags | ModifierFlags::RightCtrl;
+	}
 	if (GetKeyState(VK_LMENU) & 0x8000)
+	{
 		Flags = Flags | ModifierFlags::LeftAlt;
+	}
 	if (GetKeyState(VK_RMENU) & 0x8000)
+	{
 		Flags = Flags | ModifierFlags::RightAlt;
+	}
 	if (GetKeyState(VK_CAPITAL) & 0x0001)
+	{
 		Flags = Flags | ModifierFlags::CapsLock;
+	}
 	if (GetKeyState(VK_NUMLOCK) & 0x0001)
+	{
 		Flags = Flags | ModifierFlags::NumLock;
+	}
 
 	return Flags;
 }

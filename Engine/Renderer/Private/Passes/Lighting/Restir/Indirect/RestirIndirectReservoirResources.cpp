@@ -18,6 +18,7 @@ RestirIndirectWorkingReservoirs CreateRestirIndirectWorkingReservoirs(FrameGraph
 	{
 		return builder.CreateTexture(FrameGraphTextureDesc::CreateColor(name, sceneExtent.Width, sceneExtent.Height, PixelFormat::R32G32B32A32_Float));
 	};
+
 	return RestirIndirectWorkingReservoirs{
 	    .TemporalSample = createReservoirTexture("RestirIndirectTemporalReservoirSample"),
 	    .TemporalWeight = createReservoirTexture("RestirIndirectTemporalReservoirWeight")};

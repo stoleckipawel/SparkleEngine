@@ -22,6 +22,8 @@ Review is read-only unless the user explicitly asks for fixes. Never modify the 
 
 For source layout, apply the [Visual Spacing Contract](../Foundations/CodeStyle.md#visual-spacing-contract): inspect phase boundaries, guard-to-workflow separation, API/data groups, comment attachment, and cohesive short-statement groups. A clean formatter result proves the mechanical spacing rules only; it does not prove the authored logical grouping.
 
+For each implementation-stage review, verify the [Stage Source-Style Gate](ChangeLifecycle.md#stage-source-style-gate) against the final changed source and submission diff. Missing file coverage, stale check results, or unresolved required layout violations prevent stage completion; report mechanical checks and authored layout review separately.
+
 ## Reusable AI Review Prompt
 
 Use this prompt as written or append the intended outcome and comparison base:

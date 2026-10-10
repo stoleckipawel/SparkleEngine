@@ -361,6 +361,7 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 			enabledNext = &enabledPartitionedAccelerationStructureFeatures.pNext;
 		}
 	}
+
 	const VkDeviceCreateInfo createInfo{
 	    .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
 	    .pNext = &enabledFeatures,

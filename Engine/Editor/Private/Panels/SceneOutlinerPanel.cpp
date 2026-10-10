@@ -207,11 +207,15 @@ std::size_t SceneOutlinerPanel::CountVisibleEntries() const noexcept
 	};
 
 	if (!m_model)
+	{
 		return 0;
+	}
 	count += countVisible(m_model->GetCameraEntries());
 	const EditorSceneEntry& sky = m_model->GetSkyEntry();
 	if (PassesActiveFilter(sky.Selection) && MatchesSearch(sky.Label.c_str(), sky.TypeLabel.c_str()))
+	{
 		++count;
+	}
 	count += countVisible(m_model->GetLightEntries());
 	count += countVisible(m_model->GetMeshEntries());
 
@@ -227,10 +231,14 @@ bool SceneOutlinerPanel::IsEntryVisible(const SceneObjectSelection& selection) c
 void SceneOutlinerPanel::ToggleEntryVisibility(const SceneObjectSelection& selection) noexcept
 {
 	if (!m_model || !m_transactionHistory)
+	{
 		return;
+	}
 	auto commands = SceneObjectCommandFactory::SetVisibility(*m_model, selection, !IsEntryVisible(selection));
 	if (!commands)
+	{
 		return;
+	}
 	(void) m_transactionHistory->Execute(std::move(commands->Forward), std::move(commands->Inverse), m_model->GetWorldGeneration(), std::move(commands->CoalescingKey));
 }
 
@@ -246,7 +254,9 @@ void SceneOutlinerPanel::SelectEntry(const SceneObjectSelection& selection) noex
 	{
 		auto commands = SceneObjectCommandFactory::SetActiveCamera(*m_model, selection.entity);
 		if (commands)
+		{
 			(void) m_transactionHistory->Execute(std::move(commands->Forward), std::move(commands->Inverse), m_model->GetWorldGeneration());
+		}
 	}
 }
 

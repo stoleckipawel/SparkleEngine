@@ -118,27 +118,22 @@ SceneMemoryReport RendererMemoryMonitor::BuildSceneMemoryReport(const RhiMemoryU
 		{
 			case RhiMemoryCategory::Texture:
 				report.TextureBytes += categoryStats.UsedBytes;
-
 				break;
 
 			case RhiMemoryCategory::Mesh:
 				report.MeshBytes += categoryStats.UsedBytes;
-
 				break;
 
 			case RhiMemoryCategory::RayTracing:
 				report.RayTracingBytes += categoryStats.UsedBytes;
-
 				break;
 
 			case RhiMemoryCategory::Upload:
 				report.UploadBytes += categoryStats.UsedBytes;
-
 				break;
 
 			case RhiMemoryCategory::ConstantBuffer:
 				report.ConstantBufferBytes += categoryStats.UsedBytes;
-
 				break;
 			default:
 				break;

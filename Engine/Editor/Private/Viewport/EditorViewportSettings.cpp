@@ -51,51 +51,97 @@ public:
 	static void Apply(std::string_view key, std::string_view value, EditorViewportSettingsState& state) noexcept
 	{
 		if (key == "MoveSpeedMetersPerSecond")
+		{
 			(void) ParseNumber(value, state.Navigation.MoveSpeedMetersPerSecond);
+		}
 		else if (key == "RotationSpeedDegreesPerPixel")
+		{
 			(void) ParseNumber(value, state.Navigation.RotationSpeedDegreesPerPixel);
+		}
 		else if (key == "InvertY")
+		{
 			(void) ParseBool(value, state.Navigation.InvertY);
+		}
 		else if (key == "ProjectionKind")
+		{
 			(void) ParseEnum(value, state.ProjectionKind);
+		}
 		else if (key == "OrthographicHeightMeters")
+		{
 			(void) ParseNumber(value, state.OrthographicHeightMeters);
+		}
 		else if (key == "OverrideExposureMode")
+		{
 			(void) ParseBool(value, state.Exposure.OverrideMode);
+		}
 		else if (key == "ExposureMode")
+		{
 			(void) ParseEnum(value, state.Exposure.Mode);
+		}
 		else if (key == "OverrideExposureMeteringMethod")
+		{
 			(void) ParseBool(value, state.Exposure.OverrideMeteringMethod);
+		}
 		else if (key == "ExposureMeteringMethod")
+		{
 			(void) ParseEnum(value, state.Exposure.MeteringMethod);
+		}
 		else if (key == "OverrideManualExposure")
+		{
 			(void) ParseBool(value, state.Exposure.OverrideManualExposure);
+		}
 		else if (key == "ManualExposure")
+		{
 			(void) ParseNumber(value, state.Exposure.ManualExposure);
+		}
 		else if (key == "OverrideExposureCompensation")
+		{
 			(void) ParseBool(value, state.Exposure.OverrideCompensation);
+		}
 		else if (key == "ExposureCompensation")
+		{
 			(void) ParseNumber(value, state.Exposure.Compensation);
+		}
 		else if (key == "OverrideExposureTargetLuminance")
+		{
 			(void) ParseBool(value, state.Exposure.OverrideTargetLuminance);
+		}
 		else if (key == "ExposureTargetLuminance")
+		{
 			(void) ParseNumber(value, state.Exposure.TargetLuminance);
+		}
 		else if (key == "OverrideExposureMinimum")
+		{
 			(void) ParseBool(value, state.Exposure.OverrideMinimum);
+		}
 		else if (key == "ExposureMinimum")
+		{
 			(void) ParseNumber(value, state.Exposure.Minimum);
+		}
 		else if (key == "OverrideExposureMaximum")
+		{
 			(void) ParseBool(value, state.Exposure.OverrideMaximum);
+		}
 		else if (key == "ExposureMaximum")
+		{
 			(void) ParseNumber(value, state.Exposure.Maximum);
+		}
 		else if (key == "OverrideExposureAdaptationSpeedUp")
+		{
 			(void) ParseBool(value, state.Exposure.OverrideAdaptationSpeedUp);
+		}
 		else if (key == "ExposureAdaptationSpeedUp")
+		{
 			(void) ParseNumber(value, state.Exposure.AdaptationSpeedUp);
+		}
 		else if (key == "OverrideExposureAdaptationSpeedDown")
+		{
 			(void) ParseBool(value, state.Exposure.OverrideAdaptationSpeedDown);
+		}
 		else if (key == "ExposureAdaptationSpeedDown")
+		{
 			(void) ParseNumber(value, state.Exposure.AdaptationSpeedDown);
+		}
 	}
 
 	static void WriteBool(std::ofstream& output, std::string_view key, bool value) { output << key << '=' << (value ? 1 : 0) << '\n'; }

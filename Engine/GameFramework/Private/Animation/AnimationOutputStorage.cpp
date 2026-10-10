@@ -20,9 +20,13 @@ namespace ECS
 	    std::uint32_t targetGeneration)
 	{
 		if (targetGeneration != 0 && m_targetGeneration == targetGeneration && m_structureVersion == registry.GetStructureVersion())
+		{
 			return true;
+		}
 		if (targetGeneration == 0 || registry.IsStructureFrozen())
+		{
 			return false;
+		}
 
 		m_poseWork.clear();
 		m_morphSamples.clear();
@@ -37,14 +41,18 @@ namespace ECS
 			std::vector<std::pair<EntityId, AnimationResourceHandle>> ordered;
 			ordered.reserve(animations->GetEntities().size());
 			for (std::size_t index = 0; index < animations->GetEntities().size(); ++index)
+			{
 				ordered.emplace_back(animations->GetEntities()[index], animations->GetComponents()[index].Resource);
+			}
 			std::sort(ordered.begin(), ordered.end(), [](const auto& lhs, const auto& rhs) { return lhs.first < rhs.first; });
 
 			for (const auto& [entity, clipHandle] : ordered)
 			{
 				const ResolvedAnimationClip clip = clips.Resolve(clipHandle);
 				if (!clip.IsValid() || clip.TargetGeneration != targetGeneration)
+				{
 					continue;
+				}
 				const AuthoredIdentity* authored = registry.Get<AuthoredIdentity>(entity);
 				const std::uint64_t sourceInstanceId = authored == nullptr ? 0 : authored->SourceInstanceId;
 				PoseWorkSlot work{.Entity = entity, .Clip = clipHandle, .Skeleton = clip.Skeleton, .SourceInstanceId = sourceInstanceId};
@@ -81,11 +89,17 @@ namespace ECS
 
 		EntityId::Slot largestSlot = 0;
 		for (const PoseWorkSlot& work : m_poseWork)
+		{
 			largestSlot = (std::max) (largestSlot, work.Entity.GetSlot());
+		}
 		if (!m_poseWork.empty())
+		{
 			m_workIndexByEntitySlot.resize(static_cast<std::size_t>(largestSlot) + 1u);
+		}
 		for (std::uint32_t index = 0; index < m_poseWork.size(); ++index)
+		{
 			m_workIndexByEntitySlot[m_poseWork[index].Entity.GetSlot()] = EntityWorkIndex{m_poseWork[index].Entity, index};
+		}
 
 		const ComponentStorage<MeshInstance>* meshes = registry.FindStorage<MeshInstance>();
 		if (meshes != nullptr)
@@ -98,18 +112,25 @@ namespace ECS
 				{
 					const MeshInstance& mesh = meshes->GetComponents()[meshIndex];
 					if (mesh.Kind != SceneMeshKind::Skeletal || mesh.SourceNodeIndex != targetNode)
+					{
 						continue;
+					}
 					const EntityId targetEntity = meshes->GetEntities()[meshIndex];
 					const AuthoredIdentity* targetIdentity = registry.Get<AuthoredIdentity>(targetEntity);
 					if (targetIdentity == nullptr || targetIdentity->SourceInstanceId != sample.SourceInstanceId)
+					{
 						continue;
+					}
 					const MorphState* morph = registry.Get<MorphState>(targetEntity);
 					if (morph == nullptr || !morphWeights.PrepareWriteSize(morph->Weights, 4))
+					{
 						continue;
+					}
 					m_morphBindings.push_back(MorphTargetBinding{sampleIndex, targetEntity, morph->Weights});
 				}
 			}
 		}
+
 		std::sort(
 		    m_morphBindings.begin(),
 		    m_morphBindings.end(),
@@ -144,7 +165,9 @@ namespace ECS
 	AnimationOutputStorage::PoseWorkSlot* AnimationOutputStorage::FindPoseWork(EntityId entity) noexcept
 	{
 		if (!entity.IsValid() || entity.GetSlot() >= m_workIndexByEntitySlot.size())
+		{
 			return nullptr;
+		}
 		const EntityWorkIndex& mapping = m_workIndexByEntitySlot[entity.GetSlot()];
 		return mapping.Entity == entity && mapping.Index < m_poseWork.size() ? &m_poseWork[mapping.Index] : nullptr;
 	}

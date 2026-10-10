@@ -24,19 +24,25 @@ std::uint64_t GpuMeshPreparedData::GetResidentByteSize() const noexcept
 GpuMeshPreparedData GpuMeshPreparation::Build(const ImmutableRenderMeshHandle& source)
 {
 	if (!source.IsValid())
+	{
 		throw Diagnostics::Error("GPU mesh preparation received an invalid source handle.");
+	}
 
 	GpuMeshPreparedData output;
 	output.Source = source;
 	const MeshData& meshData = source.GetResource()->GetMeshData();
 	if (!meshData.IsValid())
+	{
 		throw Diagnostics::Error("GPU mesh preparation received invalid mesh geometry.");
+	}
 
 	BuildBoundsAndRayTracing(output);
 	BuildSkinInfluences(output);
 	BuildMorphTargets(output);
 	if (output.RayTracingVertices.empty() || output.RayTracingIndices.size() < 3u || output.GpuSkinInfluences.size() != output.RayTracingVertices.size())
+	{
 		throw Diagnostics::Error("GPU mesh preparation produced incomplete geometry.");
+	}
 	return output;
 }
 
@@ -81,7 +87,9 @@ void GpuMeshPreparation::BuildSkinInfluences(GpuMeshPreparedData& output)
 
 	const std::vector<VertexSkinInfluence>& influences = skeletalMesh->GetSkeletalMeshData().skinInfluences;
 	if (influences.size() != vertexCount)
+	{
 		throw Diagnostics::Error("Skeletal mesh skin influence count does not match its vertex count.");
+	}
 
 	output.SkinInfluences = influences;
 	for (std::size_t index = 0u; index < influences.size(); ++index)
@@ -94,18 +102,24 @@ void GpuMeshPreparation::BuildMorphTargets(GpuMeshPreparedData& output)
 {
 	const auto* skeletalMesh = dynamic_cast<const SkeletalCookedMesh*>(output.Source.GetResource().get());
 	if (skeletalMesh == nullptr)
+	{
 		return;
+	}
 
 	const MeshMorphData& morphTargets = skeletalMesh->GetSkeletalMeshData().morphTargets;
 	if (!morphTargets.HasTargets())
+	{
 		return;
+	}
 
 	const std::size_t vertexCount = output.RayTracingVertices.size();
 	output.MorphTargetDeltas.reserve(vertexCount * morphTargets.targets.size());
 	for (const MeshMorphTarget& target : morphTargets.targets)
 	{
 		if (!target.IsValidForVertexCount(vertexCount))
+		{
 			throw Diagnostics::Error("Skeletal mesh morph target does not match its vertex count.");
+		}
 
 		for (const MeshMorphTargetDelta& delta : target.deltas)
 		{

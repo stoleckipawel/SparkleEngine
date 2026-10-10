@@ -560,23 +560,19 @@ bool VulkanDescriptorAllocator::BuildWriteChunk(std::span<const DescriptorEntry>
 			case EntryKind::StorageImage:
 			case EntryKind::Sampler:
 				outChunk.ImageInfos[index] = entry.Image;
-
 				break;
 
 			case EntryKind::AccelerationStructure:
 				outChunk.AccelerationStructures[index] = entry.AccelerationStructure;
-
 				break;
 
 			case EntryKind::PartitionedAccelerationStructure:
 				outChunk.PartitionedAccelerationStructureAddresses[index] = entry.PartitionedAccelerationStructureAddress;
-
 				break;
 
 			case EntryKind::UniformBuffer:
 			case EntryKind::StorageBuffer:
 				outChunk.BufferInfos[index] = entry.Buffer;
-
 				break;
 			case EntryKind::Empty:
 			default:

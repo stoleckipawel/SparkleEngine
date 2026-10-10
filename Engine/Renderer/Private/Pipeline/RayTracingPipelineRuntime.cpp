@@ -215,6 +215,7 @@ std::unique_ptr<RayTracingShaderTable> RayTracingPipelineRuntime::CreateShaderTa
 		{
 			throw Diagnostics::Error("Ray-tracing shader-table record has no hit-group composition.");
 		}
+
 		hitGroupRecords.push_back(
 		    RhiRayTracingShaderRecord{
 		        .ExportName = group->ExportName,

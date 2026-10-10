@@ -26,9 +26,13 @@ public:
 		{
 			std::lock_guard lock(s_mutex);
 			if (s_initialized)
+			{
 				return true;
+			}
 			if (s_initializing || s_shuttingDown)
+			{
 				return false;
+			}
 			s_initializing = true;
 		}
 
@@ -71,7 +75,9 @@ public:
 			initialized = s_initialized;
 		}
 		if (initialized)
+		{
 			(void) slShutdown();
+		}
 		{
 			std::lock_guard lock(s_mutex);
 			s_initialized = false;
@@ -92,7 +98,9 @@ public:
 
 		CallLease call(CallRequirement::RuntimeReady);
 		if (!call)
+		{
 			return false;
+		}
 
 		const RhiAdapterIdentity& adapter = capabilities.ExternalFeatureInterop.Adapter;
 		auto luid = adapter.NativeLuid;
@@ -128,7 +136,9 @@ private:
 		~CallLease() noexcept
 		{
 			if (!m_acquired)
+			{
 				return;
+			}
 			{
 				std::lock_guard lock(s_mutex);
 				--s_activeCalls;
@@ -145,11 +155,17 @@ private:
 	static bool MeetsRequirement(CallRequirement requirement) noexcept
 	{
 		if (!s_initialized)
+		{
 			return false;
+		}
 		if (requirement == CallRequirement::Initialized)
+		{
 			return true;
+		}
 		if (!s_deviceBound)
+		{
 			return false;
+		}
 		return requirement == CallRequirement::DeviceBound || s_presentationReady;
 	}
 

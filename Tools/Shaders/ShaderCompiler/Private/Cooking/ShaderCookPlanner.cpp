@@ -45,6 +45,7 @@ std::vector<ShaderCookDesc> ShaderCookPlanner::BuildShaders(const ShaderCookSett
 		{
 			continue;
 		}
+
 		shaders.push_back(
 		    ShaderCookDesc{
 		        .shaderTypeId = contract.shaderTypeId,

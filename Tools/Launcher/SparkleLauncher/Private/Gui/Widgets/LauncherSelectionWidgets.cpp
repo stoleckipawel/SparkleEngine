@@ -82,6 +82,7 @@ namespace SparkleLauncher
 				    UpdateSelectAllBox(selectAllBox, scopeBoxes);
 			    });
 		}
+
 		QObject::connect(
 		    selectAllBox,
 		    &QCheckBox::toggled,

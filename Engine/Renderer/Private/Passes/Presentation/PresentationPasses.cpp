@@ -14,6 +14,7 @@ void AddPresentationPasses(FrameGraphBuilder& builder, const RenderFrame& frame,
 	{
 		return;
 	}
+
 	const FrameGraphTextureHandle displayLinearColor = ResolveRenderViewPresentationDomain(frame.View.viewMode) == RenderViewPresentationDomain::DisplayLinearExact
 	    ? resources.Presentation.ResolvedSceneColor
 	    : AddToneMappingPass(builder, frame, settings.OutputExtent, resources);

@@ -22,6 +22,7 @@ void FrameGraphResourceCommands::BeginRasterPass(RenderCommandContext& commandCo
 	{
 		colorHandles[index] = rasterPass.Colors[index].Handle;
 	}
+
 	BindRenderTargets(
 	    commandContext,
 	    std::span<const FrameGraphTextureHandle>(colorHandles.data(), rasterPass.ColorCount),
@@ -122,17 +123,14 @@ NativeTextureViewInfo FrameGraphResourceCommands::ResolveNativeTextureView(Frame
 		case ResourceState::DepthRead:
 		case ResourceState::DepthWrite:
 			view = access.depthStencilView;
-
 			break;
 
 		case ResourceState::UnorderedAccess:
 			view = access.unorderedAccessView;
-
 			break;
 
 		case ResourceState::RenderTarget:
 			view = access.renderTargetView;
-
 			break;
 
 		case ResourceState::ShaderResource:
@@ -140,7 +138,6 @@ NativeTextureViewInfo FrameGraphResourceCommands::ResolveNativeTextureView(Frame
 		case ResourceState::Common:
 		default:
 			view = access.shaderResourceView;
-
 			break;
 	}
 

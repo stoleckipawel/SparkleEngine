@@ -60,7 +60,6 @@ public:
 		{
 			case ImportedLightKind::Directional:
 				properties.Illuminance = peak;
-
 				break;
 
 			case ImportedLightKind::Point:
@@ -72,7 +71,6 @@ public:
 
 			case ImportedLightKind::Rect:
 				properties.Luminance = peak;
-
 				break;
 			case ImportedLightKind::Unknown:
 				break;

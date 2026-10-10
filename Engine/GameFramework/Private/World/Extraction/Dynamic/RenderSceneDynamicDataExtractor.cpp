@@ -89,7 +89,9 @@ namespace ECS
 		{
 			const SkinningState* skinning = state.m_registry.Get<SkinningState>(mesh.Entity);
 			if (skinning == nullptr || !skinning->Pose.IsValid() || skinning->Pose.Generation != state.m_animationOutput.GetTargetGeneration() || skinning->Pose.Slot >= output.poses.size())
+			{
 				continue;
+			}
 			const AnimationPoseOutput& pose = output.poses[skinning->Pose.Slot];
 			const SkeletonResourceHandle skeleton = resources.Skeletons.Find(pose.skeletonAssetId);
 			const AnimationState* animation = state.m_registry.Get<AnimationState>(pose.animationEntity);
@@ -117,10 +119,14 @@ namespace ECS
 		for (const AnimationOutputStorage::MorphTargetBinding& binding : state.m_animationOutput.GetMorphBindings())
 		{
 			if (binding.SampleIndex >= samples.size())
+			{
 				continue;
+			}
 			const std::uint32_t outputIndex = samples[binding.SampleIndex].OutputIndex;
 			if (outputIndex >= output.morphWeights.size())
+			{
 				continue;
+			}
 			const MorphWeightOutput& morph = output.morphWeights[outputIndex];
 			const AnimationState* animation = state.m_registry.Get<AnimationState>(morph.animationEntity);
 
@@ -168,6 +174,7 @@ namespace ECS
 			        .WeightOffset = weightOffset,
 			        .WeightCount = static_cast<std::uint32_t>(weights.size())});
 		}
+
 		std::sort(
 		    dynamic.MorphWeightRanges.begin(),
 		    dynamic.MorphWeightRanges.end(),

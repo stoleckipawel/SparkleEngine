@@ -43,8 +43,12 @@ WorldEditResult WorldEditCommandQueue::Submit(
 void WorldEditCommandQueue::Apply(std::uint64_t currentGeneration, ECS::GameWorldState& state, GameWorldResourceStores& resources)
 {
 	for (PendingEdit& pending : m_pendingEdits)
+	{
 		if (pending.ExpectedGeneration == currentGeneration)
+		{
 			ApplyPayload(pending.Command.Payload, state, resources);
+		}
+	}
 	Clear();
 }
 
@@ -60,15 +64,25 @@ bool WorldEditCommandQueue::IsTargetAvailable(const WorldEditPayload& payload, c
 	    {
 		    using T = std::decay_t<decltype(command)>;
 		    if constexpr (std::is_same_v<T, SetActiveCameraCommand> || std::is_same_v<T, SetCameraDescriptionCommand>)
+		    {
 			    return state.IsCamera(command.Entity);
+		    }
 		    else if constexpr (std::is_same_v<T, SetLocalTransformCommand> || std::is_same_v<T, SetEntityVisibilityCommand>)
+		    {
 			    return state.IsAlive(command.Entity);
+		    }
 		    else if constexpr (std::is_same_v<T, SetLightDescriptionCommand>)
+		    {
 			    return state.ReadLight(command.Entity).has_value();
+		    }
 		    else if constexpr (std::is_same_v<T, SetMaterialVariantCommand>)
+		    {
 			    return command.Value < resources.MaterialVariants.GetCount();
+		    }
 		    else
+		    {
 			    return true;
+		    }
 	    },
 	    payload);
 }
@@ -80,24 +94,40 @@ void WorldEditCommandQueue::ApplyPayload(WorldEditPayload& payload, ECS::GameWor
 	    {
 		    using T = std::decay_t<decltype(command)>;
 		    if constexpr (std::is_same_v<T, SetActiveCameraCommand>)
+		    {
 			    (void) state.SetActiveCamera(command.Entity);
+		    }
 		    else if constexpr (std::is_same_v<T, SetLocalTransformCommand>)
+		    {
 			    (void) state.WriteTransform(command.Entity, command.Value);
+		    }
 		    else if constexpr (std::is_same_v<T, SetCameraDescriptionCommand>)
+		    {
 			    (void) state.WriteCameraDesc(command.Entity, command.Value);
+		    }
 		    else if constexpr (std::is_same_v<T, SetEntityVisibilityCommand>)
+		    {
 			    (void) state.WriteVisibility(command.Entity, command.Value);
+		    }
 		    else if constexpr (std::is_same_v<T, SetLightDescriptionCommand>)
+		    {
 			    (void) state.WriteLight(command.Entity, std::move(command.Value));
+		    }
 		    else if constexpr (std::is_same_v<T, SetSkyEnvironmentCommand>)
 		    {
 			    if (command.Value)
+			    {
 				    state.WriteSkyEnvironment(std::move(*command.Value));
+			    }
 			    else
+			    {
 				    state.RemoveSkyEnvironment();
+			    }
 		    }
 		    else if constexpr (std::is_same_v<T, SetMaterialVariantCommand>)
+		    {
 			    (void) resources.MaterialVariants.Apply(command.Value, state);
+		    }
 	    },
 	    payload);
 }

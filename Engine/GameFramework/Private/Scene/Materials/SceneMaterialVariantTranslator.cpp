@@ -18,7 +18,9 @@ namespace SceneMaterialVariantTranslator
 	    std::vector<MaterialVariantBinding>& outBindings)
 	{
 		if (!mapping.material.IsValid() || !materialBaseHandle.IsValid())
+		{
 			return;
+		}
 
 		const MaterialHandle sceneMaterialHandle(materialBaseHandle.GetIndex() + mapping.material.GetIndex(), materialBaseHandle.GetGeneration());
 		SceneMeshInstanceIndex localMeshInstanceIndex = 0;
@@ -71,7 +73,9 @@ namespace SceneMaterialVariantTranslator
 		std::vector<MaterialVariantBinding> bindings;
 		bindings.reserve(sceneAssetPayload.materialVariantMappings.size());
 		for (const SceneAssetPayload::MaterialVariantMapping& mapping : sceneAssetPayload.materialVariantMappings)
+		{
 			AppendBindingsForMeshAsset(sceneAssetPayload, mapping, materialBaseHandle, sceneMeshBaseIndex, world, bindings);
+		}
 		return bindings;
 	}
 }

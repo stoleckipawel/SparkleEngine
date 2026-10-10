@@ -51,7 +51,9 @@ namespace Assets
 	{
 		Cancel();
 		if (m_control->Scope)
+		{
 			m_control->Scope->JoinFor(std::chrono::milliseconds::max());
+		}
 	}
 
 	void SceneLoadExecutor::Start(std::uint64_t requestId, std::uint64_t worldGeneration, std::uint64_t documentGeneration, LevelDesc level)
@@ -118,7 +120,9 @@ namespace Assets
 	void SceneLoadExecutor::Cancel() noexcept
 	{
 		if (m_control->Scope)
+		{
 			m_control->Scope->Cancel();
+		}
 	}
 
 	std::optional<SceneLoadCompletion> SceneLoadExecutor::ConsumeSettled()
@@ -158,7 +162,9 @@ namespace Assets
 		LevelLoadOperationProgress progress;
 		progress.RequestId = m_control->RequestId;
 		if (!m_control->Shared)
+		{
 			return progress;
+		}
 		progress.Stage = m_control->Shared->Stage.load(std::memory_order_acquire);
 		progress.CompletedAssets = m_control->Shared->CompletedDecodes.load(std::memory_order_relaxed);
 		progress.TotalAssets = static_cast<std::uint32_t>(m_control->Shared->Assets.size());

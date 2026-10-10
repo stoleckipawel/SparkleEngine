@@ -124,6 +124,7 @@ void RayTracingPartitionedTlasStrategy::CollectPartitionedInstances(
 		{
 			Diagnostics::Fatal(g_rayTracingPartitionedTlasBuildLogger, __FILE__, __LINE__, "Partitioned TLAS instance has no authoritative scene shader-table contribution.");
 		}
+
 		state.InstanceWrites.push_back(
 		    RhiPartitionedTlasInstanceWriteDesc{
 		        .Transform = RhiRayTracingTransformPacking::PackCanonicalObjectToWorld(draw.Transform.WorldMatrix),

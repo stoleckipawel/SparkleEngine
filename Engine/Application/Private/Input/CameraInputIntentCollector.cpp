@@ -59,7 +59,9 @@ CameraInputIntent CameraInputIntentCollector::Collect(float aspectRatio) noexcep
 void CameraInputIntentCollector::OnMouseButton(const MouseButtonEvent& event) noexcept
 {
 	if (event.Button != MouseButton::Right)
+	{
 		return;
+	}
 	if (event.IsPressed() && !m_mouseLookActive)
 	{
 		m_mouseLookActive = true;
@@ -83,7 +85,9 @@ void CameraInputIntentCollector::OnKeyboard(const KeyboardEvent& event) noexcept
 void CameraInputIntentCollector::OnMouseMove(const MouseMoveEvent& event) noexcept
 {
 	if (!m_mouseLookActive)
+	{
 		return;
+	}
 	m_lookDeltaX += static_cast<float>(event.Delta.X);
 	m_lookDeltaY += static_cast<float>(event.Delta.Y);
 	m_inputSystem.CenterCursor(m_window.GetHWND());
@@ -92,13 +96,17 @@ void CameraInputIntentCollector::OnMouseMove(const MouseMoveEvent& event) noexce
 void CameraInputIntentCollector::OnMouseWheel(const MouseWheelEvent& event) noexcept
 {
 	if (event.IsVertical())
+	{
 		m_speedStepCount += event.Delta;
+	}
 }
 
 void CameraInputIntentCollector::EndMouseLook() noexcept
 {
 	if (!m_mouseLookActive)
+	{
 		return;
+	}
 
 	m_mouseLookActive = false;
 	m_lookDeltaX = 0.0f;

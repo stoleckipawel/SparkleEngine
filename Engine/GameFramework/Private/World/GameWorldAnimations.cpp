@@ -18,7 +18,9 @@ namespace ECS
 			const std::uint32_t unsupportedCount = AnimationDiagnostics::CountUnsupportedRuntimeChannels(clip);
 			AnimationDiagnostics::LogLoadedClip(clip);
 			if (unsupportedCount > 0u)
+			{
 				AnimationDiagnostics::LogUnsupportedRuntimeChannels(clip, unsupportedCount);
+			}
 			const std::string name = clip.name;
 			const std::uint32_t sourceAnimationIndex = clip.sourceAnimationIndex;
 			const Assets::CookedAssetId animationAssetId = clip.animationAssetId;
@@ -32,6 +34,7 @@ namespace ECS
 			{
 				continue;
 			}
+
 			const bool added = m_registry.Add(entity, AnimationState{.Resource = resource, .AnimationAssetId = animationAssetId}) && m_registry.Add(entity, Name{name})
 			    && m_registry.Add(
 			        entity,

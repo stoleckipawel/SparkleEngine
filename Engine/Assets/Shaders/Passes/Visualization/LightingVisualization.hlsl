@@ -24,27 +24,22 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 	{
 		case RenderViewMode::DirectDiffuse:
 			outputColor = DirectDiffuse.Load(pixel).rgb;
-
 			break;
 
 		case RenderViewMode::DirectSpecular:
 			outputColor = DirectSpecular.Load(pixel).rgb;
-
 			break;
 
 		case RenderViewMode::DirectSubsurface:
 			outputColor = DirectSubsurface.Load(pixel).rgb;
-
 			break;
 
 		case RenderViewMode::IndirectDiffuse:
 			outputColor = IndirectDiffuse.Load(pixel).rgb;
-
 			break;
 
 		case RenderViewMode::IndirectSpecular:
 			outputColor = IndirectSpecular.Load(pixel).rgb;
-
 			break;
 	}
 	SceneColor[dispatchThreadId.xy] = float4(max(outputColor, 0.0f), GBufferBaseColor.Load(pixel).a);

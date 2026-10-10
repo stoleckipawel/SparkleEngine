@@ -22,13 +22,21 @@ namespace Assets
 			files.Release(manifestPath);
 
 			for (const CookedSceneMeshAssetRef& reference : manifest.meshAssetReferences)
+			{
 				files.Read(Paths::CookedMeshAsset(reference.meshAssetId));
+			}
 			for (const CookedSceneMaterialAssetRef& reference : manifest.materialAssetReferences)
+			{
 				files.Read(Paths::CookedMaterialAsset(reference.materialAssetId));
+			}
 			for (const CookedSceneSkeletonRef& reference : manifest.skeletonRefs)
+			{
 				files.Read(Paths::CookedSkeletonAsset(reference.skeletonAssetId));
+			}
 			for (const CookedAnimationReference& reference : manifest.animationReferences)
+			{
 				files.Read(Paths::CookedAnimationAsset(reference.animationAssetId));
+			}
 		}
 		catch (const Diagnostics::Error& error)
 		{

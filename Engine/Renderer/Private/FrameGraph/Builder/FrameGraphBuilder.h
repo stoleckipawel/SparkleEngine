@@ -50,14 +50,7 @@ public:
 	template <typename TVertexShader, typename TPixelShader, typename TParameters, typename TDrawCollaborator>
 	void Draw(std::string_view label, TypedPassParameterInstance<TParameters>& parameters, const RasterPassRenderState& renderState, TDrawCollaborator drawCollaborator)
 	{
-		// Preparation and recording share one collaborator and its compiled attachments.
-		struct RasterPassState final
-		{
-			FrameGraphRasterPass Pass;
-			TDrawCollaborator Draw;
-		};
-
-		auto passState = std::make_shared<RasterPassState>(RasterPassState{.Draw = std::move(drawCollaborator)});
+		auto passState = std::make_shared<RasterPassState<TDrawCollaborator>>(RasterPassState<TDrawCollaborator>{.Draw = std::move(drawCollaborator)});
 		auto* parameterInstance = &parameters;
 		auto* frameGraph = &m_frameGraph;
 		auto* runtimeCache = &m_renderPassRuntimeCache;
@@ -205,6 +198,13 @@ public:
 	ShaderDepthTarget CreateDepthTarget(FrameGraphTextureHandle handle, FrameGraphAttachmentLoadAction load, FrameGraphAttachmentStoreAction store, FrameGraphDepthStencilAccess access) const noexcept;
 
 private:
+	// Preparation and recording share one collaborator and its compiled attachments.
+	template <typename TDrawCollaborator> struct RasterPassState final
+	{
+		FrameGraphRasterPass Pass;
+		TDrawCollaborator Draw;
+	};
+
 	static std::uint64_t GetRayTracingShaderTableSize(const RayTracingShaderTable& shaderTable)
 	{
 		const auto regionEnd = [](const RhiRayTracingShaderTableRegion& region)

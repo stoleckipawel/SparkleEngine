@@ -204,6 +204,7 @@ std::string ShaderConsoleCommands::BuildShaderList()
 		{
 			output += '\n';
 		}
+
 		output += std::format(
 		    "{} type={:016x} stage={} source={} entry={} parameters={}",
 		    shader.ShaderName,

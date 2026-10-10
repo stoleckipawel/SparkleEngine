@@ -64,27 +64,22 @@ namespace SparkleLauncher
 		{
 			case KnownTool::CMake:
 				status.CMakePath = resolvedTool.Path;
-
 				break;
 
 			case KnownTool::MSBuild:
 				status.MSBuildPath = resolvedTool.Path;
-
 				break;
 
 			case KnownTool::Ninja:
 				status.NinjaPath = resolvedTool.Path;
-
 				break;
 
 			case KnownTool::Rider:
 				status.RiderPath = resolvedTool.Path;
-
 				break;
 
 			case KnownTool::Git:
 				status.GitPath = resolvedTool.Path;
-
 				break;
 		}
 	}
@@ -150,6 +145,7 @@ namespace SparkleLauncher
 		{
 			status.ClangClPath = FindExecutableOnPath("clang-cl.exe").value_or(std::filesystem::path());
 		}
+
 		ToolchainItemStatus clangCl = MakeToolStatus(
 		    "clangcl",
 		    "clang-cl",

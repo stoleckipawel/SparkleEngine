@@ -63,9 +63,13 @@ void GameWorld::InitializeStagedLevel(const LevelDesc& desc)
 		}
 	}
 	if (desc.sky)
+	{
 		m_state->WriteSkyEnvironment(SkyEnvironment{.Description = *desc.sky});
+	}
 	else
+	{
 		m_state->RemoveSkyEnvironment();
+	}
 	for (const SceneLightDesc& light : desc.lights)
 	{
 		if (!m_state->AddLight(SceneLightDesc(light)).IsValid())
@@ -86,6 +90,7 @@ void GameWorld::Update(float deltaSeconds)
 		    m_cameraNavigationSettings.MinimumMoveSpeedMetersPerSecond,
 		    m_cameraNavigationSettings.MaximumMoveSpeedMetersPerSecond);
 	}
+
 	const ECS::GameWorldSystemExecutionContext executionContext{
 	    .Resources = *m_resources,
 	    .Executor = m_taskExecutor,
@@ -239,7 +244,9 @@ bool GameWorld::ApplyMaterialVariant(MaterialVariantIndex index)
 {
 	const bool applied = m_resources->MaterialVariants.Apply(index, *m_state);
 	if (applied)
+	{
 		CommitWorldChanges();
+	}
 	return applied;
 }
 

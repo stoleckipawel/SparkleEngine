@@ -52,6 +52,7 @@ VulkanRayTracingPipeline::VulkanRayTracingPipeline(VulkanRhi& rhi, const RayTrac
 		{
 			continue;
 		}
+
 		groups.push_back(
 		    VkRayTracingShaderGroupCreateInfoKHR{
 		        .sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR,
@@ -65,6 +66,7 @@ VulkanRayTracingPipeline::VulkanRayTracingPipeline(VulkanRhi& rhi, const RayTrac
 
 		m_groupNames.emplace_back(shaderExport.ExportName);
 	}
+
 	const auto stageIndex = [&stageIndices](std::string_view name)
 	{
 		const auto found = stageIndices.find(name);

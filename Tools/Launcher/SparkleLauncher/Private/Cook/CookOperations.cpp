@@ -131,6 +131,7 @@ namespace SparkleLauncher
 #endif
 				return tools;
 			}
+
 			case CookOperationKind::CookShaders:
 #if SPARKLE_ENABLE_SHADER_COMPILER
 				return {"ShaderCompiler"};

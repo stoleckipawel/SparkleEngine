@@ -512,32 +512,26 @@ namespace SparkleLauncher
 		{
 			case RunState::Queued:
 				stateText = "Queued";
-
 				break;
 
 			case RunState::Running:
 				stateText = "Running";
-
 				break;
 
 			case RunState::Done:
 				stateText = "Done";
-
 				break;
 
 			case RunState::Blocked:
 				stateText = "Blocked";
-
 				break;
 
 			case RunState::Canceled:
 				stateText = "Canceled";
-
 				break;
 
 			case RunState::Failed:
 				stateText = "Failed";
-
 				break;
 		}
 

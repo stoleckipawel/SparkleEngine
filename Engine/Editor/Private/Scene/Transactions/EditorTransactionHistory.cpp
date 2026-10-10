@@ -13,14 +13,18 @@ WorldEditResult EditorTransactionHistory::Submit(WorldEditCommand command, std::
 {
 	command.RequestId = m_nextRequestId++;
 	if (!m_submit)
+	{
 		return {command.RequestId, WorldEditResultStatus::Rejected, "The editor command boundary is unavailable."};
+	}
 	return m_submit(std::move(command), worldGeneration);
 }
 
 void EditorTransactionHistory::InvalidateForWorldGeneration(std::uint64_t worldGeneration) noexcept
 {
 	if (m_worldGeneration == worldGeneration)
+	{
 		return;
+	}
 	m_worldGeneration = worldGeneration;
 	m_undo.clear();
 	m_redo.clear();
@@ -33,7 +37,9 @@ WorldEditResult EditorTransactionHistory::Execute(WorldEditCommand forward, Worl
 	WorldEditResult result = Submit(forward, worldGeneration);
 	m_lastResult = result;
 	if (!result.IsAccepted())
+	{
 		return result;
+	}
 
 	if (!coalescingKey.empty() && !m_undo.empty() && m_undo.back().CoalescingKey == coalescingKey)
 	{
@@ -42,7 +48,9 @@ WorldEditResult EditorTransactionHistory::Execute(WorldEditCommand forward, Worl
 	else
 	{
 		if (m_undo.size() == EditorTransactionHistoryLimits::MaximumTransactions)
+		{
 			m_undo.erase(m_undo.begin());
+		}
 		m_undo.push_back({std::move(forward), std::move(inverse), std::move(coalescingKey)});
 	}
 	m_redo.clear();
@@ -53,7 +61,9 @@ WorldEditResult EditorTransactionHistory::Undo(std::uint64_t worldGeneration)
 {
 	InvalidateForWorldGeneration(worldGeneration);
 	if (m_undo.empty())
+	{
 		return {0, WorldEditResultStatus::Rejected, "There is no editor transaction to undo."};
+	}
 	Transaction transaction = m_undo.back();
 	WorldEditResult result = Submit(transaction.Inverse, worldGeneration);
 	m_lastResult = result;
@@ -69,7 +79,9 @@ WorldEditResult EditorTransactionHistory::Redo(std::uint64_t worldGeneration)
 {
 	InvalidateForWorldGeneration(worldGeneration);
 	if (m_redo.empty())
+	{
 		return {0, WorldEditResultStatus::Rejected, "There is no editor transaction to redo."};
+	}
 	Transaction transaction = m_redo.back();
 	WorldEditResult result = Submit(transaction.Forward, worldGeneration);
 	m_lastResult = result;

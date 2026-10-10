@@ -94,6 +94,7 @@ namespace ReferencePathTracer
 		{
 			ordinal += PathLightSampling::CountEmissiveTriangles(instanceId);
 		}
+
 		return CommonRandom::CategoricalProbabilityMass(counts.Analytic + ordinal, counts.Total)
 		    * PathLightSampling::EmissiveTrianglePdfW(previousPositionWorld, surface.PositionWorld, surface.InstanceId, surface.PrimitiveIndex);
 	}

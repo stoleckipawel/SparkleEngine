@@ -23,7 +23,9 @@ RuntimeConsoleOverlay::RuntimeConsoleOverlay(Timer& timer, Window& window, CVarC
     m_window(window)
 {
 	if (!m_window.GetHWND())
+	{
 		throw Diagnostics::Error("Runtime console requires a valid host window.");
+	}
 	ConsoleBuiltinCommands::Register(m_commandRegistry, std::move(executor));
 	m_consoleSession = std::make_unique<ConsoleSession>(m_commandRegistry, ConsoleCommandScope::Runtime);
 	m_renderPacketBuilder = std::make_unique<ImGuiRenderPacketBuilder>();
@@ -114,7 +116,9 @@ void RuntimeConsoleOverlay::InitializeImGuiContext()
 void RuntimeConsoleOverlay::InitializeWin32Backend()
 {
 	if (!ImGui_ImplWin32_Init(m_window.GetHWND()))
+	{
 		throw Diagnostics::Error("Runtime console failed to initialize the Win32 ImGui backend.");
+	}
 	m_isWin32BackendInitialized = true;
 }
 

@@ -27,11 +27,9 @@ void AddSceneUpscalingPasses(
 	{
 		case SceneUpscalingMethod::Linear:
 			AddLinearUpscalePass(builder, resources.Presentation.SceneColorInput, resources.Presentation.ResolvedSceneColor, settings.OutputExtent);
-
 			return;
 		case SceneUpscalingMethod::Point:
 			AddPointUpscalePass(builder, resources.Presentation.SceneColorInput, resources.Presentation.ResolvedSceneColor, settings.OutputExtent);
-
 			return;
 		case SceneUpscalingMethod::ConfiguredProvider:
 			break;
@@ -41,7 +39,6 @@ void AddSceneUpscalingPasses(
 	{
 		case EUpscalerProviderKind::Linear:
 			AddLinearUpscalePass(builder, resources.Presentation.SceneColorInput, resources.Presentation.ResolvedSceneColor, settings.OutputExtent);
-
 			return;
 		case EUpscalerProviderKind::NvidiaDlss:
 		{

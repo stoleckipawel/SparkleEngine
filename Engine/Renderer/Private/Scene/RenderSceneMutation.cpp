@@ -200,13 +200,21 @@ void RenderScene::ApplyUpdates(const RenderSceneDelta& delta, std::span<const Gp
 void RenderScene::PublishResources(const RenderSceneDelta& delta)
 {
 	if (delta.Materials)
+	{
 		m_materials = *delta.Materials;
+	}
 	if (delta.Textures)
+	{
 		m_textures = *delta.Textures;
+	}
 	if (delta.Sky.Published)
+	{
 		m_sky = delta.Sky.Value;
+	}
 	if (delta.InstanceGroups.Published)
+	{
 		m_instanceGroups = delta.InstanceGroups.Values;
+	}
 }
 
 void RenderScene::RetainReferencedGpuMeshes() noexcept

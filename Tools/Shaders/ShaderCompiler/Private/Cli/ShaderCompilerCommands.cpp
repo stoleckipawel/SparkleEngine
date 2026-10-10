@@ -27,7 +27,9 @@ const ShaderCompilerCommand* FindShaderCompilerCommand(std::string_view verb) no
 	for (const ShaderCompilerCommand& command : commands)
 	{
 		if (command.Verb == verb)
+		{
 			return &command;
+		}
 	}
 	return nullptr;
 }
@@ -36,5 +38,7 @@ void PrintShaderCompilerUsage(std::ostream& output)
 {
 	output << "Usage:\n";
 	for (const ShaderCompilerCommand& command : commands)
+	{
 		output << command.Usage << '\n';
+	}
 }

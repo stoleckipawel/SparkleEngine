@@ -187,6 +187,7 @@ void GBufferMeshPass::MaterializePipelines(const RenderPassRuntimeCache& runtime
 		{
 			continue;
 		}
+
 		const GraphicsPipelineRequest pipelineRequest = BuildGraphicsPipelineRequest(
 		    renderState,
 		    ResolveRasterizerState(material, *gpuMesh, wireframe),

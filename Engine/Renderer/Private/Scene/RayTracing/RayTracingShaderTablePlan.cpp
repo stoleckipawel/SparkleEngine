@@ -62,6 +62,7 @@ void RayTracingShaderTablePlan::Synchronize(std::span<const RenderPrimitive> pri
 				{
 					Diagnostics::Fatal(g_rayTracingShaderTablePlanLogger, __FILE__, __LINE__, "Ray-tracing shader-table record formula overflowed or escaped the planned table.");
 				}
+
 				records.push_back(
 				    RayTracingShaderTableRecordPlan{
 				        .RecordIndex = recordIndex,

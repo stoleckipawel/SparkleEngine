@@ -149,6 +149,7 @@ void CookedAnimationTranslation::AppendChannel(
 	{
 		asset.keyframes.push_back({.timeSeconds = importedKeyframe.timeSeconds, .value = importedKeyframe.value, .inTangent = importedKeyframe.inTangent, .outTangent = importedKeyframe.outTangent});
 	}
+
 	asset.channels.push_back(
 	    {.targetPath = targetPath,
 	        .interpolation = interpolation,

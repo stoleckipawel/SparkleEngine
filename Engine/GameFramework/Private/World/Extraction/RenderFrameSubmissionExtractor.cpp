@@ -32,7 +32,9 @@ namespace ECS
 		submission.Scene.Structural.ResetScene = m_sceneGeneration != sceneGeneration;
 		submission.View.CameraCut = submission.Scene.Structural.ResetScene;
 		if (!submission.Scene.Structural.ResetScene)
+		{
 			return;
+		}
 
 		m_identities.BeginScene();
 		m_objectExtractor.BeginScene();
@@ -46,7 +48,9 @@ namespace ECS
 		for (const WorldCameraReadData& camera : readView.GetCameras())
 		{
 			if (!camera.Active)
+			{
 				continue;
+			}
 
 			return {
 			    .Position = camera.LocalTransform.GetTranslation(),

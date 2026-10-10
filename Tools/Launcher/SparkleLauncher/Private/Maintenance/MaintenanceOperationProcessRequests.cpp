@@ -94,6 +94,7 @@ namespace SparkleLauncher
 				    outputs.BuildRoot,
 				    MaintenanceCleanBehavior::RemoveDirectoryContentsPreservingPath,
 				    outputs.DependencyCacheRoot);
+
 				AddCleanStep(steps, "clean-root-generated", "Clean root CMake and Visual Studio generated files", plan.RepositoryRoot, MaintenanceCleanBehavior::RemoveRootGeneratedFiles);
 				AddContentGeneratedCleanSteps(steps, plan, true, false, false);
 				return;

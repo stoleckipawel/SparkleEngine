@@ -53,13 +53,19 @@ void D3D12Rhi::SelectAdapter() noexcept
 		ComPtr<IDXGIAdapter1> candidate;
 		HRESULT hr = m_dxgiFactory->EnumAdapterByGpuPreference(i, pref, IID_PPV_ARGS(candidate.ReleaseAndGetAddressOf()));
 		if (hr != S_OK)
+		{
 			break;
+		}
 
 		DXGI_ADAPTER_DESC1 desc{};
 		if (FAILED(candidate->GetDesc1(&desc)))
+		{
 			continue;
+		}
 		if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+		{
 			continue;
+		}
 
 		if (SUCCEEDED(D3D12CreateDevice(candidate.Get(), m_desiredD3DFeatureLevel, _uuidof(ID3D12Device), nullptr)))
 		{
@@ -73,13 +79,19 @@ void D3D12Rhi::SelectAdapter() noexcept
 		ComPtr<IDXGIAdapter1> candidate;
 		HRESULT hr = m_dxgiFactory->EnumAdapters1(i, candidate.ReleaseAndGetAddressOf());
 		if (hr != S_OK)
+		{
 			break;
+		}
 
 		DXGI_ADAPTER_DESC1 desc{};
 		if (FAILED(candidate->GetDesc1(&desc)))
+		{
 			continue;
+		}
 		if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+		{
 			continue;
+		}
 
 		if (SUCCEEDED(D3D12CreateDevice(candidate.Get(), m_desiredD3DFeatureLevel, _uuidof(ID3D12Device), nullptr)))
 		{

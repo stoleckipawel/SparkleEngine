@@ -20,7 +20,9 @@ void GpuSkinInfluenceBuffer::Upload(RenderHardwareInterface& renderHardwareInter
 	m_renderHardwareInterface = &renderHardwareInterface;
 
 	if (skinInfluences.empty())
+	{
 		Diagnostics::Fatal(g_gpuSkinInfluenceBufferLogger, __FILE__, __LINE__, "GPU mesh has no skin influence payload.");
+	}
 
 	RhiResourceService& resources = m_renderHardwareInterface->GetResourceService();
 

@@ -129,6 +129,7 @@ void ExposureSettingsEditor::DrawSettings(EngineRenderingSettingsController& set
 	    {"Manual", EngineExposureMode::Manual},
 	    {"Automatic", EngineExposureMode::Automatic},
 	};
+
 	static constexpr RenderingSettingsUi::ComboOption<EngineExposureMeteringMethod> exposureMeteringMethodOptions[] = {
 	    {"Histogram", EngineExposureMeteringMethod::Histogram},
 	    {"Downsample pyramid", EngineExposureMeteringMethod::DownsamplePyramid},
@@ -227,6 +228,7 @@ bool ExposureSettingsEditor::DrawOverrides(ViewportExposureOverrides& exposure, 
 	    {"Manual", EngineExposureMode::Manual},
 	    {"Automatic", EngineExposureMode::Automatic},
 	};
+
 	static constexpr ExposureEnumOption<EngineExposureMeteringMethod> exposureMeteringOptions[] = {
 	    {"Histogram", EngineExposureMeteringMethod::Histogram},
 	    {"Downsample pyramid", EngineExposureMeteringMethod::DownsamplePyramid},

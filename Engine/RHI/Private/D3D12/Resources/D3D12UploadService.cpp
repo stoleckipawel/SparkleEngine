@@ -243,6 +243,7 @@ void D3D12UploadService::DrainCompletedUploads() noexcept
 	{
 		completedValues.fill(UINT64_MAX);
 	}
+
 	const auto firstPending = std::remove_if(
 	    m_pendingUploads.begin(),
 	    m_pendingUploads.end(),

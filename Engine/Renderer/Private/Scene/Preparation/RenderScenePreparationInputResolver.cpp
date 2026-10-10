@@ -51,7 +51,9 @@ void RenderScenePreparationInputResolver::ResolvePrimitives(const RenderScene& s
 	for (const RenderPrimitive& primitive : scene.GetPrimitives())
 	{
 		if (!primitive.Dynamic.Visible || !primitive.GpuMeshResident || !IsMeshRenderingEnabled(primitive.Static.MeshKind))
+		{
 			continue;
+		}
 		run.ResolvedPrimitives.push_back(ResolvePrimitive(scene, primitive, scene.GetMaterials().Generation, run.PreparedScene));
 	}
 }
@@ -63,11 +65,15 @@ ResolvedRenderPrimitive RenderScenePreparationInputResolver::ResolvePrimitive(
     PreparedRenderScene& preparedScene)
 {
 	if (!primitive.Dynamic.Object.IsValid() || !primitive.Static.Mesh.IsValid())
+	{
 		Diagnostics::Fatal(g_renderPreparationInputResolverLogger, __FILE__, __LINE__, "Render scene primitive contains an invalid primitive or mesh identity.");
+	}
 
 	const GpuMesh* gpuMesh = m_gpuMeshCache->Resolve(primitive.GpuMesh);
 	if (gpuMesh == nullptr || !gpuMesh->IsValid())
+	{
 		Diagnostics::Fatal(g_renderPreparationInputResolverLogger, __FILE__, __LINE__, "Resident render scene primitive has no GPU mesh.");
+	}
 
 	const std::uint32_t materialSlot = MaterialHandleResolver::ResolveSlot(primitive.Static.Material, materialGeneration, preparedScene.materials.size());
 	const MaterialData& material = preparedScene.materials[materialSlot];
@@ -132,7 +138,9 @@ void RenderScenePreparationInputResolver::ResolveSky(const RenderScene& scene, P
 		}
 	}
 	if (skyTexture == nullptr || !*skyTexture)
+	{
 		Diagnostics::Fatal(g_renderPreparationInputResolverLogger, __FILE__, __LINE__, "Scene sky texture is unavailable.");
+	}
 	preparedScene.sky.texture = skyTexture;
 	preparedScene.sky.enabled = preparedScene.sky.enabled && CVarSkyEnabled.Get();
 }

@@ -25,7 +25,9 @@ namespace LevelParsing
 	void LightingSectionSerialization::WriteCommonFields(std::ofstream& output, std::string_view prefix, const SceneLightCommonDesc& common)
 	{
 		if (!common.name.empty())
+		{
 			output << prefix << "Name = " << common.name << "\n";
+		}
 		output << prefix << "Position = " << common.worldTransform._41 << ", " << common.worldTransform._42 << ", " << common.worldTransform._43 << "\n";
 		output << prefix << "Color = " << common.color.x << ", " << common.color.y << ", " << common.color.z << "\n";
 		output << prefix << "Visible = " << (common.visible ? "true" : "false") << "\n";

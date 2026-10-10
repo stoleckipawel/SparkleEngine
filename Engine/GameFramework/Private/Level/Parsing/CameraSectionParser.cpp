@@ -30,21 +30,27 @@ namespace LevelParsing
 		{
 			levelDesc.cameraDesc.fovYDegrees = ParseFloat(parsedLine.value, "camera FOV");
 			if (levelDesc.cameraDesc.fovYDegrees <= 0.0f || levelDesc.cameraDesc.fovYDegrees >= 180.0f)
+			{
 				throw Diagnostics::Error("Camera FOV must be between 0 and 180 degrees.");
+			}
 			return;
 		}
 		if (parsedLine.key == "NearZ")
 		{
 			levelDesc.cameraDesc.nearZ = ParseFloat(parsedLine.value, "camera near plane");
 			if (levelDesc.cameraDesc.nearZ <= 0.0f)
+			{
 				throw Diagnostics::Error("Camera near plane must be positive.");
+			}
 			return;
 		}
 		if (parsedLine.key == "FarZ")
 		{
 			levelDesc.cameraDesc.farZ = ParseFloat(parsedLine.value, "camera far plane");
 			if (levelDesc.cameraDesc.farZ <= 0.0f)
+			{
 				throw Diagnostics::Error("Camera far plane must be positive.");
+			}
 			return;
 		}
 		throw Diagnostics::Error("Unsupported camera field: " + parsedLine.key);
@@ -53,7 +59,9 @@ namespace LevelParsing
 	void ValidateCameraSection(const LevelDesc& levelDesc)
 	{
 		if (levelDesc.cameraDesc.farZ <= levelDesc.cameraDesc.nearZ)
+		{
 			throw Diagnostics::Error("Camera far plane must be greater than its near plane.");
+		}
 	}
 
 	void WriteCameraSection(std::ofstream& output, const LevelDesc& levelDesc)

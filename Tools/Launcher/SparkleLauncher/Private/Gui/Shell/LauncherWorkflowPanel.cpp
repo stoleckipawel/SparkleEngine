@@ -24,27 +24,22 @@ namespace SparkleLauncher
 		{
 			case LauncherWorkflowPageKind::Home:
 				icon = LauncherIcon::Start;
-
 				break;
 
 			case LauncherWorkflowPageKind::Sync:
 				icon = LauncherIcon::Sync;
-
 				break;
 
 			case LauncherWorkflowPageKind::Build:
 				icon = LauncherIcon::Build;
-
 				break;
 
 			case LauncherWorkflowPageKind::Cook:
 				icon = LauncherIcon::Cook;
-
 				break;
 
 			case LauncherWorkflowPageKind::Clean:
 				icon = LauncherIcon::Clean;
-
 				break;
 
 			case LauncherWorkflowPageKind::Unknown:

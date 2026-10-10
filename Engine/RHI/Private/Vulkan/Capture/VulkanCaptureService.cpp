@@ -146,6 +146,7 @@ RhiCaptureTicket VulkanCaptureService::BeginTextureReadback(const RhiTextureCapt
 		vkDestroyBuffer(device, pending->Buffer, nullptr);
 		return {};
 	}
+
 	const VkCommandBufferAllocateInfo commandBufferInfo{
 	    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
 	    .commandPool = pending->CommandPool,

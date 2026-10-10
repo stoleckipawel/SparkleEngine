@@ -34,7 +34,9 @@ public:
 			hash *= Prime;
 		}
 		if (hash == 0)
+		{
 			throw Diagnostics::Error(std::format("Scene asset identity '{}' hashes to the reserved null identity.", identity));
+		}
 		return hash;
 	}
 
@@ -43,7 +45,9 @@ public:
 	static void AddCount(std::size_t& total, std::size_t amount, std::string_view description)
 	{
 		if (amount > (std::numeric_limits<std::size_t>::max)() - total)
+		{
 			throw Diagnostics::Error(std::format("Scene load package {} count exceeds the host address range.", description));
+		}
 		total += amount;
 	}
 
@@ -53,7 +57,9 @@ public:
 		AddCount(entityCount, 1u, "entity");
 		AddCount(entityCount, state.Package->Level.lights.size(), "entity");
 		for (const Assets::SceneAssetLoadWork& work : state.Assets)
+		{
 			AddCount(entityCount, work.Entities.size(), "entity");
+		}
 		std::size_t payloadCount = state.Package->AssetPayloads.size();
 		AddCount(payloadCount, state.Assets.size(), "payload");
 		state.Package->Entities.reserve(entityCount);
@@ -68,7 +74,9 @@ public:
 		};
 
 		for (const AnimationClipResource& animation : work.Payload.animations)
+		{
 			add(std::format("{}:animation:{}", work.Id.value, animation.sourceAnimationIndex), Schemas<ECS::AnimationState, ECS::Name, ECS::AuthoredIdentity, ECS::EditorMetadata>());
+		}
 		for (std::size_t index = 0; index < work.Payload.staticMeshInstances.size(); ++index)
 		{
 			const SceneAssetPayload::StaticMeshInstance& instance = work.Payload.staticMeshInstances[index];
@@ -84,11 +92,15 @@ public:
 			    Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::MeshInstance, ECS::Visibility, ECS::MorphState, ECS::SkinningState, ECS::AuthoredIdentity, ECS::EditorMetadata>());
 		}
 		for (std::size_t index = 0; index < work.Payload.cameras.size(); ++index)
+		{
 			add(std::format("{}:camera:{}", work.Id.value, index),
 			    Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::Camera, ECS::CameraDerivedState, ECS::Visibility, ECS::Name, ECS::AuthoredIdentity, ECS::EditorMetadata>());
+		}
 		for (std::size_t index = 0; index < work.Payload.lights.size(); ++index)
+		{
 			add(std::format("{}:light:{}", work.Id.value, index),
 			    Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::Light, ECS::Visibility, ECS::Name, ECS::AuthoredIdentity, ECS::EditorMetadata>());
+		}
 	}
 
 	static void ValidateBlueprintContract(const std::vector<Assets::EntityBlueprint>& entities)
@@ -142,14 +154,22 @@ namespace Assets
 		}
 		std::unordered_set<Assets::CookedAssetId> skeletonAssets;
 		for (const SceneAssetLoadWork& work : state.Assets)
+		{
 			for (const SkeletonResource& skeleton : work.Payload.skeletons)
+			{
 				skeletonAssets.insert(skeleton.assetId);
+			}
+		}
 		for (const SceneAssetLoadWork& work : state.Assets)
+		{
 			for (const SceneAssetPayload::SkeletalMeshInstance& mesh : work.Payload.skeletalMeshInstances)
+			{
 				if (!skeletonAssets.contains(mesh.skeletonAssetId))
 				{
 					throw Diagnostics::Error("Scene load package contains an unresolved cross-asset skeleton reference.");
 				}
+			}
+		}
 
 		state.Package->Entities.push_back(
 		    EntityBlueprint{
@@ -158,14 +178,18 @@ namespace Assets
 		            Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::Camera, ECS::CameraDerivedState, ECS::Visibility, ECS::Name, ECS::AuthoredIdentity, ECS::EditorMetadata>()});
 
 		for (std::size_t index = 0; index < state.Package->Level.lights.size(); ++index)
+		{
 			state.Package->Entities.push_back(
 			    EntityBlueprint{
 			        std::format("level:{}:light:{}", state.Package->Level.name, index),
 			        SceneLoadPackageAssembly::Schemas<ECS::LocalTransform, ECS::WorldTransform, ECS::Light, ECS::Visibility, ECS::Name, ECS::AuthoredIdentity, ECS::EditorMetadata>()});
+		}
 		for (SceneAssetLoadWork& work : state.Assets)
 		{
 			for (EntityBlueprint& entity : work.Entities)
+			{
 				state.Package->Entities.push_back(std::move(entity));
+			}
 			std::vector<EntityBlueprint>().swap(work.Entities);
 			state.Package->AssetPayloads.push_back(std::move(work.Payload));
 		}

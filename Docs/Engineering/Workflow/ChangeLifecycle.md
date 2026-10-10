@@ -133,6 +133,18 @@ Every implementation stage MUST end with a deliberate source-shape pass before v
 
 The refinement pass MUST also remove dead scaffolding, duplicate state or policy, ceremonial helpers/namespaces, speculative abstractions, needless validation or diagnostics, and implementation details that leaked into an orchestrator or public contract. Reinspect includes, names, build membership, direct callers, dependency direction, and the feature integration-hook ledger after the final shape is known. A stage is not ready for handoff while a changed god function, god class, god file, diffuse feature mechanism, or unexplained abstraction remains, even when formatting, static checks, or a build succeed.
 
+### Stage Source-Style Gate
+
+Every implementation stage MUST pass this gate after responsibility refinement and before submission, handoff, or recording its exit as complete. This applies to future delivery plans and to stages run from older prompts. [Code Style](../Foundations/CodeStyle.md) and executable formatter configuration own the rules; this gate owns their required place in delivery.
+
+1. Identify every added or modified owned source file in the stage, including headers and shaders. Reconcile the selected formatter paths with this list; an empty or partial selection cannot prove stage coverage. Deleted files need no formatting check. Record other exclusions with their owning policy and reason.
+2. Apply the repository formatter only where needed in the owned scope, then run `CMake\CodeStyle.bat -Mode Check -Path "<repo-relative-file>"` for each selected file, or `CMake\CodeStyle.bat -Mode Check -Staged` when its selection covers the complete stage. Follow the [formatter procedure](../Foundations/CodeStyle.md#repository-commands). These selectors check working-tree contents of tracked files: newly added files must enter the selection before submission; untracked files remain uncovered. Do not change the Git index merely to manufacture coverage or include unrelated work. For partial staging, also inspect the exact submitted diff; a working-tree check does not certify different index contents.
+3. Review the complete changed functions, header groups, and shader blocks against the [Visual Spacing Contract](../Foundations/CodeStyle.md#visual-spacing-contract) and [Expressions And Wrapping](../Foundations/CodeStyle.md#expressions-and-wrapping). Verify purposeful paragraph boundaries, cohesive declarations/operations, attached comments, explicit control-flow braces, readable inputs, and assignment/call wrapping. A formatter pass cannot establish logical grouping or responsibility separation.
+4. Run `git diff --check` and inspect the final scoped diff. Repeat affected style checks and review after any subsequent source or formatter-policy edit; retain evidence for the final submitted contents.
+5. Record exact commands, tool version, checked file coverage, exclusions, mechanical check result, and authored layout review result in the existing stage control record or handoff. An applicable failure, unavailable required tool, or uncovered source file keeps this gate open. For a stage with no source changes, record source-style `N/A` with that reason and run the applicable documentation/build-configuration checks.
+
+Keep the check proportional to the stage. Repository-wide formatting and broad builds are not prerequisites for a scoped style result. Future plan templates and ready-to-use implementation prompts MUST reference this gate; they must not defer it to final aggregate acceptance.
+
 ## Review and Acceptance
 
 Use the [SparkleEngine Code Review](CodeReview.md) procedure and run the review section or acceptance rules in every selected subject standard; do not recreate those checklists in the change description. Then verify the integration itself:
@@ -144,6 +156,7 @@ Use the [SparkleEngine Code Review](CodeReview.md) procedure and run the review 
 - old names and production references are gone where intended;
 - no internal version, migration reader/writer, compatibility adapter, alias, fallback, old/new dispatch, or dual representation preserves the replaced Sparkle-owned contract;
 - the final structure spends no unexplained complexity and leaves the touched ownership path easier to navigate;
+- the [Stage Source-Style Gate](#stage-source-style-gate) covers the final changed source, with both mechanical and authored layout results;
 - performance impact is classified and any material hot-path, memory, latency, loading, cooking, or build-time risk has proportional evidence;
 - exact claim-to-check mappings, validation commands, configurations, backends, results, escalation, and applicable unavailable checks are recorded; unrelated broad checks are not reported as missing evidence;
 - performance and AI-assisted claims meet [Validation, Performance, and Evidence](../Verification/ValidationAndEvidence.md);

@@ -48,6 +48,7 @@ public:
 					    *desc.ParameterLayout,
 					    D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
 					    CompiledBindingType::ReadOnlyResourceTable);
+
 					break;
 				case ShaderParameterSemanticKind::AccelerationStructure:
 					CompileRootShaderResourceBinding(builder, bindings, bindingNames, bindingRecord, bindingName, desc.Shaders, *desc.ParameterLayout);
@@ -64,6 +65,7 @@ public:
 					    *desc.ParameterLayout,
 					    D3D12_DESCRIPTOR_RANGE_TYPE_UAV,
 					    CompiledBindingType::ReadWriteResourceTable);
+
 					break;
 				case ShaderParameterSemanticKind::SamplerSet:
 					CompileDescriptorTableBinding(
@@ -76,6 +78,7 @@ public:
 					    *desc.ParameterLayout,
 					    D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER,
 					    CompiledBindingType::SamplerTable);
+
 					break;
 				case ShaderParameterSemanticKind::RenderTarget:
 				case ShaderParameterSemanticKind::DepthTarget:

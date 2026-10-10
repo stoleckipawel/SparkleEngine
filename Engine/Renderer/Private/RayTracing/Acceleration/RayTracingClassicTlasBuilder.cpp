@@ -183,6 +183,7 @@ void RayTracingClassicTlasBuilder::CollectInstances(
 		{
 			Diagnostics::Fatal(g_rayTracingClassicTlasBuilderLogger, __FILE__, __LINE__, "Classic TLAS instance has no authoritative scene shader-table contribution.");
 		}
+
 		state.Instances.push_back(
 		    RhiRayTracingInstanceDesc{
 		        .Transform = RhiRayTracingTransformPacking::PackCanonicalObjectToWorld(draw.Transform.WorldMatrix),
@@ -211,6 +212,7 @@ void RayTracingClassicTlasBuilder::PrepareBuild(BuildState& state) noexcept
 		resourceService.ReleaseOwnedResource(m_instanceBuffer);
 		m_instanceBuffer = {};
 	}
+
 	m_instanceBuffer = m_renderHardwareInterface->GetRayTracingService().CreateRayTracingInstanceBuffer(
 	    state.Instances.empty() ? nullptr : state.Instances.data(),
 	    static_cast<std::uint32_t>(state.Instances.size()),

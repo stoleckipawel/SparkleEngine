@@ -346,6 +346,7 @@ void RayTracingPtlasPartitionPlanner::AppendPlanEntries(const RayTracingPtlasPar
 			std::uint32_t& maximumInstanceCount = partitionId == plan.Counts.GlobalPartitionIndex ? plan.Counts.MaxInstancesInGlobalPartition : plan.Counts.MaxInstancesPerPartition;
 			maximumInstanceCount = (std::max) (maximumInstanceCount, instanceCount);
 		}
+
 		state.NextPrevious[observed.GpuSceneSlot] = PreviousInstanceState{
 		    .WorldMatrix = observed.Draw->Transform.WorldMatrix,
 		    .LocalPartitionId = observed.LocalPartitionId,

@@ -33,6 +33,7 @@ FrameGraphReservoirHistoryHandles DeclareLightingReservoirHistory(FrameGraphBuil
 	{
 		return builder.CreateTextureHistory(FrameGraphTextureDesc::CreateColor(std::string(name) + std::string(suffix), renderExtent.Width, renderExtent.Height, format));
 	};
+
 	return FrameGraphReservoirHistoryHandles{
 	    .Sample = declare("Sample", PixelFormat::R32G32B32A32_Float),
 	    .Weight = declare("Weight", PixelFormat::R32G32B32A32_Float),

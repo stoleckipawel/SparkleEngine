@@ -145,7 +145,9 @@ CompiledShader DxcShaderBackend::Compile(const ShaderCompileRequest& request)
 	if (FAILED(status))
 	{
 		if (errorMsg.empty())
+		{
 			errorMsg = "Compilation failed with no error message";
+		}
 
 		SPDLOG_LOGGER_ERROR(
 		    g_dxcShaderBackendLogger,
@@ -470,7 +472,9 @@ std::filesystem::path DxcShaderBackend::SaveShaderSymbols(IDxcResult* result, co
 	result->GetOutput(DXC_OUT_PDB, IID_PPV_ARGS(pdbBlob.ReleaseAndGetAddressOf()), pdbNameBlob.ReleaseAndGetAddressOf());
 
 	if (!pdbBlob || !pdbNameBlob)
+	{
 		return {};
+	}
 
 	std::wstring pdbName(pdbNameBlob->GetStringPointer());
 	std::filesystem::path pdbPath = Filesystem::GetShaderSymbolsOutputPath() / std::filesystem::path(pdbName).filename();

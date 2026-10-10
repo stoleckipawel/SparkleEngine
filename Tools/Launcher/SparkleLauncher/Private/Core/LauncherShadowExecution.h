@@ -1,19 +1,20 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <vector>
 
 namespace SparkleLauncher
 {
-	enum class LauncherShadowStartState
+	enum class LauncherShadowStartState : std::uint8_t
 	{
 		AlreadyRunningFromShadow,
 		Started,
 		Failed,
 	};
 
-	enum class LauncherShadowCompletionPolicy
+	enum class LauncherShadowCompletionPolicy : std::uint8_t
 	{
 		WaitForCompletion,
 		ReleaseCallingArtifact,

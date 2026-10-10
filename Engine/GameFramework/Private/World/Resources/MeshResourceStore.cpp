@@ -49,7 +49,9 @@ namespace ECS
 	std::shared_ptr<const Mesh> MeshResourceStore::ResolveImmutable(MeshResourceHandle handle) const noexcept
 	{
 		if (!handle.IsValid() || handle.Slot >= m_entries.size())
+		{
 			return {};
+		}
 		const Entry& entry = m_entries[handle.Slot];
 		return entry.Generation == handle.Generation ? entry.Resource : std::shared_ptr<const Mesh>{};
 	}

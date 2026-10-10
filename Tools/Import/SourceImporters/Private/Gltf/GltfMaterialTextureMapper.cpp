@@ -98,6 +98,7 @@ std::optional<std::filesystem::path> GltfMaterialTextureMapper::ResolveTexturePa
 	{
 		return std::nullopt;
 	}
+
 	const std::uint32_t texCoord = textureView.has_transform && textureView.transform.has_texcoord ? static_cast<std::uint32_t>(textureView.transform.texcoord)
 	                                                                                               : static_cast<std::uint32_t>(textureView.texcoord);
 

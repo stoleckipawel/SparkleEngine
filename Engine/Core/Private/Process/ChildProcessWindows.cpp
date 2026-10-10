@@ -64,7 +64,9 @@ public:
 		void Reset(HANDLE handle = nullptr) noexcept
 		{
 			if (*this)
+			{
 				CloseHandle(m_handle);
+			}
 			m_handle = handle;
 		}
 
@@ -75,10 +77,14 @@ public:
 	static std::wstring Utf8ToWide(std::string_view text)
 	{
 		if (text.empty())
+		{
 			return {};
+		}
 		const int length = MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), nullptr, 0);
 		if (length <= 0)
+		{
 			return std::wstring(text.begin(), text.end());
+		}
 		std::wstring result(static_cast<std::size_t>(length), L'\0');
 		MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), result.data(), length);
 		return result;
@@ -103,10 +109,14 @@ public:
 	static std::wstring QuoteArgument(const std::wstring& argument)
 	{
 		if (argument.empty())
+		{
 			return L"\"\"";
+		}
 		const bool needsQuotes = std::any_of(argument.begin(), argument.end(), [](wchar_t value) { return std::iswspace(value) || value == L'\"'; });
 		if (!needsQuotes)
+		{
 			return argument;
+		}
 
 		std::wstring quoted(1, L'\"');
 		std::size_t backslashes = 0;
@@ -147,12 +157,16 @@ public:
 	static std::vector<wchar_t> BuildEnvironment(const std::vector<Process::EnvironmentOverride>& overrides)
 	{
 		if (overrides.empty())
+		{
 			return {};
+		}
 		std::vector<std::wstring> entries;
 		if (LPWCH environment = GetEnvironmentStringsW())
 		{
 			for (const wchar_t* current = environment; *current != L'\0'; current += std::wcslen(current) + 1)
+			{
 				entries.emplace_back(current);
+			}
 			FreeEnvironmentStringsW(environment);
 		}
 		for (const Process::EnvironmentOverride& overrideValue : overrides)
@@ -161,9 +175,13 @@ public:
 			const std::wstring replacement = prefix + Utf8ToWide(overrideValue.Value);
 			auto entry = std::find_if(entries.begin(), entries.end(), [&prefix](const std::wstring& value) { return value.rfind(prefix, 0) == 0; });
 			if (entry == entries.end())
+			{
 				entries.push_back(replacement);
+			}
 			else
+			{
 				*entry = replacement;
+			}
 		}
 		std::sort(entries.begin(), entries.end());
 		std::vector<wchar_t> block;
@@ -292,9 +310,13 @@ public:
 	{
 		result.CapturedOutput.append(data, size);
 		if (request.OutputCallback)
+		{
 			request.OutputCallback(std::string_view(data, size));
+		}
 		if (log.is_open())
+		{
 			log.write(data, static_cast<std::streamsize>(size));
+		}
 	}
 
 	static void ConsumeLogOutput(Process::ChildProcessResult& result, const Process::ChildProcessRequest& request, std::uint64_t& consumedBytes)
@@ -512,16 +534,24 @@ Process::ChildProcessResult Process::Detail::RunWindowsChildProcess(const ChildP
 			if (ReadFile(readPipe.Get(), buffer.data(), static_cast<DWORD>(buffer.size()), &bytesRead, &readOperation))
 			{
 				if (bytesRead == 0)
+				{
 					pipeClosed = true;
+				}
 				else
+				{
 					ChildProcessWindowsImplementation::ConsumeOutput(result, request, log, buffer.data(), bytesRead);
+				}
 				continue;
 			}
 			const DWORD readError = GetLastError();
 			if (readError == ERROR_IO_PENDING)
+			{
 				readPending = true;
+			}
 			else if (readError == ERROR_BROKEN_PIPE)
+			{
 				pipeClosed = true;
+			}
 			else
 			{
 				result.FailureReason = "Failed while reading child output: " + ChildProcessWindowsImplementation::FormatError(readError);
@@ -550,7 +580,9 @@ Process::ChildProcessResult Process::Detail::RunWindowsChildProcess(const ChildP
 			waits[count++] = cancelEvent.Get();
 		}
 		if (count == 0)
+		{
 			break;
+		}
 		const DWORD waitResult = WaitForMultipleObjects(count, waits.data(), FALSE, INFINITE);
 		if (waitResult == WAIT_FAILED)
 		{
@@ -576,9 +608,13 @@ Process::ChildProcessResult Process::Detail::RunWindowsChildProcess(const ChildP
 			DWORD bytesRead = 0;
 			readPending = false;
 			if (GetOverlappedResult(readPipe.Get(), &readOperation, &bytesRead, FALSE) && bytesRead != 0)
+			{
 				ChildProcessWindowsImplementation::ConsumeOutput(result, request, log, buffer.data(), bytesRead);
+			}
 			else if (GetLastError() == ERROR_BROKEN_PIPE || bytesRead == 0)
+			{
 				pipeClosed = true;
+			}
 			else
 			{
 				result.FailureReason = "Failed while completing child output read: " + ChildProcessWindowsImplementation::FormatError(GetLastError());

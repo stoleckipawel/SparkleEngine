@@ -71,7 +71,9 @@ namespace ECS
 		bool PrepareWriteTraversal() noexcept
 		{
 			if (GetValidity() != QueryIterationStatus::Success)
+			{
 				return false;
+			}
 			MarkWrites(std::index_sequence_for<AccessSpecs...>{});
 			return true;
 		}
@@ -110,16 +112,22 @@ namespace ECS
 		{
 			const QueryIterationStatus initialStatus = GetValidity();
 			if (initialStatus != QueryIterationStatus::Success)
+			{
 				return {.Status = initialStatus};
+			}
 			if (begin > end || end > m_leadingEntities.size())
+			{
 				return {.Status = QueryIterationStatus::StaleView};
+			}
 
 			std::size_t entityCount = 0;
 			for (std::size_t leadingIndex = begin; leadingIndex < end; ++leadingIndex)
 			{
 				const EntityId entity = m_leadingEntities[leadingIndex];
 				if (!Matches(entity, std::index_sequence_for<AccessSpecs...>{}))
+				{
 					continue;
+				}
 				auto arguments = BuildArguments(entity, std::index_sequence_for<AccessSpecs...>{});
 				std::apply([&](auto&... components) { std::invoke(function, leadingIndex, entity, components...); }, arguments);
 				++entityCount;
@@ -131,16 +139,22 @@ namespace ECS
 		{
 			const QueryIterationStatus initialStatus = GetValidity();
 			if (initialStatus != QueryIterationStatus::Success)
+			{
 				return {.Status = initialStatus};
+			}
 			if (begin > end || end > entities.size())
+			{
 				return {.Status = QueryIterationStatus::StaleView};
+			}
 
 			std::size_t entityCount = 0;
 			for (std::size_t targetIndex = begin; targetIndex < end; ++targetIndex)
 			{
 				const EntityId entity = entities[targetIndex];
 				if (!Matches(entity, std::index_sequence_for<AccessSpecs...>{}))
+				{
 					continue;
+				}
 				auto arguments = BuildArguments(entity, std::index_sequence_for<AccessSpecs...>{});
 				std::apply([&](auto&... components) { std::invoke(function, targetIndex, entity, components...); }, arguments);
 				++entityCount;

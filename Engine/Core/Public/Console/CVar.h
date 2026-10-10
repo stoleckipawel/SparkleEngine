@@ -64,7 +64,9 @@ public:
 	T Get() const noexcept
 	{
 		if constexpr (std::is_trivially_copyable_v<T>)
+		{
 			return m_value.load();
+		}
 		else
 		{
 			std::lock_guard lock(m_valueMutex);
@@ -75,7 +77,9 @@ public:
 	void Set(T value) noexcept
 	{
 		if constexpr (std::is_trivially_copyable_v<T>)
+		{
 			m_value.store(value);
+		}
 		else
 		{
 			std::lock_guard lock(m_valueMutex);

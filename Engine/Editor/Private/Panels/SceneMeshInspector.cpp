@@ -19,7 +19,9 @@ void SceneMeshInspector::Build(const WorldMeshReadData& mesh, EditorTransactionH
 void SceneMeshInspector::BuildTransformCategory(const std::string& filter, const WorldMeshReadData& mesh, EditorTransactionHistory& transactionHistory, std::uint64_t generation) noexcept
 {
 	if (!UiUtil::MatchesDetailsFilter(filter, "Transform", "location rotation scale transform") || !UiUtil::BeginDetailsCategory("Transform"))
+	{
 		return;
+	}
 	Transform after = mesh.LocalTransform;
 	bool changed = false;
 	auto translation = after.GetTranslation();
@@ -47,14 +49,18 @@ void SceneMeshInspector::BuildTransformCategory(const std::string& filter, const
 		changed = true;
 	}
 	if (changed)
+	{
 		(void) transactionHistory.Execute({0, SetLocalTransformCommand{mesh.Entity, after}}, {0, SetLocalTransformCommand{mesh.Entity, mesh.LocalTransform}}, generation, "mesh-transform");
+	}
 	UiUtil::EndDetailsCategory();
 }
 
 void SceneMeshInspector::BuildStaticMeshCategory(const std::string& filter, const WorldMeshReadData& mesh) noexcept
 {
 	if (!UiUtil::MatchesDetailsFilter(filter, "Mesh", "type asset rendering skeletal static") || !UiUtil::BeginDetailsCategory("Mesh"))
+	{
 		return;
+	}
 	const bool skeletal = mesh.Kind == SceneMeshKind::Skeletal;
 	UiUtil::DrawDetailsAssetRow("Mesh", UiUtil::EditorIcon::StaticMesh, skeletal ? "Cooked Skeletal Mesh" : "Cooked Static Mesh", "Generation-pinned asset reference");
 	UiUtil::DrawDetailsValueRow("Type", skeletal ? "Skeletal" : "Static");
@@ -67,18 +73,24 @@ void SceneMeshInspector::BuildStaticMeshCategory(const std::string& filter, cons
 void SceneMeshInspector::BuildAdvancedParametersCategory(const std::string& filter, const WorldMeshReadData& mesh, EditorTransactionHistory& transactionHistory, std::uint64_t generation) noexcept
 {
 	if (!UiUtil::MatchesDetailsFilter(filter, "Advanced", "visible visibility hidden") || !UiUtil::BeginDetailsCategory("Advanced", false))
+	{
 		return;
+	}
 	bool visible = mesh.Visible;
 	const bool defaultVisible = true;
 	if (UiUtil::EditDetailsCheckbox("Visible", visible, &defaultVisible))
+	{
 		(void) transactionHistory.Execute({0, SetEntityVisibilityCommand{mesh.Entity, visible}}, {0, SetEntityVisibilityCommand{mesh.Entity, mesh.Visible}}, generation, "mesh-visibility");
+	}
 	UiUtil::EndDetailsCategory();
 }
 
 void SceneMeshInspector::BuildMaterialsCategory(const std::string& filter, const WorldMeshReadData& mesh) noexcept
 {
 	if (!UiUtil::MatchesDetailsFilter(filter, "Materials", "element material slot surface") || !UiUtil::BeginDetailsCategory("Materials"))
+	{
 		return;
+	}
 	char buffer[64] = {};
 	std::snprintf(buffer, sizeof(buffer), "Material %u", mesh.Material.IsValid() ? mesh.Material.GetIndex() : 0u);
 	UiUtil::DrawDetailsAssetRow("Element 0", UiUtil::EditorIcon::Material, buffer, "Material slot");

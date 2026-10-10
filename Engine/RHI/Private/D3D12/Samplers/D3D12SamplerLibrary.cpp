@@ -152,17 +152,14 @@ bool D3D12SamplerLibrary::TryGetAddressOffset(RhiSamplerAddressMode addressMode,
 	{
 		case RhiSamplerAddressMode::Wrap:
 			outOffset = 0;
-
 			return true;
 
 		case RhiSamplerAddressMode::Clamp:
 			outOffset = 1;
-
 			return true;
 
 		case RhiSamplerAddressMode::Mirror:
 			outOffset = 2;
-
 			return true;
 		default:
 			return false;
@@ -193,17 +190,14 @@ bool D3D12SamplerLibrary::TryGetPointSlot(RhiSamplerMipFilter mipFilter, RhiSamp
 	{
 		case RhiSamplerMipFilter::None:
 			baseSlot = Slot::PointNoMipWrap;
-
 			break;
 
 		case RhiSamplerMipFilter::Point:
 			baseSlot = Slot::PointMipPointWrap;
-
 			break;
 
 		case RhiSamplerMipFilter::Linear:
 			baseSlot = Slot::PointMipLinearWrap;
-
 			break;
 		default:
 			return false;
@@ -226,17 +220,14 @@ bool D3D12SamplerLibrary::TryGetLinearSlot(RhiSamplerMipFilter mipFilter, RhiSam
 	{
 		case RhiSamplerMipFilter::None:
 			baseSlot = Slot::LinearNoMipWrap;
-
 			break;
 
 		case RhiSamplerMipFilter::Point:
 			baseSlot = Slot::LinearMipPointWrap;
-
 			break;
 
 		case RhiSamplerMipFilter::Linear:
 			baseSlot = Slot::LinearMipLinearWrap;
-
 			break;
 		default:
 			return false;
@@ -259,27 +250,22 @@ bool D3D12SamplerLibrary::TryGetAnisotropicSlot(RhiSamplerAnisotropy maxAnisotro
 	{
 		case RhiSamplerAnisotropy::X1:
 			baseSlot = Slot::Aniso1xWrap;
-
 			break;
 
 		case RhiSamplerAnisotropy::X2:
 			baseSlot = Slot::Aniso2xWrap;
-
 			break;
 
 		case RhiSamplerAnisotropy::X4:
 			baseSlot = Slot::Aniso4xWrap;
-
 			break;
 
 		case RhiSamplerAnisotropy::X8:
 			baseSlot = Slot::Aniso8xWrap;
-
 			break;
 
 		case RhiSamplerAnisotropy::X16:
 			baseSlot = Slot::Aniso16xWrap;
-
 			break;
 		default:
 			return false;

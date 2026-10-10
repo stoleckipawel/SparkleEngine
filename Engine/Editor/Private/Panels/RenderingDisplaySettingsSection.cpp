@@ -16,6 +16,7 @@ void DrawDisplaySettingsSection(EngineRenderingSettingsController& settingsContr
 	    {"B8G8R8A8 UNorm", PixelFormat::B8G8R8A8_UNorm},
 	    {"B8G8R8A8 sRGB", PixelFormat::B8G8R8A8_UNorm_Srgb},
 	};
+
 	static constexpr RenderingSettingsUi::ComboOption<EngineOutputColorEncoding> outputColorEncodingOptions[] = {
 	    {"Automatic", EngineOutputColorEncoding::Automatic},
 	    {"Linear", EngineOutputColorEncoding::Linear},

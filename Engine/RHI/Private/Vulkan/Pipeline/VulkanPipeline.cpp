@@ -149,6 +149,7 @@ VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const GraphicsPipelineDesc& desc)
 		    .format = VulkanPipelineImplementation::ToVkVertexFormat(element.Format),
 		    .offset = element.OffsetInBytes};
 	}
+
 	const VkPipelineVertexInputStateCreateInfo vertexInputState{
 	    .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 	    .pNext = nullptr,
@@ -209,6 +210,7 @@ VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const GraphicsPipelineDesc& desc)
 		    .alphaBlendOp = VulkanPipelineImplementation::ToVkBlendOperation(blend.AlphaOperation),
 		    .colorWriteMask = blend.ColorWriteMask};
 	}
+
 	const VkPipelineColorBlendStateCreateInfo colorBlendState{
 	    .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
 	    .pNext = nullptr,
@@ -257,6 +259,7 @@ VulkanPipeline::VulkanPipeline(VulkanRhi& rhi, const GraphicsPipelineDesc& desc)
 	{
 		renderTargetFormats[renderTargetIndex] = VulkanTypeConversions::ToVkFormat(desc.ColorAttachmentFormats[renderTargetIndex]);
 	}
+
 	const VkPipelineRenderingCreateInfo renderingCreateInfo{
 	    .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
 	    .pNext = nullptr,

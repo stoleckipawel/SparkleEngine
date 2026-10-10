@@ -112,7 +112,9 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunCook(const ShaderRecookReq
 	if (request.Type == ShaderRecookRequestType::ShaderId)
 	{
 		if (request.Target.empty())
+		{
 			return ShaderCompilerProcessResult{.Output = "Targeted shader recook requires a shader id."};
+		}
 		arguments.push_back("--shader-id");
 		arguments.push_back(request.Target);
 	}
@@ -178,7 +180,9 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunCommand(const std::filesys
 	if (!process.FailureReason.empty())
 	{
 		if (!result.Output.empty())
+		{
 			result.Output.push_back('\n');
+		}
 		result.Output += process.FailureReason;
 	}
 	return result;

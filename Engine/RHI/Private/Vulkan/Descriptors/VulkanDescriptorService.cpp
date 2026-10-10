@@ -176,6 +176,7 @@ RhiResourceViewHandle VulkanDescriptorService::CreateTextureDescriptorView(const
 		vkDestroyImageView(m_rhi.GetDevice(), imageView, nullptr);
 		return {};
 	}
+
 	return AddResourceView(
 	    ResourceViewRecord{
 	        .Kind = desc.Kind,
@@ -196,6 +197,7 @@ RhiResourceViewHandle VulkanDescriptorService::CreateAttachmentView(const RhiRes
 	{
 		return {};
 	}
+
 	return AddResourceView(
 	    ResourceViewRecord{
 	        .Kind = desc.Kind,

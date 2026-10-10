@@ -58,6 +58,7 @@ void ReflectionSerializer::Build(std::span<const ShaderReflection> reflections, 
 			{
 				cbIndex = cbBaseIndex + binding.ConstantBufferIndex;
 			}
+
 			outOutput.resourceBindings.push_back(
 			    CookedShaderResourceBindingRecord{
 			        .NameOffsetInBytes = nameEntry.OffsetInBytes,

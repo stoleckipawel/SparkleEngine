@@ -224,16 +224,22 @@ SlangStage SlangShaderBackend::MapStage(ShaderStage stage)
 SlangCompileTarget SlangShaderBackend::MapTarget(ShaderTarget target)
 {
 	if (IsDxilTarget(target))
+	{
 		return SLANG_DXIL;
+	}
 	if (IsSpirVTarget(target))
+	{
 		return SLANG_SPIRV;
+	}
 	return SLANG_TARGET_UNKNOWN;
 }
 
 std::string SlangShaderBackend::BlobToString(slang::IBlob* blob)
 {
 	if (blob == nullptr || blob->getBufferPointer() == nullptr || blob->getBufferSize() == 0)
+	{
 		return {};
+	}
 
 	return std::string(static_cast<const char*>(blob->getBufferPointer()), blob->getBufferSize());
 }

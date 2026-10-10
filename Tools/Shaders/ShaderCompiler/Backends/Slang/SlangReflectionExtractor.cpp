@@ -35,7 +35,9 @@ ShaderReflection SlangReflectionExtractor::Extract(slang::ProgramLayout& program
 void SlangReflectionExtractor::VisitScope(slang::VariableLayoutReflection* scopeLayout, ShaderStage stage, ShaderReflection& outReflection)
 {
 	if (scopeLayout == nullptr)
+	{
 		return;
+	}
 
 	VisitVariable(scopeLayout, stage, outReflection);
 }
@@ -43,7 +45,9 @@ void SlangReflectionExtractor::VisitScope(slang::VariableLayoutReflection* scope
 void SlangReflectionExtractor::VisitVariable(slang::VariableLayoutReflection* variableLayout, ShaderStage stage, ShaderReflection& outReflection)
 {
 	if (variableLayout == nullptr || variableLayout->getTypeLayout() == nullptr)
+	{
 		return;
+	}
 
 	for (unsigned categoryIndex = 0; categoryIndex < variableLayout->getCategoryCount(); ++categoryIndex)
 	{
@@ -77,7 +81,9 @@ void SlangReflectionExtractor::VisitVariable(slang::VariableLayoutReflection* va
 void SlangReflectionExtractor::VisitTypeFields(slang::TypeLayoutReflection* typeLayout, ShaderStage stage, ShaderReflection& outReflection)
 {
 	if (typeLayout == nullptr)
+	{
 		return;
+	}
 
 	slang::TypeLayoutReflection* unwrapped = UnwrapSingleElementContainer(typeLayout);
 	if (unwrapped != nullptr && unwrapped != typeLayout)
@@ -87,7 +93,9 @@ void SlangReflectionExtractor::VisitTypeFields(slang::TypeLayoutReflection* type
 	}
 
 	if (typeLayout->getKind() != slang::TypeReflection::Kind::Struct)
+	{
 		return;
+	}
 
 	const unsigned fieldCount = typeLayout->getFieldCount();
 	for (unsigned fieldIndex = 0; fieldIndex < fieldCount; ++fieldIndex)
@@ -184,13 +192,17 @@ void SlangReflectionExtractor::AddVaryingInput(slang::VariableLayoutReflection& 
 void SlangReflectionExtractor::FlattenMembers(slang::TypeLayoutReflection* typeLayout, std::uint32_t parentOffset, std::vector<ShaderReflectionConstantBufferMember>& outMembers)
 {
 	if (typeLayout == nullptr || typeLayout->getKind() != slang::TypeReflection::Kind::Struct)
+	{
 		return;
+	}
 
 	for (unsigned fieldIndex = 0; fieldIndex < typeLayout->getFieldCount(); ++fieldIndex)
 	{
 		slang::VariableLayoutReflection* field = typeLayout->getFieldByIndex(fieldIndex);
 		if (field == nullptr || field->getTypeLayout() == nullptr)
+		{
 			continue;
+		}
 
 		ShaderReflectionConstantBufferMember member;
 		member.Name = field->getName() ? field->getName() : "";
@@ -210,9 +222,13 @@ void SlangReflectionExtractor::FlattenMembers(slang::TypeLayoutReflection* typeL
 CookedShaderResourceKind SlangReflectionExtractor::MapResourceKind(slang::TypeLayoutReflection* typeLayout, slang::ParameterCategory category)
 {
 	if (category == slang::ParameterCategory::ConstantBuffer)
+	{
 		return CookedShaderResourceKind::ConstantBuffer;
+	}
 	if (category == slang::ParameterCategory::SamplerState)
+	{
 		return CookedShaderResourceKind::Sampler;
+	}
 
 	const SlangResourceShape shape = typeLayout != nullptr ? typeLayout->getResourceShape() : SLANG_RESOURCE_NONE;
 	const SlangResourceShape baseShape = static_cast<SlangResourceShape>(shape & SLANG_RESOURCE_BASE_SHAPE_MASK);
@@ -220,13 +236,21 @@ CookedShaderResourceKind SlangReflectionExtractor::MapResourceKind(slang::TypeLa
 	const bool writable = category == slang::ParameterCategory::UnorderedAccess || access != SLANG_RESOURCE_ACCESS_READ;
 
 	if (baseShape == SLANG_STRUCTURED_BUFFER)
+	{
 		return writable ? CookedShaderResourceKind::RWStructuredBuffer : CookedShaderResourceKind::StructuredBuffer;
+	}
 	if (baseShape == SLANG_BYTE_ADDRESS_BUFFER)
+	{
 		return writable ? CookedShaderResourceKind::RWByteAddressBuffer : CookedShaderResourceKind::ByteAddressBuffer;
+	}
 	if (baseShape == SLANG_TEXTURE_BUFFER)
+	{
 		return writable ? CookedShaderResourceKind::RWTypedBuffer : CookedShaderResourceKind::TypedBuffer;
+	}
 	if (baseShape == SLANG_ACCELERATION_STRUCTURE)
+	{
 		return CookedShaderResourceKind::AccelerationStructure;
+	}
 
 	return writable ? CookedShaderResourceKind::RWTexture : CookedShaderResourceKind::Texture;
 }
@@ -244,7 +268,9 @@ CookedShaderResourceDimension SlangReflectionExtractor::MapResourceDimension(sla
 			return arrayed ? CookedShaderResourceDimension::Texture1DArray : CookedShaderResourceDimension::Texture1D;
 		case SLANG_TEXTURE_2D:
 			if (multisampled)
+			{
 				return arrayed ? CookedShaderResourceDimension::Texture2DMSArray : CookedShaderResourceDimension::Texture2DMS;
+			}
 			return arrayed ? CookedShaderResourceDimension::Texture2DArray : CookedShaderResourceDimension::Texture2D;
 		case SLANG_TEXTURE_3D:
 			return CookedShaderResourceDimension::Texture3D;
@@ -291,7 +317,9 @@ CookedShaderScalarType SlangReflectionExtractor::MapScalarType(slang::TypeReflec
 slang::TypeLayoutReflection* SlangReflectionExtractor::UnwrapSingleElementContainer(slang::TypeLayoutReflection* typeLayout)
 {
 	if (typeLayout == nullptr)
+	{
 		return nullptr;
+	}
 
 	switch (typeLayout->getKind())
 	{
@@ -312,8 +340,12 @@ slang::TypeLayoutReflection* SlangReflectionExtractor::UnwrapSingleElementContai
 std::uint32_t SlangReflectionExtractor::NormalizeArrayCount(std::size_t elementCount)
 {
 	if (elementCount == 0 || elementCount == SLANG_UNKNOWN_SIZE)
+	{
 		return 1;
+	}
 	if (elementCount == SLANG_UNBOUNDED_SIZE)
+	{
 		return 0;
+	}
 	return static_cast<std::uint32_t>(elementCount);
 }

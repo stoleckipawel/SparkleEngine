@@ -56,7 +56,9 @@ void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry, C
 ConsoleCommandResult ConsoleBuiltinCommands::ExecuteHelp(const ConsoleCommandRegistry& commandRegistry, ConsoleCommandScope scope, std::span<const std::string_view> arguments)
 {
 	if (arguments.size() > 1)
+	{
 		return ConsoleCommandResult::Error("usage: Help [filter]");
+	}
 	const std::string_view filter = arguments.empty() ? std::string_view{} : arguments.front();
 	std::string output;
 	for (const ConsoleCommandDescriptor& command : commandRegistry.GetCommands())
@@ -87,9 +89,13 @@ ConsoleCommandResult ConsoleBuiltinCommands::ExecuteHelp(const ConsoleCommandReg
 ConsoleCommandResult ConsoleBuiltinCommands::ExecuteListCVars(const CVarControlExecutor& executor, std::span<const std::string_view> arguments)
 {
 	if (arguments.size() > 1)
+	{
 		return ConsoleCommandResult::Error("usage: ListCVars [filter]");
+	}
 	if (!executor)
+	{
 		return ConsoleCommandResult::Error("CVar control owner is unavailable.");
+	}
 	return FormatControlResult(executor({.Operation = CVarControlOperation::List, .Filter = arguments.empty() ? std::string{} : std::string(arguments.front())}));
 }
 
@@ -101,7 +107,9 @@ ConsoleCommandResult ConsoleBuiltinCommands::ExecuteGetCVar(const CVarControlExe
 	}
 
 	if (!executor)
+	{
 		return ConsoleCommandResult::Error("CVar control owner is unavailable.");
+	}
 	return FormatControlResult(executor({.Operation = CVarControlOperation::Query, .Entries = {{std::string(arguments.front()), {}}}}));
 }
 
@@ -113,19 +121,25 @@ ConsoleCommandResult ConsoleBuiltinCommands::ExecuteSetCVar(const CVarControlExe
 	}
 
 	if (!executor)
+	{
 		return ConsoleCommandResult::Error("CVar control owner is unavailable.");
+	}
 	return FormatControlResult(executor({.Operation = CVarControlOperation::Set, .Entries = {{std::string(arguments.front()), Strings::Join(arguments, " ", 1)}}}));
 }
 
 ConsoleCommandResult ConsoleBuiltinCommands::FormatControlResult(CVarControlResult result)
 {
 	if (!result.Error.empty())
+	{
 		return ConsoleCommandResult::Error(std::move(result.Error));
+	}
 	std::string output;
 	for (const CVarControlValue& value : result.Values)
 	{
 		if (!output.empty())
+		{
 			output += '\n';
+		}
 		output += FormatCVar(value);
 	}
 	return output.empty() ? ConsoleCommandResult::Warning("no CVars matched") : ConsoleCommandResult::Success(std::move(output));

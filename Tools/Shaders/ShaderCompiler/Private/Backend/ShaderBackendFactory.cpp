@@ -16,6 +16,7 @@ static constexpr std::array<ShaderBinaryFormatDescriptor, 2> kShaderBinaryFormat
     {.Name = "Dxil", .IsAvailable = true},
     {.Name = "SpirV", .IsAvailable = true},
 }};
+
 static constexpr std::array<ShaderCodegenTargetDescriptor, 11> kShaderCodegenTargets = {{
     {.Target = ShaderTarget::DxilSm60, .BinaryFormat = "Dxil", .IsAvailable = true},
     {.Target = ShaderTarget::DxilSm61, .BinaryFormat = "Dxil", .IsAvailable = true},

@@ -14,12 +14,10 @@ void AddExposurePasses(FrameGraphBuilder& builder, const RenderFrame& frame, con
 	{
 		case EngineExposureMeteringMethod::Histogram:
 			moments = AddExposureHistogramPasses(builder, settings.RenderExtent, resources);
-
 			break;
 
 		case EngineExposureMeteringMethod::DownsamplePyramid:
 			moments = AddExposureDownsamplePasses(builder, settings.RenderExtent, resources);
-
 			break;
 		default:
 			throw Diagnostics::Error("Exposure graph construction received an invalid metering method.");

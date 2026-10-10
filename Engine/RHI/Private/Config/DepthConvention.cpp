@@ -74,7 +74,9 @@ float DepthConvention::LinearizeDepth(float ndcDepth, float nearZ, float farZ) n
 	if (DepthConvention::IsReversedZ())
 	{
 		if (ndcDepth <= 0.0f)
+		{
 			return farZ;
+		}
 		return nearZ / ndcDepth;
 	}
 
@@ -88,7 +90,9 @@ float DepthConvention::DepthToNDC(float linearZ, float nearZ, float farZ) noexce
 	{
 		(void) farZ;
 		if (linearZ <= 0.0f)
+		{
 			return 0.0f;
+		}
 		return nearZ / linearZ;
 	}
 

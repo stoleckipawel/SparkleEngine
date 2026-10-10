@@ -166,18 +166,24 @@ void SceneInspectorPanel::BuildSelectionInspector() noexcept
 	{
 		case SceneObjectType::Camera:
 			if (const WorldCameraReadData* camera = m_model->FindCamera(m_selection->entity))
+			{
 				SceneCameraInspector::Build(*camera, *m_transactionHistory, m_model->GetWorldGeneration(), m_filterText);
+			}
 			break;
 		case SceneObjectType::Light:
 			if (const WorldLightReadData* light = m_model->FindLight(m_selection->entity))
+			{
 				SceneLightInspector::Build(light->Description, light->Entity, *m_transactionHistory, m_model->GetWorldGeneration(), m_filterText);
+			}
 			break;
 		case SceneObjectType::Sky:
 			SceneSkyInspector::Build(m_model->GetSkyEnvironment(), *m_transactionHistory, m_model->GetWorldGeneration(), m_filterText);
 			break;
 		case SceneObjectType::Mesh:
 			if (const WorldMeshReadData* mesh = m_model->FindMesh(m_selection->entity))
+			{
 				SceneMeshInspector::Build(*mesh, *m_transactionHistory, m_model->GetWorldGeneration(), m_filterText);
+			}
 			break;
 		case SceneObjectType::None:
 		default:

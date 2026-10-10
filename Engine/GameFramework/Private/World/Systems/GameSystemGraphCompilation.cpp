@@ -331,22 +331,32 @@ namespace ECS
 		{
 			std::vector<std::uint32_t> remaining(m_data->Systems.size());
 			for (const auto& outgoing : m_edges)
+			{
 				for (std::uint32_t target : outgoing)
+				{
 					++remaining[target];
+				}
+			}
 			std::vector<bool> scheduled(m_data->Systems.size());
 			std::size_t count = 0;
 			while (count < scheduled.size())
 			{
 				std::vector<std::uint32_t> wave;
 				for (std::uint32_t index = 0; index < scheduled.size(); ++index)
+				{
 					if (!scheduled[index] && remaining[index] == 0)
+					{
 						wave.push_back(index);
+					}
+				}
 				for (std::uint32_t index : wave)
 				{
 					scheduled[index] = true;
 					++count;
 					for (std::uint32_t target : m_edges[index])
+					{
 						--remaining[target];
+					}
 				}
 				GameSystemWave compiledWave;
 				compiledWave.ItemCounts.resize(wave.size());

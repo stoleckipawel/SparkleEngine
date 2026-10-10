@@ -260,42 +260,49 @@ VulkanResourceStateMapping VulkanTypeConversions::ToResourceStateMapping(Resourc
 			return VulkanResourceStateMapping{.StageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, .AccessMask = 0, .ImageLayout = VK_IMAGE_LAYOUT_UNDEFINED};
 
 		case ResourceState::Common:
+
 			return VulkanResourceStateMapping{
 			    .StageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
 			    .AccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT,
 			    .ImageLayout = VK_IMAGE_LAYOUT_GENERAL};
 
 		case ResourceState::RenderTarget:
+
 			return VulkanResourceStateMapping{
 			    .StageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
 			    .AccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
 			    .ImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
 
 		case ResourceState::DepthWrite:
+
 			return VulkanResourceStateMapping{
 			    .StageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
 			    .AccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
 			    .ImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
 
 		case ResourceState::DepthRead:
+
 			return VulkanResourceStateMapping{
 			    .StageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
 			    .AccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
 			    .ImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL};
 
 		case ResourceState::ShaderResource:
+
 			return VulkanResourceStateMapping{
 			    .StageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
 			    .AccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
 			    .ImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
 
 		case ResourceState::UnorderedAccess:
+
 			return VulkanResourceStateMapping{
 			    .StageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
 			    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
 			    .ImageLayout = VK_IMAGE_LAYOUT_GENERAL};
 
 		case ResourceState::RayTracingAccelerationStructure:
+
 			return VulkanResourceStateMapping{
 			    .StageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
 			        | VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
@@ -303,6 +310,7 @@ VulkanResourceStateMapping VulkanTypeConversions::ToResourceStateMapping(Resourc
 			    .ImageLayout = VK_IMAGE_LAYOUT_GENERAL};
 
 		case ResourceState::RayTracingShaderTable:
+
 			return VulkanResourceStateMapping{
 			    .StageMask = VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
 			    .AccessMask = VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR,
@@ -329,17 +337,14 @@ VkBufferCreateInfo VulkanTypeConversions::BuildBufferCreateInfo(const RhiBufferR
 	{
 		case RhiBufferKind::Vertex:
 			usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-
 			break;
 
 		case RhiBufferKind::Index:
 			usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-
 			break;
 
 		case RhiBufferKind::Structured:
 			usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-
 			break;
 		case RhiBufferKind::Generic:
 			if (desc.StrideInBytes > 0)

@@ -27,10 +27,14 @@ namespace Assets
 		{
 #if defined(_WIN32)
 			if (Data != nullptr)
+			{
 				UnmapViewOfFile(Data);
+			}
 #else
 			if (Data != nullptr)
+			{
 				munmap(Data, Size);
+			}
 #endif
 		}
 
@@ -139,7 +143,9 @@ namespace Assets
 		if (existing != m_files.end())
 		{
 			if (existing->second->ReferenceCount == (std::numeric_limits<std::size_t>::max)())
+			{
 				throw Diagnostics::Error(std::format("Cooked asset '{}' reference count exceeds the host range.", path.generic_string()));
+			}
 			++existing->second->ReferenceCount;
 			return;
 		}
@@ -164,7 +170,9 @@ namespace Assets
 			throw Diagnostics::Error(std::format("Cooked asset '{}' was released without a retained reference.", path.generic_string()));
 		}
 		if (--file->second->ReferenceCount == 0)
+		{
 			m_files.erase(file);
+		}
 	}
 
 	void CookedAssetFileSet::Reset() noexcept

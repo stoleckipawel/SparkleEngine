@@ -74,14 +74,12 @@ namespace TextureCookPipeline
 			case CompressionTarget::BC1:
 			case CompressionTarget::BC4:
 				blockBytes = 8;
-
 				break;
 
 			case CompressionTarget::BC5:
 			case CompressionTarget::BC6H:
 			case CompressionTarget::BC7:
 				blockBytes = 16;
-
 				break;
 			case CompressionTarget::None:
 				Diagnostics::Fatal(g_textureCompressionPolicyLogger, __FILE__, __LINE__, "Block-compressed row pitch was requested without a compression target.");

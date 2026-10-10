@@ -21,7 +21,9 @@ namespace ECS
 			m_structureVersion = registry.GetStructureVersion();
 		}
 		for (MeshSlot& slot : m_meshSlots)
+		{
 			slot.Included = false;
+		}
 		return true;
 	}
 
@@ -38,12 +40,16 @@ namespace ECS
 		for (const MeshSlot& slot : m_meshSlots)
 		{
 			if (!slot.Included)
+			{
 				continue;
+			}
 			if (slot.InstanceGroupIndex < m_meshGroups.size())
 			{
 				SceneMeshInstanceGroupData& group = m_meshGroups[slot.InstanceGroupIndex];
 				if (group.instanceCount == 0)
+				{
 					group.firstInstance = static_cast<SceneMeshInstanceIndex>(m_extractedMeshes.size());
+				}
 				++group.instanceCount;
 			}
 			m_extractedMeshes.push_back(slot);

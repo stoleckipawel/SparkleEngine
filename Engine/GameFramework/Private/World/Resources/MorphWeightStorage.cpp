@@ -19,7 +19,9 @@ namespace ECS
 			return {slot, entry.Generation};
 		}
 		if (m_entries.size() >= AnimationOutputSlotHandle{}.Slot)
+		{
 			return {};
+		}
 		const auto slot = static_cast<std::uint32_t>(m_entries.size());
 		m_entries.push_back(Entry{.Weights = std::vector<float>(weights.begin(), weights.end()), .Occupied = true});
 		return {slot, m_entries.back().Generation};
@@ -28,10 +30,14 @@ namespace ECS
 	bool MorphWeightStorage::PrepareWriteSize(AnimationOutputSlotHandle handle, std::size_t weightCount)
 	{
 		if (!handle.IsValid() || handle.Slot >= m_entries.size())
+		{
 			return false;
+		}
 		Entry& entry = m_entries[handle.Slot];
 		if (!entry.Occupied || entry.Generation != handle.Generation)
+		{
 			return false;
+		}
 		entry.Weights.resize(weightCount);
 		return true;
 	}
@@ -39,10 +45,14 @@ namespace ECS
 	bool MorphWeightStorage::Write(AnimationOutputSlotHandle handle, std::span<const float> weights) noexcept
 	{
 		if (!handle.IsValid() || handle.Slot >= m_entries.size())
+		{
 			return false;
+		}
 		Entry& entry = m_entries[handle.Slot];
 		if (!entry.Occupied || entry.Generation != handle.Generation || entry.Weights.size() != weights.size())
+		{
 			return false;
+		}
 		std::copy(weights.begin(), weights.end(), entry.Weights.begin());
 		return true;
 	}
@@ -50,7 +60,9 @@ namespace ECS
 	std::span<const float> MorphWeightStorage::Read(AnimationOutputSlotHandle handle) const noexcept
 	{
 		if (!handle.IsValid() || handle.Slot >= m_entries.size())
+		{
 			return {};
+		}
 		const Entry& entry = m_entries[handle.Slot];
 		return entry.Occupied && entry.Generation == handle.Generation ? std::span<const float>(entry.Weights) : std::span<const float>{};
 	}
@@ -58,10 +70,14 @@ namespace ECS
 	bool MorphWeightStorage::Remove(AnimationOutputSlotHandle handle) noexcept
 	{
 		if (!handle.IsValid() || handle.Slot >= m_entries.size())
+		{
 			return false;
+		}
 		Entry& entry = m_entries[handle.Slot];
 		if (!entry.Occupied || entry.Generation != handle.Generation)
+		{
 			return false;
+		}
 		entry.Weights.clear();
 		entry.Occupied = false;
 		if (entry.Generation != (std::numeric_limits<std::uint32_t>::max)())

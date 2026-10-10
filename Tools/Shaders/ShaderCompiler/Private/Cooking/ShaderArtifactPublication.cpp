@@ -176,6 +176,7 @@ namespace ShaderArtifactAssembly
 			{
 				constantBufferIndex = binding.ConstantBufferIndex - record.ConstantBufferOffset;
 			}
+
 			result.Bindings.push_back(
 			    ShaderReflectionResourceBinding{
 			        .Name = Resolve(map, binding.NameOffsetInBytes, binding.NameSizeInBytes),

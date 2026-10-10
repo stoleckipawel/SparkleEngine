@@ -55,7 +55,9 @@ namespace ECS
 		        {
 			        const ResolvedAnimationClip clip = m_resources.AnimationClips.Resolve(state.Resource);
 			        if (!clip.IsValid() || !state.Playing || clip.Resource->durationSeconds <= 0.0f)
+			        {
 				        return;
+			        }
 			        state.TimeSeconds += m_deltaSeconds * state.PlaybackRate;
 			        state.TimeSeconds = state.Looping ? std::fmod(state.TimeSeconds, clip.Resource->durationSeconds) : (std::min) (state.TimeSeconds, clip.Resource->durationSeconds);
 			        m_state.m_systemArena.AnimationChanges[index] = entity;
@@ -73,11 +75,15 @@ namespace ECS
 		        {
 			        AnimationOutputStorage::PoseWorkSlot* work = m_state.m_animationOutput.FindPoseWork(entity);
 			        if (work == nullptr || work->PoseOutputIndex >= m_state.m_animationOutput.GetMutableOutput().poses.size())
+			        {
 				        return;
+			        }
 			        const ResolvedAnimationClip clip = m_resources.AnimationClips.Resolve(state.Resource);
 			        const SkeletonEvaluationData skeleton = m_resources.Skeletons.Resolve(work->Skeleton);
 			        if (!clip.IsValid() || !AnimationPoseEvaluator::Evaluate(*clip.Resource, skeleton, state.TimeSeconds, work->LocalTransforms, work->ModelSpaceTransforms))
+			        {
 				        return;
+			        }
 			        m_state.m_animationOutput.GetMutableOutput().poses[work->PoseOutputIndex].playbackTimeSeconds = state.TimeSeconds;
 		        })
 		    .Succeeded();
@@ -98,7 +104,9 @@ namespace ECS
 			        const AnimationOutputStorage::MorphSampleSlot& sample = samples[index];
 			        const ResolvedAnimationClip clip = m_resources.AnimationClips.Resolve(sample.Clip);
 			        if (!clip.IsValid() || sample.OutputIndex >= output.morphWeights.size())
+			        {
 				        return;
+			        }
 			        MorphWeightEvaluator::Evaluate(*clip.Resource, sample.ChannelIndex, state.TimeSeconds, output.morphWeights[sample.OutputIndex].weights);
 		        })
 		    .Succeeded();
@@ -112,9 +120,13 @@ namespace ECS
 		{
 			AnimationOutputStorage::PoseWorkSlot& slot = work[index];
 			if (slot.PoseOutputIndex >= output.poses.size())
+			{
 				continue;
+			}
 			if (!SkinningMatrixEvaluator::Evaluate(m_resources.Skeletons.Resolve(slot.Skeleton), slot.ModelSpaceTransforms, output.poses[slot.PoseOutputIndex].jointMatrices))
+			{
 				return false;
+			}
 		}
 		return true;
 	}
@@ -128,10 +140,14 @@ namespace ECS
 		{
 			const AnimationOutputStorage::MorphTargetBinding& binding = bindings[index];
 			if (binding.SampleIndex >= samples.size())
+			{
 				return false;
+			}
 			const std::uint32_t outputIndex = samples[binding.SampleIndex].OutputIndex;
 			if (outputIndex >= output.morphWeights.size() || !m_state.m_morphWeights.Write(binding.TargetWeights, output.morphWeights[outputIndex].weights))
+			{
 				return false;
+			}
 			m_state.m_systemArena.MorphChanges[index] = binding.TargetEntity;
 		}
 		return true;

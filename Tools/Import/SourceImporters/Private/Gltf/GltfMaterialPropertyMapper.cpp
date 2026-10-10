@@ -22,18 +22,15 @@ void GltfMaterialPropertyMapper::Apply(const cgltf_material& material, ImportedM
 	{
 		case cgltf_alpha_mode_mask:
 			importedMaterial.alphaMode = ImportedAlphaMode::Mask;
-
 			break;
 
 		case cgltf_alpha_mode_blend:
 			importedMaterial.alphaMode = ImportedAlphaMode::Blend;
-
 			break;
 
 		case cgltf_alpha_mode_opaque:
 		default:
 			importedMaterial.alphaMode = ImportedAlphaMode::Opaque;
-
 			break;
 	}
 

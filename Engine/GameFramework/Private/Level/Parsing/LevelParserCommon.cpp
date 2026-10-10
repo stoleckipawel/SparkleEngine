@@ -62,15 +62,25 @@ namespace LevelParsing
 	{
 		const std::string sectionName = Strings::TrimCopy(line.substr(1, line.size() - 2));
 		if (sectionName == "Level")
+		{
 			return LevelFileSection::Level;
+		}
 		if (sectionName == "Camera")
+		{
 			return LevelFileSection::Camera;
+		}
 		if (sectionName == "Sky")
+		{
 			return LevelFileSection::Sky;
+		}
 		if (sectionName == "Lighting")
+		{
 			return LevelFileSection::Lighting;
+		}
 		if (sectionName == "SceneAssets")
+		{
 			return LevelFileSection::SceneAssets;
+		}
 		throw Diagnostics::Error(std::format("Unsupported level section '{}'.", sectionName));
 	}
 
@@ -79,7 +89,9 @@ namespace LevelParsing
 		std::string_view key;
 		std::string_view value;
 		if (!Strings::TrySplitKeyValue(line, '=', key, value))
+		{
 			throw Diagnostics::Error("Malformed level field.");
+		}
 		return ParsedLevelLine{.key = std::string(key), .value = std::string(value)};
 	}
 
@@ -87,7 +99,9 @@ namespace LevelParsing
 	{
 		float parsed = 0.0f;
 		if (!TryParseFloatValue(value, parsed))
+		{
 			throw Diagnostics::Error(std::format("Invalid {}.", fieldName));
+		}
 		return parsed;
 	}
 
@@ -95,7 +109,9 @@ namespace LevelParsing
 	{
 		DirectX::XMFLOAT3 parsed;
 		if (!TryParseFloat3Value(value, parsed))
+		{
 			throw Diagnostics::Error(std::format("Invalid {}.", fieldName));
+		}
 		return parsed;
 	}
 
@@ -103,7 +119,9 @@ namespace LevelParsing
 	{
 		bool parsed = false;
 		if (!Strings::TryParseBool(value, parsed))
+		{
 			throw Diagnostics::Error(std::format("Invalid {}.", fieldName));
+		}
 		return parsed;
 	}
 }

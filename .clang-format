@@ -13,6 +13,8 @@ TabWidth: 4
 UseTab: ForIndentation
 ContinuationIndentWidth: 4
 AccessModifierOffset: -4
+EmptyLineBeforeAccessModifier: LogicalBlock
+EmptyLineAfterAccessModifier: Never
 NamespaceIndentation: All
 IndentCaseLabels: true
 IndentCaseBlocks: false

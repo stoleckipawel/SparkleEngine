@@ -115,6 +115,7 @@ namespace SparkleLauncher
 			{
 				missingProfiles.push_back("runtime");
 			}
+
 			options.push_back(
 			    {configuration.DisplayName,
 			        configuration.Value,
